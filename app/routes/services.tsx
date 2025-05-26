@@ -78,7 +78,7 @@ export default function Services() {
             >
               <div className="flex items-center gap-x-4">
                 <service.icon
-                  className="h-10 w-10 text-primary-600"
+                  className="h-6 w-6 text-primary-600"
                   aria-hidden="true"
                 />
                 <h3 className="text-lg font-semibold leading-7 tracking-tight text-slate-900">
@@ -119,4 +119,4 @@ export default function Services() {
       </div>
     </div>
   );
-} 
+}

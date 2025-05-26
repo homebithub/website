@@ -191,7 +191,7 @@ export default function About() {
               <div key={value.name}>
                 <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-slate-900">
                   <value.icon
-                    className="h-5 w-5 flex-none text-teal-600"
+                    className="h-4 w-4 flex-none text-teal-600"
                     aria-hidden="true"
                   />
                   {value.name}
@@ -236,4 +236,4 @@ export default function About() {
       <Footer />
     </div>
   );
-} 
+}

@@ -26,7 +26,7 @@ export default function LoginPage() {
     e.preventDefault();
     try {
       await login(formData.email, formData.password);
-      const from = location.state?.from?.pathname || "/";
+      const from = location.state?.from?.pathname || "/dashboard";
       navigate(from);
     } catch (error) {
       // Error is handled by the auth context
@@ -43,42 +43,53 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navigation />
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">Login</h1>
-        <Form method="post" className="max-w-md mx-auto bg-white dark:bg-slate-800 rounded-lg shadow p-8">
-          <div className="space-y-4">
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
+        <div className="card w-full max-w-md">
+          <h1 className="text-3xl font-extrabold text-primary mb-6 text-center">Sign in to HomeXpert</h1>
+          <Form method="post" className="space-y-6">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
+              <label htmlFor="email" className="block text-sm font-medium text-primary mb-1">Email</label>
               <input
                 type="email"
                 id="email"
                 name="email"
                 required
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                className="input w-full"
+                value={formData.email}
+                onChange={handleChange}
+                placeholder="you@email.com"
               />
             </div>
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+              <label htmlFor="password" className="block text-sm font-medium text-primary mb-1">Password</label>
               <input
                 type="password"
                 id="password"
                 name="password"
                 required
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
+                className="input w-full"
+                value={formData.password}
+                onChange={handleChange}
+                placeholder="••••••••"
               />
             </div>
-            <div>
-              <button
-                type="submit"
-                className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-offset-slate-800"
-              >
-                Login
-              </button>
+            <div className="flex items-center justify-between">
+              <Link to="/forgot-password" className="link text-sm">Forgot password?</Link>
             </div>
+            <button
+              type="submit"
+              className="btn-primary w-full mt-2"
+            >
+              Login
+            </button>
+          </Form>
+          <div className="text-center mt-6 text-sm">
+            Don&apos;t have an account?{' '}
+            <Link to="/signup" className="link font-semibold">Sign up</Link>
           </div>
-        </Form>
+        </div>
       </main>
       <Footer />
     </div>
