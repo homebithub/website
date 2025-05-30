@@ -1,11 +1,7 @@
-html {
-    box-sizing: border-box;
-}
-
 *,
 *:before,
 *:after {
-    box-sizing: inherit;
+    box-sizing: border-box;
 }
 
 body {
@@ -29,17 +25,59 @@ body {
     color: #121212;
 }
 
-textarea,
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-background text-text font-sans min-h-screen;
+}
+
 input,
+textarea,
 button {
-    font-size: 1rem;
-    font-family: inherit;
-    border: none;
-    border-radius: 8px;
-    padding: 0.5rem 0.75rem;
-    box-shadow: 0 0px 1px hsla(0, 0%, 0%, 0.2), 0 1px 2px hsla(0, 0%, 0%, 0.2);
-    background-color: white;
-    line-height: 1.5;
+  @apply rounded-xl border border-primary-light px-4 py-2 text-base font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition;
+  background-color: #fff;
+}
+
+button {
+  @apply bg-primary text-white font-semibold hover:bg-primary-dark;
+}
+
+.btn-primary {
+  @apply bg-primary text-white rounded-xl px-6 py-2 font-semibold shadow-card hover:bg-primary-dark transition;
+}
+
+.card {
+  @apply bg-white rounded-xl shadow-card p-8;
+}
+
+.input {
+  @apply border border-primary-light rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary;
+}
+
+.link {
+  @apply text-primary hover:underline;
+}
+
+.btn-primary {
+  @apply bg-primary text-white rounded-xl px-6 py-2 font-semibold shadow-card hover:bg-primary-dark transition;
+}
+
+.card {
+  @apply bg-white rounded-xl shadow-card p-8;
+}
+
+.input {
+  @apply border border-primary-light rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary;
+}
+
+.link {
+  @apply text-primary hover:underline;
+}
+
+/* Remove duplicate and misplaced CSS */
     margin: 0;
 }
 

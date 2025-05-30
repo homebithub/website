@@ -1,6 +1,4 @@
 import { Link } from "@remix-run/react";
-import { Bars3Icon, XMarkIcon } from "@heroicons/react/24/outline";
-import { useState } from "react";
 
 const navigation = [
   { name: "Services", href: "/services" },
@@ -9,83 +7,27 @@ const navigation = [
 ];
 
 export function Navigation() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   return (
-    <nav className="bg-white border-b border-slate-200">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 justify-between">
-          <div className="flex">
-            <div className="flex flex-shrink-0 items-center">
-              <Link to="/" className="text-2xl font-bold text-primary-600">
-                HomeXpert
-              </Link>
-            </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="inline-flex items-center border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-primary-500 hover:text-slate-900"
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+    <nav className="bg-white py-3">
+      <div className="container mx-auto px-4 flex justify-between items-center">
+        <Link to="/" className="text-primary-700 font-bold text-2xl">
+          HomeXpert
+        </Link>
+        <div className="flex space-x-8 items-center">
+          {navigation.map((item) => (
             <Link
-              to="/login"
-              className="ml-4 btn-primary"
+              key={item.name}
+              to={item.href}
+              className="text-primary-700 hover:text-primary-900 transition-colors duration-200"
             >
-              Sign In
+              {item.name}
             </Link>
-          </div>
-          <div className="-mr-2 flex items-center sm:hidden">
-            <button
-              type="button"
-              className="inline-flex items-center justify-center rounded-md p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-500 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              <span className="sr-only">Open main menu</span>
-              {mobileMenuOpen ? (
-                <XMarkIcon className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Bars3Icon className="block h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
-          </div>
+          ))}
+          <button className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700 transition-colors duration-200">
+            Contact Us —
+          </button>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      {mobileMenuOpen && (
-        <div className="sm:hidden">
-          <div className="space-y-1 pb-3 pt-2">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="block border-l-4 border-transparent py-2 pl-3 pr-4 text-base font-medium text-slate-500 hover:border-primary-500 hover:bg-slate-50 hover:text-slate-900"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
-          <div className="border-t border-slate-200 pb-3 pt-4">
-            <div className="flex items-center px-4">
-              <Link
-                to="/login"
-                className="ml-4 btn-primary"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                Sign In
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
     </nav>
   );
-} 
+}

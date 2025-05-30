@@ -3,35 +3,35 @@ import { Link } from "@remix-run/react";
 
 export function Footer() {
   return (
-    <footer className="bg-white border-t border-slate-200">
+    <footer className="bg-primary-50 border-t border-primary-100">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
-            <h3 className="text-lg font-semibold text-slate-900 mb-4">
+            <h3 className="text-xl font-bold text-primary-900 mb-4">
               HomeXpert
             </h3>
-            <p className="text-slate-600">
+            <p className="text-primary-700">
               Professional home services at your fingertips.
             </p>
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">
+            <h4 className="text-sm font-semibold text-primary-800 uppercase tracking-wider mb-4">
               Services
             </h4>
             <ul className="space-y-4">
               <li>
-                <a href="#" className="text-slate-600 hover:text-teal-600">
+                <a href="#" className="text-primary-600 hover:text-primary-900 transition-colors duration-200">
                   Home Maintenance
                 </a>
               </li>
               <li>
-                <a href="#" className="text-slate-600 hover:text-teal-600">
+                <a href="#" className="text-primary-600 hover:text-primary-900 transition-colors duration-200">
                   Repairs
                 </a>
               </li>
               <li>
-                <a href="#" className="text-slate-600 hover:text-teal-600">
+                <a href="#" className="text-primary-600 hover:text-primary-900 transition-colors duration-200">
                   Installations
                 </a>
               </li>
@@ -39,22 +39,22 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">
+            <h4 className="text-sm font-semibold text-primary-800 uppercase tracking-wider mb-4">
               Company
             </h4>
             <ul className="space-y-4">
               <li>
-                <a href="/about" className="text-slate-600 hover:text-teal-600">
+                <a href="/about" className="text-primary-600 hover:text-primary-900 transition-colors duration-200">
                   About Us
                 </a>
               </li>
               <li>
-                <a href="/contact" className="text-slate-600 hover:text-teal-600">
+                <a href="/contact" className="text-primary-600 hover:text-primary-900 transition-colors duration-200">
                   Contact
                 </a>
               </li>
               <li>
-                <a href="/careers" className="text-slate-600 hover:text-teal-600">
+                <a href="/careers" className="text-primary-600 hover:text-primary-900 transition-colors duration-200">
                   Careers
                 </a>
               </li>
@@ -62,22 +62,22 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-slate-900 uppercase tracking-wider mb-4">
+            <h4 className="text-sm font-semibold text-primary-800 uppercase tracking-wider mb-4">
               Legal
             </h4>
             <ul className="space-y-4">
               <li>
-                <a href="/privacy" className="text-slate-600 hover:text-teal-600">
+                <a href="/privacy" className="text-primary-600 hover:text-primary-900 transition-colors duration-200">
                   Privacy
                 </a>
               </li>
               <li>
-                <a href="/terms" className="text-slate-600 hover:text-teal-600">
+                <a href="/terms" className="text-primary-600 hover:text-primary-900 transition-colors duration-200">
                   Terms
                 </a>
               </li>
               <li>
-                <a href="/cookies" className="text-slate-600 hover:text-teal-600">
+                <a href="/cookies" className="text-primary-600 hover:text-primary-900 transition-colors duration-200">
                   Cookie Policy
                 </a>
               </li>
@@ -85,7 +85,7 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 pt-8 border-t border-slate-200">
+        <div className="mt-12 pt-8 border-t border-primary-100">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <p className="text-slate-600 text-sm">
               &copy; {new Date().getFullYear()} HomeXpert. All rights reserved.
@@ -93,7 +93,7 @@ export function Footer() {
             <div className="flex space-x-6 mt-4 md:mt-0">
               <a
                 href="#"
-                className="text-slate-600 hover:text-teal-600"
+                className="text-primary-600 hover:text-primary-900 transition-colors duration-200"
                 aria-label="Facebook"
               >
                 <svg
@@ -110,7 +110,7 @@ export function Footer() {
               </a>
               <a
                 href="#"
-                className="text-slate-600 hover:text-teal-600"
+                className="text-primary-600 hover:text-primary-900 transition-colors duration-200"
                 aria-label="Instagram"
               >
                 <svg
@@ -127,7 +127,7 @@ export function Footer() {
               </a>
               <a
                 href="#"
-                className="text-slate-600 hover:text-teal-600"
+                className="text-primary-600 hover:text-primary-900 transition-colors duration-200"
                 aria-label="Twitter"
               >
                 <svg

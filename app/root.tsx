@@ -20,9 +20,10 @@ export default function App() {
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <Meta/>
                 <Links/>
+                <link rel="icon" href="/favicon.ico" type="image/x-icon" />
                 <title>homexpert</title>
             </head>
-            <body className="min-h-screen bg-white text-slate-900">
+            <body className="min-h-screen bg-white text-slate-900 font-sans antialiased">
                 <Outlet/>
                 <ScrollRestoration/>
                 <Scripts/>
@@ -145,10 +146,8 @@ const UserDropdown = ({
     );
 };
 
-export const btnLinkClass = "text-black px-4 py-2 hover:text-gray-900 hover:bg-yellow-400  hover:rounded" +
-    " font-semibold underline" +
-    " underline-offset-8";
-export const btnLinkClass2 = "text-black px-4 py-2 hover:text-gray-900 hover:bg-yellow-400s font-semibold underline" +
+export const btnLinkClass = "text-primary-700 px-4 py-2 hover:text-primary-900 hover:bg-primary-100 rounded-lg transition-colors duration-200 font-semibold";
+export const btnLinkClass2 = "text-primary-600 px-4 py-2 hover:text-primary-800 hover:bg-primary-50 rounded-lg transition-colors duration-200 font-semibold" +
     " underline-offset-8";
 
 

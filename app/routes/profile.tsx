@@ -36,31 +36,33 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col bg-background">
       <Navigation />
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">User Profile</h1>
-        <div className="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-lg shadow p-8">
-          <div className="space-y-4">
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
+        <div className="card w-full max-w-2xl">
+          <h1 className="text-3xl font-extrabold text-primary mb-8 text-center">Profile</h1>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
-              <span className="block text-sm text-slate-500 dark:text-slate-400">Name</span>
-              <span className="block text-lg text-slate-900 dark:text-white">{profile.name}</span>
+              <div className="mb-4">
+                <span className="block text-sm text-primary font-medium mb-1">Name</span>
+                <span className="block text-lg font-semibold text-text">{profile.name}</span>
+              </div>
+              <div className="mb-4">
+                <span className="block text-sm text-primary font-medium mb-1">Email</span>
+                <span className="block text-lg font-semibold text-text">{profile.email}</span>
+              </div>
+              <div className="mb-4">
+                <span className="block text-sm text-primary font-medium mb-1">Phone</span>
+                <span className="block text-lg font-semibold text-text">{profile.phone}</span>
+              </div>
+              <div className="mb-4">
+                <span className="block text-sm text-primary font-medium mb-1">Address</span>
+                <span className="block text-lg font-semibold text-text">{profile.address}</span>
+              </div>
             </div>
             <div>
-              <span className="block text-sm text-slate-500 dark:text-slate-400">Email</span>
-              <span className="block text-lg text-slate-900 dark:text-white">{profile.email}</span>
-            </div>
-            <div>
-              <span className="block text-sm text-slate-500 dark:text-slate-400">Phone</span>
-              <span className="block text-lg text-slate-900 dark:text-white">{profile.phone}</span>
-            </div>
-            <div>
-              <span className="block text-sm text-slate-500 dark:text-slate-400">Address</span>
-              <span className="block text-lg text-slate-900 dark:text-white">{profile.address}</span>
-            </div>
-            <div>
-              <span className="block text-sm text-slate-500 dark:text-slate-400">Bio</span>
-              <span className="block text-lg text-slate-900 dark:text-white">{profile.bio}</span>
+              <span className="block text-sm text-primary font-medium mb-1">Bio</span>
+              <span className="block text-base text-text">{profile.bio}</span>
             </div>
           </div>
         </div>
