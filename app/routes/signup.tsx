@@ -1,160 +1,166 @@
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate, Form } from "@remix-run/react";
-import { useAuth } from "~/contexts/AuthContext";
-import { Error } from "~/components/Error";
-import { Loading } from "~/components/Loading";
-import { Navigation } from "~/components/Navigation";
-import { Footer } from "~/components/Footer";
+import React, { useState } from 'react';
+import { Footer } from '../components/Footer';
+import { Navigation } from '../components/Navigation';
 
-interface PasswordStrength {
-  score: number;
-  feedback: string;
-}
+// Types for request and response
+export type SignupRequest = {
+  profile_type: 'employer';
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  country: string;
+};
 
-function calculatePasswordStrength(password: string): PasswordStrength {
-  let score = 0;
-  const feedback: string[] = [];
+export type SignupResponse = {
+  user_id: string;
+  token: string;
+};
 
-  if (password.length >= 8) score += 1;
-  else feedback.push("At least 8 characters");
-
-  if (/[A-Z]/.test(password)) score += 1;
-  else feedback.push("At least one uppercase letter");
-
-  if (/[a-z]/.test(password)) score += 1;
-  else feedback.push("At least one lowercase letter");
-
-  if (/[0-9]/.test(password)) score += 1;
-  else feedback.push("At least one number");
-
-  if (/[^A-Za-z0-9]/.test(password)) score += 1;
-  else feedback.push("At least one special character");
-
-  return {
-    score,
-    feedback: feedback.join(", "),
-  };
-}
+const base_url = 'http://localhost:8080';
 
 export default function SignupPage() {
-  const { signup, loading, error } = useAuth();
-  const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    firstName: "",
-    lastName: "",
-    acceptTerms: false,
+  const [form, setForm] = useState<SignupRequest>({
+    profile_type: 'employer',
+    email: '',
+    password: '',
+    first_name: '',
+    last_name: '',
+    phone: '',
+    country: 'KE',
   });
-  const [passwordStrength, setPasswordStrength] = useState<PasswordStrength>({ score: 0, feedback: "" });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<SignupResponse | null>(null);
 
-  useEffect(() => {
-    if (formData.password) {
-      setPasswordStrength(calculatePasswordStrength(formData.password));
-    }
-  }, [formData.password]);
-
-  useEffect(() => {
-    // Access document only on the client side
-    if (typeof window !== 'undefined') {
-      // Your document access code here
-    }
-  }, []);
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.password !== formData.confirmPassword) {
-      return;
-    }
-    if (!formData.acceptTerms) {
-      return;
-    }
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
     try {
-      await signup(formData.email, formData.password, formData.firstName, formData.lastName);
-      navigate("/");
-    } catch (error) {
-      // Error is handled by the auth context
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  if (loading) {
-    return <Loading text="Creating account..." />;
-  }
-
-  const getStrengthColor = (score: number) => {
-    switch (score) {
-      case 0:
-      case 1:
-        return "bg-red-500";
-      case 2:
-      case 3:
-        return "bg-yellow-500";
-      case 4:
-      case 5:
-        return "bg-green-500";
-      default:
-        return "bg-gray-200";
+      const res = await fetch(`${base_url}/api/v1/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Signup failed');
+      }
+      const data: SignupResponse = await res.json();
+      setSuccess(data);
+    } catch (err: any) {
+      setError(err.message || 'Signup failed');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <main className="min-h-screen bg-white flex flex-col">
       <Navigation />
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">Sign Up</h1>
-        <Form method="post" className="max-w-md mx-auto bg-white dark:bg-slate-800 rounded-lg shadow p-8">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              />
+      <section className="flex-grow flex items-center justify-center py-16 bg-gray-50">
+        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-8 w-full max-w-md">
+          <h2 className="text-3xl font-bold text-primary-800 mb-6 text-center">Sign Up</h2>
+          {success ? (
+            <div className="text-green-700 bg-green-50 border border-green-200 rounded p-4 text-center mb-4">
+              Signup successful!<br />
+              User ID: <span className="font-mono">{success.user_id}</span>
             </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                required
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              />
-            </div>
-            <div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="block text-primary-700 mb-1 font-medium">First Name</label>
+                <input
+                  type="text"
+                  name="first_name"
+                  value={form.first_name}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                />
+              </div>
+              <div>
+                <label className="block text-primary-700 mb-1 font-medium">Last Name</label>
+                <input
+                  type="text"
+                  name="last_name"
+                  value={form.last_name}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                />
+              </div>
+              <div>
+                <label className="block text-primary-700 mb-1 font-medium">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                />
+              </div>
+              <div>
+                <label className="block text-primary-700 mb-1 font-medium">Password</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                />
+              </div>
+              <div>
+                <label className="block text-primary-700 mb-1 font-medium">Phone</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={form.phone}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  placeholder="+254712345678"
+                />
+              </div>
+              <div>
+                <label className="block text-primary-700 mb-1 font-medium">Country</label>
+                <select
+                  name="country"
+                  value={form.country}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                >
+                  <option value="KE">Kenya</option>
+                  {/* Add more countries as needed */}
+                </select>
+              </div>
+              {error && (
+                <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center">
+                  {error}
+                </div>
+              )}
               <button
                 type="submit"
-                className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-offset-slate-800"
+                className="w-full bg-primary-700 text-white py-2 rounded-md hover:bg-primary-800 transition-colors duration-200 font-semibold disabled:opacity-60"
+                disabled={loading}
               >
-                Sign Up
+                {loading ? 'Signing up...' : 'Sign Up'}
               </button>
-            </div>
-          </div>
-        </Form>
-      </main>
+            </form>
+          )}
+        </div>
+      </section>
       <Footer />
-    </div>
+    </main>
   );
 } 

@@ -23,6 +23,12 @@ export function Navigation() {
               {item.name}
             </Link>
           ))}
+          <Link
+            to="/signup"
+            className="bg-primary-700 text-white px-6 py-2 rounded-md hover:bg-primary-800 transition-colors duration-200 font-semibold"
+          >
+            Sign Up
+          </Link>
           <button className="bg-primary-600 text-white px-6 py-2 rounded-md hover:bg-primary-700 transition-colors duration-200">
             Contact Us —
           </button>

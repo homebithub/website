@@ -7,6 +7,7 @@ import {FULL_HOST} from "./config";
 import {FaFacebook, FaInstagram, FaTwitter} from "react-icons/fa";
 import logo from './images/logo-dark.png';
 import axios from "axios";
+import { AuthProvider } from "~/contexts/AuthContext";
 
 export const links: LinksFunction = () => [
     {rel: "stylesheet", href: stylesheet},
@@ -24,7 +25,9 @@ export default function App() {
                 <title>homexpert</title>
             </head>
             <body className="min-h-screen bg-white text-slate-900 font-sans antialiased">
-                <Outlet/>
+                <AuthProvider>
+                    <Outlet/>
+                </AuthProvider>
                 <ScrollRestoration/>
                 <Scripts/>
                 <LiveReload/>

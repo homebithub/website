@@ -26,17 +26,69 @@ body {
 }
 
 
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Tailwind directives removed or move to a Tailwind-compatible file if using Tailwind CSS */
 
 body {
-  @apply bg-background text-text font-sans min-h-screen;
-}
-
+  background-color: #f7f7f7; /* Replace with your background color */
+  color: #121212; /* Replace with your text color */
+  font-family: sans-serif;
 input,
 textarea,
 button {
+  border-radius: 0.75rem;
+  border: 1px solid #b3d4fc; /* Replace with your primary-light color */
+  padding-left: 1rem;
+  padding-right: 1rem;
+button {
+  background-color: #3992ff; /* Replace with your primary color */
+  color: #fff;
+  font-weight: 600;
+.btn-primary {
+  background-color: #3992ff; /* Replace with your primary color */
+  color: #fff;
+  border-radius: 0.75rem;
+.card {
+  background-color: #fff;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08); /* Replace with your card shadow */
+.input {
+  border: 1px solid #b3d4fc; /* Replace with your primary-light color */
+  border-radius: 0.75rem;
+  padding-left: 1rem;
+.link {
+  color: #3992ff; /* Replace with your primary color */
+  text-decoration: none;
+}
+.link:hover {
+  text-decoration: underline;
+}
+}
+.input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3992ff; /* Replace with your primary color */
+  border-color: #3992ff; /* Replace with your primary color */
+}
+  font-weight: 600;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08); /* Replace with your card shadow */
+  transition: background-color 0.2s;
+}
+.btn-primary:hover {
+  background-color: #2563eb; /* Replace with your primary-dark color */
+}
+}
+  font-family: sans-serif;
+  box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+  transition: box-shadow 0.2s, border-color 0.2s;
+  background-color: #fff;
+  outline: none;
+}
+input:focus,
+textarea:focus,
+button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #3992ff; /* Replace with your primary color */
+  border-color: #3992ff; /* Replace with your primary color */
+}
   @apply rounded-xl border border-primary-light px-4 py-2 text-base font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition;
   background-color: #fff;
 }
@@ -78,8 +130,6 @@ button {
 }
 
 /* Remove duplicate and misplaced CSS */
-    margin: 0;
-}
 
 button {
     color: #3992ff;
