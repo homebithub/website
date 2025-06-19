@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || "Failed to sign up");
+        throw new Error((data as LoginErrorResponse).message || "Failed to sign up");
       }
 
       const { token, user } = await response.json();

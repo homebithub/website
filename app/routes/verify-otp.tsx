@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
-import { useSearchParams } from '@remix-run/react';
-import { Footer } from '../components/Footer';
-import { Navigation } from '../components/Navigation';
+import { useLocation, useNavigate } from '@remix-run/react';
+import { Footer } from '~/components/Footer';
+import { Navigation } from '~/components/Navigation';
 
 export default function VerifyOtpPage() {
-  const [searchParams] = useSearchParams();
-  const email = searchParams.get('email') || '';
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Check if state exists
+  const { phone, user_id } = (location.state || {}) as { phone?: string; user_id?: string };
+  React.useEffect(() => {
+    if (!phone || !user_id) {
+      // Optionally, redirect to signup if state is missing
+      navigate('/signup');
+    }
+  }, [phone, user_id, navigate]);
+  // const [searchParams] = useSearchParams();
+  // const email = searchParams.get('email') || '';
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -19,13 +29,14 @@ export default function VerifyOtpPage() {
     setSuccess(false);
     try {
       // Call your backend OTP verification endpoint here
-      const res = await fetch('http://localhost:8080/api/v1/auth/verify-otp', {
+      const res = await fetch('http://localhost:8080/api/v1/verifications/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp }),
+        body: JSON.stringify({ user_id,verification_type:"phone", otp }),
       });
       if (!res.ok) {
         const err = await res.json();
+        console.log(err)
         throw new Error(err.message || 'OTP verification failed');
       }
       setSuccess(true);
@@ -42,10 +53,10 @@ export default function VerifyOtpPage() {
     setError(null);
     try {
       // Call your backend resend OTP endpoint here
-      const res = await fetch('http://localhost:8080/api/v1/auth/resend-otp', {
+      const res = await fetch('http://localhost:8080/api/v1/verifications/resend-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ user_id,verification_type:"phone", }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -65,7 +76,7 @@ export default function VerifyOtpPage() {
       <section className="flex-grow flex items-center justify-center py-16 bg-gray-50 dark:bg-slate-800">
         <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-gray-100 dark:border-slate-700 p-8 w-full max-w-md">
           <h2 className="text-2xl font-bold text-primary-800 dark:text-primary-400 mb-6 text-center">Verify Your Account</h2>
-          <p className="mb-4 text-center text-gray-700 dark:text-gray-300">Enter the OTP sent to <span className="font-semibold">{email}</span></p>
+          <p className="mb-4 text-center text-gray-700 dark:text-gray-300">Enter the OTP sent to <span className="font-semibold">{phone || ''}</span></p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="text"
@@ -101,4 +112,4 @@ export default function VerifyOtpPage() {
       <Footer />
     </main>
   );
-} 
+}
