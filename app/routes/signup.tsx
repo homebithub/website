@@ -5,7 +5,7 @@ import { useNavigate } from '@remix-run/react';
 
 // Types for request and response
 export type SignupRequest = {
-  profile_type: 'employer' | 'employee' | 'agency';
+  profile_type: string;
   email: string;
   password: string;
   first_name: string;
@@ -23,7 +23,7 @@ const base_url = 'http://localhost:8080';
 
 export default function SignupPage() {
   const [form, setForm] = useState<SignupRequest>({
-    profile_type: 'employer',
+    profile_type: '',
     email: '',
     password: '',
     first_name: '',
@@ -150,7 +150,7 @@ export default function SignupPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-primary-700 dark:text-primary-300 mb-1 font-medium" htmlFor="profile_type">Role</label>
+                <label className="block text-primary-700 dark:text-primary-300 mb-1 font-medium" htmlFor="profile_type">Profile Type</label>
                 <div className="relative">
                   <select
                     id="profile_type"
@@ -160,9 +160,11 @@ export default function SignupPage() {
                     required
                     className="w-full h-12 text-base px-4 py-3 pr-10 rounded-md border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-800 dark:text-primary-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
                   >
+                    <option value="">Select profile</option>
                     <option value="employer">Employer</option>
                     <option value="employee">Employee</option>
                     <option value="agency">Agency</option>
+
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
                     <svg className="h-5 w-5 text-primary-400 dark:text-primary-300" fill="none" viewBox="0 0 20 20" stroke="currentColor">

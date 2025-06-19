@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "@remix-run/react";
+import type { LoginRequest, LoginResponse, LoginErrorResponse } from "../types/users";
 
 interface User {
   id: string;
@@ -10,10 +11,10 @@ interface User {
 }
 
 interface AuthContextType {
-  user: User | null;
+  user: LoginResponse | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (phone: string, password: string) => Promise<void>;
   signup: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -21,7 +22,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<LoginResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -49,28 +50,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string) => {
+  const login = async (phone: string, password: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:8080/auth/login", {
+      const response = await fetch("http://localhost:8080/api/v1/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ phone, password } as LoginRequest),
       });
 
+      const data: LoginResponse | LoginErrorResponse = await response.json();
       if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Failed to login");
+        throw new Error((data as LoginErrorResponse).error || "Failed to login");
       }
 
-      const { token, user } = await response.json();
-      localStorage.setItem("token", token);
-      setUser(user);
-      navigate("/");
+      localStorage.setItem("token", (data as LoginResponse).token);
+      setUser(data as LoginResponse);
+      navigate("/dashboard");
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
       throw error;
