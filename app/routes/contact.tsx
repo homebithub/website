@@ -67,15 +67,15 @@ export default function Contact() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <Navigation />
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-primary-400">
               Contact Us
             </h1>
-            <p className="mt-2 text-slate-600">
+            <p className="mt-2 text-slate-600 dark:text-gray-300">
               Have questions? We'd love to hear from you.
             </p>
           </div>
@@ -83,8 +83,8 @@ export default function Contact() {
           {error && <ErrorComponent title="Error" message={error} />}
 
           {success ? (
-            <div className="bg-green-50 p-4 rounded-md">
-              <p className="text-green-800">
+            <div className="bg-green-50 dark:bg-green-900 p-4 rounded-md">
+              <p className="text-green-800 dark:text-green-200">
                 Thank you for your message! We'll get back to you soon.
               </p>
             </div>
@@ -95,7 +95,7 @@ export default function Contact() {
                   <div>
                     <label
                       htmlFor="name"
-                      className="block text-sm font-medium text-slate-700"
+                      className="block text-sm font-medium text-slate-700 dark:text-primary-200"
                     >
                       Name
                     </label>
@@ -106,14 +106,14 @@ export default function Contact() {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
+                      className="mt-1 block w-full rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 text-base h-12 px-4 py-3 transition"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="email"
-                      className="block text-sm font-medium text-slate-700"
+                      className="block text-sm font-medium text-slate-700 dark:text-primary-200"
                     >
                       Email
                     </label>
@@ -124,14 +124,14 @@ export default function Contact() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
+                      className="mt-1 block w-full rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 text-base h-12 px-4 py-3 transition"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="subject"
-                      className="block text-sm font-medium text-slate-700"
+                      className="block text-sm font-medium text-slate-700 dark:text-primary-200"
                     >
                       Subject
                     </label>
@@ -141,7 +141,7 @@ export default function Contact() {
                       required
                       value={formData.subject}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
+                      className="mt-1 block w-full rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 text-base h-12 px-4 py-3 transition"
                     >
                       <option value="">Select a subject</option>
                       <option value="general">General Inquiry</option>
@@ -154,7 +154,7 @@ export default function Contact() {
                   <div>
                     <label
                       htmlFor="message"
-                      className="block text-sm font-medium text-slate-700"
+                      className="block text-sm font-medium text-slate-700 dark:text-primary-200"
                     >
                       Message
                     </label>
@@ -165,13 +165,13 @@ export default function Contact() {
                       required
                       value={formData.message}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
+                      className="mt-1 block w-full rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 text-base px-4 py-3 transition"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-primary-700 hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition"
                   >
                     Send Message
                   </button>
@@ -180,23 +180,23 @@ export default function Contact() {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-slate-900">
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-primary-300">
                     Contact Information
                   </h3>
                   <div className="mt-4 space-y-4">
-                    <p className="text-slate-600">
+                    <p className="text-slate-600 dark:text-gray-300">
                       <strong>Address:</strong>
                       <br />
                       123 Main Street
                       <br />
                       City, State, ZIP
                     </p>
-                    <p className="text-slate-600">
+                    <p className="text-slate-600 dark:text-gray-300">
                       <strong>Email:</strong>
                       <br />
                       contact@homexpert.com
                     </p>
-                    <p className="text-slate-600">
+                    <p className="text-slate-600 dark:text-gray-300">
                       <strong>Phone:</strong>
                       <br />
                       (555) 123-4567
@@ -205,17 +205,17 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium text-slate-900">
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-primary-300">
                     Business Hours
                   </h3>
                   <div className="mt-4 space-y-2">
-                    <p className="text-slate-600">
+                    <p className="text-slate-600 dark:text-gray-300">
                       Monday - Friday: 9:00 AM - 6:00 PM
                     </p>
-                    <p className="text-slate-600">
+                    <p className="text-slate-600 dark:text-gray-300">
                       Saturday: 10:00 AM - 4:00 PM
                     </p>
-                    <p className="text-slate-600">
+                    <p className="text-slate-600 dark:text-gray-300">
                       Sunday: Closed
                     </p>
                   </div>

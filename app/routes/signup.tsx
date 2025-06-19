@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Footer } from '../components/Footer';
 import { Navigation } from '../components/Navigation';
+import { useNavigate } from '@remix-run/react';
 
 // Types for request and response
 export type SignupRequest = {
-  profile_type: 'employer';
+  profile_type: 'employer' | 'employee' | 'agency';
   email: string;
   password: string;
   first_name: string;
@@ -33,6 +34,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<SignupResponse | null>(null);
+  const navigate = useNavigate();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -53,8 +55,7 @@ export default function SignupPage() {
         const err = await res.json();
         throw new Error(err.message || 'Signup failed');
       }
-      const data: SignupResponse = await res.json();
-      setSuccess(data);
+      navigate(`/verify-otp?email=${encodeURIComponent(form.email)}`);
     } catch (err: any) {
       setError(err.message || 'Signup failed');
     } finally {
@@ -63,11 +64,15 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white flex flex-col">
+    <main className="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
       <Navigation />
-      <section className="flex-grow flex items-center justify-center py-16 bg-gray-50">
-        <div className="bg-white rounded-lg shadow-md border border-gray-100 p-8 w-full max-w-md">
-          <h2 className="text-3xl font-bold text-primary-800 mb-6 text-center">Sign Up</h2>
+      <section className="flex-grow flex items-center justify-center py-16 bg-gray-50 dark:bg-slate-800">
+        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-gray-100 dark:border-slate-700 p-8 w-full max-w-md">
+          <h2 className="text-3xl font-bold text-primary-800 dark:text-primary-400 mb-6 text-center">Sign Up</h2>
+          <div className="text-center mb-4">
+            <span className="text-sm text-gray-600 dark:text-gray-300">Already have an account?</span>
+            <a href="/login" className="ml-2 text-primary-700 dark:text-primary-300 font-semibold hover:underline">Sign In</a>
+          </div>
           {success ? (
             <div className="text-green-700 bg-green-50 border border-green-200 rounded p-4 text-center mb-4">
               Signup successful!<br />
@@ -83,7 +88,7 @@ export default function SignupPage() {
                   value={form.first_name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  className="w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
                 />
               </div>
               <div>
@@ -94,7 +99,7 @@ export default function SignupPage() {
                   value={form.last_name}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  className="w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
                 />
               </div>
               <div>
@@ -105,7 +110,7 @@ export default function SignupPage() {
                   value={form.email}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  className="w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
                 />
               </div>
               <div>
@@ -116,7 +121,7 @@ export default function SignupPage() {
                   value={form.password}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  className="w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
                 />
               </div>
               <div>
@@ -127,7 +132,7 @@ export default function SignupPage() {
                   value={form.phone}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  className="w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
                   placeholder="+254712345678"
                 />
               </div>
@@ -138,11 +143,33 @@ export default function SignupPage() {
                   value={form.country}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200"
+                  className="w-full h-12 text-base px-4 py-3 pr-10 rounded-md border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-800 dark:text-primary-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
                 >
                   <option value="KE">Kenya</option>
                   {/* Add more countries as needed */}
                 </select>
+              </div>
+              <div>
+                <label className="block text-primary-700 dark:text-primary-300 mb-1 font-medium" htmlFor="profile_type">Role</label>
+                <div className="relative">
+                  <select
+                    id="profile_type"
+                    name="profile_type"
+                    value={form.profile_type}
+                    onChange={handleChange}
+                    required
+                    className="w-full h-12 text-base px-4 py-3 pr-10 rounded-md border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-800 dark:text-primary-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
+                  >
+                    <option value="employer">Employer</option>
+                    <option value="employee">Employee</option>
+                    <option value="agency">Agency</option>
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                    <svg className="h-5 w-5 text-primary-400 dark:text-primary-300" fill="none" viewBox="0 0 20 20" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 7l3-3 3 3m0 6l-3 3-3-3" />
+                    </svg>
+                  </div>
+                </div>
               </div>
               {error && (
                 <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center">
