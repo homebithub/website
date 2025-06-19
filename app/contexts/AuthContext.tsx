@@ -33,7 +33,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const response = await fetch("http://localhost:8080/auth/me", {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.log("not token found in local storage")
+        return;
+      }
+      const response = await fetch("http://localhost:8080/api/v1/auth/me", {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
         },
@@ -42,6 +47,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const user = await response.json();
         setUser(user);
+      }else{
+        console.log("not logged in")
       }
     } catch (error) {
       console.error("Error checking auth:", error);
@@ -65,7 +72,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data: LoginResponse | LoginErrorResponse = await response.json();
       if (!response.ok) {
-        throw new Error((data as LoginErrorResponse).error || "Failed to login");
+
+        throw new Error((data as LoginErrorResponse).message || "Failed to login");
       }
 
       localStorage.setItem("token", (data as LoginResponse).token);
@@ -154,4 +162,4 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-} 
+}
