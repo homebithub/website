@@ -7,12 +7,38 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { FcGoogle } from 'react-icons/fc';
 
+export type LoginRequest = {
+  phone: string;
+  password: string;
+};
+
+export type LoginResponse = {
+  id: string;
+  email: string;
+  first_name: string;
+  profile_type: string;
+  last_name: string;
+  phone: string;
+  email_verified: boolean;
+  country: string;
+  role: string;
+  status: string;
+  auth_provider: string;
+  created_at: string;
+  updated_at: string;
+  token: string;
+};
+
+export type LoginErrorResponse = {
+  error: string;
+};
+
 export default function LoginPage() {
   const { login, loading, error } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState({
-    email: "",
+    phone: "",
     password: "",
   });
 
@@ -26,7 +52,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await login(formData.email, formData.password);
+      await login(formData.phone, formData.password);
       const from = location.state?.from?.pathname || "/dashboard";
       navigate(from);
     } catch (error) {
@@ -53,19 +79,23 @@ export default function LoginPage() {
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
         <div className="card w-full max-w-md bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700 p-8 rounded-xl shadow-lg">
           <h1 className="text-3xl font-extrabold text-primary mb-6 text-center dark:text-primary-400">Sign in to HomeXpert</h1>
+          {error && (
+            <div className="mb-4 p-3 rounded bg-red-100 text-red-700 border border-red-300 dark:bg-red-900 dark:text-red-200 dark:border-red-700 text-center">
+              {error}
+            </div>
+          )}
           <Form method="post" className="space-y-6">
             <div className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-primary mb-1">Email</label>
+            <div>
+                <label className="block text-primary-700 mb-1 font-medium">Phone</label>
                 <input
-                  type="email"
-                  id="email"
-                  name="email"
-                  required
-                  className="input w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
-                  value={formData.email}
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
                   onChange={handleChange}
-                  placeholder="you@email.com"
+                  required
+                  className="w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
+                  placeholder="+254712345678"
                 />
               </div>
               <div>
@@ -87,6 +117,7 @@ export default function LoginPage() {
             </div>
             <button
               type="submit"
+              onClick={handleSubmit}
               className="btn-primary w-full h-12 mt-2 text-base px-4 py-3 rounded-lg"
             >
               Login
