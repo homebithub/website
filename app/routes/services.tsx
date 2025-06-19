@@ -50,7 +50,7 @@ const services = [
 
 export default function Services() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
       <Navigation />
       
       <div className="relative isolate overflow-hidden">
@@ -96,7 +96,7 @@ export default function Services() {
       {/* CTA Section */}
       <div className="bg-primary-600">
         <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
-          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl dark:text-primary-200">
             Ready to get started?
             <br />
             Book a service today.
@@ -104,13 +104,13 @@ export default function Services() {
           <div className="mt-10 flex items-center gap-x-6">
             <Link
               to="/contact"
-              className="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-primary-600 shadow-sm hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-primary-600 shadow-sm hover:bg-primary-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white dark:bg-slate-900 dark:text-primary-200 dark:hover:bg-slate-800"
             >
               Contact Us
             </Link>
             <Link
               to="/about"
-              className="text-sm font-semibold leading-6 text-white"
+              className="text-sm font-semibold leading-6 text-white dark:text-primary-100"
             >
               Learn more <span aria-hidden="true">→</span>
             </Link>

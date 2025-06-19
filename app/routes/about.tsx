@@ -141,17 +141,17 @@ const team: TeamMember[] = [
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
       <Navigation />
       <main>
         {/* Hero section */}
         <div className="relative isolate overflow-hidden py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
             <div className="mx-auto max-w-2xl lg:mx-0">
-              <h2 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl">
+              <h2 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl dark:text-primary-400">
                 About HomeXpert
               </h2>
-              <p className="mt-6 text-lg leading-8 text-slate-600">
+              <p className="mt-6 text-lg leading-8 text-slate-600 dark:text-gray-300">
                 We're on a mission to transform how home services are discovered, booked, and delivered.
               </p>
             </div>
@@ -161,17 +161,17 @@ export default function About() {
         {/* Mission section */}
         <div className="mx-auto mt-32 max-w-7xl px-6 sm:mt-40 lg:px-8">
           <div className="mx-auto max-w-2xl lg:mx-0">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-primary-300">
               Our Mission
             </h2>
           </div>
           <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 text-base leading-7 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:gap-x-16">
             {features.map((feature) => (
-              <div key={feature.name} className="flex flex-col bg-slate-50 p-8">
-                <dt className="text-sm font-semibold leading-6 text-slate-600">
+              <div key={feature.name} className="flex flex-col bg-slate-50 p-8 dark:bg-slate-800">
+                <dt className="text-sm font-semibold leading-6 text-slate-600 dark:text-gray-300">
                   {feature.name}
                 </dt>
-                <dd className="order-first text-3xl font-semibold tracking-tight text-slate-900">
+                <dd className="order-first text-3xl font-semibold tracking-tight text-slate-900 dark:text-primary-200">
                   {feature.value}
                 </dd>
               </div>

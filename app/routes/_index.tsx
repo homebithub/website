@@ -32,17 +32,17 @@ const features = [
 
 export default function Index() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
       <Navigation />
       
       {/* Hero section */}
       <div className="relative isolate overflow-hidden">
         <div className="mx-auto max-w-7xl px-6 pb-24 pt-10 sm:pb-32 lg:flex lg:px-8 lg:py-40">
           <div className="mx-auto max-w-2xl lg:mx-0 lg:max-w-xl lg:flex-shrink-0 lg:pt-8">
-            <h1 className="mt-10 text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl">
+            <h1 className="mt-10 text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl dark:text-primary-400">
               Your Home, Our Expertise
             </h1>
-            <p className="mt-6 text-lg leading-8 text-slate-600">
+            <p className="mt-6 text-lg leading-8 text-slate-600 dark:text-gray-300">
               Professional home services at your fingertips. From maintenance to repairs,
               we've got you covered with our expert team of technicians.
             </p>
@@ -55,7 +55,7 @@ export default function Index() {
               </Link>
               <Link
                 to="/contact"
-                className="text-sm font-semibold leading-6 text-slate-900"
+                className="text-sm font-semibold leading-6 text-slate-900 dark:text-primary-300"
               >
                 Contact Us <span aria-hidden="true">→</span>
               </Link>

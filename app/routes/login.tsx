@@ -5,6 +5,7 @@ import { Error } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
+import { FcGoogle } from 'react-icons/fc';
 
 export default function LoginPage() {
   const { login, loading, error } = useAuth();
@@ -38,56 +39,69 @@ export default function LoginPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const handleGoogleSignIn = () => {
+    window.location.href = 'http://localhost:8080/auth/google'; // Adjust to your backend endpoint
+  };
+
   if (loading) {
     return <Loading text="Logging in..." />;
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="min-h-screen flex flex-col bg-background bg-white dark:bg-slate-900">
       <Navigation />
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
-        <div className="card w-full max-w-md">
-          <h1 className="text-3xl font-extrabold text-primary mb-6 text-center">Sign in to HomeXpert</h1>
+        <div className="card w-full max-w-md bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700 p-8 rounded-xl shadow-lg">
+          <h1 className="text-3xl font-extrabold text-primary mb-6 text-center dark:text-primary-400">Sign in to HomeXpert</h1>
           <Form method="post" className="space-y-6">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-primary mb-1">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                required
-                className="input w-full"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="you@email.com"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-primary mb-1">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                required
-                className="input w-full"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-              />
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-primary mb-1">Email</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  required
+                  className="input w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="you@email.com"
+                />
+              </div>
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium text-primary mb-1">Password</label>
+                <input
+                  type="password"
+                  id="password"
+                  name="password"
+                  required
+                  className="input w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                />
+              </div>
             </div>
             <div className="flex items-center justify-between">
               <Link to="/forgot-password" className="link text-sm">Forgot password?</Link>
             </div>
             <button
               type="submit"
-              className="btn-primary w-full mt-2"
+              className="btn-primary w-full h-12 mt-2 text-base px-4 py-3 rounded-lg"
             >
               Login
             </button>
           </Form>
-          <div className="text-center mt-6 text-sm">
-            Don&apos;t have an account?{' '}
-            <Link to="/signup" className="link font-semibold">Sign up</Link>
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            className="flex items-center justify-center w-full border border-gray-300 dark:border-slate-700 rounded-md py-3 mt-6 bg-white dark:bg-slate-800 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+          >
+            <FcGoogle className="mr-2 text-2xl" />
+            <span className="font-medium text-gray-700 dark:text-gray-200">Sign in with Google</span>
+          </button>
+          <div className="flex justify-center mt-8">
+            <Link to="/signup" className="link font-semibold text-primary-700 dark:text-primary-300 text-base text-center">Don&apos;t have an account? Sign up</Link>
           </div>
         </div>
       </main>
