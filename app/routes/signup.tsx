@@ -15,8 +15,24 @@ export type SignupRequest = {
 };
 
 export type SignupResponse = {
-    user_id: string;
-    token: string;
+    user: {
+        user_id: string;
+    };
+    verification: {
+        id: string;
+        user_id: string;
+        type: string;
+        status: string;
+        target: string;
+        expires_at: string;
+        next_resend_at: string;
+        attempts: number;
+        max_attempts: number;
+        resends: number;
+        max_resends: number;
+        created_at: string;
+        updated_at: string;
+    };
 };
 
 const base_url = 'http://localhost:8080';
@@ -41,29 +57,29 @@ export default function SignupPage() {
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError(null);
-        setSuccess(null);
-        try {
-            const res = await fetch(`${base_url}/api/v1/auth/register`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(form),
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                throw new Error(err.message || 'Signup failed');
-            }
-            const data: SignupResponse = await res.json();
-            // Pass phone and user_id to the verify-otp page using navigation state
-            navigate('/verify-otp', {state: {phone: form.phone, user_id: data.user_id}});
-        } catch (err: any) {
-            setError(err.message || 'Signup failed');
-        } finally {
-            setLoading(false);
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(null);
+    try {
+        const res = await fetch(`${base_url}/api/v1/auth/register`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(form),
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.message || 'Signup failed');
         }
-    };
+        const data: SignupResponse = await res.json();
+        // Pass verification object to the verify-otp page using navigation state
+        navigate('/verify-otp', { state: { verification: data.verification } });
+    } catch (err: any) {
+        setError(err.message || 'Signup failed');
+    } finally {
+        setLoading(false);
+    }
+};
 
     return (
         <main className="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
@@ -173,9 +189,9 @@ export default function SignupPage() {
                                     className="w-full h-12 text-base px-4 py-3 pr-10 rounded-md border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-800 dark:text-primary-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
                                 >
                                     <option value="">Select profile</option>
-                                    <option value="employer">Employer</option>
-                                    <option value="employee">Employee</option>
-                                    <option value="agency">Agency</option>
+                                    <option value="employer">Household</option>
+                                    <option value="househelp">Househelp/Nanny</option>
+                                    <option value="agency">Agency/Bureau</option>
 
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
