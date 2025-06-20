@@ -160,7 +160,7 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 required
                                 className="w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
-                                placeholder="+254712345678"
+                                placeholder="0712345678"
                             />
                         </div>
                         <div>
