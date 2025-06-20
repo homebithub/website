@@ -124,9 +124,19 @@ export default function VerifyOtpPage() {
         console.log(err)
         throw new Error(err.message || 'OTP verification failed');
       }
+      const userData = await res.json();
+      // Store token and user_object in localStorage
+      if (userData.token) {
+        localStorage.setItem('token', userData.token);
+        // Remove token from user object before storing
+        const { token, ...userObj } = userData;
+        localStorage.setItem('user_object', JSON.stringify(userObj));
+      }
       setSuccess(true);
       setLocalFailedAttempts(0); // reset on success
       setLastTriedOtp('');
+      // Navigate to update-email page
+      navigate('/update-email');
     } catch (err: any) {
       setError(err.message || 'OTP verification failed');
       setLocalFailedAttempts((prev) => prev + 1);
