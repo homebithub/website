@@ -117,7 +117,7 @@ export default function VerifyOtpPage() {
       const res = await fetch('http://localhost:8080/api/v1/verifications/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({  user_id, verification_type: "phone", otp }),
+        body: JSON.stringify({  user_id, verification_type: verification.type, otp }),
       });
       if (!res.ok) {
         const err = await res.json();
@@ -136,7 +136,12 @@ export default function VerifyOtpPage() {
       setLocalFailedAttempts(0); // reset on success
       setLastTriedOtp('');
       // Navigate to update-email page
-      navigate('/update-email');
+      if(verification.type === 'phone'){
+        navigate('/verify-email', { state: { user_id } });
+      }else{
+        navigate('/dashboard');
+      }
+     
     } catch (err: any) {
       setError(err.message || 'OTP verification failed');
       setLocalFailedAttempts((prev) => prev + 1);
@@ -254,8 +259,8 @@ export default function VerifyOtpPage() {
               {resent && <div className="text-green-600 text-center mt-2 text-sm">OTP resent!</div>}
             </>
           )}
-          {/* Change phone number section */}
-          {/* Hide change phone link if showChangePhone is true */}
+          {/* Change contact section: phone or email */}
+          {/* Hide change link if showChangePhone is true */}
           {!showChangePhone && (
             <div className="text-center mt-4">
               <button
@@ -263,11 +268,13 @@ export default function VerifyOtpPage() {
                 className="text-primary-700 hover:underline text-xs"
                 onClick={() => setShowChangePhone(true)}
               >
-                Used the wrong phone number? Click here to change
+                {verification.type === 'phone' || verification.type === 'password-reset'
+                  ? 'Used the wrong phone number? Click here to change'
+                  : 'Used the wrong email? Click here to change'}
               </button>
             </div>
           )}
-{/* Hide attempts left if showChangePhone is true */}
+          {/* Hide attempts left if showChangePhone is true */}
           {!showChangePhone && error !== 'OTP has expired' && attemptsLeft !== null && (
             <div className="text-center text-xs text-gray-500 mt-2">
               Attempts left: {attemptsLeft}
@@ -275,24 +282,60 @@ export default function VerifyOtpPage() {
           )}
           {showChangePhone && (
             <form
-              onSubmit={handleChangePhoneSubmit}
+              onSubmit={verification.type === 'phone' || verification.type === 'password-reset' ? handleChangePhoneSubmit : async (e) => {
+                e.preventDefault();
+                setChangePhoneError(null);
+                setChangePhoneLoading(true);
+                try {
+                  const res = await fetch('http://localhost:8080/api/v1/auth/update-email', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: newPhone, user_id }),
+                  });
+                  if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || 'Failed to update email');
+                  }
+                  const data = await res.json();
+                  if (data.verification) {
+                    setVerification(data.verification);
+                    setShowChangePhone(false);
+                    setNewPhone('');
+                    setLocalFailedAttempts(0);
+                    setOtp('');
+                    setLastTriedOtp('');
+                  }
+                } catch (err: any) {
+                  setChangePhoneError(err.message || 'Failed to update email');
+                } finally {
+                  setChangePhoneLoading(false);
+                }
+              }}
               className="space-y-4 mt-6 flex flex-col items-center"
               style={{ width: '100%' }}
             >
-              <label className="block text-primary-700 mb-1 font-medium text-center">Enter new phone number</label>
+              <label className="block text-primary-700 mb-1 font-medium text-center">
+                {verification.type === 'phone' || verification.type === 'password-reset'
+                  ? 'Enter new phone number'
+                  : 'Enter new email address'}
+              </label>
               <input
-                type="tel"
+                type={verification.type === 'phone' || verification.type === 'password-reset' ? 'tel' : 'email'}
                 name="newPhone"
                 value={newPhone}
                 onChange={e => setNewPhone(e.target.value)}
                 required
                 className="w-full max-w-xs h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
-                placeholder="e.g. 0712345678"
+                placeholder={verification.type === 'phone' || verification.type === 'password-reset' ? 'e.g. 0712345678' : 'e.g. user@email.com'}
               />
               <button
                 type="submit"
                 className="w-full max-w-xs bg-primary-700 text-white py-2 rounded-md hover:bg-primary-800 transition-colors duration-200 font-semibold disabled:opacity-60"
-                disabled={!/^\+?\d{9,15}$/.test(newPhone) || changePhoneLoading}
+                disabled={
+                  verification.type === 'phone' || verification.type === 'password-reset'
+                    ? !/^[+]?\d{9,15}$/.test(newPhone) || changePhoneLoading
+                    : !/^\S+@\S+\.\S+$/.test(newPhone) || changePhoneLoading
+                }
               >
                 {changePhoneLoading ? 'Submitting...' : 'Submit'}
               </button>
