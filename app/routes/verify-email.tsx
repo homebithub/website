@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import { Error as ErrorComponent } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 
@@ -14,13 +14,18 @@ interface ErrorConstructor {
 declare const Error: ErrorConstructor;
 
 export default function VerifyEmail() {
-  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get("token");
+  const [token, setToken] = useState<string | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    // Obtain token from localStorage
+    const storedToken = localStorage.getItem("token");
+    setToken(storedToken);
+  }, []);
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -55,7 +60,9 @@ export default function VerifyEmail() {
       }
     };
 
-    verifyEmail();
+    if (token !== null) {
+      verifyEmail();
+    }
   }, [token, navigate]);
 
   if (loading) {
