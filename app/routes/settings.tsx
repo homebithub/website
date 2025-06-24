@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import { json, redirect } from "@remix-run/node";
 import { useLoaderData, Form } from "@remix-run/react";
 import React from "react";
 import { Navigation } from "~/components/Navigation";
@@ -26,6 +26,68 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
   const settings = await res.json();
   return json({ settings });
+};
+
+export const action = async ({ request }: LoaderFunctionArgs) => {
+  const cookie = request.headers.get("cookie") || "";
+  const formData = await request.formData();
+  const name = formData.get("name");
+  const email = formData.get("email");
+  const phone = formData.get("phone");
+  const address = formData.get("address");
+  const notifications = formData.get("notifications") === "on";
+
+  // Fetch current settings to compare emails
+  const resSettings = await fetch("http://localhost:8080/users/settings", {
+    headers: { "cookie": cookie },
+    credentials: "include",
+  });
+  if (!resSettings.ok) {
+    return json({ error: "Failed to fetch user settings" }, { status: resSettings.status });
+  }
+  const currentSettings = await resSettings.json();
+  const prevEmail = currentSettings.email;
+
+  // If email changed, call backend to update email
+  if (email && email !== prevEmail) {
+    const updateRes = await fetch("http://localhost:8080/auth/update-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "cookie": cookie,
+      },
+      credentials: "include",
+      body: JSON.stringify({ email }),
+    });
+    const data = await updateRes.json();
+    if (updateRes.ok && data.verification) {
+      // Redirect to verify-otp with verification id and email as params
+      const params = new URLSearchParams({
+        verification_id: data.verification.id,
+        email: data.verification.target,
+        type: data.verification.type,
+      });
+      return redirect(`/verify-otp?${params.toString()}`);
+    } else {
+      return json({ error: data.message || "Failed to update email" }, { status: updateRes.status });
+    }
+  }
+
+  // Otherwise, update other settings
+  const updateRes = await fetch("http://localhost:8080/users/settings", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "cookie": cookie,
+    },
+    credentials: "include",
+    body: JSON.stringify({ name, phone, address, notifications }),
+  });
+  if (!updateRes.ok) {
+    const data = await updateRes.json();
+    return json({ error: data.message || "Failed to update settings" }, { status: updateRes.status });
+  }
+  return redirect("/settings");
 };
 
 export default function SettingsPage() {

@@ -6,7 +6,6 @@ import {useNavigate} from '@remix-run/react';
 // Types for request and response
 export type SignupRequest = {
     profile_type: string;
-    email: string;
     password: string;
     first_name: string;
     last_name: string;
@@ -40,7 +39,7 @@ const base_url = 'http://localhost:8080';
 export default function SignupPage() {
     const [form, setForm] = useState<SignupRequest>({
         profile_type: '',
-        email: '',
+        
         password: '',
         first_name: '',
         last_name: '',
@@ -129,17 +128,7 @@ export default function SignupPage() {
                                 className="w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
                             />
                         </div>
-                        <div>
-                            <label className="block text-primary-700 mb-1 font-medium">Email</label>
-                            <input
-                                type="email"
-                                name="email"
-                                value={form.email}
-                                onChange={handleChange}
-                                required
-                                className="w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
-                            />
-                        </div>
+                         
                         <div>
                             <label className="block text-primary-700 mb-1 font-medium">Password</label>
                             <input

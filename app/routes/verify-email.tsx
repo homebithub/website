@@ -1,112 +1,92 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "@remix-run/react";
-import { Error as ErrorComponent } from "~/components/Error";
-import { Loading } from "~/components/Loading";
-
-interface ApiError {
-  message: string;
-}
-
-interface ErrorConstructor {
-  new (message?: string): Error;
-}
-
-declare const Error: ErrorConstructor;
+import React, { useState } from "react";
+import { useLocation, useNavigate } from "@remix-run/react";
+import { Navigation } from "~/components/Navigation";
+import { Footer } from "~/components/Footer";
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
-  const [token, setToken] = useState<string | null>(null);
-
-  const [loading, setLoading] = useState(true);
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-    // Obtain token from localStorage
-    const storedToken = localStorage.getItem("token");
-    setToken(storedToken);
-  }, []);
-
-  useEffect(() => {
-    const verifyEmail = async () => {
-      if (!token) {
-        setError("Invalid or missing verification token");
-        setLoading(false);
-        return;
+  const location = useLocation();
+  const locationState = (location.state || {}) as { user_id?:string };
+  const [user_id, setUserId] = useState(locationState.user_id);
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
+    try {
+      const response = await fetch("http://localhost:8080/api/v1/auth/update-email", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email,user_id }),
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to request email verification");
       }
-
-      try {
-        const response = await fetch("http://localhost:8080/auth/verify-email", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ token }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json() as ApiError;
-          throw new Error(data.message || "Failed to verify email");
-        }
-
+      if (data.verification) {
+        // Navigate to verify-otp page with verification object in state
+        navigate("/verify-otp", { state: { verification: data.verification } });
         setSuccess(true);
-        setTimeout(() => {
-          navigate("/login");
-        }, 3000);
-      } catch (error) {
-        setError(error instanceof Error ? error.message : "An error occurred");
-      } finally {
-        setLoading(false);
+      } else {
+        setSuccess(true);
       }
-    };
-
-    if (token !== null) {
-      verifyEmail();
+    } catch (err: any) {
+      setError(err.message || "Failed to request email verification");
+    } finally {
+      setLoading(false);
     }
-  }, [token, navigate]);
-
-  if (loading) {
-    return <Loading text="Verifying your email..." />;
-  }
-
-  if (success) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-        <div className="max-w-md w-full text-center">
-          <h1 className="text-3xl font-bold text-slate-900">
-            Email verified successfully
-          </h1>
-          <p className="mt-2 text-slate-600">
-            Your email has been verified. You will be redirected to the login page.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
+  };
+console.log(user_id,"user_id");
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center">
-        {error ? (
-          <>
-            <h1 className="text-3xl font-bold text-slate-900">
-              Verification failed
-            </h1>
-            <p className="mt-2 text-slate-600">
-              {error}
-            </p>
-          </>
-        ) : (
-          <>
-            <h1 className="text-3xl font-bold text-slate-900">
-              Verifying your email
-            </h1>
-            <p className="mt-2 text-slate-600">
-              Please wait while we verify your email address...
-            </p>
-          </>
-        )}
-      </div>
+    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900">
+      <Navigation />
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
+        <section className="w-full max-w-md mx-auto bg-white dark:bg-slate-800 rounded-lg shadow-card p-8 border border-gray-100 dark:border-slate-700">
+          <h1 className="text-3xl font-extrabold text-primary mb-6 text-center dark:text-primary-400">Verify Your Email</h1>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-primary-700 mb-1 font-medium">Email address</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
+                placeholder="Enter your email"
+                disabled={loading}
+              />
+            </div>
+            {error && (
+              <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center">{error}</div>
+            )}
+            {success && (
+              <div className="text-green-700 bg-green-50 border border-green-200 rounded p-2 text-center">Verification email sent. Please check your inbox.</div>
+            )}
+            <button
+              type="submit"
+              className="w-full bg-primary-700 text-white py-2 rounded-md hover:bg-primary-800 transition-colors duration-200 font-semibold disabled:opacity-60"
+              disabled={loading}
+            >
+              {loading ? 'Verifying...' : 'Verify'}
+            </button>
+          </form>
+          <button
+            type="button"
+            className="w-full mt-4 text-sm text-gray-400 hover:text-gray-600 transition-colors duration-200 font-normal bg-transparent border-none outline-none"
+            style={{ boxShadow: 'none' }}
+            onClick={() => navigate('/dashboard')}
+          >
+            Skip for now
+          </button>
+        </section>
+      </main>
+      <Footer />
     </div>
   );
-} 
+}
