@@ -2,7 +2,7 @@
 import React from "react";
 
 import { useEffect, useState } from "react";
-import { Navigation } from "~/components/Navigation";
+ 
 
 export default function BureauProfile() {
     const [profile, setProfile] = useState<any>(null);
@@ -89,7 +89,7 @@ export default function BureauProfile() {
 
     return (
         <main className="flex flex-col items-center px-2 py-4 min-h-screen bg-gray-50 dark:bg-slate-900 overflow-x-hidden">
-            <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-4 sm:p-6 relative">
+            <div className="w-full max-w-2xl bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-4 sm:p-6 relative">
                 {/* Edit button */}
                 {!editMode && (
                     <button
@@ -279,9 +279,6 @@ export default function BureauProfile() {
                     </div>
                 </div>
             </div>
-      
-   
- 
                     
             </main>
     );

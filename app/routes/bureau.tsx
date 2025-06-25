@@ -17,8 +17,8 @@ export default function BureauDashboard() {
   return (
     <>
       <Navigation />
-      <main className="flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900 px-2 py-4">
-  <div className="mx-auto w-full max-w-5xl flex flex-col gap-4 sm:flex-row sm:gap-8 overflow-x-hidden">
+      <main className="flex flex-col bg-gray-50 dark:bg-slate-900 px-2">
+  <div className="mx-auto w-full max-w-6xl flex flex-col sm:flex-row gap-2 items-start overflow-x-hidden">
     <BureauSidebar />
     <section className="flex-1 min-w-0">
       <Outlet />
