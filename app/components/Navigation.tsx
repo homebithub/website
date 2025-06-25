@@ -18,12 +18,64 @@ export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
+  const [profileType, setProfileType] = useState<string | null>(null);
 
-  // Check if current route is an authenticated route
-  const isAuthenticatedRoute = authenticatedRoutes.includes(location.pathname);
-  
-  // Show auth buttons only if user is not logged in OR not on authenticated routes
-  const showAuthButtons = !user || !isAuthenticatedRoute;
+  // Memoized dashboard path based on profile type
+  const dashboardPath = React.useMemo(() => {
+    if (!profileType) return null;
+    if (profileType === "household") return "/household";
+    if (profileType === "househelp") return "/househelp";
+    if (profileType === "bureau") return "/bureau";
+    return null;
+  }, [profileType]);
+
+  // On mount and when user changes, parse localStorage.user_object
+  useEffect(() => {
+    if (user) {
+      try {
+        const obj = localStorage.getItem("user_object");
+        if (obj) {
+          const parsed = JSON.parse(obj);
+          setProfileType(parsed.profile_type || null);
+        } else {
+          setProfileType(null);
+        }
+      } catch {
+        setProfileType(null);
+      }
+    } else {
+      setProfileType(null);
+    }
+  }, [user]);
+
+  // Show auth buttons only if user is not logged in
+  const showAuthButtons = !user;
+
+  // If user exists but profileType is missing, fetch it from backend
+  useEffect(() => {
+    if (user && !profileType) {
+      const fetchProfileType = async () => {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) return;
+          const res = await fetch("http://localhost:8080/api/v1/auth/me", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (!res.ok) return;
+          const data = await res.json();
+          setProfileType(data.profile_type || null);
+          // Optionally update localStorage for consistency
+          const userObj = localStorage.getItem("user_object");
+          if (userObj) {
+            const parsed = JSON.parse(userObj);
+            parsed.profile_type = data.profile_type;
+            localStorage.setItem("user_object", JSON.stringify(parsed));
+          }
+        } catch {}
+      };
+      fetchProfileType();
+    }
+  }, [user, profileType]);
 
   useEffect(() => {
     // On mount, check localStorage for theme
@@ -71,6 +123,15 @@ export function Navigation() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
+            {/* Dashboard link for authenticated users with profile_type (desktop) */}
+            {user && dashboardPath && (
+              <Link
+                to={dashboardPath}
+                className="text-purple-700 dark:text-purple-300 hover:text-purple-900 dark:hover:text-purple-100 transition-colors duration-200 font-semibold px-4 py-2 rounded-lg border-2 border-purple-200 dark:border-purple-700 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-600"
+              >
+                Dashboard
+              </Link>
+            )}
             {/* Auth Buttons - Only show when appropriate */}
             {showAuthButtons && (
               <div className="flex items-center space-x-3">
@@ -90,10 +151,11 @@ export function Navigation() {
             )}
 
             {/* User info when authenticated */}
-            {user && isAuthenticatedRoute && (
+            {user && (
+
               <div className="flex items-center space-x-3">
                 <div className="text-base text-gray-700 dark:text-gray-300 font-medium">
-                  Welcome, {user.user?.first_name || 'User'}
+                  Welcome, {(user.first_name || user.user?.first_name) ?? 'User'}
                 </div>
               </div>
             )}
@@ -261,7 +323,18 @@ export function Navigation() {
                   {item.name}
                 </Link>
               ))}
-              
+
+              {/* Dashboard link for authenticated users with profile_type (mobile) */}
+              {user && dashboardPath && (
+                <Link
+                  to={dashboardPath}
+                  className="block px-4 py-3 rounded-xl text-base font-medium text-gray-700 dark:text-gray-300 hover:text-purple-700 dark:hover:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+              )}
+
               {/* User-specific mobile menu items */}
               {user && (
                 <>
@@ -291,7 +364,7 @@ export function Navigation() {
                   </button>
                 </>
               )}
-              
+
               {/* Auth buttons in mobile menu */}
               {showAuthButtons && (
                 <div className="pt-4 pb-3 border-t border-gray-200 dark:border-slate-700">
