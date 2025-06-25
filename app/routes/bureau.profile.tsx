@@ -88,8 +88,8 @@ export default function BureauProfile() {
     if (!profile) return null;
 
     return (
-        <main className="flex flex-col items-center px-2 py-8 min-h-screen bg-gray-50 dark:bg-slate-900">
-            <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 relative">
+        <main className="flex flex-col items-center px-2 py-4 min-h-screen bg-gray-50 dark:bg-slate-900 overflow-x-hidden">
+            <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-4 sm:p-6 relative">
                 {/* Edit button */}
                 {!editMode && (
                     <button
