@@ -27,6 +27,7 @@
     "dompurify": "^3.1.6",
     "http-proxy": "^1.18.1",
     "isbot": "^4.1.0",
+    "joi": "^17.13.3",
     "lodash.debounce": "^4.0.8",
     "lucide-react": "^0.474.0",
     "moment-timezone": "^0.5.45",

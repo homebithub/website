@@ -1,10 +1,12 @@
 import type { LoaderFunctionArgs } from "@remix-run/node";
 import { json, redirect } from "@remix-run/node";
-import { useLoaderData, Form } from "@remix-run/react";
-import React from "react";
+import { useLoaderData, Form, useNavigate, useLocation } from "@remix-run/react";
+import React, { useEffect } from "react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
+import { useAuth } from "~/contexts/AuthContext";
+import { Loading } from "~/components/Loading";
 
 interface UserSettings {
   id: string;
@@ -92,84 +94,60 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
 
 export default function SettingsPage() {
   const { settings } = useLoaderData<typeof loader>();
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  useEffect(() => {
+    // If not loading and no user, redirect to login
+    if (!loading && !user) {
+      const returnUrl = encodeURIComponent(location.pathname);
+      navigate(`/login?redirect=${returnUrl}`);
+    }
+  }, [user, loading, navigate, location.pathname]);
+
+  // Show loading while checking authentication
+  if (loading) {
+    return <Loading text="Checking authentication..." />;
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!user) {
+    return null;
+  }
 
   if (!settings) {
     return <Error message="User settings not found." />;
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col bg-background bg-white dark:bg-slate-900">
       <Navigation />
-      <main className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">User Settings</h1>
-        <Form method="post" className="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-lg shadow p-8">
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Name</label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                defaultValue={settings.name}
-                required
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              />
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
+        <div className="card w-full max-w-2xl text-center bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700">
+          <h1 className="text-4xl font-extrabold text-primary mb-6 dark:text-primary-400">Settings</h1>
+          <p className="text-lg text-text mb-8 dark:text-primary-200">Manage your account settings and preferences.</p>
+          
+          <div className="space-y-6">
+            <div className="bg-accent rounded-xl shadow-card p-6 dark:bg-slate-800">
+              <div className="font-bold text-primary mb-1 dark:text-primary-300">Account Settings</div>
+              <div className="text-text text-sm mb-2 dark:text-primary-200">Update your account information and preferences.</div>
+              <a href="/profile" className="btn-primary">Edit Account</a>
             </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
-              <input
-                type="email"
-                id="email"
-                name="email"
-                defaultValue={settings.email}
-                required
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              />
+            
+            <div className="bg-accent rounded-xl shadow-card p-6 dark:bg-slate-800">
+              <div className="font-bold text-primary mb-1 dark:text-primary-300">Security Settings</div>
+              <div className="text-text text-sm mb-2 dark:text-primary-200">Change your password and manage security settings.</div>
+              <a href="/change-password" className="btn-primary">Change Password</a>
             </div>
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Phone</label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                defaultValue={settings.phone}
-                required
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              />
-            </div>
-            <div>
-              <label htmlFor="address" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Address</label>
-              <textarea
-                id="address"
-                name="address"
-                defaultValue={settings.address}
-                required
-                rows={3}
-                className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:border-slate-700 dark:text-white"
-              />
-            </div>
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="notifications"
-                name="notifications"
-                defaultChecked={settings.notifications}
-                className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-slate-300 rounded"
-              />
-              <label htmlFor="notifications" className="ml-2 block text-sm text-slate-700 dark:text-slate-300">
-                Enable notifications
-              </label>
-            </div>
-            <div>
-              <button
-                type="submit"
-                className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-offset-slate-800"
-              >
-                Save Settings
-              </button>
+            
+            <div className="bg-accent rounded-xl shadow-card p-6 dark:bg-slate-800">
+              <div className="font-bold text-primary mb-1 dark:text-primary-300">Back to Dashboard</div>
+              <div className="text-text text-sm mb-2 dark:text-primary-200">Return to your main dashboard.</div>
+              <a href="/dashboard" className="btn-primary">Go to Dashboard</a>
             </div>
           </div>
-        </Form>
+        </div>
       </main>
       <Footer />
     </div>

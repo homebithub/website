@@ -2,11 +2,17 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from '@remix-run/react';
 import { Footer } from '~/components/Footer';
 import { Navigation } from '~/components/Navigation';
+import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
 
 export default function VerifyOtpPage() {
   // UI state for changing phone
   const [showChangePhone, setShowChangePhone] = React.useState(false);
   const [newPhone, setNewPhone] = React.useState('');
+
+  // Validation state
+  const [otpError, setOtpError] = React.useState<string | null>(null);
+  const [newPhoneError, setNewPhoneError] = React.useState<string | null>(null);
+  const [otpTouched, setOtpTouched] = React.useState(false);
 
   // Handler for phone change submit
   const [changePhoneError, setChangePhoneError] = React.useState<string | null>(null);
@@ -15,7 +21,23 @@ export default function VerifyOtpPage() {
     e.preventDefault();
     setChangePhoneError(null);
     setChangePhoneLoading(true);
+    
+    // Validate new phone/email
+    const schema = verification.type === 'phone' || verification.type === 'password_reset' 
+      ? updatePhoneSchema 
+      : updateEmailSchema;
+    const validation = validateForm(schema, { 
+      [verification.type === 'phone' || verification.type === 'password_reset' ? 'phone' : 'email']: newPhone 
+    });
+    
+    if (!validation.isValid) {
+      setChangePhoneError(Object.values(validation.errors)[0]);
+      setChangePhoneLoading(false);
+      return;
+    }
+    
     try {
+      if(verification.type === 'phone'){
       const res = await fetch('http://localhost:8080/api/v1/auth/update-phone', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -34,14 +56,32 @@ export default function VerifyOtpPage() {
         setOtp('');
         setLastTriedOtp('');
       }
+    }else{
+      const res = await fetch('http://localhost:8080/api/v1/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: newPhone,  }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || 'Failed to send OTP');
+      }
+      const data = await res.json();
+      if (data.verification) {
+        setVerification(data.verification);
+        setShowChangePhone(false);
+        setNewPhone('');
+        setLocalFailedAttempts(0);
+        setOtp('');
+        setLastTriedOtp('');
+      }
+    }
     } catch (err: any) {
       setChangePhoneError(err.message || 'Failed to update phone');
     } finally {
       setChangePhoneLoading(false);
     }
   };
-
-
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -109,9 +149,18 @@ export default function VerifyOtpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate OTP
+    const validation = validateForm(otpSchema, { otp });
+    if (!validation.isValid) {
+      setOtpError(Object.values(validation.errors)[0]);
+      return;
+    }
+    
     setLoading(true);
     setError(null);
     setSuccess(false);
+    setOtpError(null);
     try {
       // Call your backend OTP verification endpoint here
       const res = await fetch('http://localhost:8080/api/v1/verifications/verify-otp', {
@@ -181,6 +230,49 @@ export default function VerifyOtpPage() {
     }
   };
 
+  const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (/^\d{0,6}$/.test(val)) {
+      setOtp(val);
+      if (error && val !== lastTriedOtp) setError(null);
+      if (otpError) setOtpError(null);
+    }
+  };
+
+  const handleOtpBlur = () => {
+    setOtpTouched(true);
+    if (otp) {
+      const validation = validateForm(otpSchema, { otp });
+      if (!validation.isValid) {
+        setOtpError(Object.values(validation.errors)[0]);
+      } else {
+        setOtpError(null);
+      }
+    }
+  };
+
+  const handleNewPhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setNewPhone(value);
+    if (newPhoneError) setNewPhoneError(null);
+  };
+
+  const handleNewPhoneBlur = () => {
+    if (newPhone) {
+      const schema = verification.type === 'phone' || verification.type === 'password_reset' 
+        ? updatePhoneSchema 
+        : updateEmailSchema;
+      const validation = validateForm(schema, { 
+        [verification.type === 'phone' || verification.type === 'password_reset' ? 'phone' : 'email']: newPhone 
+      });
+      if (!validation.isValid) {
+        setNewPhoneError(Object.values(validation.errors)[0]);
+      } else {
+        setNewPhoneError(null);
+      }
+    }
+  };
+
   return (
     <main className="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
       <Navigation />
@@ -206,22 +298,22 @@ export default function VerifyOtpPage() {
                 type="text"
                 name="otp"
                 value={otp}
-                onChange={e => {
-                  const val = e.target.value;
-                  // Only allow numbers
-                  if (/^\d{0,6}$/.test(val)) {
-                    setOtp(val);
-                    // Reset error if user types a new value after a failed attempt
-                    if (error && val !== lastTriedOtp) setError(null);
-                  }
-                }}
+                onChange={handleOtpChange}
+                onBlur={handleOtpBlur}
                 required
                 maxLength={6}
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className="w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-200 text-center tracking-widest text-lg"
+                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 text-center tracking-widest text-lg bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm ${
+                  otpError 
+                    ? 'border-red-300 dark:border-red-600' 
+                    : otpTouched && !otpError && otp.length === 6
+                    ? 'border-green-300 dark:border-green-600'
+                    : 'border-primary-200 dark:border-primary-700'
+                }`}
                 placeholder="Enter OTP"
               />
+              {otpError && <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center">{otpError}</div>}
               {error && <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center">{error}</div>}
               {success && <div className="text-green-700 bg-green-50 border border-green-200 rounded p-2 text-center">OTP verified successfully!</div>}
               <button
@@ -232,7 +324,8 @@ export default function VerifyOtpPage() {
                   otp.length !== 6 ||
                   !/^\d{6}$/.test(otp) ||
                   (error && otp === lastTriedOtp) ||
-                  attemptsLeft === 0
+                  attemptsLeft === 0 ||
+                  !!otpError
                 }
               >
                 {loading ? 'Verifying...' : 'Verify OTP'}
@@ -268,7 +361,7 @@ export default function VerifyOtpPage() {
                 className="text-primary-700 hover:underline text-xs"
                 onClick={() => setShowChangePhone(true)}
               >
-                {verification.type === 'phone' || verification.type === 'password-reset'
+                {verification.type === 'phone' || verification.type === 'password_reset'
                   ? 'Used the wrong phone number? Click here to change'
                   : 'Used the wrong email? Click here to change'}
               </button>
@@ -282,7 +375,7 @@ export default function VerifyOtpPage() {
           )}
           {showChangePhone && (
             <form
-              onSubmit={verification.type === 'phone' || verification.type === 'password-reset' ? handleChangePhoneSubmit : async (e) => {
+              onSubmit={verification.type === 'phone' || verification.type === 'password_reset' ? handleChangePhoneSubmit : async (e) => {
                 e.preventDefault();
                 setChangePhoneError(null);
                 setChangePhoneLoading(true);
@@ -315,26 +408,36 @@ export default function VerifyOtpPage() {
               style={{ width: '100%' }}
             >
               <label className="block text-primary-700 mb-1 font-medium text-center">
-                {verification.type === 'phone' || verification.type === 'password-reset'
+                {verification.type === 'phone' || verification.type === 'password_reset'
                   ? 'Enter new phone number'
                   : 'Enter new email address'}
               </label>
               <input
-                type={verification.type === 'phone' || verification.type === 'password-reset' ? 'tel' : 'email'}
+                type={verification.type === 'phone' || verification.type === 'password_reset' ? 'tel' : 'email'}
                 name="newPhone"
                 value={newPhone}
-                onChange={e => setNewPhone(e.target.value)}
+                onChange={handleNewPhoneChange}
+                onBlur={handleNewPhoneBlur}
                 required
-                className="w-full max-w-xs h-12 text-base px-4 py-3 rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition"
-                placeholder={verification.type === 'phone' || verification.type === 'password-reset' ? 'e.g. 0712345678' : 'e.g. user@email.com'}
+                className={`w-full max-w-xs h-12 text-base px-4 py-3 rounded-lg border bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition ${
+                  newPhoneError 
+                    ? 'border-red-300 dark:border-red-600' 
+                    : newPhone && !newPhoneError
+                    ? 'border-green-300 dark:border-green-600'
+                    : 'border-primary-200 dark:border-primary-700'
+                }`}
+                placeholder={verification.type === 'phone' || verification.type === 'password_reset' ? 'e.g. 0712345678' : 'e.g. user@email.com'}
               />
+              {newPhoneError && (
+                <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center w-full max-w-xs">{newPhoneError}</div>
+              )}
               <button
                 type="submit"
                 className="w-full max-w-xs bg-primary-700 text-white py-2 rounded-md hover:bg-primary-800 transition-colors duration-200 font-semibold disabled:opacity-60"
                 disabled={
-                  verification.type === 'phone' || verification.type === 'password-reset'
-                    ? !/^[+]?\d{9,15}$/.test(newPhone) || changePhoneLoading
-                    : !/^\S+@\S+\.\S+$/.test(newPhone) || changePhoneLoading
+                  changePhoneLoading ||
+                  !!newPhoneError ||
+                  !newPhone
                 }
               >
                 {changePhoneLoading ? 'Submitting...' : 'Submit'}

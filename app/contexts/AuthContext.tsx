@@ -122,16 +122,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      await fetch("http://localhost:8080/auth/logout", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
+      // Try to call logout endpoint (optional - for server-side cleanup)
+      try {
+        await fetch("http://localhost:8080/api/v1/auth/logout", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`,
+          },
+        });
+      } catch (error) {
+        // Ignore server logout errors - we'll still clear local state
+        console.log("Server logout failed, but clearing local state");
+      }
 
+      // Clear all auth-related data from localStorage
       localStorage.removeItem("token");
+      localStorage.removeItem("user_object");
+      
+      // Clear user state
       setUser(null);
-      navigate("/login");
+      
+      // Navigate to home page instead of login to avoid redirect loops
+      navigate("/");
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
       throw error;
