@@ -73,12 +73,24 @@ export default function SignupPage() {
 
     // Get redirect URL from query params
     const searchParams = new URLSearchParams(location.search);
-    const redirectUrl = searchParams.get('redirect') || '/dashboard';
+    const redirectUrl = searchParams.get('redirect');
 
     useEffect(() => {
         // If user is already authenticated, redirect them
         if (user) {
-            navigate(redirectUrl);
+            // Try to get profile_type from user object
+            const profileType = user.profile_type;
+            if (profileType === "household") {
+                navigate("/household");
+            } else if (profileType === "househelp") {
+                navigate("/househelp");
+            } else if (profileType === "bureau") {
+                navigate("/bureau");
+            } else if (redirectUrl) {
+                navigate(redirectUrl);
+            } else {
+                navigate("/");
+            }
         }
     }, [user, navigate, redirectUrl]);
 

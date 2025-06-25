@@ -2,7 +2,6 @@ import Joi from 'joi';
 
 // Common validation patterns
 const phonePattern = /^[+]?\d{9,15}$/;
-const passwordPattern = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
 
 // Validation schemas
 export const signupSchema = Joi.object({
@@ -10,8 +9,8 @@ export const signupSchema = Joi.object({
     'any.required': 'Please select your profile type',
     'any.only': 'Please choose a valid profile type from the list'
   }),
-  password: Joi.string().pattern(passwordPattern).required().messages({
-    'string.pattern.base': 'Your password needs at least 8 characters with uppercase, lowercase, number, and special character',
+  password: Joi.string().min(4).required().messages({
+    'string.min': 'Password must be at least 4 characters',
     'any.required': 'Please enter your password'
   }),
   first_name: Joi.string().min(2).max(50).required().messages({
@@ -52,8 +51,8 @@ export const changePasswordSchema = Joi.object({
   currentPassword: Joi.string().required().messages({
     'any.required': 'Please enter your current password'
   }),
-  newPassword: Joi.string().pattern(passwordPattern).required().messages({
-    'string.pattern.base': 'Your new password needs at least 8 characters with uppercase, lowercase, number, and special character',
+  newPassword: Joi.string().min(4).required().messages({
+    'string.min': 'Password must be at least 4 characters',
     'any.required': 'Please enter your new password'
   }),
   confirmPassword: Joi.string().valid(Joi.ref('newPassword')).required().messages({

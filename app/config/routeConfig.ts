@@ -26,7 +26,6 @@ export const routeConfig: Record<string, RouteConfig> = {
   '/verify-email': { path: '/verify-email', requiresAuth: false },
   
   // Protected routes - require authentication
-  '/dashboard': { path: '/dashboard', requiresAuth: true },
   '/profile': { path: '/profile', requiresAuth: true },
   '/settings': { path: '/settings', requiresAuth: true },
   '/change-password': { path: '/change-password', requiresAuth: true },

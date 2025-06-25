@@ -11,7 +11,7 @@ const navigation = [
 ];
 
 // Routes where login/signup buttons should be hidden when authenticated
-const authenticatedRoutes = ['/dashboard', '/profile', '/settings', '/change-password'];
+const authenticatedRoutes = ['/profile', '/settings', '/change-password'];
 
 export function Navigation() {
   const [darkMode, setDarkMode] = useState(false);
@@ -113,7 +113,7 @@ export function Navigation() {
   };
 
   return (
-    <nav className="bg-white dark:bg-slate-900 py-4 shadow-sm border-b border-gray-100 dark:border-slate-800">
+    <nav className="bg-white dark:bg-slate-900 py-4 shadow-sm border-b border-gray-100 dark:border-slate-800 mb-4">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center">
           {/* Logo */}

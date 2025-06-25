@@ -44,22 +44,9 @@ export default function LoginPage() {
 
   // Get redirect URL from query params
   const searchParams = new URLSearchParams(location.search);
-  const redirectUrl = searchParams.get('redirect') || '/dashboard';
+  const redirectUrl = searchParams.get('redirect');
 
-  useEffect(() => {
-    // If user is already authenticated, redirect them
-    if (user) {
-      navigate(redirectUrl);
-    }
-  }, [user, navigate, redirectUrl]);
-
-  useEffect(() => {
-    // Access document only on the client side
-    if (typeof window !== 'undefined') {
-      // Your document access code here
-    }
-  }, []);
-
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));

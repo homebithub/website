@@ -105,7 +105,18 @@ export function redirectToLogin(returnUrl?: string): string {
 
 // Redirect authenticated users away from auth pages
 export function redirectAuthenticatedUser(): string {
-  return '/dashboard';
+  // Try to get profile_type from localStorage
+  try {
+    const userObj = localStorage.getItem("user_object");
+    if (userObj) {
+      const parsed = JSON.parse(userObj);
+      const profileType = parsed.profile_type;
+      if (profileType === "household") return "/household";
+      if (profileType === "househelp") return "/househelp";
+      if (profileType === "bureau") return "/bureau";
+    }
+  } catch {}
+  return "/";
 }
 
 // Extract token from request headers (server-side)

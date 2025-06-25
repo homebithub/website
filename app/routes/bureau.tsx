@@ -17,14 +17,14 @@ export default function BureauDashboard() {
   return (
     <>
       <Navigation />
-      <main className="flex flex-col bg-gray-50 dark:bg-slate-900 px-2">
-  <div className="mx-auto w-full max-w-6xl flex flex-col sm:flex-row gap-2 items-start overflow-x-hidden">
-    <BureauSidebar />
-    <section className="flex-1 min-w-0">
-      <Outlet />
-    </section>
-  </div>
-</main>
+      <div className="min-h-screen w-full bg-slate-950">
+        <div className="mx-auto w-full max-w-6xl flex flex-col sm:flex-row gap-2 items-start overflow-x-hidden">
+          <BureauSidebar />
+          <section className="flex-1 min-w-0">
+            <Outlet />
+          </section>
+        </div>
+      </div>
     </>
   );
 }

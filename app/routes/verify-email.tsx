@@ -80,7 +80,17 @@ console.log(user_id,"user_id");
             type="button"
             className="w-full mt-4 text-sm text-gray-400 hover:text-gray-600 transition-colors duration-200 font-normal bg-transparent border-none outline-none"
             style={{ boxShadow: 'none' }}
-            onClick={() => navigate('/dashboard')}
+            onClick={() => {
+              const userObj = localStorage.getItem('user_object');
+              let path = '/';
+              if (userObj) {
+                const parsed = JSON.parse(userObj);
+                if (parsed.profile_type === 'household') path = '/household';
+                else if (parsed.profile_type === 'househelp') path = '/househelp';
+                else if (parsed.profile_type === 'bureau') path = '/bureau';
+              }
+              navigate(path);
+            }}
           >
             Skip for now
           </button>

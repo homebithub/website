@@ -185,12 +185,15 @@ export default function VerifyOtpPage() {
       setLocalFailedAttempts(0); // reset on success
       setLastTriedOtp('');
       // Navigate to update-email page
-      if(verification.type === 'phone'){
-        navigate('/verify-email', { state: { user_id } });
-      }else{
-        navigate('/dashboard');
+      const userObj = localStorage.getItem('user_object');
+      let path = '/';
+      if (userObj) {
+        const parsed = JSON.parse(userObj);
+        if (parsed.profile_type === 'household') path = '/household';
+        else if (parsed.profile_type === 'househelp') path = '/househelp';
+        else if (parsed.profile_type === 'bureau') path = '/bureau';
       }
-     
+      navigate(path);
     } catch (err: any) {
       setError(err.message || 'OTP verification failed');
       setLocalFailedAttempts((prev) => prev + 1);

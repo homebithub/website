@@ -262,12 +262,6 @@ export default function ChangePasswordPage() {
               <div className="text-text text-sm mb-2 dark:text-primary-200">Manage your security settings.</div>
               <a href="/settings" className="btn-primary">Security Settings</a>
             </div>
-            
-            <div className="bg-accent rounded-xl shadow-card p-6 dark:bg-slate-800">
-              <div className="font-bold text-primary mb-1 dark:text-primary-300">Back to Dashboard</div>
-              <div className="text-text text-sm mb-2 dark:text-primary-200">Return to your main dashboard.</div>
-              <a href="/dashboard" className="btn-primary">Go to Dashboard</a>
-            </div>
           </div>
         </div>
       </main>

@@ -37,68 +37,70 @@ export default function HouseholdDashboard() {
   return (
     <>
       <Navigation />
-      <main className="flex flex-col items-center px-2 py-8 min-h-screen bg-gray-50 dark:bg-slate-900">
-      <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-6">
-        <h1 className="text-2xl font-bold text-primary mb-2 text-center dark:text-primary-300">Household Profile</h1>
-        <div className="text-center text-gray-500 dark:text-gray-300 mb-6">Your employer profile details</div>
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:gap-4">
-            <div className="flex-1">
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Profile Status</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_status}</span>
-            </div>
-            <div className="flex-1">
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Profile Type</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_type}</span>
-            </div>
-          </div>
-          <div>
-            <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Address</span>
-            <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.address || '-'}</span>
-          </div>
-          <div>
-            <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Bio</span>
-            <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.bio || '-'}</span>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:gap-4">
-            <div className="flex-1">
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Verified</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.verified ? 'Yes' : 'No'}</span>
-            </div>
-            <div className="flex-1">
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">House Size</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.house_size}</span>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:gap-4">
-            <div className="flex-1">
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Number of Kids</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.number_of_kids}</span>
-            </div>
-            <div className="flex-1">
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Newborns Under 1</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.new_borns_under_one}</span>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:gap-4">
-            <div className="flex-1">
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Max Househelps</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.max_househelps}</span>
-            </div>
-            <div className="flex-1">
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Created At</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.created_at ? new Date(profile.created_at).toLocaleString() : '-'}</span>
-            </div>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:gap-4">
-            <div className="flex-1">
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Updated At</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.updated_at ? new Date(profile.updated_at).toLocaleString() : '-'}</span>
+      <div className="min-h-screen w-full bg-slate-950">
+        <div className="mx-auto w-full max-w-lg flex flex-col items-center">
+          <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-6">
+            <h1 className="text-2xl font-bold text-primary mb-2 text-center dark:text-primary-300">Household Profile</h1>
+            <div className="text-center text-gray-500 dark:text-gray-300 mb-6">Your employer profile details</div>
+            <div className="space-y-4">
+              <div className="flex flex-col sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Profile Status</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_status}</span>
+                </div>
+                <div className="flex-1">
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Profile Type</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_type}</span>
+                </div>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Address</span>
+                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.address || '-'}</span>
+              </div>
+              <div>
+                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Bio</span>
+                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.bio || '-'}</span>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Verified</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.verified ? 'Yes' : 'No'}</span>
+                </div>
+                <div className="flex-1">
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">House Size</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.house_size}</span>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Number of Kids</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.number_of_kids}</span>
+                </div>
+                <div className="flex-1">
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Newborns Under 1</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.new_borns_under_one}</span>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Max Househelps</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.max_househelps}</span>
+                </div>
+                <div className="flex-1">
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Created At</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.created_at ? new Date(profile.created_at).toLocaleString() : '-'}</span>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row sm:gap-4">
+                <div className="flex-1">
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Updated At</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.updated_at ? new Date(profile.updated_at).toLocaleString() : '-'}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </main>
     </>
   );
 }

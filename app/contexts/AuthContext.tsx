@@ -78,10 +78,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       localStorage.setItem("token", (data as LoginResponse).token);
       const userData = {...data as LoginResponse};
-      delete userData.token;
+      delete (userData as any).token;
       localStorage.setItem("user_object", JSON.stringify(userData));
       setUser(data as LoginResponse);
-      navigate("/dashboard");
+      // Redirect to specific dashboard based on profile_type
+      const profileType = userData.profile_type;
+      console.log("profileType", profileType);
+      if (profileType === "household") {
+        navigate("/household");
+      } else if (profileType === "househelp") {
+        navigate("/househelp");
+      } else if (profileType === "bureau") {
+        navigate("/bureau");
+      } else {
+      
+        navigate("/"); // fallback
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
       throw error;
