@@ -77,6 +77,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       localStorage.setItem("token", (data as LoginResponse).token);
+      const userData = {...data as LoginResponse};
+      delete userData.token;
+      localStorage.setItem("user_object", JSON.stringify(userData));
       setUser(data as LoginResponse);
       navigate("/dashboard");
     } catch (error) {
@@ -138,10 +141,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear all auth-related data from localStorage
       localStorage.removeItem("token");
       localStorage.removeItem("user_object");
-      
+
       // Clear user state
       setUser(null);
-      
+
       // Navigate to home page instead of login to avoid redirect loops
       navigate("/");
     } catch (error) {
