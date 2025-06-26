@@ -14,6 +14,7 @@ export type SignupRequest = {
     first_name: string;
     last_name: string;
     phone: string;
+    bureau_id?: string;
 };
 
 export type SignupResponse = {
@@ -71,15 +72,19 @@ export default function SignupPage() {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<SignupResponse | null>(null);
 
-    // Get redirect URL from query params
+    // Get redirect URL and bureauId from query params
     const searchParams = new URLSearchParams(location.search);
     const redirectUrl = searchParams.get('redirect');
+    const bureauId = searchParams.get('bureauId');
 
     useEffect(() => {
         // If user is already authenticated, redirect them
         if (user) {
-            // Try to get profile_type from user object
             const profileType = user.profile_type;
+            // Allow bureau to register househelps if bureauId is present
+            if (profileType === "bureau" && bureauId) {
+                return;
+            }
             if (profileType === "household") {
                 navigate("/household");
             } else if (profileType === "househelp") {
@@ -92,7 +97,7 @@ export default function SignupPage() {
                 navigate("/");
             }
         }
-    }, [user, navigate, redirectUrl]);
+    }, [user, navigate, redirectUrl, bureauId]);
 
     // Click outside handler for dropdown
     useEffect(() => {
@@ -184,10 +189,15 @@ export default function SignupPage() {
         setError(null);
         setSuccess(null);
         try {
+            // Prepare payload
+            let payload = { ...form };
+            if (form.profile_type === 'househelp' && bureauId) {
+                payload = { ...payload, bureau_id: bureauId };
+            }
             const res = await fetch(`${base_url}/api/v1/auth/register`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(form),
+                body: JSON.stringify(payload),
             });
             if (!res.ok) {
                 const err = await res.json();
@@ -195,7 +205,7 @@ export default function SignupPage() {
             }
             const data: SignupResponse = await res.json();
             // Pass verification object to the verify-otp page using navigation state
-            navigate('/verify-otp', { state: { verification: data.verification } });
+            navigate('/verify-otp', { state: { verification: data.verification, bureauId } });
         } catch (err: any) {
             setError(err.message || 'Signup failed');
         } finally {

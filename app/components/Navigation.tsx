@@ -113,7 +113,7 @@ export function Navigation() {
   };
 
   return (
-    <nav className="bg-white dark:bg-slate-900 py-4 shadow-sm border-b border-gray-100 dark:border-slate-800 mb-4">
+    <nav className="bg-white dark:bg-slate-900 py-4 shadow-sm border-b border-gray-100 dark:border-slate-800">
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center">
           {/* Logo */}

@@ -16,7 +16,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider mb-4">
+            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider">
               Services
             </h4>
             <ul className="space-y-4">
@@ -39,7 +39,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider mb-4">
+            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider">
               Company
             </h4>
             <ul className="space-y-4">
@@ -62,7 +62,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider mb-4">
+            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider">
               Legal
             </h4>
             <ul className="space-y-4">

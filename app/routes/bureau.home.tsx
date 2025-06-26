@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 
 export default function BureauHomeDashboard() {
   // Dummy data for dashboard
@@ -13,9 +13,55 @@ export default function BureauHomeDashboard() {
     { label: "Avg. Placement Time", value: "5 days" },
   ];
 
+  // State for Onboard modal and OTP
+  const [showOnboardModal, setShowOnboardModal] = useState(false);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+
+  // State for bureau ID
+  const [bureauId, setBureauId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch bureau profile to get bureau ID
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const res = await fetch("http://localhost:8080/api/v1/profile/bureau/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setBureauId(data.id || data._id || null);
+      } catch {}
+    };
+    fetchProfile();
+  }, []);
+
+  // Placeholder handler functions
+  const handleSendOtp = () => {
+    // TODO: Integrate backend call to send OTP
+    setShowOtpModal(true);
+  };
+
+  const handleResendOtp = () => {
+    // TODO: Integrate backend call to resend OTP
+    // Optionally show a message to the user
+  };
+
+  const handleVerifyOtp = () => {
+    // TODO: Integrate backend call to verify OTP and onboard househelp
+    setShowOnboardModal(false);
+    setShowOtpModal(false);
+    setPhone("");
+    setOtp("");
+    // Optionally update househelp list here
+  };
+
   return (
     <div className="p-4 sm:p-6">
-      <h2 className="text-xl font-bold mb-4 text-primary dark:text-primary-300">Bureau Dashboard</h2>
+      <h2 className="text-xl font-bold text-primary dark:text-primary-300">Bureau Dashboard</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {stats.map((stat) => (
           <div
@@ -39,6 +85,14 @@ export default function BureauHomeDashboard() {
           <li className="text-gray-500 dark:text-gray-300">Closed contract with commercial partner CleanCo</li>
           <li className="text-gray-500 dark:text-gray-300">Received 3 new applications today</li>
         </ul>
+      </div>
+      {/* Househelps Subsection */}
+      <div className="mt-10">
+        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Househelps</h3>
+        {/* Placeholder for househelp list */}
+        <div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-gray-100 dark:border-slate-700 p-4 text-gray-500 dark:text-gray-300">
+          List of househelps will appear here.
+        </div>
       </div>
     </div>
   );

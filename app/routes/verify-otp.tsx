@@ -86,7 +86,7 @@ export default function VerifyOtpPage() {
   const location = useLocation();
   const navigate = useNavigate();
   // Check if state exists
-  const locationState = (location.state || {}) as { verification?: any };
+  const locationState = (location.state || {}) as { verification?: any, bureauId?: string };
   const [verification, setVerification] = useState(locationState.verification);
   React.useEffect(() => {
     if (!verification) {
@@ -184,16 +184,20 @@ export default function VerifyOtpPage() {
       setSuccess(true);
       setLocalFailedAttempts(0); // reset on success
       setLastTriedOtp('');
-      // Navigate to update-email page
-      const userObj = localStorage.getItem('user_object');
-      let path = '/';
-      if (userObj) {
-        const parsed = JSON.parse(userObj);
-        if (parsed.profile_type === 'household') path = '/household';
-        else if (parsed.profile_type === 'househelp') path = '/househelp';
-        else if (parsed.profile_type === 'bureau') path = '/bureau';
+      // If bureauId is present in state, redirect to /bureau/househelps after verification
+      if (locationState.bureauId) {
+        navigate('/bureau/househelps');
+      } else {
+        const userObj = localStorage.getItem('user_object');
+        let path = '/';
+        if (userObj) {
+          const parsed = JSON.parse(userObj);
+          if (parsed.profile_type === 'household') path = '/household';
+          else if (parsed.profile_type === 'househelp') path = '/househelp';
+          else if (parsed.profile_type === 'bureau') path = '/bureau';
+        }
+        navigate(path);
       }
-      navigate(path);
     } catch (err: any) {
       setError(err.message || 'OTP verification failed');
       setLocalFailedAttempts((prev) => prev + 1);
