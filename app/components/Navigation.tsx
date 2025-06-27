@@ -23,7 +23,7 @@ export function Navigation() {
   // Memoized dashboard path based on profile type
   const dashboardPath = React.useMemo(() => {
     if (!profileType) return null;
-    if (profileType === "household") return "/household";
+    if (profileType === "employer") return "/household";
     if (profileType === "househelp") return "/househelp";
     if (profileType === "bureau") return "/bureau";
     return null;
@@ -155,7 +155,7 @@ export function Navigation() {
 
               <div className="flex items-center space-x-3">
                 <div className="text-base text-gray-700 dark:text-gray-300 font-medium">
-                  Welcome, {(user.first_name || user.user?.first_name) ?? 'User'}
+                  Welcome, {(user.first_name ) ?? 'User'}
                 </div>
               </div>
             )}
@@ -196,7 +196,7 @@ export function Navigation() {
                         )}
                       </Menu.Item>
                     ))}
-                    
+
                     {/* Dark Mode Toggle */}
                     <div className="border-t border-gray-200 dark:border-slate-700 my-2"></div>
                     <Menu.Item>
@@ -218,7 +218,7 @@ export function Navigation() {
                         </button>
                       )}
                     </Menu.Item>
-                    
+
                     {/* User-specific menu items */}
                     {user && (
                       <>
