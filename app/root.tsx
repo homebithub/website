@@ -24,7 +24,7 @@ export default function App() {
                 <link rel="icon" href="/favicon.ico" type="image/x-icon" />
                 <title>homexpert</title>
             </head>
-            <body className="min-h-screen bg-white text-slate-900 font-sans antialiased">
+            <body className="min-h-screen bg-gray-50 dark:bg-slate-950 text-slate-900 dark:text-slate-50 font-sans antialiased">
                 <AuthProvider>
                     <Outlet/>
                 </AuthProvider>

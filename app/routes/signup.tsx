@@ -74,7 +74,7 @@ export default function SignupPage() {
 
     // Get redirect URL and bureauId from query params
     const searchParams = new URLSearchParams(location.search);
-    const redirectUrl = searchParams.get('redirect');
+    //const redirectUrl = searchParams.get('redirect');
     const bureauId = searchParams.get('bureauId');
 
     useEffect(() => {
@@ -83,6 +83,7 @@ export default function SignupPage() {
             const profileType = user.profile_type;
             // Allow bureau to register househelps if bureauId is present
             if (profileType === "bureau" && bureauId) {
+        
                 return;
             }
             if (profileType === "household") {
@@ -91,13 +92,13 @@ export default function SignupPage() {
                 navigate("/househelp");
             } else if (profileType === "bureau") {
                 navigate("/bureau");
-            } else if (redirectUrl) {
-                navigate(redirectUrl);
+           // } else if (redirectUrl) {
+             //   navigate(redirectUrl);
             } else {
                 navigate("/");
             }
         }
-    }, [user, navigate, redirectUrl, bureauId]);
+    }, [user, navigate, bureauId]);
 
     // Click outside handler for dropdown
     useEffect(() => {
@@ -226,8 +227,8 @@ export default function SignupPage() {
         return selected ? selected.label : 'Select profile type';
     };
 
-    // Show loading if user is being redirected
-    if (authLoading || user) {
+    // If auth is loading and it's not a bureau registering a househelp, show loader
+    if (authLoading && !bureauId) {
         return <Loading text="Redirecting..." />;
     }
 

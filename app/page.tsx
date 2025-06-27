@@ -1,6 +1,7 @@
 import React from 'react';
 import { Footer } from './components/Footer';
 import { Navigation } from './components/Navigation';
+import HousehelpsTable from './components/HousehelpsTable';
 
 export default function Home() {
   return (
@@ -83,79 +84,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {/* Profile Card 1 */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:border-primary-500 transition-all duration-300 dark:bg-slate-900 dark:border-slate-700">
-              <div className="flex flex-col h-full">
-                <div className="mb-4">
-                  <h3 className="text-xl font-semibold text-primary-800 mb-1 dark:text-primary-300">Sarah Kamau</h3>
-                  <p className="text-primary-600 dark:text-primary-200">Professional Nanny</p>
-                </div>
-                <div className="space-y-3 flex-grow">
-                  <p className="text-gray-600 dark:text-gray-300"><span className="font-medium">Experience:</span> 5 years</p>
-                  <p className="text-gray-600 dark:text-gray-300"><span className="font-medium">Location:</span> Nairobi, Kenya</p>
-                  <p className="text-gray-600 dark:text-gray-300"><span className="font-medium">Availability:</span> Immediate</p>
-                  <div>
-                    <p className="font-medium text-gray-600 mb-2 dark:text-gray-300">Skills:</p>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm dark:bg-primary-900 dark:text-primary-200">Child Care</span>
-                      <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm dark:bg-primary-900 dark:text-primary-200">Cooking</span>
-                      <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm dark:bg-primary-900 dark:text-primary-200">First Aid</span>
-                    </div>
-                  </div>
-                </div>
-                <button className="mt-6 w-full bg-primary-700 text-white py-2 rounded-md hover:bg-primary-800 transition-colors duration-300 dark:bg-primary-600 dark:hover:bg-primary-700">View Profile</button>
-              </div>
-            </div>
-
-            {/* Profile Card 2 */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:border-primary-500 transition-all duration-300 dark:bg-slate-900 dark:border-slate-700">
-              <div className="flex flex-col h-full">
-                <div className="mb-4">
-                  <h3 className="text-xl font-semibold text-primary-800 mb-1 dark:text-primary-300">Mary Wanjiku</h3>
-                  <p className="text-primary-600 dark:text-primary-200">Experienced Housekeeper</p>
-                </div>
-                <div className="space-y-3 flex-grow">
-                  <p className="text-gray-600 dark:text-gray-300"><span className="font-medium">Experience:</span> 8 years</p>
-                  <p className="text-gray-600 dark:text-gray-300"><span className="font-medium">Location:</span> Mombasa, Kenya</p>
-                  <p className="text-gray-600 dark:text-gray-300"><span className="font-medium">Availability:</span> 2 weeks notice</p>
-                  <div>
-                    <p className="font-medium text-gray-600 mb-2 dark:text-gray-300">Skills:</p>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm dark:bg-primary-900 dark:text-primary-200">Cleaning</span>
-                      <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm dark:bg-primary-900 dark:text-primary-200">Organization</span>
-                      <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm dark:bg-primary-900 dark:text-primary-200">Pet Care</span>
-                    </div>
-                  </div>
-                </div>
-                <button className="mt-6 w-full bg-primary-700 text-white py-2 rounded-md hover:bg-primary-800 transition-colors duration-300 dark:bg-primary-600 dark:hover:bg-primary-700">View Profile</button>
-              </div>
-            </div>
-
-            {/* Profile Card 3 */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 hover:border-primary-500 transition-all duration-300 dark:bg-slate-900 dark:border-slate-700">
-              <div className="flex flex-col h-full">
-                <div className="mb-4">
-                  <h3 className="text-xl font-semibold text-primary-800 mb-1 dark:text-primary-300">Grace Akinyi</h3>
-                  <p className="text-primary-600 dark:text-primary-200">Nanny & Elderly Care Specialist</p>
-                </div>
-                <div className="space-y-3 flex-grow">
-                  <p className="text-gray-600 dark:text-gray-300"><span className="font-medium">Experience:</span> 10 years</p>
-                  <p className="text-gray-600 dark:text-gray-300"><span className="font-medium">Location:</span> Kisumu, Kenya</p>
-                  <p className="text-gray-600 dark:text-gray-300"><span className="font-medium">Availability:</span> Available weekdays</p>
-                  <div>
-                    <p className="font-medium text-gray-600 mb-2 dark:text-gray-300">Skills:</p>
-                    <div className="flex flex-wrap gap-2">
-                      <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm dark:bg-primary-900 dark:text-primary-200">Elder Care</span>
-                      <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm dark:bg-primary-900 dark:text-primary-200">Child Care</span>
-                      <span className="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-sm dark:bg-primary-900 dark:text-primary-200">Meal Prep</span>
-                    </div>
-                  </div>
-                </div>
-                <button className="mt-6 w-full bg-primary-700 text-white py-2 rounded-md hover:bg-primary-800 transition-colors duration-300 dark:bg-primary-600 dark:hover:bg-primary-700">View Profile</button>
-              </div>
-            </div>
-          </div>
+          <HousehelpsTable />
 
           <div className="text-center mt-12">
             <button className="bg-primary-700 text-white px-6 py-3 rounded-md hover:bg-primary-800 transition-colors duration-300 font-medium dark:bg-primary-600 dark:hover:bg-primary-700">
