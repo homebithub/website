@@ -89,18 +89,7 @@ export default function HouseholdEmployment() {
     <label htmlFor="experience" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Experience (years)</label>
     <input id="experience" name="experience" type="number" min="0" value={fields.experience} onChange={handleChange} placeholder="Years" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
   </div>
-  <div className="flex flex-col">
-    <label htmlFor="reference" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Reference</label>
-    <input id="reference" name="reference" value={fields.reference} onChange={handleChange} placeholder="e.g. Nairobi" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
-  </div>
-  <div className="flex flex-col">
-    <label htmlFor="salary_expectation_min" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Salary Min</label>
-    <input id="salary_expectation_min" name="salary_expectation_min" type="number" min="0" value={fields.salary_expectation_min} onChange={handleChange} placeholder="Min" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
-  </div>
-  <div className="flex flex-col">
-    <label htmlFor="salary_expectation_max" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Salary Max</label>
-    <input id="salary_expectation_max" name="salary_expectation_max" type="number" min="0" value={fields.salary_expectation_max} onChange={handleChange} placeholder="Max" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
-  </div>
+   
   <div className="flex flex-col">
     <label htmlFor="salary_frequency" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Salary Frequency</label>
     <select id="salary_frequency" name="salary_frequency" value={fields.salary_frequency} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
@@ -110,30 +99,14 @@ export default function HouseholdEmployment() {
     </select>
   </div>
   <div className="flex flex-col">
-    <label htmlFor="availability_before" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Available Before</label>
+    <label htmlFor="availability_before" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Available From</label>
     <input id="availability_before" name="availability_before" type="date" value={fields.availability_before} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
   </div>
   <div className="flex flex-col">
     <label htmlFor="location" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Location</label>
     <input id="location" name="location" value={fields.location} onChange={handleChange} placeholder="Location" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
   </div>
-  <div className="flex flex-col">
-    <label htmlFor="min_rating" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min Rating</label>
-    <input id="min_rating" name="min_rating" type="number" step="0.1" min="0" max="5" value={fields.min_rating} onChange={handleChange} placeholder="Min Rating" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
-  </div>
-  <div className="flex flex-col">
-    <label htmlFor="sort" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Sort By</label>
-    <select id="sort" name="sort" value={fields.sort} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
-      <option value="popular">Popular</option>
-      <option value="recent">Recent</option>
-      <option value="salary_low">Salary Low</option>
-      <option value="salary_high">Salary High</option>
-    </select>
-  </div>
-  <div className="flex flex-col">
-    <label htmlFor="limit" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Limit</label>
-    <input id="limit" name="limit" type="number" min="1" max="50" value={fields.limit} onChange={handleChange} placeholder="Limit" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
-  </div>
+
   <div className="flex flex-col col-span-1 md:col-span-3 lg:col-span-4 justify-end">
     <label className="sr-only">Search</label>
     <button type="submit" className="bg-primary text-white py-2 rounded-lg font-semibold shadow-md bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-400 transition mt-auto">Search</button>
