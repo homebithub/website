@@ -36,16 +36,7 @@ export default function HouseholdProfile() {
       <h1 className="text-2xl font-bold text-primary mb-2 text-center dark:text-primary-300">Household Profile</h1>
       <div className="text-center text-gray-500 dark:text-gray-300 mb-6">Your employer profile details</div>
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:gap-4">
-          <div className="flex-1">
-            <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Profile Status</span>
-            <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_status}</span>
-          </div>
-          <div className="flex-1">
-            <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Profile Type</span>
-            <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_type}</span>
-          </div>
-        </div>
+  
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Address</span>
           <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.address || '-'}</span>
