@@ -9,7 +9,7 @@ const menu = [
 export default function HouseholdSidebar() {
   const location = useLocation();
   return (
-    <aside className="w-full sm:w-56 bg-white dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700 p-4 rounded-xl shadow-sm flex flex-col space-y-2">
+    <aside className="w-full sm:w-56 bg-white dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700 p-4 rounded-xl shadow-sm flex flex-col space-y-2 mt-2">
       {menu.map((item) => (
         <Link
           key={item.to}
