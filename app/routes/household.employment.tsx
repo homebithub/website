@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "@remix-run/react";
 
 const initialFields = {
   status: "active",
@@ -17,6 +18,7 @@ const initialFields = {
 };
 
 export default function HouseholdEmployment() {
+  const navigate = useNavigate();
   const [fields, setFields] = useState(initialFields);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -118,7 +120,15 @@ export default function HouseholdEmployment() {
         {!hasSearched && !loading && <div className="text-center text-gray-500">Customize your search to find househelps.</div>}
         {hasSearched && results.length === 0 && !loading && <div className="text-center text-gray-500">No househelps found.</div>}
         {results.map((h) => (
-          <div key={h.id} className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow">
+          <div
+            key={h.id}
+            className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
+            onClick={() => navigate(`/household/househelp/profile?profile_id=${h.profile_id}`)}
+            role="button"
+            tabIndex={0}
+            onKeyPress={e => { if (e.key === 'Enter') navigate(`/household/househelp/profile?profile_id=${h.profile_id}`); }}
+            aria-label={`View profile of ${h.first_name} ${h.last_name}`}
+          >
             <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
             <div className="flex-1">
               <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
