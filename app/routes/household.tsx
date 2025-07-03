@@ -1,9 +1,20 @@
-import { Outlet } from "@remix-run/react";
+import {Outlet, useLocation, useNavigate} from "@remix-run/react";
 import { Navigation } from "~/components/Navigation";
 import HouseholdSidebar from "~/components/HouseholdSidebar";
+import {useEffect} from "react";
 
 export default function HouseholdDashboard() {
-  return (
+
+    const navigate = useNavigate();
+    const location = useLocation();
+    // Redirect /bureau to /bureau/home by default
+    useEffect(() => {
+        if (location.pathname === "/household") {
+            navigate("/household/profile", { replace: true });
+        }
+    }, [location, navigate]);
+
+    return (
     <>
       <Navigation />
       <div className="min-h-screen w-full bg-slate-950 mt-4">
