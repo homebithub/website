@@ -1,8 +1,55 @@
 import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "@remix-run/react";
-import { ArrowLeftIcon, LockClosedIcon } from "@heroicons/react/24/outline";
+import { ArrowLeftIcon, HeartIcon } from "@heroicons/react/24/outline";
 
 export default function HousehelpProfile() {
+  const [shortlistLoading, setShortlistLoading] = useState(false);
+  const [shortlistDisabled, setShortlistDisabled] = useState(false);
+  const [shortlistDisabledReason, setShortlistDisabledReason] = useState<string | null>(null);
+
+  const handleShortlist = async () => {
+    if (!profileId) return;
+    setShortlistLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
+      const res = await fetch(`http://localhost:8080/api/v1/shortlists`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          profile_id: profileId,
+          profile_type: 'househelp',
+        }),
+      });
+      if (!res.ok) {
+        let errData;
+        try {
+          errData = await res.json();
+        } catch {
+          throw new Error('Failed to shortlist');
+        }
+        if (
+          res.status === 400 &&
+          errData.message === 'profile is currently unlocked and not expired'
+        ) {
+          setShortlistDisabled(true);
+          setShortlistDisabledReason('This profile is currently unlocked and cannot be shortlisted until it expires.');
+          return;
+        }
+        throw new Error(errData.message || 'Failed to shortlist');
+      }
+      // Optionally, show success or update UI
+      // e.g., setShortlisted(true);
+    } catch (err: any) {
+      if (!shortlistDisabled) alert(err.message || 'Failed to shortlist');
+    } finally {
+      setShortlistLoading(false);
+    }
+  };
+
   const [searchParams] = useSearchParams();
   const profileId = searchParams.get("profile_id");
   const [data, setData] = useState<any>(null);
@@ -18,6 +65,33 @@ export default function HousehelpProfile() {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Not authenticated");
         if (!profileId) throw new Error("No profile ID provided");
+        // Check if already shortlisted
+        const shortlistRes = await fetch(`http://localhost:8080/api/v1/shortlists/exists/${profileId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (shortlistRes.ok) {
+          const shortlistData = await shortlistRes.json();
+          if (shortlistData.exists) {
+            setShortlistDisabled(true);
+            setShortlistDisabledReason('You have already shortlisted this profile.');
+          } else {
+            setShortlistDisabled(false);
+            setShortlistDisabledReason(null);
+          }
+        }
+        // Track profile view
+        await fetch(`http://localhost:8080/api/v1/profile-view/record`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            profile_id: profileId,
+            profile_type: 'househelp',
+          }),
+        });
+        // Fetch profile
         const res = await fetch(`http://localhost:8080/api/v1/househelps/${profileId}/profile_with_user`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -48,9 +122,25 @@ export default function HousehelpProfile() {
           <ArrowLeftIcon className="w-6 h-6 text-primary-700 dark:text-primary-300" />
         </button>
         <span className="text-xl font-bold text-primary dark:text-primary-300">Househelp Profile</span>
-        <button className="p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition" aria-label="Lock">
-          <LockClosedIcon className="w-6 h-6 text-primary-700 dark:text-primary-300" />
-        </button>
+        <div className="relative inline-block group">
+  <button
+    className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow transition
+      ${shortlistDisabled ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-400'}
+      ${shortlistLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+    aria-label="Shortlist"
+    onClick={shortlistDisabled ? undefined : handleShortlist}
+    disabled={shortlistLoading || shortlistDisabled}
+    tabIndex={0}
+  >
+    <span>{shortlistLoading ? 'Shortlisting...' : 'Shortlist'}</span>
+    <HeartIcon className="w-6 h-6" />
+  </button>
+  {shortlistDisabled && shortlistDisabledReason && (
+    <div className="absolute left-1/2 -translate-x-1/2 -top-12 w-56 bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900 text-xs rounded px-3 py-2 shadow-lg z-10 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
+      {shortlistDisabledReason}
+    </div>
+  )}
+</div>
       </div>
       {/* User Information Section */}
       <div className="flex flex-col items-center mb-8">

@@ -70,7 +70,16 @@ export default function HouseholdEmployment() {
   
   return (
     <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-4 sm:p-6">
-      <h1 className="text-2xl font-bold text-primary mb-4 text-center dark:text-primary-300">Find a Househelp</h1>
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold text-primary text-center flex-1 dark:text-primary-300">Find a Househelp</h1>
+        <button
+          type="button"
+          className="ml-4 px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold shadow-md focus:outline-none focus:ring-2 focus:ring-green-400 transition"
+          style={{ minWidth: 100 }}
+        >
+          Pay
+        </button>
+      </div>
       <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-4 mb-8 w-full">
   <div className="flex flex-col">
     <label htmlFor="status" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Status</label>
