@@ -17,6 +17,16 @@ export default function BureauHomeDashboard() {
   const [showOnboardModal, setShowOnboardModal] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [phone, setPhone] = useState("");
+
+  // Add styles for phone input
+  const phoneInputStyle = {
+    color: '#1f2937', // Dark text color
+    backgroundColor: '#f9fafb', // Light background
+    padding: '0.5rem',
+    borderRadius: '0.5rem',
+    border: '1px solid #e5e7eb',
+    fontSize: '1rem',
+  };
   const [otp, setOtp] = useState("");
 
   // State for bureau ID

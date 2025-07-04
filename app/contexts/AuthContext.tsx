@@ -85,13 +85,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profileType = userData.profile_type;
       console.log("profileType", profileType);
       if (profileType === "household") {
-        navigate("/household");
+        navigate("/household/profile");
       } else if (profileType === "househelp") {
         navigate("/househelp");
       } else if (profileType === "bureau") {
         navigate("/bureau");
       } else {
-      
         navigate("/"); // fallback
       }
     } catch (error) {

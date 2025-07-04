@@ -1,6 +1,16 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "@remix-run/react";
 
+// Add phone input styles
+const phoneInputStyle = {
+  color: '#1f2937', // Dark text color
+  backgroundColor: '#f9fafb', // Light background
+  padding: '0.5rem',
+  borderRadius: '0.5rem',
+  border: '1px solid #e5e7eb',
+  fontSize: '1rem',
+};
+
 export default function BureauHousehelps() {
   // State for Onboard modal and OTP
   const [showOnboardModal, setShowOnboardModal] = useState(false);
@@ -137,6 +147,7 @@ export default function BureauHousehelps() {
                   value={phone}
                   onChange={e => setPhone(e.target.value)}
                   disabled={searching || !!househelpInfo}
+                  style={phoneInputStyle}
                 />
                 {!househelpInfo && (
                   <button
