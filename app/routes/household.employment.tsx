@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate, useSearchParams, useLocation } from "@remix-run/react";
 import ShortlistPlaceholderIcon from "../components/ShortlistPlaceholderIcon";
 
 const initialFields = {
@@ -27,7 +27,23 @@ export default function HouseholdEmployment() {
   const [hasSearched, setHasSearched] = useState(false);
   const [shortlistCount, setShortlistCount] = useState<number>(0);
   const [shortlist, setShortlist] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'find' | 'shortlist'>('find');
+  const [shortlistProfiles, setShortlistProfiles] = useState<any[]>([]);
+  const [shortlistProfilesLoading, setShortlistProfilesLoading] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<'find' | 'shortlist'>(() => {
+    const tabParam = searchParams.get('tab');
+    return tabParam === 'shortlist' ? 'shortlist' : 'find';
+  });
+
+  // Keep tab in sync with query param
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && tabParam !== activeTab) {
+      setActiveTab(tabParam === 'shortlist' ? 'shortlist' : 'find');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
 
   useEffect(() => {
     const fetchShortlist = async () => {
@@ -48,6 +64,43 @@ export default function HouseholdEmployment() {
     };
     fetchShortlist();
   }, []);
+
+  // Fetch full profiles when switching to shortlist tab
+  useEffect(() => {
+    const fetchProfiles = async () => {
+      if (activeTab !== 'shortlist' || shortlist.length === 0) {
+        setShortlistProfiles([]);
+        return;
+      }
+      setShortlistProfilesLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const profile_ids = shortlist.map((s) => s.profile_id).filter(Boolean);
+        if (!token || profile_ids.length === 0) {
+          setShortlistProfiles([]);
+          setShortlistProfilesLoading(false);
+          return;
+        }
+        const res = await fetch("http://localhost:8080/api/v1/househelps/search_multiple", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ profile_type: "househelp", profile_ids }),
+        });
+        if (!res.ok) throw new Error("Failed to fetch profiles");
+        const data = await res.json();
+        setShortlistProfiles(Array.isArray(data) ? data : []);
+      } catch (err) {
+        setShortlistProfiles([]);
+      } finally {
+        setShortlistProfilesLoading(false);
+      }
+    };
+    fetchProfiles();
+    // Only refetch when switching to shortlist tab or shortlist changes
+  }, [activeTab, shortlist]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -185,20 +238,35 @@ export default function HouseholdEmployment() {
       )}
       {activeTab === 'shortlist' && (
         <div className="space-y-4">
-          {shortlist.length === 0 && <div className="text-center text-gray-500">You have no househelps in your shortlist yet.</div>}
-          {shortlist.map((s) => (
-            <div
-              key={s.id}
-              className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow"
-            >
-              <ShortlistPlaceholderIcon />
-              <div className="flex-1">
-                <div className="font-bold text-lg text-primary-700 dark:text-primary-200">Househelp Profile</div>
-                <div className="text-gray-500 dark:text-gray-300 text-sm">Profile ID: {s.profile_id}</div>
-                <div className="text-gray-400 text-xs">Shortlisted: {s.created_at ? new Date(s.created_at).toLocaleDateString() : ''}</div>
-              </div>
-            </div>
-          ))}
+          {shortlistProfilesLoading && <div className="text-center text-gray-500">Loading shortlist profiles...</div>}
+          {!shortlistProfilesLoading && shortlist.length === 0 && <div className="text-center text-gray-500">You have no househelps in your shortlist yet.</div>}
+          {!shortlistProfilesLoading && shortlistProfiles.length === 0 && shortlist.length > 0 && (
+            <div className="text-center text-gray-500">No profiles found for your shortlist.</div>
+          )}
+          {shortlistProfiles.map((h) => (
+  <div
+    key={h.id}
+    className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
+    onClick={() => navigate(`/household/househelp/contact?profile_id=${h.profile_id}&tab=shortlist`)}
+    role="button"
+    tabIndex={0}
+    onKeyPress={e => {
+      if (e.key === 'Enter') {
+        navigate(`/household/househelp/contact?profile_id=${h.profile_id}&tab=shortlist`);
+      }
+    }}
+    aria-label={`View profile of ${h.first_name} ${h.last_name}`}
+  >
+    <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
+    <div className="flex-1">
+      <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
+      <div className="text-gray-500 dark:text-gray-300 text-sm">Salary: {h.salary_expectation || 'N/A'} {h.salary_frequency}</div>
+      <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
+      <div className="text-gray-400 text-xs">Joined: {h.created_at ? new Date(h.created_at).toLocaleDateString() : ''}</div>
+    </div>
+  </div>
+))}
+
         </div>
       )}
     </div>
