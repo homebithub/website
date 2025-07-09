@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useSearchParams, useNavigate } from "@remix-run/react";
+import {useSearchParams, useNavigate, useLocation} from "@remix-run/react";
 import { ArrowLeftIcon, HeartIcon, TrashIcon } from "@heroicons/react/24/outline";
 
 export default function HousehelpProfile() {
@@ -54,12 +54,14 @@ export default function HousehelpProfile() {
     }
   };
 
-  const [searchParams] = useSearchParams();
-  const profileId = searchParams.get("profile_id");
+ 
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationState = (location.state || {}) as { profileId?: string };
+  const profileId = locationState.profileId 
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -213,7 +215,7 @@ export default function HousehelpProfile() {
           {Househelp.verified && <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Verified</span>}
           <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{User.country}</span>
         </div>
-       
+
       </div>
       {/* Househelp Profile Information Section */}
       <div className="space-y-8">
@@ -227,18 +229,18 @@ export default function HousehelpProfile() {
           <div><span className="font-semibold">Languages:</span> {Househelp.languages && Househelp.languages.length ? Househelp.languages.join(', ') : '-'}</div>
           <div><span className="font-semibold">Hourly Rate:</span> {Househelp.hourly_rate ? Househelp.hourly_rate : '-'}</div>
           <div><span className="font-semibold">Salary Expectation:</span> {Househelp.salary_expectation ? `${Househelp.salary_expectation} (${Househelp.salary_frequency})` : '-'}</div>
-           
+
           <div><span className="font-semibold">Rating:</span> {Househelp.rating} ({Househelp.review_count} reviews)</div>
           <div><span className="font-semibold">References:</span> {Househelp.references ? Househelp.references : '-'}</div>
           <div><span className="font-semibold">Images:</span> {Househelp.images ? JSON.stringify(Househelp.images) : '-'}</div>
           <div><span className="font-semibold">Created At:</span> {Househelp.created_at ? new Date(Househelp.created_at).toLocaleString() : '-'}</div>
-         
+
         </div>
       </div>
 
           {/* All fields already rendered above in grid sections. No further rendering needed. */}
         </div>
       </div>
-    
+
   );
 }
