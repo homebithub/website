@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {useSearchParams, useNavigate, useLocation} from "@remix-run/react";
-import {ArrowLeftIcon, HeartIcon, TrashIcon} from "@heroicons/react/24/outline";
+import {ArrowLeftIcon, HeartIcon, TrashIcon, LockClosedIcon, LockOpenIcon} from "@heroicons/react/24/outline";
 
 export default function HousehelpProfile() {
     const [shortlistLoading, setShortlistLoading] = useState(false);
@@ -61,6 +61,7 @@ export default function HousehelpProfile() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [unlockedContact, setUnlockedContact] = useState<{ phone?: string; email?: string } | null>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -139,56 +140,89 @@ export default function HousehelpProfile() {
                     >
                         <ArrowLeftIcon className="w-6 h-6 text-primary-700 dark:text-primary-300" />
                     </button>
-                    <span className="text-xl font-bold text-primary dark:text-primary-300">Househelp Profile</span>
-                    <div className="relative inline-block group">
+                
+                    <div className="flex flex-row gap-4 items-center group">
                         {shortlisted ? (
-                            <button
-                                className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow transition bg-red-600 hover:bg-red-700 text-white dark:bg-red-500 dark:hover:bg-red-400 ${shortlistLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
-                                aria-label="Reject"
-                                onClick={async () => {
-                                    setShortlistLoading(true);
-                                    try {
-                                        const token = localStorage.getItem('token');
-                                        if (!token) throw new Error('Not authenticated');
-                                        const res = await fetch(`http://localhost:8080/api/v1/shortlists/${profileId}`, {
-                                            method: 'DELETE',
-                                            headers: {Authorization: `Bearer ${token}`},
-                                        });
-                                        if (!res.ok) {
-                                            const errData = await res.json();
-                                            throw new Error(errData.message || 'Failed to remove from shortlist');
-                                        }
-                                        // After removal, re-check shortlist status and unlock logic
-                                        setShortlisted(false);
-                                        setShortlistDisabled(false);
-                                        setShortlistDisabledReason(null);
-                                        // Optionally, re-run the shortlist check
-                                        const shortlistRes = await fetch(`http://localhost:8080/api/v1/shortlists/exists/${profileId}`, {
-                                            headers: {Authorization: `Bearer ${token}`},
-                                        });
-                                        if (shortlistRes.ok) {
-                                            const shortlistData = await shortlistRes.json();
-                                            setShortlisted(!!shortlistData.exists);
-                                            if (shortlistData.exists) {
-                                                setShortlistDisabled(true);
-                                                setShortlistDisabledReason('You have already shortlisted this profile.');
-                                            } else {
-                                                setShortlistDisabled(false);
-                                                setShortlistDisabledReason(null);
+                            <>
+                                <button
+                                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow transition bg-red-600 hover:bg-red-700 text-white dark:bg-red-500 dark:hover:bg-red-400 ${shortlistLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                    aria-label="Reject"
+                                    onClick={async () => {
+                                        setShortlistLoading(true);
+                                        try {
+                                            const token = localStorage.getItem('token');
+                                            if (!token) throw new Error('Not authenticated');
+                                            const res = await fetch(`http://localhost:8080/api/v1/shortlists/${profileId}`, {
+                                                method: 'DELETE',
+                                                headers: {Authorization: `Bearer ${token}`},
+                                            });
+                                            if (!res.ok) {
+                                                const errData = await res.json();
+                                                throw new Error(errData.message || 'Failed to remove from shortlist');
                                             }
+                                            // After removal, re-check shortlist status and unlock logic
+                                            setShortlisted(false);
+                                            setShortlistDisabled(false);
+                                            setShortlistDisabledReason(null);
+                                            // Optionally, re-run the shortlist check
+                                            const shortlistRes = await fetch(`http://localhost:8080/api/v1/shortlists/exists/${profileId}`, {
+                                                headers: {Authorization: `Bearer ${token}`},
+                                            });
+                                            if (shortlistRes.ok) {
+                                                const shortlistData = await shortlistRes.json();
+                                                setShortlisted(!!shortlistData.exists);
+                                                if (shortlistData.exists) {
+                                                    setShortlistDisabled(true);
+                                                    setShortlistDisabledReason('You have already shortlisted this profile.');
+                                                } else {
+                                                    setShortlistDisabled(false);
+                                                    setShortlistDisabledReason(null);
+                                                }
+                                            }
+                                        } catch (err: any) {
+                                            alert(err.message || 'Failed to remove from shortlist');
+                                        } finally {
+                                            setShortlistLoading(false);
                                         }
-                                    } catch (err: any) {
-                                        alert(err.message || 'Failed to remove from shortlist');
-                                    } finally {
-                                        setShortlistLoading(false);
-                                    }
-                                }}
-                                disabled={shortlistLoading}
-                                tabIndex={0}
-                            >
-                                <span>{shortlistLoading ? 'Removing...' : 'Reject'}</span>
-                                <TrashIcon className="w-6 h-6"/>
-                            </button>
+                                    }}
+                                    disabled={shortlistLoading}
+                                    tabIndex={0}
+                                >
+                                    <span>{shortlistLoading ? 'Removing...' : 'Reject'}</span>
+                                    <TrashIcon className="w-6 h-6"/>
+                                </button>
+                                <button
+                                    className="flex items-center gap-2 px-3 py-1.5 sm:px-4 sm:py-2 rounded-full font-semibold shadow transition bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-400 ml-2 text-base sm:text-lg"
+                                    aria-label="Unlock Contact"
+                                    onClick={async () => {
+                                        try {
+                                            const token = localStorage.getItem('token');
+                                            if (!token) throw new Error('Not authenticated');
+                                            const res = await fetch(`http://localhost:8080/api/v1/shortlists/unlock`, {
+                                                method: 'POST',
+                                                headers: {
+                                                    'Content-Type': 'application/json',
+                                                    Authorization: `Bearer ${token}`,
+                                                },
+                                                body: JSON.stringify({ profile_id: profileId }),
+                                            });
+                                            if (!res.ok) throw new Error('Failed to unlock contact');
+                                            const data = await res.json();
+                                            setUnlockedContact(data);
+                                        } catch (err: any) {
+                                            alert(err.message || 'Failed to unlock contact');
+                                        }
+                                    }}
+                                    tabIndex={0}
+                                >
+                                    <span>View Contact</span>
+                                    {unlockedContact ? (
+    <LockOpenIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+) : (
+    <LockClosedIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+)}
+                                </button>
+                            </>
                         ) : (
                             <>
                                 <button
@@ -229,7 +263,12 @@ export default function HousehelpProfile() {
                             <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Verified</span>}
                         <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{User.country}</span>
                     </div>
-
+                    {unlockedContact && (
+                        <div className="mt-2 flex flex-col items-center">
+                            <div className="text-lg font-bold text-purple-700">Phone: {unlockedContact.phone}</div>
+                            {unlockedContact.email && <div className="text-lg font-bold text-purple-700">Email: {unlockedContact.email}</div>}
+                        </div>
+                    )}
                 </div>
                 {/* Househelp Profile Information Section */}
                 <div className="space-y-8">
