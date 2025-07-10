@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from "react";
 import {useSearchParams, useNavigate, useLocation} from "@remix-run/react";
 import { ArrowLeftIcon, HeartIcon, TrashIcon } from "@heroicons/react/24/outline";
+import ReadOnlyUserImageCarousel from "~/components/househelp/ReadOnlyUserImageCarousel";
+import ImageLightbox from "~/components/househelp/ImageLightbox";
 
 export default function HousehelpProfile() {
+  // Carousel state (ALWAYS at the top)
+  const [images, setImages] = useState<any[]>([]);
+  const [carouselIdx, setCarouselIdx] = useState(0);
+  // Lightbox state
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState(0);
+
   const [shortlistLoading, setShortlistLoading] = useState(false);
   const [shortlistDisabled, setShortlistDisabled] = useState(false);
   const [shortlistDisabledReason, setShortlistDisabledReason] = useState<string | null>(null);
@@ -54,14 +63,35 @@ export default function HousehelpProfile() {
     }
   };
 
- 
+
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch images after data is loaded and User.id is available
+  useEffect(() => {
+    async function fetchImages(userId: string) {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8080/api/v1/images/user/${userId}`,
+        { headers: token ? { Authorization: `Bearer ${token}` } : undefined }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setImages(Array.isArray(data.images) ? data.images : []);
+        setCarouselIdx(0);
+      } else {
+        setImages([]);
+      }
+    }
+    if (data && data.User && data.User.id) {
+      fetchImages(data.User.id);
+    }
+  }, [data && data.User && data.User.id]);
+
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = (location.state || {}) as { profileId?: string };
-  const profileId = locationState.profileId 
+  const profileId = locationState.profileId
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -120,9 +150,11 @@ export default function HousehelpProfile() {
 
   const { User, Househelp } = data;
 
+
   return (
     <div className="w-full flex justify-center bg-transparent mt-4 sm:mt-2">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 sm:p-12 px-8 sm:px-16 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-5xl">
+      
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-4">
         <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition" aria-label="Back">
@@ -208,14 +240,37 @@ export default function HousehelpProfile() {
           alt={User.first_name}
           className="w-24 h-24 rounded-full object-cover bg-gray-200 mb-3"
         />
-        <div className="text-2xl font-bold text-primary-900 dark:text-primary-100">{User.first_name} {User.last_name}</div>
-        <div className="text-gray-500 dark:text-gray-300">{User.email}</div>
-        <div className="text-gray-500 dark:text-gray-300">{User.phone}</div>
-        <div className="flex gap-2 mt-2">
-          {Househelp.verified && <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs">Verified</span>}
-          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{User.country}</span>
+        {/* Name and KE badge BELOW AVATAR */}
+        <div className="flex flex-col items-center mb-2">
+          <div className="text-2xl font-bold text-primary-900 dark:text-primary-100">{User.first_name} {User.last_name}</div>
+          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs mt-1">{User.country}</span>
         </div>
-        
+        {/* User Images Carousel BELOW NAME */}
+        {images.length > 0 && (
+          <>
+            <div className="w-full max-w-xs mb-4">
+              <ReadOnlyUserImageCarousel
+                images={images}
+                carouselIdx={carouselIdx}
+                setCarouselIdx={setCarouselIdx}
+                onExpand={(idx) => {
+                  setLightboxOpen(true);
+                  setLightboxIdx(idx);
+                }}
+              />
+            </div>
+            <ImageLightbox
+              images={images}
+              open={lightboxOpen}
+              index={lightboxIdx}
+              onClose={() => setLightboxOpen(false)}
+              onPrev={() => setLightboxIdx((i) => Math.max(0, i - 1))}
+              onNext={() => setLightboxIdx((i) => Math.min(images.length - 1, i + 1))}
+            />
+          </>
+        )}
+        {/* Optionally, show Verified badge below carousel if needed */}
+
       </div>
       {/* Househelp Profile Information Section */}
       <div className="space-y-8">
