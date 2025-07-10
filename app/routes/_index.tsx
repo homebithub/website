@@ -60,6 +60,45 @@ export default function Index() {
                 Contact Us <span aria-hidden="true">→</span>
               </Link>
             </div>
+
+            {/* Landing page illustrations */}
+            <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-14 justify-items-center">
+              {/* Dishwashing Service */}
+              <div className="flex flex-col items-center max-w-md">
+                <img
+                  src="/washing_dishes.jpg"
+                  alt="Professional dishwashing service"
+                  className="w-80 sm:w-96 md:w-[28rem] lg:w-[32rem] rounded-2xl shadow-2xl transform scale-110 hover:scale-120 transition-transform"
+                />
+                <p className="mt-2 text-center text-sm font-medium text-slate-700 dark:text-gray-300">
+                  Spotless dishes handled by pros.
+                </p>
+              </div>
+
+              {/* Nanny Service */}
+              <div className="md:-translate-y-6 flex flex-col items-center max-w-md">
+                <img
+                  src="/nanny.png"
+                  alt="Experienced nanny caring for child"
+                  className="w-80 sm:w-96 md:w-[28rem] lg:w-[32rem] rounded-2xl shadow-2xl transform scale-110 hover:scale-120 transition-transform"
+                />
+                <p className="mt-2 text-center text-sm font-medium text-slate-700 dark:text-gray-300">
+                  Caring nannies for your little ones.
+                </p>
+              </div>
+
+              {/* Home Cleaning Service */}
+              <div className="md:translate-y-3 flex flex-col items-center max-w-md">
+                <img
+                  src="/cleaning_house.png"
+                  alt="Cleaning professional tidying a living room"
+                  className="w-80 sm:w-96 md:w-[28rem] lg:w-[32rem] rounded-2xl shadow-2xl transform scale-110 hover:scale-120 transition-transform"
+                />
+                <p className="mt-2 text-center text-sm font-medium text-slate-700 dark:text-gray-300">
+                  Thorough home cleaning made easy.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
