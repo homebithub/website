@@ -4,15 +4,24 @@ import {ArrowLeftIcon, HeartIcon, TrashIcon, LockClosedIcon, LockOpenIcon} from 
 
 export default function HousehelpProfile() {
     const [showUnlockModal, setShowUnlockModal] = useState(false);
-    const [phone, setPhone] = useState<string>("");
+    const [phone, setPhone] = useState('');
     const [editingPhone, setEditingPhone] = useState(false);
-    useEffect(() => {
-        // Try to get phone from user_object in localStorage
-        try {
-            const userObj = JSON.parse(localStorage.getItem('user_object') || '{}');
-            if (userObj && userObj.phone) setPhone(userObj.phone);
-        } catch {}
-    }, []);
+    // When opening the modal, always set phone to the latest user_object.phone
+    const handleShowUnlockModal = () => {
+      try {
+        const userObjStr = localStorage.getItem('user_object');
+        if (userObjStr) {
+          const userObj = JSON.parse(userObjStr);
+          setPhone(userObj.phone || '');
+        } else {
+          setPhone('');
+        }
+      } catch {
+        setPhone('');
+      }
+      setShowUnlockModal(true);
+    };
+
     const [shortlistLoading, setShortlistLoading] = useState(false);
     const [shortlistDisabled, setShortlistDisabled] = useState(false);
     const [shortlistDisabledReason, setShortlistDisabledReason] = useState<string | null>(null);
@@ -134,7 +143,7 @@ export default function HousehelpProfile() {
     return (
       <>
         {showUnlockModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-md">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 w-full max-w-md relative">
               <h2 className="text-lg font-bold mb-2 text-center text-primary-700">Unlock Contact</h2>
               <p className="mb-3 text-sm text-gray-700 dark:text-gray-200 text-center">
@@ -218,8 +227,9 @@ export default function HousehelpProfile() {
           </div>
         )}
     
-        {/* Main Content */}
-        <div className="flex justify-between items-center mb-4">
+        {/* User Information Section */}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 sm:p-12 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-4xl flex flex-col items-center mb-8">
+          {/* Back button in top-left (red box) */}
           <button
             onClick={() => {
               if (tabParam === 'shortlist') {
@@ -228,15 +238,11 @@ export default function HousehelpProfile() {
                 navigate(-1);
               }
             }}
-            className="p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition"
+            className="absolute top-4 left-4 p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition z-10"
             aria-label="Back"
           >
             <ArrowLeftIcon className="w-6 h-6 text-primary-700 dark:text-primary-300" />
           </button>
-        </div>
-    
-        {/* User Information Section */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 sm:p-12 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-4xl flex flex-col items-center mb-8">
           <div className="flex flex-col items-center w-full mb-6 mt-2 gap-2">
             <img
               src={Househelp.avatar_url || "https://placehold.co/96x96?text=HH"}
@@ -284,16 +290,16 @@ export default function HousehelpProfile() {
                     disabled={shortlistLoading}
                     tabIndex={0}
                   >
-                    <span className="hidden sm:inline">{shortlistLoading ? 'Removing...' : 'Reject'}</span>
+                    <span>{shortlistLoading ? 'Removing...' : 'Reject'}</span>
                     <TrashIcon className="w-4 h-4 ml-1" />
                   </button>
                   <button
                     className="flex items-center justify-center gap-1 px-4 py-1 min-w-[130px] rounded-full font-semibold shadow transition bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-400 text-xs"
                     aria-label="Unlock Contact"
-                    onClick={() => setShowUnlockModal(true)}
+                    onClick={handleShowUnlockModal}
                     tabIndex={0}
                   >
-                    <span className="hidden sm:inline">View Contact</span>
+                    <span>View Contact</span>
                     {unlockedContact ? (
                       <LockOpenIcon className="w-4 h-4 ml-1" />
                     ) : (
