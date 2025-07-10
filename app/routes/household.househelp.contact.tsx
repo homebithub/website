@@ -369,10 +369,7 @@ export default function HousehelpProfile() {
                 <div className="text-gray-400 dark:text-gray-500">Phone</div>
                 <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{User.phone || '-'}</div>
               </div>
-              <div>
-                <div className="text-gray-400 dark:text-gray-500">Country</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{User.country || '-'}</div>
-              </div>
+             
               
               <div>
                 <div className="text-gray-400 dark:text-gray-500">User Created At</div>
