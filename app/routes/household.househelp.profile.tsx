@@ -48,6 +48,7 @@ export default function HousehelpProfile() {
           setShortlistDisabled(true);
           setShortlisted(false);
           setShortlistDisabledReason('This profile is currently unlocked and cannot be shortlisted until it expires.');
+          setError('This profile is currently unlocked and cannot be shortlisted until it expires.')
           return;
         }
         throw new Error(errData.message || 'Failed to shortlist');
@@ -145,7 +146,7 @@ export default function HousehelpProfile() {
   }, [profileId]);
 
   if (loading) return <div className="flex justify-center py-12">Loading...</div>;
-  if (error) return <div className="bg-red-100 text-red-700 px-4 py-2 rounded mt-6 text-center">{error}</div>;
+  // if (error) return
   if (!data) return null;
 
   const { User, Househelp } = data;
@@ -154,7 +155,8 @@ export default function HousehelpProfile() {
   return (
     <div className="w-full flex justify-center bg-transparent mt-4 sm:mt-2">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 sm:p-12 px-8 sm:px-16 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-5xl">
-      
+        {error && <div className="bg-red-100 text-red-700 px-4 py-2 rounded mt-6 text-center">{error}</div>}
+
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-4">
         <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition" aria-label="Back">
