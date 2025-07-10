@@ -316,23 +316,47 @@ export default function HousehelpDashboard() {
         }
     };
 
+    const [uploadingImages, setUploadingImages] = useState(false);
+    const onUploadImages = async () => {
+        setUploadingImages(true);
+        try {
+            if (imageFiles.length === 0) return;
+            if (imageFiles.some(f => f.size > 10 * 1024 * 1024)) {
+                alert('Each image must be 10MB or less.');
+                setUploadingImages(false);
+                return;
+            }
+            const formData = new FormData();
+            imageFiles.forEach(f => formData.append('images', f));
+            const token = localStorage.getItem('token');
+            const res = await fetch('http://localhost:8080/api/v1/images/upload', {
+                method: 'POST',
+                body: formData,
+                headers: token ? {Authorization: `Bearer ${token}`} : undefined,
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error(err.message || 'Failed to upload images');
+            }
+            setImageFiles([]);
+            setShowImageModal(false);
+            // Refresh images
+            const imgRes = await fetch('http://localhost:8080/api/v1/images/user', {
+                headers: token ? {Authorization: `Bearer ${token}`} : undefined,
+            });
+            if (imgRes.ok) {
+                const data = await imgRes.json();
+                setUserImages(Array.isArray(data.images) ? data.images : []);
+                setCarouselIdx(0);
+            }
+        } catch (err: any) {
+            alert(err.message || 'Failed to upload images');
+        } finally {
+            setUploadingImages(false);
+        }
+    };
     function renderSection(sectionId: string) {
         if (sectionId === "profile-overview") {
-            if (editSection === sectionId) {
-                return (
-                    <ProfileOverviewSection
-                        profile={profile}
-                        onEdit={() => handleEdit(sectionId)}
-                        onShowImageModal={() => setShowImageModal(true)}
-                        userImages={userImages}
-                        carouselIdx={carouselIdx}
-                        setCarouselIdx={setCarouselIdx}
-                        showImageModal={showImageModal}
-                        imageFiles={imageFiles}
-                        setImageFiles={setImageFiles}
-                    />
-                );
-            }
             return (
                 <ProfileOverviewSection
                     profile={profile}
@@ -344,6 +368,9 @@ export default function HousehelpDashboard() {
                     showImageModal={showImageModal}
                     imageFiles={imageFiles}
                     setImageFiles={setImageFiles}
+                    onCloseImageModal={()=>setShowImageModal(false)}
+                    onUploadImages={onUploadImages}
+                    uploadingImages={uploadingImages}
                 />
             );
         }

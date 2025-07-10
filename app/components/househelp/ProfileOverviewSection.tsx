@@ -1,34 +1,43 @@
 import React, { useState } from "react";
 import ExpandedImageModal from "./ExpandedImageModal";
+import ImageUploadModal from "./ImageUploadModal";
 
 interface ProfileOverviewSectionProps {
   profile: any;
   onEdit: () => void;
   onShowImageModal: () => void;
+  onCloseImageModal: () => void;
   userImages: any[];
   carouselIdx: number;
   setCarouselIdx: (idx: number) => void;
   showImageModal: boolean;
   imageFiles: File[];
   setImageFiles: (files: File[]) => void;
+  onUploadImages: () => void;
+  uploadingImages: boolean;
 }
 
 export default function ProfileOverviewSection({
   profile,
   onEdit,
   onShowImageModal,
+  onCloseImageModal,
   userImages,
   carouselIdx,
   setCarouselIdx,
   showImageModal,
   imageFiles,
-  setImageFiles
+  setImageFiles,
+  onUploadImages,
+  uploadingImages
 }: ProfileOverviewSectionProps) {
   const [expanded, setExpanded] = useState(false);
   const [expandedIdx, setExpandedIdx] = useState(0);
   if (!profile) {
     return <div className="text-red-600">Profile data is missing or loading.</div>;
   }
+
+
   return (
     <section id="profile-overview" className="mb-6 scroll-mt-24">
       {userImages.length > 0 && (
@@ -68,8 +77,17 @@ export default function ProfileOverviewSection({
           </div>
         </div>
       )}
-      {/* ImageUploadModal should be imported and used here */}
-      {/* <ImageUploadModal ... /> */}
+      {/* ImageUploadModal */}
+      {showImageModal && (
+        <ImageUploadModal
+          open={showImageModal}
+          onClose={onCloseImageModal}
+          files={imageFiles}
+          setFiles={setImageFiles}
+          onUpload={onUploadImages}
+          uploading={uploadingImages}
+        />
+      )}
       <div className="flex justify-end mb-2 gap-2">
         <button className="btn-primary" onClick={onEdit}>Edit</button>
         <button className="btn-secondary" onClick={onShowImageModal}>Upload Images</button>

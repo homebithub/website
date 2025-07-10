@@ -5,11 +5,12 @@ interface ImageUploadModalProps {
   onClose: () => void;
   files: File[];
   setFiles: (files: File[]) => void;
+  onUpload: () => void;
+  uploading?: boolean;
 }
 
-export default function ImageUploadModal({ open, onClose, files, setFiles }: ImageUploadModalProps) {
+export default function ImageUploadModal({ open, onClose, files, setFiles, onUpload, uploading }: ImageUploadModalProps) {
   const [previews, setPreviews] = React.useState<string[]>([]);
-  const [uploading, setUploading] = React.useState(false);
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -95,7 +96,13 @@ export default function ImageUploadModal({ open, onClose, files, setFiles }: Ima
           >
             Cancel
           </button>
-          {/* The actual upload button should be handled by parent, or you can add a prop for onUpload if needed */}
+          <button
+            className="btn-primary"
+            onClick={onUpload}
+            disabled={uploading || files.length === 0}
+          >
+            {uploading ? 'Uploading...' : 'Upload'}
+          </button>
         </div>
       </div>
     </div>
