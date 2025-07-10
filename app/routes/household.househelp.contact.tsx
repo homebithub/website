@@ -1,6 +1,8 @@
 import React, {useEffect, useState} from "react";
 import {useSearchParams, useNavigate, useLocation} from "@remix-run/react";
 import {ArrowLeftIcon, HeartIcon, TrashIcon, LockClosedIcon, LockOpenIcon} from "@heroicons/react/24/outline";
+import ReadOnlyUserImageCarousel from "~/components/househelp/ReadOnlyUserImageCarousel";
+import ImageLightbox from "~/components/househelp/ImageLightbox";
 
 export default function HousehelpProfile() {
     const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -134,6 +136,29 @@ export default function HousehelpProfile() {
         fetchProfile();
     }, [profileId]);
 
+    // Carousel state (must be above any early returns)
+    const [images, setImages] = useState<any[]>([]);
+    const [carouselIdx, setCarouselIdx] = useState(0);
+    const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [lightboxIdx, setLightboxIdx] = useState(0);
+
+    // Only fetch images once data is loaded
+    useEffect(() => {
+      if (!data || !data.User || !data.User.id) return;
+      async function fetchImages(userId: string) {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`http://localhost:8080/api/v1/images/user/${userId}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+        if (res.ok) {
+          const data = await res.json();
+          setImages(Array.isArray(data.images) ? data.images : []);
+          setCarouselIdx(0);
+        } else {
+          setImages([]);
+        }
+      }
+      fetchImages(data.User.id);
+    }, [data && data.User && data.User.id]);
+
     if (loading) return <div className="flex justify-center py-12">Loading...</div>;
     if (error) return <div className="bg-red-100 text-red-700 px-4 py-2 rounded mt-6 text-center">{error}</div>;
     if (!data) return null;
@@ -229,33 +254,28 @@ export default function HousehelpProfile() {
     
         {/* User Information Section */}
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 sm:p-12 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-4xl flex flex-col items-center mb-8">
-          {/* Back button in top-left (red box) */}
-          <button
-            onClick={() => {
-              if (tabParam === 'shortlist') {
-                navigate('/household/employment?tab=shortlist');
-              } else {
-                navigate(-1);
-              }
-            }}
-            className="absolute top-4 left-4 p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition z-10"
-            aria-label="Back"
-          >
-            <ArrowLeftIcon className="w-6 h-6 text-primary-700 dark:text-primary-300" />
-          </button>
-          <div className="flex flex-col items-center w-full mb-6 mt-2 gap-2">
-            <img
-              src={Househelp.avatar_url || "https://placehold.co/96x96?text=HH"}
-              alt={User.first_name}
-              className="w-24 h-24 rounded-full object-cover bg-gray-200 mb-3"
-            />
-            <div className="flex gap-4 mb-2">
-              {shortlisted ? (
-                <>
-                  <button
-                    className={`flex items-center justify-center gap-1 px-4 py-1 min-w-[130px] rounded-full font-semibold shadow transition bg-red-600 hover:bg-red-700 text-white dark:bg-red-500 dark:hover:bg-red-400 text-xs ${shortlistLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
-                    aria-label="Reject"
-                    onClick={async () => {
+          {/* Back button and action buttons */}
+          <div className="flex flex-row items-center justify-between gap-4 w-full mb-4">
+            <button
+              onClick={() => {
+                if (tabParam === 'shortlist') {
+                  navigate('/household/employment?tab=shortlist');
+                } else {
+                  navigate(-1);
+                }
+              }}
+              className="p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition"
+              aria-label="Back"
+              type="button"
+            >
+              <ArrowLeftIcon className="w-6 h-6 text-primary-700 dark:text-primary-300" />
+            </button>
+            {shortlisted ? (
+              <>
+                <button
+                  className={`flex items-center justify-center gap-1 px-4 py-1 min-w-[130px] rounded-full font-semibold shadow transition bg-red-600 hover:bg-red-700 text-white text-xs ${shortlistLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                  aria-label="Reject"
+                  onClick={async () => {
                       setShortlistLoading(true);
                       try {
                         const token = localStorage.getItem('token');
@@ -329,6 +349,43 @@ export default function HousehelpProfile() {
                 </>
               )}
             </div>
+          <div className="flex flex-col items-center w-full mb-6 mt-2 gap-2">
+            <img
+              src={Househelp.avatar_url || "https://placehold.co/96x96?text=HH"}
+              alt={User.first_name}
+              className="w-24 h-24 rounded-full object-cover bg-gray-200 mb-3"
+            />
+            {/* Name and KE badge */}
+            <div className="flex flex-col items-center mb-2">
+              <div className="text-2xl font-bold text-primary-900 dark:text-primary-100">{User.first_name} {User.last_name}</div>
+              <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs mt-1">{User.country}</span>
+            </div>
+            {/* User Images Carousel BELOW NAME */}
+            {images.length > 0 && (
+              <>
+                <div className="w-full max-w-xs mb-4">
+                  <ReadOnlyUserImageCarousel
+                    images={images}
+                    carouselIdx={carouselIdx}
+                    setCarouselIdx={setCarouselIdx}
+                    onExpand={(idx) => {
+                      setLightboxOpen(true);
+                      setLightboxIdx(idx);
+                    }}
+                  />
+                </div>
+                <ImageLightbox
+                  images={images}
+                  open={lightboxOpen}
+                  index={lightboxIdx}
+                  onClose={() => setLightboxOpen(false)}
+                  onPrev={() => setLightboxIdx((i) => Math.max(0, i - 1))}
+                  onNext={() => setLightboxIdx((i) => Math.min(images.length - 1, i + 1))}
+                />
+              </>
+            )}
+
+            
           </div>
     
           {/* Verified + Country */}
@@ -416,10 +473,7 @@ export default function HousehelpProfile() {
                 <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Array.isArray(Househelp.specialities) && Househelp.specialities.length > 0 ? Househelp.specialities.join(', ') : '-'}</div>
               </div>
               
-              <div>
-                <div className="text-gray-400 dark:text-gray-500">Images</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Househelp.images ? JSON.stringify(Househelp.images) : '-'}</div>
-              </div>
+
               
               <div>
                 <div className="text-gray-400 dark:text-gray-500">Salary Expectation</div>
