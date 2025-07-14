@@ -94,7 +94,7 @@ export default function Index() {
           <p className="mt-6 text-lg leading-8 text-slate-600 dark:text-gray-300">
             Professional home services at your fingertips. From laundry to
             childcare, we've got you covered with our expert team of house
-            manangers.
+            managers.
           </p>
           <div className="mt-10 flex items-center justify-center gap-x-6">
             <Link
