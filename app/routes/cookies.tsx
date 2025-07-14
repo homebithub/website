@@ -6,7 +6,7 @@ export default function Cookies() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <Navigation />
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 border-2 border-purple-500 dark:border-purple-400 rounded-xl bg-white dark:bg-black text-slate-900 dark:text-white shadow-card">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">

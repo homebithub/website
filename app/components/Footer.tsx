@@ -3,7 +3,7 @@ import { Link } from "@remix-run/react";
 
 export function Footer() {
   return (
-    <footer className="bg-primary-50 dark:bg-slate-800 border-t border-primary-100 dark:border-slate-700">
+    <footer className="bg-white dark:bg-black border-t-2 border-purple-500 dark:border-purple-400 text-slate-900 dark:text-white">
       <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>

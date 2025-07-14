@@ -544,3 +544,37 @@ i {
         width: 100%;
     }
 }
+
+/* --- Dark mode overrides for theme --- */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #000 !important;
+    color: #fff !important;
+  }
+  .card, .btn-primary, .input, .container, .sidebar, .responsive-button {
+    border: 2px solid #a020f0 !important; /* purple */
+    box-shadow: 0 2px 8px 0 rgba(160,32,240,0.15) !important;
+  }
+  .btn-primary {
+    background-color: #000 !important;
+    color: #fff !important;
+    border-color: #a020f0 !important;
+  }
+  .card {
+    background-color: #111 !important;
+    color: #fff !important;
+    border-color: #a020f0 !important;
+  }
+  .input {
+    background-color: #222 !important;
+    color: #fff !important;
+    border-color: #a020f0 !important;
+  }
+  .link {
+    color: #a020f0 !important;
+  }
+  .link:hover {
+    color: #a020f0 !important;
+  }
+}
+}

@@ -13,7 +13,7 @@ export default function LoadingDemoPage() {
     <div className="min-h-screen bg-white dark:bg-slate-900">
       <Navigation />
       
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 border-2 border-purple-500 dark:border-purple-400 rounded-xl bg-white dark:bg-black text-slate-900 dark:text-white shadow-card">
         <div className="max-w-6xl mx-auto">
           <h1 className="text-4xl font-bold text-primary-800 dark:text-primary-400 mb-8 text-center">
             Loading Component Demo
