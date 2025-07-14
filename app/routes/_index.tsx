@@ -142,7 +142,7 @@ export default function Index() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.8 }}
-                className="text-6xl font-bold text-purple-400 leading-snug"
+                className="text-5xl font-bold text-purple-400 leading-snug"
               >
                 Getting house managers <br />
                 has never been made easier
@@ -152,7 +152,7 @@ export default function Index() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.0, duration: 0.8 }}
-                className="text-3xl font-semibold text-gray-200 leading-relaxed max-w-md"
+                className="text-2xl font-semibold text-gray-200 leading-relaxed max-w-md"
               >
                 <strong > Create an account </strong> and
                 <br />
@@ -171,10 +171,10 @@ export default function Index() {
       {/* Feature section */}
       <div className="mx-auto max-w-7xl px-6 lg:px-8 py-24 sm:py-32">
         <div className="mx-auto max-w-2xl lg:text-center">
-          <h2 className="text-base font-semibold leading-7 text-primary-600">
+          <h2 className="text-3xl font-semibold text-white leading-tight">
             Why Choose Us
           </h2>
-          <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-primary-400 sm:text-4xl">
+          <p className="mt-2 text-2xl text-purple-400 sm:text-6xl">
             Everything you need for your home
           </p>
           <p className="mt-6 text-lg leading-8 text-slate-600 dark:text-gray-300">
