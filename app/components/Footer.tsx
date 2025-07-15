@@ -16,10 +16,15 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider">
+            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider mb-6">
               Services
             </h4>
             <ul className="space-y-4">
+              <li>
+                <a href="#" className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 transition-colors duration-200">
+                  Child carer(Nannies)
+                </a>
+              </li>
               <li>
                 <a href="#" className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 transition-colors duration-200">
                   Home Maintenance
@@ -27,19 +32,20 @@ export function Footer() {
               </li>
               <li>
                 <a href="#" className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 transition-colors duration-200">
-                  Repairs
+                 House Helps 
                 </a>
               </li>
               <li>
                 <a href="#" className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 transition-colors duration-200">
-                  Installations
+                 House Managers  
                 </a>
               </li>
+            
             </ul>
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider">
+            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider mb-6">
               Company
             </h4>
             <ul className="space-y-4">
@@ -62,18 +68,18 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider">
+            <h4 className="text-sm font-semibold text-primary-800 dark:text-primary-200 uppercase tracking-wider mb-6">
               Legal
             </h4>
             <ul className="space-y-4">
               <li>
                 <a href="/privacy" className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 transition-colors duration-200">
-                  Privacy
+                  Privacy Policy
                 </a>
               </li>
               <li>
                 <a href="/terms" className="text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-100 transition-colors duration-200">
-                  Terms
+                  Terms of Service
                 </a>
               </li>
               <li>

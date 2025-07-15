@@ -48,7 +48,7 @@ button {
   color: #fff;
   border-radius: 0.75rem;
 .card {
-  background-color: #fff;
+  background-color: #111827; /* Always dark background */
   border-radius: 0.75rem;
   box-shadow: 0 2px 8px 0 rgba(0,0,0,0.08); /* Replace with your card shadow */
 .input {
@@ -56,10 +56,11 @@ button {
   border-radius: 0.75rem;
   padding-left: 1rem;
 .link {
-  color: #3992ff; /* Replace with your primary color */
+  color: #8a5fa6; /* Dull purple */
   text-decoration: none;
 }
 .link:hover {
+  color: #6d4887;
   text-decoration: underline;
 }
 }
@@ -79,7 +80,7 @@ button {
   font-family: sans-serif;
   box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
   transition: box-shadow 0.2s, border-color 0.2s;
-  background-color: #fff;
+  background-color: #111827; /* Always dark background */
   outline: none;
 }
 input:focus,
@@ -90,7 +91,7 @@ button:focus {
   border-color: #3992ff; /* Replace with your primary color */
 }
   @apply rounded-xl border border-primary-light px-4 py-2 text-base font-sans shadow-sm focus:outline-none focus:ring-2 focus:ring-primary transition;
-  background-color: #fff;
+  background-color: #111827; /* Always dark background */
 }
 
 button {
@@ -546,8 +547,15 @@ i {
 }
 
 /* --- Dark mode overrides for theme --- */
-@media (prefers-color-scheme: dark) {
+/* Removed light mode media query: always dark mode */
   body {
+  }
+  .link {
+    color: #8a5fa6 !important;
+  }
+  .link:hover {
+    color: #b194d6 !important;
+  }
     background-color: #000 !important;
     color: #fff !important;
   }

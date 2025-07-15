@@ -31,7 +31,7 @@ const colors = {
 }
 
 export default {
-  darkMode: 'class',
+  darkMode: 'class', // Always use dark mode
   content: ['./app/**/*.{js,jsx,ts,tsx}'],
   theme: {
     extend: {

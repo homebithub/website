@@ -9,41 +9,54 @@ import {
   HeartIcon,
 } from "@heroicons/react/24/outline";
 
+const cardColor = "from-primary-100 via-primary-50 to-primary-200 dark:from-primary-900 dark:via-slate-900 dark:to-primary-800 border-primary-200 dark:border-primary-700";
 const services = [
   {
-    name: "Home Maintenance",
-    description: "Regular maintenance services to keep your home in top condition.",
+    name: "Home Maintenance & Repairs",
+    description:
+      "Comprehensive care for your home, from routine upkeep to fixing what’s broken. We handle everything so you don’t have to. (Coming Soon)",
     icon: WrenchScrewdriverIcon,
-    href: "/services/maintenance",
+    color: cardColor,
+    href: "/services/maintenance-repairs",
   },
   {
-    name: "Painting & Decorating",
-    description: "Professional painting and decorating services for your home.",
-    icon: PaintBrushIcon,
-    href: "/services/painting",
+    name: "Child Care (Nannies)",
+    description:
+      "Caring, reliable nannies to nurture and support your children in a safe and loving environment. (Coming Soon)",
+    icon: HeartIcon,
+    color: cardColor,
+    href: "/services/child-care",
   },
   {
-    name: "Home Repairs",
-    description: "Expert repair services for all your home needs.",
+    name: "House Helps",
+    description:
+      "Professional house helps to make your daily chores effortless and keep your home running smoothly. (Coming Soon)",
     icon: HomeIcon,
-    href: "/services/repairs",
+    color: cardColor,
+    href: "/services/house-helps",
   },
   {
     name: "Security Systems",
-    description: "Installation and maintenance of home security systems.",
+    description:
+      "Protect your loved ones and property with our advanced home security solutions. (Coming Soon)",
     icon: ShieldCheckIcon,
+    color: cardColor,
     href: "/services/security",
   },
   {
     name: "Electrical Services",
-    description: "Professional electrical services and installations.",
+    description:
+      "Safe and reliable electrical installations, repairs, and upgrades for your peace of mind. (Coming Soon)",
     icon: BoltIcon,
+    color: cardColor,
     href: "/services/electrical",
   },
   {
     name: "Plumbing Services",
-    description: "Expert plumbing services for your home.",
-    icon: HeartIcon,
+    description:
+      "Prompt and professional plumbing solutions for leaks, clogs, and installations. (Coming Soon)",
+    icon: WrenchScrewdriverIcon,
+    color: cardColor,
     href: "/services/plumbing",
   },
 ];
@@ -73,7 +86,7 @@ export default function Services() {
           {services.map((service) => (
             <div
               key={service.name}
-              className="rounded-2xl shadow-lg p-6 bg-gradient-to-br from-primary-100 via-white to-primary-50 dark:from-primary-900 dark:via-slate-900 dark:to-primary-800 border border-primary-200 dark:border-primary-700 flex flex-col gap-2"
+              className={`rounded-2xl shadow-lg p-6 bg-gradient-to-br ${service.color} flex flex-col gap-2 border`}
             >
               <h3 className="text-lg font-semibold leading-7 tracking-tight text-slate-900 dark:text-primary-300">
                 {service.name}

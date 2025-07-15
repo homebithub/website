@@ -1,17 +1,17 @@
 import { Link } from "@remix-run/react";
 import React, { useEffect, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, SunIcon, MoonIcon } from "@heroicons/react/20/solid";
+import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/AuthContext";
 
 const navigation = [
   { name: "Services", href: "/services" },
   { name: "About", href: "/about" },
   { name: "Contact", href: "/contact" },
+  { name: "Pricing", href: "/pricing" },
 ];
 
 export function Navigation() {
-  const [darkMode, setDarkMode] = useState(false);
   const { user, logout } = useAuth();
   const [profileType, setProfileType] = useState<string | null>(null);
 
@@ -43,32 +43,6 @@ export function Navigation() {
     }
   }, [user]);
 
-  // Handle dark mode
-  useEffect(() => {
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme === "dark") {
-      setDarkMode(true);
-      document.documentElement.classList.add("dark");
-    } else {
-      setDarkMode(false);
-      document.documentElement.classList.remove("dark");
-    }
-  }, []);
-
-  const toggleDarkMode = () => {
-    setDarkMode((prev) => {
-      const newMode = !prev;
-      if (newMode) {
-        document.documentElement.classList.add("dark");
-        localStorage.setItem("theme", "dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-        localStorage.setItem("theme", "light");
-      }
-      return newMode;
-    });
-  };
-
   const handleLogout = async () => {
     try {
       await logout();
@@ -81,27 +55,39 @@ export function Navigation() {
   const showAuthButtons = !user;
 
   return (
-    <nav className="bg-white dark:bg-slate-900 py-4 shadow-sm">
+    <nav className="bg-slate-900 py-4 shadow-sm">
       <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8">
         {/* Logo */}
-        <Link to="/" className="text-primary-700 dark:text-primary-400 font-bold text-2xl hover:text-primary-800 dark:hover:text-primary-300 transition-colors duration-200">
+        <Link to="/" className="text-primary-400 font-bold text-2xl hover:text-primary-300 transition-colors duration-200">
           HomeXpert
         </Link>
 
+        {/* Navigation Links */}
+        <div className="hidden md:flex items-center space-x-6">
+          {navigation.map((item) => (
+            <Link
+              key={item.name}
+              to={item.href}
+              className="link text-lg font-bold transition-colors duration-200 px-4 py-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 text-primary-400 hover:text-primary-100"
+            >
+              {item.name}
+            </Link>
+          ))}
+        </div>
+
         {/* Right section */}
         <div className="flex items-center space-x-4">
-          {/* Auth Buttons - Show signup always, login on desktop */}
           {showAuthButtons && (
             <div className="flex items-center space-x-3">
               <Link
                 to="/login"
-                className="hidden md:block text-slate-900 dark:text-primary-300 hover:text-primary-600 dark:hover:text-primary-400 font-semibold"
+                className="link hidden md:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-primary-400 hover:text-primary-100"
               >
                 Log in
               </Link>
               <Link
                 to="/signup"
-                className="px-4 py-2 text-sm md:px-6 md:py-2 md:text-base rounded-lg bg-purple-600 dark:bg-purple-700 text-white hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors duration-200 font-semibold shadow-sm hover:shadow-md"
+                className="px-6 py-3 text-lg rounded-xl bg-primary-700 text-white hover:bg-primary-600 transition-colors duration-200 font-bold shadow-md hover:shadow-lg"
               >
                 Sign up
               </Link>
@@ -110,7 +96,7 @@ export function Navigation() {
 
           {/* Menu Dropdown */}
           <Menu as="div" className="relative inline-block text-left">
-            <Menu.Button className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-white dark:bg-slate-800 p-2 text-gray-700 dark:text-gray-300 shadow-sm border border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700 transition-all duration-200">
+            <Menu.Button className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800 p-2 text-gray-300 shadow-sm border border-slate-700 hover:bg-slate-700 transition-all duration-200">
               <Bars3Icon className="h-5 w-5" />
             </Menu.Button>
 
@@ -123,7 +109,7 @@ export function Navigation() {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
-              <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                 <div className="py-2">
                   {/* Navigation Links */}
                   {navigation.map((item) => (
@@ -132,7 +118,7 @@ export function Navigation() {
                         <Link
                           to={item.href}
                           className={`${
-                            active ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
+                            active ? 'bg-purple-900/20 text-purple-300' : 'text-gray-300'
                           } block px-4 py-2 text-sm`}
                         >
                           {item.name}
@@ -148,7 +134,7 @@ export function Navigation() {
                         <Link
                           to="/login"
                           className={`md:hidden ${
-                            active ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
+                            active ? 'bg-purple-900/20 text-purple-300' : 'text-gray-300'
                           } block px-4 py-2 text-sm`}
                         >
                           Log in
@@ -157,36 +143,17 @@ export function Navigation() {
                     </Menu.Item>
                   )}
 
-                  {/* Dark Mode Toggle */}
-                  <Menu.Item>
-                    {({ active }) => (
-                      <button
-                        onClick={toggleDarkMode}
-                        className={`${
-                          active ? 'bg-purple-50 dark:bg-purple-900/20' : ''
-                        } w-full flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300`}
-                      >
-                        {darkMode ? (
-                          <SunIcon className="mr-3 h-5 w-5" />
-                        ) : (
-                          <MoonIcon className="mr-3 h-5 w-5" />
-                        )}
-                        {darkMode ? 'Light Mode' : 'Dark Mode'}
-                      </button>
-                    )}
-                  </Menu.Item>
-
                   {/* User Menu Items */}
                   {user && (
                     <>
-                      <div className="border-t border-gray-200 dark:border-slate-700 my-1"></div>
+                      <div className="border-t border-slate-700 my-1"></div>
                       {dashboardPath && (
                         <Menu.Item>
                           {({ active }) => (
                             <Link
                               to={dashboardPath}
                               className={`${
-                                active ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
+                                active ? 'bg-purple-900/20 text-purple-300' : 'text-gray-300'
                               } block px-4 py-2 text-sm`}
                             >
                               Dashboard
@@ -199,7 +166,7 @@ export function Navigation() {
                           <Link
                             to="/profile"
                             className={`${
-                              active ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
+                              active ? 'bg-purple-900/20 text-purple-300' : 'text-gray-300'
                             } flex items-center px-4 py-2 text-sm`}
                           >
                             <UserIcon className="mr-3 h-5 w-5" />
@@ -212,7 +179,7 @@ export function Navigation() {
                           <Link
                             to="/settings"
                             className={`${
-                              active ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
+                              active ? 'bg-purple-900/20 text-purple-300' : 'text-gray-300'
                             } flex items-center px-4 py-2 text-sm`}
                           >
                             <CogIcon className="mr-3 h-5 w-5" />
@@ -225,7 +192,7 @@ export function Navigation() {
                           <button
                             onClick={handleLogout}
                             className={`${
-                              active ? 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300' : 'text-gray-700 dark:text-gray-300'
+                              active ? 'bg-red-900/20 text-red-300' : 'text-gray-300'
                             } flex items-center w-full px-4 py-2 text-sm`}
                           >
                             <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />

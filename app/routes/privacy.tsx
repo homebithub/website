@@ -4,20 +4,20 @@ import { Navigation } from "~/components/Navigation";
 
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       <Navigation />
       <main className="container mx-auto px-4 py-8 border-2 border-purple-500 dark:border-purple-400 rounded-xl bg-white dark:bg-black text-slate-900 dark:text-white shadow-card">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900">
+            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
               Privacy Policy
             </h1>
-            <p className="mt-2 text-slate-600">
+            <p className="mt-2 text-slate-600 dark:text-slate-400">
               Last updated: {new Date().toLocaleDateString()}
             </p>
           </div>
 
-          <div className="prose max-w-none">
+          <div className="prose dark:prose-invert max-w-none">
             <h2>1. Information We Collect</h2>
             <p>
               We collect information that you provide directly to us, including but not limited to:

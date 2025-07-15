@@ -1,6 +1,7 @@
 import React from "react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
+import { AnimatedStatCard } from "~/components/AnimatedStatCard";
 import { Link } from "@remix-run/react";
 import {
   CheckCircleIcon,
@@ -23,7 +24,6 @@ interface Value {
 interface TeamMember {
   name: string;
   role: string;
-  imageUrl: string;
 }
 
 const features: Feature[] = [
@@ -120,118 +120,80 @@ const team: TeamMember[] = [
   {
     name: "John Smith",
     role: "CEO",
-    imageUrl: "/images/team/john-smith.jpg",
   },
   {
     name: "Sarah Johnson",
     role: "COO",
-    imageUrl: "/images/team/sarah-johnson.jpg",
   },
   {
     name: "Michael Brown",
     role: "CTO",
-    imageUrl: "/images/team/michael-brown.jpg",
   },
   {
     name: "Emily Davis",
     role: "Head of Customer Success",
-    imageUrl: "/images/team/emily-davis.jpg",
   },
 ];
 
 export default function About() {
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-900">
+    <div className="min-h-screen bg-white dark:bg-slate-900 font-sans">
       <Navigation />
       <main>
         {/* Hero section */}
         <div className="relative isolate overflow-hidden py-24 sm:py-32">
           <div className="mx-auto max-w-7xl px-6 lg:px-8">
-            <div className="mx-auto max-w-2xl lg:mx-0">
-              <h2 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl dark:text-primary-400">
+            <div className="mx-auto max-w-7xl px-6 lg:px-8 py-16">
+              <h2 className="text-5xl font-extrabold tracking-tight text-slate-900 dark:text-primary-400 text-center mb-6">
                 About HomeXpert
               </h2>
-              <p className="mt-6 text-lg leading-8 text-slate-600 dark:text-gray-300">
-                We're on a mission to transform how home services are discovered, booked, and delivered.
+              <p className="mx-auto max-w-3xl text-xl text-slate-700 dark:text-slate-300 text-center">
+                HomeXpert bridges the gap between households seeking trustworthy househelps and nannies, and professionals seeking reliable jobs. We prioritize security, transparency, and a rigorous vetting process to ensure peace of mind for every family and worker.
               </p>
             </div>
           </div>
         </div>
 
         {/* Mission section */}
-        <div className="mx-auto mt-32 max-w-7xl px-6 sm:mt-40 lg:px-8">
-          <div className="mx-auto max-w-2xl lg:mx-0">
-            <h2 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl dark:text-primary-300">
-              Our Mission
-            </h2>
-          </div>
-          <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 text-base leading-7 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:gap-x-16">
-            {features.map((feature) => (
-              <div key={feature.name} className="flex flex-col bg-slate-50 p-8 dark:bg-slate-800">
-                <dt className="text-sm font-semibold leading-6 text-slate-600 dark:text-gray-300">
-                  {feature.name}
-                </dt>
-                <dd className="order-first text-3xl font-semibold tracking-tight text-slate-900 dark:text-primary-200">
-                  {feature.value}
-                </dd>
-              </div>
-            ))}
-          </dl>
+        <div className="mx-auto mt-12 max-w-7xl px-6 sm:mt-16 lg:px-8">
+  <div className="mx-auto max-w-7xl px-6 lg:px-8 mb-4">
+  <h2 className="text-5xl font-extrabold tracking-tight text-slate-900 dark:text-primary-400 text-center mb-6">
+    Our Mission
+  </h2>
+  <p className="mx-auto max-w-3xl text-xl text-slate-700 dark:text-slate-300 text-center">
+    At HomeXpert, our mission is to connect families with trustworthy, vetted househelps and nannies, making home management simpler, safer, and more reliable for everyone.
+  </p>
+</div>
+  <dl className="mx-auto mt-6 grid max-w-2xl grid-cols-1 gap-8 text-base leading-7 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:gap-x-16">
+    {features.map((feature, idx) => (
+      <AnimatedStatCard key={feature.name} name={feature.name} value={feature.value} />
+    ))}
+  </dl>
+
+
         </div>
 
         {/* Values section */}
-        <div className="mx-auto mt-32 max-w-7xl px-6 sm:mt-40 lg:px-8">
+        <div className="mx-auto mt-32 max-w-7xl px-6 sm:mt-40 lg:px-8 mb-20">
           <div className="mx-auto max-w-2xl lg:mx-0">
             <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
               Our Values
             </p>
           </div>
           <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 text-base leading-7 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:gap-x-16">
-            {values.map((value) => (
-              <div key={value.name}>
-                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-slate-900">
-                  <value.icon
-                    className="h-4 w-4 flex-none text-teal-600"
-                    aria-hidden="true"
-                  />
-                  {value.name}
-                </dt>
-                <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-slate-600">
-                  {value.description}
-                </dd>
-              </div>
-            ))}
-          </dl>
+  {values.map((value) => (
+    <div key={value.name} className="flex flex-col items-center text-center p-6 rounded-xl bg-slate-50 dark:bg-slate-800 shadow-md">
+      <div className="flex items-center justify-center mb-4">
+        <value.icon className="h-16 w-16 text-primary-400 dark:text-primary-300" aria-hidden="true" />
+      </div>
+      <dt className="text-lg font-semibold leading-7 text-slate-900 dark:text-primary-100 mb-2">{value.name}</dt>
+      <dd className="text-base leading-7 text-slate-600 dark:text-slate-300">{value.description}</dd>
+    </div>
+  ))}
+</dl>
         </div>
 
-        {/* Team section */}
-        <div className="mx-auto mt-32 max-w-7xl px-6 sm:mt-40 lg:px-8">
-          <div className="mx-auto max-w-2xl lg:mx-0">
-            <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              Our Team
-            </p>
-          </div>
-          <ul
-            role="list"
-            className="mx-auto mt-20 grid max-w-2xl grid-cols-1 gap-x-8 gap-y-14 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:grid-cols-3 xl:grid-cols-4"
-          >
-            {team.map((person) => (
-              <li key={person.name}>
-                <img
-                  className="aspect-[14/13] w-full rounded-2xl object-cover"
-                  src={person.imageUrl}
-                  alt=""
-                />
-                <h3 className="mt-6 text-lg font-semibold leading-8 text-slate-900">
-                  {person.name}
-                </h3>
-                <p className="text-base leading-7 text-slate-600">
-                  {person.role}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
+
       </main>
       <Footer />
     </div>
