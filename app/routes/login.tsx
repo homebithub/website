@@ -130,13 +130,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background bg-white dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col bg-background bg-white" style={{backgroundColor: 'white'}}>
       <Navigation />
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
-        <div className="card w-full max-w-md bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700 p-8 rounded-xl shadow-lg">
-          <h1 className="text-3xl font-extrabold text-primary mb-6 text-center dark:text-primary-400">Login to HomeXpert</h1>
+        <div className="card w-full max-w-md bg-white border border-gray-100 p-8 rounded-xl shadow-lg">
+          <h1 className="text-3xl font-extrabold text-primary mb-6 text-center">Login to HomeXpert</h1>
           {loading && (
-            <div className="mb-4 p-3 rounded bg-blue-100 text-blue-700 border border-blue-300 dark:bg-blue-900 dark:text-blue-200 dark:border-blue-700 text-center">
+            <div className="mb-4 p-3 rounded bg-blue-100 text-blue-700 border border-blue-300 text-center">
               Logging in...
             </div>
           )}
@@ -148,12 +148,12 @@ export default function LoginPage() {
                 id="phone"
                 name="phone"
                 required
-                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition ${
+                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
                     getFieldError('phone') 
-                        ? 'border-red-300 dark:border-red-600' 
+                        ? 'border-red-300' 
                         : isFieldValid('phone')
-                        ? 'border-green-300 dark:border-green-600'
-                        : 'border-primary-200 dark:border-primary-700'
+                        ? 'border-green-300'
+                        : 'border-primary-200'
                 }`}
                 value={formData.phone}
                 onChange={handleChange}
@@ -172,12 +172,12 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 required
-                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition ${
+                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
                     getFieldError('password') 
-                        ? 'border-red-300 dark:border-red-600' 
+                        ? 'border-red-300' 
                         : isFieldValid('password')
-                        ? 'border-green-300 dark:border-green-600'
-                        : 'border-primary-200 dark:border-primary-700'
+                        ? 'border-green-300'
+                        : 'border-primary-200'
                 }`}
                 value={formData.password}
                 onChange={handleChange}
@@ -189,7 +189,7 @@ export default function LoginPage() {
               )}
             </div>
             <div className="flex justify-end mb-2">
-              <Link to="/forgot-password" className="link text-lg font-semibold text-primary-600 dark:text-primary-300 hover:underline">Forgot password?</Link>
+              <Link to="/forgot-password" className="link text-lg font-semibold text-primary-600 hover:underline">Forgot password?</Link>
             </div>
           
           <button
@@ -203,10 +203,10 @@ export default function LoginPage() {
           <div className="mt-6">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300 dark:border-gray-600"></div>
+                <div className="w-full border-t border-gray-300"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white dark:bg-slate-900 text-gray-500 dark:text-gray-400">Or continue with</span>
+                <span className="px-2 bg-white text-gray-500">Or continue with</span>
               </div>
             </div>
             
@@ -214,7 +214,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm bg-white dark:bg-slate-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors duration-200"
+                className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
               >
                 <FcGoogle className="h-5 w-5 mr-2" />
                 Google
@@ -223,8 +223,8 @@ export default function LoginPage() {
           </div>
           
           <div className="mt-6 text-center">
-            <span className="text-base text-gray-600 dark:text-gray-400 font-medium">Don't have an account?</span>
-            <Link to="/signup" className="ml-1 text-base font-semibold text-primary-600 dark:text-primary-400 hover:text-primary-500 dark:hover:text-primary-300">
+            <span className="text-base text-gray-600 font-medium">Don't have an account?</span>
+            <Link to="/signup" className="ml-1 text-base font-semibold text-primary-600 hover:text-primary-500">
               Sign up
             </Link>
           </div>

@@ -79,12 +79,12 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Navigation />
 
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 pb-16 sm:pb-24 lg:px-8 lg:py-32 pt-12 sm:pt-16 md:pt-20 lg:pt-24">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="mx-auto max-w-2xl lg:mx-auto lg:max-w-xl lg:flex-shrink-0 lg:pt-0 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-purple-900 dark:text-purple-400">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-purple-600">
             <span
               style={{
                 whiteSpace: "nowrap",
@@ -96,48 +96,50 @@ export default function Index() {
               <span className="animate-pulse">|</span>
             </span>
           </h1>
-          <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 dark:text-gray-300 mx-auto text-center max-w-xl">Professional home services at your fingertips. From laundry to childcare, we've got you covered with our expert team of house managers.</p>
+          <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 mx-auto text-center max-w-xl font-medium">Professional home services at your fingertips. From laundry to childcare, we've got you covered with our expert team of house managers.</p>
         </div>
       </div>
 
-      {/* How it works image section - Full width */}
-      <div className="relative w-full h-[60vh] sm:h-[70vh] md:h-[80vh] lg:h-screen overflow-hidden">
-        {/* Full Background Image */}
-        <img
-          src="/how%20it%20works.jpg"
-          alt="How it works"
-          className="absolute inset-0 w-full h-full object-cover z-0"
-        />
-
-        {/* Dark Overlay */}
-        <div className="absolute inset-0 bg-black/60 z-10"></div>
-
-        {/* Text Block */}
-        <div className="relative z-20 flex items-start justify-start h-full">
-          
-        </div>
-        {/* Animated CTA: Get Started */}
-        <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 sm:bottom-8 sm:left-8 sm:translate-x-0 z-30">
-  <Link
-    to="/signup"
-    className="link underline text-2xl font-semibold transition-colors duration-200 text-primary-600 dark:text-primary-400 hover:text-primary-900 dark:hover:text-primary-100"
-    style={{ fontFamily: 'Inter, ui-sans-serif, system-ui' }}
+            {/* How it works image section */}
+      <div className="w-full flex justify-center">
+  <div
+    className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100 w-full"
+    style={{
+      maxWidth: 'calc(100vw - 8cm)', // 4cm left + 4cm right
+      marginLeft: '4cm',
+      marginRight: '4cm',
+    }}
   >
-    Get started
-  </Link>
-</div>
+    <img
+      src="/how%20it%20works.jpg"
+      alt="How it works"
+      className="w-full h-auto object-cover"
+    />
+    {/* CTA overlay - visually integrated, left-aligned, responsive */}
+    <div className="absolute inset-0 flex items-end sm:items-center justify-start p-4 sm:p-8 lg:p-12 pointer-events-none">
+      <div className="w-full max-w-2xl flex justify-start">
+        <Link
+          to="/signup"
+          className="pointer-events-auto px-5 py-3 text-lg rounded-xl bg-purple-600 text-white font-bold shadow-lg hover:bg-purple-700 transition-colors duration-200 border-4 border-white/20 focus:outline-none focus:ring-4 focus:ring-purple-300"
+          style={{ boxShadow: '0 8px 32px rgba(128,0,255,0.16)' }}
+        >
+          Join HomeXpert
+        </Link>
       </div>
+    </div>
+  </div>
+</div>
 
       {/* What we offer section */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-12 sm:pt-24 md:pt-32 pb-6 sm:pb-12 md:pb-16">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="mx-auto max-w-2xl lg:text-center center-mobile">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-white leading-tight text-center">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-purple-600 leading-tight text-center">
             What We Offer
           </h2>
-          <p className="mt-2 text-lg sm:text-2xl text-purple-400 text-center">
+          <p className="mt-2 text-lg sm:text-2xl text-purple-600 text-center">
             More than just a home services platform.
           </p>
-          <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 dark:text-gray-300 text-center">
+          <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 text-center font-medium">
             Whether you need a quick clean, or full-time help, HomeXpert
             connects you with reliable professionals you can trust.
           </p>
@@ -145,25 +147,25 @@ export default function Index() {
         <div className="mx-auto mt-16 max-w-5xl sm:mt-20 lg:mt-24">
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
             <OfferCard
-              className="offer-glow-card"
+              className="offer-glow-card bg-white shadow-lg rounded-xl p-6"
               icon={
-                <UserPlusIcon className="h-12 w-12 text-purple-600 dark:text-purple-400" />
+                <UserPlusIcon className="h-12 w-12 text-purple-600" />
               }
               title="Create an Account"
               description="Sign up in seconds to start accessing our wide range of home services."
             />
             <OfferCard
-              className="offer-glow-card"
+              className="offer-glow-card bg-white shadow-lg rounded-xl p-6"
               icon={
-                <CalendarDaysIcon className="h-12 w-12 text-purple-600 dark:text-purple-400" />
+                <CalendarDaysIcon className="h-12 w-12 text-purple-600" />
               }
               title="Bookings"
               description="Book trusted professionals for cleaning, care, and more."
             />
             <OfferCard
-              className="offer-glow-card"
+              className="offer-glow-card bg-white shadow-lg rounded-xl p-6"
               icon={
-                <UserGroupIcon className="h-12 w-12 text-purple-600 dark:text-purple-400" />
+                <UserGroupIcon className="h-12 w-12 text-purple-600" />
               }
               title="Placements"
               description="Personalised placements for families looking to hire trusted, full-time support."
@@ -173,15 +175,15 @@ export default function Index() {
       </div>
 
       {/* Feature section */}
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pt-6 sm:pt-12 md:pt-16 pb-12 sm:pb-24 md:pb-32">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="mx-auto max-w-2xl lg:text-center center-mobile">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-white leading-tight text-center">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-purple-600 leading-tight text-center">
             Why Choose Us
           </h2>
-          <p className="mt-2 text-lg sm:text-2xl text-purple-400 text-center">
+          <p className="mt-2 text-lg sm:text-2xl text-purple-600 text-center">
             Everything you need for your home
           </p>
-          <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 dark:text-gray-300 text-center">
+          <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 text-center font-medium">
             We provide comprehensive home services with a focus on quality,
             reliability, and customer satisfaction.
           </p>
@@ -191,8 +193,8 @@ export default function Index() {
             {features.map((feature) => (
               <OfferCard
                 key={feature.name}
-                className="offer-glow-card"
-                icon={<feature.icon className="h-12 w-12 text-purple-600 dark:text-purple-400" />}
+                className="offer-glow-card bg-white shadow-lg rounded-xl p-6"
+                icon={<feature.icon className="h-12 w-12 text-purple-600" />}
                 title={feature.name}
                 description={feature.description}
               />

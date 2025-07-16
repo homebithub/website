@@ -3,6 +3,7 @@ import { Link } from "@remix-run/react";
 import { Navigation } from "~/components/Navigation";
 import { Error as ErrorComponent } from "~/components/Error";
 import { Loading } from "~/components/Loading";
+import { Footer } from "~/components/Footer";
 
 interface ApiError {
   message: string;
@@ -67,15 +68,15 @@ export default function Contact() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-white">
       <Navigation />
-      <main className="container mx-auto px-4 py-8 border-2 border-purple-500 dark:border-purple-400 rounded-xl bg-white dark:bg-black text-slate-900 dark:text-white shadow-card">
-        <div className="max-w-3xl mx-auto">
+      <main className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-primary-400">
+            <h1 className="text-3xl font-bold text-gray-900">
               Contact Us
             </h1>
-            <p className="mt-2 text-slate-600 dark:text-gray-300">
+            <p className="mt-2 text-gray-600">
               Have questions? We'd love to hear from you.
             </p>
           </div>
@@ -83,19 +84,19 @@ export default function Contact() {
           {error && <ErrorComponent title="Error" message={error} />}
 
           {success ? (
-            <div className="bg-green-50 dark:bg-green-900 p-4 rounded-md">
-              <p className="text-green-800 dark:text-green-200">
+            <div className="bg-green-50 p-4 rounded-md">
+              <p className="text-green-800">
                 Thank you for your message! We'll get back to you soon.
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
               <div>
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
                     <label
                       htmlFor="name"
-                      className="block text-sm font-medium text-slate-700 dark:text-primary-200"
+                      className="block text-sm font-medium text-gray-700"
                     >
                       Name
                     </label>
@@ -106,14 +107,14 @@ export default function Contact() {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 text-base h-12 px-4 py-3 transition"
+                      className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-base h-12 px-4 py-3 transition"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="email"
-                      className="block text-sm font-medium text-slate-700 dark:text-primary-200"
+                      className="block text-sm font-medium text-gray-700"
                     >
                       Email
                     </label>
@@ -124,14 +125,14 @@ export default function Contact() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 text-base h-12 px-4 py-3 transition"
+                      className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-base h-12 px-4 py-3 transition"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="subject"
-                      className="block text-sm font-medium text-slate-700 dark:text-primary-200"
+                      className="block text-sm font-medium text-gray-700"
                     >
                       Subject
                     </label>
@@ -141,7 +142,7 @@ export default function Contact() {
                       required
                       value={formData.subject}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 text-base h-12 px-4 py-3 transition"
+                      className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-base h-12 px-4 py-3 transition"
                     >
                       <option value="">Select a subject</option>
                       <option value="general">General Inquiry</option>
@@ -154,7 +155,7 @@ export default function Contact() {
                   <div>
                     <label
                       htmlFor="message"
-                      className="block text-sm font-medium text-slate-700 dark:text-primary-200"
+                      className="block text-sm font-medium text-gray-700"
                     >
                       Message
                     </label>
@@ -165,13 +166,13 @@ export default function Contact() {
                       required
                       value={formData.message}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-lg border border-primary-200 dark:border-primary-700 bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 text-base px-4 py-3 transition"
+                      className="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-base px-4 py-3 transition"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-primary-700 hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition"
+                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition"
                   >
                     Send Message
                   </button>
@@ -180,23 +181,23 @@ export default function Contact() {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-primary-300">
+                  <h3 className="text-lg font-medium text-gray-900">
                     Contact Information
                   </h3>
                   <div className="mt-4 space-y-4">
-                    <p className="text-slate-600 dark:text-gray-300">
+                    <p className="text-gray-600">
                       <strong>Address:</strong>
                       <br />
                       123 Main Street
                       <br />
                       City, State, ZIP
                     </p>
-                    <p className="text-slate-600 dark:text-gray-300">
+                    <p className="text-gray-600">
                       <strong>Email:</strong>
                       <br />
                       contact@homexpert.com
                     </p>
-                    <p className="text-slate-600 dark:text-gray-300">
+                    <p className="text-gray-600">
                       <strong>Phone:</strong>
                       <br />
                       (555) 123-4567
@@ -205,17 +206,17 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium text-slate-900 dark:text-primary-300">
+                  <h3 className="text-lg font-medium text-gray-900">
                     Business Hours
                   </h3>
                   <div className="mt-4 space-y-2">
-                    <p className="text-slate-600 dark:text-gray-300">
+                    <p className="text-gray-600">
                       Monday - Friday: 9:00 AM - 6:00 PM
                     </p>
-                    <p className="text-slate-600 dark:text-gray-300">
+                    <p className="text-gray-600">
                       Saturday: 10:00 AM - 4:00 PM
                     </p>
-                    <p className="text-slate-600 dark:text-gray-300">
+                    <p className="text-gray-600">
                       Sunday: Closed
                     </p>
                   </div>
@@ -225,6 +226,7 @@ export default function Contact() {
           )}
         </div>
       </main>
+      <Footer />
     </div>
   );
-} 
+}

@@ -233,16 +233,16 @@ export default function SignupPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-background bg-white dark:bg-slate-900">
+        <div className="min-h-screen flex flex-col bg-background bg-white" style={{backgroundColor: 'white'}}>
             <Navigation/>
             <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
-                <div className="card w-full max-w-md bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700 p-8 rounded-xl shadow-lg">
-                    <h2 className="text-3xl font-bold text-primary-800 dark:text-primary-400 mb-6 text-center">Sign
+                <div className="card w-full max-w-md bg-white border border-gray-100 p-8 rounded-xl shadow-lg">
+                    <h2 className="text-3xl font-bold text-primary-800 mb-6 text-center">Sign
                         Up</h2>
                     <div className="text-center mb-4">
-                        <span className="text-base text-gray-600 dark:text-gray-300 font-medium">Already have an account?</span>
+                        <span className="text-base text-gray-600 font-medium">Already have an account?</span>
                         <a href="/login"
-                           className="ml-2 text-base text-primary-700 dark:text-primary-300 font-semibold hover:underline">Login
+                           className="ml-2 text-base text-primary-700 font-semibold hover:underline">Login
                             </a>
                     </div>
                     {error && (
@@ -261,12 +261,12 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition ${
+                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
                                     getFieldError('first_name') 
-                                        ? 'border-red-300 dark:border-red-600' 
+                                        ? 'border-red-300' 
                                         : isFieldValid('first_name')
-                                        ? 'border-green-300 dark:border-green-600'
-                                        : 'border-primary-200 dark:border-primary-700'
+                                        ? 'border-green-300'
+                                        : 'border-primary-200'
                                 }`}
                             />
                             {getFieldError('first_name') && (
@@ -282,12 +282,12 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition ${
+                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
                                     getFieldError('last_name') 
-                                        ? 'border-red-300 dark:border-red-600' 
+                                        ? 'border-red-300' 
                                         : isFieldValid('last_name')
-                                        ? 'border-green-300 dark:border-green-600'
-                                        : 'border-primary-200 dark:border-primary-700'
+                                        ? 'border-green-300'
+                                        : 'border-primary-200'
                                 }`}
                             />
                             {getFieldError('last_name') && (
@@ -304,12 +304,12 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition ${
+                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
                                     getFieldError('password') 
-                                        ? 'border-red-300 dark:border-red-600' 
+                                        ? 'border-red-300' 
                                         : isFieldValid('password')
-                                        ? 'border-green-300 dark:border-green-600'
-                                        : 'border-primary-200 dark:border-primary-700'
+                                        ? 'border-green-300'
+                                        : 'border-primary-200'
                                 }`}
                             />
                             {getFieldError('password') && (
@@ -325,12 +325,12 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition ${
+                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
                                     getFieldError('phone') 
-                                        ? 'border-red-300 dark:border-red-600' 
+                                        ? 'border-red-300' 
                                         : isFieldValid('phone')
-                                        ? 'border-green-300 dark:border-green-600'
-                                        : 'border-primary-200 dark:border-primary-700'
+                                        ? 'border-green-300'
+                                        : 'border-primary-200'
                                 }`}
                                 placeholder="0712345678"
                             />
@@ -347,13 +347,13 @@ export default function SignupPage() {
                                 <button
                                     type="button"
                                     onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                    className={`w-full h-12 text-base px-4 py-3 pr-12 rounded-lg border bg-white dark:bg-slate-800 text-left text-primary-800 dark:text-primary-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 dark:focus:ring-primary-600 dark:focus:border-primary-400 transition-all duration-200 hover:shadow-md ${
+                                    className={`w-full h-12 text-base px-4 py-3 pr-12 rounded-lg border bg-white text-left text-primary-800 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition-all duration-200 hover:shadow-md ${
                                         getFieldError('profile_type') 
-                                            ? 'border-red-300 dark:border-red-600' 
+                                            ? 'border-red-300' 
                                             : isFieldValid('profile_type')
-                                            ? 'border-green-300 dark:border-green-600'
-                                            : 'border-primary-200 dark:border-primary-700'
-                                    } ${!form.profile_type ? 'text-gray-500 dark:text-gray-400' : ''}`}
+                                            ? 'border-green-300'
+                                            : 'border-primary-200'
+                                    } ${!form.profile_type ? 'text-gray-500' : ''}`}
                                 >
                                     {getSelectedProfileLabel()}
                                 </button>
@@ -361,7 +361,7 @@ export default function SignupPage() {
                                 {/* Dropdown Icon */}
                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-4">
                                     <ChevronDownIcon 
-                                        className={`h-5 w-5 text-primary-400 dark:text-primary-300 transition-transform duration-300 ease-in-out ${
+                                        className={`h-5 w-5 text-primary-400 transition-transform duration-300 ease-in-out ${
                                             isDropdownOpen ? 'rotate-180' : ''
                                         }`} 
                                     />
@@ -369,7 +369,7 @@ export default function SignupPage() {
                                 
                                 {/* Dropdown Options */}
                                 {isDropdownOpen && (
-                                    <div className="absolute z-50 w-full mt-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-2xl animate-in slide-in-from-top-2 duration-200">
+                                    <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-2xl animate-in slide-in-from-top-2 duration-200">
                                         {profileOptions.map((option, index) => (
                                             <button
                                                 key={option.value}
@@ -377,8 +377,8 @@ export default function SignupPage() {
                                                 onClick={() => handleProfileTypeSelect(option.value)}
                                                 className={`w-full px-4 py-3 text-left text-base font-medium transition-all duration-200 first:rounded-t-lg last:rounded-b-lg ${
                                                     form.profile_type === option.value
-                                                        ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border-l-4 border-purple-500'
-                                                        : 'text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700 dark:hover:text-purple-300 hover:border-l-4 hover:border-purple-300'
+                                                        ? 'bg-purple-50 text-purple-600 border-l-4 border-purple-600'
+                                                        : 'text-gray-700 hover:bg-purple-50 hover:text-purple-600 hover:border-l-4 hover:border-purple-600'
                                                 }`}
                                                 style={{
                                                     animationDelay: `${index * 50}ms`

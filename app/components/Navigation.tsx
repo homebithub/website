@@ -55,20 +55,20 @@ export function Navigation() {
   const showAuthButtons = !user;
 
   return (
-    <nav className="bg-slate-900 py-4 shadow-sm">
-      <div className="flex justify-between items-center px-4 sm:px-6 lg:px-8">
+    <nav className="bg-white py-4 shadow-sm">
+      <div className="flex justify-between items-center px-8 sm:px-12 lg:px-24">
         {/* Logo */}
-        <Link to="/" className="text-primary-400 font-bold text-2xl hover:text-primary-300 transition-colors duration-200">
+        <Link to="/" className="text-purple-600 font-bold text-2xl hover:text-purple-600 transition-colors duration-200">
           HomeXpert
         </Link>
 
         {/* Navigation Links */}
-        <div className="hidden md:flex items-center space-x-6">
+        <div className="hidden md:flex items-center space-x-4 ml-auto">
           {navigation.map((item) => (
             <Link
               key={item.name}
               to={item.href}
-              className="link text-lg font-bold transition-colors duration-200 px-4 py-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 text-primary-400 hover:text-primary-100"
+              className="link text-base font-bold transition-colors duration-200 px-4 py-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 text-slate-700 hover:text-purple-600"
             >
               {item.name}
             </Link>
@@ -76,18 +76,18 @@ export function Navigation() {
         </div>
 
         {/* Right section */}
-        <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-4 ml-6">
           {showAuthButtons && (
             <div className="flex items-center space-x-3">
               <Link
                 to="/login"
-                className="link hidden md:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-primary-400 hover:text-primary-100"
+                className="link hidden md:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-purple-600 border-2 border-purple-600 hover:bg-purple-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
               >
                 Log in
               </Link>
               <Link
                 to="/signup"
-                className="px-6 py-3 text-lg rounded-xl bg-primary-700 text-white hover:bg-primary-600 transition-colors duration-200 font-bold shadow-md hover:shadow-lg"
+                className="px-6 py-3 text-lg rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition-colors duration-200 font-bold shadow-md hover:shadow-lg"
               >
                 Sign up
               </Link>
@@ -95,9 +95,9 @@ export function Navigation() {
           )}
 
           {/* Menu Dropdown */}
-          <Menu as="div" className="relative inline-block text-left">
-            <Menu.Button className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800 p-2 text-gray-300 shadow-sm border border-slate-700 hover:bg-slate-700 transition-all duration-200">
-              <Bars3Icon className="h-5 w-5" />
+          <Menu as="div" className="relative inline-block text-left md:hidden">
+            <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-purple-600 p-2 text-white shadow-md hover:bg-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
+              <Bars3Icon className="h-7 w-7" />
             </Menu.Button>
 
             <Transition
@@ -109,7 +109,7 @@ export function Navigation() {
               leaveFrom="transform opacity-100 scale-100"
               leaveTo="transform opacity-0 scale-95"
             >
-              <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-slate-800 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+              <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                 <div className="py-2">
                   {/* Navigation Links */}
                   {navigation.map((item) => (
@@ -118,7 +118,7 @@ export function Navigation() {
                         <Link
                           to={item.href}
                           className={`${
-                            active ? 'bg-purple-900/20 text-purple-300' : 'text-gray-300'
+                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
                           } block px-4 py-2 text-sm`}
                         >
                           {item.name}
@@ -134,7 +134,7 @@ export function Navigation() {
                         <Link
                           to="/login"
                           className={`md:hidden ${
-                            active ? 'bg-purple-900/20 text-purple-300' : 'text-gray-300'
+                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
                           } block px-4 py-2 text-sm`}
                         >
                           Log in
@@ -146,14 +146,14 @@ export function Navigation() {
                   {/* User Menu Items */}
                   {user && (
                     <>
-                      <div className="border-t border-slate-700 my-1"></div>
+                      <div className="border-t border-gray-200 my-1"></div>
                       {dashboardPath && (
                         <Menu.Item>
                           {({ active }) => (
                             <Link
                               to={dashboardPath}
                               className={`${
-                                active ? 'bg-purple-900/20 text-purple-300' : 'text-gray-300'
+                                active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
                               } block px-4 py-2 text-sm`}
                             >
                               Dashboard
@@ -166,7 +166,7 @@ export function Navigation() {
                           <Link
                             to="/profile"
                             className={`${
-                              active ? 'bg-purple-900/20 text-purple-300' : 'text-gray-300'
+                              active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
                             } flex items-center px-4 py-2 text-sm`}
                           >
                             <UserIcon className="mr-3 h-5 w-5" />
@@ -179,7 +179,7 @@ export function Navigation() {
                           <Link
                             to="/settings"
                             className={`${
-                              active ? 'bg-purple-900/20 text-purple-300' : 'text-gray-300'
+                              active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
                             } flex items-center px-4 py-2 text-sm`}
                           >
                             <CogIcon className="mr-3 h-5 w-5" />
@@ -192,7 +192,7 @@ export function Navigation() {
                           <button
                             onClick={handleLogout}
                             className={`${
-                              active ? 'bg-red-900/20 text-red-300' : 'text-gray-300'
+                              active ? 'bg-red-100 text-red-700' : 'text-gray-700'
                             } flex items-center w-full px-4 py-2 text-sm`}
                           >
                             <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />

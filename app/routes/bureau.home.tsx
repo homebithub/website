@@ -71,36 +71,36 @@ export default function BureauHomeDashboard() {
 
   return (
     <div className="p-4 sm:p-6">
-      <h2 className="text-xl font-bold text-primary dark:text-primary-300">Bureau Dashboard</h2>
+      <h2 className="text-xl font-bold text-purple-600">Bureau Dashboard</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="bg-white dark:bg-slate-800 rounded-xl shadow border border-gray-100 dark:border-slate-700 p-4 sm:p-5 flex flex-col items-center"
+            className="bg-white  rounded-xl shadow border border-gray-100  p-4 sm:p-5 flex flex-col items-center"
           >
-            <div className="text-2xl sm:text-3xl font-extrabold text-purple-700 dark:text-purple-300 mb-2">
+            <div className="text-2xl sm:text-3xl font-extrabold text-purple-600 mb-2">
               {stat.value}
             </div>
-            <div className="text-gray-500 dark:text-gray-300 text-base text-center">
+            <div className="text-gray-500  text-base text-center">
               {stat.label}
             </div>
           </div>
         ))}
       </div>
       <div className="mt-6 sm:mt-8">
-        <h3 className="text-lg font-semibold mb-2 text-gray-700 dark:text-gray-200">Recent Activity</h3>
+        <h3 className="text-lg font-semibold mb-2 text-gray-700 ">Recent Activity</h3>
         <ul className="space-y-2">
-          <li className="text-gray-500 dark:text-gray-300">Placed househelp Mary W. with household #1234</li>
-          <li className="text-gray-500 dark:text-gray-300">Onboarded new househelp James K.</li>
-          <li className="text-gray-500 dark:text-gray-300">Closed contract with commercial partner CleanCo</li>
-          <li className="text-gray-500 dark:text-gray-300">Received 3 new applications today</li>
+          <li className="text-gray-500 ">Placed househelp Mary W. with household #1234</li>
+          <li className="text-gray-500 ">Onboarded new househelp James K.</li>
+          <li className="text-gray-500 ">Closed contract with commercial partner CleanCo</li>
+          <li className="text-gray-500 ">Received 3 new applications today</li>
         </ul>
       </div>
       {/* Househelps Subsection */}
       <div className="mt-10">
-        <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-4">Househelps</h3>
+        <h3 className="text-lg font-semibold text-gray-700  mb-4">Househelps</h3>
         {/* Placeholder for househelp list */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-gray-100 dark:border-slate-700 p-4 text-gray-500 dark:text-gray-300">
+        <div className="bg-white  rounded-xl shadow border border-gray-100  p-4 text-gray-500 ">
           List of househelps will appear here.
         </div>
       </div>
