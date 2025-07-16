@@ -169,7 +169,7 @@ export default function HousehelpProfile() {
       <>
         {showUnlockModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-md">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 w-full max-w-md relative">
+            <div className="bg-white  rounded-xl shadow-lg p-6 w-full max-w-md relative">
               <h2 className="text-lg font-bold mb-2 text-center text-primary-700">Unlock Contact</h2>
               <p className="mb-3 text-sm text-gray-700 dark:text-gray-200 text-center">
                 You are allowed to unlock up to 3 profiles. Make sure you go through the profile before you make a decision.<br />
@@ -253,7 +253,7 @@ export default function HousehelpProfile() {
         )}
     
         {/* User Information Section */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 sm:p-12 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-4xl flex flex-col items-center mb-8">
+        <div className="bg-white  rounded-2xl shadow-lg border border-gray-100  p-8 sm:p-12 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-4xl flex flex-col items-center mb-8">
           {/* Back button and action buttons */}
           <div className="flex flex-row items-center justify-between gap-4 w-full mb-4">
             <button
@@ -357,7 +357,7 @@ export default function HousehelpProfile() {
             />
             {/* Name and KE badge */}
             <div className="flex flex-col items-center mb-2">
-              <div className="text-2xl font-bold text-primary-900 dark:text-primary-100">{User.first_name} {User.last_name}</div>
+              <div className="text-2xl font-bold text-slate-900 ">{User.first_name} {User.last_name}</div>
               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs mt-1">{User.country}</span>
             </div>
             {/* User Images Carousel BELOW NAME */}
@@ -399,9 +399,9 @@ export default function HousehelpProfile() {
           {/* Unlocked contact info */}
           {unlockedContact && (
             <div className="mt-2 flex flex-col items-center">
-              <div className="text-lg font-bold text-purple-700">Phone: {unlockedContact.phone}</div>
+              <div className="text-lg font-bold text-purple-600">Phone: {unlockedContact.phone}</div>
               {unlockedContact.email && (
-                <div className="text-lg font-bold text-purple-700">Email: {unlockedContact.email}</div>
+                <div className="text-lg font-bold text-purple-600">Email: {unlockedContact.email}</div>
               )}
             </div>
           )}
@@ -411,77 +411,77 @@ export default function HousehelpProfile() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2 text-sm">
               {/* User fields */}
               <div>
-                <div className="text-gray-400 dark:text-gray-500">First Name</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{User.first_name || '-'}</div>
+                <div className="text-gray-400 ">First Name</div>
+                <div className="text-sm text-slate-900  font-medium">{User.first_name || '-'}</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Last Name</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{User.last_name || '-'}</div>
+                <div className="text-gray-400 ">Last Name</div>
+                <div className="text-sm text-slate-900  font-medium">{User.last_name || '-'}</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Email</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{User.email || '-'}</div>
+                <div className="text-gray-400 ">Email</div>
+                <div className="text-sm text-slate-900  font-medium">{User.email || '-'}</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Phone</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{User.phone || '-'}</div>
+                <div className="text-gray-400 ">Phone</div>
+                <div className="text-sm text-slate-900  font-medium">{User.phone || '-'}</div>
               </div>
              
               
               <div>
-                <div className="text-gray-400 dark:text-gray-500">User Created At</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{User.created_at ? new Date(User.created_at).toLocaleString() : '-'}</div>
+                <div className="text-gray-400 ">User Created At</div>
+                <div className="text-sm text-slate-900  font-medium">{User.created_at ? new Date(User.created_at).toLocaleString() : '-'}</div>
               </div>
              
 
               {/* Househelp fields */}
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Bio</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Househelp.bio || '-'}</div>
+                <div className="text-gray-400 ">Bio</div>
+                <div className="text-sm text-slate-900  font-medium">{Househelp.bio || '-'}</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Address</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Househelp.address || '-'}</div>
+                <div className="text-gray-400 ">Address</div>
+                <div className="text-sm text-slate-900  font-medium">{Househelp.address || '-'}</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Status</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Househelp.status || '-'}</div>
+                <div className="text-gray-400 ">Status</div>
+                <div className="text-sm text-slate-900  font-medium">{Househelp.status || '-'}</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Verified</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Househelp.verified ? 'Yes' : 'No'}</div>
+                <div className="text-gray-400 ">Verified</div>
+                <div className="text-sm text-slate-900  font-medium">{Househelp.verified ? 'Yes' : 'No'}</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Rating</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Househelp.rating} ({Househelp.review_count} reviews)</div>
+                <div className="text-gray-400 ">Rating</div>
+                <div className="text-sm text-slate-900  font-medium">{Househelp.rating} ({Househelp.review_count} reviews)</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Skills</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Array.isArray(Househelp.skills) && Househelp.skills.length > 0 ? Househelp.skills.join(', ') : '-'}</div>
+                <div className="text-gray-400 ">Skills</div>
+                <div className="text-sm text-slate-900  font-medium">{Array.isArray(Househelp.skills) && Househelp.skills.length > 0 ? Househelp.skills.join(', ') : '-'}</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Experience</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Househelp.experience || 0} years</div>
+                <div className="text-gray-400 ">Experience</div>
+                <div className="text-sm text-slate-900  font-medium">{Househelp.experience || 0} years</div>
               </div>
               
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Languages</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Array.isArray(Househelp.languages) && Househelp.languages.length > 0 ? Househelp.languages.join(', ') : '-'}</div>
+                <div className="text-gray-400 ">Languages</div>
+                <div className="text-sm text-slate-900  font-medium">{Array.isArray(Househelp.languages) && Househelp.languages.length > 0 ? Househelp.languages.join(', ') : '-'}</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Specialities</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Array.isArray(Househelp.specialities) && Househelp.specialities.length > 0 ? Househelp.specialities.join(', ') : '-'}</div>
+                <div className="text-gray-400 ">Specialities</div>
+                <div className="text-sm text-slate-900  font-medium">{Array.isArray(Househelp.specialities) && Househelp.specialities.length > 0 ? Househelp.specialities.join(', ') : '-'}</div>
               </div>
               
 
               
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Salary Expectation</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Househelp.salary_expectation ? `KES ${Househelp.salary_expectation}` : '-'}</div>
+                <div className="text-gray-400 ">Salary Expectation</div>
+                <div className="text-sm text-slate-900  font-medium">{Househelp.salary_expectation ? `KES ${Househelp.salary_expectation}` : '-'}</div>
               </div>
               <div>
-                <div className="text-gray-400 dark:text-gray-500">Salary Frequency</div>
-                <div className="text-sm text-primary-900 dark:text-primary-100 font-medium">{Househelp.salary_frequency || '-'}</div>
+                <div className="text-gray-400 ">Salary Frequency</div>
+                <div className="text-sm text-slate-900  font-medium">{Househelp.salary_frequency || '-'}</div>
               </div>
               
             </div>

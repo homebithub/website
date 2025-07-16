@@ -1,9 +1,9 @@
 .glow-card {
   position: relative;
   overflow: hidden;
-  background-color: #1f2937; /* gray-800 */
+  background-color: #ffffff; /* white */
   border-radius: 1rem; /* 16px */
-  border: 1px solid #4b5563; /* gray-600 */
+  border: 1px solid #e5e7eb; /* gray-200 */
   transition: all 0.3s ease;
   /* Add a subtle, persistent glow */
   box-shadow: 0 0 8px rgba(192, 132, 252, 0.2);
@@ -11,9 +11,9 @@
 
 .glow-card:hover {
   /* Intensify the glow on hover */
-  box-shadow: 0 0 20px rgba(192, 132, 252, 0.6), 0 0 35px rgba(192, 132, 252, 0.4);
+  box-shadow: 0 0 20px rgba(192, 132, 252, 0.4), 0 0 35px rgba(192, 132, 252, 0.2);
   transform: translateY(-5px);
-  border-color: rgba(192, 132, 252, 0.8);
+  border-color: rgba(192, 132, 252, 0.5);
 }
 
 .glow-card::before {
@@ -53,12 +53,12 @@
 .offer-glow-card {
   position: relative;
   overflow: hidden;
-  background-color: #1a1128; /* Darker purple shade */
+  background-color: #ffffff; /* White */
   border-radius: 1rem; /* 16px */
-  border: 1px solid #4c1d95; /* purple-900 */
+  border: 1px solid #e9d5ff; /* purple-200 */
   transition: all 0.3s ease;
   /* Add a stronger, persistent glow */
-  box-shadow: 0 0 12px rgba(147, 51, 234, 0.3), 0 0 20px rgba(88, 28, 135, 0.15);
+  box-shadow: 0 0 12px rgba(147, 51, 234, 0.15), 0 0 20px rgba(147, 51, 234, 0.1);
 }
 
 .offer-glow-card::before {
@@ -81,7 +81,8 @@
 
 .offer-glow-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 0 20px rgba(192, 132, 252, 0.6), 0 0 35px rgba(147, 51, 234, 0.3);
+  box-shadow: 0 0 20px rgba(192, 132, 252, 0.4), 0 0 35px rgba(147, 51, 234, 0.2);
+  border-color: rgba(192, 132, 252, 0.5);
 }
 
 /* Responsive center text for offer/why sections */

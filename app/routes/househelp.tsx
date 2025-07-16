@@ -70,10 +70,10 @@ function ImageUploadModal({open, onClose, files, setFiles}: {
         <div
             className={`fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-lg ${open ? '' : 'hidden'}`}
             aria-modal="true" role="dialog">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 w-full max-w-lg relative">
-                <h3 className="text-xl font-bold mb-4 text-primary dark:text-primary-200">Upload Images</h3>
+            <div className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-lg relative">
+                <h3 className="text-xl font-bold mb-4 text-purple-600">Upload Images</h3>
                 <div className="flex flex-col gap-4">
-                    <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+                    <div className="text-sm text-gray-600 mb-1">
                         You can upload up to 5 images, 10MB each.
                     </div>
                     <input
@@ -476,19 +476,19 @@ export default function HousehelpDashboard() {
     return (
         <>
             <Navigation/>
-            <div className="min-h-screen w-full bg-slate-950">
+            <div className="min-h-screen w-full bg-gray-50 py-8">
                 <div className="mx-auto w-full max-w-6xl flex flex-col sm:flex-row gap-2 items-start overflow-x-hidden">
                     {/* Sidebar */}
                     <aside
-                        className="w-full sm:w-56 bg-white dark:bg-slate-800 border-r border-gray-100 dark:border-slate-700 p-4 rounded-xl shadow-sm flex flex-col space-y-2 mb-4 sm:mb-0">
+                        className="w-full sm:w-56 bg-white border-r border-gray-100 p-4 rounded-xl shadow-sm flex flex-col space-y-2 mb-4 sm:mb-0">
                         {househelpSections.map((section) => (
                             <button
                                 key={section.id}
                                 onClick={() => setActiveSection(section.id)}
                                 className={`block text-left w-full px-4 py-2 rounded-lg text-base font-medium transition-colors duration-150
                                 ${activeSection === section.id
-                                    ? "bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-200 font-bold"
-                                    : "text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-700 dark:hover:text-purple-200"}
+                                    ? "bg-purple-100 text-purple-600 font-bold"
+                                    : "text-gray-700 hover:bg-purple-50 hover:text-purple-600"}
                                 `}
                             >
                                 {section.label}
@@ -497,7 +497,7 @@ export default function HousehelpDashboard() {
                     </aside>
                     {/* Main Content */}
                     <section className="flex-1 min-w-0">
-                        <div className="w-full max-w-2xl bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-6">
+                        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
                             {renderSection(activeSection)}
                         </div>
                     </section>
