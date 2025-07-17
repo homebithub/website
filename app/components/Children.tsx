@@ -45,6 +45,15 @@ const Children: React.FC = () => {
       setError("Please fill all fields and select up to 3 traits.");
       return;
     }
+    // Date of birth must be today or in the past
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const dobDate = new Date(dob);
+    dobDate.setHours(0,0,0,0);
+    if (dobDate > today) {
+      setError("Date of birth cannot be in the future.");
+      return;
+    }
     setError("");
     setLoading(true);
     try {
@@ -82,6 +91,15 @@ const Children: React.FC = () => {
   const handleExpectingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setExpectingError("");
+    // Expected date must be today or in the future
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const expDate = new Date(expectingDate);
+    expDate.setHours(0,0,0,0);
+    if (expDate < today) {
+      setExpectingError("Expected date must be today or in the future.");
+      return;
+    }
     setExpectingLoading(true);
     try {
       const token = localStorage.getItem("token");
