@@ -11,8 +11,7 @@ import {
   UserPlusIcon,
   CalendarDaysIcon,
 } from "@heroicons/react/24/outline";
-import { OfferCard } from "~/components/OfferCard";
-import "~/styles/glow-card.css";
+
 
 const features = [
   {
@@ -84,7 +83,7 @@ export default function Index() {
 
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="mx-auto max-w-2xl lg:mx-auto lg:max-w-xl lg:flex-shrink-0 lg:pt-0 text-center">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-purple-600">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900">
             <span
               style={{
                 whiteSpace: "nowrap",
@@ -101,14 +100,9 @@ export default function Index() {
       </div>
 
             {/* How it works image section */}
-      <div className="w-full flex justify-center">
+      <div className="w-full flex justify-center px-4 sm:px-6 lg:px-8 my-8">
   <div
-    className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100 w-full"
-    style={{
-      maxWidth: 'calc(100vw - 8cm)', // 4cm left + 4cm right
-      marginLeft: '4cm',
-      marginRight: '4cm',
-    }}
+    className="relative rounded-xl overflow-hidden shadow-lg bg-gray-100 w-full max-w-7xl mx-auto"
   >
     <img
       src="/how%20it%20works.jpg"
@@ -130,13 +124,15 @@ export default function Index() {
   </div>
 </div>
 
+
+
       {/* What we offer section */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="mx-auto max-w-2xl lg:text-center center-mobile">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-purple-600 leading-tight text-center">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 leading-tight text-center">
             What We Offer
           </h2>
-          <p className="mt-2 text-lg sm:text-2xl text-purple-600 text-center">
+          <p className="mt-2 text-lg sm:text-2xl text-slate-900 text-center">
             More than just a home services platform.
           </p>
           <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 text-center font-medium">
@@ -144,43 +140,15 @@ export default function Index() {
             connects you with reliable professionals you can trust.
           </p>
         </div>
-        <div className="mx-auto mt-16 max-w-5xl sm:mt-20 lg:mt-24">
-          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
-            <OfferCard
-              className="offer-glow-card bg-white shadow-lg rounded-xl p-6"
-              icon={
-                <UserPlusIcon className="h-12 w-12 text-purple-600" />
-              }
-              title="Create an Account"
-              description="Sign up in seconds to start accessing our wide range of home services."
-            />
-            <OfferCard
-              className="offer-glow-card bg-white shadow-lg rounded-xl p-6"
-              icon={
-                <CalendarDaysIcon className="h-12 w-12 text-purple-600" />
-              }
-              title="Bookings"
-              description="Book trusted professionals for cleaning, care, and more."
-            />
-            <OfferCard
-              className="offer-glow-card bg-white shadow-lg rounded-xl p-6"
-              icon={
-                <UserGroupIcon className="h-12 w-12 text-purple-600" />
-              }
-              title="Placements"
-              description="Personalised placements for families looking to hire trusted, full-time support."
-            />
-          </div>
-        </div>
       </div>
 
       {/* Feature section */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div className="mx-auto max-w-2xl lg:text-center center-mobile">
-          <h2 className="text-2xl sm:text-3xl font-semibold text-purple-600 leading-tight text-center">
+          <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 leading-tight text-center">
             Why Choose Us
           </h2>
-          <p className="mt-2 text-lg sm:text-2xl text-purple-600 text-center">
+          <p className="mt-2 text-lg sm:text-2xl text-slate-900 text-center">
             Everything you need for your home
           </p>
           <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 text-center font-medium">
@@ -191,13 +159,11 @@ export default function Index() {
         <div className="mx-auto mt-16 max-w-4xl sm:mt-20 lg:mt-24">
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-4">
             {features.map((feature) => (
-              <OfferCard
-                key={feature.name}
-                className="offer-glow-card bg-white shadow-lg rounded-xl p-6"
-                icon={<feature.icon className="h-12 w-12 text-purple-600" />}
-                title={feature.name}
-                description={feature.description}
-              />
+              <div key={feature.name} className="relative flex flex-col rounded-2xl border border-gray-200 bg-white p-8 shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <feature.icon className="h-12 w-12 text-purple-600" />
+                <h3 className="mt-4 text-lg font-semibold leading-7 tracking-tight text-gray-900">{feature.name}</h3>
+                <p className="mt-4 text-base leading-7 text-gray-600">{feature.description}</p>
+              </div>
             ))}
           </div>
         </div>

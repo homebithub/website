@@ -73,7 +73,7 @@ export default function About() {
                         <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
                             <div className="lg:pr-8 lg:pt-4">
                                 <div className="lg:max-w-lg">
-                                    <h2 className="text-base font-semibold leading-7 text-purple-600">About Us</h2>
+                                    <h2 className="inline-block rounded-full bg-gray-100 px-4 py-2 text-slate-900 font-bold text-lg">About Us</h2>
                                     <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">A Better Way to Manage Your Home</p>
                                     <p className="mt-6 text-lg leading-8 text-gray-600">
                                         HomeXpert bridges the gap between households seeking trustworthy househelps and nannies, and professionals seeking reliable jobs. We prioritize security, transparency, and a rigorous vetting process to ensure peace of mind for every family and worker.
@@ -82,7 +82,7 @@ export default function About() {
                             </div>
                             <div className="lg:pr-8 lg:pt-4">
                                 <div className="lg:max-w-lg">
-                                    <h2 className="text-base font-semibold leading-7 text-purple-600">Our Mission</h2>
+                                    <h2 className="inline-block rounded-full bg-gray-100 px-4 py-2 text-slate-900 font-bold text-lg">Our Mission</h2>
                                     <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Connecting Families and Professionals</p>
                                     <p className="mt-6 text-lg leading-8 text-gray-600">
                                         At HomeXpert, our mission is to connect families with trustworthy, vetted househelps and nannies, making home management simpler, safer, and more reliable for everyone.
@@ -106,8 +106,8 @@ export default function About() {
                     <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 text-base leading-7 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:grid-cols-4 lg:gap-8">
                         {values.map((value) => (
                             <div key={value.name} className="relative flex flex-col rounded-2xl border border-gray-200 bg-white p-8 shadow-sm transition-transform duration-300 hover:-translate-y-1 hover:shadow-lg">
-                                <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-purple-100 mb-6">
-                                    <value.icon className="h-6 w-6 text-purple-600" aria-hidden="true" />
+                                <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-gray-100 mb-6">
+                                    <value.icon className="h-6 w-6 text-slate-900" aria-hidden="true" />
                                 </div>
                                 <dt className="text-lg font-semibold text-gray-900">{value.name}</dt>
                                 <dd className="mt-2 text-base leading-7 text-gray-600">{value.description}</dd>

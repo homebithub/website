@@ -49,10 +49,7 @@ export default function Pricing() {
       <Navigation />
       <main className="container mx-auto px-4 py-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-base font-semibold leading-7 text-purple-600">Pricing</h1>
-          <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-            Pricing plans for teams of all sizes
-          </p>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">Pricing</h1>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
           Choose an affordable plan that's packed with the best features for engaging your audience, creating customer loyalty, and driving sales.
@@ -63,18 +60,18 @@ export default function Pricing() {
               key={tier.id}
               className="flex flex-col justify-between rounded-3xl bg-white p-8 shadow-xl ring-1 ring-gray-900/10 sm:p-10">
               <div>
-                <h3 id={tier.id} className="text-base font-semibold leading-7 text-purple-600">
+                <h3 id={tier.id} className="text-base font-semibold leading-7 text-slate-900">
                   {tier.name}
                 </h3>
                 <div className="mt-4 flex items-baseline gap-x-2">
-                  <span className="text-5xl font-bold tracking-tight text-gray-900">{tier.priceMonthly}</span>
-                  <span className="text-base font-semibold leading-7 text-gray-600">/month</span>
+                  <span className="text-5xl font-bold tracking-tight text-gray-900">Ksh {tier.priceMonthly.replace('$', '').replace('15', '1,500').replace('30', '3,000').replace('60', '6,000')}</span>
+<span className="text-base font-semibold leading-7 text-gray-600">/month</span>
                 </div>
                 <p className="mt-6 text-base leading-7 text-gray-600">{tier.description}</p>
                 <ul role="list" className="mt-10 space-y-4 text-sm leading-6 text-gray-600">
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex gap-x-3">
-                      <CheckIcon className="h-6 w-5 flex-none text-purple-600" aria-hidden="true" />
+                      <CheckIcon className="h-6 w-5 flex-none text-slate-900" aria-hidden="true" />
                       {feature}
                     </li>
                   ))}
