@@ -15,6 +15,51 @@ const NanyType: React.FC = () => {
   const [selected, setSelected] = useState<string>("");
   const [availableFrom, setAvailableFrom] = useState<string>("");
   const [availability, setAvailability] = useState<AvailabilityType>(initialAvailability);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>("");
+  const [success, setSuccess] = useState<string>("");
+
+  const handleSubmit = async () => {
+    setError("");
+    setSuccess("");
+    if (!selected) {
+      setError("Please select the type of househelp.");
+      return;
+    }
+    if (!availableFrom || isNaN(Date.parse(availableFrom))) {
+      setError("Please select the 'Available from' date.");
+      return;
+    }
+    if (selected === "day") {
+      const hasAvailability = Object.values(availability).some(daySlots => Object.values(daySlots).some(Boolean));
+      if (!hasAvailability) {
+        setError("Please select at least one available day or time slot.");
+        return;
+      }
+    }
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch("http://localhost:8080/api/v1/employer/profile/availability", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          availability,
+          available_from: availableFrom,
+        }),
+      });
+      if (!res.ok) throw new Error("Failed to save availability. Please try again.");
+      setSuccess("Availability updated successfully!");
+    } catch (err: any) {
+      setError(err.message || "An error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   const toggleSlot = (day: string, time: string) => {
     setAvailability(prev => ({
@@ -54,7 +99,7 @@ const NanyType: React.FC = () => {
         </label>
       </div>
       {selected === "day" && (
-        <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 mt-4 overflow-x-auto">
+        <div className={`bg-slate-50 p-4 rounded-xl border mt-4 overflow-x-auto ${error && error.includes('available day or time slot') ? 'border-red-500' : 'border-slate-100'}`}>
           <div className="mb-2 font-semibold text-center text-primary-700">Select Availability</div>
           <table className="min-w-full table-fixed border-separate border-spacing-y-0">
             <thead>
@@ -134,22 +179,26 @@ const NanyType: React.FC = () => {
         </div>
       )}
       <div className="mt-8">
-        <label className="block mb-2 font-semibold text-gray-700">Available from</label>
+        <label className="block mb-2 font-semibold text-gray-700">Available from <span className="text-red-500">*</span></label>
         <input
           type="date"
           value={availableFrom}
           onChange={e => setAvailableFrom(e.target.value)}
-          className="form-input w-full border-gray-300 rounded"
+          className={`form-input w-full rounded border ${(!availableFrom || isNaN(Date.parse(availableFrom))) && error && error.includes('Available from') ? 'border-red-500' : 'border-gray-300'}`}
           min={new Date().toISOString().split('T')[0]}
+          required
         />
       </div>
       <button
         type="button"
-        className="mt-8 w-full bg-primary-700 hover:bg-primary-800 text-white font-semibold py-3 rounded-lg shadow-sm transition"
-        onClick={() => {/* TODO: handle submit logic here */}}
+        className={`mt-8 w-full bg-primary-700 hover:bg-primary-800 text-white font-semibold py-3 rounded-lg shadow-sm transition ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+        onClick={handleSubmit}
+        disabled={loading}
       >
-        Submit
+        {loading ? 'Submitting...' : 'Submit'}
       </button>
+      {error && <div className="mt-4 text-red-600 text-center">{error}</div>}
+      {success && <div className="mt-4 text-green-600 text-center">{success}</div>}
     </div>
   );
 };
