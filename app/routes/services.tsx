@@ -89,7 +89,7 @@ export default function Services() {
         {service.name}
       </h3>
       {showBadge && (
-        <span className="mt-2 inline-block rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-slate-900 self-start">
+        <span className="mt-2 inline-block rounded-full bg-gray-100 px-2 py-1 text-xs font-semibold text-primary-600 self-start">
           Coming soon
         </span>
       )}

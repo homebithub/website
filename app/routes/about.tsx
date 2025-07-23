@@ -73,7 +73,7 @@ export default function About() {
                         <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
                             <div className="lg:pr-8 lg:pt-4">
                                 <div className="lg:max-w-lg">
-                                    <h2 className="inline-block rounded-full bg-gray-100 px-4 py-2 text-slate-900 font-bold text-lg">About Us</h2>
+                                    <h2 className="inline-block rounded-full bg-gray-100 px-4 py-2 text-primary-600 font-bold text-lg">About Us</h2>
                                     <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">A Better Way to Manage Your Home</p>
                                     <p className="mt-6 text-lg leading-8 text-gray-600">
                                         HomeXpert bridges the gap between households seeking trustworthy househelps and nannies, and professionals seeking reliable jobs. We prioritize security, transparency, and a rigorous vetting process to ensure peace of mind for every family and worker.
@@ -82,7 +82,7 @@ export default function About() {
                             </div>
                             <div className="lg:pr-8 lg:pt-4">
                                 <div className="lg:max-w-lg">
-                                    <h2 className="inline-block rounded-full bg-gray-100 px-4 py-2 text-slate-900 font-bold text-lg">Our Mission</h2>
+                                    <h2 className="inline-block rounded-full bg-gray-100 px-4 py-2 text-primary-600 font-bold text-lg">Our Mission</h2>
                                     <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">Connecting Families and Professionals</p>
                                     <p className="mt-6 text-lg leading-8 text-gray-600">
                                         At HomeXpert, our mission is to connect families with trustworthy, vetted househelps and nannies, making home management simpler, safer, and more reliable for everyone.
