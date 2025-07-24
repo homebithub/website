@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/AuthContext";
+import { Waitlist } from "~/components/Waitlist";
 
 const navigation = [
   { name: "Services", href: "/services" },
@@ -14,6 +15,7 @@ const navigation = [
 export function Navigation() {
   const { user, logout } = useAuth();
   const [profileType, setProfileType] = useState<string | null>(null);
+  const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
   // Memoized dashboard path based on profile type
   const dashboardPath = React.useMemo(() => {
@@ -79,6 +81,12 @@ export function Navigation() {
                 <div className="flex items-center space-x-4 ml-6">
           {showAuthButtons && (
             <div className="flex items-center space-x-3">
+              <button
+                onClick={() => setIsWaitlistOpen(true)}
+                className="link hidden md:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-gray-600 border-2 border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
+              >
+                Join waitlist
+              </button>
               <Link
                 to="/login"
                 className="link hidden md:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-purple-600 border-2 border-purple-600 hover:bg-purple-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
@@ -127,20 +135,34 @@ export function Navigation() {
                     </Menu.Item>
                   ))}
                     
-                  {/* Mobile Login */}
+                  {/* Mobile Auth Options */}
                   {showAuthButtons && (
-                    <Menu.Item>
-                      {({ active }) => (
-                        <Link
-                          to="/login"
-                          className={`md:hidden ${
-                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                          } block px-4 py-2 text-sm`}
-                        >
-                          Log in
-                        </Link>
-                      )}
-                    </Menu.Item>
+                    <>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <button
+                            onClick={() => setIsWaitlistOpen(true)}
+                            className={`md:hidden w-full text-left ${
+                              active ? 'bg-gray-100 text-gray-700' : 'text-gray-700'
+                            } block px-4 py-2 text-sm`}
+                          >
+                            Join waitlist
+                          </button>
+                        )}
+                      </Menu.Item>
+                      <Menu.Item>
+                        {({ active }) => (
+                          <Link
+                            to="/login"
+                            className={`md:hidden ${
+                              active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                            } block px-4 py-2 text-sm`}
+                          >
+                            Log in
+                          </Link>
+                        )}
+                      </Menu.Item>
+                    </>
                   )}
 
                   {/* User Menu Items */}
@@ -208,6 +230,12 @@ export function Navigation() {
           </Menu>
         </div>
       </div>
+      
+      {/* Waitlist Modal */}
+      <Waitlist 
+        isOpen={isWaitlistOpen} 
+        onClose={() => setIsWaitlistOpen(false)} 
+      />
     </nav>
   );
 }
