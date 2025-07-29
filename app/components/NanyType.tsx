@@ -86,7 +86,7 @@ const NanyType: React.FC = () => {
             onChange={() => setSelected("sleep_in")}
             className="form-radio h-5 w-5 text-primary-600 border-gray-300 mr-2"
           />
-          <span>Sleep in househelp</span>
+          <span>Sleep in</span>
         </label>
         <label className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${selected === "day" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
           <input
@@ -97,7 +97,7 @@ const NanyType: React.FC = () => {
             onChange={() => setSelected("day")}
             className="form-radio h-5 w-5 text-primary-600 border-gray-300 mr-2"
           />
-          <span>Day househelp</span>
+          <span>Day burg</span>
         </label>
       </div>
       {selected === "day" && (
