@@ -1,4 +1,4 @@
-import { Fragment, useState, useCallback, useMemo } from 'react';
+import { Fragment, useState, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -25,11 +25,12 @@ interface FormData {
   schedule: string;
   preferences: string;
 }
+
 const SignupFlow = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
   // State management
   const [userType, setUserType] = useState<UserType | null>(null);
   const [currentStep, setCurrentStep] = useState<Step>('userType');
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     location: '',
     fullName: '',
     email: '',
@@ -40,30 +41,29 @@ const SignupFlow = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     yearsExperience: '',
     canWorkWithKids: '',
     kidsAgeRange: '',
-    maxKids: '',
+    numberOfKids: '',
     canLookAfterPets: '',
     bio: '',
-    serviceNeeds: [] as string[],
+    needs: [],
     schedule: '',
     preferences: ''
   });
 
   // Handlers
-  const handleUserTypeSelect = useCallback((type: 'househelp' | 'household') => {
+  const handleUserTypeSelect = (type: UserType) => {
     setUserType(type);
     setCurrentStep('location');
-  }, []);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-    
+    const { name, value, type } = e.target;
     if (type === 'checkbox') {
       const checked = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({
         ...prev,
-        [name]: checked
-          ? [...(prev.serviceNeeds || []), value]
-          : prev.serviceNeeds?.filter((item: string) => item !== value)
+        needs: checked
+          ? [...(prev.needs || []), value]
+          : (prev.needs || []).filter((item: string) => item !== value)
       }));
     } else {
       setFormData(prev => ({
@@ -89,7 +89,8 @@ const SignupFlow = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     }
   }, [currentStep, onClose, userType, formData.helpType, formData.canWorkWithKids]);
 
-  const handleSubmit = () => {
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     // Handle form submission
     console.log('Form submitted:', { userType, ...formData });
     onClose();
@@ -127,209 +128,105 @@ const SignupFlow = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
     const currentIndex = flow.indexOf(current);
     return flow[currentIndex - 1] || null;
   };
-  const [userType, setUserType] = useState<UserType | null>(null);
-  const [currentStep, setCurrentStep] = useState<Step>('userType');
-  
-  // Form data for both user types
-  const [formData, setFormData] = useState({
-    // Common fields
-    userType: '',
-    location: '',
-    
-    // Personal info
-    fullName: '',
-    email: '',
-    phone: '',
-    gender: '',
-    dateOfBirth: '',
-    
-    // Househelp specific
-    helpType: '',
-    yearsExperience: '',
-    canWorkWithKids: '',
-    kidsAgeRange: '',
-    maxKids: '',
-    canLookAfterPets: '',
-    bio: '',
-    
-    // Household specific
-    serviceNeeds: [] as string[],
-    schedule: '',
-    preferences: '',
-  });
 
-  const handleNext = () => {
-    if (!userType) return;
+  const isLastStep = () => {
+    const nextStep = getNextStep(currentStep);
+    return !nextStep;
+  };
 
-    // Define steps based on user type
-    const househelpSteps: HousehelpStep[] = ['userType', 'location', 'personal', 'type', 'experience', 'kids', 'kidsDetails', 'pets', 'bio'];
-    const householdSteps: HouseholdStep[] = ['userType', 'location', 'personal', 'needs', 'schedule', 'preferences'];
-    
-    const steps = userType === 'househelp' ? househelpSteps : householdSteps;
-    const currentIndex = steps.indexOf(currentStep);
+  // Define step titles based on user type
+  const getStepTitles = (): Record<Step, string> => {
+    const baseTitles = {
+      userType: 'Join as',
+      location: 'Location',
+      personal: userType === 'househelp' ? 'Personal Info' : 'Your Info',
+    };
 
-    // Handle conditional steps for househelp
     if (userType === 'househelp') {
-      // Skip experience step if not a sleeper
-      if (currentStep === 'type' && formData.helpType === 'dayburg') {
-        setCurrentStep('kids');
-        return;
-      }
-      
-      // Skip kids details if they can't work with kids
-      if (currentStep === 'kids' && formData.canWorkWithKids === 'no') {
-        setCurrentStep('pets');
-        return;
-      }
-    }
-
-    // Move to next step if available
-    if (currentIndex < steps.length - 1) {
-      setCurrentStep(steps[currentIndex + 1] as Step);
-    }
-  };
-
-  const handleBack = () => {
-    if (!userType) {
-      onClose();
-      return;
-    }
-
-    // Define steps based on user type
-    const househelpSteps: HousehelpStep[] = ['userType', 'location', 'personal', 'type', 'experience', 'kids', 'kidsDetails', 'pets', 'bio'];
-    const householdSteps: HouseholdStep[] = ['userType', 'location', 'personal', 'needs', 'schedule', 'preferences'];
-    
-    const steps = userType === 'househelp' ? househelpSteps : householdSteps;
-    const currentIndex = steps.indexOf(currentStep);
-    
-    if (currentIndex > 0) {
-      // Handle conditional back navigation for househelp
-      if (userType === 'househelp') {
-        // If going back from kids details and can't work with kids, skip to kids question
-        if (currentStep === 'kidsDetails' && formData.canWorkWithKids === 'no') {
-          setCurrentStep('kids');
-          return;
-        }
-        
-        // If going back from pets and not a sleeper, skip experience
-        if (currentStep === 'pets' && formData.helpType === 'dayburg' && steps[currentIndex - 1] === 'experience') {
-          setCurrentStep('type');
-          return;
-        }
-      }
-      
-      setCurrentStep(steps[currentIndex - 1] as Step);
+      return {
+        ...baseTitles,
+        type: 'Service Type',
+        experience: 'Experience',
+        kids: 'Childcare',
+        kidsDetails: 'Childcare Details',
+        pets: 'Pets',
+        bio: 'About You'
+      } as Record<Step, string>;
     } else {
-      // If at first step, close modal
-      onClose();
+      return {
+        ...baseTitles,
+        needs: 'Service Needs',
+        schedule: 'Schedule',
+        preferences: 'Preferences'
+      } as Record<Step, string>;
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
-    
-    if (type === 'checkbox') {
-      const checked = (e.target as HTMLInputElement).checked;
-      setFormData(prev => ({
-        ...prev,
-        [name]: checked
-          ? [...(prev.serviceNeeds || []), value]
-          : (prev.serviceNeeds || []).filter(item => item !== value)
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }));
-    }
-  };
+  const stepTitles = getStepTitles();
 
-  const handleUserTypeSelect = (type: UserType) => {
-    setUserType(type);
-    setFormData(prev => ({
-      ...prev,
-      userType: type
-    }));
-    
-    // Move to next step after selecting user type
-    setCurrentStep('location');
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log('Form submitted:', formData);
-    onClose();
-  };
-
+  // Render step content based on current step
   const renderStep = () => {
-    // User Type Selection (First Step)
-    if (currentStep === 'userType') {
-      return (
-        <div className="space-y-6">
-          <h3 className="text-lg font-medium text-gray-900">Join as</h3>
-          <div className="grid grid-cols-1 gap-4">
-            <button
-              type="button"
-              onClick={() => handleUserTypeSelect('househelp')}
-              className={`p-6 border-2 rounded-lg text-left transition-colors ${
-                userType === 'househelp' 
-                  ? 'border-indigo-500 bg-indigo-50' 
-                  : 'border-gray-200 hover:border-indigo-300'
-              }`}
-            >
-              <h4 className="font-medium text-gray-900">Househelp</h4>
-              <p className="mt-1 text-sm text-gray-500">
-                Looking for househelp jobs. I want to offer my services.
-              </p>
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => handleUserTypeSelect('household')}
-              className={`p-6 border-2 rounded-lg text-left transition-colors ${
-                userType === 'household' 
-                  ? 'border-indigo-500 bg-indigo-50' 
-                  : 'border-gray-200 hover:border-indigo-300'
-              }`}
-            >
-              <h4 className="font-medium text-gray-900">Household (Employer)</h4>
-              <p className="mt-1 text-sm text-gray-500">
-                Looking to hire help. I need househelp services.
-              </p>
-            </button>
+    if (!userType) return null;
+    
+    switch (currentStep) {
+      case 'userType':
+        return (
+          <div className="space-y-6">
+            <h3 className="text-lg font-medium text-gray-900">Join as</h3>
+            <div className="grid grid-cols-1 gap-4">
+              <button
+                type="button"
+                onClick={() => handleUserTypeSelect('househelp')}
+                className={`p-6 border-2 rounded-lg text-left transition-colors ${
+                  userType === 'househelp' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'
+                }`}
+              >
+                <span className="block text-lg font-semibold">Househelp</span>
+                <p className="mt-1 text-sm text-gray-500">
+                  Looking for work. I want to offer househelp services.
+                </p>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleUserTypeSelect('household')}
+                className={`p-6 border-2 rounded-lg text-left transition-colors ${
+                  userType === 'household' ? 'border-indigo-600 bg-indigo-50' : 'border-gray-200'
+                }`}
+              >
+                <span className="block text-lg font-semibold">Household</span>
+                <p className="mt-1 text-sm text-gray-500">
+                  Looking to hire help. I need househelp services.
+                </p>
+              </button>
+            </div>
           </div>
-        </div>
-      );
-    }
-
-    // Common Location Step
-    if (currentStep === 'location') {
-      return (
-        <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">
-            {userType === 'househelp' 
-              ? 'Where are you located?' 
-              : 'Where do you need househelp?'}
-          </h3>
-          <p className="text-sm text-gray-500">
-            {userType === 'househelp'
-              ? 'We\'ll use this to match you with potential employers in your area.'
-              : 'We\'ll show you available househelp in your area.'}
-          </p>
-          <input
-            type="text"
-            name="location"
-            value={formData.location}
-            onChange={handleChange}
-            placeholder="Enter location"
-            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-            required
-          />
-        </div>
-      );
-    }
+        );
       
-      // Personal Information Step
+      case 'location':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">
+              {userType === 'househelp' 
+                ? 'Where are you located?' 
+                : 'Where do you need househelp?'}
+            </h3>
+            <p className="text-sm text-gray-500">
+              {userType === 'househelp'
+                ? 'We\'ll use this to match you with potential employers in your area.'
+                : 'We\'ll show you available househelp in your area.'}
+            </p>
+            <input
+              type="text"
+              name="location"
+              value={formData.location}
+              onChange={handleChange}
+              placeholder="Enter location"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+              required
+            />
+          </div>
+        );
+      
       case 'personal':
         return (
           <div className="space-y-4">
@@ -519,10 +416,10 @@ const SignupFlow = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
               <label className="block text-sm font-medium text-gray-700">Maximum number of children you can look after at once</label>
               <input
                 type="number"
-                name="maxKids"
+                name="numberOfKids"
                 min="1"
                 max="10"
-                value={formData.maxKids}
+                value={formData.numberOfKids}
                 onChange={handleChange}
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
                 required
@@ -563,143 +460,85 @@ const SignupFlow = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
           </div>
         );
       
-      default:
-        return null;
-    }
-  };
-
-  // Define step titles based on user type
-  const stepTitles: Record<Step, string> = {
-    userType: 'Join as',
-    location: 'Location',
-    personal: userType === 'househelp' ? 'Personal Info' : 'Your Info',
-    ...(userType === 'househelp' ? {
-      type: 'Service Type',
-      experience: 'Experience',
-      kids: 'Childcare',
-      kidsDetails: 'Childcare Details',
-      pets: 'Pets',
-      bio: 'About You'
-    } : {
-      needs: 'Service Needs',
-      schedule: 'Schedule',
-      preferences: 'Preferences'
-    })
-  } as Record<Step, string>;
-
-  // Check if current step is the last one
-  const isLastStep = useCallback(() => {
-    if (!userType) return false;
-    
-    if (userType === 'househelp') {
-      return currentStep === 'bio' || 
-             (currentStep === 'kids' && formData.canWorkWithKids === 'no') ||
-             (currentStep === 'type' && formData.helpType === 'dayburg');
-    } else {
-      return currentStep === 'preferences';
-    }
-  }, [currentStep, userType, formData.canWorkWithKids, formData.helpType]);
-
-  // Render step content based on current step
-  const renderStep = () => {
-    if (!userType) return null;
-    
-    switch (currentStep) {
-      case 'userType':
-        return (
-          <div className="space-y-6">
-            <h3 className="text-lg font-medium text-gray-900">Join as</h3>
-            <div className="grid grid-cols-1 gap-4">
-              <button
-                type="button"
-                onClick={() => handleUserTypeSelect('househelp')}
-                className={`p-6 border-2 rounded-lg text-left transition-colors ${
-                  userType === 'househelp' 
-                    ? 'border-indigo-500 bg-indigo-50' 
-                    : 'border-gray-200 hover:border-indigo-300'
-                }`}
-              >
-                <h4 className="font-medium text-gray-900">Househelp</h4>
-                <p className="mt-1 text-sm text-gray-500">
-                  Looking for househelp jobs. I want to offer my services.
-                </p>
-              </button>
-              
-              <button
-                type="button"
-                onClick={() => handleUserTypeSelect('household')}
-                className={`p-6 border-2 rounded-lg text-left transition-colors ${
-                  userType === 'household' 
-                    ? 'border-indigo-500 bg-indigo-50' 
-                    : 'border-gray-200 hover:border-indigo-300'
-                }`}
-              >
-                <h4 className="font-medium text-gray-900">Household (Employer)</h4>
-                <p className="mt-1 text-sm text-gray-500">
-                  Looking to hire help. I need househelp services.
-                </p>
-              </button>
-            </div>
-          </div>
-        );
-
-      case 'location':
+      case 'bio':
         return (
           <div className="space-y-4">
-            <h3 className="text-lg font-medium text-gray-900">
-              {userType === 'househelp' 
-                ? 'Where are you located?' 
-                : 'Where do you need househelp?'}
-            </h3>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
+            <h3 className="text-lg font-medium text-gray-900">Tell us about yourself</h3>
+            <p className="text-sm text-gray-500">Share your experience, skills, and what makes you a great househelp.</p>
+            <textarea
+              name="bio"
+              value={formData.bio}
               onChange={handleChange}
-              placeholder="Enter location"
+              rows={4}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+              placeholder="Describe your experience, skills, and what you're looking for..."
               required
             />
           </div>
         );
-
-      // Add other cases here...
+      
+      case 'needs':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">What services do you need?</h3>
+            <div className="space-y-2">
+              {['Cleaning', 'Cooking', 'Laundry', 'Childcare', 'Pet care', 'Elderly care'].map((service) => (
+                <label key={service} className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    name="needs"
+                    value={service.toLowerCase()}
+                    checked={formData.needs.includes(service.toLowerCase())}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                  />
+                  <span>{service}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      
+      case 'schedule':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">What's your preferred schedule?</h3>
+            <div className="space-y-2">
+              {['Full-time live-in', 'Part-time', 'Weekends only', 'Flexible'].map((schedule) => (
+                <label key={schedule} className="flex items-center space-x-2">
+                  <input
+                    type="radio"
+                    name="schedule"
+                    value={schedule.toLowerCase().replace(' ', '-')}
+                    checked={formData.schedule === schedule.toLowerCase().replace(' ', '-')}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300"
+                    required
+                  />
+                  <span>{schedule}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      
+      case 'preferences':
+        return (
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Any specific preferences?</h3>
+            <textarea
+              name="preferences"
+              value={formData.preferences}
+              onChange={handleChange}
+              rows={4}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+              placeholder="Tell us about any specific requirements, preferences, or additional information..."
+            />
+          </div>
+        );
       
       default:
-        return <div>Step not found</div>;
-    }
-  };
-
-  // Get the appropriate button text based on the current step
-  const getButtonText = () => {
-    return isLastStep() ? 'Complete' : 'Next';
-  };
-
-  // Handle form submission or next step
-  const handleAction = () => {
-    if (isLastStep()) {
-      handleSubmit();
-    } else {
-      handleNext();
-    }
-  };
-    }
-  };
-
-  // Get the appropriate button text based on the current step
-  const getButtonText = () => {
-    if (isLastStep()) return 'Complete';
-    return 'Next';
-  };
-
-  // Handle form submission or next step
-  const handleAction = () => {
-    if (isLastStep()) {
-      handleSubmit();
-    } else {
-      handleNext();
-    }
-  };
+        return null;
     }
   };
 
@@ -728,6 +567,7 @@ const SignupFlow = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
               leave="ease-in duration-200"
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
+            >
               <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
                 <div className="flex justify-between items-center">
                   <Dialog.Title as="h3" className="text-base font-semibold leading-6 text-gray-900">
@@ -773,7 +613,13 @@ const SignupFlow = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void 
                       
                       <button
                         type="button"
-                        onClick={isLastStep() ? handleSubmit : handleNext}
+                        onClick={() => {
+                          if (isLastStep()) {
+                            handleSubmit();
+                          } else {
+                            handleNext();
+                          }
+                        }}
                         className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
                         disabled={!userType && currentStep === 'userType'}
                       >
