@@ -45,8 +45,7 @@ const base_url = 'http://localhost:8080';
 // Profile type options
 const profileOptions = [
     { value: 'employer', label: 'Household' },
-    { value: 'househelp', label: 'Househelp/Nanny' },
-    { value: 'bureau', label: 'Agency/Bureau' }
+    { value: 'househelp', label: 'Househelp/Nanny' }
 ];
 
 export default function SignupPage() {

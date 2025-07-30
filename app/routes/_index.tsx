@@ -116,22 +116,13 @@ export default function Index() {
         </div>
 
         {/* How it works image section */}
-        <div className="w-full my-8 px-2 sm:px-4">
+        <div className="w-full my-8 px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20">
           <div className="relative w-full mx-auto rounded-xl overflow-hidden shadow-lg">
             <img
               src="/how%20it%20works.jpg"
               alt="How it works"
               className="w-full h-auto object-cover"
             />
-            {/* Text overlay - left-aligned */}
-            <div className="absolute inset-0 flex items-center justify-start p-4 sm:p-8 lg:p-12 pointer-events-none">
-              <div className="max-w-2xl">
-                <h2 className="text-2xl sm:text-4xl font-bold text-white drop-shadow-lg">
-                  <span className="bg-gradient-to-r from-purple-500 to-indigo-600 bg-clip-text text-transparent">Hire Qualified Housekeepers</span>
-                  <span className="text-white"> at your convenience</span>
-                </h2>
-              </div>
-            </div>
           </div>
         </div>
 
