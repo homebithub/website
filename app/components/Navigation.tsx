@@ -165,24 +165,10 @@ export function Navigation() {
                     </>
                   )}
 
-                  {/* User Menu Items */}
+                  {/* User Menu Items - Dashboard button removed from here as per user request */}
                   {user && (
                     <>
                       <div className="border-t border-gray-200 my-1"></div>
-                      {dashboardPath && (
-                        <Menu.Item>
-                          {({ active }) => (
-                            <Link
-                              to={dashboardPath}
-                              className={`${
-                                active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                              } block px-4 py-2 text-sm`}
-                            >
-                              Dashboard
-                            </Link>
-                          )}
-                        </Menu.Item>
-                      )}
                       <Menu.Item>
                         {({ active }) => (
                           <Link
