@@ -15,7 +15,10 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
+    const [selectedLocation, setSelectedLocation] = useState<LocationSuggestion | null>(null);
+    const [submitStatus, setSubmitStatus] = useState<{success: boolean; message: string} | null>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const baseUrl = 'http://localhost:8080'
@@ -71,8 +74,10 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
 
     const handleSuggestionClick = (suggestion: LocationSuggestion) => {
         setInput(suggestion.name);
+        setSelectedLocation(suggestion);
         setShowDropdown(false);
         setSuggestions([]);
+        setSubmitStatus(null);
         if (onSelect) onSelect(suggestion);
     };
 
@@ -89,10 +94,55 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
         }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setShowDropdown(false);
-        // Optionally handle submit logic here
+        
+        if (!selectedLocation) {
+            setSubmitStatus({
+                success: false,
+                message: 'Please select a location from the suggestions'
+            });
+            return;
+        }
+
+        setSubmitting(true);
+        setSubmitStatus(null);
+        const token = localStorage.getItem('token');
+
+        try {
+            const response = await fetch(`${baseUrl}/api/v1/location/save-user-location`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': token ? `Bearer ${token}` : ''
+                },
+                body: JSON.stringify({
+                    mapbox_id: selectedLocation.mapbox_id
+                })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                setSubmitStatus({
+                    success: true,
+                    message: data.message || 'Location saved successfully!'
+                });
+                // Clear the status after 3 seconds
+                setTimeout(() => setSubmitStatus(null), 3000);
+            } else {
+                throw new Error(data.message || 'Failed to save location');
+            }
+        } catch (error) {
+            console.error('Error saving location:', error);
+            setSubmitStatus({
+                success: false,
+                message: error instanceof Error ? error.message : 'An error occurred while saving location'
+            });
+        } finally {
+            setSubmitting(false);
+        }
     };
 
     return (
@@ -134,11 +184,25 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                         </div>
                     )}
                 </div>
+                {submitStatus && (
+                    <div className={`p-3 rounded-lg text-sm font-medium ${submitStatus.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                        {submitStatus.message}
+                    </div>
+                )}
                 <button
                     type="submit"
-                    className="w-full bg-primary-700 text-white py-3 rounded-lg hover:bg-primary-800 transition-colors duration-200 font-semibold text-lg disabled:opacity-60"
+                    disabled={submitting}
+                    className={`w-full ${submitting ? 'bg-primary-500' : 'bg-primary-700 hover:bg-primary-800'} text-white py-3 rounded-lg transition-colors duration-200 font-semibold text-lg disabled:opacity-60 flex items-center justify-center`}
                 >
-                    Submit
+                    {submitting ? (
+                        <>
+                            <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Saving...
+                        </>
+                    ) : 'Save Location'}
                 </button>
             </form>
         </div>
