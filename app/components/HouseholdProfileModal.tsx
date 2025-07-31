@@ -7,48 +7,7 @@ import { ScheduleStep } from './household-profile/ScheduleStep';
 import { ChoresStep } from './household-profile/ChoresStep';
 import { RequirementsStep } from './household-profile/RequirementsStep';
 import { BudgetStep } from './household-profile/BudgetStep';
-
-export interface HouseholdProfileData {
-  location: {
-    address: string;
-    coordinates: [number, number];
-  };
-  children: {
-    hasChildren: boolean;
-    expecting: boolean;
-    children: Array<{
-      name: string;
-      age: number;
-      gender: string;
-    }>;
-    dueDate?: string;
-  };
-  nannyType: 'dayburg' | 'sleep-in' | null;
-  schedule: {
-    startDate: string;
-    days?: string[]; // For dayburg
-  };
-  chores: {
-    cleaning: boolean;
-    cooking: boolean;
-    childcare: boolean;
-    laundry: boolean;
-    other: string;
-  };
-  requirements: {
-    hasPets: boolean;
-    petDetails?: string;
-    otherRequirements?: string;
-  };
-  budget: {
-    type: 'daily' | 'weekly' | 'monthly';
-    amount: number;
-  };
-  houseDetails: {
-    size: 'bedsitter' | '1-bedroom' | '2-bedroom' | '3-bedroom' | '4+bedroom';
-    hasSeparateSQ: boolean;
-  };
-}
+import { HouseholdProfileData } from '../types/household-profile';
 
 interface HouseholdProfileModalProps {
   isOpen: boolean;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HouseholdProfileData } from '../HouseholdProfileModal';
+import { HouseholdProfileData } from '../../types/household-profile';
 
 interface LocationStepProps {
   data: HouseholdProfileData;
