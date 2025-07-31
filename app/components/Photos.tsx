@@ -7,11 +7,15 @@ type ImageFile = {
   preview: string;
 };
 
+interface PhotosProps {
+  userType?: 'househelp' | 'household';
+}
+
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-const Photos: React.FC = () => {
+const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState('');
@@ -198,11 +202,29 @@ const Photos: React.FC = () => {
     };
   }, [images]);
 
+  // Dynamic content based on user type
+  const content = {
+    househelp: {
+      title: 'Upload Your Photos',
+      description: `Add up to ${MAX_FILES} photos to showcase your work and experience. High-quality images help you stand out.`,
+      uploadText: 'Click to upload photos or drag and drop',
+      supportText: 'JPG, PNG, WEBP, GIF up to 10MB each'
+    },
+    household: {
+      title: 'Upload Photos of Your Home',
+      description: `Add up to ${MAX_FILES} photos of your home and living spaces. This helps househelps understand your environment and needs.`,
+      uploadText: 'Click to upload home photos or drag and drop',
+      supportText: 'JPG, PNG, WEBP, GIF up to 10MB each'
+    }
+  };
+
+  const currentContent = content[userType];
+
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">Upload Your Photos</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">{currentContent.title}</h1>
       <p className="text-gray-600 mb-6">
-        Add up to {MAX_FILES} photos to showcase your work and experience. High-quality images help you stand out.
+        {currentContent.description}
       </p>
       
       {error && (
@@ -245,7 +267,7 @@ const Photos: React.FC = () => {
                 htmlFor="file-upload"
                 className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500 mx-auto"
               >
-                <span>Upload files</span>
+                <span>{currentContent.uploadText}</span>
                 <input
                   id="file-upload"
                   name="file-upload"
@@ -257,10 +279,9 @@ const Photos: React.FC = () => {
                   ref={fileInputRef}
                 />
               </label>
-              <p className="pl-1">or drag and drop</p>
             </div>
             <p className="text-xs text-gray-500">
-              PNG, JPG, GIF, WEBP up to 10MB
+              {currentContent.supportText}
             </p>
           </div>
         </div>

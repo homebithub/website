@@ -103,7 +103,13 @@ export default function HousehelpProfileSetup() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
             <div className="px-6 py-8">
               <div className="max-w-2xl mx-auto">
-                <CurrentComponent />
+                {STEPS[currentStep].id === 'bio' ? (
+                  <CurrentComponent userType="househelp" />
+                ) : STEPS[currentStep].id === 'photos' ? (
+                  <CurrentComponent userType="househelp" />
+                ) : (
+                  <CurrentComponent />
+                )}
               </div>
             </div>
           </div>

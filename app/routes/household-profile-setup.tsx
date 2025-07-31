@@ -12,6 +12,7 @@ import Chores from '../components/Chores';
 import Pets from '../components/Pets';
 import Budget from '../components/Budget';
 import HouseSize from '../components/HouseSize';
+import Bio from '../components/Bio';
 import Photos from '../components/Photos';
 
 const STEPS = [
@@ -22,6 +23,7 @@ const STEPS = [
   { id: 'pets', title: 'Pets', component: Pets },
   { id: 'budget', title: 'Budget', component: Budget },
   { id: 'housesize', title: 'House Size', component: HouseSize },
+  { id: 'bio', title: 'About Your Household', component: Bio },
   { id: 'photos', title: 'Photos', component: Photos },
 ];
 
@@ -95,7 +97,13 @@ export default function HouseholdProfileSetup() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
             <div className="px-6 py-8">
               <div className="max-w-2xl mx-auto">
-                <CurrentComponent />
+                {STEPS[currentStep].id === 'bio' ? (
+                  <CurrentComponent userType="household" />
+                ) : STEPS[currentStep].id === 'photos' ? (
+                  <CurrentComponent userType="household" />
+                ) : (
+                  <CurrentComponent />
+                )}
               </div>
             </div>
           </div>

@@ -3,7 +3,11 @@ import React, { useState, useEffect } from 'react';
 const MIN_CHARACTERS = 25;
 const MAX_CHARACTERS = 2000;
 
-const Bio: React.FC = () => {
+interface BioProps {
+  userType?: 'househelp' | 'household';
+}
+
+const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
   const [bio, setBio] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -12,6 +16,22 @@ const Bio: React.FC = () => {
   
   const remainingCharacters = MAX_CHARACTERS - characterCount;
   const isBioValid = characterCount >= MIN_CHARACTERS;
+
+  // Dynamic content based on user type
+  const content = {
+    househelp: {
+      title: 'Tell Us About Yourself',
+      description: 'Introduce yourself to potential employers. A well-written bio can significantly increase your chances of getting hired. Share your experience, skills, and what makes you the perfect fit for the job.',
+      placeholder: 'Share your experience, skills, and what makes you the perfect fit...'
+    },
+    household: {
+      title: 'Tell Us About Your Household',
+      description: 'Describe your household and what you\'re looking for in a househelp. This helps potential candidates understand your family\'s needs and determine if they\'re a good fit.',
+      placeholder: 'Describe your household, family dynamics, expectations, and what you\'re looking for in a househelp...'
+    }
+  };
+
+  const currentContent = content[userType];
 
   useEffect(() => {
     setCharacterCount(bio.length);
@@ -49,11 +69,10 @@ const Bio: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Tell Us About Yourself</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-6">{currentContent.title}</h1>
       
       <p className="text-gray-600 mb-6">
-        Introduce yourself to potential employers. A well-written bio can significantly increase your chances of getting hired. 
-        Share your experience, skills, and what makes you the perfect fit for the job.
+        {currentContent.description}
       </p>
       
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -70,7 +89,7 @@ const Bio: React.FC = () => {
                   ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
                   : 'border-gray-200 focus:ring-primary-500 focus:border-primary-500'
               } shadow-sm placeholder-gray-400 focus:outline-none transition-colors`}
-              placeholder="Share your experience, skills, and what makes you the perfect fit..."
+              placeholder={currentContent.placeholder}
               value={bio}
               onChange={(e) => setBio(e.target.value)}
               maxLength={MAX_CHARACTERS}
