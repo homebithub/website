@@ -42,7 +42,7 @@ export type SignupResponse = {
 
 const base_url = 'http://localhost:8080';
 
-// Profile type options
+// Profile type options - Bureau removed as they should not sign up through regular flow
 const profileOptions = [
     { value: 'employer', label: 'Household' },
     { value: 'househelp', label: 'Househelp/Nanny' }
@@ -82,19 +82,15 @@ export default function SignupPage() {
         // If user is already authenticated, redirect them
         if (user) {
             const profileType = user.profile_type;
-            // Allow bureau to register househelps if bureauId is present
-            if (profileType === "bureau" && bureauId) {
-        
+            // Bureau users should not access regular signup flow
+            if (profileType === "bureau") {
+                navigate("/");
                 return;
             }
-            if (profileType === "employer") {
-                navigate("/household");
+            if (profileType === "employer" || profileType === "household") {
+                navigate("/household/profile");
             } else if (profileType === "househelp") {
                 navigate("/househelp");
-            } else if (profileType === "bureau") {
-                navigate("/bureau");
-           // } else if (redirectUrl) {
-             //   navigate(redirectUrl);
             } else {
                 navigate("/");
             }

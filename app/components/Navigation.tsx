@@ -15,33 +15,49 @@ const navigation = [
 export function Navigation() {
   const { user, logout } = useAuth();
   const [profileType, setProfileType] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
 
   // Memoized dashboard path based on profile type
   const dashboardPath = React.useMemo(() => {
     if (!profileType) return null;
-    if (profileType === "employer") return "/household";
+    if (profileType === "employer" || profileType === "household") return "/household";
     if (profileType === "househelp") return "/househelp";
-    if (profileType === "bureau") return "/bureau";
+    // Bureau users should not access regular navigation
     return null;
   }, [profileType]);
 
-  // Parse user profile type from localStorage
+  // Parse user profile type and name from localStorage
   useEffect(() => {
     if (user) {
       try {
         const obj = localStorage.getItem("user_object");
         if (obj) {
           const parsed = JSON.parse(obj);
-          setProfileType(parsed.profile_type || null);
+          const profileType = parsed.profile_type || null;
+          
+          // Bureau users should not access regular navigation
+          if (profileType === "bureau") {
+            setProfileType(null);
+            setUserName(null);
+            return;
+          }
+          
+          setProfileType(profileType);
+          // Get user name for greeting
+          const firstName = parsed.first_name || parsed.firstName || "";
+          setUserName(firstName);
         } else {
           setProfileType(null);
+          setUserName(null);
         }
       } catch {
         setProfileType(null);
+        setUserName(null);
       }
     } else {
       setProfileType(null);
+      setUserName(null);
     }
   }, [user]);
 
@@ -56,6 +72,8 @@ export function Navigation() {
   // Show auth buttons only if user is not logged in
   const showAuthButtons = !user;
 
+
+
   return (
     <nav className="bg-white py-4 shadow-sm">
       <div className="flex justify-between items-center px-8 sm:px-12 lg:px-24">
@@ -64,21 +82,23 @@ export function Navigation() {
           HomeXpert
         </Link>
 
-        {/* Navigation Links */}
-        <div className="hidden md:flex items-center space-x-4 ml-auto">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className="link text-base font-bold transition-colors duration-200 px-4 py-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 text-slate-700 hover:text-purple-600"
-            >
-              {item.name}
-            </Link>
-          ))}
-        </div>
+        {/* Navigation Links - Only show for non-authenticated users */}
+        {showAuthButtons && (
+          <div className="hidden md:flex items-center space-x-4 ml-auto">
+            {navigation.map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className="link text-base font-bold transition-colors duration-200 px-4 py-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 text-slate-700 hover:text-purple-600"
+              >
+                {item.name}
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Right section */}
-                <div className="flex items-center space-x-4 ml-6">
+        <div className="flex items-center space-x-4 ml-6">
           {showAuthButtons && (
             <div className="flex items-center space-x-3">
               <button
@@ -102,8 +122,17 @@ export function Navigation() {
             </div>
           )}
 
+          {/* Authenticated User Greeting */}
+          {user && userName && (
+            <div className="hidden md:flex items-center space-x-3">
+              <div className="text-sm text-gray-600">
+                <span className="font-semibold text-base">Hello, {userName}</span>
+              </div>
+            </div>
+          )}
+
           {/* Menu Dropdown */}
-          <Menu as="div" className="relative inline-block text-left md:hidden">
+          <Menu as="div" className="relative inline-block text-left">
             <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-purple-600 p-2 text-white shadow-md hover:bg-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
               <Bars3Icon className="h-7 w-7" />
             </Menu.Button>
@@ -119,7 +148,7 @@ export function Navigation() {
             >
               <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                 <div className="py-2">
-                  {/* Navigation Links */}
+                  {/* Navigation Links - Show for all users in mobile menu */}
                   {navigation.map((item) => (
                     <Menu.Item key={item.name}>
                       {({ active }) => (
@@ -165,10 +194,17 @@ export function Navigation() {
                     </>
                   )}
 
-                  {/* User Menu Items - Dashboard button removed from here as per user request */}
+                  {/* User Menu Items */}
                   {user && (
                     <>
                       <div className="border-t border-gray-200 my-1"></div>
+                      {/* User Greeting in Mobile Menu */}
+                      <div className="px-4 py-2 text-sm text-gray-600 border-b border-gray-100">
+                        <div className="font-semibold text-base">Hello, {userName}</div>
+                      </div>
+                      
+
+                      
                       <Menu.Item>
                         {({ active }) => (
                           <Link

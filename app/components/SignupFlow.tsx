@@ -7,9 +7,10 @@ type UserType = 'househelp' | 'household';
 interface SignupFlowProps {
   isOpen: boolean;
   onClose: () => void;
+  onUserTypeSelected?: (userType: UserType) => void;
 }
 
-const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose }) => {
+const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSelected }) => {
   // State management
   const [userType, setUserType] = useState<UserType | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,7 +23,10 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose }) => {
     // Close the modal after a short delay to show the selection
     setTimeout(() => {
       onClose();
-      window.location.href = type === 'househelp' ? '/signup/househelp' : '/signup/household';
+      // Trigger the profile completion modal
+      if (onUserTypeSelected) {
+        onUserTypeSelected(type);
+      }
     }, 500);
   };
 

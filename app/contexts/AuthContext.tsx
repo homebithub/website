@@ -83,14 +83,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(data as LoginResponse);
       // Redirect to specific dashboard based on profile_type
       const profileType = userData.profile_type;
-      console.log("profileType", profileType);
-      if (profileType === "household") {
+      console.log("User data after login:", userData);
+      console.log("Profile type:", profileType);
+      
+      // Bureau users should not login through regular flow
+      if (profileType === "bureau") {
+        console.log("Bureau user detected, redirecting to home");
+        navigate("/");
+        return;
+      }
+      
+      if (profileType === "household" || profileType === "employer") {
+        console.log("Redirecting to /household/profile");
         navigate("/household/profile");
       } else if (profileType === "househelp") {
+        console.log("Redirecting to /househelp");
         navigate("/househelp");
-      } else if (profileType === "bureau") {
-        navigate("/bureau");
       } else {
+        console.log("No valid profile type found, redirecting to /");
         navigate("/"); // fallback
       }
     } catch (error) {
