@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { useLocation, useNavigate } from '@remix-run/react';
 import { Footer } from '~/components/Footer';
 import { Navigation } from '~/components/Navigation';
+import { HouseholdProfileModal } from '~/components/HouseholdProfileModal';
 import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
 
 export default function VerifyOtpPage() {
   // UI state for changing phone
   const [showChangePhone, setShowChangePhone] = React.useState(false);
   const [newPhone, setNewPhone] = React.useState('');
+  
+  // Household profile modal state
+  const [showProfileModal, setShowProfileModal] = React.useState(false);
+  const [profileData, setProfileData] = React.useState(null);
 
   // Validation state
   const [otpError, setOtpError] = React.useState<string | null>(null);
@@ -192,10 +197,26 @@ export default function VerifyOtpPage() {
         let path = '/';
         if (userObj) {
           const parsed = JSON.parse(userObj);
-          if (parsed.profile_type === 'household') path = '/household';
-          else if (parsed.profile_type === 'househelp') path = '/househelp';
-          else if (parsed.profile_type === 'bureau') path = '/bureau';
+          console.log('User object after OTP verification:', parsed);
+          console.log('Profile type:', parsed.profile_type);
+          
+          // Bureau users should not verify through regular flow
+          if (parsed.profile_type === 'bureau') {
+            console.log('Bureau user detected, redirecting to home');
+            navigate('/');
+            return;
+          }
+          
+          // Handle both 'household' and 'employer' profile types
+          if (parsed.profile_type === 'household' || parsed.profile_type === 'employer') {
+            // Show profile completion modal for household users
+            setShowProfileModal(true);
+            return;
+          } else if (parsed.profile_type === 'househelp') {
+            path = '/househelp';
+          }
         }
+        console.log('Redirecting to:', path);
         navigate(path);
       }
     } catch (err: any) {
@@ -278,6 +299,45 @@ export default function VerifyOtpPage() {
         setNewPhoneError(null);
       }
     }
+  };
+
+  // Handle profile completion
+  const handleProfileComplete = async (data: any) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
+      
+      // Save profile data to backend
+      const res = await fetch('http://localhost:8080/api/v1/profile/employer/complete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to save profile data');
+      }
+      
+      setProfileData(data);
+      setShowProfileModal(false);
+      
+      // Redirect to household dashboard
+      navigate('/household/profile');
+    } catch (err: any) {
+      console.error('Failed to save profile:', err);
+      // Still redirect even if save fails
+      setShowProfileModal(false);
+      navigate('/household/profile');
+    }
+  };
+
+  const handleProfileModalClose = () => {
+    setShowProfileModal(false);
+    // Redirect to household profile page
+    navigate('/household/profile');
   };
 
   return (
@@ -465,6 +525,14 @@ export default function VerifyOtpPage() {
 
         </div>
       </section>
+      
+      {/* Household Profile Modal */}
+      <HouseholdProfileModal
+        isOpen={showProfileModal}
+        onClose={handleProfileModalClose}
+        onComplete={handleProfileComplete}
+      />
+      
       <Footer />
     </main>
   );

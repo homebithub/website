@@ -127,27 +127,62 @@ export default function Index() {
         </div>
 
         {/* What we offer section */}
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+        <div className="w-full my-8 px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20">
           <div className="mx-auto max-w-7xl">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
               <div className="order-2 md:order-1">
-                <img
-                  src="/AdobeStock_1207852325_Preview.jpeg"
-                  alt="Home services illustration"
-                  className="rounded-xl shadow-lg w-full h-auto"
-                />
+                <div className="relative w-full mx-auto rounded-xl overflow-hidden shadow-lg">
+                  <img
+                    src="/AdobeStock_1207852325_Preview.jpeg"
+                    alt="Home services illustration"
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
               </div>
-              <div className="order-1 md:order-2 max-w-2xl mx-auto text-center md:text-left">
-                <h2 className="text-2xl sm:text-3xl font-semibold text-slate-900 leading-tight">
+              <div className="order-1 md:order-2 max-w-2xl mx-auto text-center md:text-left font-sans">
+                <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight tracking-tight">
                   What We Offer
                 </h2>
-                <p className="mt-2 text-lg sm:text-2xl text-slate-900">
+                <p className="mt-3 text-xl sm:text-2xl font-semibold text-slate-800 leading-relaxed">
                   More than just a home services platform.
                 </p>
-                <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 font-medium">
+                <p className="mt-4 text-base sm:text-lg leading-relaxed text-slate-600 font-normal">
                   Whether you need a quick clean, or full-time help, HomeXpert
                   connects you with reliable professionals you can trust.
                 </p>
+                
+                {/* Detailed points */}
+                <div className="mt-8 space-y-6">
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      ✓
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-lg font-bold text-slate-900 leading-tight mb-2">Comprehensive Home Services</h4>
+                      <p className="text-base leading-relaxed text-slate-600 font-normal">From daily cleaning and laundry to specialized childcare and elderly care, we provide a full spectrum of home management services tailored to your specific needs.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      ✓
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-lg font-bold text-slate-900 leading-tight mb-2">Vetted & Certified Professionals</h4>
+                      <p className="text-base leading-relaxed text-slate-600 font-normal">All our service providers undergo rigorous background checks, skill assessments, and continuous training to ensure the highest standards of professionalism and reliability.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start space-x-4">
+                    <div className="flex-shrink-0 w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+                      ✓
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-lg font-bold text-slate-900 leading-tight mb-2">Flexible Scheduling & Real-time Tracking</h4>
+                      <p className="text-base leading-relaxed text-slate-600 font-normal">Book services on-demand or schedule recurring appointments. Track service progress in real-time and receive instant updates through our user-friendly platform.</p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
