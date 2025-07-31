@@ -68,9 +68,9 @@ export default function Contact() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white flex flex-col">
       <Navigation />
-      <main className="container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">

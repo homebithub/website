@@ -6,34 +6,26 @@ import { Footer } from '../components/Footer';
 
 // Import all the components
 import Location from '../components/Location';
-import Gender from '../components/Gender';
+import Children from '../components/Children';
 import NannyType from '../components/NanyType';
-import YearsOfExperience from '../components/YearsOfExperience';
-import WorkWithKids from '../components/WorkWithKids';
-import WorkWithPets from '../components/WorkWithPets';
-import Languages from '../components/Languages';
-import MyKids from '../components/MyKids';
-import Certifications from '../components/Certifications';
-import SalaryExpectations from '../components/SalaryExpectations';
-import Bio from '../components/Bio';
+import Chores from '../components/Chores';
+import Pets from '../components/Pets';
+import Budget from '../components/Budget';
+import HouseSize from '../components/HouseSize';
 import Photos from '../components/Photos';
 
 const STEPS = [
-{ id: 'nannytype', title: 'Service Type', component: NannyType },
   { id: 'location', title: 'Location', component: Location },
-  { id: 'gender', title: 'Gender & Age', component: Gender },
-  { id: 'experience', title: 'Experience', component: YearsOfExperience },
-  { id: 'workwithkids', title: 'Work with Kids', component: WorkWithKids },
-  { id: 'workwithpets', title: 'Work with Pets', component: WorkWithPets },
-  { id: 'languages', title: 'Languages', component: Languages },
-  { id: 'mykids', title: 'My Kids', component: MyKids },
-  { id: 'certifications', title: 'Certifications', component: Certifications },
-  { id: 'salary', title: 'Salary Expectations', component: SalaryExpectations },
-  { id: 'bio', title: 'Bio', component: Bio },
+  { id: 'children', title: 'Children', component: Children },
+  { id: 'nannytype', title: 'Service Type', component: NannyType },
+  { id: 'chores', title: 'Chores', component: Chores },
+  { id: 'pets', title: 'Pets', component: Pets },
+  { id: 'budget', title: 'Budget', component: Budget },
+  { id: 'housesize', title: 'House Size', component: HouseSize },
   { id: 'photos', title: 'Photos', component: Photos },
 ];
 
-export default function HousehelpProfileSetup() {
+export default function HouseholdProfileSetup() {
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
 
@@ -75,7 +67,7 @@ export default function HousehelpProfileSetup() {
             <div className="px-6 py-6">
               <div className="flex items-center justify-between mb-6">
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Complete Your Profile
+                  Complete Your Household Profile
                 </h1>
                 <div className="text-sm text-gray-500">
                   Step {currentStep + 1} of {STEPS.length}

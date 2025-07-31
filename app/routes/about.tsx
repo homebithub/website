@@ -64,9 +64,9 @@ const team: TeamMember[] = [
 
 export default function About() {
     return (
-        <div className="min-h-screen bg-gray-50 font-sans">
+        <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
             <Navigation />
-            <main>
+            <main className="flex-1">
                 {/* About Us and Mission Section */}
                 <div className="relative isolate overflow-hidden bg-white py-24 sm:py-32">
                     <div className="mx-auto max-w-7xl px-6 lg:px-8">
