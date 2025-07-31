@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import { Link } from "@remix-run/react";
 import React, { useEffect, useState } from "react";
 import SignupFlow from "~/components/SignupFlow";
+import HousehelpSignupFlow from "~/components/HousehelpSignupFlow";
 import {
   HomeIcon,
   UserGroupIcon,
@@ -78,6 +79,7 @@ export default function Index() {
   }, []);
 
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [userType, setUserType] = useState<'househelp' | 'household' | null>(null);
 
   const openSignupModal = (type: 'househelp' | 'household') => {
@@ -85,17 +87,36 @@ export default function Index() {
     setIsSignupModalOpen(true);
   };
 
+  const handleUserTypeSelected = (type: 'househelp' | 'household') => {
+    setUserType(type);
+    setIsProfileModalOpen(true);
+  };
+
+  const handleProfileComplete = () => {
+    setIsProfileModalOpen(false);
+    setUserType(null);
+    // User will be redirected to dashboard from within the HousehelpSignupFlow component
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <main className="flex-grow">
-        {/* Signup Modal */}
+        {/* Initial Signup Modal - User Type Selection */}
         <SignupFlow 
           isOpen={isSignupModalOpen} 
           onClose={() => {
             setIsSignupModalOpen(false);
             setUserType(null);
-          }} 
+          }}
+          onUserTypeSelected={handleUserTypeSelected}
+        />
+        
+        {/* Profile Completion Modal */}
+        <HousehelpSignupFlow 
+          isOpen={isProfileModalOpen} 
+          onClose={handleProfileComplete}
+          initialUserType={userType || undefined}
         />
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
           <div className="mx-auto max-w-2xl lg:mx-auto lg:max-w-xl lg:flex-shrink-0 lg:pt-0 text-center">
