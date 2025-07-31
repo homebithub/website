@@ -69,13 +69,13 @@ export default function HousehelpProfileSetup() {
       <Navigation />
       
       <main className="flex-1">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Header with Progress Bar */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
-            <div className="px-6 py-6">
-              <div className="flex items-center justify-between mb-6">
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Complete Your Profile
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+          {/* Header Card */}
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 sm:mb-8">
+            <div className="px-4 sm:px-6 py-4 sm:py-6">
+              <div className="text-center mb-4">
+                <h1 className="text-xl sm:text-2xl font-bold text-purple-900 mb-2">
+                  Complete Your Househelp Profile
                 </h1>
                 <div className="text-sm text-gray-500">
                   Step {currentStep + 1} of {STEPS.length}
@@ -92,7 +92,7 @@ export default function HousehelpProfileSetup() {
               
               {/* Current Step Title */}
               <div>
-                <h2 className="text-xl font-semibold text-purple-900">
+                <h2 className="text-lg sm:text-xl font-semibold text-purple-900">
                   {STEPS[currentStep].title}
                 </h2>
               </div>
@@ -100,8 +100,8 @@ export default function HousehelpProfileSetup() {
           </div>
 
           {/* Content Area */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-8">
-            <div className="px-6 py-8">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 sm:mb-8">
+            <div className="px-4 sm:px-6 py-6 sm:py-8">
               <div className="max-w-2xl mx-auto">
                 {STEPS[currentStep].id === 'bio' ? (
                   <CurrentComponent userType="househelp" />
@@ -116,8 +116,50 @@ export default function HousehelpProfileSetup() {
 
           {/* Navigation Footer */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4">
-              <div className="flex justify-between items-center">
+            <div className="px-4 sm:px-6 py-4">
+              {/* Mobile: Stack buttons vertically with dots in between */}
+              <div className="sm:hidden space-y-4">
+                {/* Progress dots */}
+                <div className="flex justify-center space-x-2">
+                  {STEPS.map((_, index) => (
+                    <div
+                      key={index}
+                      className={`h-3 w-3 rounded-full transition-colors ${
+                        index <= currentStep ? 'bg-purple-600' : 'bg-gray-300'
+                      }`}
+                    />
+                  ))}
+                </div>
+                
+                {/* Navigation buttons */}
+                <div className="flex justify-between items-center gap-4">
+                  <button
+                    onClick={handleBack}
+                    disabled={currentStep === 0}
+                    className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                      currentStep === 0
+                        ? 'text-gray-400 cursor-not-allowed'
+                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                    }`}
+                  >
+                    <ChevronLeftIcon className="h-4 w-4 mr-1" />
+                    Back
+                  </button>
+
+                  <button
+                    onClick={handleNext}
+                    className="flex items-center px-6 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition-colors"
+                  >
+                    {currentStep === STEPS.length - 1 ? 'Complete' : 'Next'}
+                    {currentStep !== STEPS.length - 1 && (
+                      <ChevronRightIcon className="h-4 w-4 ml-1" />
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Desktop: Original horizontal layout */}
+              <div className="hidden sm:flex justify-between items-center">
                 <button
                   onClick={handleBack}
                   disabled={currentStep === 0}
