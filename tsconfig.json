@@ -1,5 +1,6 @@
 {
   "include": ["remix.env.d.ts", "**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules", "build", "public/build"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
     "isolatedModules": true,
@@ -16,6 +17,10 @@
     "paths": {
       "~/*": ["./app/*"]
     },
+    "incremental": true,
+    "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo",
+    "useDefineForClassFields": true,
+    "verbatimModuleSyntax": true,
 
     // Remix takes care of building everything in `remix build`.
     "noEmit": true

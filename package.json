@@ -6,10 +6,12 @@
   "type": "module",
   "scripts": {
     "build": "remix build",
-    "dev": "cross-env HOST=0.0.0.0 remix dev -c \"node server.mjs\"",
+    "dev": "cross-env NODE_ENV=development HOST=0.0.0.0 CHOKIDAR_USEPOLLING=false remix dev -c \"node server.mjs\"",
+    "dev:fast": "cross-env NODE_ENV=development HOST=0.0.0.0 remix dev --no-restart -c \"node server.mjs\"",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "remix-serve ./build/index.js",
-    "typecheck": "tsc"
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf build public/build .cache node_modules/.cache"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
