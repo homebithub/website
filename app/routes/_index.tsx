@@ -40,43 +40,7 @@ const features = [
 ];
 
 export default function Index() {
-  // Typewriter animation for the main heading
-  const fullText = "Your Home, Our Expertise";
-  const [typedText, setTypedText] = useState("");
-
-  // Use refs to avoid interval/timeout overlap and memory leaks
-  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const currentIndexRef = React.useRef(0);
-
-  useEffect(() => {
-    function clearTimers() {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    }
-
-    function startTyping() {
-      clearTimers();
-      setTypedText("");
-      currentIndexRef.current = 0;
-      intervalRef.current = setInterval(() => {
-        currentIndexRef.current++;
-        setTypedText(fullText.slice(0, currentIndexRef.current));
-        if (currentIndexRef.current >= fullText.length) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          timeoutRef.current = setTimeout(() => {
-            startTyping();
-          }, 3000);
-        }
-      }, 100);
-    }
-
-    startTyping();
-
-    return () => {
-      clearTimers();
-    };
-  }, []);
+  
 
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -118,34 +82,48 @@ export default function Index() {
           onClose={handleProfileComplete}
           initialUserType={userType || undefined}
         />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="mx-auto max-w-2xl lg:mx-auto lg:max-w-xl lg:flex-shrink-0 lg:pt-0 text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900">
-              <span
-                style={{
-                  whiteSpace: "nowrap",
-                  minHeight: "1em",
-                  display: "inline-block",
-                }}
-              >
-                {typedText}
-                <span className="animate-pulse">|</span>
-              </span>
-            </h1>
-            <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 mx-auto text-center max-w-xl font-medium">Professional home services at your fingertips. From laundry to childcare, we've got you covered with our expert team of house managers.</p>
-          </div>
-        </div>
-
-        {/* How it works image section */}
-        <div className="w-full my-8 px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20">
-          <div className="relative w-full mx-auto rounded-xl overflow-hidden shadow-lg">
-            <img
-              src="/how%20it%20works.jpg"
-              alt="How it works"
-              className="w-full h-auto object-cover"
-            />
-          </div>
-        </div>
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 bg-white">
+  <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
+    {/* Left: Hero Text */}
+    <div className="flex-1 w-full lg:w-1/2 text-left">
+      <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 mb-2">
+  Your Home. <span className="text-purple-600 font-extrabold">Our Expertise!</span>
+</h1>
+<p className="mt-2 sm:mt-4 text-base sm:text-lg leading-7 sm:leading-8 text-slate-700 max-w-xl font-medium">
+  Transform your living space with our comprehensive home services. From deep cleaning to specialized childcare, we connect you with verified professionals who treat your home like their own.
+</p>
+<div className="mt-8">
+  <button
+    onClick={() => openSignupModal('household')}
+    className="px-8 py-3 rounded-lg bg-purple-600 text-white text-lg font-semibold shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 transition"
+  >
+    Book Service Now
+  </button>
+  <p className="mt-6 text-sm text-slate-600">
+    Are you a worker? 
+    <button
+      onClick={() => openSignupModal('househelp')}
+      className="text-purple-600 hover:text-purple-700 font-semibold underline ml-1"
+    >
+      Apply now
+    </button>
+  </p>
+</div>
+    </div>
+    {/* Right: Hero Image */}
+    <div className="flex-1 w-full lg:w-1/2 flex items-center justify-center">
+      <div className="relative rounded-xl overflow-hidden shadow-lg w-full max-w-full">
+        <img
+          src="/how%20it%20works.jpg"
+          alt="How it works"
+          className="w-full h-[280px] sm:h-[320px] md:h-[360px] lg:h-[400px] xl:h-[420px] object-cover object-center"
+        />
+      </div>
+    </div>
+  </div>
+  {/* Divider for separation */}
+  <div className="mt-12 mb-16 border-b border-gray-200 w-full" />
+</div>
 
         {/* What we offer section */}
         <div className="w-full my-8 px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20">
@@ -190,7 +168,7 @@ export default function Index() {
                     </div>
                     <div className="flex-1">
                       <h4 className="text-lg font-bold text-slate-900 leading-tight mb-2">Vetted & Certified Professionals</h4>
-                      <p className="text-base leading-relaxed text-slate-600 font-normal">All our service providers undergo rigorous background checks, skill assessments, and continuous training to ensure the highest standards of professionalism and reliability.</p>
+                      <p className="text-base leading-relaxed text-slate-600 font-normal">All our service all the time  providers undergo rigorous background checks, skill assessments, and continuous training to ensure the highest standards of professionalism and reliability.</p>
                     </div>
                   </div>
                   
