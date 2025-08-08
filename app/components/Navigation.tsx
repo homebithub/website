@@ -1,4 +1,4 @@
-import { Link } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import React, { useEffect, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/20/solid";
@@ -17,6 +17,7 @@ export function Navigation() {
   const [profileType, setProfileType] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
   const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+  const navigate = useNavigate();
 
   // Memoized dashboard path based on profile type
   const dashboardPath = React.useMemo(() => {
@@ -113,12 +114,12 @@ export function Navigation() {
               >
                 Log in
               </Link>
-              <Link
-                to="/signup"
+              <button
+                onClick={() => navigate('/signup')}
                 className="px-6 py-3 text-lg rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition-colors duration-200 font-bold shadow-md hover:shadow-lg"
               >
                 Sign up
-              </Link>
+              </button>
             </div>
           )}
 

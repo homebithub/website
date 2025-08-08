@@ -56,47 +56,50 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
               leaveFrom="opacity-100 scale-100 translate-y-0"
               leaveTo="opacity-0 scale-95 translate-y-4"
             >
-              <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 shadow-xl transition-all">
-                <div className="absolute right-4 top-4">
+              <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-3xl bg-white p-8 shadow-2xl transition-all border border-gray-100">
+                <div className="absolute right-6 top-6">
                   <button
                     type="button"
-                    className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="rounded-full bg-gray-100 p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200"
                     onClick={onClose}
                     disabled={isSubmitting}
                   >
                     <span className="sr-only">Close</span>
-                    <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                    <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                   </button>
                 </div>
 
-                <div className="py-6 px-4 sm:px-6">
-                  <div className="space-y-6">
+                <div className="pt-2 pb-6">
+                  <div className="space-y-8">
                     <div className="text-center">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">Join HomeXpert</h3>
-                      <p className="text-gray-600">Select your account type to get started</p>
+                      <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
+                        <UserGroupIcon className="h-8 w-8 text-white" />
+                      </div>
+                      <h3 className="text-3xl font-bold text-gray-900 mb-3">Join HomeXpert</h3>
+                      <p className="text-lg text-gray-600 leading-relaxed">Select your account type to get started on your journey</p>
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4">
+                    <div className="grid grid-cols-1 gap-5">
                       <button
                         onClick={() => handleUserTypeSelect('househelp')}
-                        className={`p-6 border-2 rounded-xl text-left transition-all duration-200 ${
+                        className={`group relative p-8 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
                           userType === 'househelp'
-                            ? 'border-indigo-500 bg-indigo-50'
-                            : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50'
+                            ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-purple-100 shadow-lg'
+                            : 'border-gray-200 hover:border-purple-300 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-purple-100/50 hover:shadow-md'
                         }`}
                         disabled={isSubmitting}
                       >
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                            <UserGroupIcon className="h-6 w-6 text-white" />
+                          <div className="flex-shrink-0 h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                            <UserGroupIcon className="h-8 w-8 text-white" />
                           </div>
-                          <div className="ml-4">
-                            <h4 className="text-lg font-semibold text-gray-900">Househelp</h4>
-                            <p className="text-sm text-gray-500 mt-1">I'm looking for work opportunities</p>
+                          <div className="ml-6 flex-1">
+                            <h4 className="text-xl font-bold text-gray-900 mb-1">Househelp</h4>
+                            <p className="text-base text-gray-600 leading-relaxed">I'm looking for work opportunities and want to offer my services</p>
                           </div>
                           {isSubmitting && userType === 'househelp' && (
-                            <div className="ml-auto">
-                              <div className="h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="ml-4">
+                              <div className="h-6 w-6 border-3 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                             </div>
                           )}
                         </div>
@@ -104,34 +107,34 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
 
                       <button
                         onClick={() => handleUserTypeSelect('household')}
-                        className={`p-6 border-2 rounded-xl text-left transition-all duration-200 ${
+                        className={`group relative p-8 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
                           userType === 'household'
-                            ? 'border-indigo-500 bg-indigo-50'
-                            : 'border-gray-200 hover:border-indigo-300 hover:bg-indigo-50/50'
+                            ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-purple-100 shadow-lg'
+                            : 'border-gray-200 hover:border-purple-300 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-purple-100/50 hover:shadow-md'
                         }`}
                         disabled={isSubmitting}
                       >
                         <div className="flex items-center">
-                          <div className="flex-shrink-0 h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center">
-                            <HomeIcon className="h-6 w-6 text-white" />
+                          <div className="flex-shrink-0 h-16 w-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow duration-300">
+                            <HomeIcon className="h-8 w-8 text-white" />
                           </div>
-                          <div className="ml-4">
-                            <h4 className="text-lg font-semibold text-gray-900">Household</h4>
-                            <p className="text-sm text-gray-500 mt-1">I need to hire help for my home</p>
+                          <div className="ml-6 flex-1">
+                            <h4 className="text-xl font-bold text-gray-900 mb-1">Household</h4>
+                            <p className="text-base text-gray-600 leading-relaxed">I need to hire help for my home and family needs</p>
                           </div>
                           {isSubmitting && userType === 'household' && (
-                            <div className="ml-auto">
-                              <div className="h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="ml-4">
+                              <div className="h-6 w-6 border-3 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
                             </div>
                           )}
                         </div>
                       </button>
                     </div>
 
-                    <div className="text-center pt-4">
-                      <p className="text-sm text-gray-500">
+                    <div className="text-center pt-6 border-t border-gray-100">
+                      <p className="text-base text-gray-600">
                         Already have an account?{' '}
-                        <a href="/login" className="text-indigo-600 hover:text-indigo-500 font-medium">
+                        <a href="/login" className="text-purple-600 hover:text-purple-700 font-semibold transition-colors duration-200">
                           Sign in
                         </a>
                       </p>

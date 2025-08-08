@@ -1,7 +1,7 @@
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { motion } from "motion/react";
-import { Link } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import React, { useEffect, useState } from "react";
 import SignupFlow from "~/components/SignupFlow";
 import HousehelpSignupFlow from "~/components/HousehelpSignupFlow";
@@ -45,6 +45,7 @@ export default function Index() {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [userType, setUserType] = useState<'househelp' | 'household' | null>(null);
+  const navigate = useNavigate();
 
   const openSignupModal = (type: 'househelp' | 'household') => {
     setUserType(type);
@@ -73,7 +74,15 @@ export default function Index() {
             setIsSignupModalOpen(false);
             setUserType(null);
           }}
-          onUserTypeSelected={handleUserTypeSelected}
+          onUserTypeSelected={(type) => {
+            setIsSignupModalOpen(false);
+            setUserType(null);
+            if (type === 'househelp') {
+              navigate('/signup/househelp');
+            } else if (type === 'household') {
+              navigate('/signup/household');
+            }
+          }}
         />
         
         {/* Profile Completion Modal */}
@@ -82,48 +91,37 @@ export default function Index() {
           onClose={handleProfileComplete}
           initialUserType={userType || undefined}
         />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16 bg-white">
-  <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
-    {/* Left: Hero Text */}
-    <div className="flex-1 w-full lg:w-1/2 text-left">
-      <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 mb-2">
-  Your Home. <span className="text-purple-600 font-extrabold">Our Expertise!</span>
-</h1>
-<p className="mt-2 sm:mt-4 text-base sm:text-lg leading-7 sm:leading-8 text-slate-700 max-w-xl font-medium">
-  Transform your living space with our comprehensive home services. From deep cleaning to specialized childcare, we connect you with verified professionals who treat your home like their own.
-</p>
-<div className="mt-8">
-  <button
-    onClick={() => openSignupModal('household')}
-    className="px-8 py-3 rounded-lg bg-purple-600 text-white text-lg font-semibold shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 transition"
-  >
-    Book Service Now
-  </button>
-  <p className="mt-6 text-sm text-slate-600">
-    Are you a worker? 
-    <button
-      onClick={() => openSignupModal('househelp')}
-      className="text-purple-600 hover:text-purple-700 font-semibold underline ml-1"
-    >
-      Apply now
-    </button>
-  </p>
-</div>
-    </div>
-    {/* Right: Hero Image */}
-    <div className="flex-1 w-full lg:w-1/2 flex items-center justify-center">
-      <div className="relative rounded-xl overflow-hidden shadow-lg w-full max-w-full">
-        <img
-          src="/how%20it%20works.jpg"
-          alt="How it works"
-          className="w-full h-[280px] sm:h-[320px] md:h-[360px] lg:h-[400px] xl:h-[420px] object-cover object-center"
-        />
-      </div>
-    </div>
-  </div>
-  {/* Divider for separation */}
-  <div className="mt-12 mb-16 border-b border-gray-200 w-full" />
-</div>
+        <div className="relative bg-white mb-16">
+          <div className="mx-auto lg:grid lg:grid-cols-12 lg:items-center lg:gap-x-8 lg:px-8">
+            <div className="px-6 pt-10 pb-24 sm:pb-32 lg:col-span-5 lg:px-24 lg:pt-4 lg:pb-20">
+              <div className="mx-auto max-w-2xl lg:mx-0">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 mb-2">
+                  Your Home. <span className="text-purple-600 font-extrabold">Our Expertise!</span>
+                </h1>
+                <p className="mt-2 sm:mt-4 text-base sm:text-lg leading-7 sm:leading-8 text-slate-700 font-medium">
+                  Transform your living space with our comprehensive home services. From deep cleaning to specialized childcare, we connect you with verified professionals who treat your home like their own.
+                </p>
+                <div className="mt-8 flex items-center gap-x-6">
+                  <button
+                    onClick={() => navigate('/signup')}
+                    className="px-8 py-3 rounded-lg bg-purple-600 text-white text-lg font-semibold shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 transition"
+                  >
+                    Book Service Now
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="relative lg:col-span-7">
+              <div className="p-4 bg-white rounded-2xl shadow-lg">
+                <img
+                  className="relative w-full rounded-2xl bg-gray-50 object-cover"
+                  src="/how it works.jpg"
+                  alt="Professional cleaner wiping a table in a modern home"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
 
         {/* What we offer section */}
         <div className="w-full my-8 px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20">
@@ -168,7 +166,7 @@ export default function Index() {
                     </div>
                     <div className="flex-1">
                       <h4 className="text-lg font-bold text-slate-900 leading-tight mb-2">Vetted & Certified Professionals</h4>
-                      <p className="text-base leading-relaxed text-slate-600 font-normal">All our service all the time  providers undergo rigorous background checks, skill assessments, and continuous training to ensure the highest standards of professionalism and reliability.</p>
+                      <p className="text-base leading-relaxed text-slate-600 font-normal">All our service providers undergo rigorous background checks, skill assessments, and continuous training to ensure the highest standards of professionalism and reliability.</p>
                     </div>
                   </div>
                   
@@ -212,7 +210,6 @@ export default function Index() {
                     </div>
                     <h3 className="mt-4 text-lg font-semibold leading-7 tracking-tight text-gray-900">{feature.name}</h3>
                     <p className="mt-4 text-base leading-7 text-gray-600">{feature.description}</p>
-
                   </div>
                 ))}
               </div>

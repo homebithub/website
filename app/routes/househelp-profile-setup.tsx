@@ -38,12 +38,12 @@ export default function HousehelpProfileSetup() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Check if user is authenticated
-    const token = localStorage.getItem('token');
-    if (!token) {
-      navigate('/login');
-      return;
-    }
+    // [DEV ONLY] Authentication check temporarily disabled for direct access
+    // const token = localStorage.getItem('token');
+    // if (!token) {
+    //   navigate('/login');
+    //   return;
+    // }
   }, [navigate]);
 
   const handleNext = () => {
