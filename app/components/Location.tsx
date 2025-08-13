@@ -152,6 +152,9 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                     <label htmlFor="location-input" className="block text-sm font-medium text-primary mb-1">
                         Location
                     </label>
+                    <p className="text-sm text-gray-600 mb-2">
+                        If your exact location isn't found, try searching for the nearest town or landmark
+                    </p>
                     <input
                         id="location-input"
                         type="text"

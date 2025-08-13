@@ -24,6 +24,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
   const [traits, setTraits] = useState<string[]>(initialData?.traits || []);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [otherTrait, setOtherTrait] = useState('');
 
   // Reset form when modal is opened/closed or initialData changes
   useEffect(() => {
@@ -32,6 +33,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
       setDateOfBirth(initialData?.date_of_birth || initialData?.dob || '');
       setTraits(initialData?.traits || []);
       setError('');
+      setOtherTrait('');
     }
   }, [isOpen, initialData]);
 
@@ -52,11 +54,24 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
   };
 
   const handleTraitChange = (trait: string) => {
-    setTraits(prev => 
-      prev.includes(trait)
-        ? prev.filter(t => t !== trait)
-        : prev.length < 3 ? [...prev, trait] : prev
-    );
+    if (trait === 'Other') {
+      // Handle "Other" trait selection
+      if (traits.includes('Other')) {
+        // Remove "Other" and clear the custom input
+        setTraits(prev => prev.filter(t => t !== 'Other'));
+        setOtherTrait('');
+      } else if (traits.length < 3) {
+        // Add "Other" trait
+        setTraits(prev => [...prev, 'Other']);
+      }
+    } else {
+      // Handle regular traits
+      setTraits(prev => 
+        prev.includes(trait)
+          ? prev.filter(t => t !== trait)
+          : prev.length < 3 ? [...prev, trait] : prev
+      );
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -82,10 +97,20 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
         throw new Error('Please select at least one trait');
       }
       
+      // If "Other" is selected, validate that custom trait is provided
+      if (traits.includes('Other') && !otherTrait.trim()) {
+        throw new Error('Please specify what the "Other" trait is');
+      }
+      
+      // Prepare traits array, replacing "Other" with the custom trait text
+      const finalTraits = traits.map(trait => 
+        trait === 'Other' ? otherTrait.trim() : trait
+      );
+      
       await onSave({
         gender,
         date_of_birth: dateOfBirth,
-        traits
+        traits: finalTraits
       });
       
       // Reset form
@@ -181,6 +206,23 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
               </button>
             ))}
           </div>
+          
+          {/* Custom input field for "Other" trait */}
+          {traits.includes('Other') && (
+            <div className="mt-4">
+              <label className="block mb-2 text-sm font-medium text-gray-700">
+                Please specify the trait:
+              </label>
+              <input
+                type="text"
+                value={otherTrait}
+                onChange={(e) => setOtherTrait(e.target.value)}
+                placeholder="Enter custom trait..."
+                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+                maxLength={50}
+              />
+            </div>
+          )}
         </div>
 
         {error && <div className="text-red-500 text-sm text-center">{error}</div>}

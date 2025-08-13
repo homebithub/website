@@ -17,6 +17,7 @@ import Certifications from '../components/Certifications';
 import SalaryExpectations from '../components/SalaryExpectations';
 import Bio from '../components/Bio';
 import Photos from '../components/Photos';
+import Religion from '../components/Religion';
 
 const STEPS = [
 { id: 'nannytype', title: 'Service Type', component: NannyType },
@@ -29,6 +30,7 @@ const STEPS = [
   { id: 'mykids', title: 'My Kids', component: MyKids },
   { id: 'certifications', title: 'Certifications', component: Certifications },
   { id: 'salary', title: 'Salary Expectations', component: SalaryExpectations },
+  { id: 'religion', title: 'Religion & Beliefs', component: Religion },
   { id: 'bio', title: 'Bio', component: Bio },
   { id: 'photos', title: 'Photos', component: Photos },
 ];
@@ -106,6 +108,8 @@ export default function HousehelpProfileSetup() {
                 {STEPS[currentStep].id === 'bio' ? (
                   <CurrentComponent userType="househelp" />
                 ) : STEPS[currentStep].id === 'photos' ? (
+                  <CurrentComponent userType="househelp" />
+                ) : STEPS[currentStep].id === 'religion' ? (
                   <CurrentComponent userType="househelp" />
                 ) : (
                   <CurrentComponent />
