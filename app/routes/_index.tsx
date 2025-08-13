@@ -1,7 +1,7 @@
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { motion } from "motion/react";
-import { Link } from "@remix-run/react";
+import { Link, useNavigate } from "@remix-run/react";
 import React, { useEffect, useState } from "react";
 import SignupFlow from "~/components/SignupFlow";
 import HousehelpSignupFlow from "~/components/HousehelpSignupFlow";
@@ -40,47 +40,12 @@ const features = [
 ];
 
 export default function Index() {
-  // Typewriter animation for the main heading
-  const fullText = "Your Home, Our Expertise";
-  const [typedText, setTypedText] = useState("");
-
-  // Use refs to avoid interval/timeout overlap and memory leaks
-  const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
-  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
-  const currentIndexRef = React.useRef(0);
-
-  useEffect(() => {
-    function clearTimers() {
-      if (intervalRef.current) clearInterval(intervalRef.current);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    }
-
-    function startTyping() {
-      clearTimers();
-      setTypedText("");
-      currentIndexRef.current = 0;
-      intervalRef.current = setInterval(() => {
-        currentIndexRef.current++;
-        setTypedText(fullText.slice(0, currentIndexRef.current));
-        if (currentIndexRef.current >= fullText.length) {
-          if (intervalRef.current) clearInterval(intervalRef.current);
-          timeoutRef.current = setTimeout(() => {
-            startTyping();
-          }, 3000);
-        }
-      }, 100);
-    }
-
-    startTyping();
-
-    return () => {
-      clearTimers();
-    };
-  }, []);
+  
 
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [userType, setUserType] = useState<'househelp' | 'household' | null>(null);
+  const navigate = useNavigate();
 
   const openSignupModal = (type: 'househelp' | 'household') => {
     setUserType(type);
@@ -109,7 +74,15 @@ export default function Index() {
             setIsSignupModalOpen(false);
             setUserType(null);
           }}
-          onUserTypeSelected={handleUserTypeSelected}
+          onUserTypeSelected={(type) => {
+            setIsSignupModalOpen(false);
+            setUserType(null);
+            if (type === 'househelp') {
+              navigate('/signup/househelp');
+            } else if (type === 'household') {
+              navigate('/signup/household');
+            }
+          }}
         />
         
         {/* Profile Completion Modal */}
@@ -118,32 +91,35 @@ export default function Index() {
           onClose={handleProfileComplete}
           initialUserType={userType || undefined}
         />
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <div className="mx-auto max-w-2xl lg:mx-auto lg:max-w-xl lg:flex-shrink-0 lg:pt-0 text-center">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900">
-              <span
-                style={{
-                  whiteSpace: "nowrap",
-                  minHeight: "1em",
-                  display: "inline-block",
-                }}
-              >
-                {typedText}
-                <span className="animate-pulse">|</span>
-              </span>
-            </h1>
-            <p className="mt-4 sm:mt-6 text-base sm:text-lg leading-7 sm:leading-8 text-slate-600 mx-auto text-center max-w-xl font-medium">Professional home services at your fingertips. From laundry to childcare, we've got you covered with our expert team of house managers.</p>
-          </div>
-        </div>
-
-        {/* How it works image section */}
-        <div className="w-full my-8 px-6 sm:px-8 md:px-12 lg:px-16 xl:px-20">
-          <div className="relative w-full mx-auto rounded-xl overflow-hidden shadow-lg">
-            <img
-              src="/how%20it%20works.jpg"
-              alt="How it works"
-              className="w-full h-auto object-cover"
-            />
+        <div className="relative bg-white mb-16">
+          <div className="mx-auto lg:grid lg:grid-cols-12 lg:items-center lg:gap-x-8 lg:px-8">
+            <div className="px-6 pt-10 pb-24 sm:pb-32 lg:col-span-5 lg:px-24 lg:pt-4 lg:pb-20">
+              <div className="mx-auto max-w-2xl lg:mx-0">
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-slate-900 mb-2">
+                  Your Home. <span className="text-purple-600 font-extrabold">Our Expertise!</span>
+                </h1>
+                <p className="mt-2 sm:mt-4 text-base sm:text-lg leading-7 sm:leading-8 text-slate-700 font-medium">
+                  Transform your living space with our comprehensive home services. From deep cleaning to specialized childcare, we connect you with verified professionals who treat your home like their own.
+                </p>
+                <div className="mt-8 flex items-center gap-x-6">
+                  <button
+                    onClick={() => navigate('/signup')}
+                    className="px-8 py-3 rounded-lg bg-purple-600 text-white text-lg font-semibold shadow-md hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:ring-offset-2 transition"
+                  >
+                    Book Service Now
+                  </button>
+                </div>
+              </div>
+            </div>
+            <div className="relative lg:col-span-7">
+              <div className="p-4 bg-white rounded-2xl shadow-lg">
+                <img
+                  className="relative w-full rounded-2xl bg-gray-50 object-cover"
+                  src="/how it works.jpg"
+                  alt="Professional cleaner wiping a table in a modern home"
+                />
+              </div>
+            </div>
           </div>
         </div>
 
@@ -234,7 +210,6 @@ export default function Index() {
                     </div>
                     <h3 className="mt-4 text-lg font-semibold leading-7 tracking-tight text-gray-900">{feature.name}</h3>
                     <p className="mt-4 text-base leading-7 text-gray-600">{feature.description}</p>
-
                   </div>
                 ))}
               </div>

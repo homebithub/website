@@ -239,25 +239,55 @@ export default function SignupPage() {
                 onClose={() => {}} // Empty function to prevent closing by clicking outside
                 title="Sign Up"
             >
-                <div className="px-4 py-5 sm:p-6">
-                    <h3 className="text-xl font-bold text-black mb-6 text-center">Sign up as</h3>
-                    <div className="flex flex-col gap-4">
+                <div className="px-2 py-2">
+                    <h3 className="text-xl font-semibold text-gray-900 mb-8 text-center">Choose your account type</h3>
+                    <div className="flex flex-col gap-5">
                         {profileOptions.map((option) => (
                             <button
                                 key={option.value}
                                 type="button"
                                 onClick={() => handleProfileTypeSelect(option.value)}
-                                className={`cursor-pointer flex items-center p-4 rounded-lg border transition w-full ${form.profile_type === option.value ? 'border-primary-500 bg-primary-50' : 'border-gray-200 hover:bg-gray-50'}`}
+                                className={`group relative p-6 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
+                                    form.profile_type === option.value 
+                                        ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-purple-100 shadow-lg' 
+                                        : 'border-gray-200 hover:border-purple-300 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-purple-100/50 hover:shadow-md'
+                                }`}
                             > 
-                                <div className="flex items-center justify-center w-5 h-5 border border-gray-300 rounded-full mr-3 ${form.profile_type === option.value ? 'bg-primary-600 border-primary-600' : ''}">
-                                    {form.profile_type === option.value && (
-                                        <div className="w-3 h-3 bg-white rounded-full"></div>
-                                    )}
+                                <div className="flex items-center">
+                                    <div className={`flex items-center justify-center w-6 h-6 border-2 rounded-full mr-4 transition-all duration-200 ${
+                                        form.profile_type === option.value 
+                                            ? 'bg-purple-600 border-purple-600' 
+                                            : 'border-gray-300 group-hover:border-purple-400'
+                                    }`}>
+                                        {form.profile_type === option.value && (
+                                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                                        )}
+                                    </div>
+                                    <div className="flex-1">
+                                        <h4 className="text-lg font-bold text-gray-900 mb-1">{option.label}</h4>
+                                        <p className="text-sm text-gray-600">
+                                            {option.value === 'employer' 
+                                                ? 'I need to hire help for my home and family needs' 
+                                                : 'I\'m looking for work opportunities and want to offer my services'
+                                            }
+                                        </p>
+                                    </div>
                                 </div>
-                                <span className="font-medium text-slate-900">{option.label}</span>
                             </button>
                         ))}
                     </div>
+                    
+                    {form.profile_type && (
+                        <div className="mt-8 text-center">
+                            <button
+                                type="button"
+                                onClick={() => setIsProfileModalOpen(false)}
+                                className="px-8 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+                            >
+                                Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label}
+                            </button>
+                        </div>
+                    )}
                 </div>
             </Modal>
             
