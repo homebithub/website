@@ -14,6 +14,7 @@ import Budget from '../components/Budget';
 import HouseSize from '../components/HouseSize';
 import Bio from '../components/Bio';
 import Photos from '../components/Photos';
+import Religion from '../components/Religion';
 
 const STEPS = [
   { id: 'location', title: 'Location', component: Location },
@@ -22,6 +23,7 @@ const STEPS = [
   { id: 'chores', title: 'Chores', component: Chores },
   { id: 'pets', title: 'Pets', component: Pets },
   { id: 'budget', title: 'Budget', component: Budget },
+  { id: 'religion', title: 'Religion & Beliefs', component: Religion },
   { id: 'housesize', title: 'House Size', component: HouseSize },
   { id: 'bio', title: 'About Your Household', component: Bio },
   { id: 'photos', title: 'Photos', component: Photos },
@@ -100,6 +102,10 @@ export default function HouseholdProfileSetup() {
                 {STEPS[currentStep].id === 'bio' ? (
                   <CurrentComponent userType="household" />
                 ) : STEPS[currentStep].id === 'photos' ? (
+                  <CurrentComponent userType="household" />
+                ) : STEPS[currentStep].id === 'nannytype' ? (
+                  <CurrentComponent userType="household" />
+                ) : STEPS[currentStep].id === 'religion' ? (
                   <CurrentComponent userType="household" />
                 ) : (
                   <CurrentComponent />

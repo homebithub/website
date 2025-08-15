@@ -14,6 +14,7 @@ const HOUSE_SIZE_OPTIONS: HouseSizeOption[] = [
 
 const HouseSize: React.FC = () => {
   const [selectedSize, setSelectedSize] = useState<string>('');
+  const [additionalDetails, setAdditionalDetails] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const submit = useSubmit();
@@ -32,7 +33,7 @@ const HouseSize: React.FC = () => {
     try {
       // Here you would typically save the data to your backend
       // For now, we'll just log it and show a success message
-      console.log({ houseSize: selectedSize });
+      console.log({ houseSize: selectedSize, additionalDetails });
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -42,6 +43,7 @@ const HouseSize: React.FC = () => {
       
       // Reset form
       setSelectedSize('');
+      setAdditionalDetails('');
     } catch (err) {
       setError('Failed to save house size preferences. Please try again.');
       console.error(err);
@@ -58,7 +60,7 @@ const HouseSize: React.FC = () => {
         {/* House Size Selection */}
         <div className="space-y-4">
           <h2 className="text-lg font-medium text-gray-900">
-            Select your house size
+            Select your house size (Optional)
           </h2>
           <p className="text-sm text-gray-600 mb-4">
             This helps us match you with househelps who have experience with similar home sizes.
@@ -93,6 +95,31 @@ const HouseSize: React.FC = () => {
                 <span className="text-gray-900 font-medium">{size}</span>
               </label>
             ))}
+          </div>
+        </div>
+
+        {/* Additional Details Text Area */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-medium text-gray-900">
+            Additional Details (Optional)
+          </h2>
+          <p className="text-sm text-gray-600">
+            Share any additional details about your house that might be helpful for househelps to know.
+          </p>
+          <div className="mt-1">
+            <textarea
+              id="additionalDetails"
+              name="additionalDetails"
+              rows={4}
+              value={additionalDetails}
+              onChange={(e) => setAdditionalDetails(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors text-gray-900 placeholder-gray-500 resize-vertical"
+              placeholder="e.g., House has stairs, large garden, pets, specific cleaning requirements, etc."
+              maxLength={500}
+            />
+            <div className="mt-2 text-sm text-gray-500 text-right">
+              {additionalDetails.length}/500 characters
+            </div>
           </div>
         </div>
 

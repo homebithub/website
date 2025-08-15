@@ -3,6 +3,10 @@ import React, { useState } from "react";
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const TIMES = ["morning", "afternoon", "evening"];
 
+interface NannyTypeProps {
+  userType?: 'househelp' | 'household';
+}
+
 type TimeSlots = Record<string, boolean>;
 type AvailabilityType = Record<string, TimeSlots>;
 
@@ -11,10 +15,11 @@ const initialAvailability: AvailabilityType = DAYS.reduce((acc, day) => {
   return acc;
 }, {} as AvailabilityType);
 
-const NanyType: React.FC = () => {
+const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
   const [selected, setSelected] = useState<string>("");
   const [availableFrom, setAvailableFrom] = useState<string>("");
   const [availability, setAvailability] = useState<AvailabilityType>(initialAvailability);
+  const [offDays, setOffDays] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
@@ -37,6 +42,10 @@ const NanyType: React.FC = () => {
         return;
       }
     }
+    if (userType === 'household' && selected === 'sleep_in' && offDays.length === 0) {
+      setError("Please select at least one off day for your sleep-in househelp.");
+      return;
+    }
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -49,6 +58,7 @@ const NanyType: React.FC = () => {
         body: JSON.stringify({
           availability,
           available_from: availableFrom,
+          ...(userType === 'household' && selected === 'sleep_in' && { off_days: offDays }),
         }),
       });
       if (!res.ok) throw new Error("Failed to save availability. Please try again.");
@@ -69,6 +79,17 @@ const NanyType: React.FC = () => {
         [time]: !prev[day][time as keyof TimeSlots],
       },
     }));
+  };
+
+  const handleOffDayChange = (day: string) => {
+    setOffDays(prev => {
+      if (prev.includes(day)) {
+        return prev.filter(d => d !== day);
+      } else if (prev.length < 3) {
+        return [...prev, day];
+      }
+      return prev;
+    });
   };
 
   return (
@@ -100,6 +121,56 @@ const NanyType: React.FC = () => {
           <span>Day burg</span>
         </label>
       </div>
+      
+      {/* Off Days Selection for Household Sleep-in Nanny */}
+      {userType === 'household' && selected === 'sleep_in' && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium text-gray-900">
+            Select Off Days <span className="text-xs text-gray-400">(Select up to 3 days)</span>
+          </h3>
+          <p className="text-sm text-gray-600">
+            Choose which days of the week your sleep-in househelp will have off.
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {DAYS.map((day) => (
+              <label 
+                key={day}
+                className={`flex items-center p-3 rounded-lg border cursor-pointer transition-colors ${
+                  offDays.includes(day)
+                    ? 'border-primary-500 bg-primary-50 text-primary-900' 
+                    : 'border-gray-200 bg-white hover:bg-gray-50'
+                } ${offDays.length === 3 && !offDays.includes(day) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={offDays.includes(day)}
+                  onChange={() => handleOffDayChange(day)}
+                  disabled={offDays.length === 3 && !offDays.includes(day)}
+                  className="sr-only"
+                />
+                <div className={`w-5 h-5 rounded border-2 flex items-center justify-center mr-3 flex-shrink-0 ${
+                  offDays.includes(day)
+                    ? 'border-primary-500 bg-primary-500' 
+                    : 'border-gray-300'
+                }`}>
+                  {offDays.includes(day) && (
+                    <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-sm font-medium">{day}</span>
+              </label>
+            ))}
+          </div>
+          {offDays.length > 0 && (
+            <p className="text-sm text-gray-500">
+              Selected: {offDays.join(', ')} ({offDays.length}/3)
+            </p>
+          )}
+        </div>
+      )}
+      
       {selected === "day" && (
         <div className={`bg-slate-50 p-4 rounded-xl border mt-4 overflow-x-auto ${error && error.includes('available day or time slot') ? 'border-red-500' : 'border-slate-100'}`}>
           <div className="mb-2 font-semibold text-center text-primary-700">Select Availability</div>

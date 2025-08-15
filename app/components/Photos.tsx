@@ -222,7 +222,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
 
   return (
     <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">{currentContent.title}</h1>
+      <h1 className="text-2xl font-bold text-gray-900 mb-2">{currentContent.title} (Optional)</h1>
       <p className="text-gray-600 mb-6">
         {currentContent.description}
       </p>

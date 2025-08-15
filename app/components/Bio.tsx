@@ -15,7 +15,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
   const [characterCount, setCharacterCount] = useState(0);
   
   const remainingCharacters = MAX_CHARACTERS - characterCount;
-  const isBioValid = characterCount >= MIN_CHARACTERS;
+  const isBioValid = characterCount>0 &&characterCount >= MIN_CHARACTERS;
 
   // Dynamic content based on user type
   const content = {
@@ -78,7 +78,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-2">
-            Your Bio
+            Your Bio (Optional)
           </label>
           <div className="mt-1 relative">
             <textarea

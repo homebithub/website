@@ -146,12 +146,15 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     };
 
     return (
-        <div className="w-full max-w-md relative">
+        <div className="w-full max-w-md mx-auto relative">
             <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6 bg-white border border-gray-100 p-8 rounded-xl shadow-lg">
                 <div className="relative">
                     <label htmlFor="location-input" className="block text-sm font-medium text-primary mb-1">
                         Location
                     </label>
+                    <p className="text-sm text-gray-600 mb-2">
+                        If your exact location isn't found, try searching for the nearest town or landmark
+                    </p>
                     <input
                         id="location-input"
                         type="text"
