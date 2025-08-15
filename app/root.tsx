@@ -2,7 +2,7 @@ import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration, } from "@r
 import React from "react";
 import stylesheet from "~/tailwind.css";
 import glowCardStyles from "~/styles/glow-card.css";
-import {LinksFunction} from "@remix-run/node";
+import type {LinksFunction} from "@remix-run/node";
 
 import { AuthProvider } from "~/contexts/AuthContext";
 
@@ -19,7 +19,10 @@ export default function App() {
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <Meta/>
                 <Links/>
-                <link rel="icon" href="/favicon.ico" type="image/x-icon" />
+                <link rel="icon" href="/favicon.ico" />
+                <link rel="icon" href="/logo_512x512.png" type="image/png" sizes="32x32" />
+                <link rel="icon" href="/logo_512x512.png" type="image/png" sizes="16x16" />
+                <link rel="apple-touch-icon" href="/logo_512x512.png" sizes="180x180" />
                 <title>HomeXpert</title>
             </head>
             <body className="min-h-screen bg-white text-slate-900 font-sans antialiased">

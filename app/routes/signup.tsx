@@ -236,7 +236,10 @@ export default function SignupPage() {
             {/* Profile Selection Modal */}
             <Modal 
                 isOpen={isProfileModalOpen} 
-                onClose={() => {}} // Empty function to prevent closing by clicking outside
+                onClose={() => {
+                    setIsProfileModalOpen(false);
+                    navigate('/');
+                }}
                 title="Sign Up"
             >
                 <div className="px-2 py-2">
@@ -277,8 +280,8 @@ export default function SignupPage() {
                         ))}
                     </div>
                     
-                    {form.profile_type && (
-                        <div className="mt-8 text-center">
+                    <div className="mt-8 flex flex-col gap-3">
+                        {form.profile_type && (
                             <button
                                 type="button"
                                 onClick={() => setIsProfileModalOpen(false)}
@@ -286,8 +289,18 @@ export default function SignupPage() {
                             >
                                 Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label}
                             </button>
-                        </div>
-                    )}
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsProfileModalOpen(false);
+                                navigate('/');
+                            }}
+                            className="px-8 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors duration-200"
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </div>
             </Modal>
             

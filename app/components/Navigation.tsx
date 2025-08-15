@@ -83,9 +83,9 @@ export function Navigation() {
           HomeXpert
         </Link>
 
-        {/* Navigation Links - Only show for non-authenticated users */}
+        {/* Navigation Links - Only show for non-authenticated users on larger screens */}
         {showAuthButtons && (
-          <div className="hidden md:flex items-center space-x-4 ml-auto">
+          <div className="hidden lg:flex items-center space-x-4 ml-auto">
             {navigation.map((item) => (
               <Link
                 key={item.name}
@@ -104,13 +104,13 @@ export function Navigation() {
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setIsWaitlistOpen(true)}
-                className="link hidden md:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-gray-600 border-2 border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
+                className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-gray-600 border-2 border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
               >
                 Join waitlist
               </button>
               <Link
                 to="/login"
-                className="link hidden md:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-purple-600 border-2 border-purple-600 hover:bg-purple-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+                className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-purple-600 border-2 border-purple-600 hover:bg-purple-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
               >
                 Log in
               </Link>
@@ -125,15 +125,15 @@ export function Navigation() {
 
           {/* Authenticated User Greeting */}
           {user && userName && (
-            <div className="hidden md:flex items-center space-x-3">
+            <div className="hidden lg:flex items-center space-x-3">
               <div className="text-sm text-gray-600">
                 <span className="font-semibold text-base">Hello, {userName}</span>
               </div>
             </div>
           )}
 
-          {/* Menu Dropdown */}
-          <Menu as="div" className="relative inline-block text-left">
+          {/* Menu Dropdown - Only show on mobile */}
+          <Menu as="div" className="relative inline-block text-left lg:hidden">
             <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-purple-600 p-2 text-white shadow-md hover:bg-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
               <Bars3Icon className="h-7 w-7" />
             </Menu.Button>
@@ -172,7 +172,7 @@ export function Navigation() {
                         {({ active }) => (
                           <button
                             onClick={() => setIsWaitlistOpen(true)}
-                            className={`md:hidden w-full text-left ${
+                            className={`lg:hidden w-full text-left ${
                               active ? 'bg-gray-100 text-gray-700' : 'text-gray-700'
                             } block px-4 py-2 text-sm`}
                           >
@@ -184,7 +184,7 @@ export function Navigation() {
                         {({ active }) => (
                           <Link
                             to="/login"
-                            className={`md:hidden ${
+                            className={`lg:hidden ${
                               active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
                             } block px-4 py-2 text-sm`}
                           >
