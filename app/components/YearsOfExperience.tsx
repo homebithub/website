@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { handleApiError } from '../utils/errorMessages';
 
 const YearsOfExperience = () => {
     const [years, setYears] = useState<number | null>(null);
@@ -69,7 +70,7 @@ const YearsOfExperience = () => {
             // navigate('/next-step');
         } catch (err: any) {
             console.error('Error saving information:', err);
-            setError(err.message || 'Failed to save your information. Please try again.');
+            setError(handleApiError(err, 'yearsOfExperience', 'Failed to save your information. Please try again.'));
         } finally {
             setLoading(false);
         }

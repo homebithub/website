@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from '@remix-run/react';
-import { Footer } from '~/components/Footer';
 import { Navigation } from '~/components/Navigation';
+import { Footer } from '~/components/Footer';
+import { handleApiError } from '~/utils/errorMessages';
 import { HouseholdProfileModal } from '~/components/HouseholdProfileModal';
 import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
 
@@ -220,7 +221,8 @@ export default function VerifyOtpPage() {
         navigate(path);
       }
     } catch (err: any) {
-      setError(err.message || 'OTP verification failed');
+      const errorMessage = handleApiError(err, 'otp');
+      setError(errorMessage);
       setLocalFailedAttempts((prev) => prev + 1);
       setLastTriedOtp(otp);
     } finally {
@@ -252,7 +254,8 @@ export default function VerifyOtpPage() {
       }
       setResent(true);
     } catch (err: any) {
-      setError(err.message || 'Failed to resend OTP');
+      const errorMessage = handleApiError(err, 'otp');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

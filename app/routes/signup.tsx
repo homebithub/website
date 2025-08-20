@@ -1,8 +1,10 @@
-import React, {useState, useEffect, useRef} from 'react';
-import {Footer} from '../components/Footer';
-import {Navigation} from '../components/Navigation';
-import {useNavigate, useLocation} from '@remix-run/react';
+import { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useLocation } from '@remix-run/react';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
+import { Navigation } from '~/components/Navigation';
+import { Footer } from '~/components/Footer';
 import { signupSchema, validateForm, validateField } from '~/utils/validation';
+import { handleApiError } from '~/utils/errorMessages';
 import { useAuth } from '~/contexts/AuthContext';
 import { Loading } from '~/components/Loading';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
@@ -205,7 +207,8 @@ export default function SignupPage() {
             // Pass verification object to the verify-otp page using navigation state
             navigate('/verify-otp', { state: { verification: data.verification, bureauId } });
         } catch (err: any) {
-            setError(err.message || 'Signup failed');
+            const errorMessage = handleApiError(err, 'signup');
+            setError(errorMessage);
         } finally {
             setFormLoading(false);
         }

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from 'react';
+import { handleApiError } from '../utils/errorMessages';
 
 interface Pet {
   id: string;
@@ -124,7 +125,7 @@ const Pets: React.FC = () => {
       setSelectedTraits([]);
       
     } catch (err: any) {
-      setError(err.message || "An error occurred while adding the pet.");
+      setError(handleApiError(err, 'pets', 'An error occurred while adding the pet.'));
     } finally {
       setLoading(false);
     }
@@ -159,7 +160,7 @@ const Pets: React.FC = () => {
       setPetToDelete(null);
       
     } catch (err: any) {
-      setError(err.message || "An error occurred while deleting the pet.");
+      setError(handleApiError(err, 'pets', 'An error occurred while deleting the pet.'));
     } finally {
       setDeleteLoading(false);
     }

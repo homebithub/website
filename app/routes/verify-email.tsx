@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { useLocation, useNavigate } from "@remix-run/react";
-import { Navigation } from "~/components/Navigation";
-import { Footer } from "~/components/Footer";
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate, useLocation } from '@remix-run/react';
+import { Navigation } from '~/components/Navigation';
+import { Footer } from '~/components/Footer';
+import { handleApiError } from '~/utils/errorMessages';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -35,7 +36,8 @@ export default function VerifyEmail() {
         setSuccess(true);
       }
     } catch (err: any) {
-      setError(err.message || "Failed to request email verification");
+      const errorMessage = handleApiError(err, 'email');
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

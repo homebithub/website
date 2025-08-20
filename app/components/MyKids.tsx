@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Kids from './Kids';
-import { Child } from './Children';
+import type { Child } from './Children';
+import { handleApiError } from '../utils/errorMessages';
 
 const MyKids = () => {
     const [kidOption, setKidOption] = useState<string>('');
@@ -53,7 +54,7 @@ const MyKids = () => {
             // navigate('/next-step');
         } catch (err: any) {
             console.error('Error saving information:', err);
-            setError(err.message || 'Failed to save your preference. Please try again.');
+            setError(handleApiError(err, 'myKids', 'Failed to save your preference. Please try again.'));
         } finally {
             setLoading(false);
         }

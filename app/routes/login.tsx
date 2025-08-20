@@ -7,6 +7,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { FcGoogle } from 'react-icons/fc';
 import { loginSchema, validateForm, validateField } from '~/utils/validation';
+import { handleApiError } from '~/utils/errorMessages';
 
 export type LoginRequest = {
   phone: string;

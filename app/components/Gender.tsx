@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { handleApiError } from '../utils/errorMessages';
 
 const Gender = () => {
     const [gender, setGender] = useState<'female' | 'male'>('female');
@@ -67,7 +68,7 @@ const Gender = () => {
             // router.push('/next-step'); // Uncomment and add navigation to next step if needed
         } catch (err: any) {
             console.error('Error saving information:', err);
-            setError(err.message || 'Failed to save your information. Please try again.');
+            setError(handleApiError(err, 'gender', 'Failed to save your information. Please try again.'));
         } finally {
             setLoading(false);
         }

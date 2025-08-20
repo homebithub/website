@@ -1,4 +1,5 @@
 import React, {useState, useRef, useEffect} from "react";
+import { handleApiError } from '../utils/errorMessages';
 
 interface LocationSuggestion {
     name: string;
@@ -138,7 +139,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
             console.error('Error saving location:', error);
             setSubmitStatus({
                 success: false,
-                message: error instanceof Error ? error.message : 'An error occurred while saving location'
+                message: handleApiError(error, 'location', 'An error occurred while saving location')
             });
         } finally {
             setSubmitting(false);

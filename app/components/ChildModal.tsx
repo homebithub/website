@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { handleApiError } from '../utils/errorMessages';
 import { Modal } from './Modal';
 
 const TRAITS = [
@@ -119,7 +120,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
       setTraits([]);
       onClose();
     } catch (err: any) {
-      setError(err.message || 'An error occurred');
+      setError(handleApiError(err, 'children', 'An error occurred'));
     } finally {
       setLoading(false);
     }

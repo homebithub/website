@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { handleApiError } from '../utils/errorMessages';
 
 type PetPreference = 'with_pets' | 'no_pets';
 type PetType = 'dog' | 'cat' | 'bird' | 'fish' | 'reptile' | 'small_mammal' | 'other';
@@ -108,7 +109,7 @@ const WorkWithPets = () => {
             // navigate('/next-step');
         } catch (err: any) {
             console.error('Error saving information:', err);
-            setError(err.message || 'Failed to save your preferences. Please try again.');
+            setError(handleApiError(err, 'workWithPets', 'Failed to save your preferences. Please try again.'));
         } finally {
             setLoading(false);
         }

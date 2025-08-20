@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { handleApiError } from '../utils/errorMessages';
 
 type WorkPreference = 'with_kids' | 'chores_only';
 type AgeRange = '0-2' | '2-5' | '5-10' | '10+';
@@ -89,7 +90,7 @@ const WorkWithKids = () => {
             // navigate('/next-step');
         } catch (err: any) {
             console.error('Error saving information:', err);
-            setError(err.message || 'Failed to save your preferences. Please try again.');
+            setError(handleApiError(err, 'workWithKids', 'Failed to save your preferences. Please try again.'));
         } finally {
             setLoading(false);
         }

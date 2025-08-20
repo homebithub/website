@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { handleApiError } from '../utils/errorMessages';
 
 // List of languages organized by groups
 const LANGUAGE_GROUPS = {
@@ -167,7 +168,7 @@ const Languages = () => {
             // navigate('/next-step');
         } catch (err: any) {
             console.error('Error saving information:', err);
-            setError(err.message || 'Failed to save your preferences. Please try again.');
+            setError(handleApiError(err, 'languages', 'Failed to save your preferences. Please try again.'));
         } finally {
             setLoading(false);
         }

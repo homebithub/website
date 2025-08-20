@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { handleApiError } from '../utils/errorMessages';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const TIMES = ["morning", "afternoon", "evening"];
@@ -64,7 +65,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       if (!res.ok) throw new Error("Failed to save availability. Please try again.");
       setSuccess("Availability updated successfully!");
     } catch (err: any) {
-      setError(err.message || "An error occurred.");
+      setError(handleApiError(err, 'nannyType', 'An error occurred.'));
     } finally {
       setLoading(false);
     }
