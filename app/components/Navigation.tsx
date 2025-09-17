@@ -84,43 +84,16 @@ export function Navigation() {
         </Link>
 
         {/* Navigation Links - Only show for non-authenticated users on larger screens */}
-        {showAuthButtons && (
-          <div className="hidden lg:flex items-center space-x-4 ml-auto">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="link text-base font-bold transition-colors duration-200 px-4 py-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 text-slate-700 hover:text-purple-600"
-              >
-                {item.name}
-              </Link>
-            ))}
-          </div>
-        )}
-
+        
         {/* Right section */}
         <div className="flex items-center space-x-4 ml-6">
           {showAuthButtons && (
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setIsWaitlistOpen(true)}
-                className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-gray-600 border-2 border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
-              >
-                Join waitlist
-              </button>
-              <Link
-                to="/login"
-                className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-purple-600 border-2 border-purple-600 hover:bg-purple-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
-              >
-                Log in
-              </Link>
-              <button
-                onClick={() => navigate('/signup')}
-                className="px-6 py-3 text-lg rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition-colors duration-200 font-bold shadow-md hover:shadow-lg"
-              >
-                Sign up
-              </button>
-            </div>
+            <button
+              onClick={() => setIsWaitlistOpen(true)}
+              className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-gray-600 border-2 border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
+            >
+              Join waitlist
+            </button>
           )}
 
           {/* Authenticated User Greeting */}
@@ -149,52 +122,21 @@ export function Navigation() {
             >
               <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
                 <div className="py-2">
-                  {/* Navigation Links - Show for all users in mobile menu */}
-                  {navigation.map((item) => (
-                    <Menu.Item key={item.name}>
-                      {({ active }) => (
-                        <Link
-                          to={item.href}
-                          className={`${
-                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                          } block px-4 py-2 text-sm`}
-                        >
-                          {item.name}
-                        </Link>
-                      )}
-                    </Menu.Item>
-                  ))}
-                    
                   {/* Mobile Auth Options */}
                   {showAuthButtons && (
-                    <>
-                      <Menu.Item>
-                        {({ active }) => (
-                          <button
-                            onClick={() => setIsWaitlistOpen(true)}
-                            className={`lg:hidden w-full text-left ${
-                              active ? 'bg-gray-100 text-gray-700' : 'text-gray-700'
-                            } block px-4 py-2 text-sm`}
-                          >
-                            Join waitlist
-                          </button>
-                        )}
-                      </Menu.Item>
-                      <Menu.Item>
-                        {({ active }) => (
-                          <Link
-                            to="/login"
-                            className={`lg:hidden ${
-                              active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                            } block px-4 py-2 text-sm`}
-                          >
-                            Log in
-                          </Link>
-                        )}
-                      </Menu.Item>
-                    </>
+                    <Menu.Item>
+                      {({ active }) => (
+                        <button
+                          onClick={() => setIsWaitlistOpen(true)}
+                          className={`lg:hidden w-full text-left ${
+                            active ? 'bg-gray-100 text-gray-700' : 'text-gray-700'
+                          } block px-4 py-2 text-sm`}
+                        >
+                          Join waitlist
+                        </button>
+                      )}
+                    </Menu.Item>
                   )}
-
                   {/* User Menu Items */}
                   {user && (
                     <>

@@ -53,7 +53,7 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
     setError(null);
 
     try {
-      const response = await fetch('http://localhost:8080/api/v1/waitlist', {
+      const response = await fetch('https://api.homexpert.co.ke/api/v1/waitlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
