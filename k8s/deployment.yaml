@@ -27,7 +27,7 @@ spec:
               weight: 100
       containers:
         - name: website
-          image: ghcr.io/homexpert-ke/website:20250917230021
+          image: ghcr.io/homexpert-ke/website:20250917232705
           imagePullPolicy: Always
           ports:
             - containerPort: 80
