@@ -1,22 +1,14 @@
-#FROM node:alpine as builder
-#
-#WORKDIR /app
-#
-#COPY package.json .
-#RUN npm install
-#COPY . .
-#RUN ["npm", "run", "build"]
-#
-#FROM nginx
-#EXPOSE 80
-#COPY --from=builder /app/public /usr/share/nginx/html
-
-
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 WORKDIR /app
+
+# Install deps
 COPY package*.json ./
 RUN npm ci
+
+# Copy source and build
 COPY . .
 RUN npm run build
+
+# Run server
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["node", "server.mjs"]
