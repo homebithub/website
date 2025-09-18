@@ -7,12 +7,12 @@ interface PersonalDetailsSectionProps {
 
 export default function PersonalDetailsSection({ profile, onEdit }: PersonalDetailsSectionProps) {
   return (
-    <section id="personal-details" className="mb-6 scroll-mt-24">
+    <section id="personal-details" className="mb-6 sm:mb-8 scroll-mt-24">
       <div className="flex justify-end mb-2">
         <button className="btn-primary" onClick={onEdit}>Edit</button>
       </div>
       <h2 className="text-lg font-semibold mb-2 text-primary-700 dark:text-primary-200">Personal Details</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:gap-8">
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">National ID</span>
           <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile["national_id_no;not null"] || '-'}</span>

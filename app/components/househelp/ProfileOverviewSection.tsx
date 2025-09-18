@@ -39,14 +39,14 @@ export default function ProfileOverviewSection({
 
 
   return (
-    <section id="profile-overview" className="mb-6 scroll-mt-24">
+    <section id="profile-overview" className="mb-6 sm:mb-8 scroll-mt-24">
       {userImages.length > 0 && (
         <div className="mb-6 w-full flex flex-col items-center">
-          <div className="relative w-full max-w-xs h-56 flex items-center justify-center">
+          <div className="relative w-full max-w-xs h-48 sm:h-56 flex items-center justify-center">
             <img
               src={"http://localhost:8080/images/" + userImages[carouselIdx].path.replace(/^src\//, '/')}
               alt={`User image ${carouselIdx + 1}`}
-              className="object-contain w-full h-full rounded-xl shadow border dark:border-slate-700 bg-white dark:bg-slate-900 cursor-pointer"
+              className="object-contain w-full h-full rounded-xl shadow border dark:border-slate-700 bg-white dark:bg-slate-900 cursor-pointer transition-transform duration-200 active:scale-95"
               onClick={() => {
                 setExpandedIdx(carouselIdx);
                 setExpanded(true);
@@ -88,12 +88,12 @@ export default function ProfileOverviewSection({
           uploading={uploadingImages}
         />
       )}
-      <div className="flex justify-end mb-2 gap-2">
+      <div className="flex flex-col sm:flex-row justify-end mb-2 gap-2 sm:gap-4">
         <button className="btn-primary" onClick={onEdit}>Edit</button>
         <button className="btn-secondary" onClick={onShowImageModal}>Upload Images</button>
       </div>
       <h2 className="text-lg font-semibold mb-2 text-primary-700 dark:text-primary-200">Profile Overview</h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:gap-8">
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Status</span>
           <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_status}</span>

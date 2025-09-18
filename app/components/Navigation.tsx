@@ -124,13 +124,13 @@ export function Navigation() {
                     )}
 
                     {/* Authenticated User Greeting */}
-                    {/*{user && userName && (*/}
-                    {/*    <div className="hidden lg:flex items-center space-x-3">*/}
-                    {/*        <div className="text-sm text-gray-600">*/}
-                    {/*            <span className="font-semibold text-base">Hello, {userName}</span>*/}
-                    {/*        </div>*/}
-                    {/*    </div>*/}
-                    {/*)}*/}
+                    {user && userName && (
+                        <div className="hidden lg:flex items-center space-x-3">
+                            <div className="text-sm text-gray-600">
+                                <span className="font-semibold text-base">Hello, {userName}</span>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Menu Dropdown - Only show on mobile */}
                     <Menu as="div" className="relative inline-block text-left lg:hidden">
@@ -180,73 +180,73 @@ export function Navigation() {
                                                     </button>
                                                 )}
                                             </Menu.Item>
-                                            {/*<Menu.Item>*/}
-                                            {/*    {({ active }) => (*/}
-                                            {/*        <Link*/}
-                                            {/*            to="/login"*/}
-                                            {/*            className={`lg:hidden ${*/}
-                                            {/*                active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'*/}
-                                            {/*            } block px-4 py-2 text-sm`}*/}
-                                            {/*        >*/}
-                                            {/*            Log in*/}
-                                            {/*        </Link>*/}
-                                            {/*    )}*/}
-                                            {/*</Menu.Item>*/}
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link
+                                                        to="/login"
+                                                        className={`lg:hidden ${
+                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                                                        } block px-4 py-2 text-sm`}
+                                                    >
+                                                        Log in
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
                                         </>
                                     )}
 
                                     {/* User Menu Items */}
-                                    {/*{user && (*/}
-                                    {/*    <>*/}
-                                    {/*        <div className="border-t border-gray-200 my-1"></div>*/}
-                                    {/*        /!* User Greeting in Mobile Menu *!/*/}
-                                    {/*        <div className="px-4 py-2 text-sm text-gray-600 border-b border-gray-100">*/}
-                                    {/*            <div className="font-semibold text-base">Hello, {userName}</div>*/}
-                                    {/*        </div>*/}
+                                    {user && (
+                                        <>
+                                            <div className="border-t border-gray-200 my-1"></div>
+                                            {/* User Greeting in Mobile Menu */}
+                                            <div className="px-4 py-2 text-sm text-gray-600 border-b border-gray-100">
+                                                <div className="font-semibold text-base">Hello, {userName}</div>
+                                            </div>
 
 
 
-                                    {/*        <Menu.Item>*/}
-                                    {/*            {({ active }) => (*/}
-                                    {/*                <Link*/}
-                                    {/*                    to="/profile"*/}
-                                    {/*                    className={`${*/}
-                                    {/*                        active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'*/}
-                                    {/*                    } flex items-center px-4 py-2 text-sm`}*/}
-                                    {/*                >*/}
-                                    {/*                    <UserIcon className="mr-3 h-5 w-5" />*/}
-                                    {/*                    Profile*/}
-                                    {/*                </Link>*/}
-                                    {/*            )}*/}
-                                    {/*        </Menu.Item>*/}
-                                    {/*        <Menu.Item>*/}
-                                    {/*            {({ active }) => (*/}
-                                    {/*                <Link*/}
-                                    {/*                    to="/settings"*/}
-                                    {/*                    className={`${*/}
-                                    {/*                        active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'*/}
-                                    {/*                    } flex items-center px-4 py-2 text-sm`}*/}
-                                    {/*                >*/}
-                                    {/*                    <CogIcon className="mr-3 h-5 w-5" />*/}
-                                    {/*                    Settings*/}
-                                    {/*                </Link>*/}
-                                    {/*            )}*/}
-                                    {/*        </Menu.Item>*/}
-                                    {/*        <Menu.Item>*/}
-                                    {/*            {({ active }) => (*/}
-                                    {/*                <button*/}
-                                    {/*                    onClick={handleLogout}*/}
-                                    {/*                    className={`${*/}
-                                    {/*                        active ? 'bg-red-100 text-red-700' : 'text-gray-700'*/}
-                                    {/*                    } flex items-center w-full px-4 py-2 text-sm`}*/}
-                                    {/*                >*/}
-                                    {/*                    <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />*/}
-                                    {/*                    Logout*/}
-                                    {/*                </button>*/}
-                                    {/*            )}*/}
-                                    {/*        </Menu.Item>*/}
-                                    {/*    </>*/}
-                                    {/*)}*/}
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link
+                                                        to="/profile"
+                                                        className={`${
+                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                                                        } flex items-center px-4 py-2 text-sm`}
+                                                    >
+                                                        <UserIcon className="mr-3 h-5 w-5" />
+                                                        Profile
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link
+                                                        to="/settings"
+                                                        className={`${
+                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                                                        } flex items-center px-4 py-2 text-sm`}
+                                                    >
+                                                        <CogIcon className="mr-3 h-5 w-5" />
+                                                        Settings
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <button
+                                                        onClick={handleLogout}
+                                                        className={`${
+                                                            active ? 'bg-red-100 text-red-700' : 'text-gray-700'
+                                                        } flex items-center w-full px-4 py-2 text-sm`}
+                                                    >
+                                                        <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
+                                                        Logout
+                                                    </button>
+                                                )}
+                                            </Menu.Item>
+                                        </>
+                                    )}
                                 </div>
                             </Menu.Items>
                         </Transition>

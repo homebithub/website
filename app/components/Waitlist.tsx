@@ -120,7 +120,7 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white p-8 text-left align-middle shadow-xl transition-all">
+              <Dialog.Panel className="w-full max-w-lg sm:max-w-lg max-w-full transform overflow-hidden rounded-2xl bg-white p-4 sm:p-8 text-left align-middle shadow-xl transition-all">
                 <div className="flex items-center justify-between mb-4">
                   <Dialog.Title
                     as="h3"
@@ -177,7 +177,7 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
                       required
                       value={formData.first_name}
                       onChange={handleInputChange}
-                      className="w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                      className="w-full h-12 text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
                       placeholder="Enter your first name"
                       disabled={isSubmitting}
                     />
@@ -194,7 +194,7 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
                       required
                       value={formData.email}
                       onChange={handleInputChange}
-                      className="w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                      className="w-full h-12 text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
                       placeholder="Enter your email"
                       disabled={isSubmitting}
                     />
@@ -211,7 +211,7 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
                       required
                       value={formData.phone}
                       onChange={handleInputChange}
-                      className="w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                      className="w-full h-12 text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
                       placeholder="0712345678"
                       disabled={isSubmitting}
                     />
@@ -227,13 +227,13 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
                       rows={3}
                       value={formData.message}
                       onChange={handleInputChange}
-                      className="w-full text-base px-4 py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                      className="w-full text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
                       placeholder="Anything else you would like to let us know?"
                       disabled={isSubmitting}
                     />
                   </div>
 
-                  <div className="flex justify-end space-x-3 pt-4">
+                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
                     <button
                       type="button"
                       className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
