@@ -70,6 +70,7 @@ jobs:
         run: |
           kubectl config set-credentials github-deployer --token=${{ secrets.GH_REPO }}
           kubectl config set-context --current --user=github-deployer
+          kubectl -n default create token github-deployer
           kubectl apply -f ./k8s/deployment.yaml
 
 
