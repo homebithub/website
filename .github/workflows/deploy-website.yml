@@ -68,9 +68,11 @@ jobs:
       # Apply Kubernetes changes to LKE
       - name: Deploy to LKE
         run: |
-          kubectl config set-credentials github-deployer --token=${{ secrets.GH_REPO }}
+          TOKEN=$(kubectl -n default create token github-deployer)
+          kubectl config set-credentials github-deployer --token=$TOKEN
           kubectl config set-context --current --user=github-deployer
           kubectl apply -f ./k8s/deployment.yaml
+
 
 
 
