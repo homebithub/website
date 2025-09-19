@@ -19,9 +19,10 @@ app.use(cors());
 
 app.all("*", createRequestHandler({ build }));
 
-app.listen(3000, () => {
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
     if (process.env.NODE_ENV === "development") {
         broadcastDevReady(build);
     }
-    console.log("App listening on port 3000");
+    console.log(`App listening on port ${PORT}`);
 });
