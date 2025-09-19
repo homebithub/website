@@ -31,7 +31,7 @@
 #EXPOSE 3000
 #CMD ["node", "server.mjs"]
 # ---- Build Stage ----
-FROM node:18-alpine AS builder
+FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Install all deps (including dev) to build Remix
@@ -43,7 +43,7 @@ COPY . .
 RUN npm run build
 
 # ---- Runtime Stage ----
-FROM node:18-alpine AS runtime
+FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 
