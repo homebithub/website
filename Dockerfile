@@ -54,7 +54,7 @@ RUN npm ci --omit=dev
 # Copy built app, static assets, and server entry
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/server.mjs ./server.mjs   # <--- ADD THIS
+COPY --from=builder /app/server.mjs ./server.mjs
 
 # Install curl for healthchecks
 RUN apk add --no-cache curl
