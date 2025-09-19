@@ -14,13 +14,14 @@ RUN npm run build
 FROM node:18-alpine AS production
 WORKDIR /app
 
-# Copy only production node_modules and build output
+# Copy only the required files for production
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/server.mjs ./server.mjs
-COPY --from=builder /app/app ./app
+
+# Install remix-serve globally or ensure it's available
+RUN npm install -g remix-serve
 
 EXPOSE 3000
-CMD ["node", "server.mjs"]
+CMD ["remix-serve", "build"]
