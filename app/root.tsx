@@ -1,5 +1,6 @@
 import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration, } from "@remix-run/react";
 import React from "react";
+import { cssBundleHref } from "@remix-run/css-bundle";
 import stylesheet from "~/tailwind.css";
 import glowCardStyles from "~/styles/glow-card.css";
 import type {LinksFunction} from "@remix-run/node";
@@ -7,8 +8,9 @@ import type {LinksFunction} from "@remix-run/node";
 import { AuthProvider } from "~/contexts/AuthContext";
 
 export const links: LinksFunction = () => [
-    {rel: "stylesheet", href: stylesheet},
-    {rel: "stylesheet", href: glowCardStyles},
+    ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] as const : []),
+    { rel: "stylesheet", href: stylesheet },
+    { rel: "stylesheet", href: glowCardStyles },
 ];
 
 export default function App() {

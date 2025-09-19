@@ -21,7 +21,6 @@ app.use(express.static("public", { maxAge: "1h" }));
 app.get("/healthz", (req, res) => res.status(200).json({ status: "ok" }));
 
 
-
 // app.all('/socket.io/*', (req, res) => {
 //     proxy.web(req, res, { target: FULL_HOST} ); // Change the target to your Node.js server address
 // });
