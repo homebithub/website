@@ -8,8 +8,17 @@ import * as build from "./build/index.js";
 
 const proxy = httpProxy.createProxyServer();
 const app = express();
-app.use(express.static("public"));
+// app.use(express.static("public"));
 app.use(cors());
+app.use(
+    express.static("public", {
+        setHeaders: (res, path) => {
+            if (path.endsWith(".js")) {
+                res.setHeader("Content-Type", "application/javascript");
+            }
+        },
+    })
+);
 
 
 
