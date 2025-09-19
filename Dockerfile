@@ -51,12 +51,10 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy built server code
+# Copy built app, static assets, and server entry
 COPY --from=builder /app/build ./build
-
-# Copy static assets (including browser build output)
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/public/build ./public/build
+COPY --from=builder /app/server.mjs ./server.mjs   # <--- ADD THIS
 
 # Install curl for healthchecks
 RUN apk add --no-cache curl
@@ -67,5 +65,5 @@ RUN addgroup -S app && adduser -S -G app app \
 USER app
 
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD curl -fsS http://localhost:3000/health || exit 1
-CMD ["npm", "start"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD curl -fsS http://localhost:3000/healthz || exit 1
+CMD ["node", "server.mjs"]
