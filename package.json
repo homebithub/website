@@ -28,6 +28,7 @@
     "chartjs-plugin-datalabels": "^2.2.0",
     "cors": "^2.8.5",
     "dompurify": "^3.1.6",
+    "express": "^4.21.2",
     "framer-motion": "^12.23.5",
     "http-proxy": "^1.18.1",
     "isbot": "^4.1.0",
