@@ -1,0 +1,27 @@
+# Ignore dependencies from host
+node_modules
+
+# Ignore previous build artifacts
+build
+public/build
+.cache
+
+# VCS
+.git
+.git/*
+
+# Logs and editor junk
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+
+# Env files
+.env
+.env.*
+
+# Misc
+coverage
+dist
+.tmp

@@ -3,7 +3,7 @@ import React from "react";
 import { cssBundleHref } from "@remix-run/css-bundle";
 import stylesheet from "~/tailwind.css";
 import glowCardStyles from "~/styles/glow-card.css";
-import type {LinksFunction} from "@remix-run/node";
+import type { LinksFunction, HeadersFunction } from "@remix-run/node";
 
 import { AuthProvider } from "~/contexts/AuthContext";
 
@@ -12,6 +12,10 @@ export const links: LinksFunction = () => [
     { rel: "stylesheet", href: stylesheet },
     { rel: "stylesheet", href: glowCardStyles },
 ];
+
+export const headers: HeadersFunction = () => ({
+    "Cache-Control": "no-store",
+});
 
 export default function App() {
     return (

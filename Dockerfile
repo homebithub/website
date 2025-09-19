@@ -54,7 +54,6 @@ RUN npm ci --omit=dev --ignore-scripts
 # Copy built app and static assets
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/server.mjs ./server.mjs
 
 # Install curl for healthchecks
 RUN apk add --no-cache curl
@@ -65,5 +64,5 @@ RUN addgroup -S app && adduser -S -G app app \
 USER app
 
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD curl -fsS http://localhost:3000/healthz || exit 1
-CMD ["node", "server.mjs"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD curl -fsS http://localhost:3000/health || exit 1
+CMD ["npm", "start"]

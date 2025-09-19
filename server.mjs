@@ -11,11 +11,11 @@ app.use(cors());
 // Serve built assets from /public/build at /build with long-term caching
 app.use(
   "/build",
-  express.static("public/build", { immutable: true, maxAge: "1y" })
+  express.static("public/build")
 );
 
 // Serve other static assets from /public with shorter cache
-app.use(express.static("public", { maxAge: "1h" }));
+app.use(express.static("public"));
 
 // Lightweight health endpoint (in addition to Remix /health route)
 app.get("/healthz", (req, res) => res.status(200).json({ status: "ok" }));
