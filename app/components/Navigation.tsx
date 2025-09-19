@@ -76,12 +76,19 @@ export function Navigation() {
 
 
     return (
-        <nav className="bg-white py-4 sticky top-0 z-40 shadow-md">
-            <div className="flex justify-between items-center px-8 sm:px-12 lg:px-24">
+        <nav className="sticky top-0 z-40 shadow-md bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-visible backdrop-blur-lg bg-white/70 border-b border-primary-100">
+  {/* Animated Blobs & Icons */}
+  <svg className="absolute top-0 right-0 w-24 h-24 opacity-30 animate-float z-0" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#f472b6" /></svg>
+  <svg className="absolute bottom-0 left-0 w-20 h-20 opacity-20 blur-sm animate-float delay-500 z-0" viewBox="0 0 100 100"><path d="M10,80 Q50,10 90,80" stroke="#2dd4bf" strokeWidth="8" fill="none" /></svg>
+            <div className="flex justify-between items-center px-8 sm:px-16 lg:px-32 min-h-[64px] sm:min-h-[72px]">
                 {/* Logo */}
-                <Link to="/" className="text-purple-600 font-bold text-2xl hover:text-purple-600 transition-colors duration-200">
-                    HomeXpert
-                </Link>
+                <div className="relative flex items-center">
+  {/* Floating purple blob */}
+  <svg className="absolute -top-8 -left-8 w-16 h-16 opacity-30 animate-float" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="50" ry="40" fill="#a855f7" /></svg>
+  <Link to="/" className="relative text-primary-700 font-extrabold text-3xl sm:text-4xl px-3 py-2 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:bg-primary-50 drop-shadow-lg">
+    HomeXpert
+  </Link>
+</div>
 
                 {/* Navigation Links - Only show for non-authenticated users on larger screens */}
                 {showAuthButtons && (
@@ -90,7 +97,7 @@ export function Navigation() {
                             <Link
                                 key={item.name}
                                 to={item.href}
-                                className="link text-base font-bold transition-colors duration-200 px-4 py-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 text-slate-700 hover:text-purple-600"
+                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-700 hover:text-white hover:bg-primary-500 hover:scale-110 hover:shadow-lg"
                             >
                                 {item.name}
                             </Link>
@@ -99,15 +106,17 @@ export function Navigation() {
                 )}
 
                 {/* Right section */}
-                <div className="flex items-center space-x-4 ml-6">
+                <div className="flex items-center space-x-4 ml-6 relative">
+  {/* Floating sparkle icon */}
+  <svg className="absolute -top-6 right-0 w-8 h-8 opacity-40 animate-float delay-1000 z-0" viewBox="0 0 32 32"><path d="M16 2 L20 12 L30 16 L20 20 L16 30 L12 20 L2 16 L12 12 Z" fill="#a855f7" /></svg>
                     {showAuthButtons && (
                         <div className="flex items-center space-x-3">
                             <button
-                                onClick={() => setIsWaitlistOpen(true)}
-                                className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-gray-600 border-2 border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
-                            >
-                                Join waitlist
-                            </button>
+  onClick={() => setIsWaitlistOpen(true)}
+  className="hidden lg:block bg-primary-600 text-white text-lg sm:text-xl font-bold rounded-xl shadow-lg px-6 py-3 transition-all duration-200 hover:bg-primary-700 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 border-2 border-primary-700"
+>
+  Join Waitlist
+</button>
                             {/*<Link*/}
                             {/*    to="/login"*/}
                             {/*    className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-purple-600 border-2 border-purple-600 hover:bg-purple-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"*/}
@@ -147,7 +156,7 @@ export function Navigation() {
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                         >
-                            <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white/90 border-2 border-primary-200 shadow-lg focus:outline-none backdrop-blur-md">
                                 <div className="py-2">
                                     {/* Navigation Links - Show for all users in mobile menu */}
                                     {navigation.map((item) => (
@@ -155,9 +164,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to={item.href}
-                                                    className={`${
-                                                        active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                                                    } block px-4 py-2 text-sm`}
+                                                    className={`font-bold ${active ? 'bg-primary-100 text-primary-700' : 'text-primary-700'} block px-5 py-2 text-lg rounded-xl transition-all duration-200`}
                                                 >
                                                     {item.name}
                                                 </Link>
@@ -169,30 +176,16 @@ export function Navigation() {
                                     {showAuthButtons && (
                                         <>
                                             <Menu.Item>
-                                                {({ active }) => (
-                                                    <button
-                                                        onClick={() => setIsWaitlistOpen(true)}
-                                                        className={`lg:hidden w-full text-left ${
-                                                            active ? 'bg-gray-100 text-gray-700' : 'text-gray-700'
-                                                        } block px-4 py-2 text-sm`}
-                                                    >
-                                                        Join waitlist
-                                                    </button>
-                                                )}
-                                            </Menu.Item>
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <Link
-                                                        to="/login"
-                                                        className={`lg:hidden ${
-                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                                                        } block px-4 py-2 text-sm`}
-                                                    >
-                                                        Log in
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
-                                        </>
+  {({ active }) => (
+    <button
+      onClick={() => setIsWaitlistOpen(true)}
+      className={`lg:hidden w-full text-left bg-primary-600 text-white font-bold block px-5 py-2 text-lg rounded-xl shadow-md transition-all duration-200 hover:bg-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
+    >
+      Join Waitlist
+    </button>
+  )}
+</Menu.Item>
+                                                                                    </>
                                     )}
 
                                     {/* User Menu Items */}
@@ -200,9 +193,9 @@ export function Navigation() {
                                         <>
                                             <div className="border-t border-gray-200 my-1"></div>
                                             {/* User Greeting in Mobile Menu */}
-                                            <div className="px-4 py-2 text-sm text-gray-600 border-b border-gray-100">
-                                                <div className="font-semibold text-base">Hello, {userName}</div>
-                                            </div>
+                                            <div className="px-5 py-2 text-lg font-bold rounded-xl text-primary-700 border-b border-primary-100">
+  <div className="font-semibold text-base">Hello, {userName}</div>
+</div>
 
 
 
