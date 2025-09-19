@@ -102,12 +102,12 @@ export function Navigation() {
                 <div className="flex items-center space-x-4 ml-6">
                     {showAuthButtons && (
                         <div className="flex items-center space-x-3">
-                            {/*<button*/}
-                            {/*    onClick={() => setIsWaitlistOpen(true)}*/}
-                            {/*    className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-gray-600 border-2 border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"*/}
-                            {/*>*/}
-                            {/*    Join waitlist*/}
-                            {/*</button>*/}
+                            <button
+                                onClick={() => setIsWaitlistOpen(true)}
+                                className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-gray-600 border-2 border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-500"
+                            >
+                                Join waitlist
+                            </button>
                             {/*<Link*/}
                             {/*    to="/login"*/}
                             {/*    className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-purple-600 border-2 border-purple-600 hover:bg-purple-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"*/}
