@@ -76,7 +76,7 @@ export function Navigation() {
 
 
     return (
-        <nav className="bg-white py-4 shadow-sm">
+        <nav className="bg-white py-4 sticky top-0 z-40 shadow-md">
             <div className="flex justify-between items-center px-8 sm:px-12 lg:px-24">
                 {/* Logo */}
                 <Link to="/" className="text-purple-600 font-bold text-2xl hover:text-purple-600 transition-colors duration-200">
