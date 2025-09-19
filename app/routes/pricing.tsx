@@ -45,7 +45,7 @@ const tiers = [
 
 export default function Pricing() {
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-x-hidden flex flex-col">
       <Navigation />
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mx-auto max-w-4xl text-center">
@@ -58,7 +58,7 @@ export default function Pricing() {
           {tiers.map((tier, tierIdx) => (
             <div
               key={tier.id}
-              className="flex flex-col justify-between rounded-3xl bg-white p-8 shadow-xl ring-1 ring-gray-900/10 sm:p-10">
+              className="flex flex-col justify-between rounded-3xl bg-white/90 p-8 shadow-xl backdrop-blur-lg transition-transform duration-500 hover:scale-105 hover:shadow-2xl fade-in-scroll ring-1 ring-primary-200 sm:p-10">
               <div>
                 <h3 id={tier.id} className="text-base font-semibold leading-7 text-slate-900">
                   {tier.name}

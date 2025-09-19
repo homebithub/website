@@ -68,10 +68,10 @@ export default function Contact() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-x-hidden flex flex-col">
       <Navigation />
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto bg-white p-8 rounded-2xl shadow-lg">
+        <div className="max-w-4xl mx-auto bg-white/90 p-8 rounded-3xl shadow-xl backdrop-blur-lg transition-transform duration-500 hover:scale-105 hover:shadow-2xl fade-in-scroll">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900">
               Contact Us

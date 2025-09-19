@@ -64,11 +64,14 @@ const team: TeamMember[] = [
 
 export default function About() {
     return (
-        <div className="min-h-screen bg-gray-50 font-sans flex flex-col">
+        <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-x-hidden font-sans flex flex-col">
             <Navigation />
             <main className="flex-1">
                 {/* About Us and Mission Section */}
-                <div className="relative isolate overflow-hidden bg-white py-24 sm:py-32">
+                <div className="relative isolate overflow-hidden bg-white/90 backdrop-blur-lg py-16 sm:py-24 rounded-3xl shadow-lg mx-3 sm:mx-8 mt-10 fade-in-scroll">
+  {/* Floating SVG shapes for playful effect */}
+  <svg className="absolute top-0 left-0 w-48 h-48 opacity-20 animate-float" viewBox="0 0 200 200"><circle cx="100" cy="100" r="100" fill="#c084fc" /></svg>
+  <svg className="absolute bottom-0 right-0 w-64 h-64 opacity-10 animate-float delay-1000" viewBox="0 0 200 200"><rect width="200" height="200" rx="70" fill="#a855f7" /></svg>
                     <div className="mx-auto max-w-7xl px-6 lg:px-8">
                         <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
                             <div className="lg:pr-8 lg:pt-4">

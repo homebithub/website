@@ -58,10 +58,13 @@ const services = [
 
 export default function Services() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-x-hidden">
       <Navigation />
       
       <div className="relative isolate overflow-hidden">
+  {/* Floating SVG shapes for playful effect */}
+  <svg className="absolute top-0 left-0 w-48 h-48 opacity-20 animate-float" viewBox="0 0 200 200"><circle cx="100" cy="100" r="100" fill="#c084fc" /></svg>
+  <svg className="absolute bottom-0 right-0 w-64 h-64 opacity-10 animate-float delay-1000" viewBox="0 0 200 200"><rect width="200" height="200" rx="70" fill="#a855f7" /></svg>
         <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
           <div className="mx-auto max-w-2xl lg:mx-0">
             <h2 className="text-4xl font-bold tracking-tight text-slate-900 sm:text-6xl">
