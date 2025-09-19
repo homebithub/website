@@ -49,7 +49,7 @@ ENV NODE_ENV=production
 
 # Install only production deps
 COPY package*.json ./
-RUN npm ci --omit=dev --ignore-scripts
+RUN npm ci --omit=dev
 
 # Copy built app and static assets
 COPY --from=builder /app/build ./build
