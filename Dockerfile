@@ -51,9 +51,12 @@ ENV NODE_ENV=production
 COPY package*.json ./
 RUN npm ci --omit=dev
 
-# Copy built app and static assets
+# Copy built server code
 COPY --from=builder /app/build ./build
+
+# Copy static assets (including browser build output)
 COPY --from=builder /app/public ./public
+COPY --from=builder /app/public/build ./public/build
 
 # Install curl for healthchecks
 RUN apk add --no-cache curl
