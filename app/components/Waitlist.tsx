@@ -295,7 +295,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                 <div className="flex items-center justify-between mb-4">
                   <Dialog.Title
                     as="h3"
-                    className="text-lg font-medium leading-6 text-gray-900"
+                    className="text-xl sm:text-2xl font-medium leading-7 text-gray-900"
                   >
                     Join Our Waitlist
                   </Dialog.Title>
@@ -346,7 +346,6 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                         type="button"
                         onClick={startOAuthWaitlist}
                         className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
-                        disabled={!formData.phone}
                       >
                         <FcGoogle className="h-5 w-5 mr-2" />
                         Sign in with Google
