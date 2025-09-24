@@ -225,11 +225,29 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
   // Start OAuth-based Google flow using backend URL to ensure server-verified identity
   const startOAuthWaitlist = async () => {
     try {
+      // Require phone so we can auto-create the waitlist after redirect (phone is NOT NULL in DB)
+      if (!formData.phone.trim()) {
+        setError('Please enter your Kenyan phone number before continuing with Google.');
+        setTimeout(() => phoneInputRef.current?.focus(), 0);
+        return;
+      }
       const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL)
         ? (window as any).ENV.AUTH_API_BASE_URL
         : 'https://api.homexpert.co.ke/auth';
-      // Optional: include state (e.g., current path) to preserve context
-      const state = encodeURIComponent(window.location.pathname);
+      // Include phone/message in state so callback can auto-create waitlist if possible
+      const normalizeKenyanPhone = (phone: string) => {
+        const p = phone.trim();
+        if (!p) return '';
+        if (p.startsWith('+254')) return p;
+        if (p.startsWith('254')) return `+254${p.slice(3)}`;
+        if (p.startsWith('0')) return `+254${p.slice(1)}`;
+        return p;
+      };
+      const statePayload = {
+        phone: formData.phone ? normalizeKenyanPhone(formData.phone) : undefined,
+        message: formData.message || undefined,
+      };
+      const state = encodeURIComponent(JSON.stringify(statePayload));
       const resp = await fetch(`${baseUrl}/api/v1/auth/google/url?flow=waitlist&state=${state}`);
       const data = await resp.json();
       if (data?.url) {
@@ -328,6 +346,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                         type="button"
                         onClick={startOAuthWaitlist}
                         className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                        disabled={!formData.phone}
                       >
                         <FcGoogle className="h-5 w-5 mr-2" />
                         Sign in with Google
