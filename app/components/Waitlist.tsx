@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { FcGoogle } from 'react-icons/fc';
 
 interface WaitlistProps {
   isOpen: boolean;
@@ -326,9 +327,10 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                       <button
                         type="button"
                         onClick={startOAuthWaitlist}
-                        className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                        className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       >
-                        Sign in with Google (redirect)
+                        <FcGoogle className="h-5 w-5 mr-2" />
+                        Sign in with Google
                       </button>
                     </div>
                   </div>
