@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -38,6 +38,10 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const [isGooglePrefilled, setIsGooglePrefilled] = useState(false);
+  const phoneInputRef = useRef<HTMLInputElement | null>(null);
+  const messageRef = useRef<HTMLTextAreaElement | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -92,6 +96,97 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
       setShowSuccess(false);
       onClose();
     }
+  };
+
+  // ---------- Google Sign-In Integration ----------
+  // Keep types local to this file to avoid global type edits
+  type GoogleCredentialResponse = { credential: string };
+
+  function parseJwt(token: string): any {
+    try {
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map(c => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch {
+      return null;
+    }
+  }
+
+  const handleGoogleCredential = (response: GoogleCredentialResponse) => {
+    const payload = parseJwt(response.credential);
+    if (!payload) return;
+
+    const email: string = payload.email || '';
+    const firstName: string = payload.given_name || payload.givenName || (payload.name ? String(payload.name).split(' ')[0] : '');
+
+    setFormData(prev => ({
+      ...prev,
+      email: email || prev.email,
+      first_name: firstName || prev.first_name,
+    }));
+    setIsGooglePrefilled(true);
+
+    // Focus remaining fields (phone first, then message)
+    setTimeout(() => {
+      if (phoneInputRef.current) {
+        phoneInputRef.current.focus();
+      } else if (messageRef.current) {
+        messageRef.current.focus();
+      }
+    }, 50);
+  };
+
+  // Initialize Google button when modal opens
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    // Safe-guard for SSR
+    if (typeof window === 'undefined') return;
+    // Ensure script is ready
+    const clientId = (window as any).ENV?.GOOGLE_CLIENT_ID;
+    const google = (window as any).google;
+    if (!clientId) return;
+
+    function init() {
+      if (!(window as any).google?.accounts?.id) {
+        // Retry shortly if script hasn't finished loading yet
+        setTimeout(init, 200);
+        return;
+      }
+      (window as any).google.accounts.id.initialize({
+        client_id: clientId,
+        callback: handleGoogleCredential,
+        auto_select: false,
+        context: 'signin',
+      });
+      const container = document.getElementById('google-waitlist-button');
+      if (container && container.childElementCount === 0) {
+        (window as any).google.accounts.id.renderButton(container, {
+          theme: 'outline',
+          size: 'large',
+          width: 320,
+          type: 'standard',
+          shape: 'pill',
+          logo_alignment: 'left',
+          text: 'continue_with',
+        });
+      }
+    }
+    init();
+  }, [isOpen]);
+
+  const clearGooglePrefill = () => {
+    setIsGooglePrefilled(false);
+    setFormData(prev => ({ ...prev, email: '', first_name: '' }));
   };
 
   return (
@@ -165,40 +260,73 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div>
-                    <label htmlFor="first_name" className="block text-slate-900 mb-1 font-medium">
-                      First Name *
-                    </label>
-                    <input
-                      type="text"
-                      name="first_name"
-                      id="first_name"
-                      required
-                      value={formData.first_name}
-                      onChange={handleInputChange}
-                      className="w-full h-12 text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
-                      placeholder="Enter your first name"
-                      disabled={isSubmitting}
-                    />
+                {/* Google Sign-In Option */}
+                {isClient && (
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-600 mb-2">Continue with Google</p>
+                    <div id="google-waitlist-button" className="flex justify-center"></div>
                   </div>
+                )}
 
-                  <div>
-                    <label htmlFor="email" className="block text-slate-900 mb-1 font-medium">
-                      Email *
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      id="email"
-                      required
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="w-full h-12 text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
-                      placeholder="Enter your email"
-                      disabled={isSubmitting}
-                    />
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                    <div className="w-full border-t border-gray-200" />
                   </div>
+                  <div className="relative flex justify-center">
+                    <span className="px-2 bg-white text-sm text-gray-500">or fill the form</span>
+                  </div>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {!isGooglePrefilled ? (
+                    <div>
+                      <label htmlFor="first_name" className="block text-slate-900 mb-1 font-medium">
+                        First Name *
+                      </label>
+                      <input
+                        type="text"
+                        name="first_name"
+                        id="first_name"
+                        required
+                        value={formData.first_name}
+                        onChange={handleInputChange}
+                        className="w-full h-12 text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                        placeholder="Enter your first name"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+                      <div>
+                        <p className="text-sm text-green-800">
+                          Signed in with Google as <span className="font-semibold">{formData.first_name}</span>
+                        </p>
+                        <p className="text-xs text-green-700">{formData.email}</p>
+                      </div>
+                      <button type="button" onClick={clearGooglePrefill} className="text-xs text-green-800 underline">
+                        Change
+                      </button>
+                    </div>
+                  )}
+
+                  {!isGooglePrefilled && (
+                    <div>
+                      <label htmlFor="email" className="block text-slate-900 mb-1 font-medium">
+                        Email *
+                      </label>
+                      <input
+                        type="email"
+                        name="email"
+                        id="email"
+                        required
+                        value={formData.email}
+                        onChange={handleInputChange}
+                        className="w-full h-12 text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                        placeholder="Enter your email"
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                  )}
 
                   <div>
                     <label htmlFor="phone" className="block text-slate-900 mb-1 font-medium">
@@ -214,6 +342,7 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
                       className="w-full h-12 text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
                       placeholder="0712345678"
                       disabled={isSubmitting}
+                      ref={phoneInputRef}
                     />
                   </div>
 
@@ -230,6 +359,7 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
                       className="w-full text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
                       placeholder="Anything else you would like to let us know?"
                       disabled={isSubmitting}
+                      ref={messageRef}
                     />
                   </div>
 
