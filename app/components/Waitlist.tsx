@@ -225,12 +225,6 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
   // Start OAuth-based Google flow using backend URL to ensure server-verified identity
   const startOAuthWaitlist = async () => {
     try {
-      // Require phone so we can auto-create the waitlist after redirect (phone is NOT NULL in DB)
-      if (!formData.phone.trim()) {
-        setError('Please enter your Kenyan phone number before continuing with Google.');
-        setTimeout(() => phoneInputRef.current?.focus(), 0);
-        return;
-      }
       const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL)
         ? (window as any).ENV.AUTH_API_BASE_URL
         : 'https://api.homexpert.co.ke/auth';
