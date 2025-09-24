@@ -20,7 +20,10 @@ export const headers: HeadersFunction = () => ({
 export function loader() {
     return json({
         ENV: {
-            GOOGLE_CLIENT_ID: "562184165636-klkgj2b74194819lgh5netj4s2e343o2.apps.googleusercontent.com",
+            GOOGLE_CLIENT_ID:
+                process.env.GOOGLE_CLIENT_ID ||
+                "562184165636-klkgj2b74194819lgh5netj4s2e343o2.apps.googleusercontent.com",
+            AUTH_API_BASE_URL: process.env.AUTH_API_BASE_URL || "https://api.homexpert.co.ke/auth",
         },
     });
 }
@@ -59,5 +62,6 @@ export default function App() {
         </html>
     );
 }
+
 
 

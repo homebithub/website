@@ -5,6 +5,9 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 interface WaitlistProps {
   isOpen: boolean;
   onClose: () => void;
+  prefillEmail?: string;
+  prefillFirstName?: string;
+  prefillError?: string;
 }
 
 interface WaitlistFormData {
@@ -28,7 +31,7 @@ interface WaitlistResponse {
   error?: string;
 }
 
-export function Waitlist({ isOpen, onClose }: WaitlistProps) {
+export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, prefillError }: WaitlistProps) {
   const [formData, setFormData] = useState<WaitlistFormData>({
     phone: '',
     email: '',
@@ -57,17 +60,31 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
     setError(null);
 
     try {
-      const response = await fetch('https://api.homexpert.co.ke/auth/api/v1/waitlist', {
+      const normalizeKenyanPhone = (phone: string) => {
+        const p = phone.trim();
+        if (p.startsWith('+254')) return p;
+        if (p.startsWith('254')) return `+254${p.slice(3)}`;
+        if (p.startsWith('0')) return `+254${p.slice(1)}`;
+        return p;
+      };
+      const payload: WaitlistFormData = {
+        ...formData,
+        phone: normalizeKenyanPhone(formData.phone),
+      };
+      const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL)
+        ? (window as any).ENV.AUTH_API_BASE_URL
+        : 'https://api.homexpert.co.ke/auth';
+      const response = await fetch(`${baseUrl}/api/v1/waitlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
-      const data: WaitlistResponse = await response.json();
+      const data: WaitlistResponse = await response.json().catch(() => ({ success: false } as any));
 
-      if (data.success) {
+      if (response.ok && data?.success) {
         setShowSuccess(true);
         setFormData({
           phone: '',
@@ -81,7 +98,11 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
           onClose();
         }, 3000);
       } else {
-        setError(data.error || 'An error occurred while joining the waitlist');
+        // Prefer detailed validation messages if present
+        const anyData: any = data as any;
+        const validation = anyData?.errors ? Object.values(anyData.errors as Record<string, string>).join('\n') : null;
+        const message = validation || anyData?.error || 'An error occurred while joining the waitlist';
+        setError(message);
       }
     } catch (err) {
       setError('Network error. Please try again.');
@@ -147,6 +168,22 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
     setIsClient(true);
   }, []);
 
+  // Apply prefill from props when modal opens (e.g., after OAuth callback)
+  useEffect(() => {
+    if (!isOpen) return;
+    if (prefillEmail || prefillFirstName) {
+      setFormData(prev => ({
+        ...prev,
+        email: prefillEmail || prev.email,
+        first_name: prefillFirstName || prev.first_name,
+      }));
+      setIsGooglePrefilled(true);
+    }
+    if (prefillError) {
+      setError(prefillError);
+    }
+  }, [isOpen, prefillEmail, prefillFirstName, prefillError]);
+
   useEffect(() => {
     if (!isOpen) return;
     // Safe-guard for SSR
@@ -183,6 +220,26 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
     }
     init();
   }, [isOpen]);
+
+  // Start OAuth-based Google flow using backend URL to ensure server-verified identity
+  const startOAuthWaitlist = async () => {
+    try {
+      const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL)
+        ? (window as any).ENV.AUTH_API_BASE_URL
+        : 'https://api.homexpert.co.ke/auth';
+      // Optional: include state (e.g., current path) to preserve context
+      const state = encodeURIComponent(window.location.pathname);
+      const resp = await fetch(`${baseUrl}/api/v1/auth/google/url?flow=waitlist&state=${state}`);
+      const data = await resp.json();
+      if (data?.url) {
+        window.location.href = data.url as string;
+      } else {
+        setError('Failed to start Google sign-in. Please try again.');
+      }
+    } catch (e) {
+      setError('Network error starting Google sign-in.');
+    }
+  };
 
   const clearGooglePrefill = () => {
     setIsGooglePrefilled(false);
@@ -265,6 +322,15 @@ export function Waitlist({ isOpen, onClose }: WaitlistProps) {
                   <div className="mb-4">
                     <p className="text-sm text-gray-600 mb-2">Continue with Google</p>
                     <div id="google-waitlist-button" className="flex justify-center"></div>
+                    <div className="mt-3 flex justify-center">
+                      <button
+                        type="button"
+                        onClick={startOAuthWaitlist}
+                        className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                      >
+                        Sign in with Google (redirect)
+                      </button>
+                    </div>
                   </div>
                 )}
 
