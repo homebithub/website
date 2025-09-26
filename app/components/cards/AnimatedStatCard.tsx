@@ -5,7 +5,7 @@ interface AnimatedStatCardProps {
   value: string;
 }
 
-export function AnimatedStatCard({ name, value }: AnimatedStatCardProps) {
+const AnimatedStatCard = ({ name, value }: AnimatedStatCardProps) => {
   const [displayValue, setDisplayValue] = React.useState("0");
   React.useEffect(() => {
     // Extract numeric part and suffix (e.g. '+', '%')
@@ -40,4 +40,6 @@ export function AnimatedStatCard({ name, value }: AnimatedStatCardProps) {
       </dd>
     </div>
   );
-}
+};
+
+export default AnimatedStatCard;

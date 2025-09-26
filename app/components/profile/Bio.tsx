@@ -26,8 +26,8 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
     },
     household: {
       title: 'Tell Us About Your Household',
-      description: 'Describe your household and what you\'re looking for in a househelp. This helps potential candidates understand your family\'s needs and determine if they\'re a good fit.',
-      placeholder: 'Describe your household, family dynamics, expectations, and what you\'re looking for in a househelp...'
+      description: "Describe your household and what you're looking for in a househelp. This helps potential candidates understand your family's needs and determine if they're a good fit.",
+      placeholder: "Describe your household, family dynamics, expectations, and what you're looking for in a househelp..."
     }
   };
 
