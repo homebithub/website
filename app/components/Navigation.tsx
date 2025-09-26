@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "@remix-run/react";
+import { Link, useNavigate, useLocation } from "@remix-run/react";
 import React, { useEffect, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/20/solid";
@@ -17,7 +17,11 @@ export function Navigation() {
     const [profileType, setProfileType] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
     const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+    const [prefillEmail, setPrefillEmail] = useState<string | undefined>(undefined);
+    const [prefillFirstName, setPrefillFirstName] = useState<string | undefined>(undefined);
+    const [prefillError, setPrefillError] = useState<string | undefined>(undefined);
     const navigate = useNavigate();
+    const location = useLocation();
 
     // Memoized dashboard path based on profile type
     const dashboardPath = React.useMemo(() => {
@@ -61,6 +65,21 @@ export function Navigation() {
             setUserName(null);
         }
     }, [user]);
+
+    // Open waitlist modal automatically if URL contains waitlist params (used by OAuth callback)
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const shouldOpen = params.get("waitlist");
+        if (shouldOpen === "1" || shouldOpen === "true") {
+            setIsWaitlistOpen(true);
+            const email = params.get("email") || undefined;
+            const first = params.get("first_name") || undefined;
+            const err = params.get("error") || undefined;
+            setPrefillEmail(email || undefined);
+            setPrefillFirstName(first || undefined);
+            setPrefillError(err || undefined);
+        }
+    }, [location.search]);
 
     const handleLogout = async () => {
         try {
@@ -250,7 +269,16 @@ export function Navigation() {
             {/* Waitlist Modal */}
             <Waitlist
                 isOpen={isWaitlistOpen}
-                onClose={() => setIsWaitlistOpen(false)}
+                onClose={() => {
+                    setIsWaitlistOpen(false);
+                    // Clean query params after closing if they were used to open the modal
+                    if (new URLSearchParams(location.search).has("waitlist")) {
+                        navigate(location.pathname, { replace: true });
+                    }
+                }}
+                prefillEmail={prefillEmail}
+                prefillFirstName={prefillFirstName}
+                prefillError={prefillError}
             />
         </nav>
     );
