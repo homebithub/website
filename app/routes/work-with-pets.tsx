@@ -1,5 +1,5 @@
 import React from 'react';
-import WorkWithPets from '../components/WorkWithPets';
+import WorkWithPets from '../components/modals/WorkWithPets';
 
 const WorkWithPetsPage = () => {
     return (

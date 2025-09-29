@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from '@remix-run/react';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { handleApiError } from '~/utils/errorMessages';
-import { HouseholdProfileModal } from '~/components/HouseholdProfileModal';
+import { HouseholdProfileModal } from '~/components/modals/HouseholdProfileModal';
 import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
 
 export default function VerifyOtpPage() {

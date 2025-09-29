@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { handleApiError } from '../utils/errorMessages';
+import { handleApiError } from '../../utils/errorMessages';
 
 interface Pet {
   id: string;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { handleApiError } from '../utils/errorMessages';
+import { handleApiError } from '../../utils/errorMessages';
 
 type PetPreference = 'with_pets' | 'no_pets';
 type PetType = 'dog' | 'cat' | 'bird' | 'fish' | 'reptile' | 'small_mammal' | 'other';

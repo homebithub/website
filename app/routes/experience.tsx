@@ -1,5 +1,5 @@
 import React from 'react';
-import YearsOfExperience from '../components/YearsOfExperience';
+import YearsOfExperience from '../components/modals/YearsOfExperience';
 
 const ExperiencePage = () => {
     return (

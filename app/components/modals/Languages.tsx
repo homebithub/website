@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { handleApiError } from '../utils/errorMessages';
+import { handleApiError } from '../../utils/errorMessages';
 
 // List of languages organized by groups
 const LANGUAGE_GROUPS = {

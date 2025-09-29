@@ -1,5 +1,5 @@
 import React from "react";
-import NanyType from "../components/NanyType";
+import NanyType from "../components/features/NanyType";
 
 const HousehelpTypesPage: React.FC = () => {
   return (

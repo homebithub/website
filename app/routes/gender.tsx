@@ -1,5 +1,5 @@
 import React from 'react';
-import Gender from '../components/Gender';
+import Gender from '../components/modals/Gender';
 
 const GenderPage = () => {
   return (

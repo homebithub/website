@@ -1,5 +1,5 @@
 import React from "react";
-import Children from "../components/Children";
+import Children from "../components/modals/Children";
 
 const ChildrenRoute = () => {
   return (

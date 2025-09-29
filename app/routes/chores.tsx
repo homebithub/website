@@ -1,5 +1,5 @@
 import React from "react";
-import Chores from "../components/Chores";
+import Chores from "../components/modals/Chores";
 
 const ChoresPage: React.FC = () => {
   return (

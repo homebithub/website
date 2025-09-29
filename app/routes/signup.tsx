@@ -9,7 +9,7 @@ import { useAuth } from '~/contexts/AuthContext';
 import { Loading } from '~/components/Loading';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { FcGoogle } from 'react-icons/fc';
-import { Modal } from '~/components/Modal';
+import { Modal } from '~/components/features/Modal';
 
 // Types for request and response
 export type SignupRequest = {

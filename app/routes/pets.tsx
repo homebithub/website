@@ -1,5 +1,5 @@
 import React from "react";
-import Pets from "../components/Pets";
+import Pets from "../components/modals/Pets";
 
 const PetsPage: React.FC = () => {
   return (

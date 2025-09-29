@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { handleApiError } from '../utils/errorMessages';
+import { handleApiError } from '../../utils/errorMessages';
 
 type WorkPreference = 'with_kids' | 'chores_only';
 type AgeRange = '0-2' | '2-5' | '5-10' | '10+';

@@ -1,5 +1,5 @@
 import React from 'react';
-import Languages from '../components/Languages';
+import Languages from '../components/modals/Languages';
 
 const LanguagesPage = () => {
     return (

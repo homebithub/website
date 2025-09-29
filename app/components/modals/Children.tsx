@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { handleApiError } from '../utils/errorMessages';
+import { handleApiError } from '../../utils/errorMessages';
 import { UserGroupIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import Kids from "./Kids";
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "@remix-run/react";
-import ShortlistPlaceholderIcon from "../components/ShortlistPlaceholderIcon";
+import ShortlistPlaceholderIcon from "../components/features/ShortlistPlaceholderIcon";
 
 // Curated options to avoid free-text inputs
 const TOWNS = ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"];

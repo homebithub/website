@@ -6,18 +6,18 @@ import { Footer } from '../components/Footer';
 
 // Import all the components
 import Location from '../components/Location';
-import Gender from '../components/Gender';
-import NannyType from '../components/NanyType';
-import YearsOfExperience from '../components/YearsOfExperience';
-import WorkWithKids from '../components/WorkWithKids';
-import WorkWithPets from '../components/WorkWithPets';
-import Languages from '../components/Languages';
-import MyKids from '../components/MyKids';
-import Certifications from '../components/Certifications';
-import SalaryExpectations from '../components/SalaryExpectations';
+import Gender from '../components/modals/Gender';
+import NannyType from '../components/features/NanyType';
+import YearsOfExperience from '../components/modals/YearsOfExperience';
+import WorkWithKids from '../components/modals/WorkWithKids';
+import WorkWithPets from '../components/modals/WorkWithPets';
+import Languages from '../components/modals/Languages';
+import MyKids from '../components/modals/MyKids';
+import Certifications from '../components/modals/Certifications';
+import SalaryExpectations from '../components/modals/SalaryExpectations';
 import Bio from '../components/Bio';
-import Photos from '../components/Photos';
-import Religion from '../components/Religion';
+import Photos from '../components/features/Photos';
+import Religion from '../components/modals/Religion';
 
 const STEPS = [
 { id: 'nannytype', title: 'Service Type', component: NannyType },

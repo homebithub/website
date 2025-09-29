@@ -6,15 +6,15 @@ import { Footer } from '../components/Footer';
 
 // Import all the components
 import Location from '../components/Location';
-import Children from '../components/Children';
-import NannyType from '../components/NanyType';
-import Chores from '../components/Chores';
-import Pets from '../components/Pets';
+import Children from '../components/modals/Children';
+import NannyType from '../components/features/NanyType';
+import Chores from '../components/modals/Chores';
+import Pets from '../components/modals/Pets';
 import Budget from '../components/Budget';
-import HouseSize from '../components/HouseSize';
+import HouseSize from '../components/modals/HouseSize';
 import Bio from '../components/Bio';
-import Photos from '../components/Photos';
-import Religion from '../components/Religion';
+import Photos from '../components/features/Photos';
+import Religion from '../components/modals/Religion';
 
 const STEPS = [
   { id: 'location', title: 'Location', component: Location },

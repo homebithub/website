@@ -3,8 +3,8 @@ import { Footer } from "~/components/Footer";
 import useScrollFadeIn from "~/hooks/useScrollFadeIn";
 import { Link, useNavigate } from "@remix-run/react";
 import React, { useEffect, useState } from "react";
-import SignupFlow from "~/components/SignupFlow";
-import HousehelpSignupFlow from "~/components/HousehelpSignupFlow";
+import SignupFlow from "~/components/features/SignupFlow";
+import HousehelpSignupFlow from "~/components/features/HousehelpSignupFlow";
 import {
   HomeIcon,
   UserGroupIcon,

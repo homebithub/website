@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigation } from '../components/Navigation';
 import { Footer } from '../components/Footer';
-import HouseSize from '../components/HouseSize';
+import HouseSize from '../components/modals/HouseSize';
 
 export default function HouseSizePage() {
   return (

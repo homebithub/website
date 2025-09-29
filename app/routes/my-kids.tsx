@@ -1,5 +1,5 @@
 import React from 'react';
-import MyKids from '../components/MyKids';
+import MyKids from '../components/modals/MyKids';
 
 const MyKidsPage = () => {
     return (

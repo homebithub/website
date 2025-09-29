@@ -1,5 +1,5 @@
 import React from 'react';
-import WorkWithKids from '../components/WorkWithKids';
+import WorkWithKids from '../components/modals/WorkWithKids';
 
 const WorkWithKidsPage = () => {
     return (
