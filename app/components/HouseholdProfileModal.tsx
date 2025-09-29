@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { Modal } from './Modal';
-import { LocationStep } from './household-profile/LocationStep';
-import { ChildrenStep } from './household-profile/ChildrenStep';
-import { NannyTypeStep } from './household-profile/NannyTypeStep';
-import { ScheduleStep } from './household-profile/ScheduleStep';
-import { ChoresStep } from './household-profile/ChoresStep';
-import { RequirementsStep } from './household-profile/RequirementsStep';
-import { BudgetStep } from './household-profile/BudgetStep';
+import { LocationStep } from './household/LocationStep';
+import { ChildrenStep } from './household/ChildrenStep';
+import { NannyTypeStep } from './household/NannyTypeStep';
+import { ScheduleStep } from './household/ScheduleStep';
+import { ChoresStep } from './household/ChoresStep';
+import { RequirementsStep } from './household/RequirementsStep';
+import { BudgetStep } from './household/BudgetStep';
 import { HouseholdProfileData } from '../types/household-profile';
 
 interface HouseholdProfileModalProps {
