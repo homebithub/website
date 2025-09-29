@@ -76,13 +76,11 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
-            
             <button className="mt-4 w-full bg-primary-600 text-white py-2 px-4 rounded-md hover:bg-primary-700 transition-colors duration-300">
               View Profile
             </button>
           </div>
         </div>
-      ))}
       </div>
     </div>
   );
