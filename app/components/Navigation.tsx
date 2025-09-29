@@ -23,6 +23,13 @@ export function Navigation() {
     const navigate = useNavigate();
     const location = useLocation();
 
+    // Detect if running on app subdomain
+    const isAppHost = React.useMemo(() => {
+        if (typeof window === 'undefined') return false;
+        const host = window.location.host || '';
+        return host.startsWith('app.') || host === 'app.homexpert.co.ke';
+    }, []);
+
     // Memoized dashboard path based on profile type
     const dashboardPath = React.useMemo(() => {
         if (!profileType) return null;
@@ -89,10 +96,15 @@ export function Navigation() {
         }
     };
 
-    // Show auth buttons only if user is not logged in
-    const showAuthButtons = !user;
+    // Show auth buttons only if user is not logged in and not on app host
+    const showAuthButtons = !user && !isAppHost;
 
 
+
+    // On app subdomain without an authenticated user, hide navbar completely
+    if (isAppHost && !user) {
+        return null;
+    }
 
     return (
         <nav className="sticky top-0 z-40 shadow-md bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-visible backdrop-blur-lg bg-white/70 border-b border-primary-100">
@@ -109,7 +121,7 @@ export function Navigation() {
   </Link>
 </div>
 
-                {/* Navigation Links - Only show for non-authenticated users on larger screens */}
+                {/* Public Navigation Links - Only show for non-authenticated users on larger screens (non-app host) */}
                 {showAuthButtons && (
                     <div className="hidden lg:flex items-center space-x-4 ml-auto">
                         {navigation.map((item) => (
@@ -160,6 +172,24 @@ export function Navigation() {
                         </div>
                     )}
 
+                    {/* App navigation for authenticated users on app subdomain */}
+                    {isAppHost && user && (
+                        <div className="hidden lg:flex items-center space-x-3 ml-4">
+                            {profileType === 'employer' || profileType === 'household' ? (
+                                <>
+                                    <Link to="/household/profile" className="text-primary-700 font-semibold hover:text-primary-900">Profile</Link>
+                                    <Link to="/household/employment" className="text-primary-700 font-semibold hover:text-primary-900">Find Househelps</Link>
+                                    <Link to="/household/employment?tab=shortlist" className="text-primary-700 font-semibold hover:text-primary-900">Shortlist</Link>
+                                </>
+                            ) : profileType === 'househelp' ? (
+                                <>
+                                    <Link to="/househelp" className="text-primary-700 font-semibold hover:text-primary-900">Profile</Link>
+                                    <Link to="/househelp/find-households" className="text-primary-700 font-semibold hover:text-primary-900">Find Households</Link>
+                                </>
+                            ) : null}
+                        </div>
+                    )}
+
                     {/* Menu Dropdown - Only show on mobile */}
                     <Menu as="div" className="relative inline-block text-left lg:hidden">
                         <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-purple-600 p-2 text-white shadow-md hover:bg-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
@@ -177,8 +207,8 @@ export function Navigation() {
                         >
                             <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white/90 border-2 border-primary-200 shadow-lg focus:outline-none backdrop-blur-md">
                                 <div className="py-2">
-                                    {/* Navigation Links - Show for all users in mobile menu */}
-                                    {navigation.map((item) => (
+                                    {/* Public navigation links in mobile menu (non-app host only) */}
+                                    {!isAppHost && navigation.map((item) => (
                                         <Menu.Item key={item.name}>
                                             {({ active }) => (
                                                 <Link
@@ -218,19 +248,57 @@ export function Navigation() {
 
 
 
-                                            <Menu.Item>
-                                                {({ active }) => (
-                                                    <Link
-                                                        to="/profile"
-                                                        className={`${
-                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                                                        } flex items-center px-4 py-2 text-sm`}
-                                                    >
-                                                        <UserIcon className="mr-3 h-5 w-5" />
-                                                        Profile
-                                                    </Link>
-                                                )}
-                                            </Menu.Item>
+                                            {/* App links for mobile on app host */}
+                                            {isAppHost ? (
+                                                <>
+                                                    {profileType === 'employer' || profileType === 'household' ? (
+                                                        <>
+                                                            <Menu.Item>{({ active }) => (
+                                                                <Link to="/household/profile" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
+                                                                    <UserIcon className="mr-3 h-5 w-5" /> Profile
+                                                                </Link>
+                                                            )}</Menu.Item>
+                                                            <Menu.Item>{({ active }) => (
+                                                                <Link to="/household/employment" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
+                                                                    Find Househelps
+                                                                </Link>
+                                                            )}</Menu.Item>
+                                                            <Menu.Item>{({ active }) => (
+                                                                <Link to="/household/employment?tab=shortlist" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
+                                                                    Shortlist
+                                                                </Link>
+                                                            )}</Menu.Item>
+                                                        </>
+                                                    ) : profileType === 'househelp' ? (
+                                                        <>
+                                                            <Menu.Item>{({ active }) => (
+                                                                <Link to="/househelp" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
+                                                                    <UserIcon className="mr-3 h-5 w-5" /> Profile
+                                                                </Link>
+                                                            )}</Menu.Item>
+                                                            <Menu.Item>{({ active }) => (
+                                                                <Link to="/househelp/find-households" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
+                                                                    Find Households
+                                                                </Link>
+                                                            )}</Menu.Item>
+                                                        </>
+                                                    ) : null}
+                                                </>
+                                            ) : (
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <Link
+                                                            to="/profile"
+                                                            className={`${
+                                                                active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                                                            } flex items-center px-4 py-2 text-sm`}
+                                                        >
+                                                            <UserIcon className="mr-3 h-5 w-5" />
+                                                            Profile
+                                                        </Link>
+                                                    )}
+                                                </Menu.Item>
+                                            )}
                                             <Menu.Item>
                                                 {({ active }) => (
                                                     <Link

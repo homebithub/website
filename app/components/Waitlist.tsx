@@ -334,7 +334,6 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                 {isClient && (
                   <div className="mb-4">
                     <p className="text-sm text-gray-600 mb-2">Continue with Google</p>
-                    <div id="google-waitlist-button" className="flex justify-center"></div>
                     <div className="mt-3 flex justify-center">
                       <button
                         type="button"
