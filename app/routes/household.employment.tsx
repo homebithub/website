@@ -1,21 +1,27 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "@remix-run/react";
 import ShortlistPlaceholderIcon from "../components/ShortlistPlaceholderIcon";
 
+// Curated options to avoid free-text inputs
+const TOWNS = ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"];
+const SKILLS = ["cooking", "cleaning", "babysitting", "laundry", "elderly care"];
+const TRAITS = ["honest", "patient", "punctual", "organized", "friendly"];
+const EXPERIENCES = Array.from({ length: 11 }, (_, i) => i); // 0..10
+const GENDERS = ["", "male", "female"];
+const NANNY_TYPES = ["", "dayburg", "sleeper"];
+
 const initialFields = {
   status: "active",
-  skill: "",
-  speciality: "",
+  househelp_type: "",
+  gender: "",
   experience: "",
-  reference: "",
-  salary_expectation_min: "",
-  salary_expectation_max: "",
+  town: "",
   salary_frequency: "monthly",
-  availability_before: "",
-  location: "",
+  skill: "",
+  traits: "",
   min_rating: "",
   sort: "popular",
-  limit: 10,
+  limit: 12,
 };
 
 export default function HouseholdEmployment() {
@@ -29,6 +35,12 @@ export default function HouseholdEmployment() {
   const [shortlist, setShortlist] = useState<any[]>([]);
   const [shortlistProfiles, setShortlistProfiles] = useState<any[]>([]);
   const [shortlistProfilesLoading, setShortlistProfilesLoading] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const limit = 12;
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+
+  const API_BASE = useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || 'http://localhost:8080', []);
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<'find' | 'shortlist'>(() => {
@@ -50,7 +62,7 @@ export default function HouseholdEmployment() {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const res = await fetch("http://localhost:8080/api/v1/shortlists/employer", {
+        const res = await fetch(`${API_BASE}/api/v1/shortlists/employer`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to fetch shortlist");
@@ -81,7 +93,7 @@ export default function HouseholdEmployment() {
           setShortlistProfilesLoading(false);
           return;
         }
-        const res = await fetch("http://localhost:8080/api/v1/househelps/search_multiple", {
+        const res = await fetch(`${API_BASE}/api/v1/househelps/search_multiple`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -112,10 +124,12 @@ export default function HouseholdEmployment() {
     setLoading(true);
     setError(null);
     setResults([]);
+    setOffset(0);
+    setHasMore(true);
     try {
       setHasSearched(true);
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/househelps/search", {
+      const res = await fetch(`${API_BASE}/api/v1/househelps/search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -126,23 +140,77 @@ export default function HouseholdEmployment() {
             Object.entries({
               ...fields,
               experience: fields.experience ? Number(fields.experience) : undefined,
-              salary_expectation_min: fields.salary_expectation_min ? Number(fields.salary_expectation_min) : undefined,
-              salary_expectation_max: fields.salary_expectation_max ? Number(fields.salary_expectation_max) : undefined,
               min_rating: fields.min_rating ? Number(fields.min_rating) : undefined,
-              limit: fields.limit ? Number(fields.limit) : 10,
+              limit,
+              offset: 0,
             }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
           )
         ),
       });
       if (!res.ok) throw new Error("Failed to fetch househelps");
       const data = await res.json();
-      setResults(data.data || []);
+      const rows = data.data || [];
+      setResults(rows);
+      setHasMore(rows.length === limit);
     } catch (err: any) {
       setError(err.message || "Failed to search");
     } finally {
       setLoading(false);
     }
   };
+
+  // Load more (infinite scroll)
+  const loadMore = async () => {
+    if (loading || !hasSearched || !hasMore) return;
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const nextOffset = offset + limit;
+      const res = await fetch(`${API_BASE}/api/v1/househelps/search`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify(
+          Object.fromEntries(
+            Object.entries({
+              ...fields,
+              experience: fields.experience ? Number(fields.experience) : undefined,
+              min_rating: fields.min_rating ? Number(fields.min_rating) : undefined,
+              limit,
+              offset: nextOffset,
+            }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
+          )
+        ),
+      });
+      if (!res.ok) throw new Error("Failed to fetch more results");
+      const data = await res.json();
+      const rows = data.data || [];
+      setResults(prev => [...prev, ...rows]);
+      setOffset(nextOffset);
+      setHasMore(rows.length === limit);
+    } catch (err) {
+      // silently ignore
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Observe sentinel
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const el = sentinelRef.current;
+    const io = new IntersectionObserver((entries) => {
+      const first = entries[0];
+      if (first.isIntersecting) {
+        loadMore();
+      }
+    }, { rootMargin: '200px' });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [sentinelRef.current, hasSearched, offset, loading, hasMore, fields]);
 
   return (
     <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-4 sm:p-6">
@@ -177,16 +245,29 @@ export default function HouseholdEmployment() {
               </select>
             </div>
             <div className="flex flex-col">
-              <label htmlFor="skill" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Skill</label>
-              <input id="skill" name="skill" value={fields.skill} onChange={handleChange} placeholder="e.g. cooking" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
+              <label htmlFor="househelp_type" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Nanny Type</label>
+              <select id="househelp_type" name="househelp_type" value={fields.househelp_type} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+                {NANNY_TYPES.map((t) => (<option key={t} value={t}>{t || 'Any'}</option>))}
+              </select>
             </div>
             <div className="flex flex-col">
-              <label htmlFor="speciality" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Speciality</label>
-              <input id="speciality" name="speciality" value={fields.speciality} onChange={handleChange} placeholder="e.g. elderly care" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
+              <label htmlFor="gender" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Gender</label>
+              <select id="gender" name="gender" value={fields.gender} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+                {GENDERS.map((g) => (<option key={g} value={g}>{g || 'Any'}</option>))}
+              </select>
             </div>
             <div className="flex flex-col">
-              <label htmlFor="experience" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Experience (years)</label>
-              <input id="experience" name="experience" type="number" min="0" value={fields.experience} onChange={handleChange} placeholder="Years" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
+              <label htmlFor="experience" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Experience (min)</label>
+              <select id="experience" name="experience" value={fields.experience} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+                {EXPERIENCES.map((y) => (<option key={y} value={y}>{y}</option>))}
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor="town" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Town</label>
+              <select id="town" name="town" value={fields.town} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+                <option value="">Any</option>
+                {TOWNS.map((t) => (<option key={t} value={t}>{t}</option>))}
+              </select>
             </div>
             <div className="flex flex-col">
               <label htmlFor="salary_frequency" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Salary Frequency</label>
@@ -196,13 +277,27 @@ export default function HouseholdEmployment() {
                 <option value="daily">Daily</option>
               </select>
             </div>
+            {/* Advanced (collapsible in future) */}
             <div className="flex flex-col">
-              <label htmlFor="availability_before" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Available From</label>
-              <input id="availability_before" name="availability_before" type="date" value={fields.availability_before} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
+              <label htmlFor="skill" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Skill</label>
+              <select id="skill" name="skill" value={fields.skill} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+                <option value="">Any</option>
+                {SKILLS.map((s) => (<option key={s} value={s}>{s}</option>))}
+              </select>
             </div>
             <div className="flex flex-col">
-              <label htmlFor="location" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Location</label>
-              <input id="location" name="location" value={fields.location} onChange={handleChange} placeholder="Location" className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition" />
+              <label htmlFor="traits" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Trait</label>
+              <select id="traits" name="traits" value={fields.traits} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+                <option value="">Any</option>
+                {TRAITS.map((t) => (<option key={t} value={t}>{t}</option>))}
+              </select>
+            </div>
+            <div className="flex flex-col">
+              <label htmlFor="min_rating" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min Rating</label>
+              <select id="min_rating" name="min_rating" value={fields.min_rating} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+                <option value="">Any</option>
+                {[5,4,3,2,1].map((r) => (<option key={r} value={r}>{r}+</option>))}
+              </select>
             </div>
             <div className="flex flex-col col-span-1 md:col-span-3 lg:col-span-4 justify-end">
               <label className="sr-only">Search</label>
@@ -234,6 +329,8 @@ export default function HouseholdEmployment() {
               </div>
             ))}
           </div>
+          {/* Infinite scroll sentinel */}
+          <div ref={sentinelRef} className="h-1" />
         </>
       )}
       {activeTab === 'shortlist' && (
