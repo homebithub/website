@@ -44,7 +44,7 @@ const Dashboard = () => {
   return (
     <div className="container mx-auto p-8">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {sampleProfiles.map((profile) => (
+       {sampleProfiles.map((profile) => (
         <div 
           key={profile.id}
           className="bg-white rounded-xl shadow-card p-6 border border-primary-100 hover:border-primary-500 transition-all duration-300"
@@ -81,6 +81,7 @@ const Dashboard = () => {
             </button>
           </div>
         </div>
+      ))}
       </div>
     </div>
   );
