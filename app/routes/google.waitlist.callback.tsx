@@ -1,5 +1,5 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
+import { redirect } from "react-router";
 
 // Google OAuth waitlist callback
 // Receives `code` from Google, exchanges it with the Auth API, and redirects

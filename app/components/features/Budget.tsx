@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useSubmit } from '@remix-run/react';
+import { useSubmit } from 'react-router';
 
 type BudgetFrequency = 'Daily' | 'Weekly' | 'Monthly';
 type BudgetRange = string;

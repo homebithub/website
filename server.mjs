@@ -1,9 +1,9 @@
-import { createRequestHandler } from "@remix-run/express";
-import { broadcastDevReady } from "@remix-run/node";
+import { createRequestHandler } from "@react-router/express";
+import { broadcastDevReady } from "@react-router/node";
 import express from "express";
 import cors from 'cors';
-// notice that the result of `remix build` is "just a module"
-import * as build from "./build/index.js";
+// notice that the result of `react-router build` is "just a module"
+import * as build from "./build/server/index.js";
 
 const app = express();
 console.log("We reached herer")
@@ -27,7 +27,7 @@ console.log("We reached here3")
 //     proxy.web(req, res, { target: FULL_HOST} ); // Change the target to your Node.js server address
 // });
 
-// All other requests handled by Remix
+// All other requests handled by React Router
 app.all("*", createRequestHandler({ build }));
 console.log("We reached here 4")
 

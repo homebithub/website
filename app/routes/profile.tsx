@@ -3,7 +3,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
 import { useAuth } from "~/contexts/AuthContext";
-import { useNavigate, useLocation } from "@remix-run/react";
+import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
 
 interface UserProfile {

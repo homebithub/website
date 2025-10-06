@@ -1,24 +1,20 @@
-import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "@remix-run/react";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, data } from "react-router";
 import React from "react";
-import { cssBundleHref } from "@remix-run/css-bundle";
-import stylesheet from "~/tailwind.css";
-import glowCardStyles from "~/styles/glow-card.css";
-import { json, type LinksFunction, type HeadersFunction } from "@remix-run/node";
+import type { Route } from "./+types/root";
 
 import { AuthProvider } from "~/contexts/AuthContext";
 
-export const links: LinksFunction = () => [
-    ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] as const : []),
-    { rel: "stylesheet", href: stylesheet },
-    { rel: "stylesheet", href: glowCardStyles },
+export const links: Route.LinksFunction = () => [
+    { rel: "stylesheet", href: "/tailwind.css" },
+    { rel: "stylesheet", href: "/styles/glow-card.css" },
 ];
 
-export const headers: HeadersFunction = () => ({
+export const headers: Route.HeadersFunction = () => ({
     "Cache-Control": "no-store",
 });
 
 export function loader() {
-    return json({
+    return data({
         ENV: {
             GOOGLE_CLIENT_ID:
                 process.env.GOOGLE_CLIENT_ID ||
@@ -29,7 +25,7 @@ export function loader() {
 }
 
 export default function App() {
-    const { ENV } = useLoaderData<typeof loader>();
+    const { ENV } = useLoaderData<typeof loader>() || { ENV: { GOOGLE_CLIENT_ID: "", AUTH_API_BASE_URL: "" } };
     return (
         <html lang="en" className="h-full">
             <head>
@@ -57,7 +53,6 @@ export default function App() {
                     }}
                 />
                 <Scripts/>
-                <LiveReload/>
             </body>
         </html>
     );

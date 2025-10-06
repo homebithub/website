@@ -1,6 +1,6 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { useLoaderData, Form, useNavigate, useLocation } from "@remix-run/react";
+import type { LoaderFunctionArgs } from "react-router";
+import { data, redirect } from "react-router";
+import { useLoaderData, Form, useNavigate, useLocation } from "react-router";
 import React, { useEffect } from "react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -27,7 +27,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw new Response("Failed to fetch user settings", { status: res.status });
   }
   const settings = await res.json();
-  return json({ settings });
+  return data({ settings });
 };
 
 export const action = async ({ request }: LoaderFunctionArgs) => {

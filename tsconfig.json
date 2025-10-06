@@ -1,5 +1,10 @@
 {
-  "include": ["remix.env.d.ts", "**/*.ts", "**/*.tsx"],
+  "include": [
+    "remix.env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".react-router/types/**/*"
+  ],
   "exclude": ["node_modules", "build", "public/build"],
   "compilerOptions": {
     "lib": ["DOM", "DOM.Iterable", "ES2022"],
@@ -17,12 +22,14 @@
     "paths": {
       "~/*": ["./app/*"]
     },
+    "types": ["@react-router/node", "vite/client"],
+    "rootDirs": [".", "./.react-router/types"],
     "incremental": true,
     "tsBuildInfoFile": "./node_modules/.cache/tsbuildinfo",
     "useDefineForClassFields": true,
     "verbatimModuleSyntax": true,
 
-    // Remix takes care of building everything in `remix build`.
+    // React Router takes care of building everything in `react-router build`.
     "noEmit": true
   }
 }

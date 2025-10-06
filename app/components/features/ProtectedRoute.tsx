@@ -1,5 +1,5 @@
 import React from "react";
-import { Navigate, useLocation } from "@remix-run/react";
+import { Navigate, useLocation } from "react-router";
 import { useAuth } from "~/contexts/AuthContext";
 import { Loading } from "~/components/Loading";
 
