@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { handleApiError } from '../utils/errorMessages';
+import { API_BASE_URL } from '~/config/api';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const TIMES = ["morning", "afternoon", "evening"];
@@ -50,7 +51,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/househelp-preferences/availability", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/househelp-preferences/availability`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

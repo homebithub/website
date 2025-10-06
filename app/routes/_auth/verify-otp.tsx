@@ -5,6 +5,7 @@ import { Footer } from '~/components/Footer';
 import { handleApiError } from '~/utils/errorMessages';
 import { HouseholdProfileModal } from '~/components/modals/HouseholdProfileModal';
 import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
+import { API_BASE_URL } from '~/config/api';
 
 export default function VerifyOtpPage() {
   // UI state for changing phone
@@ -44,7 +45,7 @@ export default function VerifyOtpPage() {
     
     try {
       if(verification.type === 'phone'){
-      const res = await fetch('http://localhost:8080/api/v1/auth/update-phone', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/update-phone`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: newPhone, user_id: verification?.user_id }),
@@ -63,7 +64,7 @@ export default function VerifyOtpPage() {
         setLastTriedOtp('');
       }
     }else{
-      const res = await fetch('http://localhost:8080/api/v1/auth/forgot-password', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: newPhone,  }),
@@ -169,7 +170,7 @@ export default function VerifyOtpPage() {
     setOtpError(null);
     try {
       // Call your backend OTP verification endpoint here
-      const res = await fetch('http://localhost:8080/api/v1/verifications/verify-otp', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({  user_id, verification_type: verification.type, otp }),
@@ -236,7 +237,7 @@ export default function VerifyOtpPage() {
     setError(null);
     try {
       // Call your backend resend OTP endpoint here
-      const res = await fetch('http://localhost:8080/api/v1/verifications/resend-otp', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/resend-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ verification_id: verification?.id, user_id, verification_type: "phone" }),
@@ -311,7 +312,7 @@ export default function VerifyOtpPage() {
       if (!token) throw new Error('Not authenticated');
       
       // Save profile data to backend
-      const res = await fetch('http://localhost:8080/api/v1/profile/employer/complete', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/profile/employer/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -450,7 +451,7 @@ export default function VerifyOtpPage() {
                 setChangePhoneError(null);
                 setChangePhoneLoading(true);
                 try {
-                  const res = await fetch('http://localhost:8080/api/v1/auth/update-email', {
+                  const res = await fetch(`${API_BASE_URL}/api/v1/auth/update-email`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: newPhone, user_id }),

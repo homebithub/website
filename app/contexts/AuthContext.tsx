@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "../types/users";
+import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
 
 interface User {
   id: string;
@@ -38,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("not token found in local storage")
         return;
       }
-      const response = await fetch("http://localhost:8080/api/v1/auth/me", {
+      const response = await fetch(API_ENDPOINTS.auth.me, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
         },
@@ -62,7 +63,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:8080/api/v1/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -116,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:8080/auth/signup", {
+      const response = await fetch("`${AUTH_API_BASE_URL}/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -148,7 +149,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Try to call logout endpoint (optional - for server-side cleanup)
       try {
-        await fetch("http://localhost:8080/api/v1/auth/logout", {
+        await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${localStorage.getItem("token")}`,

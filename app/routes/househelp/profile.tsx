@@ -10,6 +10,7 @@ import FamilyContactsSection from "../components/househelp/FamilyContactsSection
 import EducationHealthSection from "../components/househelp/EducationHealthSection";
 import EmploymentSalarySection from "../components/househelp/EmploymentSalarySection";
 import Joi from 'joi';
+import { API_ENDPOINTS } from '~/config/api';
 
 const househelpSections = [
     {label: "Profile Overview", id: "profile-overview"},
@@ -129,7 +130,7 @@ function ImageUploadModal({open, onClose, files, setFiles}: {
                                     const formData = new FormData();
                                     files.forEach(f => formData.append('images', f));
                                     const token = localStorage.getItem('token');
-                                    const res = await fetch('http://localhost:8080/api/v1/images/upload', {
+                                    const res = await fetch(API_ENDPOINTS.images.upload, {
                                         method: 'POST',
                                         body: formData,
                                         headers: token ? {Authorization: `Bearer ${token}`} : undefined,
@@ -179,7 +180,7 @@ export default function HousehelpDashboard() {
         const fetchImages = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await fetch('http://localhost:8080/api/v1/images/user', {
+                const res = await fetch(API_ENDPOINTS.images.user, {
                     headers: token ? {Authorization: `Bearer ${token}`} : undefined,
                 });
                 if (res.ok) {
@@ -200,7 +201,7 @@ export default function HousehelpDashboard() {
             try {
                 const token = localStorage.getItem("token");
                 if (!token) throw new Error("Not authenticated");
-                const res = await fetch("http://localhost:8080/api/v1/profile/househelp/me", {
+                const res = await fetch(API_ENDPOINTS.profile.househelp.me, {
                     headers: {Authorization: `Bearer ${token}`},
                 });
                 if (!res.ok) throw new Error("Failed to fetch profile");
@@ -296,7 +297,7 @@ export default function HousehelpDashboard() {
                     signed_date: form.signed_date,
                 };
             }
-            const res = await fetch("http://localhost:8080/api/v1/profile/househelp/me", {
+            const res = await fetch(API_ENDPOINTS.profile.househelp.me, {
                 method: "PATCH",
                 headers: {
                     "Content-Type": "application/json",
@@ -329,7 +330,7 @@ export default function HousehelpDashboard() {
             const formData = new FormData();
             imageFiles.forEach(f => formData.append('images', f));
             const token = localStorage.getItem('token');
-            const res = await fetch('http://localhost:8080/api/v1/images/upload', {
+            const res = await fetch(API_ENDPOINTS.images.upload, {
                 method: 'POST',
                 body: formData,
                 headers: token ? {Authorization: `Bearer ${token}`} : undefined,
@@ -341,7 +342,7 @@ export default function HousehelpDashboard() {
             setImageFiles([]);
             setShowImageModal(false);
             // Refresh images
-            const imgRes = await fetch('http://localhost:8080/api/v1/images/user', {
+            const imgRes = await fetch(API_ENDPOINTS.images.user, {
                 headers: token ? {Authorization: `Bearer ${token}`} : undefined,
             });
             if (imgRes.ok) {

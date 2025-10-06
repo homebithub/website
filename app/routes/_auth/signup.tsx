@@ -10,6 +10,7 @@ import { Loading } from '~/components/Loading';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { FcGoogle } from 'react-icons/fc';
 import { Modal } from '~/components/features/Modal';
+import { API_BASE_URL } from '~/config/api';
 
 // Types for request and response
 export type SignupRequest = {
@@ -42,7 +43,7 @@ export type SignupResponse = {
     };
 };
 
-const base_url = 'http://localhost:8080';
+const base_url = API_BASE_URL;
 
 // Profile type options - Bureau removed as they should not sign up through regular flow
 const profileOptions = [
@@ -446,7 +447,7 @@ export default function SignupPage() {
 <div className="mt-6 flex flex-col gap-3">
     <button
         type="button"
-        onClick={() => window.location.href = 'http://localhost:8080/auth/google'}
+        onClick={() => window.location.href = '`${AUTH_API_BASE_URL}/google`}
         className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
     >
         <FcGoogle className="h-5 w-5 mr-2" />

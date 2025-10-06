@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router";
 import { Error } from "~/components/Error";
 import { Loading } from "~/components/Loading";
+import { API_BASE_URL } from '~/config/api';
 
 interface PasswordStrength {
   score: number;
@@ -72,7 +73,7 @@ export default function ResetPassword() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8080/auth/reset-password", {
+      const response = await fetch("`${AUTH_API_BASE_URL}/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

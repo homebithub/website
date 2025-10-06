@@ -1,4 +1,5 @@
 import React from "react";
+import { API_BASE_URL } from '~/config/api';
 
 interface ReadOnlyUserImageCarouselProps {
   images: any[];
@@ -27,7 +28,7 @@ export default function ReadOnlyUserImageCarousel({ images, carouselIdx, setCaro
     <div className="w-full flex flex-col items-center">
       <div className="relative w-full h-48 flex items-center justify-center bg-gray-100 dark:bg-slate-800 rounded-lg mb-2">
         <img
-          src={images[carouselIdx]?.path ? `http://localhost:8080/images/${images[carouselIdx].path}` : (images[carouselIdx]?.url || images[carouselIdx])}
+          src={images[carouselIdx]?.path ? `API_BASE_URL/images/${images[carouselIdx].path}` : (images[carouselIdx]?.url || images[carouselIdx])}
           alt={`User image ${carouselIdx + 1}`}
           className="object-contain max-h-48 max-w-full rounded-lg cursor-pointer hover:opacity-90 transition"
           onClick={() => onExpand && onExpand(carouselIdx)}
@@ -60,7 +61,7 @@ export default function ReadOnlyUserImageCarousel({ images, carouselIdx, setCaro
               aria-label={`Go to image ${idx + 1}`}
             >
               <img
-                src={img.path ? `http://localhost:8080/images/${img.path}` : (img.url || img)}
+                src={img.path ? `API_BASE_URL/images/${img.path}` : (img.url || img)}
                 alt={`Thumbnail ${idx + 1}`}
                 className="object-cover w-full h-full"
               />

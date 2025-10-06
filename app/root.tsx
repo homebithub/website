@@ -3,6 +3,7 @@ import React from "react";
 import type { Route } from "./+types/root";
 
 import { AuthProvider } from "~/contexts/AuthContext";
+import { API_BASE_URL } from '~/config/api';
 
 export const links: Route.LinksFunction = () => [
     { rel: "stylesheet", href: "/tailwind.css" },
@@ -19,6 +20,7 @@ export function loader() {
             GOOGLE_CLIENT_ID:
                 process.env.GOOGLE_CLIENT_ID ||
                 "562184165636-klkgj2b74194819lgh5netj4s2e343o2.apps.googleusercontent.com",
+            API_BASE_URL: process.env.API_BASE_URL || "https://api.homexpert.co.ke",
             AUTH_API_BASE_URL: process.env.AUTH_API_BASE_URL || "https://api.homexpert.co.ke/auth",
         },
     });

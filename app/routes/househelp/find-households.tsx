@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { API_BASE_URL } from '~/config/api';
 
 // Dropdown-only options (no text inputs)
 const TOWNS = ["", "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"];
@@ -31,7 +32,7 @@ export default function HousehelpFindHouseholds() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const API_BASE = useMemo(
-    () => (typeof window !== "undefined" && (window as any).ENV?.AUTH_API_BASE_URL) || "http://localhost:8080",
+    () => (typeof window !== "undefined" && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL,
     []
   );
 

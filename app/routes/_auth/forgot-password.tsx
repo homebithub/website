@@ -3,6 +3,7 @@ import { Link } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { forgotPasswordSchema, validateForm, validateField } from '~/utils/validation';
+import { API_BASE_URL } from '~/config/api';
 
 export default function ForgotPasswordPage() {
   const [input, setInput] = useState("");
@@ -66,7 +67,7 @@ export default function ForgotPasswordPage() {
     setFieldError(null);
     
     try {
-      const res = await fetch("http://localhost:8080/api/v1/auth/forgot-password", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: input }),

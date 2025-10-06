@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router";
 import ShortlistPlaceholderIcon from "../components/features/ShortlistPlaceholderIcon";
+import { API_BASE_URL } from '~/config/api';
 
 // Curated options to avoid free-text inputs
 const TOWNS = ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"];
@@ -40,7 +41,7 @@ export default function HouseholdEmployment() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [hasMore, setHasMore] = useState(true);
 
-  const API_BASE = useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || 'http://localhost:8080', []);
+  const API_BASE = useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<'find' | 'shortlist'>(() => {

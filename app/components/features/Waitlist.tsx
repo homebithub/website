@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { FcGoogle } from 'react-icons/fc';
+import { API_BASE_URL } from '~/config/api';
 
 interface WaitlistProps {
   isOpen: boolean;

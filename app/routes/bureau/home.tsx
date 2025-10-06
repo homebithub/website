@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE_URL } from '~/config/api';
 
 export default function BureauHomeDashboard() {
   // Dummy data for dashboard
@@ -38,7 +39,7 @@ export default function BureauHomeDashboard() {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const res = await fetch("http://localhost:8080/api/v1/profile/bureau/me", {
+        const res = await fetch(`${API_BASE_URL}/api/v1/profile/bureau/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) return;

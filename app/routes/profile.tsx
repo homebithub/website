@@ -5,6 +5,7 @@ import { Error } from "~/components/Error";
 import { useAuth } from "~/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
+import { API_ENDPOINTS } from '~/config/api';
 
 interface UserProfile {
   id: string;
@@ -50,7 +51,7 @@ export default function ProfilePage() {
       try {
         setError(null);
         setSuccess(null);
-        const res = await fetch('http://localhost:8080/api/v1/auth/me', {
+        const res = await fetch(API_ENDPOINTS.auth.me, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -93,7 +94,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No auth token');
-      const res = await fetch('http://localhost:8080/api/v1/auth/me', {
+      const res = await fetch(API_ENDPOINTS.auth.me, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { API_ENDPOINTS } from '~/config/api';
 
 export default function HouseholdProfile() {
   const [profile, setProfile] = useState<any>(null);
@@ -16,7 +17,7 @@ export default function HouseholdProfile() {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Not authenticated");
-        const res = await fetch("http://localhost:8080/api/v1/profile/employer/me", {
+        const res = await fetch(API_ENDPOINTS.profile.employer.me, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to fetch profile");
@@ -58,7 +59,7 @@ export default function HouseholdProfile() {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Not authenticated");
-      const res = await fetch("http://localhost:8080/api/v1/profile/employer/me", {
+      const res = await fetch(API_ENDPOINTS.profile.employer.me, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

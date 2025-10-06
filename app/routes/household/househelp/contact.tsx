@@ -3,6 +3,7 @@ import {useSearchParams, useNavigate, useLocation} from "react-router";
 import {ArrowLeftIcon, HeartIcon, TrashIcon, LockClosedIcon, LockOpenIcon} from "@heroicons/react/24/outline";
 import ReadOnlyUserImageCarousel from "~/components/househelp/ReadOnlyUserImageCarousel";
 import ImageLightbox from "~/components/househelp/ImageLightbox";
+import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
 
 export default function HousehelpProfile() {
     const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -35,7 +36,7 @@ export default function HousehelpProfile() {
         try {
             const token = localStorage.getItem("token");
             if (!token) throw new Error("Not authenticated");
-            const res = await fetch(`http://localhost:8080/api/v1/shortlists`, {
+            const res = await fetch(`API_ENDPOINTS.shortlists.base`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -94,7 +95,7 @@ export default function HousehelpProfile() {
                 if (!token) throw new Error("Not authenticated");
                 if (!profileId) throw new Error("No profile ID provided");
                 // Check if already shortlisted
-                const shortlistRes = await fetch(`http://localhost:8080/api/v1/shortlists/exists/${profileId}`, {
+                const shortlistRes = await fetch(`API_ENDPOINTS.shortlists.base/exists/${profileId}`, {
                     headers: {Authorization: `Bearer ${token}`},
                 });
                 if (shortlistRes.ok) {
@@ -109,7 +110,7 @@ export default function HousehelpProfile() {
                     }
                 }
                 // Track profile view
-                await fetch(`http://localhost:8080/api/v1/profile-view/record`, {
+                await fetch(`API_ENDPOINTS.profileView.record`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -121,7 +122,7 @@ export default function HousehelpProfile() {
                     }),
                 });
                 // Fetch profile
-                const res = await fetch(`http://localhost:8080/api/v1/househelps/${profileId}/profile_with_user`, {
+                const res = await fetch(``${API_BASE_URL}/api/v1/househelps/${profileId}/profile_with_user`, {
                     headers: {Authorization: `Bearer ${token}`},
                 });
                 if (!res.ok) throw new Error("Failed to fetch househelp profile");
@@ -147,7 +148,7 @@ export default function HousehelpProfile() {
       if (!data || !data.User || !data.User.id) return;
       async function fetchImages(userId: string) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:8080/api/v1/images/user/${userId}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+        const res = await fetch(`API_ENDPOINTS.images.user/${userId}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
         if (res.ok) {
           const data = await res.json();
           setImages(Array.isArray(data.images) ? data.images : []);
@@ -227,7 +228,7 @@ export default function HousehelpProfile() {
                     try {
                       const token = localStorage.getItem('token');
                       if (!token) throw new Error('Not authenticated');
-                      const res = await fetch(`http://localhost:8080/api/v1/shortlists/unlock`, {
+                      const res = await fetch(`API_ENDPOINTS.shortlists.base/unlock`, {
                         method: 'POST',
                         headers: {
                           'Content-Type': 'application/json',
@@ -280,14 +281,14 @@ export default function HousehelpProfile() {
                       try {
                         const token = localStorage.getItem('token');
                         if (!token) throw new Error('Not authenticated');
-                        const res = await fetch(`http://localhost:8080/api/v1/shortlists/${profileId}`, {
+                        const res = await fetch(`API_ENDPOINTS.shortlists.base/${profileId}`, {
                           method: 'DELETE',
                           headers: { Authorization: `Bearer ${token}` },
                         });
                         setShortlisted(false);
                         setShortlistDisabled(false);
                         setShortlistDisabledReason(null);
-                        const shortlistRes = await fetch(`http://localhost:8080/api/v1/shortlists/exists/${profileId}`, {
+                        const shortlistRes = await fetch(`API_ENDPOINTS.shortlists.base/exists/${profileId}`, {
                           headers: { Authorization: `Bearer ${token}` },
                         });
                         if (shortlistRes.ok) {

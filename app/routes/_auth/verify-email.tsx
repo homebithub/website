@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, useLocation } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { handleApiError } from '~/utils/errorMessages';
+import { API_BASE_URL } from '~/config/api';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ export default function VerifyEmail() {
     setError(null);
     setSuccess(false);
     try {
-      const response = await fetch("http://localhost:8080/api/v1/auth/update-email", {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/update-email`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email,user_id }),

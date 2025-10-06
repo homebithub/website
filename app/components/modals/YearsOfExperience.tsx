@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { handleApiError } from '../../utils/errorMessages';
+import { API_BASE_URL } from '~/config/api';
 
 const YearsOfExperience = () => {
     const [years, setYears] = useState<number | null>(null);
@@ -46,7 +47,7 @@ const YearsOfExperience = () => {
 
             const finalYears = years === 6 ? parseInt(customYears, 10) : years;
             
-            const response = await fetch(`http://localhost:8080/api/v1/househelps/me/fields`, {
+            const response = await fetch(``${API_BASE_URL}/api/v1/househelps/me/fields`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

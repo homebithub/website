@@ -1,5 +1,6 @@
 import React, {useState, useRef, useEffect} from "react";
 import { handleApiError } from '../utils/errorMessages';
+import { API_BASE_URL } from '~/config/api';
 
 interface LocationSuggestion {
     name: string;
@@ -22,7 +23,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     const [submitStatus, setSubmitStatus] = useState<{success: boolean; message: string} | null>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const baseUrl = 'http://localhost:8080'
+    const baseUrl = API_BASE_URL
     useEffect(() => {
         if (input.length > 2) {
             setLoading(true);

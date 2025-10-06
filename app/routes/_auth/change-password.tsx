@@ -9,6 +9,7 @@ import { changePasswordSchema, validateForm, validateField } from '~/utils/valid
 import { useAuth } from "~/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
+import { API_BASE_URL } from '~/config/api';
 
 interface User {
   id: string;
@@ -17,7 +18,7 @@ interface User {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const cookie = request.headers.get("cookie") || "";
-  const res = await fetch("http://localhost:8080/users/me", {
+  const res = await fetch(API_BASE_URL/users/me", {
     headers: { "cookie": cookie },
     credentials: "include",
   });
@@ -126,7 +127,7 @@ export default function ChangePasswordPage() {
     
     try {
       // Add your password change API call here
-      const res = await fetch("http://localhost:8080/api/v1/auth/change-password", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/change-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

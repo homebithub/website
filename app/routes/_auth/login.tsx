@@ -8,6 +8,7 @@ import { Footer } from "~/components/Footer";
 import { FcGoogle } from 'react-icons/fc';
 import { loginSchema, validateForm, validateField } from '~/utils/validation';
 import { handleApiError } from '~/utils/errorMessages';
+import { API_BASE_URL } from '~/config/api';
 
 export type LoginRequest = {
   phone: string;
@@ -114,7 +115,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = () => {
-    window.location.href = 'http://localhost:8080/auth/google'; // Adjust to your backend endpoint
+    window.location.href = '`${AUTH_API_BASE_URL}/google`; // Adjust to your backend endpoint
   };
 
   const getFieldError = (fieldName: string) => {

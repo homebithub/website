@@ -2,6 +2,7 @@ import React from "react";
 
 import { useEffect, useState } from "react";
 import { Navigation } from "~/components/Navigation";
+import { API_BASE_URL } from '~/config/api';
 
 export default function BureauProfile() {
     const [profile, setProfile] = useState<any>(null);
@@ -26,7 +27,7 @@ export default function BureauProfile() {
             try {
                 const token = localStorage.getItem("token");
                 if (!token) throw new Error("Not authenticated");
-                const res = await fetch("http://localhost:8080/api/v1/profile/bureau/me", {
+                const res = await fetch(`${API_BASE_URL}/api/v1/profile/bureau/me`, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 if (!res.ok) throw new Error("Failed to fetch profile");

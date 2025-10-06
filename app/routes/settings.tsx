@@ -1,3 +1,4 @@
+import { API_ENDPOINTS, AUTH_API_BASE_URL, API_BASE_URL } from '~/config/api';
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { useLoaderData, Form, useNavigate, useLocation } from "react-router";
@@ -19,7 +20,7 @@ interface UserSettings {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const cookie = request.headers.get("cookie") || "";
-  const res = await fetch("http://localhost:8080/users/settings", {
+  const res = await fetch(API_ENDPOINTS.users.settings, {
     headers: { "cookie": cookie },
     credentials: "include",
   });
@@ -40,19 +41,19 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
   const notifications = formData.get("notifications") === "on";
 
   // Fetch current settings to compare emails
-  const resSettings = await fetch("http://localhost:8080/users/settings", {
+  const resSettings = await fetch(API_ENDPOINTS.users.settings, {
     headers: { "cookie": cookie },
     credentials: "include",
   });
   if (!resSettings.ok) {
-    return json({ error: "Failed to fetch user settings" }, { status: resSettings.status });
+    return data({ error: "Failed to fetch user settings" }, { status: resSettings.status });
   }
   const currentSettings = await resSettings.json();
   const prevEmail = currentSettings.email;
 
   // If email changed, call backend to update email
   if (email && email !== prevEmail) {
-    const updateRes = await fetch("http://localhost:8080/auth/update-email", {
+    const updateRes = await fetch(`${AUTH_API_BASE_URL}/update-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -71,12 +72,12 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
       });
       return redirect(`/verify-otp?${params.toString()}`);
     } else {
-      return json({ error: data.message || "Failed to update email" }, { status: updateRes.status });
+      return data({ error: data.message || "Failed to update email" }, { status: updateRes.status });
     }
   }
 
   // Otherwise, update other settings
-  const updateRes = await fetch("http://localhost:8080/users/settings", {
+  const updateRes = await fetch(API_ENDPOINTS.users.settings, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -87,7 +88,7 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
   });
   if (!updateRes.ok) {
     const data = await updateRes.json();
-    return json({ error: data.message || "Failed to update settings" }, { status: updateRes.status });
+    return data({ error: data.message || "Failed to update settings" }, { status: updateRes.status });
   }
   return redirect("/settings");
 };

@@ -4,6 +4,7 @@ import { Navigation } from "~/components/Navigation";
 import { Error as ErrorComponent } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Footer } from "~/components/Footer";
+import { API_ENDPOINTS } from '~/config/api';
 
 interface ApiError {
   message: string;
@@ -34,7 +35,7 @@ export default function Contact() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8080/contact", {
+      const response = await fetch(API_ENDPOINTS.contact, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
