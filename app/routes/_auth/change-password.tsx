@@ -10,6 +10,8 @@ import { useAuth } from "~/contexts/AuthContext";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
 import { API_BASE_URL } from '~/config/api';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 interface User {
   id: string;

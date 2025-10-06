@@ -6,6 +6,8 @@ import { handleApiError } from '~/utils/errorMessages';
 import { HouseholdProfileModal } from '~/components/modals/HouseholdProfileModal';
 import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
 import { API_BASE_URL } from '~/config/api';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 export default function VerifyOtpPage() {
   // UI state for changing phone

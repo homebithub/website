@@ -8,7 +8,9 @@ import { Footer } from "~/components/Footer";
 import { FcGoogle } from 'react-icons/fc';
 import { loginSchema, validateForm, validateField } from '~/utils/validation';
 import { handleApiError } from '~/utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 export type LoginRequest = {
   phone: string;
@@ -115,7 +117,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = () => {
-    window.location.href = '`${AUTH_API_BASE_URL}/google`; // Adjust to your backend endpoint
+    window.location.href = `${AUTH_API_BASE_URL}/google`; // Adjust to your backend endpoint
   };
 
   const getFieldError = (fieldName: string) => {
@@ -132,10 +134,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background bg-white" style={{backgroundColor: 'white'}}>
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
-        <div className="card w-full max-w-md bg-white border border-gray-100 p-8 rounded-xl shadow-lg">
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+        <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+          <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8">
           <h1 className="text-3xl font-extrabold text-primary mb-6 text-center">Login to HomeXpert</h1>
           {loading && (
             <div className="mb-4 p-3 rounded bg-blue-100 text-blue-700 border border-blue-300 text-center">
@@ -231,8 +234,9 @@ export default function LoginPage() {
             </Link>
           </div>
           </form>
-        </div>
-      </main>
+          </PurpleCard>
+        </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );

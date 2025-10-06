@@ -11,6 +11,8 @@ import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { FcGoogle } from 'react-icons/fc';
 import { Modal } from '~/components/features/Modal';
 import { API_BASE_URL } from '~/config/api';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 // Types for request and response
 export type SignupRequest = {

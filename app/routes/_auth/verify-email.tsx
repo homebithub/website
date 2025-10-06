@@ -4,6 +4,8 @@ import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { handleApiError } from '~/utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();

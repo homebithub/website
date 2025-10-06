@@ -4,6 +4,8 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { forgotPasswordSchema, validateForm, validateField } from '~/utils/validation';
 import { API_BASE_URL } from '~/config/api';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 export default function ForgotPasswordPage() {
   const [input, setInput] = useState("");

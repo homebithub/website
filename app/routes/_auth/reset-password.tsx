@@ -3,6 +3,8 @@ import { Link, useSearchParams, useNavigate } from "react-router";
 import { Error } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { API_BASE_URL } from '~/config/api';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 interface PasswordStrength {
   score: number;
