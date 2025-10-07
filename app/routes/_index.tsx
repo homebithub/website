@@ -89,16 +89,19 @@ export default function Index() {
           onClose={handleProfileComplete}
           initialUserType={userType || undefined}
         />
-        <div className="relative bg-gradient-to-br from-primary-400 via-primary-700 to-purple-900 overflow-hidden fade-in-scroll">
+        <div className="relative bg-gradient-to-br from-primary-400 via-primary-700 to-purple-900 dark:from-[#050508] dark:via-[#0a0a0f] dark:to-purple-950 overflow-hidden fade-in-scroll transition-colors duration-500">
   {/* Floating SVG shapes for playful effect */}
-  <svg className="absolute top-0 left-0 w-48 h-48 opacity-30 animate-float" viewBox="0 0 200 200" fill="none"><circle cx="100" cy="100" r="100" fill="#c084fc" /></svg>
-  <svg className="absolute bottom-0 right-0 w-64 h-64 opacity-20 animate-float delay-1000" viewBox="0 0 200 200" fill="none"><rect width="200" height="200" rx="70" fill="#a855f7" /></svg>
+  <svg className="absolute top-0 left-0 w-48 h-48 opacity-30 dark:opacity-20 animate-float" viewBox="0 0 200 200" fill="none"><circle cx="100" cy="100" r="100" fill="#c084fc" /></svg>
+  <svg className="absolute bottom-0 right-0 w-64 h-64 opacity-20 dark:opacity-10 animate-float delay-1000" viewBox="0 0 200 200" fill="none"><rect width="200" height="200" rx="70" fill="#a855f7" /></svg>
+  {/* Dark mode gradient orbs */}
+  <div className="hidden dark:block absolute top-1/3 right-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse-slow pointer-events-none" />
+  <div className="hidden dark:block absolute bottom-1/3 left-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl animate-pulse-slow pointer-events-none" style={{ animationDelay: '1.5s' }} />
   <div className="flex flex-col items-center justify-center w-full px-4 sm:px-6 pt-6 sm:pt-8 pb-12 sm:pb-16 lg:px-8 lg:pt-10 lg:pb-20 relative z-10">
     <div className="mx-auto max-w-4xl text-center px-2 sm:px-0">
       <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 sm:mb-8 font-sans drop-shadow-lg animate-fadeIn">
         Your Home, Our Expertise!
       </h1>
-      <p className="mt-6 sm:mt-8 md:mt-12 text-base sm:text-lg md:text-2xl leading-7 sm:leading-8 md:leading-9 text-purple-100 font-medium px-2 sm:px-0 animate-fadeIn fade-in-scroll">
+      <p className="mt-6 sm:mt-8 md:mt-12 text-base sm:text-lg md:text-2xl leading-7 sm:leading-8 md:leading-9 text-purple-100 dark:text-purple-200 font-medium px-2 sm:px-0 animate-fadeIn fade-in-scroll">
         Transform your living space with our comprehensive home services. From deep cleaning to specialized childcare, we connect you with verified professionals who treat your home like their own.
       </p>
       {/* Image Cards Section */}
@@ -122,7 +125,7 @@ export default function Index() {
       <div className="mt-8 sm:mt-10 md:mt-12 flex items-center justify-center gap-x-2 px-4 sm:px-0 fade-in-scroll">
         <Link
           to="/signup"
-          className="rounded-xl bg-primary-700 px-6 sm:px-8 py-3 sm:py-4 text-lg sm:text-2xl font-bold text-white shadow-lg hover:bg-primary-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transform hover:scale-110 transition-all duration-300 animate-fadeIn"
+          className="glow-button rounded-xl bg-primary-700 dark:bg-gradient-to-r dark:from-purple-600 dark:to-pink-600 px-6 sm:px-8 py-3 sm:py-4 text-lg sm:text-2xl font-bold text-white shadow-lg dark:shadow-glow-md hover:bg-primary-800 dark:hover:shadow-glow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transform hover:scale-110 transition-all duration-300 animate-fadeIn"
         >
           Get Started
         </Link>
