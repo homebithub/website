@@ -128,21 +128,21 @@ export default function SettingsPage() {
       <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
-        <div className="card w-full max-w-2xl text-center bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700">
-          <h1 className="text-4xl font-extrabold text-primary mb-6 dark:text-primary-400">Settings</h1>
-          <p className="text-lg text-text mb-8 dark:text-primary-200">Manage your account settings and preferences.</p>
+        <div className="w-full max-w-2xl text-center bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-8">
+          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">⚙️ Settings</h1>
+          <p className="text-lg text-gray-600 mb-8">Manage your account settings and preferences.</p>
           
           <div className="space-y-6">
-            <div className="bg-accent rounded-xl shadow-card p-6 dark:bg-slate-800">
-              <div className="font-bold text-primary mb-1 dark:text-primary-300">Account Settings</div>
-              <div className="text-text text-sm mb-2 dark:text-primary-200">Update your account information and preferences.</div>
-              <a href="/profile" className="btn-primary">Edit Account</a>
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-100 p-6 hover:border-purple-200 transition-all">
+              <div className="font-bold text-purple-700 text-xl mb-2">👤 Account Settings</div>
+              <div className="text-gray-600 text-sm mb-4">Update your account information and preferences.</div>
+              <a href="/profile" className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all">Edit Account</a>
             </div>
             
-            <div className="bg-accent rounded-xl shadow-card p-6 dark:bg-slate-800">
-              <div className="font-bold text-primary mb-1 dark:text-primary-300">Security Settings</div>
-              <div className="text-text text-sm mb-2 dark:text-primary-200">Change your password and manage security settings.</div>
-              <a href="/change-password" className="btn-primary">Change Password</a>
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-100 p-6 hover:border-purple-200 transition-all">
+              <div className="font-bold text-purple-700 text-xl mb-2">🔒 Security Settings</div>
+              <div className="text-gray-600 text-sm mb-4">Change your password and manage security settings.</div>
+              <a href="/change-password" className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all">Change Password</a>
             </div>
           </div>
         </div>

@@ -149,19 +149,22 @@ export default function ResetPassword() {
       <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
-      <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8">
+      <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            Reset your password
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            Reset Password 🔐
           </h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-400">
+          <p className="text-gray-600 text-base">
             Enter your new password below
           </p>
         </div>
 
         {error && (
-          <div className="mt-4">
-            <Error message={error} />
+          <div className="mt-6 mb-4 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
+            <div className="flex items-center justify-center">
+              <span className="text-2xl mr-3">⚠️</span>
+              <p className="text-base font-semibold text-red-800">{error}</p>
+            </div>
           </div>
         )}
 
@@ -169,7 +172,7 @@ export default function ResetPassword() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+              className="block text-sm font-semibold text-purple-700 mb-2"
             >
               New password
             </label>
@@ -182,7 +185,7 @@ export default function ResetPassword() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white sm:text-sm"
+                className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
             {formData.password && (
@@ -203,7 +206,7 @@ export default function ResetPassword() {
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+              className="block text-sm font-semibold text-purple-700 mb-2"
             >
               Confirm new password
             </label>
@@ -216,7 +219,7 @@ export default function ResetPassword() {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white sm:text-sm"
+                className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
             {formData.confirmPassword && formData.password !== formData.confirmPassword && (
@@ -234,9 +237,9 @@ export default function ResetPassword() {
                 formData.password !== formData.confirmPassword ||
                 passwordStrength.score < 3
               }
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {loading ? "Resetting..." : "Reset password"}
+              {loading ? "✨ Resetting..." : "🚀 Reset Password"}
             </button>
           </div>
         </form>
@@ -246,7 +249,7 @@ export default function ResetPassword() {
             Remember your password?{" "}
             <Link
               to="/login"
-              className="font-medium text-teal-600 hover:text-teal-500 dark:text-teal-400 dark:hover:text-teal-300"
+              className="font-bold text-purple-600 hover:text-purple-700 hover:underline transition-colors"
             >
               Sign in
             </Link>

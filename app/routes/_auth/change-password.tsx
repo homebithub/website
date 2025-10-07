@@ -164,26 +164,32 @@ export default function ChangePasswordPage() {
       <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
-        <PurpleCard hover={false} glow={true} className="w-full max-w-2xl p-8">
-          <h1 className="text-4xl font-extrabold text-primary mb-6 dark:text-primary-400">Change Password</h1>
-          <p className="text-lg text-text mb-8 dark:text-primary-200">Update your password and manage security settings.</p>
+        <PurpleCard hover={false} glow={true} className="w-full max-w-2xl p-8 sm:p-10">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Change Password 🔐</h1>
+          <p className="text-base text-gray-600 mb-8">Update your password and manage security settings.</p>
           
           {error && (
-            <div className="mb-4 p-3 rounded bg-red-100 text-red-700 border border-red-300 dark:bg-red-900 dark:text-red-200 dark:border-red-700 text-center">
-              {error}
+            <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
+              <div className="flex items-center justify-center">
+                <span className="text-2xl mr-3">⚠️</span>
+                <p className="text-base font-semibold text-red-800">{error}</p>
+              </div>
             </div>
           )}
           
           {success && (
-            <div className="mb-4 p-3 rounded bg-green-100 text-green-700 border border-green-300 dark:bg-green-900 dark:text-green-200 dark:border-green-700 text-center">
-              Password changed successfully!
+            <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-5 shadow-md">
+              <div className="flex items-center justify-center">
+                <span className="text-2xl mr-3">🎉</span>
+                <p className="text-base font-bold text-green-800">Password changed successfully! ✔️</p>
+              </div>
             </div>
           )}
           
-          <form onSubmit={handleSubmit} className="max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-lg shadow p-8">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Current Password</label>
+                <label htmlFor="currentPassword" className="block text-sm font-semibold text-purple-700 mb-2">Current Password</label>
                 <input
                   type="password"
                   id="currentPassword"
@@ -192,12 +198,12 @@ export default function ChangePasswordPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
-                  className={`mt-1 block w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:text-white ${
+                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                     getFieldError('currentPassword') 
                       ? 'border-red-300 dark:border-red-600' 
                       : isFieldValid('currentPassword')
                       ? 'border-green-300 dark:border-green-600'
-                      : 'border-slate-300 dark:border-slate-700'
+                      : 'border-purple-200'
                   }`}
                 />
                 {getFieldError('currentPassword') && (
@@ -205,7 +211,7 @@ export default function ChangePasswordPage() {
                 )}
               </div>
               <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300">New Password</label>
+                <label htmlFor="newPassword" className="block text-sm font-semibold text-purple-700 mb-2">New Password</label>
                 <input
                   type="password"
                   id="newPassword"
@@ -214,12 +220,12 @@ export default function ChangePasswordPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
-                  className={`mt-1 block w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:text-white ${
+                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                     getFieldError('newPassword') 
                       ? 'border-red-300 dark:border-red-600' 
                       : isFieldValid('newPassword')
                       ? 'border-green-300 dark:border-green-600'
-                      : 'border-slate-300 dark:border-slate-700'
+                      : 'border-purple-200'
                   }`}
                 />
                 {getFieldError('newPassword') && (
@@ -227,7 +233,7 @@ export default function ChangePasswordPage() {
                 )}
               </div>
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Confirm New Password</label>
+                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-purple-700 mb-2">Confirm New Password</label>
                 <input
                   type="password"
                   id="confirmPassword"
@@ -236,12 +242,12 @@ export default function ChangePasswordPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
-                  className={`mt-1 block w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 dark:bg-slate-800 dark:text-white ${
+                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                     getFieldError('confirmPassword') 
                       ? 'border-red-300 dark:border-red-600' 
                       : isFieldValid('confirmPassword')
                       ? 'border-green-300 dark:border-green-600'
-                      : 'border-slate-300 dark:border-slate-700'
+                      : 'border-purple-200'
                   }`}
                 />
                 {getFieldError('confirmPassword') && (
@@ -252,9 +258,9 @@ export default function ChangePasswordPage() {
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 dark:focus:ring-offset-slate-800 disabled:opacity-60"
+                  className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
-                  {formLoading ? "Changing Password..." : "Change Password"}
+                  {formLoading ? "✨ Changing..." : "🚀 Change Password"}
                 </button>
               </div>
             </div>

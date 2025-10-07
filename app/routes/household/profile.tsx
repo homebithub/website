@@ -80,16 +80,16 @@ export default function HouseholdProfile() {
   };
 
   if (loading) return <div className="flex justify-center py-12">Loading...</div>;
-  if (error) return <div className="bg-red-100 text-red-700 px-4 py-2 rounded mt-6 text-center">{error}</div>;
+  if (error) return <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md mt-6"><div className="flex items-center justify-center"><span className="text-2xl mr-3">⚠️</span><p className="text-base font-semibold text-red-800">{error}</p></div></div>;
   if (!profile) return null;
 
   return (
-    <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-4 sm:p-6">
+    <div className="w-full bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold text-primary dark:text-primary-300">Household Profile</h1>
+        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Household Profile 🏠</h1>
         {!editMode && (
-          <button className="btn-primary" onClick={handleEdit}>
-            Edit 
+          <button className="px-6 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all" onClick={handleEdit}>
+            ✏️ Edit
           </button>
         )}
       </div>
@@ -98,32 +98,32 @@ export default function HouseholdProfile() {
         {editMode ? (
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
             <div>
-              <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Address</label>
+              <label className="block text-sm font-semibold mb-2 text-purple-700">Address</label>
               <textarea
                 name="address"
                 value={form.address || ''}
                 onChange={handleChange}
-                className="w-full rounded p-2 bg-slate-800 text-white border border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Bio</label>
+              <label className="block text-sm font-semibold mb-2 text-purple-700">Bio</label>
               <textarea
                 name="bio"
                 value={form.bio || ''}
                 onChange={handleChange}
-                className="w-full rounded p-2 bg-slate-800 text-white border border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
             <div className="flex flex-col sm:flex-row sm:gap-4">
               <div className="flex-1">
-                <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">House Size</label>
+                <label className="block text-sm font-semibold mb-2 text-purple-700">House Size</label>
                 <input
                   name="house_size"
                   type="text"
                   value={form.house_size || ''}
                   onChange={handleChange}
-                  className="w-full rounded p-2 bg-slate-800 text-white border border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                 />
               </div>
               <div className="flex-1">
@@ -133,7 +133,7 @@ export default function HouseholdProfile() {
                   type="number"
                   value={form.number_of_kids || ''}
                   onChange={handleChange}
-                  className="w-full rounded p-2 bg-slate-800 text-white border border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none"
+                  className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                 />
               </div>
             </div>
@@ -143,44 +143,6 @@ export default function HouseholdProfile() {
                 <input
                   name="new_borns_under_one"
                   type="number"
-                  value={form.new_borns_under_one || ''}
-                  onChange={handleChange}
-                  className="w-full rounded p-2 bg-slate-800 text-white border border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Max Househelps</label>
-                <input
-                  name="max_househelps"
-                  type="number"
-                  value={form.max_househelps || ''}
-                  onChange={handleChange}
-                  className="w-full rounded p-2 bg-slate-800 text-white border border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none"
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button type="submit" className="btn-primary" disabled={saving}>
-                {saving ? "Saving..." : "Save"}
-              </button>
-              <button type="button" className="btn-secondary" onClick={handleCancel} disabled={saving}>
-                Cancel
-              </button>
-            </div>
-            {error && <div className="text-red-600 mt-2">{error}</div>}
-            {success && <div className="text-green-600 mt-2">{success}</div>}
-          </form>
-        ) : (
-          <>
-            <div>
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Address</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.address || '-'}</span>
-            </div>
-            <div>
-              <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Bio</span>
-              <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.bio || '-'}</span>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:gap-4">
               <div className="flex-1">
                 <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">House Size</span>
                 <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.house_size}</span>

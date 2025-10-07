@@ -76,28 +76,28 @@ export default function HousehelpProfileSetup() {
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
           {/* Header Card */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 sm:mb-8">
+          <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl shadow-lg border-2 border-purple-200 mb-6 sm:mb-8">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
-                <h1 className="text-xl sm:text-2xl font-bold text-purple-900 mb-2">
-                  Complete Your Househelp Profile
+                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                  Complete Your Househelp Profile 👩‍💼
                 </h1>
-                <div className="text-sm text-gray-500">
+                <div className="text-sm font-semibold text-purple-600">
                   Step {currentStep + 1} of {STEPS.length}
                 </div>
               </div>
               
               {/* Progress Bar */}
-              <div className="w-full bg-gray-200 rounded-full h-3 mb-4">
+              <div className="w-full bg-purple-100 rounded-full h-4 mb-4 shadow-inner">
                 <div 
-                  className="bg-purple-600 h-3 rounded-full transition-all duration-300 ease-out"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 h-4 rounded-full transition-all duration-300 ease-out shadow-md"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
               
               {/* Current Step Title */}
               <div>
-                <h2 className="text-lg sm:text-xl font-semibold text-purple-900">
+                <h2 className="text-lg sm:text-xl font-bold text-purple-700">
                   {STEPS[currentStep].title}
                 </h2>
               </div>
@@ -105,7 +105,7 @@ export default function HousehelpProfileSetup() {
           </div>
 
           {/* Content Area */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6 sm:mb-8">
+          <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-100 mb-6 sm:mb-8">
             <div className="px-4 sm:px-6 py-6 sm:py-8">
               <div className="max-w-2xl mx-auto">
                 {STEPS[currentStep].id === 'bio' ? (
@@ -122,7 +122,7 @@ export default function HousehelpProfileSetup() {
           </div>
 
           {/* Navigation Footer */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-100">
             <div className="px-4 sm:px-6 py-4">
               {/* Mobile: Stack buttons vertically with dots in between */}
               <div className="sm:hidden space-y-4">
@@ -155,9 +155,9 @@ export default function HousehelpProfileSetup() {
 
                   <button
                     onClick={handleNext}
-                    className="flex items-center px-6 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition-colors"
+                    className="flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
                   >
-                    {currentStep === STEPS.length - 1 ? 'Complete' : 'Next'}
+                    {currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →'}
                     {currentStep !== STEPS.length - 1 && (
                       <ChevronRightIcon className="h-4 w-4 ml-1" />
                     )}
@@ -195,7 +195,7 @@ export default function HousehelpProfileSetup() {
                   onClick={handleNext}
                   className="flex items-center px-6 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition-colors"
                 >
-                  {currentStep === STEPS.length - 1 ? 'Complete' : 'Next'}
+                  {currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →'}
                   {currentStep !== STEPS.length - 1 && (
                     <ChevronRightIcon className="h-4 w-4 ml-1" />
                   )}

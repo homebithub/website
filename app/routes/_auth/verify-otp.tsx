@@ -351,8 +351,8 @@ export default function VerifyOtpPage() {
       <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
-        <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8">
-          <h2 className="text-2xl font-bold text-primary-800 dark:text-primary-400 mb-6 text-center">Verify Your Account</h2>
+        <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
+          <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 text-center">Verify Account 🔒</h2>
           {/* Hide all OTP UI if showChangePhone is true */}
           {!showChangePhone && (
             <>
@@ -378,21 +378,21 @@ export default function VerifyOtpPage() {
                 maxLength={6}
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 text-center tracking-widest text-lg bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm ${
+                className={`w-full h-14 px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-center tracking-widest text-2xl bg-white text-gray-900 shadow-sm transition-all ${
                   otpError 
                     ? 'border-red-300 dark:border-red-600' 
                     : otpTouched && !otpError && otp.length === 6
                     ? 'border-green-300 dark:border-green-600'
-                    : 'border-primary-200 dark:border-primary-700'
+                    : 'border-purple-200'
                 }`}
                 placeholder="Enter OTP"
               />
-              {otpError && <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center">{otpError}</div>}
-              {error && <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center">{error}</div>}
-              {success && <div className="text-green-700 bg-green-50 border border-green-200 rounded p-2 text-center">OTP verified successfully!</div>}
+              {otpError && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-4 shadow-md"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800">{otpError}</p></div></div>}
+              {error && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-4 shadow-md"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800">{error}</p></div></div>}
+              {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-4 shadow-md"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800">OTP verified! ✔️</p></div></div>}
               <button
                 type="submit"
-                className="w-full bg-primary-700 text-white py-2 rounded-md hover:bg-primary-800 transition-colors duration-200 font-semibold disabled:opacity-60"
+                className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 disabled={
                   loading ||
                   otp.length !== 6 ||
@@ -402,7 +402,7 @@ export default function VerifyOtpPage() {
                   !!otpError
                 }
               >
-                {loading ? 'Verifying...' : 'Verify OTP'}
+                {loading ? '✨ Verifying...' : '🚀 Verify OTP'}
               </button>
             </form>
           )}
@@ -417,13 +417,13 @@ export default function VerifyOtpPage() {
                 <button
                   type="button"
                   onClick={handleResend}
-                  className="w-full mt-4 text-primary-700 hover:underline text-sm"
+                  className="w-full mt-4 text-purple-600 hover:text-purple-700 font-semibold hover:underline text-base transition-colors"
                   disabled={loading}
                 >
                   Resend OTP
                 </button>
               )}
-              {resent && <div className="text-green-600 text-center mt-2 text-sm">OTP resent!</div>}
+              {resent && <div className="text-green-600 text-center mt-2 text-sm font-semibold">✔️ OTP resent!</div>}
             </>
           )}
           {/* Change contact section: phone or email */}
@@ -432,7 +432,7 @@ export default function VerifyOtpPage() {
             <div className="text-center mt-4">
               <button
                 type="button"
-                className="text-primary-700 hover:underline text-xs"
+                className="text-purple-600 hover:text-purple-700 font-semibold hover:underline text-sm transition-colors"
                 onClick={() => setShowChangePhone(true)}
               >
                 {verification.type === 'phone' || verification.type === 'password_reset'

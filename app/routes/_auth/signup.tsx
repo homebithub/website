@@ -292,7 +292,7 @@ export default function SignupPage() {
                             <button
                                 type="button"
                                 onClick={() => setIsProfileModalOpen(false)}
-                                className="px-8 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+                                className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                             >
                                 Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label}
                             </button>
@@ -313,14 +313,14 @@ export default function SignupPage() {
             
             <div className="w-full max-w-4xl flex flex-col md:flex-row gap-8 justify-center items-stretch">
             {/* Right: Signup form card */}
-            <PurpleCard hover={false} glow={true} className="flex-1 p-8 w-full max-w-md">
+            <PurpleCard hover={false} glow={true} className="flex-1 p-8 sm:p-10 w-full max-w-md">
       <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-black text-center flex-1">Sign Up</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent text-center flex-1">Join Us! 🎉</h2>
                 {form.profile_type && (
                     <button 
                         type="button" 
                         onClick={() => setIsProfileModalOpen(true)}
-                        className="text-sm text-primary-600 hover:text-primary-800 flex items-center"
+                        className="text-sm text-purple-600 hover:text-purple-700 font-semibold hover:underline transition-colors flex items-center"
                     >
                         <span className="mr-1">Change profile: </span>
                         <span className="font-medium">{getSelectedProfileLabel()}</span>
@@ -330,16 +330,19 @@ export default function SignupPage() {
       <div className="text-center mb-4">
         <span className="text-base text-gray-600 font-medium">Already have an account?</span>
         <a href="/login"
-          className="ml-2 text-base text-primary-600 font-semibold hover:underline">Login</a>
+          className="ml-2 text-base text-purple-600 font-bold hover:text-purple-700 hover:underline transition-colors">Login</a>
       </div>
       {error && (
-        <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center mb-4">
-          {error}
+        <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
+          <div className="flex items-center justify-center">
+            <span className="text-2xl mr-3">⚠️</span>
+            <p className="text-base font-semibold text-red-800">{error}</p>
+          </div>
         </div>
       )}
       <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-slate-900 mb-1 font-medium">First Name</label>
+                            <label className="block text-sm font-semibold text-purple-700 mb-2">First Name</label>
                             <input
                                 type="text"
                                 name="first_name"
@@ -347,12 +350,12 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
+                                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                                     getFieldError('first_name') 
                                         ? 'border-red-300' 
                                         : isFieldValid('first_name')
                                         ? 'border-green-300'
-                                        : 'border-primary-200'
+                                        : 'border-purple-200'
                                 }`}
                             />
                             {getFieldError('first_name') && (
@@ -360,7 +363,7 @@ export default function SignupPage() {
                             )}
                         </div>
                         <div>
-                            <label className="block text-slate-900 mb-1 font-medium">Last Name</label>
+                            <label className="block text-sm font-semibold text-purple-700 mb-2">Last Name</label>
                             <input
                                 type="text"
                                 name="last_name"
@@ -368,12 +371,12 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
+                                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                                     getFieldError('last_name') 
                                         ? 'border-red-300' 
                                         : isFieldValid('last_name')
                                         ? 'border-green-300'
-                                        : 'border-primary-200'
+                                        : 'border-purple-200'
                                 }`}
                             />
                             {getFieldError('last_name') && (
@@ -382,7 +385,7 @@ export default function SignupPage() {
                         </div>
                          
                         <div>
-                            <label className="block text-slate-900 mb-1 font-medium">Password</label>
+                            <label className="block text-sm font-semibold text-purple-700 mb-2">Password</label>
                             <input
                                 type="password"
                                 name="password"
@@ -390,12 +393,12 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
+                                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                                     getFieldError('password') 
                                         ? 'border-red-300' 
                                         : isFieldValid('password')
                                         ? 'border-green-300'
-                                        : 'border-primary-200'
+                                        : 'border-purple-200'
                                 }`}
                             />
                             {getFieldError('password') && (
@@ -403,7 +406,7 @@ export default function SignupPage() {
                             )}
                         </div>
                         <div>
-    <label className="block text-slate-900 mb-1 font-medium">Phone</label>
+    <label className="block text-sm font-semibold text-purple-700 mb-2">Phone</label>
     <input
         type="tel"
         name="phone"
@@ -411,12 +414,12 @@ export default function SignupPage() {
         onChange={handleChange}
         onBlur={handleBlur}
         required
-        className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
+        className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
             getFieldError('phone') 
                 ? 'border-red-300' 
                 : isFieldValid('phone')
                 ? 'border-green-300'
-                : 'border-primary-200'
+                : 'border-purple-200'
         }`}
         placeholder="0712345678"
     />
@@ -427,10 +430,10 @@ export default function SignupPage() {
 
 <button
     type="submit"
-    className="w-full bg-primary-700 text-white py-3 rounded-lg hover:bg-primary-800 transition-colors duration-200 font-semibold text-lg disabled:opacity-60"
+    className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
     disabled={formLoading || !form.profile_type}
 >
-    {formLoading ? 'Signing up...' : 'Sign Up'}
+    {formLoading ? '✨ Signing up...' : '🚀 Sign Up'}
 </button>
 {!form.profile_type && (
     <p className="text-amber-600 text-sm mt-2 text-center">
@@ -440,10 +443,10 @@ export default function SignupPage() {
 
 <div className="relative my-6">
     <div className="absolute inset-0 flex items-center">
-        <div className="w-full border-t border-gray-300"></div>
+        <div className="w-full border-t-2 border-purple-200"></div>
     </div>
     <div className="relative flex justify-center text-sm">
-        <span className="px-2 bg-white text-gray-500">Or continue with</span>
+        <span className="px-4 bg-white text-purple-600 font-medium">Or continue with</span>
     </div>
 </div>
 
@@ -451,7 +454,7 @@ export default function SignupPage() {
     <button
         type="button"
         onClick={() => window.location.href = `${API_BASE_URL}/google`}
-        className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
+        className="w-full inline-flex justify-center items-center px-6 py-3 border-2 border-purple-200 rounded-xl shadow-md bg-white text-base font-semibold text-gray-700 hover:bg-purple-50 hover:border-purple-300 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
     >
         <FcGoogle className="h-5 w-5 mr-2" />
         Sign in with Google
