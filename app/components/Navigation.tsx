@@ -178,14 +178,14 @@ export function Navigation() {
                         <div className="hidden lg:flex items-center space-x-3 ml-4">
                             {profileType === 'employer' || profileType === 'household' ? (
                                 <>
-                                    <Link to="/household/profile" className="text-primary-700 font-semibold hover:text-primary-900">Profile</Link>
-                                    <Link to="/household/employment" className="text-primary-700 font-semibold hover:text-primary-900">Find Househelps</Link>
-                                    <Link to="/household/employment?tab=shortlist" className="text-primary-700 font-semibold hover:text-primary-900">Shortlist</Link>
+                                    <Link to="/household/profile" prefetch="intent" className="text-primary-700 font-semibold hover:text-primary-900">Profile</Link>
+                                    <Link to="/household/employment" prefetch="intent" className="text-primary-700 font-semibold hover:text-primary-900">Find Househelps</Link>
+                                    <Link to="/household/employment?tab=shortlist" prefetch="intent" className="text-primary-700 font-semibold hover:text-primary-900">Shortlist</Link>
                                 </>
                             ) : profileType === 'househelp' ? (
                                 <>
-                                    <Link to="/househelp" className="text-primary-700 font-semibold hover:text-primary-900">Profile</Link>
-                                    <Link to="/househelp/find-households" className="text-primary-700 font-semibold hover:text-primary-900">Find Households</Link>
+                                    <Link to="/househelp" prefetch="intent" className="text-primary-700 font-semibold hover:text-primary-900">Profile</Link>
+                                    <Link to="/househelp/find-households" prefetch="intent" className="text-primary-700 font-semibold hover:text-primary-900">Find Households</Link>
                                 </>
                             ) : null}
                         </div>
