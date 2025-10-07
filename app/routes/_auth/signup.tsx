@@ -25,10 +25,16 @@ export type SignupRequest = {
 };
 
 export type SignupResponse = {
+    token?: string; // JWT token from backend
     user: {
         user_id: string;
+        first_name?: string;
+        last_name?: string;
+        phone?: string;
+        email?: string;
+        profile_type?: string;
     };
-    verification: {
+    verification?: {
         id: string;
         user_id: string;
         type: string;
@@ -207,8 +213,32 @@ export default function SignupPage() {
                 throw new Error(err.message || 'Signup failed');
             }
             const data: SignupResponse = await res.json();
-            // Pass verification object to the verify-otp page using navigation state
-            navigate('/verify-otp', { state: { verification: data.verification, bureauId } });
+            
+            // Store authentication data
+            // Backend should return a 'token' field in the response
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+            } else {
+                // Fallback: if backend doesn't return token yet, store user_id temporarily
+                console.warn('No token in response, using user_id as fallback');
+                localStorage.setItem('token', data.user.user_id);
+            }
+            
+            // Store user data for easy access
+            localStorage.setItem('user_id', data.user.user_id);
+            localStorage.setItem('profile_type', data.user.profile_type || form.profile_type);
+            
+            // Redirect based on profile type
+            if (form.profile_type === 'employer' || form.profile_type === 'household') {
+                // Household users go to profile setup
+                navigate('/profile-setup/household');
+            } else if (form.profile_type === 'househelp') {
+                // Househelp users go to their profile setup
+                navigate('/profile-setup/househelp');
+            } else {
+                // Fallback
+                navigate('/');
+            }
         } catch (err: any) {
             const errorMessage = handleApiError(err, 'signup');
             setError(errorMessage);

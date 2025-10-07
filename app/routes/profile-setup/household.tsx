@@ -5,6 +5,7 @@ import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { Footer } from '../components/Footer';
+import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 // Import all the components
 import Location from '../components/Location';
@@ -31,25 +32,44 @@ const STEPS = [
   { id: 'photos', title: 'Photos', component: Photos },
 ];
 
-export default function HouseholdProfileSetup() {
+function HouseholdProfileSetupContent() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const { saveProfileToBackend, loadProfileFromBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
 
   useEffect(() => {
-    // [DEV ONLY] Authentication check temporarily disabled for direct access
-    // const token = localStorage.getItem('token');
-    // if (!token) {
-    //   navigate('/login');
-    //   return;
-    // }
-  }, [navigate]);
+    // Load existing profile data on mount
+    const loadData = async () => {
+      await loadProfileFromBackend();
+    };
+    loadData();
+  }, [loadProfileFromBackend]);
 
-  const handleNext = () => {
+  useEffect(() => {
+    // Jump to last completed step + 1 (or stay at 0 if starting fresh)
+    if (lastCompletedStep > 0 && lastCompletedStep < STEPS.length) {
+      setCurrentStep(lastCompletedStep);
+      console.log(`Resuming from step ${lastCompletedStep + 1}`);
+    }
+  }, [lastCompletedStep]);
+
+  const handleNext = async () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Profile setup complete
-      navigate('/'); // Redirect to home page
+      // Profile setup complete - save all data to backend
+      setSaving(true);
+      try {
+        await saveProfileToBackend();
+        // Redirect to household dashboard after successful save
+        navigate('/household/profile');
+      } catch (error) {
+        console.error('Failed to save profile:', error);
+        // Show error but allow user to try again
+        alert('Failed to save profile. Please try again.');
+        setSaving(false);
+      }
     }
   };
 
@@ -189,10 +209,11 @@ export default function HouseholdProfileSetup() {
 
                 <button
                   onClick={handleNext}
-                  className="flex items-center px-6 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition-colors"
+                  disabled={saving}
+                  className="flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
                 >
-                  {currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →'}
-                  {currentStep !== STEPS.length - 1 && (
+                  {saving ? '✨ Saving...' : (currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →')}
+                  {currentStep !== STEPS.length - 1 && !saving && (
                     <ChevronRightIcon className="h-4 w-4 ml-1" />
                   )}
                 </button>
@@ -205,6 +226,15 @@ export default function HouseholdProfileSetup() {
       </PurpleThemeWrapper>
       <Footer />
     </div>
+  );
+}
+
+// Wrap with ProfileSetupProvider
+export default function HouseholdProfileSetup() {
+  return (
+    <ProfileSetupProvider>
+      <HouseholdProfileSetupContent />
+    </ProfileSetupProvider>
   );
 }
 
