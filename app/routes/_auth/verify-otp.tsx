@@ -347,10 +347,11 @@ export default function VerifyOtpPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <section className="flex-grow flex items-center justify-center py-16 bg-gray-50 dark:bg-slate-800">
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-gray-100 dark:border-slate-700 p-8 w-full max-w-md">
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+        <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8">
           <h2 className="text-2xl font-bold text-primary-800 dark:text-primary-400 mb-6 text-center">Verify Your Account</h2>
           {/* Hide all OTP UI if showChangePhone is true */}
           {!showChangePhone && (
@@ -529,8 +530,9 @@ export default function VerifyOtpPage() {
             </form>
           )}
 
-        </div>
-      </section>
+        </PurpleCard>
+      </main>
+      </PurpleThemeWrapper>
       
       {/* Household Profile Modal */}
       <HouseholdProfileModal
@@ -540,7 +542,7 @@ export default function VerifyOtpPage() {
       />
       
       <Footer />
-    </main>
+    </div>
   );
 }
 

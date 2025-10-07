@@ -236,9 +236,10 @@ export default function SignupPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-background bg-white" style={{backgroundColor: 'white'}}>
+        <div className="min-h-screen flex flex-col">
         <Navigation/>
-        <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
+        <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+        <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
             {/* Profile Selection Modal */}
             <Modal 
                 isOpen={isProfileModalOpen} 
@@ -312,7 +313,7 @@ export default function SignupPage() {
             
             <div className="w-full max-w-4xl flex flex-col md:flex-row gap-8 justify-center items-stretch">
             {/* Right: Signup form card */}
-            <div className="card flex-1 bg-white border border-gray-100 p-8 rounded-xl shadow-lg w-full max-w-md">
+            <PurpleCard hover={false} glow={true} className="flex-1 p-8 w-full max-w-md">
       <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl font-bold text-black text-center flex-1">Sign Up</h2>
                 {form.profile_type && (
@@ -449,7 +450,7 @@ export default function SignupPage() {
 <div className="mt-6 flex flex-col gap-3">
     <button
         type="button"
-        onClick={() => window.location.href = '`${AUTH_API_BASE_URL}/google`}
+        onClick={() => window.location.href = `${API_BASE_URL}/google`}
         className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
     >
         <FcGoogle className="h-5 w-5 mr-2" />
@@ -457,9 +458,10 @@ export default function SignupPage() {
     </button>
 </div>
 </form>
-</div>
+</PurpleCard>
 </div>
 </main>
+</PurpleThemeWrapper>
 <Footer/>
 </div>
     );

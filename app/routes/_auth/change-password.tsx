@@ -160,10 +160,11 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-background bg-white dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
-        <div className="card w-full max-w-2xl text-center bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700">
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+        <PurpleCard hover={false} glow={true} className="w-full max-w-2xl p-8">
           <h1 className="text-4xl font-extrabold text-primary mb-6 dark:text-primary-400">Change Password</h1>
           <p className="text-lg text-text mb-8 dark:text-primary-200">Update your password and manage security settings.</p>
           
@@ -266,8 +267,9 @@ export default function ChangePasswordPage() {
               <a href="/settings" className="btn-primary">Security Settings</a>
             </div>
           </div>
-        </div>
+        </PurpleCard>
       </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );

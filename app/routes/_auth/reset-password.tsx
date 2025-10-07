@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router";
 import { Error } from "~/components/Error";
 import { Loading } from "~/components/Loading";
+import { Navigation } from "~/components/Navigation";
+import { Footer } from "~/components/Footer";
 import { API_BASE_URL } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
@@ -75,7 +77,7 @@ export default function ResetPassword() {
     setError(null);
 
     try {
-      const response = await fetch("`${AUTH_API_BASE_URL}/reset-password`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -143,8 +145,11 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+      <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
             Reset your password
@@ -247,7 +252,10 @@ export default function ResetPassword() {
             </Link>
           </p>
         </div>
-      </div>
+      </PurpleCard>
+      </main>
+      </PurpleThemeWrapper>
+      <Footer />
     </div>
   );
 } 

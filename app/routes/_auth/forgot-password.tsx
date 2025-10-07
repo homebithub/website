@@ -98,10 +98,11 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
-        <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700 p-8 rounded-xl shadow-lg">
+        <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8">
           <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-400 mb-6 text-center">Forgot Password</h1>
           <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
             Enter your phone number and we'll send you a verification code to reset your password.
@@ -155,8 +156,9 @@ export default function ForgotPasswordPage() {
           <div className="flex justify-center mt-8">
             <Link to="/login" className="link font-semibold text-primary-700 dark:text-primary-300 text-base text-center">Back to Login</Link>
           </div>
-        </div>
+        </PurpleCard>
       </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );

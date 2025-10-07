@@ -47,10 +47,11 @@ export default function VerifyEmail() {
   };
 console.log(user_id,"user_id");
   return (
-    <div className="min-h-screen flex flex-col bg-white dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
-        <section className="w-full max-w-md mx-auto bg-white dark:bg-slate-800 rounded-lg shadow-card p-8 border border-gray-100 dark:border-slate-700">
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+        <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8">
           <h1 className="text-3xl font-extrabold text-primary mb-6 text-center dark:text-primary-400">Verify Your Email</h1>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
@@ -99,8 +100,9 @@ console.log(user_id,"user_id");
           >
             Skip for now
           </button>
-        </section>
+        </PurpleCard>
       </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );
