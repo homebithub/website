@@ -1,6 +1,8 @@
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import useScrollFadeIn from "~/hooks/useScrollFadeIn";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 import { Link, useNavigate } from "react-router";
 import React, { useEffect, useState } from "react";
 import SignupFlow from "~/components/features/SignupFlow";
@@ -61,6 +63,7 @@ export default function Index() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="high">
       <main className="flex-grow">
         {/* Initial Signup Modal - User Type Selection */}
         <SignupFlow 
@@ -236,6 +239,7 @@ export default function Index() {
   </div>
 </div>
       </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );
