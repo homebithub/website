@@ -36,7 +36,7 @@ export default function HousehelpProfile() {
         try {
             const token = localStorage.getItem("token");
             if (!token) throw new Error("Not authenticated");
-            const res = await fetch(`API_ENDPOINTS.shortlists.base`, {
+            const res = await fetch(API_ENDPOINTS.shortlists.base, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -95,7 +95,7 @@ export default function HousehelpProfile() {
                 if (!token) throw new Error("Not authenticated");
                 if (!profileId) throw new Error("No profile ID provided");
                 // Check if already shortlisted
-                const shortlistRes = await fetch(`API_ENDPOINTS.shortlists.base/exists/${profileId}`, {
+                const shortlistRes = await fetch(`${API_ENDPOINTS.shortlists.base}/exists/${profileId}`, {
                     headers: {Authorization: `Bearer ${token}`},
                 });
                 if (shortlistRes.ok) {
@@ -110,7 +110,7 @@ export default function HousehelpProfile() {
                     }
                 }
                 // Track profile view
-                await fetch(`API_ENDPOINTS.profileView.record`, {
+                await fetch(API_ENDPOINTS.profileView.record, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -148,7 +148,7 @@ export default function HousehelpProfile() {
       if (!data || !data.User || !data.User.id) return;
       async function fetchImages(userId: string) {
         const token = localStorage.getItem('token');
-        const res = await fetch(`API_ENDPOINTS.images.user/${userId}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
+        const res = await fetch(`${API_ENDPOINTS.images.user}/${userId}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
         if (res.ok) {
           const data = await res.json();
           setImages(Array.isArray(data.images) ? data.images : []);
@@ -228,7 +228,7 @@ export default function HousehelpProfile() {
                     try {
                       const token = localStorage.getItem('token');
                       if (!token) throw new Error('Not authenticated');
-                      const res = await fetch(`API_ENDPOINTS.shortlists.base/unlock`, {
+                      const res = await fetch(`${API_ENDPOINTS.shortlists.base}/unlock`, {
                         method: 'POST',
                         headers: {
                           'Content-Type': 'application/json',
@@ -281,14 +281,14 @@ export default function HousehelpProfile() {
                       try {
                         const token = localStorage.getItem('token');
                         if (!token) throw new Error('Not authenticated');
-                        const res = await fetch(`API_ENDPOINTS.shortlists.base/${profileId}`, {
+                        const res = await fetch(`${API_ENDPOINTS.shortlists.base}/${profileId}`, {
                           method: 'DELETE',
                           headers: { Authorization: `Bearer ${token}` },
                         });
                         setShortlisted(false);
                         setShortlistDisabled(false);
                         setShortlistDisabledReason(null);
-                        const shortlistRes = await fetch(`API_ENDPOINTS.shortlists.base/exists/${profileId}`, {
+                        const shortlistRes = await fetch(`${API_ENDPOINTS.shortlists.base}/exists/${profileId}`, {
                           headers: { Authorization: `Bearer ${token}` },
                         });
                         if (shortlistRes.ok) {

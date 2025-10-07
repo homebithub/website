@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import type { LoginRequest, LoginResponse, LoginErrorResponse } from "../types/users";
+import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/types/users";
 import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
 
 interface User {
@@ -86,14 +86,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profileType = userData.profile_type;
       console.log("User data after login:", userData);
       console.log("Profile type:", profileType);
-      
+
       // Bureau users should not login through regular flow
       if (profileType === "bureau") {
         console.log("Bureau user detected, redirecting to home");
         navigate("/");
         return;
       }
-      
+
       if (profileType === "household" || profileType === "employer") {
         console.log("Redirecting to /household/profile");
         navigate("/household/profile");
