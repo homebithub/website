@@ -4,6 +4,8 @@ import { data, redirect } from "react-router";
 import { useLoaderData, Form, useNavigate, useLocation } from "react-router";
 import React, { useEffect } from "react";
 import { Navigation } from "~/components/Navigation";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
 import { useAuth } from "~/contexts/AuthContext";
@@ -122,9 +124,10 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background bg-white dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
         <div className="card w-full max-w-2xl text-center bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700">
           <h1 className="text-4xl font-extrabold text-primary mb-6 dark:text-primary-400">Settings</h1>
           <p className="text-lg text-text mb-8 dark:text-primary-200">Manage your account settings and preferences.</p>
@@ -144,6 +147,7 @@ export default function SettingsPage() {
           </div>
         </div>
       </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );

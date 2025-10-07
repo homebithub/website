@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { Navigation } from "~/components/Navigation";
+import { FloatingBubbles } from '~/components/ui/FloatingBubbles';
 import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
 import { useAuth } from "~/contexts/AuthContext";
@@ -124,9 +125,10 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col w-full bg-slate-950">
+    <div className="min-h-screen flex flex-col w-full">
       <Navigation />
-      <div className="min-h-screen flex flex-col w-full bg-slate-950">
+      <div className="relative min-h-screen flex flex-col w-full bg-gradient-to-br from-purple-50 via-white to-purple-100">
+        <FloatingBubbles variant="light" density="low" />
         <div className="mx-auto w-full max-w-md sm:max-w-lg flex flex-col items-center">
           <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 mt-4">
             <h1 className="text-3xl font-bold text-primary mb-4 text-center dark:text-primary-300">Profile</h1>

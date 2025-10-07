@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { Navigation } from '../components/Navigation';
+import { Navigation } from '~/components/Navigation';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 import { Footer } from '../components/Footer';
 
 // Import all the components
@@ -61,8 +63,9 @@ export default function HouseholdProfileSetup() {
   const CurrentComponent = STEPS[currentStep].component;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
       
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -199,6 +202,7 @@ export default function HouseholdProfileSetup() {
         </div>
       </main>
       
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );

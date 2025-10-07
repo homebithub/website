@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from "react";
 import {Navigation} from "~/components/Navigation";
+import { FloatingBubbles } from '~/components/ui/FloatingBubbles';
 import ProfileOverviewSection from "../components/househelp/ProfileOverviewSection";
 import EmploymentSalaryEditSection from "../components/househelp/EmploymentSalaryEditSection";
 import PersonalDetailsSection from "../components/househelp/PersonalDetailsSection";
@@ -477,7 +478,8 @@ export default function HousehelpDashboard() {
     return (
         <>
             <Navigation/>
-            <div className="min-h-screen w-full bg-gray-50 py-8">
+            <div className="relative min-h-screen w-full bg-gradient-to-br from-purple-50 via-white to-purple-100 py-8">
+                <FloatingBubbles variant="light" density="low" />
                 <div className="mx-auto w-full max-w-6xl flex flex-col sm:flex-row gap-2 items-start overflow-x-hidden">
                     {/* Sidebar */}
                     <aside
