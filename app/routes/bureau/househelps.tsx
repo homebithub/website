@@ -123,7 +123,7 @@ export default function BureauHousehelps() {
         </div>
       </div>
       {/* Placeholder for househelp list */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow border border-gray-100 dark:border-slate-700 p-4 text-gray-500 dark:text-gray-300">
+      <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl shadow-lg border-2 border-purple-200 p-6 text-gray-600">
         List of househelps will appear here.
       </div>
       {/* Onboard Modal */}

@@ -133,14 +133,14 @@ export default function HousehelpFindHouseholds() {
   }, [sentinelRef.current, hasSearched, offset, loading, hasMore, filters]);
 
   return (
-    <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-4 sm:p-6">
-      <h1 className="text-xl font-bold text-primary-700 dark:text-primary-300 mb-4">Find Households</h1>
+    <div className="w-full bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8">
+      <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">🏠 Find Households</h1>
 
       {/* Filters (dropdowns only) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-4 mb-4">
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Town</label>
-          <select name="town" value={filters.town} onChange={handleSelect} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+          <label className="mb-2 text-sm font-semibold text-purple-700">Town</label>
+          <select name="town" value={filters.town} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
             {TOWNS.map((t) => (
               <option key={t} value={t}>
                 {t || "Any"}
@@ -150,7 +150,7 @@ export default function HousehelpFindHouseholds() {
         </div>
         <div className="flex flex-col">
           <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">House Size</label>
-          <select name="house_size" value={filters.house_size} onChange={handleSelect} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+          <select name="house_size" value={filters.house_size} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
             {HOUSE_SIZES.map((s) => (
               <option key={s} value={s}>
                 {s || "Any"}
@@ -160,7 +160,7 @@ export default function HousehelpFindHouseholds() {
         </div>
         <div className="flex flex-col">
           <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Verified</label>
-          <select name="verified" value={filters.verified} onChange={handleSelect} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+          <select name="verified" value={filters.verified} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
             <option value="">Any</option>
             <option value="true">Verified</option>
             <option value="false">Not verified</option>
@@ -168,7 +168,7 @@ export default function HousehelpFindHouseholds() {
         </div>
         <div className="flex flex-col">
           <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Has Kids</label>
-          <select name="has_kids" value={filters.has_kids} onChange={handleSelect} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+          <select name="has_kids" value={filters.has_kids} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
             <option value="">Any</option>
             <option value="true">Yes</option>
             <option value="false">No</option>
@@ -176,7 +176,7 @@ export default function HousehelpFindHouseholds() {
         </div>
         <div className="flex flex-col">
           <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Has Pets</label>
-          <select name="has_pets" value={filters.has_pets} onChange={handleSelect} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+          <select name="has_pets" value={filters.has_pets} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
             <option value="">Any</option>
             <option value="true">Yes</option>
             <option value="false">No</option>
@@ -184,7 +184,7 @@ export default function HousehelpFindHouseholds() {
         </div>
         <div className="flex flex-col">
           <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Pet Type</label>
-          <select name="pet_type" value={filters.pet_type} onChange={handleSelect} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+          <select name="pet_type" value={filters.pet_type} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
             {PET_TYPES.map((p) => (
               <option key={p} value={p}>
                 {p || "Any"}
@@ -194,7 +194,7 @@ export default function HousehelpFindHouseholds() {
         </div>
         <div className="flex flex-col">
           <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Nanny Type</label>
-          <select name="type_of_househelp" value={filters.type_of_househelp} onChange={handleSelect} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+          <select name="type_of_househelp" value={filters.type_of_househelp} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
             {NANNY_TYPES.map((t) => (
               <option key={t} value={t}>
                 {t || "Any"}
@@ -204,7 +204,7 @@ export default function HousehelpFindHouseholds() {
         </div>
         <div className="flex flex-col">
           <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min Rating</label>
-          <select name="min_rating" value={filters.min_rating} onChange={handleSelect} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100">
+          <select name="min_rating" value={filters.min_rating} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
             {RATING_OPTS.map((r) => (
               <option key={r?.toString() || "any"} value={r?.toString() || ""}>
                 {r ? `${r}+` : "Any"}

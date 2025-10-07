@@ -214,7 +214,7 @@ export default function HouseholdEmployment() {
   }, [sentinelRef.current, hasSearched, offset, loading, hasMore, fields]);
 
   return (
-    <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-4 sm:p-6">
+    <div className="w-full bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8">
       {/* Tabs */}
       <div className="flex items-center border-b border-gray-200 dark:border-slate-700 mb-6">
         <button
@@ -239,40 +239,40 @@ export default function HouseholdEmployment() {
         <>
           <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-4 mb-8 w-full">
             <div className="flex flex-col">
-              <label htmlFor="status" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Status</label>
-              <select id="status" name="status" value={fields.status} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+              <label htmlFor="status" className="mb-2 text-sm font-semibold text-purple-700">Status</label>
+              <select id="status" name="status" value={fields.status} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
             </div>
             <div className="flex flex-col">
               <label htmlFor="househelp_type" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Nanny Type</label>
-              <select id="househelp_type" name="househelp_type" value={fields.househelp_type} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+              <select id="househelp_type" name="househelp_type" value={fields.househelp_type} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
                 {NANNY_TYPES.map((t) => (<option key={t} value={t}>{t || 'Any'}</option>))}
               </select>
             </div>
             <div className="flex flex-col">
               <label htmlFor="gender" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Gender</label>
-              <select id="gender" name="gender" value={fields.gender} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+              <select id="gender" name="gender" value={fields.gender} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
                 {GENDERS.map((g) => (<option key={g} value={g}>{g || 'Any'}</option>))}
               </select>
             </div>
             <div className="flex flex-col">
               <label htmlFor="experience" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Experience (min)</label>
-              <select id="experience" name="experience" value={fields.experience} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+              <select id="experience" name="experience" value={fields.experience} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
                 {EXPERIENCES.map((y) => (<option key={y} value={y}>{y}</option>))}
               </select>
             </div>
             <div className="flex flex-col">
               <label htmlFor="town" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Town</label>
-              <select id="town" name="town" value={fields.town} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+              <select id="town" name="town" value={fields.town} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
                 <option value="">Any</option>
                 {TOWNS.map((t) => (<option key={t} value={t}>{t}</option>))}
               </select>
             </div>
             <div className="flex flex-col">
               <label htmlFor="salary_frequency" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Salary Frequency</label>
-              <select id="salary_frequency" name="salary_frequency" value={fields.salary_frequency} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+              <select id="salary_frequency" name="salary_frequency" value={fields.salary_frequency} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
                 <option value="monthly">Monthly</option>
                 <option value="weekly">Weekly</option>
                 <option value="daily">Daily</option>
@@ -281,28 +281,28 @@ export default function HouseholdEmployment() {
             {/* Advanced (collapsible in future) */}
             <div className="flex flex-col">
               <label htmlFor="skill" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Skill</label>
-              <select id="skill" name="skill" value={fields.skill} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+              <select id="skill" name="skill" value={fields.skill} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
                 <option value="">Any</option>
                 {SKILLS.map((s) => (<option key={s} value={s}>{s}</option>))}
               </select>
             </div>
             <div className="flex flex-col">
               <label htmlFor="traits" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Trait</label>
-              <select id="traits" name="traits" value={fields.traits} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+              <select id="traits" name="traits" value={fields.traits} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
                 <option value="">Any</option>
                 {TRAITS.map((t) => (<option key={t} value={t}>{t}</option>))}
               </select>
             </div>
             <div className="flex flex-col">
               <label htmlFor="min_rating" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min Rating</label>
-              <select id="min_rating" name="min_rating" value={fields.min_rating} onChange={handleChange} className="w-full rounded-lg px-3 py-2 text-base border border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-primary-400 transition">
+              <select id="min_rating" name="min_rating" value={fields.min_rating} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
                 <option value="">Any</option>
                 {[5,4,3,2,1].map((r) => (<option key={r} value={r}>{r}+</option>))}
               </select>
             </div>
             <div className="flex flex-col col-span-1 md:col-span-3 lg:col-span-4 justify-end">
               <label className="sr-only">Search</label>
-              <button type="submit" className="bg-primary text-white py-2 rounded-lg font-semibold shadow-md bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-400 transition mt-auto">Search</button>
+              <button type="submit" className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 mt-auto">🔍 Search</button>
             </div>
           </form>
           {loading && <div className="text-center py-8">Loading...</div>}

@@ -84,7 +84,7 @@ export default function BureauProfile() {
     };
 
     if (loading) return <div className="flex justify-center py-12">Loading...</div>;
-    if (error) return <div className="bg-red-100 text-red-700 px-4 py-2 rounded mt-6 text-center">{error}</div>;
+    if (error) return <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md mt-6"><div className="flex items-center justify-center"><span className="text-2xl mr-3">⚠️</span><p className="text-base font-semibold text-red-800">{error}</p></div></div>;
     if (!profile) return null;
 
     return (
@@ -92,7 +92,7 @@ export default function BureauProfile() {
             <Navigation />
             <div className="min-h-screen w-full bg-slate-950">
                 <div className="mx-auto w-full max-w-2xl flex flex-col items-center">
-                    <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-4 sm:p-6 relative">
+                    <div className="w-full bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8 relative">
                         {/* Edit button */}
                         {!editMode && (
                             <button

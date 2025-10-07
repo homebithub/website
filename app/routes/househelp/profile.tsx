@@ -72,7 +72,7 @@ function ImageUploadModal({open, onClose, files, setFiles}: {
         <div
             className={`fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-lg ${open ? '' : 'hidden'}`}
             aria-modal="true" role="dialog">
-            <div className="bg-white rounded-2xl shadow-lg p-6 w-full max-w-lg relative">
+            <div className="bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 w-full max-w-lg relative">
                 <h3 className="text-xl font-bold mb-4 text-purple-600">Upload Images</h3>
                 <div className="flex flex-col gap-4">
                     <div className="text-sm text-gray-600 mb-1">
@@ -483,7 +483,7 @@ export default function HousehelpDashboard() {
                 <div className="mx-auto w-full max-w-6xl flex flex-col sm:flex-row gap-2 items-start overflow-x-hidden">
                     {/* Sidebar */}
                     <aside
-                        className="w-full sm:w-56 bg-white border-r border-gray-100 p-4 rounded-xl shadow-sm flex flex-col space-y-2 mb-4 sm:mb-0">
+                        className="w-full sm:w-56 bg-gradient-to-br from-purple-50 to-white border-r-2 border-purple-200 p-4 rounded-2xl shadow-lg flex flex-col space-y-2 mb-4 sm:mb-0">
                         {househelpSections.map((section) => (
                             <button
                                 key={section.id}
@@ -500,7 +500,7 @@ export default function HousehelpDashboard() {
                     </aside>
                     {/* Main Content */}
                     <section className="flex-1 min-w-0">
-                        <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+                        <div className="w-full max-w-2xl bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8">
                             {renderSection(activeSection)}
                         </div>
                     </section>

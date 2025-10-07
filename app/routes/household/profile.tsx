@@ -93,7 +93,10 @@ export default function HouseholdProfile() {
           </button>
         )}
       </div>
-      <div className="text-center text-gray-500 dark:text-gray-300 mb-6">Your employer profile details</div>
+      
+      {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-4 shadow-md mb-4"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800">{success}</p></div></div>}
+      
+      <div className="text-center text-gray-600 mb-6">Your employer profile details</div>
       <div className="space-y-4">
         {editMode ? (
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
@@ -115,87 +118,25 @@ export default function HouseholdProfile() {
                 className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
-            <div className="flex flex-col sm:flex-row sm:gap-4">
-              <div className="flex-1">
-                <label className="block text-sm font-semibold mb-2 text-purple-700">House Size</label>
-                <input
-                  name="house_size"
-                  type="text"
-                  value={form.house_size || ''}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
-                />
-              </div>
-              <div className="flex-1">
-                <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Number of Kids</label>
-                <input
-                  name="number_of_kids"
-                  type="number"
-                  value={form.number_of_kids || ''}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
-                />
-              </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button type="submit" className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100" disabled={saving}>
+                {saving ? "✨ Saving..." : "🚀 Save"}
+              </button>
+              <button type="button" className="px-6 py-3 rounded-xl border-2 border-purple-200 bg-white text-purple-600 font-semibold hover:bg-purple-50 hover:border-purple-300 transition-all" onClick={handleCancel} disabled={saving}>
+                Cancel
+              </button>
             </div>
-            <div className="flex flex-col sm:flex-row sm:gap-4">
-              <div className="flex-1">
-                <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Newborns Under 1</label>
-                <input
-                  name="new_borns_under_one"
-                  type="number"
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">House Size</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.house_size}</span>
+          </form>
+        ) : (
+          <>
+            <div className="space-y-3">
+              <div>
+                <span className="block text-sm font-semibold mb-1 text-purple-700">Address</span>
+                <span className="text-base text-gray-900 font-medium">{profile.address || '-'}</span>
               </div>
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Number of Kids</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.number_of_kids}</span>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:gap-4">
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Newborns Under 1</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.new_borns_under_one}</span>
-              </div>
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Max Househelps</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.max_househelps}</span>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:gap-4">
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Verified</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.verified ? 'Yes' : 'No'}</span>
-              </div>
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">House Size</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.house_size}</span>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:gap-4">
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Number of Kids</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.number_of_kids}</span>
-              </div>
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Newborns Under 1</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.new_borns_under_one}</span>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:gap-4">
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Max Househelps</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.max_househelps}</span>
-              </div>
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Created At</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.created_at ? new Date(profile.created_at).toLocaleString() : '-'}</span>
-              </div>
-            </div>
-            <div className="flex flex-col sm:flex-row sm:gap-4">
-              <div className="flex-1">
-                <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Updated At</span>
-                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.updated_at ? new Date(profile.updated_at).toLocaleString() : '-'}</span>
+              <div>
+                <span className="block text-sm font-semibold mb-1 text-purple-700">Bio</span>
+                <span className="text-base text-gray-900 font-medium">{profile.bio || '-'}</span>
               </div>
             </div>
           </>
@@ -204,8 +145,6 @@ export default function HouseholdProfile() {
     </div>
   );
 }
-
-
 
 // Error boundary for better error handling
 export { ErrorBoundary } from "~/components/ErrorBoundary";
