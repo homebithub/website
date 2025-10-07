@@ -286,33 +286,41 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
               leaveFrom="opacity-100 scale-100"
               leaveTo="opacity-0 scale-95"
             >
-              <Dialog.Panel className="w-full max-w-lg sm:max-w-lg max-w-full transform overflow-hidden rounded-2xl bg-white p-4 sm:p-8 text-left align-middle shadow-xl transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <Dialog.Title
-                    as="h3"
-                    className="text-xl sm:text-2xl font-medium leading-7 text-gray-900"
-                  >
-                    Join Our Waitlist
-                  </Dialog.Title>
-                  <button
-                    type="button"
-                    className="rounded-md text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    onClick={handleClose}
-                    disabled={isSubmitting}
-                  >
-                    <XMarkIcon className="h-6 w-6" />
-                  </button>
+              <Dialog.Panel className="w-full max-w-lg sm:max-w-lg max-w-full transform overflow-hidden rounded-3xl bg-gradient-to-br from-purple-50 to-white p-6 sm:p-10 text-left align-middle shadow-2xl border-2 border-purple-200 transition-all">
+                <div className="mb-6">
+                  <div className="flex items-center justify-between mb-3">
+                    <Dialog.Title
+                      as="h3"
+                      className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+                    >
+                      Join Our Waitlist 🎉
+                    </Dialog.Title>
+                    <button
+                      type="button"
+                      className="rounded-full p-2 text-purple-400 hover:text-purple-600 hover:bg-purple-100 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      onClick={handleClose}
+                      disabled={isSubmitting}
+                    >
+                      <XMarkIcon className="h-6 w-6" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-purple-600">
+                    Be the first to know when we launch! Get exclusive early access. ✨
+                  </p>
                 </div>
 
                 {showSuccess && (
-                  <div className="mb-4 rounded-md bg-green-50 p-4">
-                    <div className="flex">
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-green-800">
+                  <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-5 shadow-md">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <span className="text-3xl">🎉</span>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-base font-bold text-green-800">
                           Successfully added to waitlist!
                         </p>
                         <p className="text-sm text-green-700 mt-1">
-                          We'll notify you when HomeXpert is available.
+                          We'll notify you when HomeXpert is available. Check your email! 📧
                         </p>
                       </div>
                     </div>
@@ -320,10 +328,13 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                 )}
 
                 {error && (
-                  <div className="mb-4 rounded-md bg-red-50 p-4">
-                    <div className="flex">
-                      <div className="ml-3">
-                        <p className="text-sm font-medium text-red-800">
+                  <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <span className="text-3xl">⚠️</span>
+                      </div>
+                      <div className="ml-4">
+                        <p className="text-base font-semibold text-red-800">
                           {error}
                         </p>
                       </div>
@@ -333,27 +344,27 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
 
                 {/* Google Sign-In Option */}
                 {isClient && (
-                  <div className="mb-4">
-                    <p className="text-sm text-gray-600 mb-2">Continue with Google</p>
-                    <div className="mt-3 flex justify-center">
+                  <div className="mb-6">
+                    <p className="text-sm text-purple-700 font-medium mb-3 text-center">Quick signup with Google</p>
+                    <div className="flex justify-center">
                       <button
                         type="button"
                         onClick={startOAuthWaitlist}
-                        className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                        className="inline-flex items-center justify-center rounded-xl border-2 border-purple-200 bg-white px-6 py-3 text-base font-semibold text-gray-700 shadow-md hover:bg-purple-50 hover:border-purple-300 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       >
-                        <FcGoogle className="h-5 w-5 mr-2" />
+                        <FcGoogle className="h-6 w-6 mr-3" />
                         Sign in with Google
                       </button>
                     </div>
                   </div>
                 )}
 
-                <div className="relative my-4">
+                <div className="relative my-6">
                   <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                    <div className="w-full border-t border-gray-200" />
+                    <div className="w-full border-t-2 border-purple-200" />
                   </div>
                   <div className="relative flex justify-center">
-                    <span className="px-2 bg-white text-sm text-gray-500">or fill the form</span>
+                    <span className="px-4 bg-gradient-to-br from-purple-50 to-white text-sm font-medium text-purple-600">or fill the form below</span>
                   </div>
                 </div>
 
@@ -443,10 +454,10 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                     />
                   </div>
 
-                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
+                  <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6">
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                      className="inline-flex justify-center rounded-xl border-2 border-purple-200 bg-white px-6 py-3 text-base font-semibold text-purple-600 shadow-md hover:bg-purple-50 hover:border-purple-300 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       onClick={handleClose}
                       disabled={isSubmitting}
                     >
@@ -454,10 +465,10 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                     </button>
                     <button
                       type="submit"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex justify-center rounded-xl border-2 border-transparent bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 text-base font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? 'Joining...' : 'Join Waitlist'}
+                      {isSubmitting ? '✨ Joining...' : '🚀 Join Waitlist'}
                     </button>
                   </div>
                 </form>
