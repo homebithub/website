@@ -131,7 +131,7 @@ export default function HousehelpProfile() {
           }),
         });
         // Fetch profile
-        const res = await fetch(``${API_BASE_URL}/api/v1/househelps/${profileId}/profile_with_user`, {
+        const res = await fetch(`${API_BASE_URL}/api/v1/househelps/${profileId}/profile_with_user`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to fetch househelp profile");

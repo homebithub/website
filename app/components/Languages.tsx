@@ -153,7 +153,7 @@ const Languages = () => {
                 languages: selectedLanguages.join(',')
             };
 
-            const response = await fetch(``${API_BASE_URL}/api/v1/househelps/me/fields`, {
+            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

@@ -144,7 +144,7 @@ const Pets: React.FC = () => {
     
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(``${API_BASE_URL}/api/v1/pets/${petToDelete.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/pets/${petToDelete.id}`, {
         method: "DELETE",
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),

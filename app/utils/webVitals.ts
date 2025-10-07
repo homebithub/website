@@ -46,9 +46,10 @@ function sendToAnalytics(metric: Metric) {
 export function trackWebVitals() {
   // Dynamically import web-vitals to avoid bundling in SSR
   if (typeof window !== 'undefined') {
-    import('web-vitals').then(({ onCLS, onFID, onLCP, onFCP, onTTFB, onINP }) => {
+    import('web-vitals').then((webVitals) => {
+      const { onCLS, onLCP, onFCP, onTTFB, onINP } = webVitals;
+      // Note: onFID is deprecated in web-vitals v4+, use onINP instead
       onCLS(sendToAnalytics);
-      onFID(sendToAnalytics);
       onLCP(sendToAnalytics);
       onFCP(sendToAnalytics);
       onTTFB(sendToAnalytics);

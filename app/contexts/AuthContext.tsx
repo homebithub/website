@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "../types/users";
-import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
+import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
 
 interface User {
   id: string;
@@ -117,7 +117,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("`${AUTH_API_BASE_URL}/signup`, {
+      const response = await fetch(`${AUTH_API_BASE_URL}/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

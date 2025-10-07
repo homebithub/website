@@ -51,7 +51,7 @@ export default function BureauHousehelps() {
     // TODO: Replace with real API endpoint
     try {
       // Simulate API call
-      const res = await fetch(``${API_BASE_URL}/api/v1/househelp/lookup?phone=${encodeURIComponent(phone)}`);
+      const res = await fetch(`${API_BASE_URL}/api/v1/househelp/lookup?phone=${encodeURIComponent(phone)}`);
       if (!res.ok) throw new Error("No househelp found with this number");
       const data = await res.json();
       setHousehelpInfo(data);

@@ -20,7 +20,7 @@ interface User {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const cookie = request.headers.get("cookie") || "";
-  const res = await fetch(API_BASE_URL/users/me", {
+  const res = await fetch(`${API_BASE_URL}/users/me`, {
     headers: { "cookie": cookie },
     credentials: "include",
   });

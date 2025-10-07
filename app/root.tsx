@@ -4,11 +4,9 @@ import type { Route } from "./+types/root";
 
 import { AuthProvider } from "~/contexts/AuthContext";
 import { API_BASE_URL } from '~/config/api';
+import "./tailwind.css";
 
-export const links: Route.LinksFunction = () => [
-    { rel: "stylesheet", href: "/tailwind.css" },
-    { rel: "stylesheet", href: "/styles/glow-card.css" },
-];
+export const links: Route.LinksFunction = () => [];
 
 export const headers: Route.HeadersFunction = () => ({
     "Cache-Control": "no-store",

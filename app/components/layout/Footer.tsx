@@ -9,9 +9,9 @@ const Footer = () => {
           <span className="font-bold text-lg">HomeXpress</span> &copy; {new Date().getFullYear()}
         </div>
         <div className="flex space-x-6">
-          <Link to="/public/privacy" prefetch="viewport" className="hover:underline">Privacy Policy</Link>
-          <Link to="/public/terms" prefetch="viewport" className="hover:underline">Terms of Service</Link>
-          <Link to="/public/contact" prefetch="viewport" className="hover:underline">Contact</Link>
+          <Link to="/privacy" prefetch="viewport" className="hover:underline">Privacy Policy</Link>
+          <Link to="/terms" prefetch="viewport" className="hover:underline">Terms of Service</Link>
+          <Link to="/contact" prefetch="viewport" className="hover:underline">Contact</Link>
         </div>
       </div>
     </footer>
