@@ -251,3 +251,5 @@ export default function ResetPassword() {
     </div>
   );
 } 
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

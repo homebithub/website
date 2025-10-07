@@ -105,3 +105,6 @@ console.log(user_id,"user_id");
     </div>
   );
 }
+
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

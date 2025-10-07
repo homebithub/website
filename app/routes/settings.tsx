@@ -148,3 +148,5 @@ export default function SettingsPage() {
     </div>
   );
 } 
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

@@ -241,3 +241,6 @@ export default function LoginPage() {
     </div>
   );
 }
+
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

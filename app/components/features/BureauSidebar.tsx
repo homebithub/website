@@ -16,6 +16,7 @@ export default function BureauSidebar() {
         <Link
           key={item.to}
           to={item.to}
+          prefetch="intent"
           className={`block px-4 py-2 rounded-lg text-base font-medium transition-colors duration-150
             ${location.pathname === item.to
               ? "bg-purple-100 text-purple-600 font-bold"

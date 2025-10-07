@@ -92,3 +92,6 @@ export default function Pricing() {
     </div>
   );
 }
+
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

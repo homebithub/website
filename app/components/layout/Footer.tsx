@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router';
 
 const Footer = () => {
   return (
@@ -8,9 +9,9 @@ const Footer = () => {
           <span className="font-bold text-lg">HomeXpress</span> &copy; {new Date().getFullYear()}
         </div>
         <div className="flex space-x-6">
-          <a href="/privacy" className="hover:underline">Privacy Policy</a>
-          <a href="/terms" className="hover:underline">Terms of Service</a>
-          <a href="mailto:support@homexpress.com" className="hover:underline">Contact</a>
+          <Link to="/public/privacy" prefetch="viewport" className="hover:underline">Privacy Policy</Link>
+          <Link to="/public/terms" prefetch="viewport" className="hover:underline">Terms of Service</Link>
+          <Link to="/public/contact" prefetch="viewport" className="hover:underline">Contact</Link>
         </div>
       </div>
     </footer>

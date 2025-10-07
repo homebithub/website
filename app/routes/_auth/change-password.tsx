@@ -272,3 +272,5 @@ export default function ChangePasswordPage() {
     </div>
   );
 } 
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

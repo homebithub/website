@@ -9,3 +9,6 @@ export default function BureauCommercials() {
     </div>
   );
 }
+
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";
