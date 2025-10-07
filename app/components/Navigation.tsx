@@ -4,6 +4,7 @@ import { Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/AuthContext";
 import { Waitlist } from "~/components/features/Waitlist";
+import ThemeToggle from "~/components/ui/ThemeToggle";
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -107,16 +108,16 @@ export function Navigation() {
     }
 
     return (
-        <nav className="sticky top-0 z-40 shadow-md bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-visible backdrop-blur-lg bg-white/70 border-b border-primary-100">
+        <nav className="sticky top-0 z-40 shadow-md bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f]/95 dark:via-[#13131a]/95 dark:to-[#0a0a0f]/95 fade-in-scroll overflow-visible backdrop-blur-xl bg-white/70 dark:bg-[#0a0a0f]/80 border-b border-primary-100 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
   {/* Animated Blobs & Icons */}
-  <svg className="absolute top-0 right-0 w-24 h-24 opacity-30 animate-float z-0" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#f472b6" /></svg>
-  <svg className="absolute bottom-0 left-0 w-20 h-20 opacity-20 blur-sm animate-float delay-500 z-0" viewBox="0 0 100 100"><path d="M10,80 Q50,10 90,80" stroke="#2dd4bf" strokeWidth="8" fill="none" /></svg>
+  <svg className="absolute top-0 right-0 w-24 h-24 opacity-30 dark:opacity-20 animate-float z-0" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#f472b6" /></svg>
+  <svg className="absolute bottom-0 left-0 w-20 h-20 opacity-20 dark:opacity-10 blur-sm animate-float delay-500 z-0" viewBox="0 0 100 100"><path d="M10,80 Q50,10 90,80" stroke="#2dd4bf" strokeWidth="8" fill="none" /></svg>
             <div className="flex justify-between items-center px-8 sm:px-16 lg:px-32 min-h-[64px] sm:min-h-[72px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
   {/* Floating purple blob */}
   <svg className="absolute -top-8 -left-8 w-16 h-16 opacity-30 animate-float" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="50" ry="40" fill="#a855f7" /></svg>
-  <Link to="/" prefetch="intent" className="relative text-primary-700 font-extrabold text-3xl sm:text-4xl px-3 py-2 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:bg-primary-50 drop-shadow-lg">
+  <Link to="/" prefetch="intent" className="relative gradient-text font-extrabold text-3xl sm:text-4xl px-3 py-2 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
     HomeXpert
   </Link>
 </div>
@@ -129,7 +130,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-700 hover:text-white hover:bg-primary-500 hover:scale-110 hover:shadow-lg"
+                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-700 dark:text-purple-300 hover:text-white dark:hover:text-white hover:bg-primary-500 dark:hover:bg-purple-600 dark:hover:shadow-glow-sm hover:scale-110 hover:shadow-lg"
                             >
                                 {item.name}
                             </Link>
@@ -141,11 +142,17 @@ export function Navigation() {
                 <div className="flex items-center space-x-4 ml-6 relative">
   {/* Floating sparkle icon */}
   <svg className="absolute -top-6 right-0 w-8 h-8 opacity-40 animate-float delay-1000 z-0" viewBox="0 0 32 32"><path d="M16 2 L20 12 L30 16 L20 20 L16 30 L12 20 L2 16 L12 12 Z" fill="#a855f7" /></svg>
+                    
+                    {/* Theme Toggle - Always visible on desktop */}
+                    <div className="hidden lg:block">
+                        <ThemeToggle size="md" />
+                    </div>
+                    
                     {showAuthButtons && (
                         <div className="flex items-center space-x-3">
                             <button
   onClick={() => setIsWaitlistOpen(true)}
-  className="hidden lg:block bg-primary-600 text-white text-lg sm:text-xl font-bold rounded-xl shadow-lg px-6 py-3 transition-all duration-200 hover:bg-primary-700 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 border-2 border-primary-700"
+  className="hidden lg:block glow-button bg-primary-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-pink-600 text-white text-lg sm:text-xl font-bold rounded-xl shadow-lg dark:shadow-glow-sm px-6 py-3 transition-all duration-200 hover:bg-primary-700 dark:hover:shadow-glow-md hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 border-2 border-primary-700 dark:border-purple-500/50"
 >
   Join Waitlist
 </button>
@@ -167,7 +174,7 @@ export function Navigation() {
                     {/* Authenticated User Greeting */}
                     {user && userName && (
                         <div className="hidden lg:flex items-center space-x-3">
-                            <div className="text-sm text-gray-600">
+                            <div className="text-sm text-gray-600 dark:text-gray-300">
                                 <span className="font-semibold text-base">Hello, {userName}</span>
                             </div>
                         </div>
@@ -178,14 +185,14 @@ export function Navigation() {
                         <div className="hidden lg:flex items-center space-x-3 ml-4">
                             {profileType === 'employer' || profileType === 'household' ? (
                                 <>
-                                    <Link to="/household/profile" prefetch="intent" className="text-primary-700 font-semibold hover:text-primary-900">Profile</Link>
-                                    <Link to="/household/employment" prefetch="intent" className="text-primary-700 font-semibold hover:text-primary-900">Find Househelps</Link>
-                                    <Link to="/household/employment?tab=shortlist" prefetch="intent" className="text-primary-700 font-semibold hover:text-primary-900">Shortlist</Link>
+                                    <Link to="/household/profile" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Profile</Link>
+                                    <Link to="/household/employment" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Find Househelps</Link>
+                                    <Link to="/household/employment?tab=shortlist" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Shortlist</Link>
                                 </>
                             ) : profileType === 'househelp' ? (
                                 <>
-                                    <Link to="/househelp" prefetch="intent" className="text-primary-700 font-semibold hover:text-primary-900">Profile</Link>
-                                    <Link to="/househelp/find-households" prefetch="intent" className="text-primary-700 font-semibold hover:text-primary-900">Find Households</Link>
+                                    <Link to="/househelp" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Profile</Link>
+                                    <Link to="/househelp/find-households" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Find Households</Link>
                                 </>
                             ) : null}
                         </div>
@@ -193,7 +200,7 @@ export function Navigation() {
 
                     {/* Menu Dropdown - Only show on mobile */}
                     <Menu as="div" className="relative inline-block text-left lg:hidden">
-                        <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-purple-600 p-2 text-white shadow-md hover:bg-purple-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
+                        <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-purple-600 dark:bg-gradient-to-br dark:from-purple-600 dark:to-pink-600 p-2 text-white shadow-md dark:shadow-glow-sm hover:bg-purple-700 dark:hover:shadow-glow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
                             <Bars3Icon className="h-7 w-7" />
                         </Menu.Button>
 
@@ -206,7 +213,7 @@ export function Navigation() {
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                         >
-                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white/90 border-2 border-primary-200 shadow-lg focus:outline-none backdrop-blur-md">
+                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white/90 dark:bg-[#13131a]/95 border-2 border-primary-200 dark:border-purple-500/30 shadow-lg dark:shadow-glow-sm focus:outline-none backdrop-blur-xl">
                                 <div className="py-2">
                                     {/* Public navigation links in mobile menu (non-app host only) */}
                                     {!isAppHost && navigation.map((item) => (
@@ -214,7 +221,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to={item.href}
-                                                    className={`font-bold ${active ? 'bg-primary-100 text-primary-700' : 'text-primary-700'} block px-5 py-2 text-lg rounded-xl transition-all duration-200`}
+                                                    className={`font-bold ${active ? 'bg-primary-100 dark:bg-gray-700 text-primary-700 dark:text-purple-400' : 'text-primary-700 dark:text-purple-400'} block px-5 py-2 text-lg rounded-xl transition-all duration-200`}
                                                 >
                                                     {item.name}
                                                 </Link>
@@ -229,7 +236,7 @@ export function Navigation() {
   {({ active }) => (
     <button
       onClick={() => setIsWaitlistOpen(true)}
-      className={`lg:hidden w-full text-left bg-primary-600 text-white font-bold block px-5 py-2 text-lg rounded-xl shadow-md transition-all duration-200 hover:bg-primary-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
+      className={`lg:hidden w-full text-left bg-primary-600 dark:bg-purple-700 text-white font-bold block px-5 py-2 text-lg rounded-xl shadow-md transition-all duration-200 hover:bg-primary-700 dark:hover:bg-purple-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
     >
       Join Waitlist
     </button>
@@ -238,12 +245,20 @@ export function Navigation() {
                                                                                     </>
                                     )}
 
+                                    {/* Theme Toggle in Mobile Menu */}
+                                    <Menu.Item>
+                                        <div className="px-5 py-3 flex items-center justify-between">
+                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Theme</span>
+                                            <ThemeToggle size="sm" />
+                                        </div>
+                                    </Menu.Item>
+
                                     {/* User Menu Items */}
                                     {user && (
                                         <>
                                             <div className="border-t border-gray-200 my-1"></div>
                                             {/* User Greeting in Mobile Menu */}
-                                            <div className="px-5 py-2 text-lg font-bold rounded-xl text-primary-700 border-b border-primary-100">
+                                            <div className="px-5 py-2 text-lg font-bold rounded-xl text-primary-700 dark:text-purple-400 border-b border-primary-100 dark:border-gray-700">
   <div className="font-semibold text-base">Hello, {userName}</div>
 </div>
 

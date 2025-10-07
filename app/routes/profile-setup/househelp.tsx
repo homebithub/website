@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { PurpleCard } from '~/components/ui/PurpleCard';
 import { Footer } from '../components/Footer';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 // Import all the components
 import Location from '../components/Location';
@@ -22,7 +22,7 @@ import Photos from '../components/features/Photos';
 import Religion from '../components/modals/Religion';
 
 const STEPS = [
-{ id: 'nannytype', title: 'Service Type', component: NannyType },
+  { id: 'nannytype', title: 'Service Type', component: NannyType },
   { id: 'location', title: 'Location', component: Location },
   { id: 'gender', title: 'Gender & Age', component: Gender },
   { id: 'experience', title: 'Experience', component: YearsOfExperience },
@@ -37,25 +37,73 @@ const STEPS = [
   { id: 'photos', title: 'Photos', component: Photos },
 ];
 
-export default function HousehelpProfileSetup() {
+function HousehelpProfileSetupContent() {
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
+  const { 
+    profileData, 
+    updateStepData, 
+    saveProfileToBackend, 
+    loadProfileFromBackend,
+    lastCompletedStep,
+    isLoading, 
+    error 
+  } = useProfileSetup();
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
-    // [DEV ONLY] Authentication check temporarily disabled for direct access
-    // const token = localStorage.getItem('token');
-    // if (!token) {
-    //   navigate('/login');
-    //   return;
-    // }
-  }, [navigate]);
+    // Load existing profile data on mount
+    loadProfileFromBackend();
+  }, []);
 
-  const handleNext = () => {
+  useEffect(() => {
+    // Jump to last completed step if returning user
+    if (lastCompletedStep > 0 && lastCompletedStep < STEPS.length) {
+      setCurrentStep(lastCompletedStep);
+    }
+  }, [lastCompletedStep]);
+
+  const handleNext = async () => {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Profile setup complete
-      navigate('/'); // Redirect to home page
+      // Last step - save complete profile
+      setIsSaving(true);
+      setSaveError(null);
+      
+      try {
+        await saveProfileToBackend();
+        
+        // Save progress tracking
+        const token = localStorage.getItem('token');
+        if (token) {
+          await fetch('/api/v1/profile-setup-progress', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              profile_type: 'househelp',
+              current_step: STEPS.length,
+              last_completed_step: STEPS.length,
+              completed_steps: STEPS.map((_, idx) => idx + 1),
+              status: 'completed',
+              completion_percentage: 100
+            })
+          });
+        }
+        
+        // Profile setup complete
+        navigate('/');
+      } catch (err: any) {
+        setSaveError(err.message || 'Failed to save profile');
+        console.error('Error saving profile:', err);
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -63,6 +111,11 @@ export default function HousehelpProfileSetup() {
     if (currentStep > 0) {
       setCurrentStep(currentStep - 1);
     }
+  };
+
+  const handleStepDataUpdate = (data: any) => {
+    const stepId = STEPS[currentStep].id;
+    updateStepData(stepId, data);
   };
 
   const progressPercentage = ((currentStep + 1) / STEPS.length) * 100;
@@ -104,18 +157,49 @@ export default function HousehelpProfileSetup() {
             </div>
           </div>
 
+          {/* Error Display */}
+          {(error || saveError) && (
+            <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+              <p className="text-red-600 text-sm">{error || saveError}</p>
+            </div>
+          )}
+
+          {/* Loading Display */}
+          {(isLoading || isSaving) && (
+            <div className="mb-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+              <p className="text-blue-600 text-sm">
+                {isSaving ? 'Saving your profile...' : 'Loading...'}
+              </p>
+            </div>
+          )}
+
           {/* Content Area */}
           <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-100 mb-6 sm:mb-8">
             <div className="px-4 sm:px-6 py-6 sm:py-8">
               <div className="max-w-2xl mx-auto">
                 {STEPS[currentStep].id === 'bio' ? (
-                  <CurrentComponent userType="househelp" />
+                  <CurrentComponent 
+                    userType="househelp" 
+                    data={profileData[STEPS[currentStep].id]}
+                    onUpdate={handleStepDataUpdate}
+                  />
                 ) : STEPS[currentStep].id === 'photos' ? (
-                  <CurrentComponent userType="househelp" />
+                  <CurrentComponent 
+                    userType="househelp"
+                    data={profileData[STEPS[currentStep].id]}
+                    onUpdate={handleStepDataUpdate}
+                  />
                 ) : STEPS[currentStep].id === 'religion' ? (
-                  <CurrentComponent userType="househelp" />
+                  <CurrentComponent 
+                    userType="househelp"
+                    data={profileData[STEPS[currentStep].id]}
+                    onUpdate={handleStepDataUpdate}
+                  />
                 ) : (
-                  <CurrentComponent />
+                  <CurrentComponent 
+                    data={profileData[STEPS[currentStep].id]}
+                    onUpdate={handleStepDataUpdate}
+                  />
                 )}
               </div>
             </div>
@@ -155,7 +239,8 @@ export default function HousehelpProfileSetup() {
 
                   <button
                     onClick={handleNext}
-                    className="flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
+                    disabled={isSaving}
+                    className="flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →'}
                     {currentStep !== STEPS.length - 1 && (
@@ -193,7 +278,8 @@ export default function HousehelpProfileSetup() {
 
                 <button
                   onClick={handleNext}
-                  className="flex items-center px-6 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition-colors"
+                  disabled={isSaving}
+                  className="flex items-center px-6 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →'}
                   {currentStep !== STEPS.length - 1 && (
@@ -210,6 +296,10 @@ export default function HousehelpProfileSetup() {
       <Footer />
     </div>
   );
+}
+
+export default function HousehelpProfileSetup() {
+  return <HousehelpProfileSetupContent />;
 }
 
 // Error boundary for better error handling

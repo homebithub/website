@@ -3,6 +3,7 @@ import React from "react";
 import type { Route } from "./+types/root";
 
 import { AuthProvider } from "~/contexts/AuthContext";
+import { ThemeProvider } from "~/contexts/ThemeContext";
 import { API_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
@@ -41,10 +42,12 @@ export default function App() {
                 <link rel="apple-touch-icon" href="/logo_512x512.png" sizes="180x180" />
                 <title>HomeXpert</title>
             </head>
-            <body className="min-h-screen bg-white text-slate-900 font-sans antialiased">
-                <AuthProvider>
-                    <Outlet/>
-                </AuthProvider>
+            <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300">
+                <ThemeProvider>
+                    <AuthProvider>
+                        <Outlet/>
+                    </AuthProvider>
+                </ThemeProvider>
                 <ScrollRestoration/>
                 {/* Expose server env to client */}
                 <script
