@@ -52,7 +52,7 @@ export default function Pricing() {
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">Pricing</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-4">Pricing</h1>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
           Choose an affordable plan that's packed with the best features for engaging your audience, creating customer loyalty, and driving sales.
@@ -61,20 +61,20 @@ export default function Pricing() {
           {tiers.map((tier, tierIdx) => (
             <div
               key={tier.id}
-              className="flex flex-col justify-between rounded-3xl bg-white/90 p-8 shadow-xl backdrop-blur-lg transition-transform duration-500 hover:scale-105 hover:shadow-2xl fade-in-scroll ring-1 ring-primary-200 sm:p-10">
+              className="flex flex-col justify-between rounded-3xl bg-white/90 dark:bg-[#13131a]/95 p-8 shadow-xl dark:shadow-glow-lg backdrop-blur-lg transition-all duration-500 hover:scale-105 hover:shadow-2xl dark:hover:shadow-glow-lg fade-in-scroll ring-1 ring-primary-200 dark:ring-purple-500/30 sm:p-10">
               <div>
-                <h3 id={tier.id} className="text-base font-semibold leading-7 text-slate-900">
+                <h3 id={tier.id} className="text-base font-semibold leading-7 text-slate-900 dark:text-purple-400">
                   {tier.name}
                 </h3>
                 <div className="mt-4 flex items-baseline gap-x-2">
-                  <span className="text-5xl font-bold tracking-tight text-gray-900">Ksh {tier.priceMonthly.replace('$', '').replace('15', '1,500').replace('30', '3,000').replace('60', '6,000')}</span>
+                  <span className="text-5xl font-bold tracking-tight text-gray-900 dark:text-white">Ksh {tier.priceMonthly.replace('$', '').replace('15', '1,500').replace('30', '3,000').replace('60', '6,000')}</span>
 <span className="text-base font-semibold leading-7 text-gray-600">/month</span>
                 </div>
                 <p className="mt-6 text-base leading-7 text-gray-600">{tier.description}</p>
                 <ul role="list" className="mt-10 space-y-4 text-sm leading-6 text-gray-600">
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex gap-x-3">
-                      <CheckIcon className="h-6 w-5 flex-none text-slate-900" aria-hidden="true" />
+                      <CheckIcon className="h-6 w-5 flex-none text-slate-900 dark:text-purple-400" aria-hidden="true" />
                       {feature}
                     </li>
                   ))}

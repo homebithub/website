@@ -68,8 +68,8 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">{currentContent.title}</h1>
+    <div className="max-w-2xl mx-auto bg-white dark:bg-[#13131a] rounded-xl shadow-sm dark:shadow-glow-sm p-6 sm:p-8 transition-colors duration-300">
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">{currentContent.title}</h1>
       
       <p className="text-gray-600 mb-6">
         {currentContent.description}

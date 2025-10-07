@@ -77,7 +77,7 @@ export default function BureauHomeDashboard() {
         {stats.map((stat) => (
           <div
             key={stat.label}
-            className="bg-white  rounded-xl shadow border border-gray-100  p-4 sm:p-5 flex flex-col items-center"
+            className="bg-white dark:bg-[#13131a] rounded-xl shadow dark:shadow-glow-sm border border-gray-100 dark:border-purple-500/30 p-4 sm:p-5 flex flex-col items-center transition-colors duration-300"
           >
             <div className="text-2xl sm:text-3xl font-extrabold text-purple-600 mb-2">
               {stat.value}
@@ -101,7 +101,7 @@ export default function BureauHomeDashboard() {
       <div className="mt-10">
         <h3 className="text-lg font-semibold text-gray-700  mb-4">Househelps</h3>
         {/* Placeholder for househelp list */}
-        <div className="bg-white  rounded-xl shadow border border-gray-100  p-4 text-gray-500 ">
+        <div className="bg-white dark:bg-[#13131a] rounded-xl shadow dark:shadow-glow-sm border border-gray-100 dark:border-purple-500/30 p-4 text-gray-500 dark:text-gray-400 transition-colors duration-300">
           List of househelps will appear here.
         </div>
       </div>

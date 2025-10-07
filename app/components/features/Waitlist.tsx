@@ -350,7 +350,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                       <button
                         type="button"
                         onClick={startOAuthWaitlist}
-                        className="inline-flex items-center justify-center rounded-xl border-2 border-purple-200 bg-white px-6 py-3 text-base font-semibold text-gray-700 shadow-md hover:bg-purple-50 hover:border-purple-300 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                        className="inline-flex items-center justify-center rounded-xl border-2 border-purple-200 dark:border-purple-500/50 bg-white dark:bg-[#13131a] px-6 py-3 text-base font-semibold text-gray-700 dark:text-gray-200 shadow-md dark:shadow-glow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       >
                         <FcGoogle className="h-6 w-6 mr-3" />
                         Sign in with Google
@@ -381,7 +381,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                         required
                         value={formData.first_name}
                         onChange={handleInputChange}
-                        className="w-full h-12 text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                        className="auth-input"
                         placeholder="Enter your first name"
                         disabled={isSubmitting}
                       />
@@ -412,7 +412,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                         required
                         value={formData.email}
                         onChange={handleInputChange}
-                        className="w-full h-12 text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                        className="auth-input"
                         placeholder="Enter your email"
                         disabled={isSubmitting}
                       />
@@ -447,7 +447,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                       rows={3}
                       value={formData.message}
                       onChange={handleInputChange}
-                      className="w-full text-base px-3 sm:px-4 py-2 sm:py-3 rounded-lg border bg-white text-black shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                      className="auth-input min-h-[100px]"
                       placeholder="Anything else you would like to let us know?"
                       disabled={isSubmitting}
                       ref={messageRef}
@@ -457,7 +457,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6">
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-xl border-2 border-purple-200 bg-white px-6 py-3 text-base font-semibold text-purple-600 shadow-md hover:bg-purple-50 hover:border-purple-300 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                      className="inline-flex justify-center rounded-xl border-2 border-purple-200 dark:border-purple-500/50 bg-white dark:bg-[#13131a] px-6 py-3 text-base font-semibold text-purple-600 dark:text-purple-400 shadow-md dark:shadow-glow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       onClick={handleClose}
                       disabled={isSubmitting}
                     >

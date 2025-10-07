@@ -75,7 +75,7 @@ export default function Contact() {
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
       <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto bg-white/90 p-8 rounded-3xl shadow-xl backdrop-blur-lg transition-transform duration-500 hover:scale-105 hover:shadow-2xl fade-in-scroll">
+        <div className="max-w-4xl mx-auto bg-white/90 dark:bg-[#13131a]/95 p-8 rounded-3xl shadow-xl dark:shadow-glow-lg backdrop-blur-lg transition-all duration-500 hover:scale-105 hover:shadow-2xl dark:hover:shadow-glow-lg fade-in-scroll">
           <div className="mb-8 text-center">
             <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
               Contact Us 💬
@@ -114,7 +114,7 @@ export default function Contact() {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                      className="auth-input"
                     />
                   </div>
 
@@ -132,7 +132,7 @@ export default function Contact() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                      className="auth-input"
                     />
                   </div>
 
@@ -149,7 +149,7 @@ export default function Contact() {
                       required
                       value={formData.subject}
                       onChange={handleChange}
-                      className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                      className="auth-input"
                     >
                       <option value="">Select a subject</option>
                       <option value="general">General Inquiry</option>
@@ -173,7 +173,7 @@ export default function Contact() {
                       required
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full text-base px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                      className="auth-input min-h-[120px]"
                     />
                   </div>
 
@@ -188,7 +188,7 @@ export default function Contact() {
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                     Contact Information
                   </h3>
                   <div className="mt-4 space-y-4">
@@ -213,7 +213,7 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                     Business Hours
                   </h3>
                   <div className="mt-4 space-y-2">

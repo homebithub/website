@@ -156,7 +156,7 @@ export default function LoginPage() {
                 id="phone"
                 name="phone"
                 required
-                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
+                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
                     getFieldError('phone') 
                         ? 'border-red-300' 
                         : isFieldValid('phone')
@@ -180,7 +180,7 @@ export default function LoginPage() {
                 id="password"
                 name="password"
                 required
-                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
+                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
                     getFieldError('password') 
                         ? 'border-red-300' 
                         : isFieldValid('password')
@@ -214,7 +214,7 @@ export default function LoginPage() {
                 <div className="w-full border-t-2 border-purple-200"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-white text-purple-600 font-medium">Or continue with</span>
+                <span className="px-4 bg-white dark:bg-[#13131a] text-purple-600 dark:text-purple-400 font-medium">Or continue with</span>
               </div>
             </div>
             
@@ -222,7 +222,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full inline-flex justify-center items-center px-6 py-3 border-2 border-purple-200 rounded-xl shadow-md bg-white text-base font-semibold text-gray-700 hover:bg-purple-50 hover:border-purple-300 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full inline-flex justify-center items-center px-6 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-md dark:shadow-glow-sm bg-white dark:bg-[#13131a] text-base font-semibold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <FcGoogle className="h-5 w-5 mr-2" />
                 Google
@@ -231,8 +231,8 @@ export default function LoginPage() {
           </div>
           
           <div className="mt-6 text-center">
-            <span className="text-base text-gray-600 font-medium">Don't have an account?</span>
-            <Link to="/signup" className="ml-1 text-base font-bold text-purple-600 hover:text-purple-700 hover:underline transition-colors">
+            <span className="text-base text-gray-600 dark:text-gray-300 font-medium">Don't have an account?</span>
+            <Link to="/signup" className="ml-1 text-base font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline transition-colors">
               Sign up
             </Link>
           </div>

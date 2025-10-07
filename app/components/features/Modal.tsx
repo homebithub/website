@@ -43,7 +43,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className="relative transform overflow-hidden rounded-3xl bg-white px-8 pb-8 pt-8 text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-md border border-gray-100">
+              <Dialog.Panel className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#13131a] px-8 pb-8 pt-8 text-left shadow-2xl dark:shadow-glow-lg transition-all sm:my-8 sm:w-full sm:max-w-md border border-gray-100 dark:border-purple-500/30">
                 <div className="absolute right-6 top-6 sm:block">
                   <button
                     type="button"
@@ -63,7 +63,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
                     </div>
                     <Dialog.Title
                       as="h3"
-                      className="text-3xl font-bold text-gray-900 mb-3"
+                      className="text-3xl font-bold text-gray-900 dark:text-white mb-3"
                     >
                       {title}
                     </Dialog.Title>

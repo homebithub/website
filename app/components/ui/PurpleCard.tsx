@@ -15,9 +15,9 @@ export const PurpleCard: React.FC<PurpleCardProps> = ({
   glow = false,
   animate = true,
 }) => {
-  const baseClasses = 'rounded-2xl bg-white/90 backdrop-blur-md shadow-lg border-2 border-purple-200';
-  const hoverClasses = hover ? 'transition-transform duration-300 hover:-translate-y-2 hover:scale-105 hover:shadow-xl' : '';
-  const glowClasses = glow ? 'glow-purple' : '';
+  const baseClasses = 'rounded-2xl bg-white/90 dark:bg-[#13131a]/95 backdrop-blur-md shadow-lg dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 transition-colors duration-300';
+  const hoverClasses = hover ? 'transition-transform duration-300 hover:-translate-y-2 hover:scale-105 hover:shadow-xl dark:hover:shadow-glow-lg' : '';
+  const glowClasses = glow ? 'glow-purple dark:shadow-glow-sm' : '';
   const animateClasses = animate ? 'animate-fadeIn' : '';
 
   return (

@@ -119,7 +119,7 @@ function HouseholdProfileSetupContent() {
           </div>
 
           {/* Content Area */}
-          <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-100 mb-6 sm:mb-8">
+          <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-6 sm:py-8">
               <div className="max-w-2xl mx-auto">
                 {STEPS[currentStep].id === 'bio' ? (
@@ -138,7 +138,7 @@ function HouseholdProfileSetupContent() {
           </div>
 
           {/* Navigation Footer */}
-          <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-100">
+          <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4">
               {/* Mobile: Stack buttons vertically with dots in between */}
               <div className="sm:hidden space-y-4">
@@ -162,7 +162,7 @@ function HouseholdProfileSetupContent() {
                     className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       currentStep === 0
                         ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                        : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
                     }`}
                   >
                     <ChevronLeftIcon className="h-4 w-4 mr-1" />

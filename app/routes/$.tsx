@@ -30,10 +30,10 @@ export default function NotFound() {
             </div>
 
             {/* Message */}
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
               Oops! Page Not Found
             </h2>
-            <p className="text-lg text-gray-600 mb-8 max-w-md mx-auto">
+            <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-md mx-auto">
               The page you're looking for seems to have wandered off. Don't worry, even the best explorers get lost sometimes!
             </p>
 
@@ -49,7 +49,7 @@ export default function NotFound() {
               
               <button
                 onClick={() => window.history.back()}
-                className="inline-flex items-center px-6 py-3 bg-white text-purple-600 font-semibold rounded-lg border-2 border-purple-600 hover:bg-purple-50 transition-all duration-200 shadow-md hover:shadow-lg hover:scale-105"
+                className="inline-flex items-center px-6 py-3 bg-white dark:bg-[#13131a] text-purple-600 dark:text-purple-400 font-semibold rounded-lg border-2 border-purple-600 dark:border-purple-500/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 shadow-md dark:shadow-glow-sm hover:shadow-lg dark:hover:shadow-glow-md hover:scale-105"
               >
                 <ArrowLeftIcon className="h-5 w-5 mr-2" />
                 Go Back
@@ -57,22 +57,22 @@ export default function NotFound() {
             </div>
 
             {/* Helpful Links */}
-            <div className="mt-12 pt-8 border-t border-gray-200">
-              <p className="text-sm text-gray-500 mb-4">Looking for something specific?</p>
+            <div className="mt-12 pt-8 border-t border-gray-200 dark:border-purple-500/20">
+              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Looking for something specific?</p>
               <div className="flex flex-wrap justify-center gap-3">
-                <Link to="/about" className="text-purple-600 hover:text-purple-800 font-medium text-sm hover:underline">
+                <Link to="/about" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm hover:underline">
                   About Us
                 </Link>
-                <span className="text-gray-300">•</span>
-                <Link to="/services" className="text-purple-600 hover:text-purple-800 font-medium text-sm hover:underline">
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <Link to="/services" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm hover:underline">
                   Services
                 </Link>
-                <span className="text-gray-300">•</span>
-                <Link to="/contact" className="text-purple-600 hover:text-purple-800 font-medium text-sm hover:underline">
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <Link to="/contact" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm hover:underline">
                   Contact
                 </Link>
-                <span className="text-gray-300">•</span>
-                <Link to="/login" className="text-purple-600 hover:text-purple-800 font-medium text-sm hover:underline">
+                <span className="text-gray-300 dark:text-gray-600">•</span>
+                <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm hover:underline">
                   Login
                 </Link>
               </div>
