@@ -1,6 +1,8 @@
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { Link } from "react-router";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 import {
   WrenchScrewdriverIcon,
   PaintBrushIcon,
@@ -58,8 +60,9 @@ const services = [
 
 export default function Services() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-x-hidden">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
       
       <div className="relative isolate overflow-hidden">
   {/* Floating SVG shapes for playful effect */}
@@ -121,6 +124,7 @@ export default function Services() {
           </div>
         </div>
       </div>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );

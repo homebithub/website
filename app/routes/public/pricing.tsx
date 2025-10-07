@@ -1,6 +1,8 @@
 import React from "react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 import { CheckIcon } from '@heroicons/react/24/outline';
 
 const tiers = [
@@ -45,8 +47,9 @@ const tiers = [
 
 export default function Pricing() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-x-hidden flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="mx-auto max-w-4xl text-center">
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl mb-4">Pricing</h1>
@@ -88,6 +91,7 @@ export default function Pricing() {
           ))}
         </div>
       </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );

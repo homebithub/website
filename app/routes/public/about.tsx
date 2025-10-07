@@ -2,6 +2,8 @@ import React from "react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { Link } from "react-router";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 import {
   CheckBadgeIcon,
   HeartIcon,
@@ -64,8 +66,9 @@ const team: TeamMember[] = [
 
 export default function About() {
     return (
-        <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-x-hidden font-sans flex flex-col">
+        <div className="min-h-screen flex flex-col">
             <Navigation />
+            <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
             <main className="flex-1">
                 {/* About Us and Mission Section */}
                 <div className="relative isolate overflow-hidden bg-white/90 backdrop-blur-lg py-16 sm:py-24 rounded-3xl shadow-lg mx-3 sm:mx-8 mt-10 fade-in-scroll">
@@ -119,6 +122,7 @@ export default function About() {
                     </dl>
                 </div>
             </main>
+            </PurpleThemeWrapper>
             <Footer />
         </div>
     );

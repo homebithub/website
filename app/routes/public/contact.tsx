@@ -4,6 +4,8 @@ import { Navigation } from "~/components/Navigation";
 import { Error as ErrorComponent } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Footer } from "~/components/Footer";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 import { API_ENDPOINTS } from '~/config/api';
 
 interface ApiError {
@@ -69,8 +71,9 @@ export default function Contact() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-x-hidden flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
       <main className="flex-1 container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto bg-white/90 p-8 rounded-3xl shadow-xl backdrop-blur-lg transition-transform duration-500 hover:scale-105 hover:shadow-2xl fade-in-scroll">
           <div className="mb-8">
@@ -227,6 +230,7 @@ export default function Contact() {
           )}
         </div>
       </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );
