@@ -132,7 +132,7 @@ export default function HousehelpProfile() {
                 setError(err.message || "Failed to load profile");
             } finally {
                 setLoading(false);
-            }
+            }\
         };
         fetchProfile();
     }, [profileId]);

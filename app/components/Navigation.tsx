@@ -116,7 +116,7 @@ export function Navigation() {
                 <div className="relative flex items-center">
   {/* Floating purple blob */}
   <svg className="absolute -top-8 -left-8 w-16 h-16 opacity-30 animate-float" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="50" ry="40" fill="#a855f7" /></svg>
-  <Link to="/" className="relative text-primary-700 font-extrabold text-3xl sm:text-4xl px-3 py-2 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:bg-primary-50 drop-shadow-lg">
+  <Link to="/" prefetch="intent" className="relative text-primary-700 font-extrabold text-3xl sm:text-4xl px-3 py-2 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:bg-primary-50 drop-shadow-lg">
     HomeXpert
   </Link>
 </div>
@@ -128,6 +128,7 @@ export function Navigation() {
                             <Link
                                 key={item.name}
                                 to={item.href}
+                                prefetch="intent"
                                 className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-700 hover:text-white hover:bg-primary-500 hover:scale-110 hover:shadow-lg"
                             >
                                 {item.name}

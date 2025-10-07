@@ -7,6 +7,7 @@
 import {HydratedRouter} from "react-router/dom";
 import {startTransition, StrictMode} from "react";
 import {hydrateRoot} from "react-dom/client";
+import {trackWebVitals} from "./utils/webVitals";
 
 startTransition(() => {
     hydrateRoot(
@@ -16,3 +17,6 @@ startTransition(() => {
         </StrictMode>
     );
 });
+
+// Track Web Vitals for performance monitoring
+trackWebVitals();
