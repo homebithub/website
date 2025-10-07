@@ -280,7 +280,7 @@ export default function SignupPage() {
                 title="Sign Up"
             >
                 <div className="px-2 py-2">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-8 text-center">Choose your account type</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-8 text-center">Choose your account type</h3>
                     <div className="flex flex-col gap-5">
                         {profileOptions.map((option) => (
                             <button
@@ -289,23 +289,23 @@ export default function SignupPage() {
                                 onClick={() => handleProfileTypeSelect(option.value)}
                                 className={`group relative p-6 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
                                     form.profile_type === option.value 
-                                        ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-purple-100 shadow-lg' 
-                                        : 'border-gray-200 hover:border-purple-300 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-purple-100/50 hover:shadow-md'
+                                        ? 'border-purple-500 dark:border-purple-400 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 shadow-lg dark:shadow-glow-md' 
+                                        : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-purple-100/50 dark:hover:from-purple-900/20 dark:hover:to-purple-800/20 hover:shadow-md dark:hover:shadow-glow-sm'
                                 }`}
                             > 
                                 <div className="flex items-center">
                                     <div className={`flex items-center justify-center w-6 h-6 border-2 rounded-full mr-4 transition-all duration-200 ${
                                         form.profile_type === option.value 
-                                            ? 'bg-purple-600 border-purple-600' 
-                                            : 'border-gray-300 group-hover:border-purple-400'
+                                            ? 'bg-purple-600 dark:bg-purple-500 border-purple-600 dark:border-purple-500' 
+                                            : 'border-gray-300 dark:border-gray-600 group-hover:border-purple-400 dark:group-hover:border-purple-500'
                                     }`}>
                                         {form.profile_type === option.value && (
                                             <div className="w-3 h-3 bg-white rounded-full"></div>
                                         )}
                                     </div>
                                     <div className="flex-1">
-                                        <h4 className="text-lg font-bold text-gray-900 mb-1">{option.label}</h4>
-                                        <p className="text-sm text-gray-600">
+                                        <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{option.label}</h4>
+                                        <p className="text-sm text-gray-600 dark:text-gray-300">
                                             {option.value === 'employer' 
                                                 ? 'I need to hire help for my home and family needs' 
                                                 : 'I\'m looking for work opportunities and want to offer my services'
@@ -322,7 +322,7 @@ export default function SignupPage() {
                             <button
                                 type="button"
                                 onClick={() => setIsProfileModalOpen(false)}
-                                className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                className="glow-button px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                             >
                                 Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label}
                             </button>
@@ -333,7 +333,7 @@ export default function SignupPage() {
                                 setIsProfileModalOpen(false);
                                 navigate('/');
                             }}
-                            className="px-8 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors duration-200"
+                            className="px-8 py-3 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors duration-200"
                         >
                             Cancel
                         </button>
