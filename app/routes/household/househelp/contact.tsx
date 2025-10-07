@@ -122,7 +122,7 @@ export default function HousehelpProfile() {
                     }),
                 });
                 // Fetch profile
-                const res = await fetch(``${API_BASE_URL}/api/v1/househelps/${profileId}/profile_with_user`, {
+                const res = await fetch(`${API_BASE_URL}/api/v1/househelps/${profileId}/profile_with_user`, {
                     headers: {Authorization: `Bearer ${token}`},
                 });
                 if (!res.ok) throw new Error("Failed to fetch househelp profile");
@@ -132,7 +132,7 @@ export default function HousehelpProfile() {
                 setError(err.message || "Failed to load profile");
             } finally {
                 setLoading(false);
-            }\
+            }
         };
         fetchProfile();
     }, [profileId]);
@@ -193,7 +193,7 @@ export default function HousehelpProfile() {
                   )}
                 </div>
               </div>
-    
+
               <table className="w-full mb-3 text-sm">
                 <tbody>
                   <tr>
@@ -210,11 +210,11 @@ export default function HousehelpProfile() {
                   </tr>
                 </tbody>
               </table>
-    
+
               <div className="mb-4 text-xs text-gray-500 dark:text-gray-300 text-center">
                 The househelp will be required to reimburse you if you hire them.
               </div>
-    
+
               <div className="flex justify-end gap-3">
                 <button
                   className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold"
@@ -252,7 +252,7 @@ export default function HousehelpProfile() {
             </div>
           </div>
         )}
-    
+
         {/* User Information Section */}
         <div className="bg-white  rounded-2xl shadow-lg border border-gray-100  p-8 sm:p-12 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-4xl flex flex-col items-center mb-8">
           {/* Back button and action buttons */}
@@ -386,9 +386,9 @@ export default function HousehelpProfile() {
               </>
             )}
 
-            
+
           </div>
-    
+
           {/* Verified + Country */}
           <div className="flex gap-2 mb-4">
             {Househelp.verified && (
@@ -396,7 +396,7 @@ export default function HousehelpProfile() {
             )}
             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{User.country}</span>
           </div>
-    
+
           {/* Unlocked contact info */}
           {unlockedContact && (
             <div className="mt-2 flex flex-col items-center">
@@ -406,7 +406,7 @@ export default function HousehelpProfile() {
               )}
             </div>
           )}
-    
+
           {/* User details */}
           <div className="w-full mt-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2 text-sm">
@@ -427,13 +427,13 @@ export default function HousehelpProfile() {
                 <div className="text-gray-400 ">Phone</div>
                 <div className="text-sm text-slate-900  font-medium">{User.phone || '-'}</div>
               </div>
-             
-              
+
+
               <div>
                 <div className="text-gray-400 ">User Created At</div>
                 <div className="text-sm text-slate-900  font-medium">{User.created_at ? new Date(User.created_at).toLocaleString() : '-'}</div>
               </div>
-             
+
 
               {/* Househelp fields */}
               <div>
@@ -464,7 +464,7 @@ export default function HousehelpProfile() {
                 <div className="text-gray-400 ">Experience</div>
                 <div className="text-sm text-slate-900  font-medium">{Househelp.experience || 0} years</div>
               </div>
-              
+
               <div>
                 <div className="text-gray-400 ">Languages</div>
                 <div className="text-sm text-slate-900  font-medium">{Array.isArray(Househelp.languages) && Househelp.languages.length > 0 ? Househelp.languages.join(', ') : '-'}</div>
@@ -473,9 +473,9 @@ export default function HousehelpProfile() {
                 <div className="text-gray-400 ">Specialities</div>
                 <div className="text-sm text-slate-900  font-medium">{Array.isArray(Househelp.specialities) && Househelp.specialities.length > 0 ? Househelp.specialities.join(', ') : '-'}</div>
               </div>
-              
 
-              
+
+
               <div>
                 <div className="text-gray-400 ">Salary Expectation</div>
                 <div className="text-sm text-slate-900  font-medium">{Househelp.salary_expectation ? `KES ${Househelp.salary_expectation}` : '-'}</div>
@@ -484,12 +484,12 @@ export default function HousehelpProfile() {
                 <div className="text-gray-400 ">Salary Frequency</div>
                 <div className="text-sm text-slate-900  font-medium">{Househelp.salary_frequency || '-'}</div>
               </div>
-              
+
             </div>
           </div>
         </div>
       </>
-   
-    
+
+
       );
-    }      
+    }
