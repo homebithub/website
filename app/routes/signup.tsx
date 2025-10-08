@@ -214,29 +214,30 @@ export default function SignupPage() {
             }
             const data: SignupResponse = await res.json();
             
-            // Store authentication data
-            // Backend should return a 'token' field in the response
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-            } else {
-                // Fallback: if backend doesn't return token yet, store user_id temporarily
-                console.warn('No token in response, using user_id as fallback');
-                localStorage.setItem('token', data.user.user_id);
-            }
+            console.log('Signup response:', data);
+            console.log('Verification data:', data.verification);
             
-            // Store user data for easy access
+            // Store user data temporarily (before verification)
             localStorage.setItem('user_id', data.user.user_id);
             localStorage.setItem('profile_type', data.user.profile_type || form.profile_type);
             
-            // Redirect based on profile type
-            if (form.profile_type === 'employer' || form.profile_type === 'household') {
-                // Household users go to household setup (join or create)
-                navigate('/household/setup');
-            } else if (form.profile_type === 'househelp') {
-                // Househelp users go to their profile setup
-                navigate('/profile-setup/househelp');
+            // Redirect to OTP verification with verification data
+            // The OTP page will handle the rest of the flow
+            if (data.verification) {
+                console.log('Redirecting to verify-otp with verification:', data.verification);
+                navigate('/verify-otp', { 
+                    state: { 
+                        verification: data.verification,
+                        profileType: form.profile_type 
+                    } 
+                });
             } else {
-                // Fallback
+                // Fallback if no verification required (shouldn't happen)
+                console.error('No verification data in signup response!', data);
+                alert('Signup successful but verification data is missing. Please contact support.');
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                }
                 navigate('/');
             }
         } catch (err: any) {

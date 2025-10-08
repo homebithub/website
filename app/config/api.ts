@@ -11,15 +11,18 @@ const getApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     // Try to get from window.ENV (set in root.tsx)
     const envUrl = (window as any).ENV?.AUTH_API_BASE_URL;
+    console.log('[API Config] Browser - window.ENV.AUTH_API_BASE_URL:', envUrl);
     if (envUrl) return envUrl;
   }
   
   // Check environment variable
   if (typeof process !== 'undefined' && process.env.API_BASE_URL) {
+    console.log('[API Config] Server - process.env.API_BASE_URL:', process.env.API_BASE_URL);
     return process.env.API_BASE_URL;
   }
   
   // Default to production
+  console.warn('[API Config] No environment variable found, using production URL');
   return 'https://api.homexpert.co.ke';
 };
 

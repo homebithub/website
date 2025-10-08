@@ -95,12 +95,24 @@ export default function VerifyOtpPage() {
   const location = useLocation();
   const navigate = useNavigate();
   // Check if state exists
-  const locationState = (location.state || {}) as { verification?: any, bureauId?: string };
+  const locationState = (location.state || {}) as { verification?: any, bureauId?: string, afterEmailVerification?: boolean };
   const [verification, setVerification] = useState(locationState.verification);
+  const afterEmailVerification = locationState.afterEmailVerification;
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('verify-otp mounted');
+    console.log('Location state:', locationState);
+    console.log('Verification:', verification);
+    console.log('After email verification:', afterEmailVerification);
+  }, []);
+  
+  // Redirect to signup if no verification data (user typed URL directly)
   React.useEffect(() => {
     if (!verification) {
-      // Optionally, redirect to signup if state is missing
-      navigate('/signup');
+      console.warn('No verification data - redirecting to signup');
+      console.warn('Location state was:', locationState);
+      navigate('/signup', { replace: true });
     }
   }, [verification, navigate]);
   // const [searchParams] = useSearchParams();
@@ -213,9 +225,19 @@ export default function VerifyOtpPage() {
           
           // Handle both 'household' and 'employer' profile types
           if (parsed.profile_type === 'household' || parsed.profile_type === 'employer') {
-            // Show profile completion modal for household users
-            setShowProfileModal(true);
-            return;
+            // If this is after email verification, go to household setup
+            if (afterEmailVerification) {
+              path = '/household/setup';
+            } else {
+              // Otherwise, redirect to email verification first
+              navigate('/verify-email', { 
+                state: { 
+                  user_id: parsed.user_id || parsed.id,
+                  from: 'phone-verification'
+                } 
+              });
+              return;
+            }
           } else if (parsed.profile_type === 'househelp') {
             path = '/househelp';
           }

@@ -14,8 +14,16 @@ export default function VerifyEmail() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const location = useLocation();
-  const locationState = (location.state || {}) as { user_id?:string };
+  const locationState = (location.state || {}) as { user_id?:string, from?: string };
   const [user_id, setUserId] = useState(locationState.user_id);
+  
+  // Redirect to signup if no user_id (user typed URL directly)
+  React.useEffect(() => {
+    if (!user_id) {
+      console.warn('No user_id - redirecting to signup');
+      navigate('/signup', { replace: true });
+    }
+  }, [user_id, navigate]);
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -33,7 +41,13 @@ export default function VerifyEmail() {
       }
       if (data.verification) {
         // Navigate to verify-otp page with verification object in state
-        navigate("/verify-otp", { state: { verification: data.verification } });
+        // After email OTP verification, it will redirect to household setup
+        navigate("/verify-otp", { 
+          state: { 
+            verification: data.verification,
+            afterEmailVerification: true 
+          } 
+        });
         setSuccess(true);
       } else {
         setSuccess(true);
@@ -101,9 +115,13 @@ console.log(user_id,"user_id");
               let path = '/';
               if (userObj) {
                 const parsed = JSON.parse(userObj);
-                if (parsed.profile_type === 'household') path = '/household';
-                else if (parsed.profile_type === 'househelp') path = '/househelp';
-                else if (parsed.profile_type === 'bureau') path = '/bureau';
+                if (parsed.profile_type === 'household' || parsed.profile_type === 'employer') {
+                  path = '/household/setup';
+                } else if (parsed.profile_type === 'househelp') {
+                  path = '/househelp';
+                } else if (parsed.profile_type === 'bureau') {
+                  path = '/bureau';
+                }
               }
               navigate(path);
             }}
