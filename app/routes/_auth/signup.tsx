@@ -347,10 +347,9 @@ export default function SignupPage() {
       <div className="flex items-center justify-between mb-6">
                 <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent text-center flex-1">Join Us! 🎉</h2>
                 {form.profile_type && (
-                    <button 
-                        type="button" 
+                    <button
                         onClick={() => setIsProfileModalOpen(true)}
-                        className="text-sm text-purple-600 hover:text-purple-700 font-semibold hover:underline transition-colors flex items-center"
+                        className="text-sm text-purple-500 dark:text-purple-400 hover:text-purple-600 dark:hover:text-purple-300 font-semibold hover:underline transition-colors flex items-center"
                     >
                         <span className="mr-1">Change profile: </span>
                         <span className="font-medium">{getSelectedProfileLabel()}</span>
@@ -360,7 +359,7 @@ export default function SignupPage() {
       <div className="text-center mb-4">
         <span className="text-base text-gray-600 dark:text-gray-300 font-medium">Already have an account?</span>
         <a href="/login"
-          className="ml-2 text-base text-purple-600 dark:text-purple-400 font-bold hover:text-purple-700 dark:hover:text-purple-300 hover:underline transition-colors">Login</a>
+          className="ml-2 text-base text-purple-500 dark:text-purple-400 font-bold hover:text-purple-600 dark:hover:text-purple-300 hover:underline transition-colors">Login</a>
       </div>
       {error && (
         <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
@@ -370,6 +369,28 @@ export default function SignupPage() {
           </div>
         </div>
       )}
+      
+      {/* Google Sign Up - Primary Option */}
+      <div className="mb-6">
+    <button
+        type="button"
+        onClick={() => window.location.href = `${API_BASE_URL}/google`}
+        className="w-full inline-flex justify-center items-center px-6 py-4 border-2 border-purple-300 dark:border-purple-500/50 rounded-xl shadow-lg dark:shadow-glow bg-white dark:bg-[#13131a] text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:border-purple-400 dark:hover:border-purple-500/70 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+    >
+        <FcGoogle className="h-6 w-6 mr-3" />
+        Continue with Google
+    </button>
+</div>
+
+<div className="relative my-6">
+    <div className="absolute inset-0 flex items-center">
+        <div className="w-full border-t-2 border-purple-200 dark:border-purple-500/30"></div>
+    </div>
+    <div className="relative flex justify-center text-sm">
+        <span className="px-4 bg-white dark:bg-[#13131a] text-gray-500 dark:text-gray-400 font-medium">Or sign up with phone</span>
+    </div>
+</div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label className="block text-sm font-semibold text-purple-700 mb-2">First Name</label>
@@ -470,26 +491,6 @@ export default function SignupPage() {
         Please fill in all required fields to continue
     </p>
 )}
-
-<div className="relative my-6">
-    <div className="absolute inset-0 flex items-center">
-        <div className="w-full border-t-2 border-purple-200"></div>
-    </div>
-    <div className="relative flex justify-center text-sm">
-        <span className="px-4 bg-white dark:bg-[#13131a] text-purple-600 dark:text-purple-400 font-medium">Or continue with</span>
-    </div>
-</div>
-
-<div className="mt-6 flex flex-col gap-3">
-    <button
-        type="button"
-        onClick={() => window.location.href = `${API_BASE_URL}/google`}
-        className="w-full inline-flex justify-center items-center px-6 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-md dark:shadow-glow-sm bg-white dark:bg-[#13131a] text-base font-semibold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
-    >
-        <FcGoogle className="h-5 w-5 mr-2" />
-        Sign in with Google
-    </button>
-</div>
 </form>
 </PurpleCard>
 </div>
