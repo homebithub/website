@@ -130,7 +130,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-700 dark:text-purple-300 hover:text-white dark:hover:text-white hover:bg-primary-500 dark:hover:bg-purple-600 dark:hover:shadow-glow-sm hover:scale-110 hover:shadow-lg"
+                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-primary-600 dark:hover:bg-purple-600 dark:hover:shadow-glow-sm hover:scale-110 hover:shadow-lg"
                             >
                                 {item.name}
                             </Link>
