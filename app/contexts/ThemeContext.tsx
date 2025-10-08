@@ -1,5 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
+import { fetchPreferences, updatePreferences, migratePreferences } from '~/utils/preferencesApi';
+import { getOrCreateUserId } from '~/utils/userTracking';
 
 type Theme = 'light' | 'dark';
 
@@ -7,6 +9,7 @@ interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
+  migrateUserPreferences: () => Promise<void>;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -18,22 +21,50 @@ interface ThemeProviderProps {
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const [theme, setThemeState] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Load theme from localStorage on mount
+  // Initialize user tracking and load preferences
   useEffect(() => {
-    setMounted(true);
-    const savedTheme = localStorage.getItem('theme') as Theme | null;
-    
-    if (savedTheme) {
-      setThemeState(savedTheme);
-      applyTheme(savedTheme);
-    } else {
-      // Check system preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const defaultTheme = prefersDark ? 'dark' : 'light';
-      setThemeState(defaultTheme);
-      applyTheme(defaultTheme);
-    }
+    const initializeTheme = async () => {
+      setMounted(true);
+
+      // Initialize user tracking (generates fingerprint if needed)
+      await getOrCreateUserId();
+
+      // Try to load preferences from backend
+      const preferences = await fetchPreferences();
+
+      if (preferences?.settings?.theme) {
+        // Use backend preference
+        const backendTheme = preferences.settings.theme === 'system' 
+          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+          : preferences.settings.theme;
+        setThemeState(backendTheme);
+        applyTheme(backendTheme);
+      } else {
+        // Fallback to localStorage or system preference
+        const savedTheme = localStorage.getItem('theme') as Theme | null;
+        
+        if (savedTheme) {
+          setThemeState(savedTheme);
+          applyTheme(savedTheme);
+          // Sync to backend
+          updatePreferences({ theme: savedTheme }).catch(console.error);
+        } else {
+          // Check system preference
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const defaultTheme = prefersDark ? 'dark' : 'light';
+          setThemeState(defaultTheme);
+          applyTheme(defaultTheme);
+          // Save to backend
+          updatePreferences({ theme: defaultTheme }).catch(console.error);
+        }
+      }
+
+      setIsInitialized(true);
+    };
+
+    initializeTheme();
   }, []);
 
   const applyTheme = (newTheme: Theme) => {
@@ -46,16 +77,42 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     }
   };
 
-  const setTheme = (newTheme: Theme) => {
+  const setTheme = useCallback(async (newTheme: Theme) => {
+    // Optimistic update
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
     applyTheme(newTheme);
-  };
 
-  const toggleTheme = () => {
+    // Sync to backend (fire and forget)
+    if (isInitialized) {
+      updatePreferences({ theme: newTheme }).catch(console.error);
+    }
+  }, [isInitialized]);
+
+  const toggleTheme = useCallback(() => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
     setTheme(newTheme);
-  };
+  }, [theme, setTheme]);
+
+  const migrateUserPreferences = useCallback(async () => {
+    try {
+      const success = await migratePreferences();
+      if (success) {
+        // Reload preferences after migration
+        const preferences = await fetchPreferences();
+        if (preferences?.settings?.theme) {
+          const migratedTheme = preferences.settings.theme === 'system'
+            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+            : preferences.settings.theme;
+          setThemeState(migratedTheme);
+          applyTheme(migratedTheme);
+          localStorage.setItem('theme', migratedTheme);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to migrate preferences:', error);
+    }
+  }, []);
 
   // Prevent flash of incorrect theme
   if (!mounted) {
@@ -63,7 +120,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme, migrateUserPreferences }}>
       {children}
     </ThemeContext.Provider>
   );

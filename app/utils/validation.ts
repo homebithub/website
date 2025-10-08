@@ -6,24 +6,29 @@ const phonePattern = /^[+]?\d{9,15}$/;
 // Validation schemas
 export const signupSchema = Joi.object({
   profile_type: Joi.string().valid('employer', 'househelp', 'bureau').required().messages({
+    'string.empty': 'Please select your profile type',
     'any.required': 'Please select your profile type',
     'any.only': 'Please choose a valid profile type from the list'
   }),
   password: Joi.string().min(4).required().messages({
+    'string.empty': 'Please enter your password',
     'string.min': 'Password must be at least 4 characters',
     'any.required': 'Please enter your password'
   }),
   first_name: Joi.string().min(2).max(50).required().messages({
+    'string.empty': 'Please enter your first name',
     'string.min': 'First name should be at least 2 characters',
     'string.max': 'First name is too long (max 50 characters)',
     'any.required': 'Please enter your first name'
   }),
   last_name: Joi.string().min(2).max(50).required().messages({
+    'string.empty': 'Please enter your last name',
     'string.min': 'Last name should be at least 2 characters',
     'string.max': 'Last name is too long (max 50 characters)',
     'any.required': 'Please enter your last name'
   }),
   phone: Joi.string().pattern(phonePattern).required().messages({
+    'string.empty': 'Please enter your phone number',
     'string.pattern.base': 'Please enter a valid phone number (e.g., 0712345678)',
     'any.required': 'Please enter your phone number'
   })

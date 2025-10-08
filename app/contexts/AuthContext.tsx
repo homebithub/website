@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/types/users";
 import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
+import { migratePreferences } from '~/utils/preferencesApi';
 
 interface User {
   id: string;
@@ -82,6 +83,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       delete (userData as any).token;
       localStorage.setItem("user_object", JSON.stringify(userData));
       setUser(data as LoginResponse);
+      
+      // Migrate anonymous preferences to user account
+      migratePreferences().catch(err => {
+        console.error("Failed to migrate preferences:", err);
+        // Don't block login if migration fails
+      });
+      
       // Redirect to specific dashboard based on profile_type
       const profileType = userData.profile_type;
       console.log("User data after login:", userData);
@@ -133,6 +141,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { token, user } = await response.json();
       localStorage.setItem("token", token);
       setUser(user);
+      
+      // Migrate anonymous preferences to user account
+      migratePreferences().catch(err => {
+        console.error("Failed to migrate preferences:", err);
+        // Don't block signup if migration fails
+      });
+      
       navigate("/");
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");

@@ -444,7 +444,7 @@ export default function SignupPage() {
         onChange={handleChange}
         onBlur={handleBlur}
         required
-        className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
+        className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
             getFieldError('phone') 
                 ? 'border-red-300' 
                 : isFieldValid('phone')
@@ -461,13 +461,13 @@ export default function SignupPage() {
 <button
     type="submit"
     className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-    disabled={formLoading || !form.profile_type}
+    disabled={formLoading || !form.profile_type || Object.keys(fieldErrors).some(key => fieldErrors[key]) || !form.first_name || !form.last_name || !form.password || !form.phone}
 >
     {formLoading ? '✨ Signing up...' : '🚀 Sign Up'}
 </button>
-{!form.profile_type && (
+{(!form.profile_type || !form.first_name || !form.last_name || !form.password || !form.phone) && (
     <p className="text-amber-600 text-sm mt-2 text-center">
-        Please select a profile type to continue
+        Please fill in all required fields to continue
     </p>
 )}
 
