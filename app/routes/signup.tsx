@@ -230,8 +230,8 @@ export default function SignupPage() {
             
             // Redirect based on profile type
             if (form.profile_type === 'employer' || form.profile_type === 'household') {
-                // Household users go to profile setup
-                navigate('/profile-setup/household');
+                // Household users go to household setup (join or create)
+                navigate('/household/setup');
             } else if (form.profile_type === 'househelp') {
                 // Househelp users go to their profile setup
                 navigate('/profile-setup/househelp');
