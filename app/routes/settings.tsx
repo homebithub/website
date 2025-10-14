@@ -1,6 +1,5 @@
 import { API_ENDPOINTS, AUTH_API_BASE_URL, API_BASE_URL } from '~/config/api';
 import type { LoaderFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
 import { useLoaderData, Form, useNavigate, useLocation } from "react-router";
 import React, { useEffect } from "react";
 import { Navigation } from "~/components/Navigation";
@@ -30,7 +29,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw new Response("Failed to fetch user settings", { status: res.status });
   }
   const settings = await res.json();
-  return data({ settings });
+  return { settings };
 };
 
 export const action = async ({ request }: LoaderFunctionArgs) => {
@@ -48,7 +47,7 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
     credentials: "include",
   });
   if (!resSettings.ok) {
-    return data({ error: "Failed to fetch user settings" }, { status: resSettings.status });
+    return Response.json({ error: "Failed to fetch user settings" }, { status: resSettings.status });
   }
   const currentSettings = await resSettings.json();
   const prevEmail = currentSettings.email;
@@ -72,9 +71,9 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
         email: data.verification.target,
         type: data.verification.type,
       });
-      return redirect(`/verify-otp?${params.toString()}`);
+      return Response.redirect(`/verify-otp?${params.toString()}`);
     } else {
-      return data({ error: data.message || "Failed to update email" }, { status: updateRes.status });
+      return Response.json({ error: data.message || "Failed to update email" }, { status: updateRes.status });
     }
   }
 
@@ -90,9 +89,9 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
   });
   if (!updateRes.ok) {
     const data = await updateRes.json();
-    return data({ error: data.message || "Failed to update settings" }, { status: updateRes.status });
+    return Response.json({ error: data.message || "Failed to update settings" }, { status: updateRes.status });
   }
-  return redirect("/settings");
+  return Response.redirect("/settings");
 };
 
 export default function SettingsPage() {

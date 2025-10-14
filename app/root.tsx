@@ -1,4 +1,4 @@
-import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData, data } from "react-router";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "react-router";
 import React from "react";
 import type { Route } from "./+types/root";
 
@@ -17,7 +17,7 @@ export function loader() {
     // Get API base URL from environment (server-side)
     const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
     
-    return data({
+    return {
         ENV: {
             GOOGLE_CLIENT_ID:
                 process.env.GOOGLE_CLIENT_ID ||
@@ -25,7 +25,7 @@ export function loader() {
             API_BASE_URL: apiBaseUrl,
             AUTH_API_BASE_URL: apiBaseUrl, // Same as API_BASE_URL for local dev
         },
-    });
+    };
 }
 
 export default function App() {

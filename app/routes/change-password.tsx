@@ -1,5 +1,4 @@
 import type { LoaderFunctionArgs } from "react-router";
-import { json } from "react-router";
 import { useLoaderData, Form } from "react-router";
 import React, { useState, useEffect } from "react";
 import { Navigation } from "~/components/Navigation";
@@ -28,7 +27,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw new Response("Failed to fetch user data", { status: res.status });
   }
   const user = await res.json();
-  return json({ user });
+  return { user };
 };
 
 export default function ChangePasswordPage() {
