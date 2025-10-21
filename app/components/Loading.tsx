@@ -28,7 +28,7 @@ export function Loading({
 
   // Color classes
   const colorClasses = {
-    primary: 'border-primary-500 text-primary-500 bg-primary-500',
+    primary: 'border-purple-500 text-purple-500 bg-purple-500',
     secondary: 'border-slate-500 text-slate-500 bg-slate-500',
     success: 'border-green-500 text-green-500 bg-green-500',
     warning: 'border-yellow-500 text-yellow-500 bg-yellow-500',
@@ -110,59 +110,151 @@ export function Loading({
   };
 
   const containerClasses = fullScreen 
-    ? "flex flex-col items-center justify-center min-h-screen bg-white dark:bg-slate-900"
+    ? "flex flex-col items-center justify-center min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f]"
     : "flex flex-col items-center justify-center p-8";
 
   return (
-    <div className={`${containerClasses} ${className}`}>
-      {/* Animated background pattern */}
+    <div className={`${containerClasses} ${className} relative overflow-hidden`}>
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-purple-50 via-pink-50 to-purple-50 dark:from-[#0a0a0f] dark:via-[#1a0a1f] dark:to-[#0a0a0f] animate-gradient-shift" />
+      
+      {/* Floating orbs */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-br from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 rounded-full opacity-20 animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-tr from-primary-100 to-primary-200 dark:from-primary-900 dark:to-primary-800 rounded-full opacity-20 animate-pulse" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-20 left-20 w-64 h-64 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-gradient-to-br from-pink-400/20 to-purple-400/20 rounded-full blur-3xl animate-float-delayed" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-br from-purple-300/10 to-pink-300/10 rounded-full blur-3xl animate-pulse" />
       </div>
+
+      {/* Sparkles */}
+      <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-purple-400 dark:bg-purple-300 rounded-full animate-ping" />
+      <div className="absolute top-1/3 right-1/3 w-1.5 h-1.5 bg-pink-400 dark:bg-pink-300 rounded-full animate-ping" style={{ animationDelay: '0.3s' }} />
+      <div className="absolute bottom-1/3 left-1/2 w-2 h-2 bg-purple-300 dark:bg-purple-400 rounded-full animate-ping" style={{ animationDelay: '0.6s' }} />
+      <div className="absolute bottom-1/4 right-1/4 w-1.5 h-1.5 bg-pink-300 dark:bg-pink-400 rounded-full animate-ping" style={{ animationDelay: '0.9s' }} />
 
       {/* Main loading content */}
-      <div className="relative z-10 flex flex-col items-center space-y-6">
-        {/* Logo or icon */}
-        <div className="mb-4">
-          <div className="text-3xl font-bold text-primary-600 dark:text-primary-400">
-            HomeXpert
+      <div className="relative z-10 flex flex-col items-center space-y-8">
+        {/* Logo with glow effect */}
+        <div className="mb-4 relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 blur-2xl opacity-50 animate-pulse" />
+          <div className="relative text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent animate-gradient-x">
+            HomeBit
           </div>
         </div>
 
-        {/* Animation */}
-        <div className="flex items-center justify-center">
-          {getAnimationComponent()}
+        {/* Modern spinner with orbiting dots */}
+        <div className="relative w-24 h-24">
+          {/* Center pulse */}
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-4 h-4 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-pulse" />
+          </div>
+          
+          {/* Orbiting dots */}
+          {[0, 1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="absolute inset-0 animate-spin"
+              style={{ 
+                animationDuration: '2s',
+                animationDelay: `${i * 0.2}s`
+              }}
+            >
+              <div 
+                className="absolute top-0 left-1/2 w-3 h-3 -ml-1.5 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full shadow-lg shadow-purple-500/50"
+                style={{
+                  transform: `rotate(${i * 90}deg) translateY(-40px)`
+                }}
+              />
+            </div>
+          ))}
+          
+          {/* Outer ring */}
+          <div className="absolute inset-0 border-2 border-purple-200 dark:border-purple-800 rounded-full animate-pulse" />
         </div>
 
-        {/* Loading text */}
-        <div className="text-center">
-          <p className="text-lg font-medium text-slate-700 dark:text-slate-300 mb-2">
+        {/* Loading text with animated gradient */}
+        <div className="text-center space-y-3">
+          <p className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
             {text}
           </p>
-          <div className="flex items-center justify-center space-x-1">
-            <div className="w-1 h-1 bg-slate-400 dark:bg-slate-500 rounded-full animate-pulse" />
-            <div className="w-1 h-1 bg-slate-400 dark:bg-slate-500 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }} />
-            <div className="w-1 h-1 bg-slate-400 dark:bg-slate-500 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }} />
+          
+          {/* Animated dots */}
+          <div className="flex items-center justify-center space-x-2">
+            {[0, 1, 2].map((i) => (
+              <div
+                key={i}
+                className="w-2 h-2 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full animate-bounce"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Progress bar */}
-        <div className="w-48 bg-slate-200 dark:bg-slate-700 rounded-full h-1 overflow-hidden">
-          <div 
-            className={`h-full ${colorClasses[color].split(' ')[2]} rounded-full animate-pulse`}
-            style={{ 
-              width: '60%',
-              animationDuration: '2s'
-            }}
-          />
+        {/* Progress bar with gradient */}
+        <div className="w-64 h-2 bg-gray-200 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner">
+          <div className="h-full bg-gradient-to-r from-purple-500 via-pink-500 to-purple-500 rounded-full animate-progress bg-[length:200%_100%]" />
         </div>
       </div>
 
-      {/* Floating elements */}
-      <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-primary-300 dark:bg-primary-600 rounded-full animate-bounce opacity-60" />
-      <div className="absolute top-1/3 right-1/4 w-3 h-3 bg-primary-200 dark:bg-primary-700 rounded-full animate-bounce opacity-40" style={{ animationDelay: '0.5s' }} />
-      <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-primary-400 dark:bg-primary-500 rounded-full animate-bounce opacity-50" style={{ animationDelay: '1s' }} />
+      {/* Floating particles */}
+      {[...Array(6)].map((_, i) => (
+        <div
+          key={i}
+          className="absolute w-1 h-1 bg-purple-400 dark:bg-purple-300 rounded-full animate-float-particle opacity-60"
+          style={{
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+            animationDelay: `${Math.random() * 2}s`,
+            animationDuration: `${3 + Math.random() * 2}s`
+          }}
+        />
+      ))}
+      
+      <style>{`
+        @keyframes gradient-shift {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes gradient-x {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) translateX(0px); }
+          50% { transform: translateY(-20px) translateX(10px); }
+        }
+        @keyframes float-delayed {
+          0%, 100% { transform: translateY(0px) translateX(0px); }
+          50% { transform: translateY(20px) translateX(-10px); }
+        }
+        @keyframes float-particle {
+          0%, 100% { transform: translateY(0px) translateX(0px); opacity: 0; }
+          50% { transform: translateY(-100px) translateX(50px); opacity: 1; }
+        }
+        @keyframes progress {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+        .animate-gradient-shift {
+          background-size: 200% 200%;
+          animation: gradient-shift 8s ease infinite;
+        }
+        .animate-gradient-x {
+          background-size: 200% 100%;
+          animation: gradient-x 3s ease infinite;
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+        .animate-float-delayed {
+          animation: float-delayed 8s ease-in-out infinite;
+        }
+        .animate-float-particle {
+          animation: float-particle 4s ease-in-out infinite;
+        }
+        .animate-progress {
+          animation: progress 1.5s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }

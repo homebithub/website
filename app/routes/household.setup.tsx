@@ -15,19 +15,33 @@ export default function HouseholdSetupPage() {
   const [joinStatus, setJoinStatus] = useState<'idle' | 'pending' | 'approved'>('idle');
 
   useEffect(() => {
+    console.log('[HOUSEHOLD SETUP] Page loaded');
+    console.log('[HOUSEHOLD SETUP] User:', user);
+    
     if (!user) {
+      console.log('[HOUSEHOLD SETUP] No user found, redirecting to /login');
       navigate('/login');
       return;
     }
 
     // Check if user already has a household
     const userObj = localStorage.getItem('user_object');
+    console.log('[HOUSEHOLD SETUP] user_object from localStorage:', userObj);
+    
     if (userObj) {
       const parsed = JSON.parse(userObj);
+      console.log('[HOUSEHOLD SETUP] Parsed user object:', parsed);
+      console.log('[HOUSEHOLD SETUP] household_id:', parsed.household_id);
+      
       if (parsed.household_id) {
         // User already has a household, redirect to profile
+        console.log('[HOUSEHOLD SETUP] User has household_id, redirecting to /household/profile');
         navigate('/household/profile');
+      } else {
+        console.log('[HOUSEHOLD SETUP] No household_id found, staying on setup page');
       }
+    } else {
+      console.log('[HOUSEHOLD SETUP] No user_object in localStorage');
     }
   }, [user, navigate]);
 

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/types/users";
 import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
 import { migratePreferences } from '~/utils/preferencesApi';
@@ -24,20 +24,34 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   const [user, setUser] = useState<LoginResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Public routes that don't need auth check
+  const isPublicRoute = () => {
+    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/household/setup', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies'];
+    return publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === '/';
+  };
+
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [location.pathname]);
 
   const checkAuth = async () => {
     try {
+      // Skip auth check on public routes
+      if (isPublicRoute()) {
+        setLoading(false);
+        return;
+      }
+
       const token = localStorage.getItem("token");
       if (!token) {
         console.log("not token found in local storage")
+        setLoading(false);
         return;
       }
       const response = await fetch(API_ENDPOINTS.auth.me, {

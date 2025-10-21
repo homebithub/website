@@ -180,11 +180,15 @@ export default function SignupPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
+        console.log('[SIGNUP] Form submitted', form);
+        
         // Validate entire form
         const validation = validateForm(signupSchema, form);
         
         if (!validation.isValid) {
+            console.log('[SIGNUP] Validation failed:', validation.errors);
             setFieldErrors(validation.errors);
+            setError('Please fix the errors in the form');
             // Mark all fields as touched to show errors
             const allTouched = Object.keys(form).reduce((acc, key) => {
                 acc[key] = true;
@@ -193,6 +197,8 @@ export default function SignupPage() {
             setTouchedFields(allTouched);
             return;
         }
+        
+        console.log('[SIGNUP] Validation passed, making API call...');
         
         setFormLoading(true);
         setError(null);
@@ -217,6 +223,43 @@ export default function SignupPage() {
             });
             if (!res.ok) {
                 const err = await res.json();
+                console.log('[SIGNUP] Backend error response:', err);
+                
+                // Check if backend returned field-specific errors
+                if (err.errors && typeof err.errors === 'object') {
+                    // Map backend field names to frontend field names
+                    const backendErrors: { [key: string]: string } = {};
+                    Object.keys(err.errors).forEach(key => {
+                        backendErrors[key] = err.errors[key];
+                    });
+                    
+                    setFieldErrors(backendErrors);
+                    
+                    // Mark all error fields as touched
+                    const touchedErrorFields = Object.keys(backendErrors).reduce((acc, key) => {
+                        acc[key] = true;
+                        return acc;
+                    }, {} as { [key: string]: boolean });
+                    setTouchedFields(prev => ({ ...prev, ...touchedErrorFields }));
+                    
+                    // Set a general error message
+                    const errorCount = Object.keys(backendErrors).length;
+                    setError(`Please fix ${errorCount} error${errorCount > 1 ? 's' : ''} in the form`);
+                    return; // Don't throw, just return to show the errors
+                }
+                
+                // Handle conflict errors (e.g., duplicate phone number)
+                if (res.status === 409 && err.message) {
+                    // Show conflict error on the phone field
+                    if (err.message.toLowerCase().includes('phone')) {
+                        setFieldErrors({ phone: err.message });
+                        setTouchedFields(prev => ({ ...prev, phone: true }));
+                    }
+                    setError(err.message);
+                    return;
+                }
+                
+                // If no field-specific errors, throw with the general message
                 throw new Error(err.message || 'Signup failed');
             }
             const data: SignupResponse = await res.json();
@@ -228,10 +271,8 @@ export default function SignupPage() {
             localStorage.setItem('user_id', data.user.user_id);
             localStorage.setItem('profile_type', data.user.profile_type || form.profile_type);
             
-            // Store token if provided (backend may return token immediately)
-            if (data.token) {
-                localStorage.setItem('token', data.token);
-            }
+            // DO NOT store token yet - wait until after OTP verification
+            // The token will be stored after successful OTP verification in verify-otp.tsx
             
             // Redirect to OTP verification with verification data
             // The OTP page will handle the rest of the flow

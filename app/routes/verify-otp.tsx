@@ -3,7 +3,8 @@ import { useLocation, useNavigate } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { handleApiError } from '~/utils/errorMessages';
-import { HouseholdProfileModal } from '~/components/modals/HouseholdProfileModal';
+// Temporarily commented out to debug module loading issue
+// import { HouseholdProfileModal } from '~/components/modals/HouseholdProfileModal';
 import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
 import { API_BASE_URL } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -556,12 +557,12 @@ export default function VerifyOtpPage() {
       </main>
       </PurpleThemeWrapper>
       
-      {/* Household Profile Modal */}
-      <HouseholdProfileModal
+      {/* Household Profile Modal - Temporarily commented out to debug */}
+      {/* <HouseholdProfileModal
         isOpen={showProfileModal}
         onClose={handleProfileModalClose}
         onComplete={handleProfileComplete}
-      />
+      /> */}
       
       <Footer />
     </div>

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
+import { useLocation } from 'react-router';
 import { fetchPreferences, updatePreferences, migratePreferences } from '~/utils/preferencesApi';
 import { getOrCreateUserId } from '~/utils/userTracking';
 
@@ -19,9 +20,16 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+  const location = useLocation();
   const [theme, setThemeState] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+
+  // Public routes that don't need backend preferences
+  const isPublicRoute = () => {
+    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email'];
+    return publicPaths.some(path => location.pathname.startsWith(path));
+  };
 
   // Initialize user tracking and load preferences
   useEffect(() => {
@@ -31,7 +39,26 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       // Initialize user tracking (generates fingerprint if needed)
       await getOrCreateUserId();
 
-      // Try to load preferences from backend
+      // Skip backend preferences on public routes
+      if (isPublicRoute()) {
+        // Use localStorage or system preference only
+        const savedTheme = localStorage.getItem('theme') as Theme | null;
+        
+        if (savedTheme) {
+          setThemeState(savedTheme);
+          applyTheme(savedTheme);
+        } else {
+          // Check system preference
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          const defaultTheme = prefersDark ? 'dark' : 'light';
+          setThemeState(defaultTheme);
+          applyTheme(defaultTheme);
+        }
+        setIsInitialized(true);
+        return;
+      }
+
+      // Try to load preferences from backend (for authenticated routes)
       const preferences = await fetchPreferences();
 
       if (preferences?.settings?.theme) {
@@ -65,7 +92,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     };
 
     initializeTheme();
-  }, []);
+  }, [location.pathname]); // Re-run when route changes
 
   const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
@@ -83,11 +110,11 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     localStorage.setItem('theme', newTheme);
     applyTheme(newTheme);
 
-    // Sync to backend (fire and forget)
-    if (isInitialized) {
+    // Sync to backend (fire and forget) - skip on public routes
+    if (isInitialized && !isPublicRoute()) {
       updatePreferences({ theme: newTheme }).catch(console.error);
     }
-  }, [isInitialized]);
+  }, [isInitialized, location.pathname]);
 
   const toggleTheme = useCallback(() => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
