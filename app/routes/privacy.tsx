@@ -50,7 +50,7 @@ export default function Privacy() {
               We may share your information with:
             </p>
             <ul>
-              <li>Employers for job applications</li>
+              <li>Households for job applications</li>
               <li>Service providers who assist in our operations</li>
               <li>Legal authorities when required by law</li>
             </ul>

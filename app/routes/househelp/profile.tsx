@@ -289,7 +289,7 @@ export default function HousehelpDashboard() {
                 };
             } else if (sectionId === "employment-salary") {
                 updateFields = {
-                    employer_id: form.employer_id,
+                    household_id: form.household_id,
                     bureau_id: form.bureau_id,
                     salary_expectation: form.salary_expectation,
                     salary_frequency: form.salary_frequency,

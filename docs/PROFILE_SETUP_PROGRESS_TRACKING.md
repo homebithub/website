@@ -51,7 +51,7 @@ Previous data is pre-filled ✅
 const saveStepToBackend = async (stepId: string, data: any) => {
   // Saves just this step's data to backend
   // Called after user completes each step
-  await fetch('/api/v1/profile/employer/me', {
+  await fetch('/api/v1/profile/household/me', {
     method: 'PATCH',
     body: JSON.stringify(transformStepData(stepId, data))
   });
@@ -62,7 +62,7 @@ const saveStepToBackend = async (stepId: string, data: any) => {
 ```typescript
 const loadProfileFromBackend = async () => {
   // Fetches existing profile
-  const profile = await fetch('/api/v1/profile/employer/me');
+  const profile = await fetch('/api/v1/profile/household/me');
   
   // Converts backend data to step format
   const stepData = reconstructProfileData(profile);
@@ -309,7 +309,7 @@ const LocationStep = ({ onNext, initialData }) => {
 
 ## 📋 Backend Requirements
 
-### **Endpoint:** `PATCH /api/v1/profile/employer/me`
+### **Endpoint:** `PATCH /api/v1/profile/household/me`
 
 **Must Support:**
 - ✅ Partial updates (only update provided fields)
@@ -318,7 +318,7 @@ const LocationStep = ({ onNext, initialData }) => {
 
 **Example Request:**
 ```json
-PATCH /api/v1/profile/employer/me
+PATCH /api/v1/profile/household/me
 Authorization: Bearer {token}
 
 {

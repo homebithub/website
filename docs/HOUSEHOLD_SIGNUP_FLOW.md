@@ -21,7 +21,7 @@ Step 2: Account Created ✅
 ├─ POST /api/v1/auth/register
 ├─ User stored in database
 ├─ JWT token generated
-├─ profile_type = "employer"
+├─ profile_type = "household"
 └─ Token stored in localStorage
         ↓
 Step 3: /profile-setup/household ✅
@@ -92,7 +92,7 @@ Step 4: /household/profile ✅
 navigate('/verify-otp', { state: { verification: data.verification } });
 
 // NEW: Redirects to profile setup based on profile type
-if (form.profile_type === 'employer' || form.profile_type === 'household') {
+if (form.profile_type === 'household' || form.profile_type === 'household') {
     navigate('/profile-setup/household');
 } else if (form.profile_type === 'househelp') {
     navigate('/profile-setup/househelp');
@@ -244,7 +244,7 @@ http://localhost:5173/signup
 ```javascript
 // POST /api/v1/auth/register
 {
-  "profile_type": "employer",
+  "profile_type": "household",
   "first_name": "John",
   "last_name": "Doe",
   "password": "SecurePass123!",
@@ -257,7 +257,7 @@ http://localhost:5173/signup
     "user_id": "uuid",
     "first_name": "John",
     "last_name": "Doe",
-    "profile_type": "employer"
+    "profile_type": "household"
   }
 }
 ```

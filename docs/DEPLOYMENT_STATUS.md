@@ -27,7 +27,7 @@
 ### Database
 - ✅ **Migration Applied:** `000_add_shared_households.sql`
 - ✅ **Tables:**
-  - `household_profiles` (renamed from employer_profiles)
+  - `household_profiles` (renamed from household_profiles)
   - `household_members`
   - `household_invitations`
   - `household_member_requests`

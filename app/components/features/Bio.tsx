@@ -21,7 +21,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
   const content = {
     househelp: {
       title: 'Tell Us About Yourself',
-      description: 'Introduce yourself to potential employers. A well-written bio can significantly increase your chances of getting hired. Share your experience, skills, and what makes you the perfect fit for the job.',
+      description: 'Introduce yourself to potential households. A well-written bio can significantly increase your chances of getting hired. Share your experience, skills, and what makes you the perfect fit for the job.',
       placeholder: 'Share your experience, skills, and what makes you the perfect fit...'
     },
     household: {

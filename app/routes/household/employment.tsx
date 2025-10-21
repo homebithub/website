@@ -63,7 +63,7 @@ export default function HouseholdEmployment() {
       try {
         const token = localStorage.getItem("token");
         if (!token) return;
-        const res = await fetch(`${API_BASE}/api/v1/shortlists/employer`, {
+        const res = await fetch(`${API_BASE}/api/v1/shortlists/household`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to fetch shortlist");

@@ -12,7 +12,7 @@ POST ${API_BASE_URL}/api/v1/auth/register
 **Request Body:**
 ```json
 {
-  "profile_type": "employer",
+  "profile_type": "household",
   "first_name": "John",
   "last_name": "Doe",
   "password": "SecurePass123!",
@@ -28,7 +28,7 @@ POST ${API_BASE_URL}/api/v1/auth/register
     "first_name": "John",
     "last_name": "Doe",
     "phone": "0712345678",
-    "profile_type": "employer",
+    "profile_type": "household",
     "email": null
   },
   "verification": {
@@ -87,7 +87,7 @@ GET ${API_BASE_URL}/google
     "first_name": "John",
     "last_name": "Doe",
     "profile_picture": "https://lh3.googleusercontent.com/...",
-    "profile_type": "employer",
+    "profile_type": "household",
     "auth_provider": "google"
   }
 }
@@ -108,7 +108,7 @@ Each step component should save data as the user progresses, OR save all data at
 ```typescript
 // In each step component (Location, Children, etc.)
 const handleSave = async (data) => {
-  await fetch(`${API_BASE_URL}/api/v1/profile/employer/me`, {
+  await fetch(`${API_BASE_URL}/api/v1/profile/household/me`, {
     method: 'PATCH',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -129,7 +129,7 @@ const handleComplete = async () => {
     // ... all other steps
   };
   
-  await fetch(`${API_BASE_URL}/api/v1/profile/employer/me`, {
+  await fetch(`${API_BASE_URL}/api/v1/profile/household/me`, {
     method: 'PATCH',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -144,7 +144,7 @@ const handleComplete = async () => {
 
 **Required Endpoint:**
 ```
-PATCH ${API_BASE_URL}/api/v1/profile/employer/me
+PATCH ${API_BASE_URL}/api/v1/profile/household/me
 ```
 
 **Request Body (Example):**
@@ -183,7 +183,7 @@ PATCH ${API_BASE_URL}/api/v1/profile/employer/me
 
 #### **Endpoint 1: Get Profile**
 ```
-GET ${API_BASE_URL}/api/v1/profile/employer/me
+GET ${API_BASE_URL}/api/v1/profile/household/me
 ```
 
 **Headers:**
@@ -214,7 +214,7 @@ Authorization: Bearer {token}
 
 #### **Endpoint 2: Update Profile**
 ```
-PATCH ${API_BASE_URL}/api/v1/profile/employer/me
+PATCH ${API_BASE_URL}/api/v1/profile/household/me
 ```
 
 **Headers:**
@@ -303,7 +303,7 @@ const handleComplete = async () => {
 ```typescript
 // In each step component
 const handleNext = async (stepData) => {
-  await fetch(`${API_BASE_URL}/api/v1/profile/employer/me`, {
+  await fetch(`${API_BASE_URL}/api/v1/profile/household/me`, {
     method: 'PATCH',
     body: JSON.stringify(stepData)
   });
@@ -319,7 +319,7 @@ const handleNext = async (stepData) => {
 
 **Endpoint:**
 ```
-PATCH ${API_BASE_URL}/api/v1/profile/employer/me
+PATCH ${API_BASE_URL}/api/v1/profile/household/me
 ```
 
 **Should Accept:**
@@ -345,11 +345,11 @@ PATCH ${API_BASE_URL}/api/v1/profile/employer/me
   - [ ] Returns: token, user object
   - [ ] Creates user in database
 
-- [ ] **Endpoint 2:** `GET /api/v1/profile/employer/me` working
+- [ ] **Endpoint 2:** `GET /api/v1/profile/household/me` working
   - [ ] Requires: Authorization header with Bearer token
-  - [ ] Returns: employer profile data
+  - [ ] Returns: household profile data
 
-- [ ] **Endpoint 3:** `PATCH /api/v1/profile/employer/me` working
+- [ ] **Endpoint 3:** `PATCH /api/v1/profile/household/me` working
   - [ ] Requires: Authorization header
   - [ ] Accepts: any profile fields
   - [ ] Updates profile in database
@@ -440,7 +440,7 @@ npm run dev
 ### **6. Test Dashboard:**
 
 1. Should auto-fetch profile data
-2. **Check Network tab** for `GET /api/v1/profile/employer/me`
+2. **Check Network tab** for `GET /api/v1/profile/household/me`
 3. If it fails, check:
    - Is token in localStorage?
    - Is backend running?
@@ -458,8 +458,8 @@ npm run dev
 
 ### **What Needs Backend:**
 ⚠️ `POST /api/v1/auth/register` - Create user
-⚠️ `PATCH /api/v1/profile/employer/me` - Save profile data
-⚠️ `GET /api/v1/profile/employer/me` - Get profile data
+⚠️ `PATCH /api/v1/profile/household/me` - Save profile data
+⚠️ `GET /api/v1/profile/household/me` - Get profile data
 
 ### **What Needs Frontend Fix:**
 🔧 Token storage in signup.tsx
@@ -474,8 +474,8 @@ npm run dev
 2. **Update** `app/config/api.ts` line 23 to use `http://localhost:8000`
 3. **Implement** these 3 endpoints in backend:
    - POST `/api/v1/auth/register`
-   - GET `/api/v1/profile/employer/me`
-   - PATCH `/api/v1/profile/employer/me`
+   - GET `/api/v1/profile/household/me`
+   - PATCH `/api/v1/profile/household/me`
 4. **Fix** token storage in signup.tsx
 5. **Test** the flow!
 

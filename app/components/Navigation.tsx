@@ -34,7 +34,7 @@ export function Navigation() {
     // Memoized dashboard path based on profile type
     const dashboardPath = React.useMemo(() => {
         if (!profileType) return null;
-        if (profileType === "employer" || profileType === "household") return "/household";
+        if (profileType === "household" || profileType === "household") return "/household";
         if (profileType === "househelp") return "/househelp";
         // Bureau users should not access regular navigation
         return null;
@@ -118,12 +118,12 @@ export function Navigation() {
   {/* Floating purple blob */}
   <svg className="absolute -top-8 -left-8 w-16 h-16 opacity-30 animate-float" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="50" ry="40" fill="#a855f7" /></svg>
   <Link to="/" prefetch="intent" className="relative gradient-text font-extrabold text-3xl sm:text-4xl px-3 py-2 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
-    HomeXpert
+    HomeBit
   </Link>
 </div>
 
-                {/* Public Navigation Links - Only show for non-authenticated users on larger screens (non-app host) */}
-                {showAuthButtons && (
+                {/* Public Navigation Links - Show on non-app hosts for all users */}
+                {!isAppHost && (
                     <div className="hidden lg:flex items-center space-x-4 ml-auto">
                         {navigation.map((item) => (
                             <Link
@@ -183,7 +183,7 @@ export function Navigation() {
                     {/* App navigation for authenticated users on app subdomain */}
                     {isAppHost && user && (
                         <div className="hidden lg:flex items-center space-x-3 ml-4">
-                            {profileType === 'employer' || profileType === 'household' ? (
+                            {profileType === 'household' || profileType === 'household' ? (
                                 <>
                                     <Link to="/household/profile" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Profile</Link>
                                     <Link to="/household/employment" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Find Househelps</Link>
@@ -267,7 +267,7 @@ export function Navigation() {
                                             {/* App links for mobile on app host */}
                                             {isAppHost ? (
                                                 <>
-                                                    {profileType === 'employer' || profileType === 'household' ? (
+                                                    {profileType === 'household' || profileType === 'household' ? (
                                                         <>
                                                             <Menu.Item>{({ active }) => (
                                                                 <Link to="/household/profile" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>

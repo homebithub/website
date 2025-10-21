@@ -10,7 +10,7 @@ This document outlines the implementation of Joi validation for user input forms
 
 #### Validation Schemas Created:
 - **Signup Form** (`signupSchema`)
-  - Profile type validation (employer, househelp, bureau)
+  - Profile type validation (household, househelp, bureau)
   - Password strength requirements (8+ chars, uppercase, lowercase, number, special char)
   - Name validation (2-50 characters)
   - Phone number validation (9-15 digits, optional + prefix)

@@ -272,7 +272,7 @@ export interface HousehelpProfile {
   reviews: Review[];
 }
 
-export interface EmployerProfile {
+export interface HouseholdProfile {
   id: string;
   userId: string;
   firstName: string;
@@ -377,15 +377,15 @@ export const authService = {
 ```typescript
 // app/services/profile.service.ts
 import { apiClient } from "~/utils/api/client";
-import type { HousehelpProfile, EmployerProfile, PaginatedResponse } from "~/types/api";
+import type { HousehelpProfile, HouseholdProfile, PaginatedResponse } from "~/types/api";
 
 export const profileService = {
   async getHousehelpProfile(id: string): Promise<HousehelpProfile> {
     return apiClient.get<HousehelpProfile>(`/api/v1/profile/househelp/${id}`);
   },
   
-  async getEmployerProfile(id: string): Promise<EmployerProfile> {
-    return apiClient.get<EmployerProfile>(`/api/v1/profile/employer/${id}`);
+  async getHouseholdProfile(id: string): Promise<HouseholdProfile> {
+    return apiClient.get<HouseholdProfile>(`/api/v1/profile/household/${id}`);
   },
   
   async updateHousehelpProfile(id: string, data: Partial<HousehelpProfile>): Promise<HousehelpProfile> {
@@ -484,7 +484,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     const user = await authService.getCurrentUser();
     
     // Get profile
-    const profile = await profileService.getEmployerProfile(user.id);
+    const profile = await profileService.getHouseholdProfile(user.id);
     
     return { user, profile };
   } catch (error) {

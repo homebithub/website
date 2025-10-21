@@ -72,7 +72,7 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
       // Determine endpoint
       const endpoint = profileType === 'househelp' 
         ? API_ENDPOINTS.profile.househelp.me 
-        : API_ENDPOINTS.profile.employer.me;
+        : API_ENDPOINTS.profile.household.me;
 
       // Transform just this step's data
       const stepPayload = transformStepData(stepId, data);
@@ -121,7 +121,7 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       const endpoint = profileType === 'househelp' 
         ? API_ENDPOINTS.profile.househelp.me 
-        : API_ENDPOINTS.profile.employer.me;
+        : API_ENDPOINTS.profile.household.me;
 
       const response = await fetch(endpoint, {
         headers: {
@@ -173,7 +173,7 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
       // Determine which endpoint to use based on profile type
       const endpoint = profileType === 'househelp' 
         ? API_ENDPOINTS.profile.househelp.me 
-        : API_ENDPOINTS.profile.employer.me;
+        : API_ENDPOINTS.profile.household.me;
 
       // Transform the data to match backend expectations
       const payload = transformProfileData(profileData);
@@ -269,7 +269,7 @@ function transformProfileData(data: ProfileSetupData): any {
   }
 
   // Household-specific fields
-  if (profileType === 'employer' || profileType === 'household') {
+  if (profileType === 'household' || profileType === 'household') {
     // Children
     if (data.children) {
       transformed.has_children = data.children.has_children;
@@ -420,7 +420,7 @@ function reconstructProfileData(profile: any): ProfileSetupData {
   }
 
   // Household-specific fields
-  if (profileType === 'employer' || profileType === 'household') {
+  if (profileType === 'household' || profileType === 'household') {
     // Children
     if (profile.has_children !== undefined || profile.number_of_kids) {
       data.children = {

@@ -14,8 +14,8 @@ export default function EmploymentSalarySection({ profile, onEdit }: EmploymentS
       <h2 className="text-lg font-semibold mb-2 text-primary-700 dark:text-primary-200">Employment & Salary</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:gap-8">
         <div>
-          <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Employer ID</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.employer_id || '-'}</span>
+          <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Household ID</span>
+          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.household_id || '-'}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Bureau ID</span>

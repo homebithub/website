@@ -17,7 +17,7 @@ export default function HouseholdProfile() {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Not authenticated");
-        const res = await fetch(API_ENDPOINTS.profile.employer.me, {
+        const res = await fetch(API_ENDPOINTS.profile.household.me, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) throw new Error("Failed to fetch profile");
@@ -59,7 +59,7 @@ export default function HouseholdProfile() {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Not authenticated");
-      const res = await fetch(API_ENDPOINTS.profile.employer.me, {
+      const res = await fetch(API_ENDPOINTS.profile.household.me, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -93,10 +93,10 @@ export default function HouseholdProfile() {
           </button>
         )}
       </div>
-      
+
       {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-4 shadow-md mb-4"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800">{success}</p></div></div>}
-      
-      <div className="text-center text-gray-600 mb-6">Your employer profile details</div>
+
+      <div className="text-center text-gray-600 mb-6">Your household profile details</div>
       <div className="space-y-4">
         {editMode ? (
           <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>

@@ -41,7 +41,7 @@ We've successfully implemented **complete onboarding flows** for both user types
 2. Select "Household"
 3. Complete signup
 4. Complete 10-step profile setup
-5. ✅ Data saved to employer_profiles table
+5. ✅ Data saved to household_profiles table
 ```
 
 ### **Test Househelp Flow:**
@@ -64,7 +64,7 @@ We've successfully implemented **complete onboarding flows** for both user types
 - ✅ **Data Transformation** - Bidirectional conversion
 
 ### **Type-Specific:**
-- ✅ **Household:** 10 steps, employer-focused fields
+- ✅ **Household:** 10 steps, household-focused fields
 - ✅ **Househelp:** 13 steps, worker-focused fields
 
 ---
@@ -118,13 +118,13 @@ GROUP BY profile_type;
 - `website/app/routes/profile-setup/househelp.tsx` - Househelp flow
 
 ### **Backend:**
-- `auth/src/api/handlers/employer_handler.go` - Household endpoint
+- `auth/src/api/handlers/household_handler.go` - Household endpoint
 - `auth/src/api/handlers/househelp_handler.go` - Househelp endpoint
 - `auth/src/api/handlers/profile_setup_progress_handler.go` - Progress tracking
 
 ### **Database:**
 - `auth/migrations/000002_initial_tables.up.sql` - Profile tables
-- `auth/migrations/000011_add_employer_profile_fields.up.sql` - Household fields
+- `auth/migrations/000011_add_household_profile_fields.up.sql` - Household fields
 - `auth/migrations/000012_create_profile_setup_progress.up.sql` - Progress tracking
 
 ---

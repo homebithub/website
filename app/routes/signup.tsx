@@ -55,7 +55,7 @@ const base_url = API_BASE_URL;
 
 // Profile type options - Bureau removed as they should not sign up through regular flow
 const profileOptions = [
-    { value: 'employer', label: 'Household' },
+    { value: 'household', label: 'Household' },
     { value: 'househelp', label: 'Househelp/Nanny' }
 ];
 
@@ -98,7 +98,7 @@ export default function SignupPage() {
                 navigate("/");
                 return;
             }
-            if (profileType === "employer" || profileType === "household") {
+            if (profileType === "household" || profileType === "household") {
                 navigate("/household/profile");
             } else if (profileType === "househelp") {
                 navigate("/househelp");
@@ -197,6 +197,13 @@ export default function SignupPage() {
         setFormLoading(true);
         setError(null);
         setSuccess(null);
+        
+        // Clear any existing auth data before signup
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_object');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('profile_type');
+        
         try {
             // Prepare payload
             let payload = { ...form };
@@ -220,6 +227,11 @@ export default function SignupPage() {
             // Store user data temporarily (before verification)
             localStorage.setItem('user_id', data.user.user_id);
             localStorage.setItem('profile_type', data.user.profile_type || form.profile_type);
+            
+            // Store token if provided (backend may return token immediately)
+            if (data.token) {
+                localStorage.setItem('token', data.token);
+            }
             
             // Redirect to OTP verification with verification data
             // The OTP page will handle the rest of the flow
@@ -307,7 +319,7 @@ export default function SignupPage() {
                                     <div className="flex-1">
                                         <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{option.label}</h4>
                                         <p className="text-sm text-gray-600 dark:text-gray-300">
-                                            {option.value === 'employer' 
+                                            {option.value === 'household' 
                                                 ? 'I need to hire help for my home and family needs' 
                                                 : 'I\'m looking for work opportunities and want to offer my services'
                                             }

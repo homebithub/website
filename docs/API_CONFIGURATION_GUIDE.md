@@ -68,7 +68,7 @@ API_ENDPOINTS.auth.googleCallback        // GET Google OAuth callback
 ```tsx
 API_ENDPOINTS.profile.househelp.me                    // GET/PATCH househelp profile
 API_ENDPOINTS.profile.househelp.byId(profileId)       // GET househelp by ID
-API_ENDPOINTS.profile.employer.me                     // GET/PATCH employer profile
+API_ENDPOINTS.profile.household.me                     // GET/PATCH household profile
 ```
 
 ### Image Endpoints

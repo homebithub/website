@@ -1,6 +1,6 @@
 # Homebit
 
-Homebit is a modern web application designed to connect employers, employees, and agencies for home services. It provides a seamless platform for managing profiles, bookings, and communications in the home services industry.
+Homebit is a modern web application designed to connect households, employees, and agencies for home services. It provides a seamless platform for managing profiles, bookings, and communications in the home services industry.
 
 - [Remix Docs](https://remix.run/docs)
 

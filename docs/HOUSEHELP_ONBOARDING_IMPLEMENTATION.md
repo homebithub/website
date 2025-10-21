@@ -173,7 +173,7 @@ All required fields already exist:
 - ✅ `signature`, `signed_date`
 
 **Progress Tracking Table:** `auth/migrations/000012_create_profile_setup_progress.up.sql`
-- ✅ Supports both 'employer' and 'househelp' profile types
+- ✅ Supports both 'household' and 'househelp' profile types
 - ✅ Tracks current step, last completed step, completion percentage
 - ✅ Stores completed steps array and step timestamps
 - ✅ Tracks status (in_progress, completed, abandoned)
@@ -336,7 +336,7 @@ User continues from where they left off
 
 # Verify Data
 7. Check database: both profiles exist
-8. ✅ Household: employer_profiles table
+8. ✅ Household: household_profiles table
 9. ✅ Househelp: househelp_profiles table
 10. ✅ Progress: profile_setup_progress (2 records)
 ```
@@ -363,11 +363,11 @@ Body: {
 }
 
 # Get household profile
-GET /api/v1/profile/employer/me
+GET /api/v1/profile/household/me
 Headers: Authorization: Bearer {token}
 
 # Update household profile
-PATCH /api/v1/profile/employer/me
+PATCH /api/v1/profile/household/me
 Headers: Authorization: Bearer {token}
 Body: {
   "has_children": true,

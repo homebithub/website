@@ -307,10 +307,10 @@ Find:    'http://localhost:8080/api/v1/profile/househelp/me'
 Replace: API_ENDPOINTS.profile.househelp.me
 ```
 
-### Pattern 3: Employer Profile
+### Pattern 3: Household Profile
 ```
-Find:    'http://localhost:8080/api/v1/profile/employer/me'
-Replace: API_ENDPOINTS.profile.employer.me
+Find:    'http://localhost:8080/api/v1/profile/household/me'
+Replace: API_ENDPOINTS.profile.household.me
 ```
 
 ### Pattern 4: Image Upload

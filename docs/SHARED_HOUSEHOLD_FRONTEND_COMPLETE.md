@@ -180,7 +180,7 @@ The signup page now redirects household users to `/household/setup`:
 
 ```typescript
 // In signup.tsx (already updated)
-if (form.profile_type === 'employer' || form.profile_type === 'household') {
+if (form.profile_type === 'household' || form.profile_type === 'household') {
     navigate('/household/setup');  // NEW: Household setup flow
 }
 ```
@@ -391,7 +391,7 @@ xl: 1280px  // Large desktops
 **Status:** Fixed  
 **Fix:** Updated imports to use `github.com/homexpertke/src/...`
 
-### Issue: EmployerProfile redeclaration
+### Issue: HouseholdProfile redeclaration
 **Status:** Fixed  
 **Fix:** Removed from profile.go, now only in household_profile.go with alias
 

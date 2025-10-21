@@ -66,7 +66,7 @@ export default function HousehelpFindHouseholds() {
     setHasMore(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/v1/employers/search`, {
+      const res = await fetch(`${API_BASE}/api/v1/households/search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -94,7 +94,7 @@ export default function HousehelpFindHouseholds() {
     try {
       const token = localStorage.getItem("token");
       const nextOffset = offset + limit;
-      const res = await fetch(`${API_BASE}/api/v1/employers/search`, {
+      const res = await fetch(`${API_BASE}/api/v1/households/search`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

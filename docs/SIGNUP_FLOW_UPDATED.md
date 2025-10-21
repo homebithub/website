@@ -124,7 +124,7 @@ POST /api/v1/verifications/verify-otp
 **Before:**
 ```typescript
 // Redirect based on profile type
-if (form.profile_type === 'employer' || form.profile_type === 'household') {
+if (form.profile_type === 'household' || form.profile_type === 'household') {
     navigate('/household/setup');
 }
 ```
@@ -146,7 +146,7 @@ if (data.verification) {
 
 **Before:**
 ```typescript
-if (parsed.profile_type === 'household' || parsed.profile_type === 'employer') {
+if (parsed.profile_type === 'household' || parsed.profile_type === 'household') {
     setShowProfileModal(true); // Old modal
     return;
 }
@@ -154,7 +154,7 @@ if (parsed.profile_type === 'household' || parsed.profile_type === 'employer') {
 
 **After:**
 ```typescript
-if (parsed.profile_type === 'household' || parsed.profile_type === 'employer') {
+if (parsed.profile_type === 'household' || parsed.profile_type === 'household') {
     path = '/household/setup'; // New household setup page
 }
 ```

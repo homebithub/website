@@ -60,7 +60,7 @@ export type SignupResponse = {
 updateStepData('location', { town: 'Nairobi', area: 'Westlands' });
 
 // Save all data to backend when complete
-await saveProfileToBackend(); // Calls PATCH /api/v1/profile/employer/me
+await saveProfileToBackend(); // Calls PATCH /api/v1/profile/household/me
 ```
 
 #### 2. Updated `app/routes/profile-setup/household.tsx`
@@ -74,7 +74,7 @@ await saveProfileToBackend(); // Calls PATCH /api/v1/profile/employer/me
 1. User completes all 10 steps
 2. Clicks "🎉 Complete" button
 3. Button shows "✨ Saving..."
-4. Context calls: PATCH /api/v1/profile/employer/me
+4. Context calls: PATCH /api/v1/profile/household/me
 5. On success: Redirects to /household/profile
 6. On error: Shows alert, allows retry
 ```
@@ -95,12 +95,12 @@ await saveProfileToBackend(); // Calls PATCH /api/v1/profile/employer/me
     "last_name": "Doe",
     "phone": "0712345678",
     "email": null,
-    "profile_type": "employer"
+    "profile_type": "household"
   }
 }
 ```
 
-#### **PATCH /api/v1/profile/employer/me**
+#### **PATCH /api/v1/profile/household/me**
 **Request Headers:**
 ```
 Authorization: Bearer {token}
@@ -176,8 +176,8 @@ API_BASE_URL=http://localhost:8000
 # Make sure your backend is running on localhost:8000
 # Implement these endpoints:
 # - POST /api/v1/auth/register
-# - GET /api/v1/profile/employer/me
-# - PATCH /api/v1/profile/employer/me
+# - GET /api/v1/profile/household/me
+# - PATCH /api/v1/profile/household/me
 ```
 
 ---
@@ -212,7 +212,7 @@ npm run dev
 // Open browser console
 localStorage.getItem('token'); // Should have JWT token
 localStorage.getItem('user_id'); // Should have user ID
-localStorage.getItem('profile_type'); // Should be "employer"
+localStorage.getItem('profile_type'); // Should be "household"
 ```
 
 ---
@@ -224,11 +224,11 @@ localStorage.getItem('profile_type'); // Should be "employer"
 
 **Expected:**
 - ✅ Button changes to "✨ Saving..."
-- ✅ PATCH request to `/api/v1/profile/employer/me`
+- ✅ PATCH request to `/api/v1/profile/household/me`
 - ✅ Redirect to `/household/profile` on success
 
 **Check Network Tab:**
-- Request URL: `http://localhost:8000/api/v1/profile/employer/me`
+- Request URL: `http://localhost:8000/api/v1/profile/household/me`
 - Method: PATCH
 - Headers: `Authorization: Bearer {token}`
 - Body: JSON with all profile data
@@ -240,7 +240,7 @@ localStorage.getItem('profile_type'); // Should be "employer"
 2. Should auto-load profile data
 
 **Expected:**
-- ✅ GET request to `/api/v1/profile/employer/me`
+- ✅ GET request to `/api/v1/profile/household/me`
 - ✅ Profile data displayed
 - ✅ Can click "Edit" to modify
 
@@ -281,8 +281,8 @@ CORS(app, origins=["http://localhost:5173"])
 
 ### ⚠️ **Backend Needed:**
 1. POST `/api/v1/auth/register` - Must return `token`
-2. PATCH `/api/v1/profile/employer/me` - Save profile data
-3. GET `/api/v1/profile/employer/me` - Fetch profile data
+2. PATCH `/api/v1/profile/household/me` - Save profile data
+3. GET `/api/v1/profile/household/me` - Fetch profile data
 
 ---
 

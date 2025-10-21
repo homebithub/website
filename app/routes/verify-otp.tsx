@@ -223,8 +223,8 @@ export default function VerifyOtpPage() {
             return;
           }
           
-          // Handle both 'household' and 'employer' profile types
-          if (parsed.profile_type === 'household' || parsed.profile_type === 'employer') {
+          // Handle both 'household' and 'household' profile types
+          if (parsed.profile_type === 'household' || parsed.profile_type === 'household') {
             // If this is after email verification, go to household setup
             if (afterEmailVerification) {
               path = '/household/setup';
@@ -336,7 +336,7 @@ export default function VerifyOtpPage() {
       if (!token) throw new Error('Not authenticated');
       
       // Save profile data to backend
-      const res = await fetch(`${API_BASE_URL}/api/v1/profile/employer/complete`, {
+      const res = await fetch(`${API_BASE_URL}/api/v1/profile/household/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

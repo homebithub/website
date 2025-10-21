@@ -5,7 +5,7 @@ const phonePattern = /^[+]?\d{9,15}$/;
 
 // Validation schemas
 export const signupSchema = Joi.object({
-  profile_type: Joi.string().valid('employer', 'househelp', 'bureau').required().messages({
+  profile_type: Joi.string().valid('household', 'househelp', 'bureau').required().messages({
     'string.empty': 'Please select your profile type',
     'any.required': 'Please select your profile type',
     'any.only': 'Please choose a valid profile type from the list'

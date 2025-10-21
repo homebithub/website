@@ -34,7 +34,7 @@ Secure invite code system with approval workflow, role-based permissions, and co
    - `migrations/000_add_shared_households_down.sql` - Rollback script
 
 **📊 Database Changes:**
-- Renamed: `employer_profiles` → `household_profiles`
+- Renamed: `household_profiles` → `household_profiles`
 - Added: 3 new tables (`household_members`, `household_invitations`, `household_member_requests`)
 - Added: 5 new columns to household_profiles
 - Created: 4 helper functions, 2 views, 1 trigger

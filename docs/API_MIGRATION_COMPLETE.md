@@ -153,7 +153,7 @@ API_ENDPOINTS.auth.changePassword
 // Profiles
 API_ENDPOINTS.profile.househelp.me
 API_ENDPOINTS.profile.househelp.byId(id)
-API_ENDPOINTS.profile.employer.me
+API_ENDPOINTS.profile.household.me
 
 // Images
 API_ENDPOINTS.images.upload

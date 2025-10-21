@@ -23,10 +23,10 @@ const EmploymentSalaryEditSection: React.FC<EmploymentSalaryEditSectionProps> = 
     <h2 className="text-lg font-semibold mb-2 text-primary-700 dark:text-primary-200">Employment & Salary</h2>
     <form className="grid grid-cols-1 sm:grid-cols-2 gap-4" onSubmit={onSave}>
       <div>
-        <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Employer ID</label>
+        <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Household ID</label>
         <input
-          name="employer_id"
-          value={form.employer_id || ""}
+          name="household_id"
+          value={form.household_id || ""}
           onChange={onChange}
           className="w-full rounded p-2 bg-slate-800 text-white border border-slate-700 focus:ring-2 focus:ring-primary-500 focus:outline-none"
         />

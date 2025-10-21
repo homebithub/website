@@ -13,7 +13,7 @@ export function testValidationSchemas() {
 
   // Test signup validation
   const validSignup = {
-    profile_type: 'employer',
+    profile_type: 'household',
     password: 'TestPass123!',
     first_name: 'John',
     last_name: 'Doe',

@@ -102,7 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      if (profileType === "household" || profileType === "employer") {
+      if (profileType === "household" || profileType === "household") {
         console.log("Redirecting to /household/profile");
         navigate("/household/profile");
       } else if (profileType === "househelp") {

@@ -88,10 +88,10 @@ Step 10: Review
 SELECT * FROM users WHERE phone = '+254712345678';
 
 -- Check profile created
-SELECT * FROM employer_profiles WHERE user_id = '...';
+SELECT * FROM household_profiles WHERE user_id = '...';
 
 -- Check progress tracking
-SELECT * FROM profile_setup_progress WHERE profile_type = 'employer';
+SELECT * FROM profile_setup_progress WHERE profile_type = 'household';
 ```
 
 ---
@@ -303,7 +303,7 @@ GROUP BY profile_type;
 
 ### **Household Flow:**
 - ✅ All 10 steps complete without errors
-- ✅ Data saved to `employer_profiles` table
+- ✅ Data saved to `household_profiles` table
 - ✅ Progress tracked in `profile_setup_progress` table
 - ✅ Can resume from any step
 - ✅ Data persists across sessions
@@ -324,7 +324,7 @@ GROUP BY profile_type;
 -- After successful testing
 SELECT 'users' as table_name, COUNT(*) FROM users
 UNION ALL
-SELECT 'employer_profiles', COUNT(*) FROM employer_profiles
+SELECT 'household_profiles', COUNT(*) FROM household_profiles
 UNION ALL
 SELECT 'househelp_profiles', COUNT(*) FROM househelp_profiles
 UNION ALL
@@ -332,7 +332,7 @@ SELECT 'profile_setup_progress', COUNT(*) FROM profile_setup_progress;
 
 -- Expected:
 -- users: 4+ (2 household, 2+ househelp)
--- employer_profiles: 2+
+-- household_profiles: 2+
 -- househelp_profiles: 2+
 -- profile_setup_progress: 4+ (one per user)
 ```

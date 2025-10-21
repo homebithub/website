@@ -115,7 +115,7 @@ console.log(user_id,"user_id");
               let path = '/';
               if (userObj) {
                 const parsed = JSON.parse(userObj);
-                if (parsed.profile_type === 'household' || parsed.profile_type === 'employer') {
+                if (parsed.profile_type === 'household' || parsed.profile_type === 'household') {
                   path = '/household/setup';
                 } else if (parsed.profile_type === 'househelp') {
                   path = '/househelp';

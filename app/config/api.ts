@@ -52,8 +52,8 @@ export const API_ENDPOINTS = {
       me: `${API_BASE_URL}/api/v1/profile/househelp/me`,
       byId: (id: string) => `${API_BASE_URL}/api/v1/househelps/${id}/profile_with_user`,
     },
-    employer: {
-      me: `${API_BASE_URL}/api/v1/profile/employer/me`,
+    household: {
+      me: `${API_BASE_URL}/api/v1/profile/household/me`,
     },
   },
   
