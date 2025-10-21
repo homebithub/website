@@ -12,7 +12,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return Response.redirect(`/?waitlist=1&error=missing_code`);
   }
 
-  const baseUrl = process.env.AUTH_API_BASE_URL || "https://api.homexpert.co.ke/auth";
+  const baseUrl = process.env.AUTH_API_BASE_URL || "https://api.homebit.co.ke/auth";
 
   try {
     const resp = await fetch(`${baseUrl}/api/v1/auth/google/signin`, {

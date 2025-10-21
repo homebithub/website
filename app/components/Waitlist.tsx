@@ -75,7 +75,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
       };
       const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL)
         ? (window as any).ENV.AUTH_API_BASE_URL
-        : 'https://api.homexpert.co.ke/auth';
+        : 'https://api.homebit.co.ke/auth';
       const response = await fetch(`${baseUrl}/api/v1/waitlist`, {
         method: 'POST',
         headers: {
@@ -228,7 +228,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
     try {
       const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL)
         ? (window as any).ENV.AUTH_API_BASE_URL
-        : 'https://api.homexpert.co.ke/auth';
+        : 'https://api.homebit.co.ke/auth';
       // Include phone/message in state so callback can auto-create waitlist if possible
       const normalizeKenyanPhone = (phone: string) => {
         const p = phone.trim();
@@ -312,7 +312,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                           Successfully added to waitlist!
                         </p>
                         <p className="text-sm text-green-700 mt-1">
-                          We'll notify you when HomeXpert is available.
+                          We'll notify you when Homebit is available.
                         </p>
                       </div>
                     </div>

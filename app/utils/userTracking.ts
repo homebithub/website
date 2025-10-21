@@ -45,7 +45,7 @@ export const generateBrowserFingerprint = async (): Promise<string> => {
     if (ctx) {
       ctx.textBaseline = 'top';
       ctx.font = '14px Arial';
-      ctx.fillText('HomeXpert', 2, 2);
+      ctx.fillText('Homebit', 2, 2);
       const canvasData = canvas.toDataURL();
       components.push(canvasData.slice(-50)); // Last 50 chars for uniqueness
     }
@@ -86,8 +86,8 @@ const simpleHash = async (str: string): Promise<string> => {
  * Combines browser fingerprint with a random component for uniqueness
  */
 export const getOrCreateUserId = async (): Promise<string> => {
-  const USER_ID_KEY = 'homexpert_user_id';
-  const FINGERPRINT_KEY = 'homexpert_fingerprint';
+  const USER_ID_KEY = 'homebit_user_id';
+  const FINGERPRINT_KEY = 'homebit_fingerprint';
 
   // Check if we have a stored user ID
   let userId = localStorage.getItem(USER_ID_KEY);
@@ -127,8 +127,8 @@ export const getOrCreateUserId = async (): Promise<string> => {
  * Session ID is more temporary and can be used for short-term tracking
  */
 export const getOrCreateSessionId = (): string => {
-  const SESSION_KEY = 'homexpert_session_id';
-  const SESSION_TIMESTAMP_KEY = 'homexpert_session_timestamp';
+  const SESSION_KEY = 'homebit_session_id';
+  const SESSION_TIMESTAMP_KEY = 'homebit_session_timestamp';
   const SESSION_DURATION = 30 * 60 * 1000; // 30 minutes
 
   let sessionId = sessionStorage.getItem(SESSION_KEY);
@@ -158,8 +158,8 @@ export const getOrCreateSessionId = (): string => {
 export const clearUserTracking = (): void => {
   // Keep fingerprint and user_id for continuity
   // Only clear session
-  sessionStorage.removeItem('homexpert_session_id');
-  sessionStorage.removeItem('homexpert_session_timestamp');
+  sessionStorage.removeItem('homebit_session_id');
+  sessionStorage.removeItem('homebit_session_timestamp');
 };
 
 /**

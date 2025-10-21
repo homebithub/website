@@ -202,7 +202,7 @@ export default function Contact() {
                     <p className="text-gray-600">
                       <strong>Email:</strong>
                       <br />
-                      contact@homexpert.com
+                      contact@homebit.com
                     </p>
                     <p className="text-gray-600">
                       <strong>Phone:</strong>

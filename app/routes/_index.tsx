@@ -145,7 +145,7 @@ export default function Index() {
       <div className="text-center">
         <h2 className="text-3xl font-extrabold tracking-tight text-primary-700 dark:text-purple-400 animate-fadeIn">What We Offer</h2>
         <p className="mt-4 font-bold text-2xl sm:text-3xl md:text-4xl leading-tight text-gray-900 dark:text-white animate-fadeIn">More than just a home services platform.</p>
-        <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 animate-fadeIn">Whether you need a quick clean, or full-time help, HomeXpert connects you with reliable professionals you can trust.</p>
+        <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 animate-fadeIn">Whether you need a quick clean, or full-time help, Homebit connects you with reliable professionals you can trust.</p>
       </div>
       <div className="mt-12 sm:mt-16 grid grid-cols-1 gap-y-8 sm:gap-y-12 text-center sm:grid-cols-3 sm:gap-x-6 lg:gap-x-8">
         <div className="flex flex-col items-center fade-in-scroll">
@@ -187,15 +187,15 @@ export default function Index() {
       <div className="flex flex-col lg:flex-row gap-8 sm:gap-12 lg:gap-16 items-center">
         {/* Text Content - Left Column */}
         <div className="lg:w-1/2 mx-auto text-center fade-in-scroll">
-          <h2 className="text-3xl font-extrabold tracking-tight text-primary-700 dark:text-purple-400 animate-fadeIn">HomeXpert</h2>
+          <h2 className="text-3xl font-extrabold tracking-tight text-primary-700 dark:text-purple-400 animate-fadeIn">Homebit</h2>
           <p className="mt-4 font-bold text-2xl sm:text-3xl md:text-4xl leading-tight text-gray-900 dark:text-white animate-fadeIn">Where Quality help meets Opportunity</p>
-          <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 animate-fadeIn">At HomeXpert, we bring skilled, reliable househelps together with households that value trust and professionalism. Whether you're seeking work or looking to hire, we make the connection simple, secure, and stress-free.</p>
+          <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 animate-fadeIn">At Homebit, we bring skilled, reliable househelps together with households that value trust and professionalism. Whether you're seeking work or looking to hire, we make the connection simple, secure, and stress-free.</p>
           <div className="mt-8 sm:mt-10 md:mt-12 flex items-center justify-center fade-in-scroll">
             <Link
               to="/signup"
               className="rounded-xl bg-primary-700 px-8 sm:px-10 py-3 sm:py-4 text-lg sm:text-2xl font-bold text-white shadow-lg hover:bg-primary-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-600 transform hover:scale-110 transition-all duration-300 animate-fadeIn"
             >
-              Join HomeXpert Today
+              Join Homebit Today
             </Link>
           </div>
         </div>

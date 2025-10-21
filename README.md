@@ -1,6 +1,6 @@
-# HomeXpert
+# Homebit
 
-HomeXpert is a modern web application designed to connect employers, employees, and agencies for home services. It provides a seamless platform for managing profiles, bookings, and communications in the home services industry.
+Homebit is a modern web application designed to connect employers, employees, and agencies for home services. It provides a seamless platform for managing profiles, bookings, and communications in the home services industry.
 
 - [Remix Docs](https://remix.run/docs)
 
@@ -26,7 +26,7 @@ AUTH_API_BASE_URL="http://localhost:8080" \
 npm run dev
 ```
 
-- `AUTH_API_BASE_URL` should point to the base of the auth service (e.g. `http://localhost:8080` locally or your deployed API like `https://api.homexpert.co.ke/auth`).
+- `AUTH_API_BASE_URL` should point to the base of the auth service (e.g. `http://localhost:8080` locally or your deployed API like `https://api.homebit.co.ke/auth`).
 - `GOOGLE_CLIENT_ID` is your Google OAuth Client ID for Google Identity Services.
 
 ### Google waitlist OAuth callback
@@ -68,7 +68,7 @@ Make sure to deploy the output of `remix build`
 Set the following in your hosting environment:
 
 - `GOOGLE_CLIENT_ID`
-- `AUTH_API_BASE_URL` (e.g. `https://api.homexpert.co.ke/auth`)
+- `AUTH_API_BASE_URL` (e.g. `https://api.homebit.co.ke/auth`)
 
 ### End-to-end testing (dev)
 

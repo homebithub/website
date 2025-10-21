@@ -28,7 +28,7 @@ export function Navigation() {
     const isAppHost = React.useMemo(() => {
         if (typeof window === 'undefined') return false;
         const host = window.location.host || '';
-        return host.startsWith('app.') || host === 'app.homexpert.co.ke';
+        return host.startsWith('app.') || host === 'app.homebit.co.ke';
     }, []);
 
     // Memoized dashboard path based on profile type

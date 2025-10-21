@@ -98,7 +98,7 @@ export default function Privacy() {
             <p>
               If you have any questions about this privacy policy, please contact us at:
               <br />
-              Email: privacy@homexpert.com
+              Email: privacy@homebit.com
               <br />
               Address: 123 Main Street, City, State, ZIP
             </p>

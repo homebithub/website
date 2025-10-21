@@ -113,7 +113,7 @@ export default function Cookies() {
             <p>
               If you have any questions about our cookie policy, please contact us at:
               <br />
-              Email: privacy@homexpert.com
+              Email: privacy@homebit.com
               <br />
               Address: 123 Main Street, City, State, ZIP
             </p>

@@ -43,7 +43,7 @@ export default function App() {
                 <link rel="icon" href="/logo_512x512.png" type="image/png" sizes="32x32" />
                 <link rel="icon" href="/logo_512x512.png" type="image/png" sizes="16x16" />
                 <link rel="apple-touch-icon" href="/logo_512x512.png" sizes="180x180" />
-                <title>HomeXpert</title>
+                <title>Homebit</title>
             </head>
             <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300">
                 <ThemeProvider>
