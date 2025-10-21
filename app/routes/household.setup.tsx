@@ -8,7 +8,7 @@ import { HouseholdCodePrompt } from '~/components/household/HouseholdCodePrompt'
 import { joinHousehold } from '~/utils/householdApi';
 
 export default function HouseholdSetupPage() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,10 +16,17 @@ export default function HouseholdSetupPage() {
 
   useEffect(() => {
     console.log('[HOUSEHOLD SETUP] Page loaded');
+    console.log('[HOUSEHOLD SETUP] Auth loading:', authLoading);
     console.log('[HOUSEHOLD SETUP] User:', user);
     
+    // Wait for auth to finish loading before checking user
+    if (authLoading) {
+      console.log('[HOUSEHOLD SETUP] Auth still loading, waiting...');
+      return;
+    }
+    
     if (!user) {
-      console.log('[HOUSEHOLD SETUP] No user found, redirecting to /login');
+      console.log('[HOUSEHOLD SETUP] No user found after auth loaded, redirecting to /login');
       navigate('/login');
       return;
     }
@@ -43,7 +50,12 @@ export default function HouseholdSetupPage() {
     } else {
       console.log('[HOUSEHOLD SETUP] No user_object in localStorage');
     }
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
+  
+  // Show loading screen while auth is loading
+  if (authLoading) {
+    return <Loading text="Loading..." />;
+  }
 
   const handleJoinExisting = async (code: string) => {
     setLoading(true);
@@ -72,8 +84,8 @@ export default function HouseholdSetupPage() {
   };
 
   const handleCreateNew = () => {
-    // Redirect to household profile creation
-    navigate('/household/profile');
+    // Redirect to household profile setup wizard
+    navigate('/profile-setup/household');
   };
 
   if (joinStatus === 'pending') {

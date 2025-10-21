@@ -401,12 +401,12 @@ export default function VerifyOtpPage() {
                 maxLength={6}
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className={`w-full h-14 px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-center tracking-widest text-2xl bg-white text-gray-900 shadow-sm transition-all ${
+                className={`w-full h-14 px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-center tracking-widest text-2xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm transition-all ${
                   otpError 
                     ? 'border-red-300 dark:border-red-600' 
                     : otpTouched && !otpError && otp.length === 6
                     ? 'border-green-300 dark:border-green-600'
-                    : 'border-purple-200'
+                    : 'border-purple-200 dark:border-purple-500/30'
                 }`}
                 placeholder="Enter OTP"
               />

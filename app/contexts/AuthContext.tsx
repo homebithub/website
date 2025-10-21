@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Public routes that don't need auth check
   const isPublicRoute = () => {
-    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/household/setup', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies'];
+    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies'];
     return publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === '/';
   };
 
