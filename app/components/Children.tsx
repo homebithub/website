@@ -122,16 +122,19 @@ const Children: React.FC = () => {
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-      <form className="bg-white border p-8 rounded-xl shadow-lg flex flex-col gap-8" onSubmit={handleSubmit}>
-        <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Children</h2>
-        <div className="flex flex-col gap-5">
+      <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
+        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">👶 Children</h2>
+        <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
+          Tell us about your children so we can find the perfect match
+        </p>
+        <div className="flex flex-col gap-4">
           {options.map((opt) => (
             <label
               key={opt.value}
-              className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+              className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${
                 selected === opt.value
-                  ? "border-primary-500 bg-primary-50 text-primary-900"
-                  : "border-gray-200 bg-white hover:bg-gray-50"
+                  ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105"
+                  : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"
               }`}
             >
               <input
@@ -140,10 +143,10 @@ const Children: React.FC = () => {
                 value={opt.value}
                 checked={selected === opt.value}
                 onChange={() => handleOptionChange(opt.value)}
-                className="form-radio h-5 w-5 text-primary-600 border-gray-300"
+                className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
               />
-              <opt.icon className="h-7 w-7 text-primary-500" aria-hidden="true" />
-              <span>{opt.label}</span>
+              <opt.icon className="h-8 w-8 text-purple-600 dark:text-purple-400" aria-hidden="true" />
+              <span className="flex-1">{opt.label}</span>
             </label>
           ))}
 
@@ -156,14 +159,27 @@ const Children: React.FC = () => {
           )}
         </div>
 
-        <div className="flex justify-end">
+        {selected && (
           <button
             type="submit"
-            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            disabled={loading}
+            className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
-            Save Changes
+            {loading ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+              </>
+            ) : (
+              <>
+                💾 Continue
+              </>
+            )}
           </button>
-        </div>
+        )}
       </form>
     </div>
   );

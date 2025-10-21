@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
-import ChildModal from './ChildModal';
+import ChildModal from './modals/ChildModal';
 import ExpectingModal from './ExpectingModal';
-import { Child } from './Children';
+import type { Child } from './Children';
 
 interface KidsProps {
   onChildrenUpdate: (children: Child[]) => void;

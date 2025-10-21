@@ -3,42 +3,45 @@ import { useNavigate } from 'react-router';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { Footer } from '../components/Footer';
+import { Footer } from '~/components/Footer';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { API_BASE_URL } from '~/config/api';
 
 // Import all the components
-import Location from '../components/Location';
-import Gender from '../components/modals/Gender';
-import NannyType from '../components/features/NanyType';
-import YearsOfExperience from '../components/modals/YearsOfExperience';
-import WorkWithKids from '../components/modals/WorkWithKids';
-import WorkWithPets from '../components/modals/WorkWithPets';
-import Languages from '../components/modals/Languages';
-import MyKids from '../components/modals/MyKids';
-import Certifications from '../components/modals/Certifications';
-import SalaryExpectations from '../components/modals/SalaryExpectations';
-import Bio from '../components/Bio';
-import Photos from '../components/features/Photos';
-import Religion from '../components/modals/Religion';
+import Location from '~/components/Location';
+import Gender from '~/components/Gender';
+import NannyType from '~/components/NanyType';
+import YearsOfExperience from '~/components/YearsOfExperience';
+import WorkWithKids from '~/components/WorkWithKids';
+import WorkWithPets from '~/components/WorkWithPets';
+import Languages from '~/components/Languages';
+import MyKids from '~/components/MyKids';
+import Certifications from '~/components/Certifications';
+import SalaryExpectations from '~/components/SalaryExpectations';
+import Bio from '~/components/Bio';
+import Photos from '~/components/Photos';
+import Religion from '~/components/Religion';
 
 const STEPS = [
-  { id: 'nannytype', title: 'Service Type', component: NannyType },
-  { id: 'location', title: 'Location', component: Location },
-  { id: 'gender', title: 'Gender & Age', component: Gender },
-  { id: 'experience', title: 'Experience', component: YearsOfExperience },
-  { id: 'workwithkids', title: 'Work with Kids', component: WorkWithKids },
-  { id: 'workwithpets', title: 'Work with Pets', component: WorkWithPets },
-  { id: 'languages', title: 'Languages', component: Languages },
-  { id: 'mykids', title: 'My Kids', component: MyKids },
-  { id: 'certifications', title: 'Certifications', component: Certifications },
-  { id: 'salary', title: 'Salary Expectations', component: SalaryExpectations },
-  { id: 'religion', title: 'Religion & Beliefs', component: Religion },
-  { id: 'bio', title: 'Bio', component: Bio },
-  { id: 'photos', title: 'Photos', component: Photos },
+  { id: 'nannytype', title: 'Service Type', component: NannyType, description: 'What type of work do you offer?', skippable: false },
+  { id: 'location', title: 'Location', component: Location, description: 'Where are you located?', skippable: false },
+  { id: 'gender', title: 'Gender & Age', component: Gender, description: 'Tell us about yourself', skippable: false },
+  { id: 'experience', title: 'Experience', component: YearsOfExperience, description: 'How experienced are you?', skippable: false },
+  { id: 'salary', title: 'Salary Expectations', component: SalaryExpectations, description: 'What are your salary requirements?', skippable: false },
+  { id: 'workwithkids', title: 'Work with Kids', component: WorkWithKids, description: 'Can you care for children?', skippable: false },
+  { id: 'workwithpets', title: 'Work with Pets', component: WorkWithPets, description: 'Comfortable with pets?', skippable: true },
+  { id: 'languages', title: 'Languages', component: Languages, description: 'What languages do you speak?', skippable: false },
+  { id: 'mykids', title: 'My Kids', component: MyKids, description: 'Do you have children?', skippable: true },
+  { id: 'certifications', title: 'Certifications', component: Certifications, description: 'Any relevant training?', skippable: true },
+  { id: 'bio', title: 'About You', component: Bio, description: 'Tell your story', skippable: false },
+  { id: 'photos', title: 'Photos', component: Photos, description: 'Add your profile photos', skippable: true },
 ];
 
 function HousehelpProfileSetupContent() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [timeSpent, setTimeSpent] = useState(0);
   const navigate = useNavigate();
   const { 
     profileData, 
@@ -52,6 +55,20 @@ function HousehelpProfileSetupContent() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  
+  // Track time spent on each step
+  useEffect(() => {
+    const startTime = Date.now();
+    const interval = setInterval(() => {
+      setTimeSpent(prev => prev + 1);
+    }, 1000);
+    
+    return () => {
+      clearInterval(interval);
+      const timeOnStep = Math.floor((Date.now() - startTime) / 1000);
+      saveProgressToBackend(currentStep, timeOnStep);
+    };
+  }, [currentStep]);
 
   useEffect(() => {
     // Load existing profile data on mount
@@ -66,8 +83,11 @@ function HousehelpProfileSetupContent() {
   }, [lastCompletedStep]);
 
   const handleNext = async () => {
+    await saveProgressToBackend(currentStep, timeSpent);
+    
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
+      setTimeSpent(0);
     } else {
       // Last step - save complete profile
       setIsSaving(true);
@@ -75,28 +95,7 @@ function HousehelpProfileSetupContent() {
       
       try {
         await saveProfileToBackend();
-        
-        // Save progress tracking
-        const token = localStorage.getItem('token');
-        if (token) {
-          await fetch('/api/v1/profile-setup-progress', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({
-              profile_type: 'househelp',
-              current_step: STEPS.length,
-              last_completed_step: STEPS.length,
-              completed_steps: STEPS.map((_, idx) => idx + 1),
-              status: 'completed',
-              completion_percentage: 100
-            })
-          });
-        }
-        
-        // Profile setup complete
+        await saveProgressToBackend(STEPS.length, timeSpent, true);
         navigate('/');
       } catch (err: any) {
         setSaveError(err.message || 'Failed to save profile');
@@ -106,10 +105,69 @@ function HousehelpProfileSetupContent() {
       }
     }
   };
+  
+  const handleSkip = async () => {
+    await saveProgressToBackend(currentStep, timeSpent, false, true);
+    
+    if (currentStep < STEPS.length - 1) {
+      setCurrentStep(currentStep + 1);
+      setTimeSpent(0);
+    }
+  };
+  
+  // Auto-save progress every 30 seconds
+  useEffect(() => {
+    const autoSaveInterval = setInterval(async () => {
+      setAutoSaving(true);
+      await saveProgressToBackend(currentStep, timeSpent, false, false, true);
+      setAutoSaving(false);
+      setLastSaved(new Date());
+    }, 30000);
+    
+    return () => clearInterval(autoSaveInterval);
+  }, [currentStep, timeSpent]);
+  
+  const saveProgressToBackend = async (
+    step: number, 
+    timeOnStep: number, 
+    isComplete: boolean = false,
+    skipped: boolean = false,
+    isAutoSave: boolean = false
+  ) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const completedSteps = Array.from({ length: step + 1 }, (_, i) => i + 1);
+      
+      await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          profile_type: 'househelp',
+          current_step: step + 1,
+          last_completed_step: step + 1,
+          completed_steps: completedSteps,
+          step_id: STEPS[step].id,
+          time_spent_seconds: timeOnStep,
+          status: isComplete ? 'completed' : 'in_progress',
+          skipped: skipped,
+          is_auto_save: isAutoSave
+        })
+      });
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+    }
+  };
 
-  const handleBack = () => {
+  const handleBack = async () => {
     if (currentStep > 0) {
+      await saveProgressToBackend(currentStep, timeSpent);
       setCurrentStep(currentStep - 1);
+      setTimeSpent(0);
     }
   };
 
@@ -129,14 +187,29 @@ function HousehelpProfileSetupContent() {
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
           {/* Header Card */}
-          <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl shadow-lg border-2 border-purple-200 mb-6 sm:mb-8">
+          <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
                 <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                   Complete Your Househelp Profile 👩‍💼
                 </h1>
-                <div className="text-sm font-semibold text-purple-600">
-                  Step {currentStep + 1} of {STEPS.length}
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  {STEPS[currentStep].description}
+                </p>
+                <div className="flex items-center justify-center gap-3 text-sm">
+                  <span className="font-semibold text-purple-600 dark:text-purple-400">
+                    Step {currentStep + 1} of {STEPS.length}
+                  </span>
+                  {autoSaving && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <span className="animate-pulse">💾</span> Auto-saving...
+                    </span>
+                  )}
+                  {lastSaved && !autoSaving && (
+                    <span className="text-xs text-green-600 dark:text-green-400">
+                      ✓ Saved {Math.floor((Date.now() - lastSaved.getTime()) / 1000)}s ago
+                    </span>
+                  )}
                 </div>
               </div>
               
@@ -149,10 +222,18 @@ function HousehelpProfileSetupContent() {
               </div>
               
               {/* Current Step Title */}
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-purple-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-400">
                   {STEPS[currentStep].title}
                 </h2>
+                {STEPS[currentStep].skippable && (
+                  <button
+                    onClick={handleSkip}
+                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 underline"
+                  >
+                    Skip for now
+                  </button>
+                )}
               </div>
             </div>
           </div>

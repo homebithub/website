@@ -148,13 +148,13 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     };
 
     return (
-        <div className="w-full max-w-md mx-auto relative">
-            <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6 bg-white border border-gray-100 p-8 rounded-xl shadow-lg">
-                <div className="relative">
-                    <label htmlFor="location-input" className="block text-sm font-medium text-primary mb-1">
-                        Location
+        <div className="w-full max-w-md mx-auto">
+            <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6">
+                <div className="relative z-10">
+                    <label htmlFor="location-input" className="block text-xl font-bold text-purple-700 dark:text-purple-400 mb-3">
+                        📍 Location
                     </label>
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
                         If your exact location isn't found, try searching for the nearest town or landmark
                     </p>
                     <input
@@ -164,50 +164,62 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
                         autoComplete="off"
-                        className="w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                        className="w-full h-14 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 shadow-sm"
                         placeholder="Enter location..."
                     />
                     {showDropdown && suggestions.length > 0 && (
                         <div
                             ref={dropdownRef}
-                            className="absolute left-0 w-full bg-white border border-gray-200 rounded-b-xl shadow-lg z-10 max-h-56 overflow-y-auto"
+                            className="absolute left-0 w-full bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-xl dark:shadow-glow-md z-50 max-h-56 overflow-y-auto mt-2"
                             style={{ top: '100%' }}
                         >
                             {loading && (
-                                <div className="px-4 py-3 text-gray-500">Loading...</div>
+                                <div className="px-4 py-3 text-gray-500 dark:text-gray-400">🔍 Loading...</div>
                             )}
                             {suggestions.map((s, idx) => (
                                 <div
                                     key={s.mapbox_id}
                                     onClick={() => handleSuggestionClick(s)}
                                     onMouseEnter={() => setSelectedIndex(idx)}
-                                    className={`px-4 py-3 cursor-pointer font-medium border-b last:border-b-0 ${idx === selectedIndex ? 'bg-primary-50' : 'bg-white'} text-gray-900 hover:bg-primary-100`}
+                                    className={`px-4 py-3 cursor-pointer font-medium border-b border-purple-100 dark:border-purple-500/20 last:border-b-0 transition-colors ${
+                                        idx === selectedIndex 
+                                            ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100' 
+                                            : 'bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100'
+                                    } hover:bg-purple-100 dark:hover:bg-purple-900/40`}
                                 >
-                                    {s.name}
+                                    📍 {s.name}
                                 </div>
                             ))}
                         </div>
                     )}
                 </div>
                 {submitStatus && (
-                    <div className={`p-3 rounded-lg text-sm font-medium ${submitStatus.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
-                        {submitStatus.message}
+                    <div className={`p-4 rounded-xl text-sm font-semibold border-2 ${
+                        submitStatus.success 
+                            ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30' 
+                            : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30'
+                    }`}>
+                        {submitStatus.success ? '✓ ' : '⚠️ '}{submitStatus.message}
                     </div>
                 )}
                 <button
                     type="submit"
-                    disabled={submitting}
-                    className={`w-full ${submitting ? 'bg-primary-500' : 'bg-primary-700 hover:bg-primary-800'} text-white py-3 rounded-lg transition-colors duration-200 font-semibold text-lg disabled:opacity-60 flex items-center justify-center`}
+                    disabled={submitting || !selectedLocation}
+                    className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                 >
                     {submitting ? (
                         <>
-                            <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                             Saving...
                         </>
-                    ) : 'Save Location'}
+                    ) : (
+                        <>
+                            💾 Save Location
+                        </>
+                    )}
                 </button>
             </form>
         </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import Kids from './Kids';
 import type { Child } from './Children';
 import { handleApiError } from '../utils/errorMessages';

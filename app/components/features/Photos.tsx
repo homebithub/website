@@ -1,4 +1,5 @@
-import React, { useState, useCallback, useRef, ChangeEvent } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import type { ChangeEvent } from 'react';
 import { XMarkIcon, ArrowLeftIcon, ArrowRightIcon, XCircleIcon } from '@heroicons/react/24/outline';
 
 type ImageFile = {

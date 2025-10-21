@@ -1,5 +1,8 @@
-import React, { useState, useCallback, useRef, ChangeEvent } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import type { ChangeEvent } from 'react';
 import { XMarkIcon, ArrowLeftIcon, ArrowRightIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { API_BASE_URL } from '~/config/api';
+import { handleApiError } from '../utils/errorMessages';
 
 type ImageFile = {
   id: string;
@@ -147,15 +150,32 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
     setSuccess('');
     
     try {
-      // Here you would typically upload the images to your backend
-      console.log('Uploading images:', images);
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      images.forEach((image, index) => {
+        formData.append('photos', image.file);
+      });
       
+      const endpoint = userType === 'household'
+        ? `${API_BASE_URL}/api/v1/household-profile/photos`
+        : `${API_BASE_URL}/api/v1/househelp-profile/photos`;
+      
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to upload photos');
+      }
+
       setSuccess('Your photos have been uploaded successfully!');
-    } catch (err) {
-      setError('Failed to upload photos. Please try again.');
+    } catch (err: any) {
+      setError(handleApiError(err, 'photos', 'Failed to upload photos. Please try again.'));
       console.error(err);
     } finally {
       setIsSubmitting(false);
@@ -205,15 +225,15 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
   // Dynamic content based on user type
   const content = {
     househelp: {
-      title: 'Upload Your Photos',
-      description: `Add up to ${MAX_FILES} photos to showcase your work and experience. High-quality images help you stand out.`,
-      uploadText: 'Click to upload photos or drag and drop',
+      title: '📸 Your Photos',
+      description: `Add up to ${MAX_FILES} photos to showcase yourself`,
+      uploadText: 'Click to upload or drag and drop',
       supportText: 'JPG, PNG, WEBP, GIF up to 10MB each'
     },
     household: {
-      title: 'Upload Photos of Your Home',
-      description: `Add up to ${MAX_FILES} photos of your home and living spaces. This helps househelps understand your environment and needs.`,
-      uploadText: 'Click to upload home photos or drag and drop',
+      title: '📸 Home Photos',
+      description: `Add up to ${MAX_FILES} photos of your home`,
+      uploadText: 'Click to upload or drag and drop',
       supportText: 'JPG, PNG, WEBP, GIF up to 10MB each'
     }
   };
@@ -221,28 +241,28 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
   const currentContent = content[userType];
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">{currentContent.title} (Optional)</h1>
-      <p className="text-gray-600 mb-6">
+    <div className="max-w-4xl mx-auto">
+      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">{currentContent.title}</h2>
+      <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
         {currentContent.description}
       </p>
       
       {error && (
-        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-md text-sm whitespace-pre-line">
-          {error}
+        <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30 whitespace-pre-line">
+          ⚠️ {error}
         </div>
       )}
       
       {success && (
-        <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-md text-sm">
-          {success}
+        <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+          ✓ {success}
         </div>
       )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div 
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 bg-gray-50'
+          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+            isDragging ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 scale-105' : 'border-purple-300 dark:border-purple-500/50 hover:border-purple-400 bg-purple-50/50 dark:bg-purple-900/10'
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -250,7 +270,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
         >
           <div className="space-y-2">
             <svg 
-              className="mx-auto h-12 w-12 text-gray-400" 
+              className="mx-auto h-12 w-12 text-purple-400 dark:text-purple-500" 
               fill="none" 
               viewBox="0 0 24 24" 
               stroke="currentColor"
@@ -262,28 +282,34 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
               />
             </svg>
-            <div className="flex text-sm text-gray-600">
-              <label
-                htmlFor="file-upload"
-                className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500 mx-auto"
-              >
-                <span>{currentContent.uploadText}</span>
-                <input
-                  id="file-upload"
-                  name="file-upload"
-                  type="file"
-                  className="sr-only"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  ref={fileInputRef}
-                />
-              </label>
+            <div className="text-purple-700 dark:text-purple-400 font-bold text-lg">
+              {currentContent.uploadText}
             </div>
-            <p className="text-xs text-gray-500">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               {currentContent.supportText}
-            </p>
+            </div>
+            <div className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+              {images.length}/{MAX_FILES} images uploaded
+            </div>
           </div>
+          <input
+            id="file-upload"
+            name="file-upload"
+            type="file"
+            className="sr-only"
+            multiple
+            accept="image/*"
+            onChange={handleFileChange}
+            ref={fileInputRef}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            disabled={images.length >= MAX_FILES}
+          >
+            📁 Choose Files
+          </button>
         </div>
         
         {/* Image Previews */}
@@ -323,27 +349,25 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
           </div>
         )}
         
-        <div className="pt-2">
-          <button
-            type="submit"
-            disabled={isSubmitting || images.length === 0}
-            className={`w-full px-6 py-3 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-              images.length > 0 
-                ? 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500' 
-                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-            }`}
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Uploading...
-              </span>
-            ) : 'Save Photos'}
-          </button>
-        </div>
+        <button
+          type="submit"
+          disabled={isSubmitting || images.length === 0}
+          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Uploading...
+            </>
+          ) : (
+            <>
+              💾 Continue
+            </>
+          )}
+        </button>
       </form>
 
       {/* Image Preview Modal */}

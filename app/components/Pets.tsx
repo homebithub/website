@@ -173,32 +173,35 @@ const Pets: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto bg-white border border-gray-100 p-8 rounded-xl shadow-lg flex flex-col gap-8">
-      <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Pets</h2>
+    <div className="w-full max-w-3xl mx-auto flex flex-col gap-8">
+      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">🐾 Pets</h2>
+      <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
+        Do you have any pets that need care?
+      </p>
       
-      <div className="flex flex-col gap-5">
-        <label className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${hasPet === "no" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+      <div className="flex flex-col gap-4">
+        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${hasPet === "no" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
             type="radio"
             name="hasPet"
             value="no"
             checked={hasPet === "no"}
             onChange={() => setHasPet("no")}
-            className="form-radio h-5 w-5 text-primary-600 border-gray-300 mr-2"
+            className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
           />
-          <span>I do not have a pet</span>
+          <span className="flex-1">❌ I do not have pets</span>
         </label>
         
-        <label className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${hasPet === "yes" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${hasPet === "yes" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
             type="radio"
             name="hasPet"
             value="yes"
             checked={hasPet === "yes"}
             onChange={() => setHasPet("yes")}
-            className="form-radio h-5 w-5 text-primary-600 border-gray-300 mr-2"
+            className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
           />
-          <span>I do have pet</span>
+          <span className="flex-1">✅ I have pets</span>
         </label>
       </div>
 
@@ -265,15 +268,23 @@ const Pets: React.FC = () => {
       )}
 
       {hasPet === "yes" && (
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={handleAddPet}
-            className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-3 rounded-lg shadow-sm transition"
-          >
-            Add pet
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleAddPet}
+          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
+        >
+          ➕ Add Pet
+        </button>
+      )}
+      
+      {hasPet === "no" && (
+        <button
+          type="button"
+          disabled
+          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          💾 Continue
+        </button>
       )}
 
       {/* Modal */}

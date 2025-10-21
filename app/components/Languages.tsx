@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 

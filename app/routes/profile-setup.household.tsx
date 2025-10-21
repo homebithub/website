@@ -3,40 +3,57 @@ import { useNavigate } from 'react-router';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { PurpleCard } from '~/components/ui/PurpleCard';
-import { Footer } from '../components/Footer';
+import { Footer } from '~/components/Footer';
 import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { API_BASE_URL } from '~/config/api';
 
 // Import all the components
-import Location from '../components/Location';
-import Children from '../components/modals/Children';
-import NannyType from '../components/features/NanyType';
-import Chores from '../components/modals/Chores';
-import Pets from '../components/modals/Pets';
-import Budget from '../components/Budget';
-import HouseSize from '../components/modals/HouseSize';
-import Bio from '../components/Bio';
-import Photos from '../components/features/Photos';
-import Religion from '../components/modals/Religion';
+import Location from '~/components/Location';
+import Children from '~/components/Children';
+import NannyType from '~/components/NanyType';
+import Chores from '~/components/Chores';
+import Pets from '~/components/Pets';
+import Budget from '~/components/Budget';
+import HouseSize from '~/components/HouseSize';
+import Bio from '~/components/Bio';
+import Photos from '~/components/Photos';
+import Religion from '~/components/Religion';
 
 const STEPS = [
-  { id: 'location', title: 'Location', component: Location },
-  { id: 'children', title: 'Children', component: Children },
-  { id: 'nannytype', title: 'Service Type', component: NannyType },
-  { id: 'chores', title: 'Chores', component: Chores },
-  { id: 'pets', title: 'Pets', component: Pets },
-  { id: 'budget', title: 'Budget', component: Budget },
-  { id: 'religion', title: 'Religion & Beliefs', component: Religion },
-  { id: 'housesize', title: 'House Size', component: HouseSize },
-  { id: 'bio', title: 'About Your Household', component: Bio },
-  { id: 'photos', title: 'Photos', component: Photos },
+  { id: 'location', title: 'Location', component: Location, description: 'Where is your household located?' },
+  { id: 'children', title: 'Children', component: Children, description: 'Tell us about your children' },
+  { id: 'nannytype', title: 'Service Type', component: NannyType, description: 'What type of help do you need?' },
+  { id: 'budget', title: 'Budget', component: Budget, description: 'What\'s your budget range?', skippable: false },
+  { id: 'chores', title: 'Chores & Duties', component: Chores, description: 'What tasks need to be done?' },
+  { id: 'pets', title: 'Pets', component: Pets, description: 'Do you have any pets?', skippable: true },
+  { id: 'housesize', title: 'House Size', component: HouseSize, description: 'Tell us about your home' },
+  { id: 'bio', title: 'About Your Household', component: Bio, description: 'Share your story and preferences' },
+  { id: 'photos', title: 'Photos', component: Photos, description: 'Add photos of your home', skippable: true },
 ];
 
 function HouseholdProfileSetupContent() {
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [autoSaving, setAutoSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
+  const [timeSpent, setTimeSpent] = useState(0);
   const navigate = useNavigate();
   const { saveProfileToBackend, loadProfileFromBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
+  
+  // Track time spent on each step
+  useEffect(() => {
+    const startTime = Date.now();
+    const interval = setInterval(() => {
+      setTimeSpent(prev => prev + 1);
+    }, 1000);
+    
+    return () => {
+      clearInterval(interval);
+      const timeOnStep = Math.floor((Date.now() - startTime) / 1000);
+      // Save time spent when leaving step
+      saveProgressToBackend(currentStep, timeOnStep);
+    };
+  }, [currentStep]);
 
   useEffect(() => {
     // Load existing profile data on mount
@@ -55,27 +72,93 @@ function HouseholdProfileSetupContent() {
   }, [lastCompletedStep]);
 
   const handleNext = async () => {
+    // Save progress before moving to next step
+    await saveProgressToBackend(currentStep, timeSpent);
+    
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
+      setTimeSpent(0); // Reset timer for new step
     } else {
       // Profile setup complete - save all data to backend
       setSaving(true);
       try {
         await saveProfileToBackend();
+        // Mark as completed
+        await saveProgressToBackend(STEPS.length, timeSpent, true);
         // Redirect to household dashboard after successful save
         navigate('/household/profile');
       } catch (error) {
         console.error('Failed to save profile:', error);
-        // Show error but allow user to try again
         alert('Failed to save profile. Please try again.');
         setSaving(false);
       }
     }
   };
+  
+  const handleSkip = async () => {
+    // Save that user skipped this step
+    await saveProgressToBackend(currentStep, timeSpent, false, true);
+    
+    if (currentStep < STEPS.length - 1) {
+      setCurrentStep(currentStep + 1);
+      setTimeSpent(0);
+    }
+  };
+  
+  // Auto-save progress every 30 seconds
+  useEffect(() => {
+    const autoSaveInterval = setInterval(async () => {
+      setAutoSaving(true);
+      await saveProgressToBackend(currentStep, timeSpent, false, false, true);
+      setAutoSaving(false);
+      setLastSaved(new Date());
+    }, 30000);
+    
+    return () => clearInterval(autoSaveInterval);
+  }, [currentStep, timeSpent]);
+  
+  const saveProgressToBackend = async (
+    step: number, 
+    timeOnStep: number, 
+    isComplete: boolean = false,
+    skipped: boolean = false,
+    isAutoSave: boolean = false
+  ) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      const completedSteps = Array.from({ length: step + 1 }, (_, i) => i + 1);
+      
+      await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          profile_type: 'household',
+          current_step: step + 1,
+          last_completed_step: step + 1,
+          completed_steps: completedSteps,
+          step_id: STEPS[step].id,
+          time_spent_seconds: timeOnStep,
+          status: isComplete ? 'completed' : 'in_progress',
+          skipped: skipped,
+          is_auto_save: isAutoSave
+        })
+      });
+    } catch (error) {
+      console.error('Failed to save progress:', error);
+    }
+  };
 
-  const handleBack = () => {
+  const handleBack = async () => {
     if (currentStep > 0) {
+      // Save current progress before going back
+      await saveProgressToBackend(currentStep, timeSpent);
       setCurrentStep(currentStep - 1);
+      setTimeSpent(0);
     }
   };
 
@@ -90,14 +173,29 @@ function HouseholdProfileSetupContent() {
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
           {/* Header Card */}
-          <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl shadow-lg border-2 border-purple-200 mb-6 sm:mb-8">
+          <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
                 <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                   Complete Your Household Profile 🏠
                 </h1>
-                <div className="text-sm font-semibold text-purple-600">
-                  Step {currentStep + 1} of {STEPS.length}
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  {STEPS[currentStep].description}
+                </p>
+                <div className="flex items-center justify-center gap-3 text-sm">
+                  <span className="font-semibold text-purple-600 dark:text-purple-400">
+                    Step {currentStep + 1} of {STEPS.length}
+                  </span>
+                  {autoSaving && (
+                    <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                      <span className="animate-pulse">💾</span> Auto-saving...
+                    </span>
+                  )}
+                  {lastSaved && !autoSaving && (
+                    <span className="text-xs text-green-600 dark:text-green-400">
+                      ✓ Saved {Math.floor((Date.now() - lastSaved.getTime()) / 1000)}s ago
+                    </span>
+                  )}
                 </div>
               </div>
               
@@ -110,10 +208,18 @@ function HouseholdProfileSetupContent() {
               </div>
               
               {/* Current Step Title */}
-              <div>
-                <h2 className="text-lg sm:text-xl font-bold text-purple-700">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-400">
                   {STEPS[currentStep].title}
                 </h2>
+                {STEPS[currentStep].skippable && (
+                  <button
+                    onClick={handleSkip}
+                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 underline"
+                  >
+                    Skip for now
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -127,8 +233,6 @@ function HouseholdProfileSetupContent() {
                 ) : STEPS[currentStep].id === 'photos' ? (
                   <CurrentComponent userType="household" />
                 ) : STEPS[currentStep].id === 'nannytype' ? (
-                  <CurrentComponent userType="household" />
-                ) : STEPS[currentStep].id === 'religion' ? (
                   <CurrentComponent userType="household" />
                 ) : (
                   <CurrentComponent />

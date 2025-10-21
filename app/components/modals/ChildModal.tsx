@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { handleApiError } from '../utils/errorMessages';
-import { Modal } from './Modal';
+import { handleApiError } from '../../utils/errorMessages';
+import Modal from './Modal';
 
 const TRAITS = [
   'Allergies', 'Special Needs', 'Disabled', 'Asthma', 'ADHD',
