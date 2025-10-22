@@ -40,6 +40,15 @@ function HouseholdProfileSetupContent() {
   const navigate = useNavigate();
   const { saveProfileToBackend, loadProfileFromBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
   
+  // Clean up URL on mount - remove any query parameters or hash
+  useEffect(() => {
+    const currentPath = window.location.pathname;
+    const cleanPath = '/profile-setup/household';
+    if (currentPath !== cleanPath || window.location.search || window.location.hash) {
+      window.history.replaceState({}, '', cleanPath);
+    }
+  }, []);
+  
   // Track time spent on each step
   useEffect(() => {
     const startTime = Date.now();
