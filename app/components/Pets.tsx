@@ -47,6 +47,7 @@ const Pets: React.FC = () => {
   
   // Modal form state
   const [petType, setPetType] = useState("");
+  const [otherPetType, setOtherPetType] = useState("");
   const [requiresCare, setRequiresCare] = useState(false);
   const [careDetails, setCareDetails] = useState("");
   const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
@@ -60,6 +61,7 @@ const Pets: React.FC = () => {
     setShowModal(true);
     // Reset form
     setPetType("");
+    setOtherPetType("");
     setRequiresCare(false);
     setCareDetails("");
     setSelectedTraits([]);
@@ -82,11 +84,18 @@ const Pets: React.FC = () => {
       return;
     }
     
+    if (petType === "Other" && !otherPetType.trim()) {
+      setError("Please specify the pet type");
+      return;
+    }
+    
     setLoading(true);
     setError("");
     
     try {
       const token = localStorage.getItem("token");
+      const finalPetType = petType === "Other" ? otherPetType.trim() : petType;
+      
       const response = await fetch(`${API_BASE_URL}/api/v1/pets`, {
         method: "POST",
         headers: {
@@ -94,7 +103,7 @@ const Pets: React.FC = () => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          pet_type: petType.toLowerCase(),
+          pet_type: finalPetType.toLowerCase(),
           requires_care: requiresCare,
           care_details: requiresCare ? careDetails : "",
           traits: selectedTraits.map(trait => trait.toLowerCase())
@@ -121,6 +130,7 @@ const Pets: React.FC = () => {
       
       // Reset form
       setPetType("");
+      setOtherPetType("");
       setRequiresCare(false);
       setCareDetails("");
       setSelectedTraits([]);
@@ -279,18 +289,21 @@ const Pets: React.FC = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-800">Add Pet</h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors z-10"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-3xl">🐾</span>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Add Pet</h3>
             </div>
 
             <div className="space-y-4">
@@ -301,8 +314,13 @@ const Pets: React.FC = () => {
                 </label>
                 <select
                   value={petType}
-                  onChange={(e) => setPetType(e.target.value)}
-                  className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  onChange={(e) => {
+                    setPetType(e.target.value);
+                    if (e.target.value !== "Other") {
+                      setOtherPetType("");
+                    }
+                  }}
+                  className="w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
                   required
                 >
                   <option value="">Select pet type</option>
@@ -311,6 +329,24 @@ const Pets: React.FC = () => {
                   ))}
                 </select>
               </div>
+
+              {/* Other Pet Type Input */}
+              {petType === "Other" && (
+                <div>
+                  <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
+                    Specify Pet Type <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={otherPetType}
+                    onChange={(e) => setOtherPetType(e.target.value)}
+                    placeholder="e.g., Parrot, Ferret, Iguana..."
+                    className="w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
+                    maxLength={50}
+                    required
+                  />
+                </div>
+              )}
 
               {/* Requires Care Checkbox */}
               <div>
@@ -326,8 +362,8 @@ const Pets: React.FC = () => {
                       onClick={() => setRequiresCare(!requiresCare)}
                       className={`w-5 h-5 rounded border-2 cursor-pointer flex items-center justify-center transition-colors ${
                         requiresCare
-                          ? 'bg-purple-700 border-purple-700'
-                          : 'bg-white border-gray-300 hover:border-purple-400'
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'bg-white dark:bg-[#13131a] border-purple-300 dark:border-purple-500/50 hover:border-purple-400'
                       }`}
                     >
                       {requiresCare && (
@@ -337,21 +373,21 @@ const Pets: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">Requires Care</span>
+                  <span className="text-base font-bold text-purple-700 dark:text-purple-400">Requires Care</span>
                 </label>
               </div>
 
               {/* Care Details Textarea */}
               {requiresCare && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
                     Care Details
                   </label>
                   <textarea
                     value={careDetails}
                     onChange={(e) => setCareDetails(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 resize-none"
                     placeholder="Describe the care requirements..."
                   />
                 </div>
@@ -359,8 +395,8 @@ const Pets: React.FC = () => {
 
               {/* Pet Traits */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Traits <span className="text-gray-500">(Select up to 3)</span>
+                <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
+                  Traits <span className="text-sm text-gray-500 dark:text-gray-400">(Select up to 3)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {PET_TRAITS.map(trait => (
@@ -369,12 +405,12 @@ const Pets: React.FC = () => {
                       type="button"
                       onClick={() => handleTraitToggle(trait)}
                       disabled={!selectedTraits.includes(trait) && selectedTraits.length >= 3}
-                      className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
                         selectedTraits.includes(trait)
-                          ? 'bg-purple-100 border-purple-500 text-purple-700'
+                          ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100'
                           : selectedTraits.length >= 3
-                          ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-purple-400 hover:bg-purple-50'
+                          ? 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400 cursor-not-allowed'
+                          : 'bg-white dark:bg-[#13131a] border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10'
                       }`}
                     >
                       {trait}
@@ -386,8 +422,8 @@ const Pets: React.FC = () => {
 
             {/* Error Display */}
             {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="mt-4 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
+                ⚠️ {error}
               </div>
             )}
 
@@ -396,14 +432,14 @@ const Pets: React.FC = () => {
               <button
                 onClick={() => setShowModal(false)}
                 disabled={loading}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitPet}
-                disabled={!petType || loading}
-                className="flex-1 px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!petType || (petType === "Other" && !otherPetType.trim()) || loading}
+                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? "Adding..." : "Add Pet"}
               </button>
