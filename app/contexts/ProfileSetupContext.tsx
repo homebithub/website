@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { API_ENDPOINTS } from '~/config/api';
+import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
 
 interface ProfileSetupData {
   // Household fields
@@ -32,7 +32,7 @@ interface ProfileSetupData {
 interface ProfileSetupContextType {
   profileData: ProfileSetupData;
   updateStepData: (stepId: string, data: any) => void;
-  saveStepToBackend: (stepId: string, data: any) => Promise<void>;
+  saveStepToBackend: (stepId: string, data: any, stepNumber: number) => Promise<void>;
   saveProfileToBackend: () => Promise<void>;
   loadProfileFromBackend: () => Promise<void>;
   clearProfileData: () => void;
@@ -57,7 +57,8 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
   };
 
   // Save individual step to backend immediately
-  const saveStepToBackend = async (stepId: string, data: any) => {
+  // Backend will handle saving to both profile and steps tracking tables
+  const saveStepToBackend = async (stepId: string, data: any, stepNumber: number) => {
     setIsLoading(true);
     setError(null);
     
@@ -69,13 +70,22 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
         throw new Error('No authentication token found');
       }
 
-      // Determine endpoint
+      // Single call to profile endpoint - backend handles step tracking
       const endpoint = profileType === 'househelp' 
         ? API_ENDPOINTS.profile.househelp.me 
         : API_ENDPOINTS.profile.household.me;
 
-      // Transform just this step's data
       const stepPayload = transformStepData(stepId, data);
+      
+      // Add step metadata for backend to track
+      const payload = {
+        ...stepPayload,
+        _step_metadata: {
+          step_id: stepId,
+          step_number: stepNumber,
+          is_completed: true
+        }
+      };
 
       const response = await fetch(endpoint, {
         method: 'PATCH',
@@ -83,7 +93,7 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify(stepPayload)
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
@@ -93,8 +103,9 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       // Update local state
       updateStepData(stepId, data);
+      setLastCompletedStep(stepNumber);
       
-      console.log(`Step ${stepId} saved successfully`);
+      console.log(`Step ${stepId} (${stepNumber}) saved successfully`);
       
     } catch (err: any) {
       console.error(`Error saving step ${stepId}:`, err);
@@ -106,7 +117,7 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
   };
 
   // Load existing profile data from backend
-  const loadProfileFromBackend = async () => {
+  const loadProfileFromBackend = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     
@@ -119,36 +130,65 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
         return;
       }
 
-      const endpoint = profileType === 'househelp' 
-        ? API_ENDPOINTS.profile.househelp.me 
-        : API_ENDPOINTS.profile.household.me;
-
-      const response = await fetch(endpoint, {
+      // Fetch step tracking data from new endpoint
+      const stepsResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       });
 
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Profile doesn't exist yet, that's okay
-          console.log('No existing profile found, starting fresh');
-          return;
-        }
-        throw new Error('Failed to load profile');
-      }
+      if (stepsResponse.ok) {
+        const stepsData = await stepsResponse.json();
+        console.log('Steps tracking data:', stepsData);
+        
+        // Set last completed step from tracking data
+        setLastCompletedStep(stepsData.last_completed_step || 0);
+        
+        // Reconstruct profile data from steps
+        const reconstructed: ProfileSetupData = {};
+        stepsData.steps?.forEach((step: any) => {
+          if (step.data && step.is_completed) {
+            reconstructed[step.step_id as keyof ProfileSetupData] = step.data;
+          }
+        });
+        
+        setProfileData(reconstructed);
+        console.log('Profile loaded from steps tracking', { 
+          lastCompletedStep: stepsData.last_completed_step,
+          profileData: reconstructed 
+        });
+      } else if (stepsResponse.status === 404) {
+        // No steps tracked yet, try loading from profile (legacy)
+        console.log('No steps tracking found, loading from profile');
+        
+        const endpoint = profileType === 'househelp' 
+          ? API_ENDPOINTS.profile.househelp.me 
+          : API_ENDPOINTS.profile.household.me;
 
-      const profile = await response.json();
-      
-      // Convert backend data back to step format
-      const reconstructedData = reconstructProfileData(profile);
-      setProfileData(reconstructedData);
-      
-      // Calculate last completed step
-      const completedStep = calculateLastCompletedStep(reconstructedData);
-      setLastCompletedStep(completedStep);
-      
-      console.log('Profile loaded successfully', { completedStep });
+        const profileResponse = await fetch(endpoint, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (profileResponse.ok) {
+          const profile = await profileResponse.json();
+          console.log('Raw profile from backend:', profile);
+          
+          // Convert backend data back to step format
+          const reconstructedData = reconstructProfileData(profile);
+          console.log('Reconstructed profile data:', reconstructedData);
+          
+          setProfileData(reconstructedData);
+          
+          // Don't calculate - start from step 0 if no tracking exists
+          setLastCompletedStep(0);
+          console.log('Profile loaded successfully (legacy mode), starting from step 0');
+        } else {
+          console.log('No existing profile found, starting fresh');
+          setLastCompletedStep(0);
+        }
+      }
       
     } catch (err: any) {
       console.error('Error loading profile:', err);
@@ -156,7 +196,7 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []); // Empty deps - only created once
 
   const saveProfileToBackend = async () => {
     setIsLoading(true);
@@ -556,6 +596,15 @@ function reconstructProfileData(profile: any): ProfileSetupData {
   return data;
 }
 
+// Helper to check if a value has meaningful data
+function hasData(value: any): boolean {
+  if (value === null || value === undefined) return false;
+  if (typeof value === 'string' && value.trim() === '') return false;
+  if (Array.isArray(value) && value.length === 0) return false;
+  if (typeof value === 'object' && Object.keys(value).length === 0) return false;
+  return true;
+}
+
 // Calculate which step was last completed based on available data
 function calculateLastCompletedStep(data: ProfileSetupData): number {
   const profileType = localStorage.getItem('profile_type');
@@ -595,10 +644,15 @@ function calculateLastCompletedStep(data: ProfileSetupData): number {
 
   let lastStep = 0;
   for (let i = 0; i < stepOrder.length; i++) {
-    if (data[stepOrder[i] as keyof ProfileSetupData]) {
+    const stepData = data[stepOrder[i] as keyof ProfileSetupData];
+    if (hasData(stepData)) {
       lastStep = i + 1;
+    } else {
+      // Stop at first incomplete step
+      break;
     }
   }
 
+  console.log('Calculated last completed step:', lastStep, 'from data:', data);
   return lastStep;
 }

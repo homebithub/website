@@ -53,21 +53,42 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
 
     try {
       const token = localStorage.getItem('token');
-      const endpoint = userType === 'household' 
-        ? `${API_BASE_URL}/api/v1/household-profile/bio`
-        : `${API_BASE_URL}/api/v1/househelp-profile/bio`;
       
-      const response = await fetch(endpoint, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ bio }),
-      });
+      if (userType === 'household') {
+        // For household, use household profile PATCH with step metadata
+        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            bio,
+            _step_metadata: {
+              step_id: "bio",
+              step_number: 7,
+              is_completed: true
+            }
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to save bio');
+        if (!response.ok) {
+          throw new Error('Failed to save bio');
+        }
+      } else {
+        // For househelp, use the bio endpoint
+        const response = await fetch(`${API_BASE_URL}/api/v1/househelp-profile/bio`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ bio }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to save bio');
+        }
       }
 
       setSuccess('Your bio has been saved successfully!');

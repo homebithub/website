@@ -43,27 +43,28 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
               leaveFrom="opacity-100 translate-y-0 sm:scale-100"
               leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#13131a] px-8 pb-8 pt-8 text-left shadow-2xl dark:shadow-glow-lg transition-all sm:my-8 sm:w-full sm:max-w-md border border-gray-100 dark:border-purple-500/30">
-                <div className="absolute right-6 top-6 sm:block">
+              <Dialog.Panel className="relative transform overflow-hidden rounded-3xl bg-white dark:bg-[#13131a] px-8 pb-8 pt-8 text-left shadow-2xl dark:shadow-glow-lg transition-all sm:my-8 sm:w-full sm:max-w-md border-2 border-purple-200 dark:border-purple-500/40">
+                <div className="absolute right-4 top-4 sm:block z-10">
                   <button
                     type="button"
-                    className="rounded-full bg-gray-100 dark:bg-gray-800 p-2 text-gray-400 dark:text-gray-300 hover:text-gray-600 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200"
+                    className="rounded-full bg-gray-800/80 dark:bg-gray-800/90 p-2.5 text-gray-300 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 backdrop-blur-sm"
                     onClick={onClose}
+                    ref={cancelButtonRef}
                   >
                     <span className="sr-only">Close</span>
                     <XMarkIcon className="h-5 w-5" aria-hidden="true" />
                   </button>
                 </div>
                 {title && (
-                  <div className="text-center mb-8">
-                    <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
-                      <svg className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div className="text-center mb-6">
+                    <div className="mx-auto w-20 h-20 bg-gradient-to-br from-purple-500 via-purple-600 to-pink-600 rounded-3xl flex items-center justify-center mb-6 shadow-lg dark:shadow-glow-md transform hover:scale-105 transition-transform duration-200">
+                      <svg className="h-10 w-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                       </svg>
                     </div>
                     <Dialog.Title
                       as="h3"
-                      className="text-3xl font-bold text-gray-900 dark:text-white mb-3"
+                      className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-pink-400 mb-3"
                     >
                       {title}
                     </Dialog.Title>

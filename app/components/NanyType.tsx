@@ -51,20 +51,45 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/v1/househelp-preferences/availability`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          availability,
-          available_from: availableFrom,
-          ...(userType === 'household' && selected === 'sleep_in' && { off_days: offDays }),
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to save availability. Please try again.");
-      setSuccess("Availability updated successfully!");
+      
+      // Different endpoints for household vs househelp
+      if (userType === 'household') {
+        // For household, save to household profile with step metadata
+        const res = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            service_type: selected === 'sleep_in' ? 'live-in' : 'day-worker',
+            live_in: selected === 'sleep_in',
+            ...(selected === 'sleep_in' && offDays.length > 0 && { off_days: offDays }),
+            _step_metadata: {
+              step_id: "nannytype",
+              step_number: 2,
+              is_completed: true
+            }
+          }),
+        });
+        if (!res.ok) throw new Error("Failed to save service type. Please try again.");
+        setSuccess("Service type saved successfully!");
+      } else {
+        // For househelp, save to househelp-preferences
+        const res = await fetch(`${API_BASE_URL}/api/v1/househelp-preferences/availability`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            availability,
+            available_from: availableFrom,
+          }),
+        });
+        if (!res.ok) throw new Error("Failed to save availability. Please try again.");
+        setSuccess("Availability updated successfully!");
+      }
     } catch (err: any) {
       setError(handleApiError(err, 'nannyType', 'An error occurred.'));
     } finally {

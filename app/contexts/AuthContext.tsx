@@ -54,6 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLoading(false);
         return;
       }
+      
+      // First, try to load user from localStorage to avoid flash of unauthenticated state
+      const userObj = localStorage.getItem("user_object");
+      if (userObj) {
+        try {
+          const parsedUser = JSON.parse(userObj);
+          setUser(parsedUser);
+        } catch (e) {
+          console.error("Failed to parse user_object from localStorage:", e);
+        }
+      }
+      
+      // Then verify with the server
       const response = await fetch(API_ENDPOINTS.auth.me, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
@@ -63,11 +76,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const user = await response.json();
         setUser(user);
+        // Update localStorage with fresh data
+        localStorage.setItem("user_object", JSON.stringify(user));
       }else{
         console.log("not logged in")
+        // If server says not logged in, clear local state
+        setUser(null);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user_object");
       }
     } catch (error) {
       console.error("Error checking auth:", error);
+      // On error, keep the user from localStorage if it exists
     } finally {
       setLoading(false);
     }

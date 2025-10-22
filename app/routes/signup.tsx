@@ -334,32 +334,32 @@ export default function SignupPage() {
                 title="Sign Up"
             >
                 <div className="px-2 py-2">
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-8 text-center">Choose your account type</h3>
-                    <div className="flex flex-col gap-5">
+                    <h3 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-pink-400 mb-8 text-center">Choose your account type</h3>
+                    <div className="flex flex-col gap-4">
                         {profileOptions.map((option) => (
                             <button
                                 key={option.value}
                                 type="button"
                                 onClick={() => handleProfileTypeSelect(option.value)}
-                                className={`group relative p-6 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
+                                className={`group relative p-5 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
                                     form.profile_type === option.value 
-                                        ? 'border-purple-500 dark:border-purple-400 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/30 dark:to-purple-800/30 shadow-lg dark:shadow-glow-md' 
-                                        : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-purple-100/50 dark:hover:from-purple-900/20 dark:hover:to-purple-800/20 hover:shadow-md dark:hover:shadow-glow-sm'
+                                        ? 'border-purple-500 dark:border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/40 dark:to-pink-900/40 shadow-lg dark:shadow-glow-md' 
+                                        : 'border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-pink-50/50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 hover:shadow-md dark:hover:shadow-glow-sm bg-gray-50/50 dark:bg-gray-800/30'
                                 }`}
                             > 
-                                <div className="flex items-center">
-                                    <div className={`flex items-center justify-center w-6 h-6 border-2 rounded-full mr-4 transition-all duration-200 ${
+                                <div className="flex items-start gap-4">
+                                    <div className={`flex-shrink-0 flex items-center justify-center w-6 h-6 border-2 rounded-full mt-0.5 transition-all duration-200 ${
                                         form.profile_type === option.value 
-                                            ? 'bg-purple-600 dark:bg-purple-500 border-purple-600 dark:border-purple-500' 
-                                            : 'border-gray-300 dark:border-gray-600 group-hover:border-purple-400 dark:group-hover:border-purple-500'
+                                            ? 'bg-gradient-to-br from-purple-600 to-pink-600 border-purple-600 dark:border-purple-500 shadow-md' 
+                                            : 'border-gray-400 dark:border-gray-500 group-hover:border-purple-500 dark:group-hover:border-purple-400'
                                     }`}>
                                         {form.profile_type === option.value && (
-                                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                                            <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
                                         )}
                                     </div>
                                     <div className="flex-1">
-                                        <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{option.label}</h4>
-                                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                                        <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1.5">{option.label}</h4>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
                                             {option.value === 'household' 
                                                 ? 'I need to hire help for my home and family needs' 
                                                 : 'I\'m looking for work opportunities and want to offer my services'
@@ -376,7 +376,7 @@ export default function SignupPage() {
                             <button
                                 type="button"
                                 onClick={() => setIsProfileModalOpen(false)}
-                                className="glow-button px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                className="glow-button px-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                             >
                                 Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label}
                             </button>
@@ -387,7 +387,7 @@ export default function SignupPage() {
                                 setIsProfileModalOpen(false);
                                 navigate('/');
                             }}
-                            className="px-8 py-3 bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors duration-200"
+                            className="px-8 py-3.5 bg-gray-700/80 dark:bg-gray-800/80 text-gray-200 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-600 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-600 dark:border-gray-700"
                         >
                             Cancel
                         </button>

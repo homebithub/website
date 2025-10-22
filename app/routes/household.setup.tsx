@@ -25,16 +25,21 @@ export default function HouseholdSetupPage() {
       return;
     }
     
-    if (!user) {
-      console.log('[HOUSEHOLD SETUP] No user found after auth loaded, redirecting to /login');
+    // Check localStorage first - if we have a token and user_object, we're authenticated
+    const token = localStorage.getItem('token');
+    const userObj = localStorage.getItem('user_object');
+    
+    console.log('[HOUSEHOLD SETUP] Token exists:', !!token);
+    console.log('[HOUSEHOLD SETUP] user_object from localStorage:', userObj);
+    
+    // If no token and no user from AuthContext, redirect to login
+    if (!token && !user) {
+      console.log('[HOUSEHOLD SETUP] No token and no user, redirecting to /login');
       navigate('/login');
       return;
     }
-
-    // Check if user already has a household
-    const userObj = localStorage.getItem('user_object');
-    console.log('[HOUSEHOLD SETUP] user_object from localStorage:', userObj);
     
+    // Check if user already has a household
     if (userObj) {
       const parsed = JSON.parse(userObj);
       console.log('[HOUSEHOLD SETUP] Parsed user object:', parsed);
@@ -47,8 +52,6 @@ export default function HouseholdSetupPage() {
       } else {
         console.log('[HOUSEHOLD SETUP] No household_id found, staying on setup page');
       }
-    } else {
-      console.log('[HOUSEHOLD SETUP] No user_object in localStorage');
     }
   }, [user, authLoading, navigate]);
   

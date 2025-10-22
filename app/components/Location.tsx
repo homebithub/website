@@ -179,7 +179,10 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                             {suggestions.map((s, idx) => (
                                 <div
                                     key={s.mapbox_id}
-                                    onClick={() => handleSuggestionClick(s)}
+                                    onMouseDown={(e) => {
+                                        e.preventDefault(); // Prevent input blur
+                                        handleSuggestionClick(s);
+                                    }}
                                     onMouseEnter={() => setSelectedIndex(idx)}
                                     className={`px-4 py-3 cursor-pointer font-medium border-b border-purple-100 dark:border-purple-500/20 last:border-b-0 transition-colors ${
                                         idx === selectedIndex 
