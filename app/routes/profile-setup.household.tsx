@@ -265,8 +265,8 @@ function HouseholdProfileSetupContent() {
                     disabled={currentStep === 0}
                     className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       currentStep === 0
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
+                        ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                        : 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
                     }`}
                   >
                     <ChevronLeftIcon className="h-4 w-4 mr-1" />
@@ -292,8 +292,8 @@ function HouseholdProfileSetupContent() {
                   disabled={currentStep === 0}
                   className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     currentStep === 0
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                      : 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
                   }`}
                 >
                   <ChevronLeftIcon className="h-4 w-4 mr-1" />

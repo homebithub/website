@@ -146,7 +146,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Gender</h2>
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Gender <span className="text-red-500">*</span></h2>
             <div className="grid grid-cols-2 gap-4">
               <label className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer shadow-sm text-lg font-medium transition-all ${
                 gender === 'female' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/10'
@@ -184,7 +184,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
         </div>
 
         <div className="space-y-2">
-          <label className="block text-lg font-semibold text-gray-900 dark:text-white">Date of Birth</label>
+          <label className="block text-lg font-semibold text-gray-900 dark:text-white">Date of Birth <span className="text-red-500">*</span></label>
           <input
             type="date"
             value={dateOfBirth}
@@ -208,7 +208,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
 
         <div>
           <label className="block mb-2 font-semibold text-gray-900 dark:text-white">
-            Traits <span className="text-xs text-gray-400">(Select up to 3)</span>
+            Traits <span className="text-red-500">*</span> <span className="text-xs text-gray-400">(Select up to 3)</span>
           </label>
           <div className="flex flex-wrap gap-3">
             {TRAITS.map(trait => (
@@ -244,21 +244,31 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
 
         {error && <div className="text-red-500 dark:text-red-400 text-sm text-center font-medium">{error}</div>}
 
-        <button 
-          type="submit" 
-          className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all flex justify-center items-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Saving...
-            </>
-          ) : 'Save Child'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all flex justify-center items-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            disabled={loading || !gender || !dateOfBirth || traits.length === 0 || (traits.includes('Other') && !otherTrait.trim())}
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+              </>
+            ) : 'Save Child'}
+          </button>
+        </div>
       </form>
       </div>
     </div>

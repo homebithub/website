@@ -67,9 +67,9 @@ const Chores: React.FC = () => {
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-8">
-      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">🧹 Chores & Duties</h2>
+      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">🧹 Chores & Duties <span className="text-red-500">*</span></h2>
       <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
-        What tasks do you need help with?
+        What tasks do you need help with? (Select at least one)
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {CHORES.map(chore => (
@@ -134,7 +134,7 @@ const Chores: React.FC = () => {
           </>
         ) : (
           <>
-            💾 Continue
+            💾 Save
           </>
         )}
       </button>

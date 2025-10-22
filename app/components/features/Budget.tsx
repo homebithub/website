@@ -85,7 +85,7 @@ const Budget: React.FC = () => {
         {/* Budget Frequency Dropdown */}
         <div className="space-y-3">
           <label htmlFor="frequency" className="block text-base font-bold text-purple-700 dark:text-purple-400">
-            📅 Payment Frequency
+            📅 Payment Frequency <span className="text-red-500">*</span>
           </label>
           <select
             id="frequency"
@@ -104,8 +104,8 @@ const Budget: React.FC = () => {
 
         {/* Budget Range Radio Group */}
         <div className="space-y-4">
-          <h3 className="text-base font-bold text-purple-700 dark:text-purple-400">
-            Your {frequency} Budget (KES)
+          <h3 className="text-base font-bold text-purple-700 dark:text-purple-400 mb-3">
+            Select Budget Range <span className="text-red-500">*</span>
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Select the amount you're willing to pay

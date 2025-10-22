@@ -65,7 +65,7 @@ const HouseSize: React.FC = () => {
         {/* House Size Selection */}
         <div className="space-y-4">
           <h3 className="text-base font-bold text-purple-700 dark:text-purple-400">
-            Select your house size
+            Select your house size <span className="text-red-500">*</span>
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             This helps us match you with the right help

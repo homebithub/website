@@ -276,16 +276,6 @@ const Pets: React.FC = () => {
           ➕ Add Pet
         </button>
       )}
-      
-      {hasPet === "no" && (
-        <button
-          type="button"
-          disabled
-          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg opacity-50 cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          💾 Continue
-        </button>
-      )}
 
       {/* Modal */}
       {showModal && (
@@ -306,7 +296,7 @@ const Pets: React.FC = () => {
             <div className="space-y-4">
               {/* Pet Type Dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
                   Pet Type <span className="text-red-500">*</span>
                 </label>
                 <select

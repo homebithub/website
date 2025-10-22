@@ -172,7 +172,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
             <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6">
                 <div className="relative z-10">
                     <label htmlFor="location-input" className="block text-xl font-bold text-purple-700 dark:text-purple-400 mb-3">
-                        📍 Location
+                        📍 Location <span className="text-red-500">*</span>
                     </label>
                     <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
                         If your exact location isn't found, try searching for the nearest town or landmark

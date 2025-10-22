@@ -111,7 +111,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label htmlFor="bio" className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-3">
-            Your Bio
+            Your Bio <span className="text-red-500">*</span>
           </label>
           <div className="mt-1 relative">
             <textarea
@@ -166,7 +166,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
             </>
           ) : (
             <>
-              💾 Continue
+              💾 Save
             </>
           )}
         </button>
