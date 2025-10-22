@@ -90,39 +90,17 @@ const Children: React.FC = () => {
       setTraits([]);
     } catch (err: any) {
       setError(handleApiError(err, 'children', 'An error occurred.'));
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Submitting children data:", childrenList);
-    // Handle form submission with childrenList
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(childrenList),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save children data");
-      }
-      
-      // Handle successful save
-      const result = await response.json();
-      console.log("Children data saved successfully:", result);
-    } catch (error) {
-      console.error("Error saving children data:", error);
-    }
-  };
+  // No form submit handler needed - parent layout handles navigation
+  // Individual children are saved immediately via handleChildSubmit
 
   return (
     <div className="w-full max-w-3xl mx-auto">
-      <form className="flex flex-col gap-8" onSubmit={handleSubmit}>
+      <div className="flex flex-col gap-8">
         <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">👶 Children</h2>
         <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
           Tell us about your children so we can find the perfect match
@@ -158,29 +136,7 @@ const Children: React.FC = () => {
             />
           )}
         </div>
-
-        {selected && (
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-              </>
-            ) : (
-              <>
-                💾 Continue
-              </>
-            )}
-          </button>
-        )}
-      </form>
+      </div>
     </div>
   );
 };

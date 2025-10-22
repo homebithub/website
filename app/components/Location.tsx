@@ -20,9 +20,11 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     const [submitting, setSubmitting] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const [selectedLocation, setSelectedLocation] = useState<LocationSuggestion | null>(null);
+    const [savedLocation, setSavedLocation] = useState<LocationSuggestion | null>(null);
     const [submitStatus, setSubmitStatus] = useState<{success: boolean; message: string} | null>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
     const baseUrl = API_BASE_URL
     useEffect(() => {
         if (input.length > 2) {
@@ -72,6 +74,10 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInput(e.target.value);
         setSelectedIndex(-1);
+        // Reset saved location when user starts typing again
+        if (savedLocation) {
+            setSavedLocation(null);
+        }
     };
 
     const handleSuggestionClick = (suggestion: LocationSuggestion) => {
@@ -80,6 +86,18 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
         setShowDropdown(false);
         setSuggestions([]);
         setSubmitStatus(null);
+        
+        // Clear the timeout to prevent dropdown from reappearing
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
+        
+        // Blur the input to prevent refocus triggering search
+        if (inputRef.current) {
+            inputRef.current.blur();
+        }
+        
         if (onSelect) onSelect(suggestion);
     };
 
@@ -131,6 +149,8 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                     success: true,
                     message: data.message || 'Location saved successfully!'
                 });
+                // Save the location to disable button
+                setSavedLocation(selectedLocation);
                 // Clear the status after 3 seconds
                 setTimeout(() => setSubmitStatus(null), 3000);
             } else {
@@ -158,6 +178,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                         If your exact location isn't found, try searching for the nearest town or landmark
                     </p>
                     <input
+                        ref={inputRef}
                         id="location-input"
                         type="text"
                         value={input}
@@ -207,7 +228,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                 )}
                 <button
                     type="submit"
-                    disabled={submitting || !selectedLocation}
+                    disabled={submitting || !selectedLocation || (savedLocation?.mapbox_id === selectedLocation?.mapbox_id)}
                     className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                 >
                     {submitting ? (

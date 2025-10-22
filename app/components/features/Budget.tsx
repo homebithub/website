@@ -37,19 +37,17 @@ const Budget: React.FC = () => {
   const [error, setError] = useState('');
   const submit = useSubmit();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedRange) {
-      setError('Please select a budget range');
-      return;
-    }
+  // Auto-save when budget range is selected
+  const saveBudget = async (range: string) => {
+    if (!range) return;
 
     setIsSubmitting(true);
     setError('');
 
     try {
       const token = localStorage.getItem('token');
+      const [min, max] = range.split('-').map(v => parseInt(v.replace(/,/g, '')));
+      
       const response = await fetch(`${API_BASE_URL}/api/v1/household-preferences/budget`, {
         method: 'PUT',
         headers: {
@@ -57,8 +55,9 @@ const Budget: React.FC = () => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          frequency: frequency.toLowerCase(),
-          budget_range: selectedRange,
+          budget_min: min,
+          budget_max: max,
+          salary_frequency: frequency.toLowerCase(),
         }),
       });
 
@@ -82,7 +81,7 @@ const Budget: React.FC = () => {
         What's your budget range for household help?
       </p>
       
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-8">
         {/* Budget Frequency Dropdown */}
         <div className="space-y-3">
           <label htmlFor="frequency" className="block text-base font-bold text-purple-700 dark:text-purple-400">
@@ -126,7 +125,10 @@ const Budget: React.FC = () => {
                   name="budgetRange"
                   value={range}
                   checked={selectedRange === range}
-                  onChange={() => setSelectedRange(range)}
+                  onChange={() => {
+                    setSelectedRange(range);
+                    saveBudget(range);
+                  }}
                   className="sr-only"
                 />
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 ${
@@ -149,27 +151,7 @@ const Budget: React.FC = () => {
             ⚠️ {error}
           </div>
         )}
-
-        <button
-          type="submit"
-          disabled={isSubmitting || !selectedRange}
-          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Saving...
-            </>
-          ) : (
-            <>
-              💾 Continue
-            </>
-          )}
-        </button>
-      </form>
+      </div>
     </div>
   );
 };

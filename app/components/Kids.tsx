@@ -94,7 +94,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
             setEditingChild(null);
             setShowChildModal(true);
           }}
-          className="flex items-center gap-2 bg-primary-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-primary-700 transition-colors"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           <PlusIcon className="h-5 w-5" />
           Add Child
@@ -102,7 +102,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
         <button
           type="button"
           onClick={() => setShowExpectingModal(true)}
-          className="flex items-center gap-2 bg-primary-100 text-primary-700 px-4 py-2 rounded-lg font-medium border border-primary-200 hover:bg-primary-200 transition-colors"
+          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           <PlusIcon className="h-5 w-5" />
           Expecting a Child
