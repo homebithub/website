@@ -310,13 +310,7 @@ function transformProfileData(data: ProfileSetupData): any {
 
   // Household-specific fields
   if (profileType === 'household' || profileType === 'household') {
-    // Children
-    if (data.children) {
-      transformed.has_children = data.children.has_children;
-      transformed.number_of_kids = data.children.number_of_kids;
-      transformed.new_borns_under_one = data.children.new_borns_under_one;
-      transformed.kids_ages = data.children.ages;
-    }
+    // Children - stored in separate household_kids table, not in profile
 
     // Service Type / Nanny Type
     if (data.nannytype) {
@@ -329,11 +323,7 @@ function transformProfileData(data: ProfileSetupData): any {
       transformed.chores = data.chores.list || data.chores;
     }
 
-    // Pets
-    if (data.pets) {
-      transformed.has_pets = data.pets.has_pets;
-      transformed.pet_types = data.pets.types;
-    }
+    // Pets - stored in separate pets table, not in profile
 
     // Budget
     if (data.budget) {
@@ -461,15 +451,7 @@ function reconstructProfileData(profile: any): ProfileSetupData {
 
   // Household-specific fields
   if (profileType === 'household' || profileType === 'household') {
-    // Children
-    if (profile.has_children !== undefined || profile.number_of_kids) {
-      data.children = {
-        has_children: profile.has_children,
-        number_of_kids: profile.number_of_kids,
-        new_borns_under_one: profile.new_borns_under_one,
-        ages: profile.kids_ages
-      };
-    }
+    // Children - loaded separately from household_kids table
 
     // Service Type
     if (profile.service_type || profile.live_in !== undefined) {
@@ -484,13 +466,7 @@ function reconstructProfileData(profile: any): ProfileSetupData {
       data.chores = profile.chores;
     }
 
-    // Pets
-    if (profile.has_pets !== undefined || profile.pet_types) {
-      data.pets = {
-        has_pets: profile.has_pets,
-        types: profile.pet_types
-      };
-    }
+    // Pets - loaded separately from pets table
 
     // Budget
     if (profile.budget_min || profile.budget_max) {

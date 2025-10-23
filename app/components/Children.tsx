@@ -9,6 +9,7 @@ export interface Child {
   gender: string;
   date_of_birth?: string;
   expected_date?: string;
+  notes?: string;
   traits?: string[];
   isExpecting?: boolean;
   is_expecting?: boolean;
@@ -23,80 +24,75 @@ const options = [
 const Children: React.FC = () => {
   const [selected, setSelected] = useState<string>("");
   const [childrenList, setChildrenList] = useState<Child[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [gender, setGender] = useState<string>("");
-  const [dob, setDob] = useState<string>("");
-  const [traits, setTraits] = useState<string[]>([]);
-  const [error, setError] = useState<string>("");
-  const [loading, setLoading] = useState(false);
-  const [showExpectingModal, setShowExpectingModal] = useState(false);
-  const [expectingDate, setExpectingDate] = useState("");
-  const [expectingLoading, setExpectingLoading] = useState(false);
-  const [expectingError, setExpectingError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
-  const handleOptionChange = (value: string) => {
+  // Load existing children on mount
+  useEffect(() => {
+    const loadChildren = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
+          method: "GET",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        
+        if (res.ok) {
+          const kids = await res.json();
+          if (kids && kids.length > 0) {
+            setChildrenList(kids);
+            setSelected("have_or_expecting");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load children:", err);
+      }
+    };
+    
+    loadChildren();
+  }, []);
+
+  const handleOptionChange = async (value: string) => {
     setSelected(value);
+    
+    // If user selects "no children", save immediately
+    if (value === "no_children") {
+      await saveChildrenPreference(false);
+    }
   };
 
-  const handleTraitChange = (trait: string) => {
-    if (traits.includes(trait)) {
-      setTraits(traits.filter((t) => t !== trait));
-    } else if (traits.length < 3) {
-      setTraits([...traits, trait]);
+  const saveChildrenPreference = async (hasChildren: boolean) => {
+    setSaving(true);
+    setSaveMessage(null);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          has_children: hasChildren,
+        }),
+      });
+      
+      if (!res.ok) throw new Error("Failed to save preference");
+      
+      setSaveMessage({ type: 'success', text: 'Preference saved successfully' });
+      // Note: Step completion is tracked server-side when kids are added
+    } catch (err: any) {
+      setSaveMessage({ type: 'error', text: handleApiError(err, 'children', 'Failed to save preference') });
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleChildrenUpdate = (children: Child[]) => {
     setChildrenList(children);
   };
-
-  const handleChildSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!gender || !dob || traits.length === 0) {
-      setError("Please fill all fields and select up to 3 traits.");
-      return;
-    }
-    // Date of birth must be today or in the past
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const dobDate = new Date(dob);
-    dobDate.setHours(0,0,0,0);
-    if (dobDate > today) {
-      setError("Date of birth cannot be in the future.");
-      return;
-    }
-    setError("");
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          gender,
-          date_of_birth: dob,
-          traits,
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to save child. Please try again.");
-      const saved = await res.json();
-      setChildrenList([...childrenList, saved]);
-      setShowModal(false);
-      setGender("");
-      setDob("");
-      setTraits([]);
-    } catch (err: any) {
-      setError(handleApiError(err, 'children', 'An error occurred.'));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // No form submit handler needed - parent layout handles navigation
-  // Individual children are saved immediately via handleChildSubmit
 
   return (
     <div className="w-full max-w-3xl mx-auto">
@@ -130,12 +126,23 @@ const Children: React.FC = () => {
 
           {selected === "have_or_expecting" && (
             <Kids 
-              onChildrenUpdate={handleChildrenUpdate} 
+              onChildrenUpdate={handleChildrenUpdate}
               initialChildren={childrenList}
               className="mt-4"
             />
           )}
         </div>
+
+        {/* Save Status Message */}
+        {saveMessage && (
+          <div className={`p-4 rounded-xl text-sm font-semibold border-2 ${
+            saveMessage.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30'
+              : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30'
+          }`}>
+            {saveMessage.type === 'success' ? '✓ ' : '⚠️ '}{saveMessage.text}
+          </div>
+        )}
       </div>
     </div>
   );

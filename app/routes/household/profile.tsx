@@ -1,146 +1,330 @@
 import React, { useEffect, useState } from "react";
-import { API_ENDPOINTS } from '~/config/api';
+import { useNavigate } from "@remix-run/react";
+import { API_BASE_URL } from '~/config/api';
+
+interface HouseholdData {
+  house_size?: string;
+  household_notes?: string;
+  needs_live_in?: boolean;
+  live_in_off_days?: string[];
+  needs_day_worker?: boolean;
+  day_worker_schedule?: any;
+  available_from?: string;
+  chores?: string[];
+  budget_min?: number;
+  budget_max?: number;
+  salary_frequency?: string;
+  religion?: string;
+  bio?: string;
+  address?: string;
+  location?: any;
+}
 
 export default function HouseholdProfile() {
-  const [profile, setProfile] = useState<any>(null);
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<HouseholdData | null>(null);
+  const [kids, setKids] = useState<any[]>([]);
+  const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [editMode, setEditMode] = useState(false);
-  const [form, setForm] = useState<any>({});
-  const [saving, setSaving] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchAllData = async () => {
       setLoading(true);
       setError(null);
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Not authenticated");
-        const res = await fetch(API_ENDPOINTS.profile.household.me, {
+        
+        // Fetch profile
+        const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        if (!res.ok) throw new Error("Failed to fetch profile");
-        const data = await res.json();
-        setProfile(data);
-        setForm(data);
+        if (!profileRes.ok) throw new Error("Failed to fetch profile");
+        const profileData = await profileRes.json();
+        setProfile(profileData);
+        
+        // Fetch kids
+        try {
+          const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (kidsRes.ok) {
+            const kidsData = await kidsRes.json();
+            setKids(kidsData || []);
+          }
+        } catch (err) {
+          console.error("Failed to fetch kids:", err);
+        }
+        
+        // Fetch pets
+        try {
+          const petsRes = await fetch(`${API_BASE_URL}/api/v1/pets`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (petsRes.ok) {
+            const petsData = await petsRes.json();
+            setPets(petsData || []);
+          }
+        } catch (err) {
+          console.error("Failed to fetch pets:", err);
+        }
       } catch (err: any) {
         setError(err.message || "Failed to load profile");
       } finally {
         setLoading(false);
       }
     };
-    fetchProfile();
+    fetchAllData();
   }, []);
 
-  const handleEdit = () => {
-    setEditMode(true);
-    setForm({ ...profile });
-    setSuccess(null);
-    setError(null);
+  const handleEditSection = (section: string) => {
+    // Navigate to the specific setup step for editing
+    navigate(`/profile-setup/household?step=${section}`);
   };
 
-  const handleCancel = () => {
-    setEditMode(false);
-    setForm({});
-    setSuccess(null);
-    setError(null);
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <svg className="animate-spin h-12 w-12 text-purple-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-600 dark:text-gray-400">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setForm((prev: any) => ({ ...prev, [name]: value }));
-  };
+  if (error) {
+    return (
+      <div className="p-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 text-red-800 dark:text-red-400">
+        <div className="flex items-center gap-3">
+          <span className="text-2xl">⚠️</span>
+          <p className="font-semibold">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
-  const handleSave = async () => {
-    setSaving(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Not authenticated");
-      const res = await fetch(API_ENDPOINTS.profile.household.me, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) throw new Error("Failed to update profile");
-      const updated = await res.json();
-      setProfile(updated);
-      setEditMode(false);
-      setSuccess("Profile updated successfully.");
-    } catch (err: any) {
-      setError(err.message || "Failed to update profile");
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  if (loading) return <div className="flex justify-center py-12">Loading...</div>;
-  if (error) return <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md mt-6"><div className="flex items-center justify-center"><span className="text-2xl mr-3">⚠️</span><p className="text-base font-semibold text-red-800">{error}</p></div></div>;
   if (!profile) return null;
 
   return (
-    <div className="w-full bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Household Profile 🏠</h1>
-        {!editMode && (
-          <button className="px-6 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all" onClick={handleEdit}>
+    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-lg">
+        <h1 className="text-3xl font-bold mb-2">🏠 My Household Profile</h1>
+        <p className="text-purple-100">View and manage your household information</p>
+      </div>
+
+      {/* House Size & Notes */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🏠 House Information</h2>
+          <button
+            onClick={() => handleEditSection('housesize')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+          >
             ✏️ Edit
           </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">House Size</span>
+            <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
+          </div>
+          {profile.household_notes && (
+            <div className="md:col-span-2">
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
+              <p className="text-base text-gray-900 dark:text-gray-100 mt-1">{profile.household_notes}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Service Type */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👥 Service Type Needed</h2>
+          <button
+            onClick={() => handleEditSection('nannytype')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        <div className="space-y-3">
+          {profile.needs_live_in && (
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 Live-in Help</p>
+              {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Off days: {profile.live_in_off_days.join(', ')}</p>
+              )}
+            </div>
+          )}
+          {profile.needs_day_worker && (
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <p className="font-semibold text-purple-900 dark:text-purple-100">☀️ Day Worker</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Schedule configured</p>
+            </div>
+          )}
+          {!profile.needs_live_in && !profile.needs_day_worker && (
+            <p className="text-gray-500 dark:text-gray-400">No service type specified</p>
+          )}
+          {profile.available_from && (
+            <div>
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Available From</span>
+              <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString()}</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Children */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👶 Children</h2>
+          <button
+            onClick={() => handleEditSection('children')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        {kids.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {kids.map((kid, idx) => (
+              <div key={kid.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <p className="font-semibold text-purple-900 dark:text-purple-100">
+                  {kid.is_expecting ? '🤰 Expecting' : `👶 Child ${idx + 1}`}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Gender: {kid.gender}</p>
+                {kid.date_of_birth && <p className="text-sm text-gray-600 dark:text-gray-400">DOB: {new Date(kid.date_of_birth).toLocaleDateString()}</p>}
+                {kid.expected_date && <p className="text-sm text-gray-600 dark:text-gray-400">Expected: {new Date(kid.expected_date).toLocaleDateString()}</p>}
+                {kid.traits && kid.traits.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {kid.traits.map((trait: string, i: number) => (
+                      <span key={i} className="text-xs px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full">{trait}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400">No children added</p>
         )}
       </div>
-      
-      {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-4 shadow-md mb-4"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800">{success}</p></div></div>}
-      
-      <div className="text-center text-gray-600 mb-6">Your household profile details</div>
-      <div className="space-y-4">
-        {editMode ? (
-          <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-purple-700">Address</label>
-              <textarea
-                name="address"
-                value={form.address || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold mb-2 text-purple-700">Bio</label>
-              <textarea
-                name="bio"
-                value={form.bio || ''}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
-              />
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button type="submit" className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100" disabled={saving}>
-                {saving ? "✨ Saving..." : "🚀 Save"}
-              </button>
-              <button type="button" className="px-6 py-3 rounded-xl border-2 border-purple-200 bg-white text-purple-600 font-semibold hover:bg-purple-50 hover:border-purple-300 transition-all" onClick={handleCancel} disabled={saving}>
-                Cancel
-              </button>
-            </div>
-          </form>
+
+      {/* Pets */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🐾 Pets</h2>
+          <button
+            onClick={() => handleEditSection('pets')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        {pets.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {pets.map((pet, idx) => (
+              <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <p className="font-semibold text-purple-900 dark:text-purple-100 capitalize">🐾 {pet.pet_type}</p>
+                {pet.requires_care && <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">⚠️ Requires care</p>}
+                {pet.care_details && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{pet.care_details}</p>}
+                {pet.traits && pet.traits.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {pet.traits.map((trait: string, i: number) => (
+                      <span key={i} className="text-xs px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full capitalize">{trait}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         ) : (
-          <>
-            <div className="space-y-3">
-              <div>
-                <span className="block text-sm font-semibold mb-1 text-purple-700">Address</span>
-                <span className="text-base text-gray-900 font-medium">{profile.address || '-'}</span>
-              </div>
-              <div>
-                <span className="block text-sm font-semibold mb-1 text-purple-700">Bio</span>
-                <span className="text-base text-gray-900 font-medium">{profile.bio || '-'}</span>
-              </div>
-            </div>
-          </>
+          <p className="text-gray-500 dark:text-gray-400">No pets added</p>
         )}
+      </div>
+
+      {/* Chores */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🧹 Chores & Duties</h2>
+          <button
+            onClick={() => handleEditSection('chores')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        {profile.chores && profile.chores.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {profile.chores.map((chore, idx) => (
+              <span key={idx} className="px-3 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-lg font-medium">
+                {chore}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400">No chores specified</p>
+        )}
+      </div>
+
+      {/* Budget */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">💰 Budget</h2>
+          <button
+            onClick={() => handleEditSection('budget')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        {profile.budget_min || profile.budget_max ? (
+          <div className="space-y-2">
+            <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+              {profile.budget_min && profile.budget_max ? `KES ${profile.budget_min.toLocaleString()} - ${profile.budget_max.toLocaleString()}` : profile.budget_min ? `KES ${profile.budget_min.toLocaleString()}+` : 'Negotiable'}
+            </p>
+            {profile.salary_frequency && (
+              <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">Per {profile.salary_frequency}</p>
+            )}
+          </div>
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400">No budget specified</p>
+        )}
+      </div>
+
+      {/* Religion */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🙏 Religion & Beliefs</h2>
+          <button
+            onClick={() => handleEditSection('religion')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        <p className="text-base font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
+      </div>
+
+      {/* Bio */}
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">✍️ About Your Household</h2>
+          <button
+            onClick={() => handleEditSection('bio')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        <p className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
       </div>
     </div>
   );

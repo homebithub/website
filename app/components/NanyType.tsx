@@ -18,7 +18,8 @@ const initialAvailability: AvailabilityType = DAYS.reduce((acc, day) => {
 }, {} as AvailabilityType);
 
 const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
-  const [selected, setSelected] = useState<string>("");
+  const [needsLiveIn, setNeedsLiveIn] = useState<boolean>(false);
+  const [needsDayWorker, setNeedsDayWorker] = useState<boolean>(false);
   const [availableFrom, setAvailableFrom] = useState<string>("");
   const [availability, setAvailability] = useState<AvailabilityType>(initialAvailability);
   const [offDays, setOffDays] = useState<string[]>([]);
@@ -29,23 +30,23 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
   const handleSubmit = async () => {
     setError("");
     setSuccess("");
-    if (!selected) {
-      setError("Please select the type of househelp.");
+    if (!needsLiveIn && !needsDayWorker) {
+      setError("Please select at least one type of househelp.");
       return;
     }
     if (!availableFrom || isNaN(Date.parse(availableFrom))) {
       setError("Please select the 'Available from' date.");
       return;
     }
-    if (selected === "day") {
+    if (needsDayWorker) {
       const hasAvailability = Object.values(availability).some(daySlots => Object.values(daySlots).some(Boolean));
       if (!hasAvailability) {
-        setError("Please select at least one available day or time slot.");
+        setError("Please select at least one available day or time slot for day-worker.");
         return;
       }
     }
-    if (userType === 'household' && selected === 'sleep_in' && offDays.length === 0) {
-      setError("Please select at least one off day for your sleep-in househelp.");
+    if (userType === 'household' && needsLiveIn && offDays.length === 0) {
+      setError("Please select at least one off day for your live-in househelp.");
       return;
     }
     setLoading(true);
@@ -56,15 +57,17 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       if (userType === 'household') {
         // For household, save to household profile with step metadata
         const res = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          method: "PATCH",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
-            service_type: selected === 'sleep_in' ? 'live-in' : 'day-worker',
-            live_in: selected === 'sleep_in',
-            ...(selected === 'sleep_in' && offDays.length > 0 && { off_days: offDays }),
+            needs_live_in: needsLiveIn,
+            ...(needsLiveIn && offDays.length > 0 && { live_in_off_days: offDays }),
+            needs_day_worker: needsDayWorker,
+            ...(needsDayWorker && { day_worker_schedule: JSON.stringify(availability) }),
+            available_from: availableFrom,
             _step_metadata: {
               step_id: "nannytype",
               step_number: 2,
@@ -72,7 +75,11 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
             }
           }),
         });
-        if (!res.ok) throw new Error("Failed to save service type. Please try again.");
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({}));
+          console.error("Failed to save service type:", errorData);
+          throw new Error(errorData.message || "Failed to save service type. Please try again.");
+        }
         setSuccess("Service type saved successfully!");
       } else {
         // For househelp, save to househelp-preferences
@@ -123,35 +130,31 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-8">
       <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">🏠 Service Type</h2>
       <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
-        What type of help are you looking for?
+        What type of help are you looking for? (You can select both)
       </p>
       <div className="flex flex-col gap-4">
-        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${selected === "sleep_in" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
+        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${needsLiveIn ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
-            type="radio"
-            name="nanyType"
-            value="sleep_in"
-            checked={selected === "sleep_in"}
-            onChange={() => setSelected("sleep_in")}
-            className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
+            type="checkbox"
+            checked={needsLiveIn}
+            onChange={(e) => setNeedsLiveIn(e.target.checked)}
+            className="form-checkbox h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
           />
-          <span className="flex-1">🌙 Sleep-in (Lives with you)</span>
+          <span className="flex-1">🌙 Live-in (Lives with you)</span>
         </label>
-        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${selected === "day" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
+        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${needsDayWorker ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
-            type="radio"
-            name="nanyType"
-            value="day"
-            checked={selected === "day"}
-            onChange={() => setSelected("day")}
-            className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
+            type="checkbox"
+            checked={needsDayWorker}
+            onChange={(e) => setNeedsDayWorker(e.target.checked)}
+            className="form-checkbox h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
           />
           <span className="flex-1">☀️ Day Worker (Comes during the day)</span>
         </label>
       </div>
       
-      {/* Off Days Selection for Household Sleep-in Nanny */}
-      {userType === 'household' && selected === 'sleep_in' && (
+      {/* Off Days Selection for Household Live-in */}
+      {userType === 'household' && needsLiveIn && (
         <div className="space-y-4 p-6 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
           <h3 className="text-lg font-bold text-purple-700 dark:text-purple-400">
             📅 Select Off Days <span className="text-sm text-gray-500 dark:text-gray-400">(Up to 3 days)</span>
@@ -199,7 +202,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
         </div>
       )}
       
-      {selected === "day" && (
+      {needsDayWorker && (
         <div className={`bg-purple-50 dark:bg-purple-900/20 p-6 rounded-xl border-2 overflow-x-auto ${error && error.includes('available day or time slot') ? 'border-red-500 dark:border-red-400' : 'border-purple-200 dark:border-purple-500/30'}`}>
           <div className="mb-4 font-bold text-lg text-center text-purple-700 dark:text-purple-400">📅 Select Availability</div>
           <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-4">Click day names or time slots to select all. Click individual cells to toggle.</p>
@@ -309,11 +312,11 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
         onClick={handleSubmit}
         disabled={
           loading || 
-          !selected || 
+          (!needsLiveIn && !needsDayWorker) || 
           !availableFrom || 
           isNaN(Date.parse(availableFrom)) ||
-          (selected === 'day' && !Object.values(availability).some(daySlots => Object.values(daySlots).some(Boolean))) ||
-          (userType === 'household' && selected === 'sleep_in' && offDays.length === 0)
+          (needsDayWorker && !Object.values(availability).some(daySlots => Object.values(daySlots).some(Boolean))) ||
+          (userType === 'household' && needsLiveIn && offDays.length === 0)
         }
       >
         {loading ? (

@@ -19,33 +19,46 @@ const HouseSize: React.FC = () => {
   const [additionalDetails, setAdditionalDetails] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const submit = useSubmit();
 
-  // Auto-save when house size is selected
-  const saveHouseSize = async (size: string) => {
-    if (!size) return;
+  // Save house size to household profile
+  const saveHouseSize = async () => {
+    if (!selectedSize) {
+      setError('Please select a house size');
+      return;
+    }
 
     setIsSubmitting(true);
     setError('');
+    setSuccess('');
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/household-preferences/house-size`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          house_size: size.toLowerCase().replace(' ', '_'),
+          house_size: selectedSize,
+          household_notes: additionalDetails.trim() || "",
+          _step_metadata: {
+            step_id: "housesize",
+            step_number: 1,
+            is_completed: true
+          }
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save house size');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to save house size');
       }
 
-      console.log('House size saved successfully');
+      setSuccess('House size saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(handleApiError(err, 'houseSize', 'Failed to save house size. Please try again.'));
       console.error(err);
@@ -85,10 +98,7 @@ const HouseSize: React.FC = () => {
                   name="houseSize"
                   value={size}
                   checked={selectedSize === size}
-                  onChange={() => {
-                    setSelectedSize(size);
-                    saveHouseSize(size);
-                  }}
+                  onChange={() => setSelectedSize(size)}
                   className="sr-only"
                 />
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 ${
@@ -136,6 +146,34 @@ const HouseSize: React.FC = () => {
             ⚠️ {error}
           </div>
         )}
+
+        {success && (
+          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+            ✓ {success}
+          </div>
+        )}
+
+        {/* Save Button */}
+        <button
+          type="button"
+          onClick={saveHouseSize}
+          disabled={isSubmitting || !selectedSize}
+          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Saving...
+            </>
+          ) : (
+            <>
+              💾 Save House Size
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

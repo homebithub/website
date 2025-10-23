@@ -57,6 +57,41 @@ const Pets: React.FC = () => {
   const [petToDelete, setPetToDelete] = useState<Pet | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Load existing pets on mount
+  useEffect(() => {
+    const loadPets = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/v1/pets`, {
+          method: "GET",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        
+        if (res.ok) {
+          const petsData = await res.json();
+          if (petsData && petsData.length > 0) {
+            // Map backend response to frontend Pet interface
+            const mappedPets = petsData.map((p: any) => ({
+              id: p.id,
+              type: p.pet_type,
+              requiresCare: p.requires_care,
+              careDetails: p.care_details || "",
+              traits: p.traits || []
+            }));
+            setPets(mappedPets);
+            setHasPet("yes");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load pets:", err);
+      }
+    };
+    
+    loadPets();
+  }, []);
+
   const handleAddPet = () => {
     setShowModal(true);
     // Reset form
@@ -218,50 +253,50 @@ const Pets: React.FC = () => {
       {/* Pet Table - Show if user has pets */}
       {hasPet === "yes" && pets.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Your Pets</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
-              <thead className="bg-gray-50">
+          <h3 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-4">Your Pets</h3>
+          <div className="overflow-x-auto rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
+            <table className="w-full">
+              <thead className="bg-purple-50 dark:bg-purple-900/20">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Pet Type</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Traits</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Care Required</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">Action</th>
+                  <th className="px-4 py-3 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Pet Type</th>
+                  <th className="px-4 py-3 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Traits</th>
+                  <th className="px-4 py-3 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Care Required</th>
+                  <th className="px-4 py-3 text-center text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {pets.map((pet, index) => (
-                  <tr key={pet.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100`}>
-                    <td className="px-4 py-3 text-sm text-gray-800 border-b capitalize">{pet.type}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 border-b">
+                  <tr key={pet.id} className={`${index % 2 === 0 ? 'bg-white dark:bg-[#13131a]' : 'bg-purple-50/50 dark:bg-purple-900/10'} hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors`}>
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 border-b border-purple-100 dark:border-purple-500/20 capitalize font-medium">{pet.type}</td>
+                    <td className="px-4 py-3 text-sm border-b border-purple-100 dark:border-purple-500/20">
                       {pet.traits.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {pet.traits.map(trait => (
-                            <span key={trait} className="inline-block bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full capitalize">
+                            <span key={trait} className="inline-block bg-purple-100 dark:bg-purple-800/40 text-purple-700 dark:text-purple-300 text-xs px-2 py-1 rounded-full capitalize font-medium border border-purple-200 dark:border-purple-500/30">
                               {trait}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <span className="text-gray-400">None</span>
+                        <span className="text-gray-400 dark:text-gray-500">None</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm border-b">
+                    <td className="px-4 py-3 text-sm border-b border-purple-100 dark:border-purple-500/20">
                       {pet.requiresCare ? (
                         <div>
-                          <span className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full mb-1">Yes</span>
+                          <span className="inline-block bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs px-2 py-1 rounded-full mb-1 font-medium">Yes</span>
                           {pet.careDetails && (
-                            <p className="text-xs text-gray-600 mt-1">{pet.careDetails}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{pet.careDetails}</p>
                           )}
                         </div>
                       ) : (
-                        <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">No</span>
+                        <span className="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2 py-1 rounded-full font-medium">No</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-center border-b">
+                    <td className="px-4 py-3 text-center border-b border-purple-100 dark:border-purple-500/20">
                       <button
                         onClick={() => handleRemovePet(pet)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition-colors"
+                        className="text-red-500 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-full transition-colors"
                         title="Delete pet"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -450,28 +485,28 @@ const Pets: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && petToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border-2 border-purple-200 dark:border-purple-500/30">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">Delete Pet</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Pet</h3>
               </div>
             </div>
             
             <div className="mb-6">
-              <p className="text-sm text-gray-600">
-                Are you sure you want to delete <span className="font-semibold capitalize">{petToDelete.type}</span>? This action cannot be undone.
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Are you sure you want to delete <span className="font-semibold capitalize text-purple-700 dark:text-purple-400">{petToDelete.type}</span>? This action cannot be undone.
               </p>
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="mb-4 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
+                ⚠️ {error}
               </div>
             )}
 
@@ -479,14 +514,14 @@ const Pets: React.FC = () => {
               <button
                 onClick={cancelDelete}
                 disabled={deleteLoading}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeletePet}
                 disabled={deleteLoading}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold shadow-lg hover:bg-red-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {deleteLoading ? "Deleting..." : "Delete"}
               </button>

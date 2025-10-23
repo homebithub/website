@@ -3,6 +3,8 @@ import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import ChildModal from './modals/ChildModal';
 import ExpectingModal from './ExpectingModal';
 import type { Child } from './Children';
+import { API_BASE_URL } from '~/config/api';
+import { handleApiError } from '../utils/errorMessages';
 
 interface KidsProps {
   onChildrenUpdate: (children: Child[]) => void;
@@ -16,43 +18,34 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
   const [showExpectingModal, setShowExpectingModal] = useState(false);
   const [editingChild, setEditingChild] = useState<Child | null>(null);
   const [editingIndex, setEditingIndex] = useState<number>(-1);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Update local state when initialChildren prop changes
   useEffect(() => {
     setChildren(initialChildren);
   }, [initialChildren]);
 
-  const handleAddChild = (childData: Omit<Child, 'id'>) => {
-    const newChild = { 
-      ...childData, 
-      id: Date.now().toString(),
-      // Ensure consistent field names
-      date_of_birth: childData.date_of_birth || childData.dob,
-      is_expecting: childData.is_expecting || childData.isExpecting
-    };
-    
-    const updatedChildren = [...children, newChild];
-    setChildren(updatedChildren);
-    onChildrenUpdate(updatedChildren);
-  };
-
-  const handleUpdateChild = (index: number, childData: Omit<Child, 'id'>) => {
-    const updatedChildren = [...children];
-    updatedChildren[index] = { 
-      ...childData, 
-      id: updatedChildren[index].id,
-      // Ensure consistent field names
-      date_of_birth: childData.date_of_birth || childData.dob,
-      is_expecting: childData.is_expecting || childData.isExpecting
-    };
-    setChildren(updatedChildren);
-    onChildrenUpdate(updatedChildren);
-  };
-
-  const handleRemoveChild = (index: number) => {
-    const updatedChildren = children.filter((_, i) => i !== index);
-    setChildren(updatedChildren);
-    onChildrenUpdate(updatedChildren);
+  const handleRemoveChild = async (index: number) => {
+    try {
+      const childId = children[index].id;
+      const token = localStorage.getItem("token");
+      
+      const res = await fetch(`${API_BASE_URL}/api/v1/household_kids/${childId}`, {
+        method: "DELETE",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+      
+      if (!res.ok) throw new Error("Failed to delete child");
+      
+      const updatedChildren = children.filter((_, i) => i !== index);
+      setChildren(updatedChildren);
+      onChildrenUpdate(updatedChildren);
+    } catch (err: any) {
+      console.error("Failed to delete child:", err);
+      alert(handleApiError(err, 'children', 'Failed to delete child'));
+    }
   };
 
   const handleEditChild = (index: number) => {
@@ -62,17 +55,57 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
   };
 
   const handleSaveChild = async (childData: Omit<Child, 'id'>): Promise<void> => {
-    return new Promise((resolve) => {
+    try {
+      const token = localStorage.getItem("token");
+      
       if (editingIndex >= 0) {
-        handleUpdateChild(editingIndex, childData);
+        // Update existing child
+        const childId = children[editingIndex].id;
+        const res = await fetch(`${API_BASE_URL}/api/v1/household_kids/${childId}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(childData),
+        });
+        
+        if (!res.ok) throw new Error("Failed to update child");
+        const updatedChild = await res.json();
+        
+        const updatedChildren = [...children];
+        updatedChildren[editingIndex] = updatedChild;
+        setChildren(updatedChildren);
+        onChildrenUpdate(updatedChildren);
       } else {
-        handleAddChild(childData);
+        // Create new child
+        const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify(childData),
+        });
+        
+        if (!res.ok) throw new Error("Failed to save child");
+        const savedChild = await res.json();
+        
+        const updatedChildren = [...children, savedChild];
+        setChildren(updatedChildren);
+        onChildrenUpdate(updatedChildren);
       }
+      
       setShowChildModal(false);
       setEditingChild(null);
       setEditingIndex(-1);
-      resolve();
-    });
+      
+      // Show success message
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (err: any) {
+      throw new Error(handleApiError(err, 'children', 'Failed to save child'));
+    }
   };
 
   // Format date for display
@@ -87,6 +120,12 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
 
   return (
     <div className={`space-y-4 ${className}`}>
+      {/* Success Message */}
+      {saveSuccess && (
+        <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+          ✓ Child saved successfully
+        </div>
+      )}
       <div className="flex gap-4">
         <button
           type="button"
@@ -110,29 +149,29 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
       </div>
 
       {children.length > 0 && (
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <thead className="bg-gray-50">
+        <div className="overflow-x-auto rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
+          <table className="min-w-full bg-white dark:bg-gray-900">
+            <thead className="bg-purple-50 dark:bg-purple-900/20">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gender</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date of Birth</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Traits</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Gender</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Date of Birth</th>
+                <th className="px-6 py-3 text-left text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Traits</th>
+                <th className="px-6 py-3 text-right text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-900 divide-y divide-purple-100 dark:divide-purple-500/20">
               {children.map((child, index) => {
                 const isExpecting = child.is_expecting || child.isExpecting;
                 const dateOfBirth = child.date_of_birth || child.dob;
                 
                 return (
-                  <tr key={child.id || index} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 capitalize">
+                  <tr key={child.id || index} className="hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white capitalize">
                       {child.gender || 'Not specified'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                       {isExpecting ? (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400">
                           Due: {formatDate(child.expected_date)}
                         </span>
                       ) : (
@@ -140,17 +179,17 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex flex-wrap gap-1">
+                      <div className="flex flex-wrap gap-2">
                         {child.traits?.map((trait) => (
                           <span 
                             key={trait} 
-                            className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary-100 text-primary-800"
+                            className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300"
                           >
                             {trait}
                           </span>
                         ))}
                         {isExpecting && (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400">
                             Expecting
                           </span>
                         )}
@@ -160,14 +199,14 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
                       <button
                         type="button"
                         onClick={() => handleEditChild(index)}
-                        className="text-primary-600 hover:text-primary-900 mr-3"
+                        className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-semibold mr-4 transition-colors"
                       >
                         Edit
                       </button>
                       <button
                         type="button"
                         onClick={() => handleRemoveChild(index)}
-                        className="text-red-600 hover:text-red-900"
+                        className="text-red-600 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 transition-colors"
                         aria-label="Remove child"
                       >
                         <TrashIcon className="h-5 w-5" />
@@ -195,15 +234,42 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
       <ExpectingModal
         isOpen={showExpectingModal}
         onClose={() => setShowExpectingModal(false)}
-        onSave={(data) => {
-          handleAddChild({
-            ...data,
-            is_expecting: true,
-            expected_date: data.expected_date,
-            date_of_birth: data.expected_date, // For display consistency
-            traits: []
-          });
-          setShowExpectingModal(false);
+        onSave={async (data) => {
+          try {
+            const token = localStorage.getItem("token");
+            
+            // Save expecting child to database
+            const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              },
+              body: JSON.stringify({
+                gender: data.gender,
+                is_expecting: true,
+                expected_date: data.expected_date,
+                notes: data.notes || "",
+                traits: []
+              }),
+            });
+            
+            if (!res.ok) throw new Error("Failed to save expecting child");
+            const savedChild = await res.json();
+            
+            const updatedChildren = [...children, savedChild];
+            setChildren(updatedChildren);
+            onChildrenUpdate(updatedChildren);
+            
+            setShowExpectingModal(false);
+            
+            // Show success message
+            setSaveSuccess(true);
+            setTimeout(() => setSaveSuccess(false), 3000);
+          } catch (err: any) {
+            console.error("Failed to save expecting child:", err);
+            alert(handleApiError(err, 'children', 'Failed to save expecting child'));
+          }
         }}
       />
     </div>

@@ -31,41 +31,67 @@ const BUDGET_RANGES: Record<BudgetFrequency, BudgetRange[]> = {
 };
 
 const Budget: React.FC = () => {
-  const [frequency, setFrequency] = useState<BudgetFrequency>('Daily');
+  const [frequency, setFrequency] = useState<BudgetFrequency>('Monthly');
   const [selectedRange, setSelectedRange] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const submit = useSubmit();
 
-  // Auto-save when budget range is selected
-  const saveBudget = async (range: string) => {
-    if (!range) return;
+  // Save budget to household profile
+  const saveBudget = async () => {
+    if (!selectedRange) {
+      setError('Please select a budget range');
+      return;
+    }
 
     setIsSubmitting(true);
     setError('');
+    setSuccess('');
 
     try {
       const token = localStorage.getItem('token');
-      const [min, max] = range.split('-').map(v => parseInt(v.replace(/,/g, '')));
       
-      const response = await fetch(`${API_BASE_URL}/api/v1/household-preferences/budget`, {
+      // Parse budget range
+      let budgetMin = 0;
+      let budgetMax = 0;
+      
+      if (selectedRange !== 'Negotiable') {
+        const parts = selectedRange.split('-');
+        if (parts.length === 2) {
+          budgetMin = parseInt(parts[0].replace(/,/g, '').replace(/\s+/g, ''));
+          budgetMax = parseInt(parts[1].replace(/,/g, '').replace(/\s+/g, '').replace('KES', '').replace('+', ''));
+        } else if (selectedRange.includes('+')) {
+          budgetMin = parseInt(selectedRange.replace(/,/g, '').replace(/\s+/g, '').replace('KES', '').replace('+', ''));
+          budgetMax = budgetMin * 2; // Set max to double for open-ended ranges
+        }
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          budget_min: min,
-          budget_max: max,
+          budget_min: budgetMin,
+          budget_max: budgetMax,
           salary_frequency: frequency.toLowerCase(),
+          _step_metadata: {
+            step_id: "budget",
+            step_number: 5,
+            is_completed: true
+          }
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save budget preferences');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || 'Failed to save budget preferences');
       }
 
-      console.log('Budget saved successfully');
+      setSuccess('Budget saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(handleApiError(err, 'budget', 'Failed to save budget preferences. Please try again.'));
       console.error(err);
@@ -125,10 +151,7 @@ const Budget: React.FC = () => {
                   name="budgetRange"
                   value={range}
                   checked={selectedRange === range}
-                  onChange={() => {
-                    setSelectedRange(range);
-                    saveBudget(range);
-                  }}
+                  onChange={() => setSelectedRange(range)}
                   className="sr-only"
                 />
                 <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 ${
@@ -151,6 +174,34 @@ const Budget: React.FC = () => {
             ⚠️ {error}
           </div>
         )}
+
+        {success && (
+          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+            ✓ {success}
+          </div>
+        )}
+
+        {/* Save Button */}
+        <button
+          type="button"
+          onClick={saveBudget}
+          disabled={isSubmitting || !selectedRange}
+          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Saving...
+            </>
+          ) : (
+            <>
+              💾 Save Budget
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

@@ -55,9 +55,9 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
       const token = localStorage.getItem('token');
       
       if (userType === 'household') {
-        // For household, use household profile PATCH with step metadata
+        // For household, use household profile PUT with step metadata
         const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          method: 'PATCH',
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -73,7 +73,8 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to save bio');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.message || 'Failed to save bio');
         }
       } else {
         // For househelp, use the bio endpoint

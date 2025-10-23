@@ -11,20 +11,44 @@ const CHORES = [
   "Grocery shopping",
   "Window cleaning",
   "Bathroom cleaning",
-  "Pet care"
+  "Pet care",
+  "Other"
 ];
 
 const Chores: React.FC = () => {
   const [selectedChores, setSelectedChores] = useState<string[]>([]);
+  const [showOtherInput, setShowOtherInput] = useState(false);
+  const [otherChore, setOtherChore] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string>("");
 
   const toggleChore = (chore: string) => {
+    if (chore === "Other") {
+      setShowOtherInput(!showOtherInput);
+      if (showOtherInput) {
+        // If unchecking "Other", remove it and clear the input
+        setSelectedChores(prev => prev.filter(c => !c.startsWith("Other:")));
+        setOtherChore("");
+      }
+      return;
+    }
+    
     setSelectedChores(prev =>
       prev.includes(chore)
         ? prev.filter(c => c !== chore)
         : [...prev, chore]
     );
+  };
+
+  const handleOtherChoreAdd = () => {
+    if (otherChore.trim()) {
+      const customChore = `Other: ${otherChore.trim()}`;
+      setSelectedChores(prev => {
+        // Remove any existing "Other:" entries and add the new one
+        const filtered = prev.filter(c => !c.startsWith("Other:"));
+        return [...filtered, customChore];
+      });
+    }
   };
 
   const saveChores = async () => {
@@ -33,28 +57,37 @@ const Chores: React.FC = () => {
       return;
     }
 
+    if (showOtherInput && !selectedChores.some(c => c.startsWith("Other:"))) {
+      setMessage("Please add your custom chore or uncheck 'Other'");
+      return;
+    }
+
     setIsLoading(true);
     setMessage("");
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/househelp-preferences/chores`, {
-        method: 'POST',
+      const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          chores: selectedChores.map(chore => chore.toLowerCase())
+          chores: selectedChores,
+          _step_metadata: {
+            step_id: "chores",
+            step_number: 4,
+            is_completed: true
+          }
         }),
       });
 
       if (response.ok) {
-        const data = await response.json();
         setMessage("Chores saved successfully!");
-        console.log('Saved chores:', data.chores);
+        setTimeout(() => setMessage(""), 3000);
       } else {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         setMessage(errorData.message || "Failed to save chores");
       }
     } catch (error) {
@@ -72,31 +105,74 @@ const Chores: React.FC = () => {
         What tasks do you need help with? (Select at least one)
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {CHORES.map(chore => (
-          <label key={chore} className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all
-            ${selectedChores.includes(chore) ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}
-          `}>
-            <div className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 ${
-              selectedChores.includes(chore)
-                ? 'border-purple-500 bg-purple-500' 
-                : 'border-purple-300 dark:border-purple-500/50'
-            }`}>
-              <input
-                type="checkbox"
-                checked={selectedChores.includes(chore)}
-                onChange={() => toggleChore(chore)}
-                className="sr-only"
-              />
-              {selectedChores.includes(chore) && (
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-            </div>
-            <span>{chore}</span>
-          </label>
-        ))}
+        {CHORES.map(chore => {
+          const isOther = chore === "Other";
+          const isChecked = isOther 
+            ? showOtherInput || selectedChores.some(c => c.startsWith("Other:"))
+            : selectedChores.includes(chore);
+          
+          return (
+            <label key={chore} className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all
+              ${isChecked ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}
+            `}>
+              <div className={`w-6 h-6 rounded border-2 flex items-center justify-center flex-shrink-0 ${
+                isChecked
+                  ? 'border-purple-500 bg-purple-500' 
+                  : 'border-purple-300 dark:border-purple-500/50'
+              }`}>
+                <input
+                  type="checkbox"
+                  checked={isChecked}
+                  onChange={() => toggleChore(chore)}
+                  className="sr-only"
+                />
+                {isChecked && (
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              <span>{chore}</span>
+            </label>
+          );
+        })}
       </div>
+      
+      {/* Other Chore Input */}
+      {showOtherInput && (
+        <div className="space-y-3 p-5 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
+          <label htmlFor="otherChore" className="block text-base font-bold text-purple-700 dark:text-purple-400">
+            ✏️ Specify Other Chore <span className="text-red-500">*</span>
+          </label>
+          <div className="flex gap-3">
+            <input
+              id="otherChore"
+              type="text"
+              value={otherChore}
+              onChange={(e) => setOtherChore(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  handleOtherChoreAdd();
+                }
+              }}
+              placeholder="e.g., Gardening, Car washing, etc."
+              className="flex-1 h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 text-base"
+            />
+            <button
+              type="button"
+              onClick={handleOtherChoreAdd}
+              disabled={!otherChore.trim()}
+              className="px-6 py-3 rounded-xl bg-purple-600 text-white font-bold text-base shadow-md hover:bg-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Add
+            </button>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Type your custom chore and click "Add" or press Enter
+          </p>
+        </div>
+      )}
+      
       {selectedChores.length > 0 && (
         <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
           <span className="text-purple-700 dark:text-purple-400 font-bold text-sm">✓ Selected ({selectedChores.length}):</span>
