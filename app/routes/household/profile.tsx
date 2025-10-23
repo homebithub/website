@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
 
 interface HouseholdData {
