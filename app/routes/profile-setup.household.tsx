@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -40,7 +40,11 @@ function HouseholdProfileSetupContent() {
   const [timeSpent, setTimeSpent] = useState(0);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { saveProfileToBackend, loadProfileFromBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
+  
+  // Check if user is editing from profile page using location state (secure, can't be manipulated)
+  const isEditMode = location.state?.fromProfile === true;
   
   // Clean up URL on mount - remove any query parameters or hash
   useEffect(() => {
@@ -187,10 +191,24 @@ function HouseholdProfileSetupContent() {
       
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-          {/* Header Card */}
+          {/* Header Card - Hide in edit mode */}
+          {!isEditMode && (
           <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
+                {isEditMode && (
+                  <div className="flex items-center justify-between mb-4">
+                    <button
+                      onClick={() => navigate('/household/profile')}
+                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-all"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                      </svg>
+                      Back to Profile
+                    </button>
+                  </div>
+                )}
                 <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                   Complete Your Household Profile 🏠
                 </h1>
@@ -230,6 +248,25 @@ function HouseholdProfileSetupContent() {
               </div>
             </div>
           </div>
+          )}
+
+          {/* Edit Mode Header - Show only in edit mode */}
+          {isEditMode && (
+            <div className="mb-6">
+              <button
+                onClick={() => navigate('/household/profile')}
+                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-600 dark:text-purple-400 hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white rounded-lg transition-all mb-4 hover:scale-105"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Profile
+              </button>
+              <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-2">
+                Edit {STEPS[currentStep].title}
+              </h2>
+            </div>
+          )}
 
           {/* Content Area */}
           <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
@@ -258,7 +295,8 @@ function HouseholdProfileSetupContent() {
             </div>
           </div>
 
-          {/* Navigation Footer */}
+          {/* Navigation Footer - Hide in edit mode */}
+          {!isEditMode && (
           <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4">
               {/* Mobile: Stack buttons vertically with dots in between */}
@@ -341,6 +379,7 @@ function HouseholdProfileSetupContent() {
               </div>
             </div>
           </div>
+          )}
         </div>
       </main>
       

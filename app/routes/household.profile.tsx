@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
+import { Navigation } from "~/components/Navigation";
+import { Footer } from "~/components/Footer";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 
 interface HouseholdData {
   house_size?: string;
@@ -27,6 +30,7 @@ export default function HouseholdProfile() {
   const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -70,17 +74,28 @@ export default function HouseholdProfile() {
           console.error("Failed to fetch pets:", err);
         }
       } catch (err: any) {
+        console.error("Error loading household profile:", err);
         setError(err.message || "Failed to load profile");
+        setHasError(true);
       } finally {
         setLoading(false);
       }
     };
-    fetchAllData();
+    
+    try {
+      fetchAllData();
+    } catch (err) {
+      console.error("Critical error:", err);
+      setHasError(true);
+      setLoading(false);
+    }
   }, []);
 
   const handleEditSection = (section: string) => {
-    // Navigate to the specific setup step for editing
-    navigate(`/profile-setup/household?step=${section}`);
+    // Navigate to the specific setup step for editing with state (secure, can't be URL-manipulated)
+    navigate('/profile-setup/household', { 
+      state: { fromProfile: true, editSection: section }
+    });
   };
 
   if (loading) {
@@ -97,34 +112,82 @@ export default function HouseholdProfile() {
     );
   }
 
-  if (error) {
+  if (error || hasError) {
     return (
-      <div className="p-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 text-red-800 dark:text-red-400">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">⚠️</span>
-          <p className="font-semibold">{error}</p>
+      <div className="max-w-2xl mx-auto mt-8">
+        <div className="p-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">⚠️</span>
+            <p className="font-semibold text-red-800 dark:text-red-400">{error || "Something went wrong"}</p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Reload Page
+            </button>
+            <button
+              onClick={() => navigate('/profile-setup/household')}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Complete Profile Setup
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  if (!profile) return null;
+  if (!profile) {
+    return (
+      <div className="max-w-2xl mx-auto mt-8">
+        <div className="p-6 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-500/30">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">📝</span>
+            <p className="font-semibold text-yellow-800 dark:text-yellow-400">No profile found</p>
+          </div>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">You haven't completed your household profile yet.</p>
+          <button
+            onClick={() => navigate('/profile-setup/household')}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 transition-all"
+          >
+            Complete Profile Setup
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-12">
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
+      <main className="flex-1 py-8">
+    <div className="max-w-5xl mx-auto px-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-white shadow-lg">
-        <h1 className="text-3xl font-bold mb-2">🏠 My Household Profile</h1>
-        <p className="text-purple-100">View and manage your household information</p>
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-8 text-white rounded-t-3xl">
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">🏠 My Household Profile</h1>
+            <p className="text-purple-100">View and manage your household information</p>
+          </div>
+          <button
+            onClick={() => navigate('/household/public-profile')}
+            className="px-6 py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg"
+          >
+            👁️ View Public Profile
+          </button>
+        </div>
       </div>
 
       {/* House Size & Notes */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🏠 House Information</h2>
           <button
             onClick={() => handleEditSection('housesize')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -144,12 +207,12 @@ export default function HouseholdProfile() {
       </div>
 
       {/* Service Type */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👥 Service Type Needed</h2>
           <button
             onClick={() => handleEditSection('nannytype')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -182,12 +245,12 @@ export default function HouseholdProfile() {
       </div>
 
       {/* Children */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👶 Children</h2>
           <button
             onClick={() => handleEditSection('children')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -218,12 +281,12 @@ export default function HouseholdProfile() {
       </div>
 
       {/* Pets */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🐾 Pets</h2>
           <button
             onClick={() => handleEditSection('pets')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -251,12 +314,12 @@ export default function HouseholdProfile() {
       </div>
 
       {/* Chores */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🧹 Chores & Duties</h2>
           <button
             onClick={() => handleEditSection('chores')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -275,12 +338,12 @@ export default function HouseholdProfile() {
       </div>
 
       {/* Budget */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">💰 Budget</h2>
           <button
             onClick={() => handleEditSection('budget')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -291,7 +354,7 @@ export default function HouseholdProfile() {
               {profile.budget_min && profile.budget_max ? `KES ${profile.budget_min.toLocaleString()} - ${profile.budget_max.toLocaleString()}` : profile.budget_min ? `KES ${profile.budget_min.toLocaleString()}+` : 'Negotiable'}
             </p>
             {profile.salary_frequency && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">Per {profile.salary_frequency}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">Per {profile.salary_frequency.replace('ly', '')}</p>
             )}
           </div>
         ) : (
@@ -300,12 +363,12 @@ export default function HouseholdProfile() {
       </div>
 
       {/* Religion */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🙏 Religion & Beliefs</h2>
           <button
             onClick={() => handleEditSection('religion')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -314,18 +377,22 @@ export default function HouseholdProfile() {
       </div>
 
       {/* Bio */}
-      <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-md border-2 border-purple-100 dark:border-purple-500/30">
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">✍️ About Your Household</h2>
           <button
             onClick={() => handleEditSection('bio')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all"
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
         </div>
         <p className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
       </div>
+    </div>
+      </main>
+      </PurpleThemeWrapper>
+      <Footer />
     </div>
   );
 }
