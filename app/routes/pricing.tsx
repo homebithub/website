@@ -50,7 +50,7 @@ export default function Pricing() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
-      <main className="flex-1 container mx-auto px-4 py-8">
+      <main className="flex-1 container mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
         <div className="mx-auto max-w-4xl text-center">
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-4">Pricing</h1>
         </div>
@@ -61,7 +61,7 @@ export default function Pricing() {
           {tiers.map((tier, tierIdx) => (
             <div
               key={tier.id}
-              className="flex flex-col justify-between rounded-3xl bg-white/90 dark:bg-[#13131a]/95 p-8 shadow-xl dark:shadow-glow-lg backdrop-blur-lg transition-all duration-500 hover:scale-105 hover:shadow-2xl dark:hover:shadow-glow-lg fade-in-scroll ring-1 ring-primary-200 dark:ring-purple-500/30 sm:p-10">
+              className="flex flex-col justify-between rounded-3xl bg-white/90 dark:bg-[#13131a]/95 p-8 shadow-light-glow-lg dark:shadow-glow-lg backdrop-blur-lg transition-all duration-500 hover:scale-105 hover:shadow-light-glow-lg dark:hover:shadow-glow-lg fade-in-scroll ring-2 ring-primary-200 dark:ring-purple-500/30 sm:p-10">
               <div>
                 <h3 id={tier.id} className="text-base font-semibold leading-7 text-slate-900 dark:text-purple-400">
                   {tier.name}
@@ -83,7 +83,7 @@ export default function Pricing() {
               <a
                 href={tier.href}
                 aria-describedby={tier.id}
-                className="mt-8 block rounded-md bg-purple-600 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-sm hover:bg-purple-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
+                className="mt-8 block rounded-md bg-gradient-to-r from-purple-600 to-pink-600 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
               >
                 Get started
               </a>

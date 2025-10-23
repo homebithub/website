@@ -59,6 +59,10 @@ export default {
         'glow-lg': '0 0 45px rgba(168, 85, 247, 0.7)',
         'inner-glow': 'inset 0 0 20px rgba(168, 85, 247, 0.3)',
         'neon': '0 0 5px rgba(168, 85, 247, 0.5), 0 0 20px rgba(168, 85, 247, 0.3)',
+        // Light theme glow effects
+        'light-glow-sm': '0 0 20px rgba(147, 51, 234, 0.15), 0 4px 24px rgba(168, 85, 247, 0.12)',
+        'light-glow-md': '0 0 30px rgba(147, 51, 234, 0.2), 0 8px 32px rgba(168, 85, 247, 0.15)',
+        'light-glow-lg': '0 0 40px rgba(147, 51, 234, 0.25), 0 12px 40px rgba(168, 85, 247, 0.18)',
       },
       borderRadius: {
         xl: '1.25rem',

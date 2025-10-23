@@ -36,7 +36,7 @@ const features = [
   },
 ];
 
-export default function Index() {
+export default function SecondHome() {
   useScrollFadeIn();
 
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
@@ -89,7 +89,7 @@ export default function Index() {
           onClose={handleProfileComplete}
           initialUserType={userType || undefined}
         />
-        <div className="relative bg-transparent dark:from-[#050508] dark:via-[#0a0a0f] dark:to-purple-950 overflow-hidden fade-in-scroll transition-colors duration-500">
+        <div className="relative bg-gradient-to-br from-purple-500 via-purple-600 to-pink-600 dark:from-[#050508] dark:via-[#0a0a0f] dark:to-purple-950 overflow-hidden fade-in-scroll transition-colors duration-500">
   {/* Floating SVG shapes for playful effect */}
   <svg className="absolute top-0 left-0 w-48 h-48 opacity-30 dark:opacity-20 animate-float" viewBox="0 0 200 200" fill="none"><circle cx="100" cy="100" r="100" fill="#c084fc" /></svg>
   <svg className="absolute bottom-0 right-0 w-64 h-64 opacity-20 dark:opacity-10 animate-float delay-1000" viewBox="0 0 200 200" fill="none"><rect width="200" height="200" rx="70" fill="#a855f7" /></svg>
@@ -98,10 +98,10 @@ export default function Index() {
   <div className="hidden dark:block absolute bottom-1/3 left-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl animate-pulse-slow pointer-events-none" style={{ animationDelay: '1.5s' }} />
   <div className="flex flex-col items-center justify-center w-full px-4 sm:px-6 pt-6 sm:pt-8 pb-12 sm:pb-16 lg:px-8 lg:pt-10 lg:pb-20 relative z-10">
     <div className="mx-auto max-w-4xl text-center px-2 sm:px-0">
-      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-6 sm:mb-8 font-sans drop-shadow-lg animate-fadeIn">
+      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 sm:mb-8 font-sans drop-shadow-lg animate-fadeIn">
         Your Home, Our Expertise!
       </h1>
-      <p className="mt-6 sm:mt-8 md:mt-12 text-base sm:text-lg md:text-2xl leading-7 sm:leading-8 md:leading-9 text-gray-700 dark:text-purple-200 font-medium px-2 sm:px-0 animate-fadeIn fade-in-scroll">
+      <p className="mt-6 sm:mt-8 md:mt-12 text-base sm:text-lg md:text-2xl leading-7 sm:leading-8 md:leading-9 text-purple-100 dark:text-purple-200 font-medium px-2 sm:px-0 animate-fadeIn fade-in-scroll">
         Transform your living space with our comprehensive home services. From deep cleaning to specialized childcare, we connect you with verified professionals who treat your home like their own.
       </p>
       {/* Image Cards Section */}

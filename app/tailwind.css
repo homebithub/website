@@ -90,7 +90,12 @@
   }
 
   .dark-card:hover {
-    @apply dark:shadow-glow-sm dark:border-purple-500/30 transform scale-[1.02];
+    @apply shadow-light-glow-sm dark:shadow-glow-sm border-purple-300 dark:border-purple-500/30 transform scale-[1.02];
+  }
+
+  /* Purple glow effect for cards */
+  .glow-purple {
+    @apply shadow-light-glow-md dark:shadow-glow-md;
   }
 
   /* Neon border */

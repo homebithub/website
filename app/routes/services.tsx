@@ -64,16 +64,16 @@ export default function Services() {
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
       
-      <div className="relative isolate overflow-hidden">
+      <div className="relative isolate overflow-hidden bg-transparent dark:from-[#050508] dark:via-[#0a0a0f] dark:to-purple-950 transition-colors duration-500">
   {/* Floating SVG shapes for playful effect */}
-  <svg className="absolute top-0 left-0 w-48 h-48 opacity-20 animate-float" viewBox="0 0 200 200"><circle cx="100" cy="100" r="100" fill="#c084fc" /></svg>
-  <svg className="absolute bottom-0 right-0 w-64 h-64 opacity-10 animate-float delay-1000" viewBox="0 0 200 200"><rect width="200" height="200" rx="70" fill="#a855f7" /></svg>
+  <svg className="absolute top-0 left-0 w-48 h-48 opacity-30 dark:opacity-20 animate-float" viewBox="0 0 200 200"><circle cx="100" cy="100" r="100" fill="#ec4899" /></svg>
+  <svg className="absolute bottom-0 right-0 w-64 h-64 opacity-20 dark:opacity-10 animate-float delay-1000" viewBox="0 0 200 200"><rect width="200" height="200" rx="70" fill="#a855f7" /></svg>
         <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
           <div className="mx-auto max-w-2xl lg:mx-0">
-            <h2 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-6xl">
+            <h2 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl drop-shadow-lg">
               Our Services
             </h2>
-            <p className="mt-6 text-lg font-semibold leading-8 text-slate-700 dark:text-gray-300">
+            <p className="mt-6 text-lg font-semibold leading-8 text-gray-700 dark:text-purple-200">
               We offer a wide range of professional home services to keep your home
               in perfect condition. Our expert technicians are here to help with
               all your home maintenance and repair needs.
@@ -82,14 +82,15 @@ export default function Services() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 pb-24">
+      <div className="relative bg-gradient-to-br from-purple-100/60 via-purple-200/40 to-pink-100/60 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-24 transition-colors duration-300">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto grid max-w-2xl grid-cols-1 gap-x-8 gap-y-16 sm:gap-y-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
           {services.map((service) => {
   const showBadge = !["House Helps", "Child Care (Nannies)"].includes(service.name);
   return (
     <div
       key={service.name}
-      className="relative flex flex-col rounded-2xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 shadow-sm dark:shadow-glow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-glow-md"
+      className="relative flex flex-col rounded-2xl border-2 border-primary-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 shadow-light-glow-sm dark:shadow-glow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-light-glow-md dark:hover:shadow-glow-md"
     >
       <h3 className="text-lg font-semibold leading-7 tracking-tight text-gray-900 dark:text-white">
         {service.name}
@@ -106,6 +107,7 @@ export default function Services() {
   );
 })}
         </div>
+        </div>
       </div>
 
       {/* CTA Section */}
@@ -117,7 +119,7 @@ export default function Services() {
           <div className="mt-10 flex items-center gap-x-6">
             <Link
               to="/signup"
-              className="glow-button rounded-md bg-purple-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-pink-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm dark:shadow-glow-sm hover:bg-purple-700 dark:hover:shadow-glow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 transition-all duration-200"
+              className="glow-button rounded-md bg-gradient-to-r from-purple-600 to-pink-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 transition-all duration-200"
             >
               Sign Up
             </Link>

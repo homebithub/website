@@ -131,7 +131,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-primary-600 dark:hover:bg-purple-600 hover:shadow-xl hover:shadow-primary-400/50 dark:hover:shadow-glow-sm hover:scale-110"
+                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110"
                             >
                                 {item.name}
                             </Link>
@@ -153,7 +153,7 @@ export function Navigation() {
                         <div className="flex items-center space-x-3">
                             <button
   onClick={() => setIsWaitlistOpen(true)}
-  className="hidden lg:block glow-button bg-gradient-to-r from-primary-600 to-purple-600 dark:from-purple-600 dark:to-pink-600 text-white text-lg sm:text-xl font-bold rounded-xl shadow-lg shadow-primary-500/40 dark:shadow-glow-sm px-6 py-3 transition-all duration-200 hover:from-primary-700 hover:to-purple-700 hover:shadow-xl hover:shadow-primary-600/50 dark:hover:shadow-glow-md hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 border-2 border-primary-700/50 dark:border-purple-500/50"
+  className="hidden lg:block glow-button bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg sm:text-xl font-bold rounded-xl shadow-lg px-6 py-3 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
 >
   Join Waitlist
 </button>
@@ -161,13 +161,13 @@ export function Navigation() {
                                 <>
                                     <Link
                                         to="/login"
-                                        className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-primary-600 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500 hover:bg-primary-100 dark:hover:bg-purple-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
+                                        className="link hidden lg:block text-lg font-bold rounded-xl transition-all duration-200 px-5 py-3 text-primary-600 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500 hover:bg-primary-100 dark:hover:bg-purple-900/30 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
                                     >
                                         Log in
                                     </Link>
                                     <Link
                                         to="/signup"
-                                        className="hidden lg:block px-6 py-3 text-lg rounded-xl bg-primary-600 dark:bg-purple-600 text-white hover:bg-primary-700 dark:hover:bg-purple-700 transition-colors duration-200 font-bold shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
+                                        className="hidden lg:block px-6 py-3 text-lg rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
                                     >
                                         Sign up
                                     </Link>
@@ -203,7 +203,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to="/household/profile"
-                                                    className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
                                                 >
                                                     <UserIcon className="mr-3 h-5 w-5" />
                                                     My Household
@@ -214,7 +214,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to="/settings"
-                                                    className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
                                                 >
                                                     <CogIcon className="mr-3 h-5 w-5" />
                                                     Settings
@@ -226,7 +226,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <button
                                                     onClick={handleLogout}
-                                                    className={`${active ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'} flex items-center w-full px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-red-600 to-red-700 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center w-full px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
                                                 >
                                                     <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
                                                     Logout
@@ -244,14 +244,14 @@ export function Navigation() {
                         <div className="hidden lg:flex items-center space-x-3 ml-4">
                             {profileType === 'household' || profileType === 'household' ? (
                                 <>
-                                    <Link to="/household/profile" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Profile</Link>
-                                    <Link to="/household/employment" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Find Househelps</Link>
-                                    <Link to="/household/employment?tab=shortlist" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Shortlist</Link>
+                                    <Link to="/household/profile" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">Profile</Link>
+                                    <Link to="/household/employment" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">Find Househelps</Link>
+                                    <Link to="/household/employment?tab=shortlist" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">Shortlist</Link>
                                 </>
                             ) : profileType === 'househelp' ? (
                                 <>
-                                    <Link to="/househelp" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Profile</Link>
-                                    <Link to="/househelp/find-households" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold hover:text-primary-900 dark:hover:text-purple-300">Find Households</Link>
+                                    <Link to="/househelp" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">Profile</Link>
+                                    <Link to="/househelp/find-households" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">Find Households</Link>
                                 </>
                             ) : null}
                         </div>
@@ -280,7 +280,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to={item.href}
-                                                    className={`font-bold ${active ? 'bg-primary-100 dark:bg-gray-700 text-primary-700 dark:text-purple-400' : 'text-primary-700 dark:text-purple-400'} block px-5 py-2 text-lg rounded-xl transition-all duration-200`}
+                                                    className={`font-bold ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} block px-5 py-2 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
                                                 >
                                                     {item.name}
                                                 </Link>
@@ -295,7 +295,7 @@ export function Navigation() {
   {({ active }) => (
     <button
       onClick={() => setIsWaitlistOpen(true)}
-      className={`lg:hidden w-full text-left bg-gradient-to-r from-primary-600 to-purple-600 dark:bg-purple-700 text-white font-bold block px-5 py-2 text-lg rounded-xl shadow-md shadow-primary-400/40 transition-all duration-200 hover:from-primary-700 hover:to-purple-700 hover:shadow-lg hover:shadow-primary-500/50 dark:hover:bg-purple-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
+      className={`lg:hidden w-full text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold block px-5 py-2 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500`}
     >
       Join Waitlist
     </button>
@@ -307,7 +307,7 @@ export function Navigation() {
                                                         {({ active }) => (
                                                             <Link
                                                                 to="/login"
-                                                                className={`font-bold ${active ? 'bg-primary-100 dark:bg-purple-900/30 text-primary-700 dark:text-purple-400' : 'text-primary-700 dark:text-purple-400'} block px-5 py-2 text-lg rounded-xl transition-all duration-200 border-2 border-primary-600 dark:border-purple-500 mx-2 my-1`}
+                                                                className={`font-bold ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-2 border-transparent scale-105' : 'text-primary-700 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500'} block px-5 py-2 text-lg rounded-xl transition-all duration-200 mx-2 my-1 hover:scale-105`}
                                                             >
                                                                 Log in
                                                             </Link>
@@ -317,7 +317,7 @@ export function Navigation() {
                                                         {({ active }) => (
                                                             <Link
                                                                 to="/signup"
-                                                                className={`font-bold bg-primary-600 dark:bg-purple-600 text-white block px-5 py-2 text-lg rounded-xl shadow-md transition-all duration-200 hover:bg-primary-700 dark:hover:bg-purple-700 mx-2 my-1`}
+                                                                className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-5 py-2 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
                                                             >
                                                                 Sign up
                                                             </Link>

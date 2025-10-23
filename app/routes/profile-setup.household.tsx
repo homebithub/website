@@ -232,7 +232,7 @@ function HouseholdProfileSetupContent() {
           </div>
 
           {/* Content Area */}
-          <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
+          <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-6 sm:py-8">
               <div className="max-w-2xl mx-auto">
                 {STEPS[currentStep].id === 'bio' ? (
@@ -259,7 +259,7 @@ function HouseholdProfileSetupContent() {
           </div>
 
           {/* Navigation Footer */}
-          <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 transition-colors duration-300">
+          <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4">
               {/* Mobile: Stack buttons vertically with dots in between */}
               <div className="sm:hidden space-y-4">

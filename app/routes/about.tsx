@@ -71,7 +71,7 @@ export default function About() {
             <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
             <main className="flex-1">
                 {/* About Us and Mission Section */}
-                <div className="relative isolate overflow-hidden bg-white/90 dark:bg-[#13131a]/95 backdrop-blur-lg py-16 sm:py-24 rounded-3xl shadow-lg dark:shadow-glow-md mx-3 sm:mx-8 mt-10 fade-in-scroll transition-colors duration-300">
+                <div className="relative isolate overflow-hidden bg-white/90 dark:bg-[#13131a]/95 backdrop-blur-lg py-16 sm:py-24 rounded-3xl shadow-light-glow-md dark:shadow-glow-md mx-3 sm:mx-8 mt-10 fade-in-scroll transition-colors duration-300 border-2 border-purple-200/40 dark:border-purple-500/20">
   {/* Floating SVG shapes for playful effect */}
   <svg className="absolute top-0 left-0 w-48 h-48 opacity-20 animate-float" viewBox="0 0 200 200"><circle cx="100" cy="100" r="100" fill="#c084fc" /></svg>
   <svg className="absolute bottom-0 right-0 w-64 h-64 opacity-10 animate-float delay-1000" viewBox="0 0 200 200"><rect width="200" height="200" rx="70" fill="#a855f7" /></svg>
@@ -111,7 +111,7 @@ export default function About() {
                     </div>
                     <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 text-base leading-7 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:grid-cols-4 lg:gap-8">
                         {values.map((value) => (
-                            <div key={value.name} className="relative flex flex-col rounded-2xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 shadow-sm dark:shadow-glow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg dark:hover:shadow-glow-md">
+                            <div key={value.name} className="relative flex flex-col rounded-2xl border-2 border-primary-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 shadow-light-glow-sm dark:shadow-glow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-light-glow-md dark:hover:shadow-glow-md">
                                 <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-gray-100 dark:bg-purple-900/30 mb-6">
                                     <value.icon className="h-6 w-6 text-slate-900 dark:text-purple-400" aria-hidden="true" />
                                 </div>
