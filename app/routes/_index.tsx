@@ -7,6 +7,7 @@ import { Link, useNavigate } from "react-router";
 import React, { useEffect, useState } from "react";
 import SignupFlow from "~/components/features/SignupFlow";
 import HousehelpSignupFlow from "~/components/features/HousehelpSignupFlow";
+import AuthenticatedHome from "~/components/AuthenticatedHome";
 import {
   HomeIcon,
   UserGroupIcon,
@@ -42,7 +43,30 @@ export default function Index() {
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [userType, setUserType] = useState<'househelp' | 'household' | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+
+  // Check authentication status on mount
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = localStorage.getItem('token');
+      const userTypeStored = localStorage.getItem('userType');
+      
+      if (token && userTypeStored) {
+        setIsAuthenticated(true);
+      } else {
+        setIsAuthenticated(false);
+      }
+      
+      // Simulate a brief loading time for smooth transition
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 500);
+    };
+
+    checkAuth();
+  }, []);
 
   const openSignupModal = (type: 'househelp' | 'household') => {
     setUserType(type);
@@ -60,6 +84,27 @@ export default function Index() {
     // User will be redirected to dashboard from within the HousehelpSignupFlow component
   };
 
+  // Loading screen
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-600 to-pink-600">
+        <div className="text-center">
+          <div className="mb-8">
+            <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-white mx-auto"></div>
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-2">🏠 Homebit</h2>
+          <p className="text-purple-100 text-lg">Loading your experience...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show authenticated home for logged-in users
+  if (isAuthenticated) {
+    return <AuthenticatedHome />;
+  }
+
+  // Show marketing page for non-authenticated users
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />

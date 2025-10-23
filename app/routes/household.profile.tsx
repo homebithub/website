@@ -166,15 +166,15 @@ export default function HouseholdProfile() {
       <main className="flex-1 py-8">
     <div className="max-w-5xl mx-auto px-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-8 text-white rounded-t-3xl">
-        <div className="flex justify-between items-start">
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 sm:p-8 text-white rounded-t-3xl">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">🏠 My Household Profile</h1>
-            <p className="text-purple-100">View and manage your household information</p>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">🏠 My Household Profile</h1>
+            <p className="text-purple-100 text-sm sm:text-base">View and manage your household information</p>
           </div>
           <button
             onClick={() => navigate('/household/public-profile')}
-            className="px-6 py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg"
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
           >
             👁️ View Public Profile
           </button>
