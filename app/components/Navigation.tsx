@@ -5,6 +5,7 @@ import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon } from "@heroic
 import { useAuth } from "~/contexts/AuthContext";
 import { Waitlist } from "~/components/features/Waitlist";
 import ThemeToggle from "~/components/ui/ThemeToggle";
+import { FEATURE_FLAGS } from "~/config/features";
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -156,28 +157,86 @@ export function Navigation() {
 >
   Join Waitlist
 </button>
-                            {/*<Link*/}
-                            {/*    to="/login"*/}
-                            {/*    className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-purple-600 border-2 border-purple-600 hover:bg-purple-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"*/}
-                            {/*>*/}
-                            {/*    Log in*/}
-                            {/*</Link>*/}
-                            {/*<button*/}
-                            {/*    onClick={() => navigate('/signup')}*/}
-                            {/*    className="px-6 py-3 text-lg rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition-colors duration-200 font-bold shadow-md hover:shadow-lg"*/}
-                            {/*>*/}
-                            {/*    Sign up*/}
-                            {/*</button>*/}
+                            {FEATURE_FLAGS.showAuthButtons && (
+                                <>
+                                    <Link
+                                        to="/login"
+                                        className="link hidden lg:block text-lg font-bold rounded-lg transition-colors duration-200 px-4 py-2 text-primary-600 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500 hover:bg-primary-100 dark:hover:bg-purple-900/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
+                                    >
+                                        Log in
+                                    </Link>
+                                    <Link
+                                        to="/signup"
+                                        className="hidden lg:block px-6 py-3 text-lg rounded-xl bg-primary-600 dark:bg-purple-600 text-white hover:bg-primary-700 dark:hover:bg-purple-700 transition-colors duration-200 font-bold shadow-md hover:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
+                                    >
+                                        Sign up
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     )}
 
                     {/* Authenticated User Greeting */}
                     {user && userName && (
-                        <div className="hidden lg:flex items-center space-x-3">
-                            <div className="text-sm text-gray-600 dark:text-gray-300">
-                                <span className="font-semibold text-base">Hello, {userName}</span>
-                            </div>
-                        </div>
+                        <Menu as="div" className="relative hidden lg:inline-block text-left">
+                            <Menu.Button className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all">
+                                <div className="text-sm text-gray-600 dark:text-gray-300">
+                                    <span className="font-semibold text-base">Hello, {userName}</span>
+                                </div>
+                                <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </Menu.Button>
+
+                            <Transition
+                                as={React.Fragment}
+                                enter="transition ease-out duration-200"
+                                enterFrom="transform opacity-0 scale-95"
+                                enterTo="transform opacity-100 scale-100"
+                                leave="transition ease-in duration-150"
+                                leaveFrom="transform opacity-100 scale-100"
+                                leaveTo="transform opacity-0 scale-95"
+                            >
+                                <Menu.Items className="absolute right-0 z-50 mt-2 w-56 origin-top-right rounded-xl bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 shadow-lg dark:shadow-glow-md focus:outline-none">
+                                    <div className="py-2">
+                                        <Menu.Item>
+                                            {({ active }) => (
+                                                <Link
+                                                    to="/household/profile"
+                                                    className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                >
+                                                    <UserIcon className="mr-3 h-5 w-5" />
+                                                    My Household
+                                                </Link>
+                                            )}
+                                        </Menu.Item>
+                                        <Menu.Item>
+                                            {({ active }) => (
+                                                <Link
+                                                    to="/settings"
+                                                    className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                >
+                                                    <CogIcon className="mr-3 h-5 w-5" />
+                                                    Settings
+                                                </Link>
+                                            )}
+                                        </Menu.Item>
+                                        <div className="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+                                        <Menu.Item>
+                                            {({ active }) => (
+                                                <button
+                                                    onClick={handleLogout}
+                                                    className={`${active ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'} flex items-center w-full px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                >
+                                                    <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
+                                                    Logout
+                                                </button>
+                                            )}
+                                        </Menu.Item>
+                                    </div>
+                                </Menu.Items>
+                            </Transition>
+                        </Menu>
                     )}
 
                     {/* App navigation for authenticated users on app subdomain */}
@@ -242,7 +301,31 @@ export function Navigation() {
     </button>
   )}
 </Menu.Item>
-                                                                                    </>
+                                            {FEATURE_FLAGS.showAuthButtons && (
+                                                <>
+                                                    <Menu.Item>
+                                                        {({ active }) => (
+                                                            <Link
+                                                                to="/login"
+                                                                className={`font-bold ${active ? 'bg-primary-100 dark:bg-purple-900/30 text-primary-700 dark:text-purple-400' : 'text-primary-700 dark:text-purple-400'} block px-5 py-2 text-lg rounded-xl transition-all duration-200 border-2 border-primary-600 dark:border-purple-500 mx-2 my-1`}
+                                                            >
+                                                                Log in
+                                                            </Link>
+                                                        )}
+                                                    </Menu.Item>
+                                                    <Menu.Item>
+                                                        {({ active }) => (
+                                                            <Link
+                                                                to="/signup"
+                                                                className={`font-bold bg-primary-600 dark:bg-purple-600 text-white block px-5 py-2 text-lg rounded-xl shadow-md transition-all duration-200 hover:bg-primary-700 dark:hover:bg-purple-700 mx-2 my-1`}
+                                                            >
+                                                                Sign up
+                                                            </Link>
+                                                        )}
+                                                    </Menu.Item>
+                                                </>
+                                            )}
+                                        </>
                                     )}
 
                                     {/* Theme Toggle in Mobile Menu */}

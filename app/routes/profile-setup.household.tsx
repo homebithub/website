@@ -146,7 +146,8 @@ function HouseholdProfileSetupContent() {
       
       // Handle case when step is beyond STEPS array (completion)
       const actualStep = Math.min(step, STEPS.length - 1);
-      const completedSteps = Array.from({ length: actualStep + 1 }, (_, i) => i + 1);
+      // Backend expects step IDs (strings), not step numbers
+      const completedSteps = Array.from({ length: actualStep + 1 }, (_, i) => STEPS[i].id);
       
       await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
         method: 'POST',
@@ -155,15 +156,11 @@ function HouseholdProfileSetupContent() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          profile_type: 'household',
           current_step: actualStep + 1,
           last_completed_step: actualStep + 1,
           completed_steps: completedSteps,
           step_id: STEPS[actualStep]?.id || 'completed',
-          time_spent_seconds: timeOnStep,
-          status: isComplete ? 'completed' : 'in_progress',
-          skipped: skipped,
-          is_auto_save: isAutoSave
+          time_spent_seconds: timeOnStep
         })
       });
     } catch (error) {
@@ -242,11 +239,13 @@ function HouseholdProfileSetupContent() {
                   <CurrentComponent userType="household" />
                 ) : STEPS[currentStep].id === 'photos' ? (
                   <CurrentComponent userType="household" onComplete={async () => {
+                    console.log('Photos onComplete callback triggered!');
                     // Show congratulations modal when photos are skipped/uploaded
-                    await saveProfileToBackend();
-                    await saveProgressToBackend(STEPS.length, timeSpent, true);
+                    // Note: Photos component already saved the step, so we just show the modal
+                    console.log('Setting showCongratulations to true');
                     setShowCongratulations(true);
                     setTimeout(() => {
+                      console.log('Navigating to profile');
                       navigate('/household/profile');
                     }, 3000);
                   }} />
