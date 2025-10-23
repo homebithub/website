@@ -108,7 +108,7 @@ export function Navigation() {
     }
 
     return (
-        <nav className="sticky top-0 z-40 shadow-md bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f]/95 dark:via-[#13131a]/95 dark:to-[#0a0a0f]/95 fade-in-scroll overflow-visible backdrop-blur-xl bg-white/70 dark:bg-[#0a0a0f]/80 border-b border-primary-100 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
+        <nav className="sticky top-0 z-40 shadow-xl shadow-purple-200/50 bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f]/95 dark:via-[#13131a]/95 dark:to-[#0a0a0f]/95 fade-in-scroll overflow-visible backdrop-blur-xl border-b border-primary-200/60 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
   {/* Animated Blobs & Icons */}
   <svg className="absolute top-0 right-0 w-24 h-24 opacity-30 dark:opacity-20 animate-float z-0" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#f472b6" /></svg>
   <svg className="absolute bottom-0 left-0 w-20 h-20 opacity-20 dark:opacity-10 blur-sm animate-float delay-500 z-0" viewBox="0 0 100 100"><path d="M10,80 Q50,10 90,80" stroke="#2dd4bf" strokeWidth="8" fill="none" /></svg>
@@ -117,7 +117,7 @@ export function Navigation() {
                 <div className="relative flex items-center">
   {/* Floating purple blob */}
   <svg className="absolute -top-8 -left-8 w-16 h-16 opacity-30 animate-float" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="50" ry="40" fill="#a855f7" /></svg>
-  <Link to="/" prefetch="intent" className="relative gradient-text font-extrabold text-3xl sm:text-4xl px-3 py-2 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-lg hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
+  <Link to="/" prefetch="intent" className="relative gradient-text font-extrabold text-3xl sm:text-4xl px-3 py-2 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-purple-300/50 hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
     HomeBit
   </Link>
 </div>
@@ -130,7 +130,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-primary-600 dark:hover:bg-purple-600 dark:hover:shadow-glow-sm hover:scale-110 hover:shadow-lg"
+                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-primary-600 dark:hover:bg-purple-600 hover:shadow-xl hover:shadow-primary-400/50 dark:hover:shadow-glow-sm hover:scale-110"
                             >
                                 {item.name}
                             </Link>
@@ -152,7 +152,7 @@ export function Navigation() {
                         <div className="flex items-center space-x-3">
                             <button
   onClick={() => setIsWaitlistOpen(true)}
-  className="hidden lg:block glow-button bg-primary-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-pink-600 text-white text-lg sm:text-xl font-bold rounded-xl shadow-lg dark:shadow-glow-sm px-6 py-3 transition-all duration-200 hover:bg-primary-700 dark:hover:shadow-glow-md hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 border-2 border-primary-700 dark:border-purple-500/50"
+  className="hidden lg:block glow-button bg-gradient-to-r from-primary-600 to-purple-600 dark:from-purple-600 dark:to-pink-600 text-white text-lg sm:text-xl font-bold rounded-xl shadow-lg shadow-primary-500/40 dark:shadow-glow-sm px-6 py-3 transition-all duration-200 hover:from-primary-700 hover:to-purple-700 hover:shadow-xl hover:shadow-primary-600/50 dark:hover:shadow-glow-md hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 border-2 border-primary-700/50 dark:border-purple-500/50"
 >
   Join Waitlist
 </button>
@@ -200,7 +200,7 @@ export function Navigation() {
 
                     {/* Menu Dropdown - Only show on mobile */}
                     <Menu as="div" className="relative inline-block text-left lg:hidden">
-                        <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-purple-600 dark:bg-gradient-to-br dark:from-purple-600 dark:to-pink-600 p-2 text-white shadow-md dark:shadow-glow-sm hover:bg-purple-700 dark:hover:shadow-glow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
+                        <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 dark:from-purple-600 dark:to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 dark:shadow-glow-sm hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-glow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
                             <Bars3Icon className="h-7 w-7" />
                         </Menu.Button>
 
@@ -213,7 +213,7 @@ export function Navigation() {
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                         >
-                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white/90 dark:bg-[#13131a]/95 border-2 border-primary-200 dark:border-purple-500/30 shadow-lg dark:shadow-glow-sm focus:outline-none backdrop-blur-xl">
+                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white/90 dark:bg-[#13131a]/95 border-2 border-primary-200 dark:border-purple-500/30 shadow-xl shadow-purple-200/50 dark:shadow-glow-sm focus:outline-none backdrop-blur-xl">
                                 <div className="py-2">
                                     {/* Public navigation links in mobile menu (non-app host only) */}
                                     {!isAppHost && navigation.map((item) => (
@@ -236,7 +236,7 @@ export function Navigation() {
   {({ active }) => (
     <button
       onClick={() => setIsWaitlistOpen(true)}
-      className={`lg:hidden w-full text-left bg-primary-600 dark:bg-purple-700 text-white font-bold block px-5 py-2 text-lg rounded-xl shadow-md transition-all duration-200 hover:bg-primary-700 dark:hover:bg-purple-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
+      className={`lg:hidden w-full text-left bg-gradient-to-r from-primary-600 to-purple-600 dark:bg-purple-700 text-white font-bold block px-5 py-2 text-lg rounded-xl shadow-md shadow-primary-400/40 transition-all duration-200 hover:from-primary-700 hover:to-purple-700 hover:shadow-lg hover:shadow-primary-500/50 dark:hover:bg-purple-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500`}
     >
       Join Waitlist
     </button>
