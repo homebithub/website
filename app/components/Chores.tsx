@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { API_BASE_URL } from '~/config/api';
 
 const CHORES = [
@@ -21,6 +21,39 @@ const Chores: React.FC = () => {
   const [otherChore, setOtherChore] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string>("");
+
+  // Load existing data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.chores && Array.isArray(data.chores)) {
+            setSelectedChores(data.chores);
+            // Check if any chore starts with "Other:"
+            const hasOther = data.chores.some((c: string) => c.startsWith('Other:'));
+            if (hasOther) {
+              setShowOtherInput(true);
+              const otherChore = data.chores.find((c: string) => c.startsWith('Other:'));
+              if (otherChore) {
+                setOtherChore(otherChore.replace('Other: ', ''));
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load chores:', err);
+      }
+    };
+    loadData();
+  }, []);
 
   const toggleChore = (chore: string) => {
     if (chore === "Other") {

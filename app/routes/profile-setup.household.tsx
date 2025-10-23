@@ -21,12 +21,13 @@ import Religion from '~/components/Religion';
 
 const STEPS = [
   { id: 'location', title: 'Location', component: Location, description: 'Where is your household located?' },
-  { id: 'children', title: 'Children', component: Children, description: 'Tell us about your children' },
   { id: 'nannytype', title: 'Service Type', component: NannyType, description: 'What type of help do you need?' },
-  { id: 'budget', title: 'Budget', component: Budget, description: 'What\'s your budget range?', skippable: false },
-  { id: 'chores', title: 'Chores & Duties', component: Chores, description: 'What tasks need to be done?' },
-  { id: 'pets', title: 'Pets', component: Pets, description: 'Do you have any pets?', skippable: true },
+  { id: 'children', title: 'Children', component: Children, description: 'Tell us about your children' },
   { id: 'housesize', title: 'House Size', component: HouseSize, description: 'Tell us about your home' },
+  { id: 'chores', title: 'Chores & Duties', component: Chores, description: 'What tasks need to be done?' },
+  { id: 'budget', title: 'Budget', component: Budget, description: 'What\'s your budget range?', skippable: false },
+  { id: 'pets', title: 'Pets', component: Pets, description: 'Do you have any pets?', skippable: true },
+  { id: 'religion', title: 'Religion & Beliefs', component: Religion, description: 'Share your religious preferences' },
   { id: 'bio', title: 'About Your Household', component: Bio, description: 'Share your story and preferences' },
   { id: 'photos', title: 'Photos', component: Photos, description: 'Add photos of your home', skippable: true },
 ];
@@ -37,6 +38,7 @@ function HouseholdProfileSetupContent() {
   const [autoSaving, setAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [timeSpent, setTimeSpent] = useState(0);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const navigate = useNavigate();
   const { saveProfileToBackend, loadProfileFromBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
   
@@ -94,11 +96,16 @@ function HouseholdProfileSetupContent() {
         await saveProfileToBackend();
         // Mark as completed
         await saveProgressToBackend(STEPS.length, timeSpent, true);
-        // Redirect to household dashboard after successful save
-        navigate('/household/profile');
+        // Show congratulations modal
+        setShowCongratulations(true);
+        // Auto-redirect after 3 seconds
+        setTimeout(() => {
+          navigate('/household/profile');
+        }, 3000);
       } catch (error) {
         console.error('Failed to save profile:', error);
         alert('Failed to save profile. Please try again.');
+      } finally {
         setSaving(false);
       }
     }
@@ -137,7 +144,9 @@ function HouseholdProfileSetupContent() {
       const token = localStorage.getItem('token');
       if (!token) return;
       
-      const completedSteps = Array.from({ length: step + 1 }, (_, i) => i + 1);
+      // Handle case when step is beyond STEPS array (completion)
+      const actualStep = Math.min(step, STEPS.length - 1);
+      const completedSteps = Array.from({ length: actualStep + 1 }, (_, i) => i + 1);
       
       await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
         method: 'POST',
@@ -147,10 +156,10 @@ function HouseholdProfileSetupContent() {
         },
         body: JSON.stringify({
           profile_type: 'household',
-          current_step: step + 1,
-          last_completed_step: step + 1,
+          current_step: actualStep + 1,
+          last_completed_step: actualStep + 1,
           completed_steps: completedSteps,
-          step_id: STEPS[step].id,
+          step_id: STEPS[actualStep]?.id || 'completed',
           time_spent_seconds: timeOnStep,
           status: isComplete ? 'completed' : 'in_progress',
           skipped: skipped,
@@ -221,14 +230,6 @@ function HouseholdProfileSetupContent() {
                 <h2 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-400">
                   {STEPS[currentStep].title}
                 </h2>
-                {STEPS[currentStep].skippable && (
-                  <button
-                    onClick={handleSkip}
-                    className="text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 underline"
-                  >
-                    Skip for now
-                  </button>
-                )}
               </div>
             </div>
           </div>
@@ -240,7 +241,15 @@ function HouseholdProfileSetupContent() {
                 {STEPS[currentStep].id === 'bio' ? (
                   <CurrentComponent userType="household" />
                 ) : STEPS[currentStep].id === 'photos' ? (
-                  <CurrentComponent userType="household" />
+                  <CurrentComponent userType="household" onComplete={async () => {
+                    // Show congratulations modal when photos are skipped/uploaded
+                    await saveProfileToBackend();
+                    await saveProgressToBackend(STEPS.length, timeSpent, true);
+                    setShowCongratulations(true);
+                    setTimeout(() => {
+                      navigate('/household/profile');
+                    }, 3000);
+                  }} />
                 ) : STEPS[currentStep].id === 'nannytype' ? (
                   <CurrentComponent userType="household" />
                 ) : (
@@ -335,6 +344,58 @@ function HouseholdProfileSetupContent() {
           </div>
         </div>
       </main>
+      
+      {/* Congratulations Modal */}
+      {showCongratulations && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Background overlay */}
+            <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm transition-opacity"></div>
+
+            {/* Modal panel */}
+            <div className="relative transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 text-center shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border-4 border-purple-500">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-8">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white mb-4 animate-bounce">
+                  <span className="text-5xl">🎉</span>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-2" id="modal-title">
+                  Congratulations!
+                </h3>
+                <p className="text-xl text-purple-100">
+                  Welcome to Homebit!
+                </p>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-900 px-6 py-8">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Your profile is complete!
+                    </p>
+                  </div>
+                  
+                  <p className="text-base text-gray-600 dark:text-gray-400">
+                    You can now start browsing and connecting with qualified househelps in your area.
+                  </p>
+                  
+                  <div className="pt-4">
+                    <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Redirecting to your profile...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       </PurpleThemeWrapper>
       <Footer />

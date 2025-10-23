@@ -26,6 +26,41 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
     const baseUrl = API_BASE_URL
+
+    // Load existing location data
+    useEffect(() => {
+        const loadLocation = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                
+                const response = await fetch(`${baseUrl}/api/v1/household/profile`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.location && data.location.place) {
+                        setInput(data.location.place);
+                        setSavedLocation({
+                            name: data.location.place,
+                            mapbox_id: data.location.mapbox_id || '',
+                            feature_type: data.location.feature_type || 'place'
+                        });
+                        setSelectedLocation({
+                            name: data.location.place,
+                            mapbox_id: data.location.mapbox_id || '',
+                            feature_type: data.location.feature_type || 'place'
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load location:', err);
+            }
+        };
+        loadLocation();
+    }, [baseUrl]);
+
     useEffect(() => {
         if (input.length > 2) {
             setLoading(true);
@@ -74,8 +109,8 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setInput(e.target.value);
         setSelectedIndex(-1);
-        // Reset saved location when user starts typing again
-        if (savedLocation) {
+        // Reset saved location when user starts typing again (only if they're actually changing it)
+        if (savedLocation && input !== savedLocation.name) {
             setSavedLocation(null);
         }
     };

@@ -32,18 +32,38 @@ const Children: React.FC = () => {
     const loadChildren = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
+        
+        // First, check if there are any kids
+        const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
           method: "GET",
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
         });
         
-        if (res.ok) {
-          const kids = await res.json();
+        if (kidsRes.ok) {
+          const kids = await kidsRes.json();
           if (kids && kids.length > 0) {
             setChildrenList(kids);
             setSelected("have_or_expecting");
+            return; // Exit early if we have kids
+          }
+        }
+        
+        // If no kids, check if user has progressed beyond this step
+        const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          method: "GET",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          // If they have data in steps beyond children (like chores, budget, religion, bio)
+          // but no children, assume they selected "no children"
+          if (profile.chores || profile.budget_min || profile.religion || profile.bio) {
+            setSelected("no_children");
           }
         }
       } catch (err) {

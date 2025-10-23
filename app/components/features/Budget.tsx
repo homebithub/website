@@ -38,6 +38,46 @@ const Budget: React.FC = () => {
   const [success, setSuccess] = useState('');
   const submit = useSubmit();
 
+  // Load existing data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.salary_frequency) {
+            const freq = data.salary_frequency.charAt(0).toUpperCase() + data.salary_frequency.slice(1);
+            setFrequency(freq as BudgetFrequency);
+          }
+          if (data.budget_min || data.budget_max) {
+            // Try to match to a range
+            const ranges = BUDGET_RANGES[frequency];
+            const matchedRange = ranges.find(range => {
+              if (range === 'Negotiable') return data.budget_min === 0 && data.budget_max === 0;
+              const parts = range.split('-');
+              if (parts.length === 2) {
+                const min = parseInt(parts[0].replace(/,/g, ''));
+                const max = parseInt(parts[1].replace(/,/g, '').replace('KES', '').replace('+', ''));
+                return data.budget_min === min && data.budget_max === max;
+              }
+              return false;
+            });
+            if (matchedRange) setSelectedRange(matchedRange);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load budget:', err);
+      }
+    };
+    loadData();
+  }, [frequency]);
+
   // Save budget to household profile
   const saveBudget = async () => {
     if (!selectedRange) {

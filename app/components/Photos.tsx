@@ -12,18 +12,20 @@ type ImageFile = {
 
 interface PhotosProps {
   userType?: 'househelp' | 'household';
+  onComplete?: () => void;
 }
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
+const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) => {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSkipping, setIsSkipping] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -137,11 +139,53 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
     }
   };
 
+  const handleSkip = async () => {
+    setIsSkipping(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      // Just mark the step as completed without uploading photos
+      const token = localStorage.getItem('token');
+      const endpoint = `${API_BASE_URL}/api/v1/household/profile`;
+      
+      const response = await fetch(endpoint, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          _step_metadata: {
+            step_id: "photos",
+            step_number: 8,
+            is_completed: true
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to skip photos');
+      }
+
+      setSuccess('Skipped photos. You can add them later from your profile!');
+      // Trigger completion callback if provided
+      if (onComplete) {
+        setTimeout(() => onComplete(), 500);
+      }
+    } catch (err: any) {
+      setError(handleApiError(err, 'photos', 'Failed to skip. Please try again.'));
+      console.error(err);
+    } finally {
+      setIsSkipping(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (images.length === 0) {
-      setError('Please upload at least one image');
+      setError('Please upload at least one image or click "Skip for Now"');
       return;
     }
     
@@ -158,7 +202,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
       });
       
       const endpoint = userType === 'household'
-        ? `${API_BASE_URL}/api/v1/household-profile/photos`
+        ? `${API_BASE_URL}/api/v1/household/profile/photos`
         : `${API_BASE_URL}/api/v1/househelp-profile/photos`;
       
       const response = await fetch(endpoint, {
@@ -228,13 +272,15 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
       title: '📸 Your Photos',
       description: `Add up to ${MAX_FILES} photos to showcase yourself`,
       uploadText: 'Click to upload or drag and drop',
-      supportText: 'JPG, PNG, WEBP, GIF up to 10MB each'
+      supportText: 'JPG, PNG, WEBP, GIF up to 10MB each',
+      benefitText: '✨ Profiles with photos get 3x more responses from households!'
     },
     household: {
       title: '📸 Home Photos',
       description: `Add up to ${MAX_FILES} photos of your home`,
       uploadText: 'Click to upload or drag and drop',
-      supportText: 'JPG, PNG, WEBP, GIF up to 10MB each'
+      supportText: 'JPG, PNG, WEBP, GIF up to 10MB each',
+      benefitText: '✨ Profiles with photos get 5x more applications from qualified househelps!'
     }
   };
 
@@ -242,10 +288,17 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">{currentContent.title}</h2>
-      <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
+      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">{currentContent.title} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(Optional)</span></h2>
+      <p className="text-base text-gray-600 dark:text-gray-400 mb-2">
         {currentContent.description}
       </p>
+      
+      {/* Benefit Message */}
+      <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-500/30">
+        <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 text-center">
+          {currentContent.benefitText}
+        </p>
+      </div>
       
       {error && (
         <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30 whitespace-pre-line">
@@ -349,25 +402,48 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
           </div>
         )}
         
-        <button
-          type="submit"
-          disabled={isSubmitting || images.length === 0}
-          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Uploading...
-            </>
-          ) : (
-            <>
-              💾 Continue
-            </>
-          )}
-        </button>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            type="button"
+            onClick={handleSkip}
+            disabled={isSubmitting || isSkipping}
+            className="flex-1 px-8 py-4 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-400 font-bold text-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isSkipping ? (
+              <>
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Skipping...
+              </>
+            ) : (
+              <>
+                ⏭️ Skip for Now
+              </>
+            )}
+          </button>
+          
+          <button
+            type="submit"
+            disabled={isSubmitting || isSkipping || images.length === 0}
+            className="flex-1 px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Uploading...
+              </>
+            ) : (
+              <>
+                💾 Upload & Continue
+              </>
+            )}
+          </button>
+        </div>
       </form>
 
       {/* Image Preview Modal */}

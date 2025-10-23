@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 
@@ -26,6 +26,41 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
+
+  // Load existing data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.needs_live_in !== undefined) setNeedsLiveIn(data.needs_live_in);
+          if (data.needs_day_worker !== undefined) setNeedsDayWorker(data.needs_day_worker);
+          if (data.live_in_off_days) setOffDays(data.live_in_off_days);
+          if (data.available_from) setAvailableFrom(data.available_from.split('T')[0]);
+          if (data.day_worker_schedule) {
+            try {
+              const schedule = typeof data.day_worker_schedule === 'string' 
+                ? JSON.parse(data.day_worker_schedule) 
+                : data.day_worker_schedule;
+              setAvailability(schedule);
+            } catch (e) {
+              console.error('Failed to parse schedule:', e);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load service type:', err);
+      }
+    };
+    loadData();
+  }, []);
 
   const handleSubmit = async () => {
     setError("");

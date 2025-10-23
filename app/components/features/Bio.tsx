@@ -35,6 +35,30 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
 
   const currentContent = content[userType];
 
+  // Load existing bio data
+  useEffect(() => {
+    const loadBio = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.bio) {
+            setBio(data.bio);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load bio:', err);
+      }
+    };
+    loadBio();
+  }, []);
+
   useEffect(() => {
     setCharacterCount(bio.length);
   }, [bio]);

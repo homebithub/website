@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 
@@ -24,6 +24,37 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Load existing data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        
+        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.religion) {
+            // Check if it's one of the predefined options
+            if (RELIGIONS.includes(data.religion)) {
+              setSelectedReligion(data.religion);
+            } else {
+              // It's a custom religion
+              setSelectedReligion('Other');
+              setCustomReligion(data.religion);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load religion:', err);
+      }
+    };
+    loadData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
