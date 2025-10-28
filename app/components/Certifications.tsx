@@ -29,8 +29,11 @@ const HELP_WITH_OPTIONS = [
 const Certifications: React.FC = () => {
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [selectedHelp, setSelectedHelp] = useState<string[]>([]);
+  const [otherCerts, setOtherCerts] = useState<string[]>(['']);
+  const [otherHelp, setOtherHelp] = useState<string[]>(['']);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   const handleCertToggle = (cert: string) => {
     setSelectedCerts(prev => 
@@ -48,13 +51,51 @@ const Certifications: React.FC = () => {
     );
   };
 
+  const addOtherCert = () => {
+    setOtherCerts([...otherCerts, '']);
+  };
+
+  const removeOtherCert = (index: number) => {
+    setOtherCerts(otherCerts.filter((_, i) => i !== index));
+  };
+
+  const updateOtherCert = (index: number, value: string) => {
+    const updated = [...otherCerts];
+    updated[index] = value;
+    setOtherCerts(updated);
+  };
+
+  const addOtherHelp = () => {
+    setOtherHelp([...otherHelp, '']);
+  };
+
+  const removeOtherHelp = (index: number) => {
+    setOtherHelp(otherHelp.filter((_, i) => i !== index));
+  };
+
+  const updateOtherHelp = (index: number, value: string) => {
+    const updated = [...otherHelp];
+    updated[index] = value;
+    setOtherHelp(updated);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    setSuccess('');
 
     try {
       const token = localStorage.getItem('token');
+      
+      // Filter out empty other certifications and help options
+      const validOtherCerts = otherCerts.filter(cert => cert.trim() !== '');
+      const validOtherHelp = otherHelp.filter(help => help.trim() !== '');
+      
+      // Combine selected and other options
+      const allCerts = [...selectedCerts, ...validOtherCerts];
+      const allHelp = [...selectedHelp, ...validOtherHelp];
+      
       const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
         method: 'PATCH',
         headers: {
@@ -63,8 +104,8 @@ const Certifications: React.FC = () => {
         },
         body: JSON.stringify({
           updates: {
-            certifications: selectedCerts.join(','),
-            can_help_with: selectedHelp.join(','),
+            certifications: allCerts.join(','),
+            can_help_with: allHelp.join(','),
           }
         }),
       });
@@ -73,7 +114,7 @@ const Certifications: React.FC = () => {
         throw new Error('Failed to save certifications');
       }
 
-      console.log('Certifications saved successfully');
+      setSuccess('Certifications saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'certifications', 'Failed to save your information. Please try again.'));
       console.error(err);
@@ -122,6 +163,38 @@ const Certifications: React.FC = () => {
               </label>
             ))}
           </div>
+          
+          {/* Other Certifications */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-purple-700 dark:text-purple-400">Other Certifications</h4>
+            {otherCerts.map((cert, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={cert}
+                  onChange={(e) => updateOtherCert(index, e.target.value)}
+                  placeholder="Enter certification name"
+                  className="flex-1 h-12 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
+                />
+                {otherCerts.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeOtherCert(index)}
+                    className="px-4 py-2 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addOtherCert}
+              className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-2"
+            >
+              + Add another certification
+            </button>
+          </div>
         </div>
 
         {/* What Can You Help With Section */}
@@ -156,7 +229,45 @@ const Certifications: React.FC = () => {
               </label>
             ))}
           </div>
+          
+          {/* Other Help Options */}
+          <div className="space-y-3">
+            <h4 className="text-sm font-bold text-purple-700 dark:text-purple-400">Other Skills</h4>
+            {otherHelp.map((help, index) => (
+              <div key={index} className="flex gap-2">
+                <input
+                  type="text"
+                  value={help}
+                  onChange={(e) => updateOtherHelp(index, e.target.value)}
+                  placeholder="Enter skill or service"
+                  className="flex-1 h-12 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
+                />
+                {otherHelp.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => removeOtherHelp(index)}
+                    className="px-4 py-2 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              type="button"
+              onClick={addOtherHelp}
+              className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-2"
+            >
+              + Add another skill
+            </button>
+          </div>
         </div>
+
+        {success && (
+          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+            ✓ {success}
+          </div>
+        )}
 
         {error && (
           <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">

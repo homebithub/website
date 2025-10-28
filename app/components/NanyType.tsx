@@ -34,24 +34,48 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
         const token = localStorage.getItem('token');
         if (!token) return;
         
-        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+        // Different endpoints based on user type
+        const endpoint = userType === 'household' 
+          ? `${API_BASE_URL}/api/v1/household/profile`
+          : `${API_BASE_URL}/api/v1/househelps/me/fields`;
+        
+        const response = await fetch(endpoint, {
           headers: { Authorization: `Bearer ${token}` },
         });
         
         if (response.ok) {
           const data = await response.json();
-          if (data.needs_live_in !== undefined) setNeedsLiveIn(data.needs_live_in);
-          if (data.needs_day_worker !== undefined) setNeedsDayWorker(data.needs_day_worker);
-          if (data.live_in_off_days) setOffDays(data.live_in_off_days);
-          if (data.available_from) setAvailableFrom(data.available_from.split('T')[0]);
-          if (data.day_worker_schedule) {
-            try {
-              const schedule = typeof data.day_worker_schedule === 'string' 
-                ? JSON.parse(data.day_worker_schedule) 
-                : data.day_worker_schedule;
-              setAvailability(schedule);
-            } catch (e) {
-              console.error('Failed to parse schedule:', e);
+          
+          if (userType === 'household') {
+            if (data.needs_live_in !== undefined) setNeedsLiveIn(data.needs_live_in);
+            if (data.needs_day_worker !== undefined) setNeedsDayWorker(data.needs_day_worker);
+            if (data.live_in_off_days) setOffDays(data.live_in_off_days);
+            if (data.available_from) setAvailableFrom(data.available_from.split('T')[0]);
+            if (data.day_worker_schedule) {
+              try {
+                const schedule = typeof data.day_worker_schedule === 'string' 
+                  ? JSON.parse(data.day_worker_schedule) 
+                  : data.day_worker_schedule;
+                setAvailability(schedule);
+              } catch (e) {
+                console.error('Failed to parse schedule:', e);
+              }
+            }
+          } else {
+            // For househelp
+            if (data.offers_live_in !== undefined) setNeedsLiveIn(data.offers_live_in);
+            if (data.offers_day_worker !== undefined) setNeedsDayWorker(data.offers_day_worker);
+            if (data.off_days) setOffDays(data.off_days);
+            if (data.available_from) setAvailableFrom(data.available_from.split('T')[0]);
+            if (data.availability_schedule) {
+              try {
+                const schedule = typeof data.availability_schedule === 'string' 
+                  ? JSON.parse(data.availability_schedule) 
+                  : data.availability_schedule;
+                setAvailability(schedule);
+              } catch (e) {
+                console.error('Failed to parse schedule:', e);
+              }
             }
           }
         }
@@ -60,13 +84,15 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       }
     };
     loadData();
-  }, []);
+  }, [userType]);
 
   const handleSubmit = async () => {
     setError("");
     setSuccess("");
     if (!needsLiveIn && !needsDayWorker) {
-      setError("Please select at least one type of househelp.");
+      setError(userType === 'household' 
+        ? "Please select at least one type of househelp."
+        : "Please select at least one type of work you offer.");
       return;
     }
     if (!availableFrom || isNaN(Date.parse(availableFrom))) {
@@ -76,12 +102,14 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
     if (needsDayWorker) {
       const hasAvailability = Object.values(availability).some(daySlots => Object.values(daySlots).some(Boolean));
       if (!hasAvailability) {
-        setError("Please select at least one available day or time slot for day-worker.");
+        setError("Please select at least one available day or time slot.");
         return;
       }
     }
-    if (userType === 'household' && needsLiveIn && offDays.length === 0) {
-      setError("Please select at least one off day for your live-in househelp.");
+    if (needsLiveIn && offDays.length === 0) {
+      setError(userType === 'household'
+        ? "Please select at least one off day for your live-in househelp."
+        : "Please select at least one off day.");
       return;
     }
     setLoading(true);
@@ -117,20 +145,25 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
         }
         setSuccess("Service type saved successfully!");
       } else {
-        // For househelp, save to househelp-preferences
-        const res = await fetch(`${API_BASE_URL}/api/v1/househelp-preferences/availability`, {
-          method: "PUT",
+        // For househelp, save to househelps/me/fields
+        const res = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
+          method: "PATCH",
           headers: {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
-            availability,
-            available_from: availableFrom,
+            updates: {
+              offers_live_in: needsLiveIn,
+              ...(needsLiveIn && offDays.length > 0 && { off_days: offDays }),
+              offers_day_worker: needsDayWorker,
+              ...(needsDayWorker && { availability_schedule: JSON.stringify(availability) }),
+              available_from: availableFrom,
+            }
           }),
         });
         if (!res.ok) throw new Error("Failed to save availability. Please try again.");
-        setSuccess("Availability updated successfully!");
+        setSuccess("Service type saved successfully!");
       }
     } catch (err: any) {
       setError(handleApiError(err, 'nannyType', 'An error occurred.'));
@@ -165,7 +198,9 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-8">
       <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">🏠 Service Type</h2>
       <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
-        What type of help are you looking for? (You can select both)
+        {userType === 'household' 
+          ? 'What type of help are you looking for? (You can select both)'
+          : 'What type of work do you offer? (You can select both)'}
       </p>
       <div className="flex flex-col gap-4">
         <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${needsLiveIn ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
@@ -175,7 +210,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
             onChange={(e) => setNeedsLiveIn(e.target.checked)}
             className="form-checkbox h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
           />
-          <span className="flex-1">🌙 Live-in (Lives with you)</span>
+          <span className="flex-1">🌙 Live-in {userType === 'household' ? '(Lives with you)' : '(I can live with the family)'}</span>
         </label>
         <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${needsDayWorker ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
@@ -184,18 +219,20 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
             onChange={(e) => setNeedsDayWorker(e.target.checked)}
             className="form-checkbox h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
           />
-          <span className="flex-1">☀️ Day Worker (Comes during the day)</span>
+          <span className="flex-1">☀️ Day Worker {userType === 'household' ? '(Comes during the day)' : '(I work during the day)'}</span>
         </label>
       </div>
       
-      {/* Off Days Selection for Household Live-in */}
-      {userType === 'household' && needsLiveIn && (
+      {/* Off Days Selection for Live-in */}
+      {needsLiveIn && (
         <div className="space-y-4 p-6 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
           <h3 className="text-lg font-bold text-purple-700 dark:text-purple-400">
             📅 Select Off Days <span className="text-sm text-gray-500 dark:text-gray-400">(Up to 3 days)</span>
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
-            Choose which days your sleep-in helper will have off
+            {userType === 'household' 
+              ? 'Choose which days your sleep-in helper will have off'
+              : 'Choose which days you would like to have off'}
           </p>
           <div className="grid grid-cols-2 gap-3">
             {DAYS.map((day) => (
@@ -351,7 +388,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           !availableFrom || 
           isNaN(Date.parse(availableFrom)) ||
           (needsDayWorker && !Object.values(availability).some(daySlots => Object.values(daySlots).some(Boolean))) ||
-          (userType === 'household' && needsLiveIn && offDays.length === 0)
+          (needsLiveIn && offDays.length === 0)
         }
       >
         {loading ? (

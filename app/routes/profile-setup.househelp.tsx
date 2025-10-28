@@ -20,20 +20,50 @@ import Certifications from '~/components/Certifications';
 import SalaryExpectations from '~/components/SalaryExpectations';
 import Bio from '~/components/Bio';
 import Photos from '~/components/Photos';
-import Religion from '~/components/Religion';
+import PreferredWorkEnvironment from '~/components/PreferredWorkEnvironment';
+import References from '~/components/References';
+import BackgroundCheckConsent from '~/components/BackgroundCheckConsent';
 
 const STEPS = [
-  { id: 'nannytype', title: 'Service Type', component: NannyType, description: 'What type of work do you offer?', skippable: false },
+  // Step 1: Location
   { id: 'location', title: 'Location', component: Location, description: 'Where are you located?', skippable: false },
-  { id: 'gender', title: 'Gender & Age', component: Gender, description: 'Tell us about yourself', skippable: false },
-  { id: 'experience', title: 'Experience', component: YearsOfExperience, description: 'How experienced are you?', skippable: false },
+  
+  // Step 2: Service Type & Availability
+  { id: 'nannytype', title: 'Service Type & Availability', component: NannyType, description: 'What type of work do you offer?', skippable: false },
+  
+  // Step 3: Personal Info (Gender & Age)
+  { id: 'gender', title: 'Personal Info', component: Gender, description: 'Tell us about yourself', skippable: false },
+  
+  // Step 4: Experience & Certifications (Combined)
+  { id: 'experience', title: 'Experience & Certifications', component: YearsOfExperience, description: 'Your professional background', skippable: false },
+  { id: 'certifications', title: 'Certifications & Skills', component: Certifications, description: 'Your qualifications', skippable: false },
+  
+  // Step 5: Salary Expectations
   { id: 'salary', title: 'Salary Expectations', component: SalaryExpectations, description: 'What are your salary requirements?', skippable: false },
+  
+  // Step 6: Work with Kids (Required - Yes/No)
   { id: 'workwithkids', title: 'Work with Kids', component: WorkWithKids, description: 'Can you care for children?', skippable: false },
-  { id: 'workwithpets', title: 'Work with Pets', component: WorkWithPets, description: 'Comfortable with pets?', skippable: true },
+  
+  // Step 7: Work with Pets (Required - Yes/No)
+  { id: 'workwithpets', title: 'Work with Pets', component: WorkWithPets, description: 'Comfortable with pets?', skippable: false },
+  
+  // Step 8: Languages
   { id: 'languages', title: 'Languages', component: Languages, description: 'What languages do you speak?', skippable: false },
-  { id: 'mykids', title: 'My Kids', component: MyKids, description: 'Do you have children?', skippable: true },
-  { id: 'certifications', title: 'Certifications', component: Certifications, description: 'Any relevant training?', skippable: true },
+  
+  // Step 9: My Kids & Preferred Work Environment (Combined, Optional)
+  { id: 'mykids', title: 'Personal Preferences', component: MyKids, description: 'Do you have children?', skippable: true },
+  { id: 'workenvironment', title: 'Work Environment', component: PreferredWorkEnvironment, description: 'Your ideal workplace', skippable: true },
+  
+  // Step 10: References (Optional)
+  { id: 'references', title: 'References', component: References, description: 'Professional references', skippable: true },
+  
+  // Step 11: Background Check Consent (Optional)
+  { id: 'backgroundcheck', title: 'Background Check', component: BackgroundCheckConsent, description: 'Verification consent', skippable: true },
+  
+  // Step 12: About You / Bio
   { id: 'bio', title: 'About You', component: Bio, description: 'Tell your story', skippable: false },
+  
+  // Step 13: Photos (Optional but Recommended)
   { id: 'photos', title: 'Photos', component: Photos, description: 'Add your profile photos', skippable: true },
 ];
 
@@ -42,6 +72,7 @@ function HousehelpProfileSetupContent() {
   const [autoSaving, setAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [timeSpent, setTimeSpent] = useState(0);
+  const [showCongratulations, setShowCongratulations] = useState(false);
   const navigate = useNavigate();
   const { 
     profileData, 
@@ -96,7 +127,12 @@ function HousehelpProfileSetupContent() {
       try {
         await saveProfileToBackend();
         await saveProgressToBackend(STEPS.length, timeSpent, true);
-        navigate('/');
+        // Show congratulations modal
+        setShowCongratulations(true);
+        // Auto-redirect after 3 seconds
+        setTimeout(() => {
+          navigate('/househelp/profile');
+        }, 3000);
       } catch (err: any) {
         setSaveError(err.message || 'Failed to save profile');
         console.error('Error saving profile:', err);
@@ -258,29 +294,25 @@ function HousehelpProfileSetupContent() {
           <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-6 sm:py-8">
               <div className="max-w-2xl mx-auto">
-                {STEPS[currentStep].id === 'bio' ? (
+                {/* Components that need userType prop */}
+                {STEPS[currentStep].id === 'photos' ? (
                   <CurrentComponent 
                     userType="househelp" 
-                    data={profileData[STEPS[currentStep].id]}
-                    onUpdate={handleStepDataUpdate}
+                    onComplete={async () => {
+                      console.log('Photos onComplete callback triggered!');
+                      // Show congratulations modal when photos are skipped/uploaded
+                      console.log('Setting showCongratulations to true');
+                      setShowCongratulations(true);
+                      setTimeout(() => {
+                        console.log('Navigating to profile');
+                        navigate('/househelp/profile');
+                      }, 3000);
+                    }}
                   />
-                ) : STEPS[currentStep].id === 'photos' ? (
-                  <CurrentComponent 
-                    userType="househelp"
-                    data={profileData[STEPS[currentStep].id]}
-                    onUpdate={handleStepDataUpdate}
-                  />
-                ) : STEPS[currentStep].id === 'religion' ? (
-                  <CurrentComponent 
-                    userType="househelp"
-                    data={profileData[STEPS[currentStep].id]}
-                    onUpdate={handleStepDataUpdate}
-                  />
+                ) : ['bio', 'nannytype'].includes(STEPS[currentStep].id) ? (
+                  <CurrentComponent userType="househelp" />
                 ) : (
-                  <CurrentComponent 
-                    data={profileData[STEPS[currentStep].id]}
-                    onUpdate={handleStepDataUpdate}
-                  />
+                  <CurrentComponent />
                 )}
               </div>
             </div>
@@ -372,6 +404,58 @@ function HousehelpProfileSetupContent() {
           </div>
         </div>
       </main>
+      
+      {/* Congratulations Modal */}
+      {showCongratulations && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            {/* Background overlay */}
+            <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm transition-opacity"></div>
+
+            {/* Modal panel */}
+            <div className="relative transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 text-center shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border-4 border-purple-500">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-8">
+                <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white mb-4 animate-bounce">
+                  <span className="text-5xl">🎉</span>
+                </div>
+                <h3 className="text-3xl font-bold text-white mb-2" id="modal-title">
+                  Congratulations!
+                </h3>
+                <p className="text-xl text-purple-100">
+                  Welcome to Homebit!
+                </p>
+              </div>
+              
+              <div className="bg-white dark:bg-gray-900 px-6 py-8">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                    </svg>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                      Your profile is complete!
+                    </p>
+                  </div>
+                  
+                  <p className="text-base text-gray-600 dark:text-gray-400">
+                    You can now start connecting with households looking for qualified help.
+                  </p>
+                  
+                  <div className="pt-4">
+                    <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Redirecting to your profile...</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       </PurpleThemeWrapper>
       <Footer />
