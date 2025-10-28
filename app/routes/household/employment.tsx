@@ -1,17 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router";
-import ShortlistPlaceholderIcon from "../components/features/ShortlistPlaceholderIcon";
+import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
+import HousehelpFilters, { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import { API_BASE_URL } from '~/config/api';
+import { apiClient } from '~/utils/apiClient';
 
-// Curated options to avoid free-text inputs
-const TOWNS = ["Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"];
-const SKILLS = ["cooking", "cleaning", "babysitting", "laundry", "elderly care"];
-const TRAITS = ["honest", "patient", "punctual", "organized", "friendly"];
-const EXPERIENCES = Array.from({ length: 11 }, (_, i) => i); // 0..10
-const GENDERS = ["", "male", "female"];
-const NANNY_TYPES = ["", "dayburg", "sleeper"];
+// Option constants now live within HousehelpFilters
 
-const initialFields = {
+const initialFields: HousehelpSearchFields = {
   status: "active",
   househelp_type: "",
   gender: "",
@@ -21,13 +17,12 @@ const initialFields = {
   skill: "",
   traits: "",
   min_rating: "",
-  sort: "popular",
-  limit: 12,
 };
 
 export default function HouseholdEmployment() {
   const navigate = useNavigate();
-  const [fields, setFields] = useState(initialFields);
+  const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,15 +57,19 @@ export default function HouseholdEmployment() {
     const fetchShortlist = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) return;
-        const res = await fetch(`${API_BASE}/api/v1/shortlists/household`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        if (!token) {
+          // No token - set empty shortlist for development
+          setShortlistCount(0);
+          setShortlist([]);
+          return;
+        }
+        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/household`, { method: 'GET' });
         if (!res.ok) throw new Error("Failed to fetch shortlist");
-        const data = await res.json();
+        const data = await apiClient.json<any[]>(res);
         setShortlistCount(Array.isArray(data) ? data.length : 0);
         setShortlist(Array.isArray(data) ? data : []);
       } catch (err) {
+        // Gracefully handle errors - set empty state
         setShortlistCount(0);
         setShortlist([]);
       }
@@ -90,22 +89,21 @@ export default function HouseholdEmployment() {
         const token = localStorage.getItem("token");
         const profile_ids = shortlist.map((s) => s.profile_id).filter(Boolean);
         if (!token || profile_ids.length === 0) {
+          // No token or no profiles - set empty state
           setShortlistProfiles([]);
           setShortlistProfilesLoading(false);
           return;
         }
-        const res = await fetch(`${API_BASE}/api/v1/househelps/search_multiple`, {
+        const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/search_multiple`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ profile_type: "househelp", profile_ids }),
         });
         if (!res.ok) throw new Error("Failed to fetch profiles");
-        const data = await res.json();
+        const data = await apiClient.json<any[]>(res);
         setShortlistProfiles(Array.isArray(data) ? data : []);
       } catch (err) {
+        // Gracefully handle errors - set empty state
         setShortlistProfiles([]);
       } finally {
         setShortlistProfilesLoading(false);
@@ -117,7 +115,11 @@ export default function HouseholdEmployment() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFields((prev) => ({ ...prev, [name]: value }));
+    setFields((prev: HousehelpSearchFields) => ({ ...prev, [name]: value }));
+  };
+
+  const handleFieldChange = (name: string, value: string) => {
+    setFields((prev: HousehelpSearchFields) => ({ ...prev, [name]: value }));
   };
 
   const handleSearch = async (e?: React.FormEvent) => {
@@ -130,12 +132,17 @@ export default function HouseholdEmployment() {
     try {
       setHasSearched(true);
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/v1/househelps/search`, {
+      
+      // If no token, show a helpful message instead of error
+      if (!token) {
+        setError("Please log in to search for househelps");
+        setLoading(false);
+        return;
+      }
+      
+      const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/search`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           Object.fromEntries(
             Object.entries({
@@ -149,7 +156,7 @@ export default function HouseholdEmployment() {
         ),
       });
       if (!res.ok) throw new Error("Failed to fetch househelps");
-      const data = await res.json();
+      const data = await apiClient.json<{ data: any[] }>(res);
       const rows = data.data || [];
       setResults(rows);
       setHasMore(rows.length === limit);
@@ -167,12 +174,9 @@ export default function HouseholdEmployment() {
     try {
       const token = localStorage.getItem("token");
       const nextOffset = offset + limit;
-      const res = await fetch(`${API_BASE}/api/v1/househelps/search`, {
+      const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/search`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(
           Object.fromEntries(
             Object.entries({
@@ -186,7 +190,7 @@ export default function HouseholdEmployment() {
         ),
       });
       if (!res.ok) throw new Error("Failed to fetch more results");
-      const data = await res.json();
+      const data = await apiClient.json<{ data: any[] }>(res);
       const rows = data.data || [];
       setResults(prev => [...prev, ...rows]);
       setOffset(nextOffset);
@@ -237,134 +241,116 @@ export default function HouseholdEmployment() {
       {/* Tab content */}
       {activeTab === 'find' && (
         <>
-          <form onSubmit={handleSearch} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-4 mb-8 w-full">
-            <div className="flex flex-col">
-              <label htmlFor="status" className="mb-2 text-sm font-semibold text-purple-700">Status</label>
-              <select id="status" name="status" value={fields.status} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-              </select>
-            </div>
-            <div className="flex flex-col">
-              <label htmlFor="househelp_type" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Nanny Type</label>
-              <select id="househelp_type" name="househelp_type" value={fields.househelp_type} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                {NANNY_TYPES.map((t) => (<option key={t} value={t}>{t || 'Any'}</option>))}
-              </select>
-            </div>
-            <div className="flex flex-col">
-              <label htmlFor="gender" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Gender</label>
-              <select id="gender" name="gender" value={fields.gender} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                {GENDERS.map((g) => (<option key={g} value={g}>{g || 'Any'}</option>))}
-              </select>
-            </div>
-            <div className="flex flex-col">
-              <label htmlFor="experience" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Experience (min)</label>
-              <select id="experience" name="experience" value={fields.experience} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                {EXPERIENCES.map((y) => (<option key={y} value={y}>{y}</option>))}
-              </select>
-            </div>
-            <div className="flex flex-col">
-              <label htmlFor="town" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Town</label>
-              <select id="town" name="town" value={fields.town} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                <option value="">Any</option>
-                {TOWNS.map((t) => (<option key={t} value={t}>{t}</option>))}
-              </select>
-            </div>
-            <div className="flex flex-col">
-              <label htmlFor="salary_frequency" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Salary Frequency</label>
-              <select id="salary_frequency" name="salary_frequency" value={fields.salary_frequency} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                <option value="monthly">Monthly</option>
-                <option value="weekly">Weekly</option>
-                <option value="daily">Daily</option>
-              </select>
-            </div>
-            {/* Advanced (collapsible in future) */}
-            <div className="flex flex-col">
-              <label htmlFor="skill" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Skill</label>
-              <select id="skill" name="skill" value={fields.skill} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                <option value="">Any</option>
-                {SKILLS.map((s) => (<option key={s} value={s}>{s}</option>))}
-              </select>
-            </div>
-            <div className="flex flex-col">
-              <label htmlFor="traits" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Trait</label>
-              <select id="traits" name="traits" value={fields.traits} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                <option value="">Any</option>
-                {TRAITS.map((t) => (<option key={t} value={t}>{t}</option>))}
-              </select>
-            </div>
-            <div className="flex flex-col">
-              <label htmlFor="min_rating" className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min Rating</label>
-              <select id="min_rating" name="min_rating" value={fields.min_rating} onChange={handleChange} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                <option value="">Any</option>
-                {[5,4,3,2,1].map((r) => (<option key={r} value={r}>{r}+</option>))}
-              </select>
-            </div>
-            <div className="flex flex-col col-span-1 md:col-span-3 lg:col-span-4 justify-end">
-              <label className="sr-only">Search</label>
-              <button type="submit" className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 mt-auto">🔍 Search</button>
-            </div>
-          </form>
-          {loading && <div className="text-center py-8">Loading...</div>}
-          {error && <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-center">{error}</div>}
-          <div className="space-y-4">
-            {!hasSearched && !loading && <div className="text-center text-gray-500">Customize your search to find househelps.</div>}
-            {hasSearched && results.length === 0 && !loading && <div className="text-center text-gray-500">No househelps found.</div>}
-            {results.map((h) => (
-              <div
-                key={h.id}
-                className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
-                onClick={() => navigate('/household/househelp/profile', { state: { profileId: h.profile_id } })}
-                role="button"
-                tabIndex={0}
-                onKeyPress={e => { if (e.key === 'Enter') navigate('/household/househelp/profile', { state: { profile: h.profile_id } }); }}
-                aria-label={`View profile of ${h.first_name} ${h.last_name}`}
+          <div className="flex gap-4 items-start">
+            {/* Mobile open-filters button */}
+            <div className="sm:hidden w-full">
+              <button
+                onClick={() => setFiltersOpen(true)}
+                className="w-full mb-4 rounded-xl border-2 border-purple-300 text-purple-700 bg-purple-50 px-4 py-3 font-semibold"
               >
-                <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
-                <div className="flex-1">
-                  <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
-                  <div className="text-gray-500 dark:text-gray-300 text-sm">Salary: {h.salary_expectation || 'N/A'} {h.salary_frequency}</div>
-                  <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
-                  <div className="text-gray-400 text-xs">Joined: {h.created_at ? new Date(h.created_at).toLocaleDateString() : ''}</div>
-                </div>
+                Filter search
+              </button>
+            </div>
+
+            {/* Sidebar (desktop) */}
+            <div className="hidden sm:block shrink-0">
+              <HousehelpFilters
+                fields={fields}
+                onChange={handleFieldChange}
+                onSearch={() => handleSearch()}
+                onClear={() => setFields(initialFields)}
+              />
+            </div>
+
+            {/* Results */}
+            <div className="flex-1 min-w-0">
+              {loading && <div className="text-center py-8">Loading...</div>}
+              {error && <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-center">{error}</div>}
+              <div className="space-y-4">
+                {!hasSearched && !loading && <div className="text-center text-gray-500">Customize your search to find househelps.</div>}
+                {hasSearched && results.length === 0 && !loading && <div className="text-center text-gray-500">No househelps found.</div>}
+                {results.map((h) => (
+                  <div
+                    key={h.id}
+                    className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
+                    onClick={() => navigate('/household/househelp/profile', { state: { profileId: h.profile_id } })}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={e => { if (e.key === 'Enter') navigate('/household/househelp/profile', { state: { profile: h.profile_id } }); }}
+                    aria-label={`View profile of ${h.first_name} ${h.last_name}`}
+                  >
+                    <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
+                    <div className="flex-1">
+                      <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
+                      <div className="text-gray-500 dark:text-gray-300 text-sm">Salary: {h.salary_expectation || 'N/A'} {h.salary_frequency}</div>
+                      <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
+                      <div className="text-gray-400 text-xs">Joined: {h.created_at ? new Date(h.created_at).toLocaleDateString() : ''}</div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+              {/* Infinite scroll sentinel */}
+              <div ref={sentinelRef} className="h-1" />
+            </div>
           </div>
-          {/* Infinite scroll sentinel */}
-          <div ref={sentinelRef} className="h-1" />
+
+          {/* Mobile drawer */}
+          {filtersOpen && (
+            <div className="fixed inset-0 z-40 sm:hidden">
+              <div className="absolute inset-0 bg-black/40" onClick={() => setFiltersOpen(false)} />
+              <div className="absolute inset-y-0 left-0 w-[85%] max-w-xs p-4">
+                <HousehelpFilters
+                  fields={fields}
+                  onChange={handleFieldChange}
+                  onSearch={() => { setFiltersOpen(false); handleSearch(); }}
+                  onClose={() => setFiltersOpen(false)}
+                  onClear={() => setFields(initialFields)}
+                />
+              </div>
+            </div>
+          )}
         </>
       )}
       {activeTab === 'shortlist' && (
         <div className="space-y-4">
           {shortlistProfilesLoading && <div className="text-center text-gray-500">Loading shortlist profiles...</div>}
-          {!shortlistProfilesLoading && shortlist.length === 0 && <div className="text-center text-gray-500">You have no househelps in your shortlist yet.</div>}
+          {!shortlistProfilesLoading && shortlist.length === 0 && (
+            <div className="text-center py-12">
+              <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
+              <div className="text-gray-500 text-lg mb-2">Your shortlist is empty</div>
+              <div className="text-gray-400 text-sm">Start browsing househelps and add them to your shortlist to see them here.</div>
+            </div>
+          )}
           {!shortlistProfilesLoading && shortlistProfiles.length === 0 && shortlist.length > 0 && (
-            <div className="text-center text-gray-500">No profiles found for your shortlist.</div>
+            <div className="text-center py-12">
+              <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
+              <div className="text-gray-500 text-lg mb-2">No profiles found</div>
+              <div className="text-gray-400 text-sm">The househelps in your shortlist may no longer be available.</div>
+            </div>
           )}
           {shortlistProfiles.map((h) => (
-  <div
-    key={h.id}
-    className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
-    onClick={() => navigate(`/household/househelp/contact?profile_id=${h.profile_id}&tab=shortlist`)}
-    role="button"
-    tabIndex={0}
-    onKeyPress={e => {
-      if (e.key === 'Enter') {
-        navigate(`/household/househelp/contact?profile_id=${h.profile_id}&tab=shortlist`);
-      }
-    }}
-    aria-label={`View profile of ${h.first_name} ${h.last_name}`}
-  >
-    <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
-    <div className="flex-1">
-      <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
-      <div className="text-gray-500 dark:text-gray-300 text-sm">Salary: {h.salary_expectation || 'N/A'} {h.salary_frequency}</div>
-      <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
-      <div className="text-gray-400 text-xs">Joined: {h.created_at ? new Date(h.created_at).toLocaleDateString() : ''}</div>
-    </div>
-  </div>
-))}
-
+            <div
+              key={h.id}
+              className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
+              onClick={() => navigate(`/household/househelp/contact?profile_id=${h.profile_id}&tab=shortlist`)}
+              role="button"
+              tabIndex={0}
+              onKeyPress={e => {
+                if (e.key === 'Enter') {
+                  navigate(`/household/househelp/contact?profile_id=${h.profile_id}&tab=shortlist`);
+                }
+              }}
+              aria-label={`View profile of ${h.first_name} ${h.last_name}`}
+            >
+              <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
+              <div className="flex-1">
+                <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
+                <div className="text-gray-500 dark:text-gray-300 text-sm">Salary: {h.salary_expectation || 'N/A'} {h.salary_frequency}</div>
+                <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
+                <div className="text-gray-400 text-xs">Joined: {h.created_at ? new Date(h.created_at).toLocaleDateString() : ''}</div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </div>
