@@ -4,6 +4,7 @@ import type { Route } from "./+types/root";
 
 import { AuthProvider } from "~/contexts/AuthContext";
 import { ThemeProvider } from "~/contexts/ThemeContext";
+import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
 import { API_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
@@ -48,7 +49,9 @@ export default function App() {
             <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300">
                 <ThemeProvider>
                     <AuthProvider>
-                        <Outlet/>
+                        <ProfileSetupProvider>
+                            <Outlet/>
+                        </ProfileSetupProvider>
                     </AuthProvider>
                 </ThemeProvider>
                 <ScrollRestoration/>

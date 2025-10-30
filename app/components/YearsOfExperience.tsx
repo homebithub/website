@@ -1,14 +1,48 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 
 const YearsOfExperience = () => {
-    const [years, setYears] = useState<number | null>(null);
+    const [years, setYears] = useState<number>(0);
     const [customYears, setCustomYears] = useState<string>('');
     const [error, setError] = useState<string>('');
     const [success, setSuccess] = useState<string>('');
     const [loading, setLoading] = useState(false);
+
+    // Load existing data
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.years_of_experience !== undefined) {
+                        const totalYears = data.years_of_experience;
+                        if (totalYears > 5) {
+                            setYears(6);
+                            setCustomYears(totalYears.toString());
+                        } else {
+                            setYears(Math.floor(totalYears));
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load experience data:', err);
+            }
+        };
+
+        loadData();
+    }, []);
+
     const navigate = useNavigate();
 
     const experienceOptions = [
@@ -56,6 +90,11 @@ const YearsOfExperience = () => {
                 body: JSON.stringify({
                     updates: {
                         years_of_experience: finalYears
+                    },
+                    _step_metadata: {
+                        step_id: "experience",
+                        step_number: 4,
+                        is_completed: true
                     }
                 })
             });
@@ -157,7 +196,7 @@ const YearsOfExperience = () => {
                             </>
                         ) : (
                             <>
-                                💾 Continue
+                                💾 Save
                             </>
                         )}
                     </button>

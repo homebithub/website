@@ -342,8 +342,8 @@ function HousehelpProfileSetupContent() {
                     disabled={currentStep === 0}
                     className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                       currentStep === 0
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
+                        ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                        : 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
                     }`}
                   >
                     <ChevronLeftIcon className="h-4 w-4 mr-1" />
@@ -353,10 +353,10 @@ function HousehelpProfileSetupContent() {
                   <button
                     onClick={handleNext}
                     disabled={isSaving}
-                    className="flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                   >
-                    {currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →'}
-                    {currentStep !== STEPS.length - 1 && (
+                    {isSaving ? '✨ Saving...' : (currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →')}
+                    {currentStep !== STEPS.length - 1 && !isSaving && (
                       <ChevronRightIcon className="h-4 w-4 ml-1" />
                     )}
                   </button>
@@ -370,8 +370,8 @@ function HousehelpProfileSetupContent() {
                   disabled={currentStep === 0}
                   className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
                     currentStep === 0
-                      ? 'text-gray-400 cursor-not-allowed'
-                      : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                      ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                      : 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
                   }`}
                 >
                   <ChevronLeftIcon className="h-4 w-4 mr-1" />
@@ -392,10 +392,10 @@ function HousehelpProfileSetupContent() {
                 <button
                   onClick={handleNext}
                   disabled={isSaving}
-                  className="flex items-center px-6 py-2 bg-purple-600 text-white rounded-md text-sm font-medium hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
                 >
-                  {currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →'}
-                  {currentStep !== STEPS.length - 1 && (
+                  {isSaving ? '✨ Saving...' : (currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →')}
+                  {currentStep !== STEPS.length - 1 && !isSaving && (
                     <ChevronRightIcon className="h-4 w-4 ml-1" />
                   )}
                 </button>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 
@@ -8,6 +8,35 @@ const Gender = () => {
     const [error, setError] = useState<string>('');
     const [success, setSuccess] = useState<string>('');
     const [loading, setLoading] = useState(false);
+
+    // Load existing data
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.gender) setGender(data.gender);
+                    if (data.date_of_birth) {
+                        const date = new Date(data.date_of_birth);
+                        setDateOfBirth(date.toISOString().split('T')[0]);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load gender data:', err);
+            }
+        };
+
+        loadData();
+    }, []);
 
     const calculateMaxDate = (): string => {
         const today = new Date();
@@ -55,6 +84,11 @@ const Gender = () => {
                     updates: {
                         gender: gender,
                         date_of_birth: dateOfBirth
+                    },
+                    _step_metadata: {
+                        step_id: "gender",
+                        step_number: 3,
+                        is_completed: true
                     }
                 })
             });
@@ -161,7 +195,7 @@ const Gender = () => {
                             </>
                         ) : (
                             <>
-                                💾 Continue
+                                💾 Save
                             </>
                         )}
                     </button>

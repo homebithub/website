@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
@@ -15,6 +15,42 @@ const WorkWithKids = () => {
     const [success, setSuccess] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
+
+    // Load existing data
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                    },
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.can_work_with_kids !== undefined) {
+                        setWorkPreference(data.can_work_with_kids ? 'with_kids' : 'chores_only');
+                    }
+                    if (data.children_age_range) {
+                        setSelectedAges(data.children_age_range.split(',') as AgeRange[]);
+                    }
+                    if (data.number_of_concurrent_children) {
+                        const capacity = data.number_of_concurrent_children;
+                        if (capacity <= 2) setSelectedCapacities(['1-2']);
+                        else if (capacity <= 4) setSelectedCapacities(['2-4']);
+                        else setSelectedCapacities(['5+']);
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load work with kids data:', err);
+            }
+        };
+
+        loadData();
+    }, []);
 
     const ageRanges = [
         { value: '0-2' as const, label: '0-2 years' },
@@ -81,7 +117,14 @@ const WorkWithKids = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ updates })
+                body: JSON.stringify({ 
+                    updates,
+                    _step_metadata: {
+                        step_id: "workwithkids",
+                        step_number: 7,
+                        is_completed: true
+                    }
+                })
             });
 
             const data = await response.json();
@@ -223,7 +266,7 @@ const WorkWithKids = () => {
                             </>
                         ) : (
                             <>
-                                💾 Continue
+                                💾 Save
                             </>
                         )}
                     </button>

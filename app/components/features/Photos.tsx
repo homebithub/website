@@ -194,15 +194,22 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
           throw new Error('Failed to save photos to profile');
         }
       } else {
-        // For househelp, update househelp profile
-        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/househelp/profile`, {
+        // For househelp, update househelp profile with step tracking
+        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
-            photos: imageUrls
+            updates: {
+              photos: imageUrls
+            },
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 15,
+              is_completed: true
+            }
           }),
         });
         

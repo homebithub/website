@@ -240,7 +240,19 @@ export default function VerifyOtpPage() {
               return;
             }
           } else if (parsed.profile_type === 'househelp') {
-            path = '/househelp';
+            // If this is after email verification, go to househelp profile setup
+            if (afterEmailVerification) {
+              path = '/profile-setup/househelp';
+            } else {
+              // Otherwise, redirect to email verification first
+              navigate('/verify-email', { 
+                state: { 
+                  user_id: parsed.user_id || parsed.id,
+                  from: 'phone-verification'
+                } 
+              });
+              return;
+            }
           }
         }
         console.log('Redirecting to:', path);

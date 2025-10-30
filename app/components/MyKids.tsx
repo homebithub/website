@@ -45,7 +45,14 @@ const MyKids = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ updates })
+                body: JSON.stringify({ 
+                    updates,
+                    _step_metadata: {
+                        step_id: "mykids",
+                        step_number: 10,
+                        is_completed: true
+                    }
+                })
             });
 
             const data = await response.json();
@@ -173,7 +180,7 @@ const MyKids = () => {
                             </>
                         ) : (
                             <>
-                                💾 Continue
+                                💾 Save
                             </>
                         )}
                     </button>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 
@@ -26,6 +26,40 @@ const References: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Load existing data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.reference) {
+            try {
+              const refs = typeof data.reference === 'string' ? JSON.parse(data.reference) : data.reference;
+              if (Array.isArray(refs) && refs.length > 0) {
+                setReferences(refs.map((r: any) => ({ name: r.referee_name || '', relationship: '', phone: r.referee_tel || '', email: '', duration: '' })));
+              }
+            } catch (e) {
+              console.error('Failed to parse references:', e);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load references data:', err);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const addReference = () => {
     if (references.length < 3) {
@@ -93,6 +127,11 @@ const References: React.FC = () => {
         body: JSON.stringify({
           updates: {
             references: JSON.stringify(validReferences),
+          },
+          _step_metadata: {
+            step_id: "references",
+            step_number: 12,
+            is_completed: true
           }
         }),
       });
@@ -251,7 +290,7 @@ const References: React.FC = () => {
               </>
             ) : (
               <>
-                💾 Continue
+                💾 Save
               </>
             )}
           </button>

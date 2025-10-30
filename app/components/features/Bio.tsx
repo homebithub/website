@@ -101,14 +101,23 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
           throw new Error(errorData.message || 'Failed to save bio');
         }
       } else {
-        // For househelp, use the bio endpoint
-        const response = await fetch(`${API_BASE_URL}/api/v1/househelp-profile/bio`, {
-          method: 'PUT',
+        // For househelp, use the fields endpoint with step tracking
+        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
+          method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify({ bio }),
+          body: JSON.stringify({ 
+            updates: {
+              bio
+            },
+            _step_metadata: {
+              step_id: "bio",
+              step_number: 14,
+              is_completed: true
+            }
+          }),
         });
 
         if (!response.ok) {

@@ -154,7 +154,7 @@ console.log(user_id,"user_id");
                 if (parsed.profile_type === 'household' || parsed.profile_type === 'household') {
                   path = '/household/setup';
                 } else if (parsed.profile_type === 'househelp') {
-                  path = '/househelp';
+                  path = '/profile-setup/househelp';
                 } else if (parsed.profile_type === 'bureau') {
                   path = '/bureau';
                 }

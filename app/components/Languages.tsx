@@ -159,7 +159,14 @@ const Languages = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ updates })
+                body: JSON.stringify({ 
+                    updates,
+                    _step_metadata: {
+                        step_id: "languages",
+                        step_number: 9,
+                        is_completed: true
+                    }
+                })
             });
 
             const data = await response.json();
@@ -395,7 +402,7 @@ const Languages = () => {
                             </>
                         ) : (
                             <>
-                                💾 Continue
+                                💾 Save
                             </>
                         )}
                     </button>

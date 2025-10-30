@@ -120,7 +120,12 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                     'Authorization': token ? `Bearer ${token}` : ''
                 },
                 body: JSON.stringify({
-                    mapbox_id: selectedLocation.mapbox_id
+                    mapbox_id: selectedLocation.mapbox_id,
+                    _step_metadata: {
+                        step_id: "location",
+                        step_number: 1,
+                        is_completed: true
+                    }
                 })
             });
 

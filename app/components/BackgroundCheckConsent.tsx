@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 
@@ -7,6 +7,33 @@ const BackgroundCheckConsent: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Load existing data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.background_check_consent !== undefined) {
+            setConsent(data.background_check_consent);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load background check data:', err);
+      }
+    };
+
+    loadData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +58,11 @@ const BackgroundCheckConsent: React.FC = () => {
         body: JSON.stringify({
           updates: {
             background_check_consent: consent,
+          },
+          _step_metadata: {
+            step_id: "backgroundcheck",
+            step_number: 13,
+            is_completed: true
           }
         }),
       });
@@ -192,7 +224,7 @@ const BackgroundCheckConsent: React.FC = () => {
               </>
             ) : (
               <>
-                💾 Continue
+                💾 Save
               </>
             )}
           </button>

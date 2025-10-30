@@ -100,7 +100,14 @@ const WorkWithPets = () => {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ updates })
+                body: JSON.stringify({ 
+                    updates,
+                    _step_metadata: {
+                        step_id: "workwithpets",
+                        step_number: 8,
+                        is_completed: true
+                    }
+                })
             });
 
             const data = await response.json();
@@ -232,7 +239,7 @@ const WorkWithPets = () => {
                             </>
                         ) : (
                             <>
-                                💾 Continue
+                                💾 Save
                             </>
                         )}
                     </button>

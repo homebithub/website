@@ -60,6 +60,11 @@ const SalaryExpectations: React.FC = () => {
           updates: {
             salary_frequency: frequency.toLowerCase(),
             salary_expectation: selectedRange,
+          },
+          _step_metadata: {
+            step_id: "salary",
+            step_number: 6,
+            is_completed: true
           }
         }),
       });
@@ -167,7 +172,7 @@ const SalaryExpectations: React.FC = () => {
             </>
           ) : (
             <>
-              💾 Continue
+              💾 Save
             </>
           )}
         </button>

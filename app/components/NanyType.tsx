@@ -159,6 +159,11 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
               offers_day_worker: needsDayWorker,
               ...(needsDayWorker && { availability_schedule: JSON.stringify(availability) }),
               available_from: availableFrom,
+            },
+            _step_metadata: {
+              step_id: "nannytype",
+              step_number: 2,
+              is_completed: true
             }
           }),
         });
@@ -202,26 +207,16 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           ? 'What type of help are you looking for? (You can select both)'
           : 'What type of work do you offer? (You can select both)'}
       </p>
-      <div className="flex flex-col gap-4">
-        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${needsLiveIn ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
-          <input
-            type="checkbox"
-            checked={needsLiveIn}
-            onChange={(e) => setNeedsLiveIn(e.target.checked)}
-            className="form-checkbox h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
-          />
-          <span className="flex-1">🌙 Live-in {userType === 'household' ? '(Lives with you)' : '(I can live with the family)'}</span>
-        </label>
-        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${needsDayWorker ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
-          <input
-            type="checkbox"
-            checked={needsDayWorker}
-            onChange={(e) => setNeedsDayWorker(e.target.checked)}
-            className="form-checkbox h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
-          />
-          <span className="flex-1">☀️ Day Worker {userType === 'household' ? '(Comes during the day)' : '(I work during the day)'}</span>
-        </label>
-      </div>
+      {/* Live-in Option */}
+      <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${needsLiveIn ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
+        <input
+          type="checkbox"
+          checked={needsLiveIn}
+          onChange={(e) => setNeedsLiveIn(e.target.checked)}
+          className="form-checkbox h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
+        />
+        <span className="flex-1">🌙 Live-in {userType === 'household' ? '(Lives with you)' : '(I can live with the family)'}</span>
+      </label>
       
       {/* Off Days Selection for Live-in */}
       {needsLiveIn && (
@@ -273,6 +268,17 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           )}
         </div>
       )}
+      
+      {/* Day Worker Option */}
+      <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${needsDayWorker ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
+        <input
+          type="checkbox"
+          checked={needsDayWorker}
+          onChange={(e) => setNeedsDayWorker(e.target.checked)}
+          className="form-checkbox h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
+        />
+        <span className="flex-1">☀️ Day Worker {userType === 'household' ? '(Comes during the day)' : '(I work during the day)'}</span>
+      </label>
       
       {needsDayWorker && (
         <div className={`bg-purple-50 dark:bg-purple-900/20 p-6 rounded-xl border-2 overflow-x-auto ${error && error.includes('available day or time slot') ? 'border-red-500 dark:border-red-400' : 'border-purple-200 dark:border-purple-500/30'}`}>

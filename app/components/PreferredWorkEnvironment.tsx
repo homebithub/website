@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 
@@ -33,6 +33,34 @@ const PreferredWorkEnvironment: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  // Load existing data
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.preferred_household_size) setHouseholdSize(data.preferred_household_size);
+          if (data.preferred_location_type) setLocationType(data.preferred_location_type);
+          if (data.preferred_family_type) setFamilyType(data.preferred_family_type);
+          if (data.work_environment_notes) setAdditionalPreferences(data.work_environment_notes);
+        }
+      } catch (err) {
+        console.error('Failed to load work environment data:', err);
+      }
+    };
+
+    loadData();
+  }, []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -53,6 +81,11 @@ const PreferredWorkEnvironment: React.FC = () => {
             preferred_location_type: locationType,
             preferred_family_type: familyType,
             work_environment_notes: additionalPreferences,
+          },
+          _step_metadata: {
+            step_id: "workenvironment",
+            step_number: 11,
+            is_completed: true
           }
         }),
       });
@@ -232,7 +265,7 @@ const PreferredWorkEnvironment: React.FC = () => {
               </>
             ) : (
               <>
-                💾 Continue
+                💾 Save
               </>
             )}
           </button>
