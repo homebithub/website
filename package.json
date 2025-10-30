@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "dev": "react-router dev --force",
+    "dev": "rimraf build public/build .cache node_modules/.cache .react-router && react-router dev --force",
     "dev:host": "cross-env NODE_ENV=development HOST=0.0.0.0 react-router dev",
     "dev:server": "cross-env NODE_ENV=development react-router dev -c \"node server.mjs\"",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
