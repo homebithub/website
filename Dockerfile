@@ -44,5 +44,4 @@ RUN addgroup -S app && adduser -S -G app app \
 USER app
 
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD curl -fsS http://localhost:3000/healthz || exit 1
 CMD ["/app/server"]
