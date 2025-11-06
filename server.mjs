@@ -1,63 +1,79 @@
+import Fastify from "fastify";
+import cors from "@fastify/cors";
+import fastifyStatic from "@fastify/static";
 import { createRequestHandler } from "@react-router/express";
-import express from "express";
-import cors from 'cors';
-// notice that the result of `react-router build` is "just a module"
+import path from "path";
 import * as build from "./build/server/index.js";
+import { fileURLToPath } from "url";
 
-const app = express();
-console.log("We reached herer")
-app.use(cors());
-
-// Serve built client assets with long-term caching
-app.use(
-  "/assets",
-  express.static("build/client/assets", {
-    setHeaders(res) {
-      res.setHeader("Cache-Control", "no-store");
-      res.setHeader("Pragma", "no-cache");
-      res.setHeader("Expires", "0");
-    },
-  })
-);
-
-// Serve other static assets from build/client
-app.use(
-  express.static("build/client", {
-    setHeaders(res) {
-      res.setHeader("Cache-Control", "no-store");
-      res.setHeader("Pragma", "no-cache");
-      res.setHeader("Expires", "0");
-    },
-  })
-);
-
-// Serve other static assets from /public with shorter cache
-app.use(
-  express.static("public", {
-    setHeaders(res) {
-      res.setHeader("Cache-Control", "no-store");
-      res.setHeader("Pragma", "no-cache");
-      res.setHeader("Expires", "0");
-    },
-  })
-);
-console.log("We reached here2")
-
-// Lightweight health endpoint (in addition to Remix /health route)
-app.get("/healthz", (req, res) => res.status(200).json({ status: "ok" }));
-
-console.log("We reached here3")
-
-// app.all('/socket.io/*', (req, res) => {
-//     proxy.web(req, res, { target: FULL_HOST} ); // Change the target to your Node.js server address
-// });
-
-// All other requests handled by React Router
-app.all("*", createRequestHandler({ build }));
-console.log("We reached here 4")
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log("We reached herer0")
-    console.log(`App listening on port ${PORT}`);
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const app = Fastify({
+  logger: true,
 });
+
+// Enable CORS (dev-friendly)
+await app.register(cors, { origin: true });
+
+// Serve static assets — no caching for now
+await app.register(fastifyStatic, {
+  root: path.join(__dirname, "build/client/assets"),
+  prefix: "/assets/",
+  setHeaders: (res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  },
+});
+
+await app.register(fastifyStatic, {
+  root: path.join(__dirname, "build/client"),
+  prefix: "/",
+  decorateReply: false,
+  setHeaders: (res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  },
+});
+
+await app.register(fastifyStatic, {
+  root: path.join(__dirname, "public"),
+  prefix: "/",
+  decorateReply: false,
+  setHeaders: (res) => {
+    res.setHeader("Cache-Control", "no-store");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+  },
+});
+
+// Health check endpoint
+app.get("/healthz", async (_, reply) => {
+  return reply.code(200).send({ status: "ok" });
+});
+
+// Handle all other routes with React Router’s SSR handler
+app.all("/*", async (req, reply) => {
+  const handler = createRequestHandler({ build });
+  const nodeReq = {
+    method: req.method,
+    headers: req.headers,
+    url: req.url,
+  };
+  const nodeRes = {
+    writeHead: (status, headers) => reply.code(status).headers(headers),
+    end: (body) => reply.send(body),
+  };
+  return handler(nodeReq, nodeRes);
+});
+
+// Start server
+const PORT = process.env.PORT || 3000;
+app.listen({ port: PORT, host: "0.0.0.0" })
+  .then(() => {
+    console.log(`🚀 Server running at http://localhost:${PORT}`);
+  })
+  .catch((err) => {
+    app.log.error(err);
+    process.exit(1);
+  });
