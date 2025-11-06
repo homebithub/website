@@ -7,11 +7,15 @@ import * as build from "./build/server/index.js";
 const app = express();
 console.log("We reached herer")
 app.use(cors());
-// Serve built assets from /public/build at /build with long-term caching
-// app.use(
-//   "/build",
-//   express.static("public/build")
-// );
+
+// Serve built client assets with long-term caching
+app.use(
+  "/assets",
+  express.static("build/client/assets", { immutable: true, maxAge: "1y" })
+);
+
+// Serve other static assets from build/client
+app.use(express.static("build/client", { maxAge: "1h" }));
 
 // Serve other static assets from /public with shorter cache
 app.use(express.static("public"));
