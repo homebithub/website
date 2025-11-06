@@ -19,12 +19,24 @@ func main() {
 
 	mux := http.NewServeMux()
 
-	// Health check
-	mux.HandleFunc("/healthz", func(w http.ResponseWriter, r *http.Request) {
+	// Health checks (support multiple common probe paths)
+	health := func(w http.ResponseWriter, r *http.Request) {
+		// allow GET/HEAD; respond 200 for any method to be tolerant
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(`{"status":"ok"}`))
-	})
+		if r.Method != http.MethodHead {
+			_, _ = w.Write([]byte(`{"status":"ok"}`))
+		}
+	}
+	for _, p := range []string{
+		"/healthz", "/healthz/",
+		"/health", "/health/",
+		"/live", "/live/", "/livez", "/livez/", "/liveness", "/liveness/",
+		"/ready", "/ready/", "/readyz", "/readyz/", "/readiness", "/readiness/",
+		"/status", "/status/", "/alive", "/alive/",
+	} {
+		mux.HandleFunc(p, health)
+	}
 
 	// Serve immutable assets with long cache
 	mux.Handle("/assets/", cacheControl(http.StripPrefix("/assets/", http.FileServer(http.Dir(filepath.Join(clientDir, "assets")))), "no-store"))
