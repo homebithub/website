@@ -3,6 +3,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { API_BASE_URL } from '~/config/api';
+import { apiClient } from '~/utils/apiClient';
 
 interface HousehelpProfile {
   id: number;
@@ -28,21 +29,13 @@ export default function AuthenticatedHome() {
 
   const loadHousehelps = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/househelps`, {
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setHousehelps(data);
-      } else {
-        setError('Failed to load househelps');
-      }
+      // Requires auth; redirect on 401
+      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps`, { method: 'GET' });
+      const data = await apiClient.json<HousehelpProfile[]>(res);
+      setHousehelps(data);
     } catch (err) {
       console.error('Error loading househelps:', err);
+      // Error is already handled by apiClient for 401; still show message
       setError('Failed to load househelps');
     } finally {
       setLoading(false);

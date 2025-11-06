@@ -1,6 +1,6 @@
 import {Outlet, useLocation, useNavigate} from "react-router";
 import { Navigation } from "~/components/Navigation";
-import HouseholdSidebar from "~/components/HouseholdSidebar";
+import HouseholdSidebar from "~/components/features/HouseholdSidebar";
 import {useEffect} from "react";
 import { FloatingBubbles } from '~/components/ui/FloatingBubbles';
 
