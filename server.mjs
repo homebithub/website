@@ -1,5 +1,4 @@
 import { createRequestHandler } from "@react-router/express";
-import { broadcastDevReady } from "@react-router/node";
 import express from "express";
 import cors from 'cors';
 // notice that the result of `react-router build` is "just a module"
@@ -34,9 +33,5 @@ console.log("We reached here 4")
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log("We reached herer0")
-
-    if (process.env.NODE_ENV === "development") {
-        broadcastDevReady(build);
-    }
     console.log(`App listening on port ${PORT}`);
 });
