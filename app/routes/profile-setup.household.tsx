@@ -79,12 +79,19 @@ function HouseholdProfileSetupContent() {
   }, [loadProfileFromBackend]);
 
   useEffect(() => {
-    // Jump to last completed step + 1 (or stay at 0 if starting fresh)
-    if (lastCompletedStep > 0 && lastCompletedStep < STEPS.length) {
+    // If editing a specific section from profile page, navigate to that step
+    if (isEditMode && location.state?.editSection) {
+      const sectionId = location.state.editSection;
+      const stepIndex = STEPS.findIndex(step => step.id === sectionId);
+      if (stepIndex !== -1) {
+        setCurrentStep(stepIndex);
+      }
+    } else if (lastCompletedStep > 0 && lastCompletedStep < STEPS.length) {
+      // Jump to last completed step if returning user (not in edit mode)
       setCurrentStep(lastCompletedStep);
       console.log(`Resuming from step ${lastCompletedStep + 1}`);
     }
-  }, [lastCompletedStep]);
+  }, [lastCompletedStep, isEditMode, location.state]);
 
   const handleNext = async () => {
     // Save progress before moving to next step
@@ -196,19 +203,6 @@ function HouseholdProfileSetupContent() {
           <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
-                {isEditMode && (
-                  <div className="flex items-center justify-between mb-4">
-                    <button
-                      onClick={() => navigate('/household/profile')}
-                      className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-900/30 rounded-lg transition-all"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                      </svg>
-                      Back to Profile
-                    </button>
-                  </div>
-                )}
                 <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                   Complete Your Household Profile 🏠
                 </h1>
@@ -255,12 +249,9 @@ function HouseholdProfileSetupContent() {
             <div className="mb-6">
               <button
                 onClick={() => navigate('/household/profile')}
-                className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-purple-600 dark:text-purple-400 hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white rounded-lg transition-all mb-4 hover:scale-105"
+                className="flex items-center gap-1 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors mb-4"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Profile
+                ← Back to Profile
               </button>
               <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Edit {STEPS[currentStep].title}

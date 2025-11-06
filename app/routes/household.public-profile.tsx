@@ -239,7 +239,13 @@ export default function HouseholdPublicProfile() {
               {profile.budget_min && profile.budget_max ? `KES ${profile.budget_min.toLocaleString()} - ${profile.budget_max.toLocaleString()}` : profile.budget_min ? `KES ${profile.budget_min.toLocaleString()}+` : 'Negotiable'}
             </p>
             {profile.salary_frequency && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">Per {profile.salary_frequency.replace('ly', '')}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                Per {profile.salary_frequency === 'daily' ? 'Day' : 
+                     profile.salary_frequency === 'weekly' ? 'Week' : 
+                     profile.salary_frequency === 'monthly' ? 'Month' : 
+                     profile.salary_frequency === 'yearly' ? 'Year' : 
+                     profile.salary_frequency}
+              </p>
             )}
           </div>
         ) : (

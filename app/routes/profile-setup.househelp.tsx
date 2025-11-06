@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -74,6 +74,7 @@ function HousehelpProfileSetupContent() {
   const [timeSpent, setTimeSpent] = useState(0);
   const [showCongratulations, setShowCongratulations] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { 
     profileData, 
     updateStepData, 
@@ -86,6 +87,9 @@ function HousehelpProfileSetupContent() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  
+  // Check if user is editing from profile page using location state (secure, can't be manipulated)
+  const isEditMode = location.state?.fromProfile === true;
   
   // Track time spent on each step
   useEffect(() => {
@@ -107,11 +111,18 @@ function HousehelpProfileSetupContent() {
   }, []);
 
   useEffect(() => {
-    // Jump to last completed step if returning user
-    if (lastCompletedStep > 0 && lastCompletedStep < STEPS.length) {
+    // If editing a specific section from profile page, navigate to that step
+    if (isEditMode && location.state?.editSection) {
+      const sectionId = location.state.editSection;
+      const stepIndex = STEPS.findIndex(step => step.id === sectionId);
+      if (stepIndex !== -1) {
+        setCurrentStep(stepIndex);
+      }
+    } else if (lastCompletedStep > 0 && lastCompletedStep < STEPS.length) {
+      // Jump to last completed step if returning user (not in edit mode)
       setCurrentStep(lastCompletedStep);
     }
-  }, [lastCompletedStep]);
+  }, [lastCompletedStep, isEditMode, location.state]);
 
   const handleNext = async () => {
     await saveProgressToBackend(currentStep, timeSpent);
@@ -221,7 +232,8 @@ function HousehelpProfileSetupContent() {
       
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-          {/* Header Card */}
+          {/* Header Card - Hide in edit mode */}
+          {!isEditMode && (
           <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
@@ -272,6 +284,22 @@ function HousehelpProfileSetupContent() {
               </div>
             </div>
           </div>
+          )}
+
+          {/* Edit Mode Header - Show only in edit mode */}
+          {isEditMode && (
+            <div className="mb-6">
+              <button
+                onClick={() => navigate('/househelp/profile')}
+                className="flex items-center gap-1 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors mb-4"
+              >
+                ← Back to Profile
+              </button>
+              <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-2">
+                Edit {STEPS[currentStep].title}
+              </h2>
+            </div>
+          )}
 
           {/* Error Display */}
           {(error || saveError) && (
@@ -317,7 +345,8 @@ function HousehelpProfileSetupContent() {
             </div>
           </div>
 
-          {/* Navigation Footer */}
+          {/* Navigation Footer - Hide in edit mode */}
+          {!isEditMode && (
           <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4">
               {/* Mobile: Stack buttons vertically with dots in between */}
@@ -401,6 +430,7 @@ function HousehelpProfileSetupContent() {
               </div>
             </div>
           </div>
+          )}
         </div>
       </main>
       

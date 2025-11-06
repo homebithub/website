@@ -1,514 +1,329 @@
-import React, {useEffect, useState} from "react";
-import {Navigation} from "~/components/Navigation";
-import { FloatingBubbles } from '~/components/ui/FloatingBubbles';
-import ProfileOverviewSection from "~/components/features/household/househelp/ProfileOverviewSection";
-import EmploymentSalaryEditSection from "~/components/features/household/househelp/EmploymentSalaryEditSection";
-import PersonalDetailsSection from "~/components/features/household/househelp/PersonalDetailsSection";
-import PersonalDetailsEditSection from "~/components/features/household/househelp/PersonalDetailsEditSection";
-import FamilyContactsEditSection from "~/components/features/household/househelp/FamilyContactsEditSection";
-import EducationHealthEditSection from "~/components/features/household/househelp/EducationHealthEditSection";
-import FamilyContactsSection from "~/components/features/household/househelp/FamilyContactsSection";
-import EducationHealthSection from "~/components/features/household/househelp/EducationHealthSection";
-import EmploymentSalarySection from "~/components/features/household/househelp/EmploymentSalarySection";
-import Joi from 'joi';
-import { API_ENDPOINTS } from '~/config/api';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { API_BASE_URL } from '~/config/api';
+import { Navigation } from "~/components/Navigation";
+import { Footer } from "~/components/Footer";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 
-const househelpSections = [
-    {label: "Profile Overview", id: "profile-overview"},
-    {label: "Personal Details", id: "personal-details"},
-    {label: "Family & Contacts", id: "family-contacts"},
-    {label: "Education & Health", id: "education-health"},
-    {label: "Employment & Salary", id: "employment-salary"},
-];
-
-
-function isValidUuid(uuid: string | undefined | null): boolean {
-    if (!uuid) return false;
-    // Joi's uuid validation returns an error if invalid, otherwise returns the value
-    const {error} = Joi.string().uuid().validate(uuid);
-    return !error;
+interface HousehelpData {
+  first_name?: string;
+  last_name?: string;
+  gender?: string;
+  date_of_birth?: string;
+  years_of_experience?: number;
+  work_with_kids?: boolean;
+  work_with_pets?: boolean;
+  languages?: string[];
+  certifications?: string[];
+  salary_expectation?: number;
+  salary_frequency?: string;
+  bio?: string;
+  location?: any;
+  available_from?: string;
+  live_in?: boolean;
+  day_worker?: boolean;
 }
 
-function ImageUploadModal({open, onClose, files, setFiles}: {
-    open: boolean;
-    onClose: () => void;
-    files: File[];
-    setFiles: (files: File[]) => void;
-}) {
-    const [previews, setPreviews] = useState<string[]>([]);
-    const [uploading, setUploading] = useState(false);
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+export default function HousehelpProfile() {
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<HousehelpData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
-    useEffect(() => {
-        if (open && files.length > 0) {
-            const readers = files.map(file => {
-                return new Promise<string>((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result as string);
-                    reader.readAsDataURL(file);
-                });
-            });
-            Promise.all(readers).then(setPreviews);
-        } else {
-            setPreviews([]);
-        }
-    }, [files, open]);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const selected = e.target.files ? Array.from(e.target.files) : [];
-        // Only allow up to 5 images total
-        setFiles([...files, ...selected].slice(0, 5));
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Not authenticated");
+        
+        const profileRes = await fetch(`${API_BASE_URL}/api/v1/profile/househelp/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!profileRes.ok) throw new Error("Failed to fetch profile");
+        const profileData = await profileRes.json();
+        setProfile(profileData);
+      } catch (err: any) {
+        console.error("Error loading househelp profile:", err);
+        setError(err.message || "Failed to load profile");
+        setHasError(true);
+      } finally {
+        setLoading(false);
+      }
     };
+    
+    fetchProfile();
+  }, []);
 
-    const handleRemove = (idx: number) => {
-        setFiles(files.filter((_, i) => i !== idx));
-    };
+  const handleEditSection = (section: string) => {
+    // Navigate to the specific setup step for editing
+    navigate('/profile-setup/househelp', { 
+      state: { fromProfile: true, editSection: section }
+    });
+  };
 
-    const handleReplace = (idx: number, file: File) => {
-        setFiles(files.map((f, i) => (i === idx ? file : f)));
-    };
-
+  if (loading) {
     return (
-        <div
-            className={`fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-lg ${open ? '' : 'hidden'}`}
-            aria-modal="true" role="dialog">
-            <div className="bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 w-full max-w-lg relative">
-                <h3 className="text-xl font-bold mb-4 text-purple-600">Upload Images</h3>
-                <div className="flex flex-col gap-4">
-                    <div className="text-sm text-gray-600 mb-1">
-                        You can upload up to 5 images, 10MB each.
-                    </div>
-                    <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleFileChange}
-                        disabled={files.length >= 5}
-                        className="block mb-2"
-                    />
-                    <div className="grid grid-cols-2 gap-4">
-                        {previews.map((src, idx) => (
-                            <div key={idx} className="relative border rounded-lg overflow-hidden">
-                                <img src={src} alt={`Preview ${idx + 1}`} className="object-cover w-full h-32"/>
-                                <div className="absolute top-1 right-1 flex gap-1">
-                                    <label
-                                        className="cursor-pointer text-xs bg-primary-200 text-primary-800 px-2 py-1 rounded hover:bg-primary-300">
-                                        Replace
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            style={{display: 'none'}}
-                                            onChange={e => {
-                                                if (e.target.files && e.target.files[0]) handleReplace(idx, e.target.files[0]);
-                                            }}
-                                        />
-                                    </label>
-                                    <button
-                                        className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200"
-                                        onClick={() => handleRemove(idx)}
-                                        type="button"
-                                    >Remove
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                    <div className="flex justify-end gap-2 mt-4">
-                        <button className="btn-secondary" onClick={onClose}>Cancel</button>
-                        <button
-                            className="btn-primary"
-                            style={{background: '#a259e6'}}
-                            disabled={!files.length || files.some(f => f.size > 10 * 1024 * 1024) || uploading}
-                            onClick={async () => {
-                                setErrorMsg(null);
-                                if (files.length === 0) return;
-                                if (files.some(f => f.size > 10 * 1024 * 1024)) {
-                                    setErrorMsg('Each image must be 10MB or less.');
-                                    return;
-                                }
-                                setUploading(true);
-                                try {
-                                    const formData = new FormData();
-                                    files.forEach(f => formData.append('images', f));
-                                    const token = localStorage.getItem('token');
-                                    const res = await fetch(API_ENDPOINTS.images.upload, {
-                                        method: 'POST',
-                                        body: formData,
-                                        headers: token ? {Authorization: `Bearer ${token}`} : undefined,
-                                    });
-                                    if (!res.ok) {
-                                        const err = await res.json().catch(() => ({}));
-                                        throw new Error(err.message || 'Failed to upload images');
-                                    }
-                                    // Optionally handle response data
-                                    setFiles([]);
-                                    setUploading(false);
-                                    onClose();
-                                } catch (err: any) {
-                                    setUploading(false);
-                                    setErrorMsg(err.message || 'Failed to upload images');
-                                }
-                            }}
-                        >{uploading ? 'Uploading...' : 'Submit'}</button>
-                    </div>
-                    {errorMsg && (
-                        <div className="text-red-600 mt-2 text-sm text-center">{errorMsg}</div>
-                    )}
-                </div>
-            </div>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <svg className="animate-spin h-12 w-12 text-purple-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <p className="text-gray-600 dark:text-gray-400">Loading your profile...</p>
         </div>
+      </div>
     );
-}
+  }
 
-export default function HousehelpDashboard() {
-    const [profile, setProfile] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [activeSection, setActiveSection] = useState(househelpSections[0].id);
-    const [editSection, setEditSection] = useState<string | null>(null);
-    const [form, setForm] = useState<any>({});
-    const [saving, setSaving] = useState(false);
-    const [success, setSuccess] = useState<string | null>(null);
-    // For image upload modal
-    const [showImageModal, setShowImageModal] = useState(false);
-    const [imageFiles, setImageFiles] = useState<File[]>([]);
-
-    // For user image carousel (fix hook order error)
-    const [userImages, setUserImages] = useState<any[]>([]);
-    const [carouselIdx, setCarouselIdx] = useState(0);
-    useEffect(() => {
-        // Only fetch once per mount of this section
-        const fetchImages = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                const res = await fetch(API_ENDPOINTS.images.user, {
-                    headers: token ? {Authorization: `Bearer ${token}`} : undefined,
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    setUserImages(Array.isArray(data.images) ? data.images : []);
-                    setCarouselIdx(0);
-                }
-            } catch {
-            }
-        };
-        fetchImages();
-    }, []);
-
-    useEffect(() => {
-        const fetchProfile = async () => {
-            setLoading(true);
-            setError(null);
-            try {
-                const token = localStorage.getItem("token");
-                if (!token) throw new Error("Not authenticated");
-                const res = await fetch(API_ENDPOINTS.profile.househelp.me, {
-                    headers: {Authorization: `Bearer ${token}`},
-                });
-                if (!res.ok) throw new Error("Failed to fetch profile");
-                const data = await res.json();
-                setProfile(data);
-            } catch (err: any) {
-                setError(err.message || "Failed to load profile");
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchProfile();
-    }, []);
-
-    // Handle edit state
-    const handleEdit = (sectionId: string) => {
-        setEditSection(sectionId);
-        setForm({...profile});
-        setSuccess(null);
-        setError(null);
-    };
-    const handleCancel = () => {
-        setEditSection(null);
-        setForm({});
-        setSuccess(null);
-        setError(null);
-    };
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-        const {name, value} = e.target;
-        setForm((prev: any) => ({...prev, [name]: value}));
-    };
-    const handleSave = async (sectionId: string) => {
-        setSaving(true);
-        setError(null);
-        setSuccess(null);
-        try {
-            const token = localStorage.getItem("token");
-            if (!token) throw new Error("Not authenticated");
-            let updateFields: any = {};
-            if (sectionId === "profile-overview") {
-                updateFields = {
-                    bio: form.bio,
-                    experience: form.experience,
-                    hourly_rate: form.hourly_rate,
-                    skills: form.skills,
-                    languages: form.languages,
-                    specialities: form.specialities,
-                    references: form.references,
-                };
-            } else if (sectionId === "personal-details") {
-                updateFields = {
-                    "national_id_no;not null": form["national_id_no;not null"],
-                    telephone_alt: form.telephone_alt,
-                    current_location: form.current_location,
-                    home_area: form.home_area,
-                    nearest_shopping_center: form.nearest_shopping_center,
-                    person_known: form.person_known,
-                    person_known_tel: form.person_known_tel,
-                    nearest_school: form.nearest_school,
-                    nearest_church: form.nearest_church,
-                    county_of_residence: form.county_of_residence,
-                    sub_county: form.sub_county,
-                    location: form.location,
-                    village: form.village,
-                    marital_status: form.marital_status,
-                    no_of_children_and_age: form.no_of_children_and_age,
-                };
-            } else if (sectionId === "family-contacts") {
-                updateFields = {
-                    fathers_name: form.fathers_name,
-                    fathers_tel: form.fathers_tel,
-                    mothers_name: form.mothers_name,
-                    mothers_tel: form.mothers_tel,
-                    next_of_kin: form.next_of_kin,
-                    next_of_kin_tel: form.next_of_kin_tel,
-                    home_contact: form.home_contact,
-                    home_contact_tel: form.home_contact_tel,
-                };
-            } else if (sectionId === "education-health") {
-                updateFields = {
-                    education_level: form.education_level,
-                    school_name: form.school_name,
-                    diseases: form.diseases,
-                };
-            } else if (sectionId === "employment-salary") {
-                updateFields = {
-                    household_id: form.household_id,
-                    bureau_id: form.bureau_id,
-                    salary_expectation: form.salary_expectation,
-                    salary_frequency: form.salary_frequency,
-                    availability: form.availability,
-                    signature: form.signature,
-                    signed_date: form.signed_date,
-                };
-            }
-            const res = await fetch(API_ENDPOINTS.profile.househelp.me, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify(updateFields),
-            });
-            if (!res.ok) throw new Error("Failed to update profile");
-            const updated = await res.json();
-            setProfile(updated);
-            setEditSection(null);
-            setSuccess("Profile updated successfully.");
-        } catch (err: any) {
-            setError(err.message || "Failed to update profile");
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    const [uploadingImages, setUploadingImages] = useState(false);
-    const onUploadImages = async () => {
-        setUploadingImages(true);
-        try {
-            if (imageFiles.length === 0) return;
-            if (imageFiles.some(f => f.size > 10 * 1024 * 1024)) {
-                alert('Each image must be 10MB or less.');
-                setUploadingImages(false);
-                return;
-            }
-            const formData = new FormData();
-            imageFiles.forEach(f => formData.append('images', f));
-            const token = localStorage.getItem('token');
-            const res = await fetch(API_ENDPOINTS.images.upload, {
-                method: 'POST',
-                body: formData,
-                headers: token ? {Authorization: `Bearer ${token}`} : undefined,
-            });
-            if (!res.ok) {
-                const err = await res.json().catch(() => ({}));
-                throw new Error(err.message || 'Failed to upload images');
-            }
-            setImageFiles([]);
-            setShowImageModal(false);
-            // Refresh images
-            const imgRes = await fetch(API_ENDPOINTS.images.user, {
-                headers: token ? {Authorization: `Bearer ${token}`} : undefined,
-            });
-            if (imgRes.ok) {
-                const data = await imgRes.json();
-                setUserImages(Array.isArray(data.images) ? data.images : []);
-                setCarouselIdx(0);
-            }
-        } catch (err: any) {
-            alert(err.message || 'Failed to upload images');
-        } finally {
-            setUploadingImages(false);
-        }
-    };
-    function renderSection(sectionId: string) {
-        if (sectionId === "profile-overview") {
-            return (
-                <ProfileOverviewSection
-                    profile={profile}
-                    onEdit={() => handleEdit(sectionId)}
-                    onShowImageModal={() => setShowImageModal(true)}
-                    userImages={userImages}
-                    carouselIdx={carouselIdx}
-                    setCarouselIdx={setCarouselIdx}
-                    showImageModal={showImageModal}
-                    imageFiles={imageFiles}
-                    setImageFiles={setImageFiles}
-                    onCloseImageModal={()=>setShowImageModal(false)}
-                    onUploadImages={onUploadImages}
-                    uploadingImages={uploadingImages}
-                />
-            );
-        }
-        if (sectionId === "personal-details") {
-            if (editSection === sectionId) {
-                return (
-                    <PersonalDetailsEditSection
-                        form={form}
-                        onChange={handleChange}
-                        onSave={(e: React.FormEvent) => {
-                            e.preventDefault();
-                            handleSave(sectionId);
-                        }}
-                        onCancel={handleCancel}
-                        saving={saving}
-                        error={error}
-                        success={success}
-                    />
-                );
-            }
-            return (
-                <PersonalDetailsSection
-                    profile={profile}
-                    onEdit={() => handleEdit(sectionId)}
-                />
-            );
-        }
-        if (sectionId === "family-contacts") {
-            if (editSection === sectionId) {
-                return (
-                    <FamilyContactsEditSection
-                        form={form}
-                        onChange={handleChange}
-                        onSave={(e: React.FormEvent) => {
-                            e.preventDefault();
-                            handleSave(sectionId);
-                        }}
-                        onCancel={handleCancel}
-                        saving={saving}
-                        error={error}
-                        success={success}
-                    />
-                );
-            }
-            return (
-                <FamilyContactsSection
-                    profile={profile}
-                    onEdit={() => handleEdit(sectionId)}
-                />
-            );
-        }
-        if (sectionId === "education-health") {
-            if (editSection === sectionId) {
-                return (
-                    <EducationHealthEditSection
-                        form={form}
-                        onChange={handleChange}
-                        onSave={(e: React.FormEvent) => {
-                            e.preventDefault();
-                            handleSave(sectionId);
-                        }}
-                        onCancel={handleCancel}
-                        saving={saving}
-                        error={error}
-                        success={success}
-                    />
-                );
-            }
-            return (
-                <EducationHealthSection
-                    profile={profile}
-                    onEdit={() => handleEdit(sectionId)}
-                />
-            );
-        }
-        if (sectionId === "employment-salary") {
-            if (editSection === sectionId) {
-                return (
-                    <EmploymentSalaryEditSection
-                        form={form}
-                        onChange={handleChange}
-                        onSave={(e: React.FormEvent) => {
-                            e.preventDefault();
-                            handleSave(sectionId);
-                        }}
-                        onCancel={handleCancel}
-                        saving={saving}
-                        error={error}
-                        success={success}
-                    />
-                );
-            }
-            return (
-                <EmploymentSalarySection
-                    profile={profile}
-                    onEdit={() => handleEdit(sectionId)}
-                />
-            );
-        }
-        return null;
-    }
-
+  if (error || hasError) {
     return (
-        <>
-            <Navigation/>
-            <div className="relative min-h-screen w-full bg-gradient-to-br from-purple-50 via-white to-purple-100 py-8">
-                <FloatingBubbles variant="light" density="low" />
-                <div className="mx-auto w-full max-w-6xl flex flex-col sm:flex-row gap-2 items-start overflow-x-hidden">
-                    {/* Sidebar */}
-                    <aside
-                        className="w-full sm:w-56 bg-gradient-to-br from-purple-50 to-white border-r-2 border-purple-200 p-4 rounded-2xl shadow-lg flex flex-col space-y-2 mb-4 sm:mb-0">
-                        {househelpSections.map((section) => (
-                            <button
-                                key={section.id}
-                                onClick={() => setActiveSection(section.id)}
-                                className={`block text-left w-full px-4 py-2 rounded-lg text-base font-medium transition-colors duration-150
-                                ${activeSection === section.id
-                                    ? "bg-purple-100 text-purple-600 font-bold"
-                                    : "text-gray-700 hover:bg-purple-50 hover:text-purple-600"}
-                                `}
-                            >
-                                {section.label}
-                            </button>
-                        ))}
-                    </aside>
-                    {/* Main Content */}
-                    <section className="flex-1 min-w-0">
-                        <div className="w-full max-w-2xl bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8">
-                            {renderSection(activeSection)}
-                        </div>
-                    </section>
-                </div>
-            </div>
-        </>
+      <div className="max-w-2xl mx-auto mt-8">
+        <div className="p-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">⚠️</span>
+            <p className="font-semibold text-red-800 dark:text-red-400">{error || "Something went wrong"}</p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => window.location.reload()}
+              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Reload Page
+            </button>
+            <button
+              onClick={() => navigate('/profile-setup/househelp')}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            >
+              Complete Profile Setup
+            </button>
+          </div>
+        </div>
+      </div>
     );
+  }
+
+  if (!profile) {
+    return (
+      <div className="max-w-2xl mx-auto mt-8">
+        <div className="p-6 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-500/30">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">📝</span>
+            <p className="font-semibold text-yellow-800 dark:text-yellow-400">No profile found</p>
+          </div>
+          <p className="text-gray-700 dark:text-gray-300 mb-4">You haven't completed your househelp profile yet.</p>
+          <button
+            onClick={() => navigate('/profile-setup/househelp')}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 transition-all"
+          >
+            Complete Profile Setup
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
+      <main className="flex-1 py-8">
+    <div className="max-w-5xl mx-auto px-4">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 sm:p-8 text-white rounded-t-3xl">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">👤 My Househelp Profile</h1>
+            <p className="text-purple-100 text-sm sm:text-base">View and manage your professional information</p>
+          </div>
+          <button
+            onClick={() => navigate('/househelp/public-profile')}
+            className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
+          >
+            👁️ View Public Profile
+          </button>
+        </div>
+      </div>
+
+      {/* Personal Information */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👤 Personal Information</h2>
+          <button
+            onClick={() => handleEditSection('gender')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Name</span>
+            <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">
+              {profile.first_name} {profile.last_name}
+            </p>
+          </div>
+          <div>
+            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Gender</span>
+            <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.gender || 'Not specified'}</p>
+          </div>
+          {profile.date_of_birth && (
+            <div>
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Date of Birth</span>
+              <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">
+                {new Date(profile.date_of_birth).toLocaleDateString()}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Experience & Skills */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">💼 Experience & Skills</h2>
+          <button
+            onClick={() => handleEditSection('experience')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        <div className="space-y-4">
+          <div>
+            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Years of Experience</span>
+            <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">
+              {profile.years_of_experience ? `${profile.years_of_experience} years` : 'Not specified'}
+            </p>
+          </div>
+          {profile.certifications && Array.isArray(profile.certifications) && profile.certifications.length > 0 && (
+            <div>
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Certifications</span>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {profile.certifications.map((cert, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-sm">
+                    {cert}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+          {profile.languages && Array.isArray(profile.languages) && profile.languages.length > 0 && (
+            <div>
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Languages</span>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {profile.languages.map((lang, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full text-sm">
+                    {lang}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Work Preferences */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">⚙️ Work Preferences</h2>
+          <button
+            onClick={() => handleEditSection('nannytype')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <p className="font-semibold text-purple-900 dark:text-purple-100">👶 Work with Kids</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {profile.work_with_kids ? 'Yes' : 'No'}
+              </p>
+            </div>
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <p className="font-semibold text-purple-900 dark:text-purple-100">🐾 Work with Pets</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {profile.work_with_pets ? 'Yes' : 'No'}
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {profile.live_in && (
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 Live-in Available</p>
+              </div>
+            )}
+            {profile.day_worker && (
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                <p className="font-semibold text-purple-900 dark:text-purple-100">☀️ Day Worker Available</p>
+              </div>
+            )}
+          </div>
+          {profile.available_from && (
+            <div>
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Available From</span>
+              <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">
+                {new Date(profile.available_from).toLocaleDateString()}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Salary Expectations */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">💰 Salary Expectations</h2>
+          <button
+            onClick={() => handleEditSection('salary')}
+            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Expected Salary</span>
+            <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">
+              {profile.salary_expectation ? `KES ${profile.salary_expectation.toLocaleString()}` : 'Not specified'}
+            </p>
+          </div>
+          {profile.salary_frequency && (
+            <div>
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Frequency</span>
+              <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">
+                {profile.salary_frequency}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bio */}
+      {profile.bio && (
+        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">📝 About Me</h2>
+            <button
+              onClick={() => handleEditSection('bio')}
+              className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            >
+              ✏️ Edit
+            </button>
+          </div>
+          <p className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio}</p>
+        </div>
+      )}
+    </div>
+      </main>
+      </PurpleThemeWrapper>
+      <Footer />
+    </div>
+  );
 }
 
-// Error boundary for better error handling
 export { ErrorBoundary } from "~/components/ErrorBoundary";
