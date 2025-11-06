@@ -1,6 +1,6 @@
 import type { Config } from "@react-router/dev/config";
 
 export default {
-  // SSR is enabled
+  // Build with SSR enabled
   ssr: true,
 } satisfies Config;

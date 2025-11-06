@@ -11,14 +11,36 @@ app.use(cors());
 // Serve built client assets with long-term caching
 app.use(
   "/assets",
-  express.static("build/client/assets", { immutable: true, maxAge: "1y" })
+  express.static("build/client/assets", {
+    setHeaders(res) {
+      res.setHeader("Cache-Control", "no-store");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    },
+  })
 );
 
 // Serve other static assets from build/client
-app.use(express.static("build/client", { maxAge: "1h" }));
+app.use(
+  express.static("build/client", {
+    setHeaders(res) {
+      res.setHeader("Cache-Control", "no-store");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    },
+  })
+);
 
 // Serve other static assets from /public with shorter cache
-app.use(express.static("public"));
+app.use(
+  express.static("public", {
+    setHeaders(res) {
+      res.setHeader("Cache-Control", "no-store");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+    },
+  })
+);
 console.log("We reached here2")
 
 // Lightweight health endpoint (in addition to Remix /health route)
