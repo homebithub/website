@@ -1,10 +1,12 @@
 import React, { useEffect } from "react";
 import { Navigation } from "~/components/Navigation";
+import { FloatingBubbles } from '~/components/ui/FloatingBubbles';
 import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
 import { useAuth } from "~/contexts/AuthContext";
-import { useNavigate, useLocation } from "@remix-run/react";
+import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
+import { API_ENDPOINTS } from '~/config/api';
 
 interface UserProfile {
   id: string;
@@ -50,7 +52,7 @@ export default function ProfilePage() {
       try {
         setError(null);
         setSuccess(null);
-        const res = await fetch('http://localhost:8080/api/v1/auth/me', {
+        const res = await fetch(API_ENDPOINTS.auth.me, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
@@ -93,7 +95,7 @@ export default function ProfilePage() {
     try {
       const token = localStorage.getItem('token');
       if (!token) throw new Error('No auth token');
-      const res = await fetch('http://localhost:8080/api/v1/auth/me', {
+      const res = await fetch(API_ENDPOINTS.auth.me, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -123,28 +125,29 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col w-full bg-slate-950">
+    <div className="min-h-screen flex flex-col w-full">
       <Navigation />
-      <div className="min-h-screen flex flex-col w-full bg-slate-950">
+      <div className="relative min-h-screen flex flex-col w-full bg-gradient-to-br from-purple-50 via-white to-purple-100">
+        <FloatingBubbles variant="light" density="low" />
         <div className="mx-auto w-full max-w-md sm:max-w-lg flex flex-col items-center">
-          <div className="w-full bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-6 mt-4">
-            <h1 className="text-3xl font-bold text-primary mb-4 text-center dark:text-primary-300">Profile</h1>
-            <p className="text-center text-gray-500 dark:text-gray-300 mb-6">Manage your profile information. Only email, name and phone are editable.</p>
+          <div className="w-full bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-8 mt-4">
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 text-center">My Profile 👤</h1>
+            <p className="text-center text-gray-600 mb-6">Manage your profile information. Only email, name and phone are editable.</p>
 
-            {error && <div className="bg-red-100 text-red-700 px-3 py-2 rounded mb-3 text-center">{error}</div>}
-            {success && <div className="bg-green-100 text-green-700 px-3 py-2 rounded mb-3 text-center">{success}</div>}
+            {error && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-4 shadow-md mb-4"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800">{error}</p></div></div>}
+            {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-4 shadow-md mb-4"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800">{success}</p></div></div>}
 
             <form className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">First Name</label>
+                  <label className="block text-sm font-semibold mb-2 text-purple-700">First Name</label>
                   {editMode ? (
                     <input
                       type="text"
                       name="first_name"
                       value={form.first_name}
                       onChange={handleChange}
-                      className="input input-bordered w-full rounded-lg px-3 py-2 text-base border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900"
+                      className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                       autoComplete="given-name"
                     />
                   ) : (
@@ -154,14 +157,14 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Last Name</label>
+                  <label className="block text-sm font-semibold mb-2 text-purple-700">Last Name</label>
                   {editMode ? (
                     <input
                       type="text"
                       name="last_name"
                       value={form.last_name}
                       onChange={handleChange}
-                      className="input input-bordered w-full rounded-lg px-3 py-2 text-base border-primary-300 dark:border-primary-600 bg-white dark:bg-slate-900"
+                      className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                       autoComplete="family-name"
                     />
                   ) : (
@@ -172,7 +175,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div className="relative">
-                <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Email</label>
+                <label className="block text-sm font-semibold mb-2 text-purple-700">Email</label>
                 <div className="flex items-center">
                   <div className="flex-1 text-base text-gray-900 dark:text-gray-100 font-medium">
                     {form.email || <span className="text-gray-400">-</span>}
@@ -188,7 +191,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div className="relative">
-                <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Phone</label>
+                <label className="block text-sm font-semibold mb-2 text-purple-700">Phone</label>
                 <div className="flex items-center">
                   <div className="flex-1 text-base text-gray-900 dark:text-gray-100 font-medium">
                     {form.phone || <span className="text-gray-400">-</span>}
@@ -267,25 +270,25 @@ export default function ProfilePage() {
                 {!editMode && (
                   <button
                     type="button"
-                    className="btn-primary px-6 py-2 rounded-lg font-semibold"
+                    className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
                     onClick={handleEdit}
                   >
-                    Edit
+                    ✏️ Edit Profile
                   </button>
                 )}
                 {editMode && (
                   <>
                     <button
                       type="button"
-                      className="btn-primary px-6 py-2 rounded-lg font-semibold disabled:opacity-60"
+                      className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
                       onClick={handleSave}
                       disabled={saving}
                     >
-                      {saving ? 'Saving...' : 'Save'}
+                      {saving ? '✨ Saving...' : '🚀 Save Changes'}
                     </button>
                     <button
                       type="button"
-                      className="btn-secondary px-6 py-2 rounded-lg font-semibold"
+                      className="px-6 py-3 rounded-xl border-2 border-purple-200 bg-white text-purple-600 font-semibold hover:bg-purple-50 hover:border-purple-300 transition-all"
                       onClick={handleCancel}
                       disabled={saving}
                     >
@@ -302,3 +305,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

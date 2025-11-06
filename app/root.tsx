@@ -1,35 +1,36 @@
-import { Links, LiveReload, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "@remix-run/react";
+import { Links, Meta, Outlet, Scripts, ScrollRestoration, useLoaderData } from "react-router";
 import React from "react";
-import { cssBundleHref } from "@remix-run/css-bundle";
-import stylesheet from "~/tailwind.css";
-import glowCardStyles from "~/styles/glow-card.css";
-import { json, type LinksFunction, type HeadersFunction } from "@remix-run/node";
+import type { Route } from "./+types/root";
 
 import { AuthProvider } from "~/contexts/AuthContext";
+import { ThemeProvider } from "~/contexts/ThemeContext";
+import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
+import { API_BASE_URL } from '~/config/api';
+import "./tailwind.css";
 
-export const links: LinksFunction = () => [
-    ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] as const : []),
-    { rel: "stylesheet", href: stylesheet },
-    { rel: "stylesheet", href: glowCardStyles },
-];
+export const links: Route.LinksFunction = () => [];
 
-export const headers: HeadersFunction = () => ({
+export const headers: Route.HeadersFunction = () => ({
     "Cache-Control": "no-store",
 });
 
 export function loader() {
-    return json({
+    // Get API base URL from environment (server-side)
+    const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
+    
+    return {
         ENV: {
             GOOGLE_CLIENT_ID:
                 process.env.GOOGLE_CLIENT_ID ||
                 "562184165636-klkgj2b74194819lgh5netj4s2e343o2.apps.googleusercontent.com",
-            AUTH_API_BASE_URL: process.env.AUTH_API_BASE_URL || "https://api.homexpert.co.ke/auth",
+            API_BASE_URL: apiBaseUrl,
+            AUTH_API_BASE_URL: apiBaseUrl, // Same as API_BASE_URL for local dev
         },
-    });
+    };
 }
 
 export default function App() {
-    const { ENV } = useLoaderData<typeof loader>();
+    const { ENV } = useLoaderData<typeof loader>() || { ENV: { GOOGLE_CLIENT_ID: "", AUTH_API_BASE_URL: "" } };
     return (
         <html lang="en" className="h-full">
             <head>
@@ -43,12 +44,16 @@ export default function App() {
                 <link rel="icon" href="/logo_512x512.png" type="image/png" sizes="32x32" />
                 <link rel="icon" href="/logo_512x512.png" type="image/png" sizes="16x16" />
                 <link rel="apple-touch-icon" href="/logo_512x512.png" sizes="180x180" />
-                <title>HomeXpert</title>
+                <title>Homebit</title>
             </head>
-            <body className="min-h-screen bg-white text-slate-900 font-sans antialiased">
-                <AuthProvider>
-                    <Outlet/>
-                </AuthProvider>
+            <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300">
+                <ThemeProvider>
+                    <AuthProvider>
+                        <ProfileSetupProvider>
+                            <Outlet/>
+                        </ProfileSetupProvider>
+                    </AuthProvider>
+                </ThemeProvider>
                 <ScrollRestoration/>
                 {/* Expose server env to client */}
                 <script
@@ -57,7 +62,6 @@ export default function App() {
                     }}
                 />
                 <Scripts/>
-                <LiveReload/>
             </body>
         </html>
     );

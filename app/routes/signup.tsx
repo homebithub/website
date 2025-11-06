@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from '@remix-run/react';
+import { Link, useNavigate, useLocation } from 'react-router';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
@@ -10,6 +10,9 @@ import { Loading } from '~/components/Loading';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { FcGoogle } from 'react-icons/fc';
 import { Modal } from '~/components/features/Modal';
+import { API_BASE_URL } from '~/config/api';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 // Types for request and response
 export type SignupRequest = {
@@ -22,10 +25,16 @@ export type SignupRequest = {
 };
 
 export type SignupResponse = {
+    token?: string; // JWT token from backend
     user: {
         user_id: string;
+        first_name?: string;
+        last_name?: string;
+        phone?: string;
+        email?: string;
+        profile_type?: string;
     };
-    verification: {
+    verification?: {
         id: string;
         user_id: string;
         type: string;
@@ -42,11 +51,11 @@ export type SignupResponse = {
     };
 };
 
-const base_url = 'http://localhost:8080';
+const base_url = API_BASE_URL;
 
 // Profile type options - Bureau removed as they should not sign up through regular flow
 const profileOptions = [
-    { value: 'employer', label: 'Household' },
+    { value: 'household', label: 'Household' },
     { value: 'househelp', label: 'Househelp/Nanny' }
 ];
 
@@ -89,7 +98,7 @@ export default function SignupPage() {
                 navigate("/");
                 return;
             }
-            if (profileType === "employer" || profileType === "household") {
+            if (profileType === "household" || profileType === "household") {
                 navigate("/household/profile");
             } else if (profileType === "househelp") {
                 navigate("/househelp");
@@ -171,11 +180,15 @@ export default function SignupPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
+        console.log('[SIGNUP] Form submitted', form);
+        
         // Validate entire form
         const validation = validateForm(signupSchema, form);
         
         if (!validation.isValid) {
+            console.log('[SIGNUP] Validation failed:', validation.errors);
             setFieldErrors(validation.errors);
+            setError('Please fix the errors in the form');
             // Mark all fields as touched to show errors
             const allTouched = Object.keys(form).reduce((acc, key) => {
                 acc[key] = true;
@@ -185,9 +198,18 @@ export default function SignupPage() {
             return;
         }
         
+        console.log('[SIGNUP] Validation passed, making API call...');
+        
         setFormLoading(true);
         setError(null);
         setSuccess(null);
+        
+        // Clear any existing auth data before signup
+        localStorage.removeItem('token');
+        localStorage.removeItem('user_object');
+        localStorage.removeItem('user_id');
+        localStorage.removeItem('profile_type');
+        
         try {
             // Prepare payload
             let payload = { ...form };
@@ -201,11 +223,76 @@ export default function SignupPage() {
             });
             if (!res.ok) {
                 const err = await res.json();
+                console.log('[SIGNUP] Backend error response:', err);
+                
+                // Check if backend returned field-specific errors
+                if (err.errors && typeof err.errors === 'object') {
+                    // Map backend field names to frontend field names
+                    const backendErrors: { [key: string]: string } = {};
+                    Object.keys(err.errors).forEach(key => {
+                        backendErrors[key] = err.errors[key];
+                    });
+                    
+                    setFieldErrors(backendErrors);
+                    
+                    // Mark all error fields as touched
+                    const touchedErrorFields = Object.keys(backendErrors).reduce((acc, key) => {
+                        acc[key] = true;
+                        return acc;
+                    }, {} as { [key: string]: boolean });
+                    setTouchedFields(prev => ({ ...prev, ...touchedErrorFields }));
+                    
+                    // Set a general error message
+                    const errorCount = Object.keys(backendErrors).length;
+                    setError(`Please fix ${errorCount} error${errorCount > 1 ? 's' : ''} in the form`);
+                    return; // Don't throw, just return to show the errors
+                }
+                
+                // Handle conflict errors (e.g., duplicate phone number)
+                if (res.status === 409 && err.message) {
+                    // Show conflict error on the phone field
+                    if (err.message.toLowerCase().includes('phone')) {
+                        setFieldErrors({ phone: err.message });
+                        setTouchedFields(prev => ({ ...prev, phone: true }));
+                    }
+                    setError(err.message);
+                    return;
+                }
+                
+                // If no field-specific errors, throw with the general message
                 throw new Error(err.message || 'Signup failed');
             }
             const data: SignupResponse = await res.json();
-            // Pass verification object to the verify-otp page using navigation state
-            navigate('/verify-otp', { state: { verification: data.verification, bureauId } });
+            
+            console.log('Signup response:', data);
+            console.log('Verification data:', data.verification);
+            
+            // Store user data temporarily (before verification)
+            localStorage.setItem('user_id', data.user.user_id);
+            localStorage.setItem('profile_type', data.user.profile_type || form.profile_type);
+            
+            // DO NOT store token yet - wait until after OTP verification
+            // The token will be stored after successful OTP verification in verify-otp.tsx
+            
+            // Redirect to OTP verification with verification data
+            // The OTP page will handle the rest of the flow
+            if (data.verification) {
+                console.log('Redirecting to verify-otp with verification:', data.verification);
+                navigate('/verify-otp', { 
+                    state: { 
+                        verification: data.verification,
+                        profileType: form.profile_type 
+                    } 
+                });
+            } else {
+                // Fallback if no verification required (shouldn't happen)
+                console.error('No verification data in signup response!', data);
+                alert('Signup successful but verification data is missing. Please contact support.');
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                }
+                navigate('/');
+            }
         } catch (err: any) {
             const errorMessage = handleApiError(err, 'signup');
             setError(errorMessage);
@@ -233,9 +320,10 @@ export default function SignupPage() {
     }
 
     return (
-        <div className="min-h-screen flex flex-col bg-background bg-white" style={{backgroundColor: 'white'}}>
+        <div className="min-h-screen flex flex-col">
         <Navigation/>
-        <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
+        <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+        <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
             {/* Profile Selection Modal */}
             <Modal 
                 isOpen={isProfileModalOpen} 
@@ -246,33 +334,33 @@ export default function SignupPage() {
                 title="Sign Up"
             >
                 <div className="px-2 py-2">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-8 text-center">Choose your account type</h3>
-                    <div className="flex flex-col gap-5">
+                    <h3 className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-pink-400 mb-8 text-center">Choose your account type</h3>
+                    <div className="flex flex-col gap-4">
                         {profileOptions.map((option) => (
                             <button
                                 key={option.value}
                                 type="button"
                                 onClick={() => handleProfileTypeSelect(option.value)}
-                                className={`group relative p-6 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
+                                className={`group relative p-5 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
                                     form.profile_type === option.value 
-                                        ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-purple-100 shadow-lg' 
-                                        : 'border-gray-200 hover:border-purple-300 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-purple-100/50 hover:shadow-md'
+                                        ? 'border-purple-500 dark:border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/40 dark:to-pink-900/40 shadow-lg dark:shadow-glow-md' 
+                                        : 'border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-pink-50/50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 hover:shadow-md dark:hover:shadow-glow-sm bg-gray-50/50 dark:bg-gray-800/30'
                                 }`}
                             > 
-                                <div className="flex items-center">
-                                    <div className={`flex items-center justify-center w-6 h-6 border-2 rounded-full mr-4 transition-all duration-200 ${
+                                <div className="flex items-start gap-4">
+                                    <div className={`flex-shrink-0 flex items-center justify-center w-6 h-6 border-2 rounded-full mt-0.5 transition-all duration-200 ${
                                         form.profile_type === option.value 
-                                            ? 'bg-purple-600 border-purple-600' 
-                                            : 'border-gray-300 group-hover:border-purple-400'
+                                            ? 'bg-gradient-to-br from-purple-600 to-pink-600 border-purple-600 dark:border-purple-500 shadow-md' 
+                                            : 'border-gray-400 dark:border-gray-500 group-hover:border-purple-500 dark:group-hover:border-purple-400'
                                     }`}>
                                         {form.profile_type === option.value && (
-                                            <div className="w-3 h-3 bg-white rounded-full"></div>
+                                            <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
                                         )}
                                     </div>
                                     <div className="flex-1">
-                                        <h4 className="text-lg font-bold text-gray-900 mb-1">{option.label}</h4>
-                                        <p className="text-sm text-gray-600">
-                                            {option.value === 'employer' 
+                                        <h4 className="text-lg font-bold text-gray-900 dark:text-white mb-1.5">{option.label}</h4>
+                                        <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                                            {option.value === 'household' 
                                                 ? 'I need to hire help for my home and family needs' 
                                                 : 'I\'m looking for work opportunities and want to offer my services'
                                             }
@@ -288,7 +376,7 @@ export default function SignupPage() {
                             <button
                                 type="button"
                                 onClick={() => setIsProfileModalOpen(false)}
-                                className="px-8 py-3 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-colors duration-200 shadow-md hover:shadow-lg"
+                                className="glow-button px-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                             >
                                 Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label}
                             </button>
@@ -299,7 +387,7 @@ export default function SignupPage() {
                                 setIsProfileModalOpen(false);
                                 navigate('/');
                             }}
-                            className="px-8 py-3 bg-gray-200 text-gray-700 rounded-xl font-semibold hover:bg-gray-300 transition-colors duration-200"
+                            className="px-8 py-3.5 bg-gray-700/80 dark:bg-gray-800/80 text-gray-200 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-600 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-600 dark:border-gray-700"
                         >
                             Cancel
                         </button>
@@ -309,14 +397,14 @@ export default function SignupPage() {
             
             <div className="w-full max-w-4xl flex flex-col md:flex-row gap-8 justify-center items-stretch">
             {/* Right: Signup form card */}
-            <div className="card flex-1 bg-white border border-gray-100 p-8 rounded-xl shadow-lg w-full max-w-md">
+            <PurpleCard hover={false} glow={true} className="flex-1 p-8 sm:p-10 w-full max-w-md">
       <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl font-bold text-black text-center flex-1">Sign Up</h2>
+                <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent text-center flex-1">Join Us! 🎉</h2>
                 {form.profile_type && (
                     <button 
                         type="button" 
                         onClick={() => setIsProfileModalOpen(true)}
-                        className="text-sm text-primary-600 hover:text-primary-800 flex items-center"
+                        className="text-sm text-primary-600 dark:text-purple-400 hover:text-primary-700 dark:hover:text-purple-300 font-semibold hover:underline transition-colors flex items-center"
                     >
                         <span className="mr-1">Change profile: </span>
                         <span className="font-medium">{getSelectedProfileLabel()}</span>
@@ -324,18 +412,43 @@ export default function SignupPage() {
                 )}
             </div>
       <div className="text-center mb-4">
-        <span className="text-base text-gray-600 font-medium">Already have an account?</span>
+        <span className="text-base text-gray-600 dark:text-gray-300 font-medium">Already have an account?</span>
         <a href="/login"
-          className="ml-2 text-base text-primary-600 font-semibold hover:underline">Login</a>
+          className="ml-2 text-base text-primary-600 dark:text-purple-400 font-bold hover:text-primary-700 dark:hover:text-purple-300 hover:underline transition-colors">Login</a>
       </div>
       {error && (
-        <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center mb-4">
-          {error}
+        <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
+          <div className="flex items-center justify-center">
+            <span className="text-2xl mr-3">⚠️</span>
+            <p className="text-base font-semibold text-red-800">{error}</p>
+          </div>
         </div>
       )}
+      
+      {/* Google Sign Up - Primary Option */}
+      <div className="mb-6">
+    <button
+        type="button"
+        onClick={() => window.location.href = `${API_BASE_URL}/google`}
+        className="w-full inline-flex justify-center items-center px-6 py-4 border-2 border-purple-300 dark:border-purple-500/50 rounded-xl shadow-lg dark:shadow-glow bg-white dark:bg-[#13131a] text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:border-purple-400 dark:hover:border-purple-500/70 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+    >
+        <FcGoogle className="h-6 w-6 mr-3" />
+        Continue with Google
+    </button>
+</div>
+
+<div className="relative my-6">
+    <div className="absolute inset-0 flex items-center">
+        <div className="w-full border-t-2 border-purple-200 dark:border-purple-500/30"></div>
+    </div>
+    <div className="relative flex justify-center text-sm">
+        <span className="px-4 bg-white dark:bg-[#13131a] text-gray-500 dark:text-gray-400 font-medium">Or sign up with phone</span>
+    </div>
+</div>
+
       <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-slate-900 mb-1 font-medium">First Name</label>
+                            <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">First Name</label>
                             <input
                                 type="text"
                                 name="first_name"
@@ -343,12 +456,12 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
+                                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
                                     getFieldError('first_name') 
                                         ? 'border-red-300' 
                                         : isFieldValid('first_name')
                                         ? 'border-green-300'
-                                        : 'border-primary-200'
+                                        : 'border-purple-200'
                                 }`}
                             />
                             {getFieldError('first_name') && (
@@ -356,7 +469,7 @@ export default function SignupPage() {
                             )}
                         </div>
                         <div>
-                            <label className="block text-slate-900 mb-1 font-medium">Last Name</label>
+                            <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">Last Name</label>
                             <input
                                 type="text"
                                 name="last_name"
@@ -364,12 +477,12 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
+                                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
                                     getFieldError('last_name') 
                                         ? 'border-red-300' 
                                         : isFieldValid('last_name')
                                         ? 'border-green-300'
-                                        : 'border-primary-200'
+                                        : 'border-purple-200'
                                 }`}
                             />
                             {getFieldError('last_name') && (
@@ -378,7 +491,7 @@ export default function SignupPage() {
                         </div>
                          
                         <div>
-                            <label className="block text-slate-900 mb-1 font-medium">Password</label>
+                            <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">Password</label>
                             <input
                                 type="password"
                                 name="password"
@@ -386,12 +499,12 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
+                                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
                                     getFieldError('password') 
                                         ? 'border-red-300' 
                                         : isFieldValid('password')
                                         ? 'border-green-300'
-                                        : 'border-primary-200'
+                                        : 'border-purple-200'
                                 }`}
                             />
                             {getFieldError('password') && (
@@ -399,7 +512,7 @@ export default function SignupPage() {
                             )}
                         </div>
                         <div>
-    <label className="block text-slate-900 mb-1 font-medium">Phone</label>
+    <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">Phone</label>
     <input
         type="tel"
         name="phone"
@@ -407,12 +520,12 @@ export default function SignupPage() {
         onChange={handleChange}
         onBlur={handleBlur}
         required
-        className={`w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition ${
+        className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
             getFieldError('phone') 
                 ? 'border-red-300' 
                 : isFieldValid('phone')
                 ? 'border-green-300'
-                : 'border-primary-200'
+                : 'border-purple-200'
         }`}
         placeholder="0712345678"
     />
@@ -423,41 +536,25 @@ export default function SignupPage() {
 
 <button
     type="submit"
-    className="w-full bg-primary-700 text-white py-3 rounded-lg hover:bg-primary-800 transition-colors duration-200 font-semibold text-lg disabled:opacity-60"
-    disabled={formLoading || !form.profile_type}
+    className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+    disabled={formLoading || !form.profile_type || Object.keys(fieldErrors).some(key => fieldErrors[key]) || !form.first_name || !form.last_name || !form.password || !form.phone}
 >
-    {formLoading ? 'Signing up...' : 'Sign Up'}
+    {formLoading ? '✨ Signing up...' : '🚀 Sign Up'}
 </button>
-{!form.profile_type && (
+{(!form.profile_type || !form.first_name || !form.last_name || !form.password || !form.phone) && (
     <p className="text-amber-600 text-sm mt-2 text-center">
-        Please select a profile type to continue
+        Please fill in all required fields to continue
     </p>
 )}
-
-<div className="relative my-6">
-    <div className="absolute inset-0 flex items-center">
-        <div className="w-full border-t border-gray-300"></div>
-    </div>
-    <div className="relative flex justify-center text-sm">
-        <span className="px-2 bg-white text-gray-500">Or continue with</span>
-    </div>
-</div>
-
-<div className="mt-6 flex flex-col gap-3">
-    <button
-        type="button"
-        onClick={() => window.location.href = 'http://localhost:8080/auth/google'}
-        className="w-full inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors duration-200"
-    >
-        <FcGoogle className="h-5 w-5 mr-2" />
-        Sign in with Google
-    </button>
-</div>
 </form>
-</div>
+</PurpleCard>
 </div>
 </main>
+</PurpleThemeWrapper>
 <Footer/>
 </div>
     );
 }
+
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

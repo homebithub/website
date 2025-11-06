@@ -1,7 +1,12 @@
 import React, { useState } from "react";
-import { Link, useSearchParams, useNavigate } from "@remix-run/react";
+import { Link, useSearchParams, useNavigate } from "react-router";
 import { Error } from "~/components/Error";
 import { Loading } from "~/components/Loading";
+import { Navigation } from "~/components/Navigation";
+import { Footer } from "~/components/Footer";
+import { API_BASE_URL } from '~/config/api';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 interface PasswordStrength {
   score: number;
@@ -72,7 +77,7 @@ export default function ResetPassword() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8080/auth/reset-password", {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/reset-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -140,20 +145,26 @@ export default function ResetPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+      <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-            Reset your password
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            Reset Password 🔐
           </h1>
-          <p className="mt-2 text-slate-600 dark:text-slate-400">
+          <p className="text-gray-600 text-base">
             Enter your new password below
           </p>
         </div>
 
         {error && (
-          <div className="mt-4">
-            <Error message={error} />
+          <div className="mt-6 mb-4 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
+            <div className="flex items-center justify-center">
+              <span className="text-2xl mr-3">⚠️</span>
+              <p className="text-base font-semibold text-red-800">{error}</p>
+            </div>
           </div>
         )}
 
@@ -161,7 +172,7 @@ export default function ResetPassword() {
           <div>
             <label
               htmlFor="password"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+              className="block text-sm font-semibold text-purple-700 mb-2"
             >
               New password
             </label>
@@ -174,7 +185,7 @@ export default function ResetPassword() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white sm:text-sm"
+                className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
             {formData.password && (
@@ -195,7 +206,7 @@ export default function ResetPassword() {
           <div>
             <label
               htmlFor="confirmPassword"
-              className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+              className="block text-sm font-semibold text-purple-700 mb-2"
             >
               Confirm new password
             </label>
@@ -208,7 +219,7 @@ export default function ResetPassword() {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 dark:bg-slate-700 dark:border-slate-600 dark:text-white sm:text-sm"
+                className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
             {formData.confirmPassword && formData.password !== formData.confirmPassword && (
@@ -226,9 +237,9 @@ export default function ResetPassword() {
                 formData.password !== formData.confirmPassword ||
                 passwordStrength.score < 3
               }
-              className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
-              {loading ? "Resetting..." : "Reset password"}
+              {loading ? "✨ Resetting..." : "🚀 Reset Password"}
             </button>
           </div>
         </form>
@@ -238,13 +249,18 @@ export default function ResetPassword() {
             Remember your password?{" "}
             <Link
               to="/login"
-              className="font-medium text-teal-600 hover:text-teal-500 dark:text-teal-400 dark:hover:text-teal-300"
+              className="font-bold text-purple-600 hover:text-purple-700 hover:underline transition-colors"
             >
               Sign in
             </Link>
           </p>
         </div>
-      </div>
+      </PurpleCard>
+      </main>
+      </PurpleThemeWrapper>
+      <Footer />
     </div>
   );
 } 
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

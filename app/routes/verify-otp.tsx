@@ -1,10 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from '@remix-run/react';
+import { useLocation, useNavigate } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { handleApiError } from '~/utils/errorMessages';
-import { HouseholdProfileModal } from '~/components/modals/HouseholdProfileModal';
+// Temporarily commented out to debug module loading issue
+// import { HouseholdProfileModal } from '~/components/modals/HouseholdProfileModal';
 import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
+import { API_BASE_URL } from '~/config/api';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 export default function VerifyOtpPage() {
   // UI state for changing phone
@@ -44,7 +48,7 @@ export default function VerifyOtpPage() {
     
     try {
       if(verification.type === 'phone'){
-      const res = await fetch('http://localhost:8080/api/v1/auth/update-phone', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/update-phone`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: newPhone, user_id: verification?.user_id }),
@@ -63,7 +67,7 @@ export default function VerifyOtpPage() {
         setLastTriedOtp('');
       }
     }else{
-      const res = await fetch('http://localhost:8080/api/v1/auth/forgot-password', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ phone: newPhone,  }),
@@ -92,12 +96,24 @@ export default function VerifyOtpPage() {
   const location = useLocation();
   const navigate = useNavigate();
   // Check if state exists
-  const locationState = (location.state || {}) as { verification?: any, bureauId?: string };
+  const locationState = (location.state || {}) as { verification?: any, bureauId?: string, afterEmailVerification?: boolean };
   const [verification, setVerification] = useState(locationState.verification);
+  const afterEmailVerification = locationState.afterEmailVerification;
+  
+  // Debug logging
+  React.useEffect(() => {
+    console.log('verify-otp mounted');
+    console.log('Location state:', locationState);
+    console.log('Verification:', verification);
+    console.log('After email verification:', afterEmailVerification);
+  }, []);
+  
+  // Redirect to signup if no verification data (user typed URL directly)
   React.useEffect(() => {
     if (!verification) {
-      // Optionally, redirect to signup if state is missing
-      navigate('/signup');
+      console.warn('No verification data - redirecting to signup');
+      console.warn('Location state was:', locationState);
+      navigate('/signup', { replace: true });
     }
   }, [verification, navigate]);
   // const [searchParams] = useSearchParams();
@@ -169,7 +185,7 @@ export default function VerifyOtpPage() {
     setOtpError(null);
     try {
       // Call your backend OTP verification endpoint here
-      const res = await fetch('http://localhost:8080/api/v1/verifications/verify-otp', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({  user_id, verification_type: verification.type, otp }),
@@ -208,13 +224,35 @@ export default function VerifyOtpPage() {
             return;
           }
           
-          // Handle both 'household' and 'employer' profile types
-          if (parsed.profile_type === 'household' || parsed.profile_type === 'employer') {
-            // Show profile completion modal for household users
-            setShowProfileModal(true);
-            return;
+          // Handle both 'household' and 'household' profile types
+          if (parsed.profile_type === 'household' || parsed.profile_type === 'household') {
+            // If this is after email verification, go to household setup
+            if (afterEmailVerification) {
+              path = '/household/setup';
+            } else {
+              // Otherwise, redirect to email verification first
+              navigate('/verify-email', { 
+                state: { 
+                  user_id: parsed.user_id || parsed.id,
+                  from: 'phone-verification'
+                } 
+              });
+              return;
+            }
           } else if (parsed.profile_type === 'househelp') {
-            path = '/househelp';
+            // If this is after email verification, go to househelp profile setup
+            if (afterEmailVerification) {
+              path = '/profile-setup/househelp';
+            } else {
+              // Otherwise, redirect to email verification first
+              navigate('/verify-email', { 
+                state: { 
+                  user_id: parsed.user_id || parsed.id,
+                  from: 'phone-verification'
+                } 
+              });
+              return;
+            }
           }
         }
         console.log('Redirecting to:', path);
@@ -236,7 +274,7 @@ export default function VerifyOtpPage() {
     setError(null);
     try {
       // Call your backend resend OTP endpoint here
-      const res = await fetch('http://localhost:8080/api/v1/verifications/resend-otp', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/resend-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ verification_id: verification?.id, user_id, verification_type: "phone" }),
@@ -311,7 +349,7 @@ export default function VerifyOtpPage() {
       if (!token) throw new Error('Not authenticated');
       
       // Save profile data to backend
-      const res = await fetch('http://localhost:8080/api/v1/profile/employer/complete', {
+      const res = await fetch(`${API_BASE_URL}/api/v1/profile/household/complete`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -344,11 +382,12 @@ export default function VerifyOtpPage() {
   };
 
   return (
-    <main className="min-h-screen bg-white dark:bg-slate-900 flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <section className="flex-grow flex items-center justify-center py-16 bg-gray-50 dark:bg-slate-800">
-        <div className="bg-white dark:bg-slate-900 rounded-lg shadow-md border border-gray-100 dark:border-slate-700 p-8 w-full max-w-md">
-          <h2 className="text-2xl font-bold text-primary-800 dark:text-primary-400 mb-6 text-center">Verify Your Account</h2>
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+        <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
+          <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 text-center">Verify Account 🔒</h2>
           {/* Hide all OTP UI if showChangePhone is true */}
           {!showChangePhone && (
             <>
@@ -374,21 +413,21 @@ export default function VerifyOtpPage() {
                 maxLength={6}
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className={`w-full px-4 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary-400 text-center tracking-widest text-lg bg-gray-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 shadow-sm ${
+                className={`w-full h-14 px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-center tracking-widest text-2xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm transition-all ${
                   otpError 
                     ? 'border-red-300 dark:border-red-600' 
                     : otpTouched && !otpError && otp.length === 6
                     ? 'border-green-300 dark:border-green-600'
-                    : 'border-primary-200 dark:border-primary-700'
+                    : 'border-purple-200 dark:border-purple-500/30'
                 }`}
                 placeholder="Enter OTP"
               />
-              {otpError && <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center">{otpError}</div>}
-              {error && <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center">{error}</div>}
-              {success && <div className="text-green-700 bg-green-50 border border-green-200 rounded p-2 text-center">OTP verified successfully!</div>}
+              {otpError && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-4 shadow-md"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800">{otpError}</p></div></div>}
+              {error && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-4 shadow-md"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800">{error}</p></div></div>}
+              {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-4 shadow-md"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800">OTP verified! ✔️</p></div></div>}
               <button
                 type="submit"
-                className="w-full bg-primary-700 text-white py-2 rounded-md hover:bg-primary-800 transition-colors duration-200 font-semibold disabled:opacity-60"
+                className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 disabled={
                   loading ||
                   otp.length !== 6 ||
@@ -398,7 +437,7 @@ export default function VerifyOtpPage() {
                   !!otpError
                 }
               >
-                {loading ? 'Verifying...' : 'Verify OTP'}
+                {loading ? '✨ Verifying...' : '🚀 Verify OTP'}
               </button>
             </form>
           )}
@@ -413,13 +452,13 @@ export default function VerifyOtpPage() {
                 <button
                   type="button"
                   onClick={handleResend}
-                  className="w-full mt-4 text-primary-700 hover:underline text-sm"
+                  className="w-full mt-4 text-purple-600 hover:text-purple-700 font-semibold hover:underline text-base transition-colors"
                   disabled={loading}
                 >
                   Resend OTP
                 </button>
               )}
-              {resent && <div className="text-green-600 text-center mt-2 text-sm">OTP resent!</div>}
+              {resent && <div className="text-green-600 text-center mt-2 text-sm font-semibold">✔️ OTP resent!</div>}
             </>
           )}
           {/* Change contact section: phone or email */}
@@ -428,7 +467,7 @@ export default function VerifyOtpPage() {
             <div className="text-center mt-4">
               <button
                 type="button"
-                className="text-primary-700 hover:underline text-xs"
+                className="text-purple-600 hover:text-purple-700 font-semibold hover:underline text-sm transition-colors"
                 onClick={() => setShowChangePhone(true)}
               >
                 {verification.type === 'phone' || verification.type === 'password_reset'
@@ -450,7 +489,7 @@ export default function VerifyOtpPage() {
                 setChangePhoneError(null);
                 setChangePhoneLoading(true);
                 try {
-                  const res = await fetch('http://localhost:8080/api/v1/auth/update-email', {
+                  const res = await fetch(`${API_BASE_URL}/api/v1/auth/update-email`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ email: newPhone, user_id }),
@@ -526,17 +565,21 @@ export default function VerifyOtpPage() {
             </form>
           )}
 
-        </div>
-      </section>
+        </PurpleCard>
+      </main>
+      </PurpleThemeWrapper>
       
-      {/* Household Profile Modal */}
-      <HouseholdProfileModal
+      {/* Household Profile Modal - Temporarily commented out to debug */}
+      {/* <HouseholdProfileModal
         isOpen={showProfileModal}
         onClose={handleProfileModalClose}
         onComplete={handleProfileComplete}
-      />
+      /> */}
       
       <Footer />
-    </main>
+    </div>
   );
 }
+
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

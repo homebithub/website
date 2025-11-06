@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../utils/errorMessages';
+import { API_BASE_URL } from '~/config/api';
 
 interface Pet {
   id: string;
@@ -46,6 +47,7 @@ const Pets: React.FC = () => {
   
   // Modal form state
   const [petType, setPetType] = useState("");
+  const [otherPetType, setOtherPetType] = useState("");
   const [requiresCare, setRequiresCare] = useState(false);
   const [careDetails, setCareDetails] = useState("");
   const [selectedTraits, setSelectedTraits] = useState<string[]>([]);
@@ -55,10 +57,46 @@ const Pets: React.FC = () => {
   const [petToDelete, setPetToDelete] = useState<Pet | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Load existing pets on mount
+  useEffect(() => {
+    const loadPets = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/v1/pets`, {
+          method: "GET",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        
+        if (res.ok) {
+          const petsData = await res.json();
+          if (petsData && petsData.length > 0) {
+            // Map backend response to frontend Pet interface
+            const mappedPets = petsData.map((p: any) => ({
+              id: p.id,
+              type: p.pet_type,
+              requiresCare: p.requires_care,
+              careDetails: p.care_details || "",
+              traits: p.traits || []
+            }));
+            setPets(mappedPets);
+            setHasPet("yes");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load pets:", err);
+      }
+    };
+    
+    loadPets();
+  }, []);
+
   const handleAddPet = () => {
     setShowModal(true);
     // Reset form
     setPetType("");
+    setOtherPetType("");
     setRequiresCare(false);
     setCareDetails("");
     setSelectedTraits([]);
@@ -81,19 +119,26 @@ const Pets: React.FC = () => {
       return;
     }
     
+    if (petType === "Other" && !otherPetType.trim()) {
+      setError("Please specify the pet type");
+      return;
+    }
+    
     setLoading(true);
     setError("");
     
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8080/api/v1/pets", {
+      const finalPetType = petType === "Other" ? otherPetType.trim() : petType;
+      
+      const response = await fetch(`${API_BASE_URL}/api/v1/pets`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          pet_type: petType.toLowerCase(),
+          pet_type: finalPetType.toLowerCase(),
           requires_care: requiresCare,
           care_details: requiresCare ? careDetails : "",
           traits: selectedTraits.map(trait => trait.toLowerCase())
@@ -120,6 +165,7 @@ const Pets: React.FC = () => {
       
       // Reset form
       setPetType("");
+      setOtherPetType("");
       setRequiresCare(false);
       setCareDetails("");
       setSelectedTraits([]);
@@ -143,7 +189,7 @@ const Pets: React.FC = () => {
     
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:8080/api/v1/pets/${petToDelete.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/pets/${petToDelete.id}`, {
         method: "DELETE",
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -172,82 +218,85 @@ const Pets: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-xl mx-auto bg-white border border-gray-100 p-8 rounded-xl shadow-lg flex flex-col gap-8">
-      <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Pets</h2>
+    <div className="w-full max-w-3xl mx-auto flex flex-col gap-8">
+      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">🐾 Pets</h2>
+      <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
+        Do you have any pets that need care?
+      </p>
       
-      <div className="flex flex-col gap-5">
-        <label className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${hasPet === "no" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+      <div className="flex flex-col gap-4">
+        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${hasPet === "no" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
             type="radio"
             name="hasPet"
             value="no"
             checked={hasPet === "no"}
             onChange={() => setHasPet("no")}
-            className="form-radio h-5 w-5 text-primary-600 border-gray-300 mr-2"
+            className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
           />
-          <span>I do not have a pet</span>
+          <span className="flex-1">❌ I do not have pets</span>
         </label>
         
-        <label className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${hasPet === "yes" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${hasPet === "yes" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
             type="radio"
             name="hasPet"
             value="yes"
             checked={hasPet === "yes"}
             onChange={() => setHasPet("yes")}
-            className="form-radio h-5 w-5 text-primary-600 border-gray-300 mr-2"
+            className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
           />
-          <span>I do have pet</span>
+          <span className="flex-1">✅ I have pets</span>
         </label>
       </div>
 
       {/* Pet Table - Show if user has pets */}
       {hasPet === "yes" && pets.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Your Pets</h3>
-          <div className="overflow-x-auto">
-            <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
-              <thead className="bg-gray-50">
+          <h3 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-4">Your Pets</h3>
+          <div className="overflow-x-auto rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
+            <table className="w-full">
+              <thead className="bg-purple-50 dark:bg-purple-900/20">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Pet Type</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Traits</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Care Required</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">Action</th>
+                  <th className="px-4 py-3 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Pet Type</th>
+                  <th className="px-4 py-3 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Traits</th>
+                  <th className="px-4 py-3 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Care Required</th>
+                  <th className="px-4 py-3 text-center text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {pets.map((pet, index) => (
-                  <tr key={pet.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100`}>
-                    <td className="px-4 py-3 text-sm text-gray-800 border-b capitalize">{pet.type}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 border-b">
+                  <tr key={pet.id} className={`${index % 2 === 0 ? 'bg-white dark:bg-[#13131a]' : 'bg-purple-50/50 dark:bg-purple-900/10'} hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors`}>
+                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 border-b border-purple-100 dark:border-purple-500/20 capitalize font-medium">{pet.type}</td>
+                    <td className="px-4 py-3 text-sm border-b border-purple-100 dark:border-purple-500/20">
                       {pet.traits.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {pet.traits.map(trait => (
-                            <span key={trait} className="inline-block bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full capitalize">
+                            <span key={trait} className="inline-block bg-purple-100 dark:bg-purple-800/40 text-purple-700 dark:text-purple-300 text-xs px-2 py-1 rounded-full capitalize font-medium border border-purple-200 dark:border-purple-500/30">
                               {trait}
                             </span>
                           ))}
                         </div>
                       ) : (
-                        <span className="text-gray-400">None</span>
+                        <span className="text-gray-400 dark:text-gray-500">None</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm border-b">
+                    <td className="px-4 py-3 text-sm border-b border-purple-100 dark:border-purple-500/20">
                       {pet.requiresCare ? (
                         <div>
-                          <span className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full mb-1">Yes</span>
+                          <span className="inline-block bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs px-2 py-1 rounded-full mb-1 font-medium">Yes</span>
                           {pet.careDetails && (
-                            <p className="text-xs text-gray-600 mt-1">{pet.careDetails}</p>
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{pet.careDetails}</p>
                           )}
                         </div>
                       ) : (
-                        <span className="inline-block bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">No</span>
+                        <span className="inline-block bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs px-2 py-1 rounded-full font-medium">No</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-center border-b">
+                    <td className="px-4 py-3 text-center border-b border-purple-100 dark:border-purple-500/20">
                       <button
                         onClick={() => handleRemovePet(pet)}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full transition-colors"
+                        className="text-red-500 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-full transition-colors"
                         title="Delete pet"
                       >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -264,43 +313,49 @@ const Pets: React.FC = () => {
       )}
 
       {hasPet === "yes" && (
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={handleAddPet}
-            className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-3 rounded-lg shadow-sm transition"
-          >
-            Add pet
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleAddPet}
+          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
+        >
+          ➕ Add Pet
+        </button>
       )}
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-800">Add Pet</h3>
-              <button
-                onClick={() => setShowModal(false)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 max-h-[90vh] overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => setShowModal(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors z-10"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <div className="flex items-center gap-2 mb-6">
+              <span className="text-3xl">🐾</span>
+              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Add Pet</h3>
             </div>
 
             <div className="space-y-4">
               {/* Pet Type Dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
                   Pet Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={petType}
-                  onChange={(e) => setPetType(e.target.value)}
-                  className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  onChange={(e) => {
+                    setPetType(e.target.value);
+                    if (e.target.value !== "Other") {
+                      setOtherPetType("");
+                    }
+                  }}
+                  className="w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
                   required
                 >
                   <option value="">Select pet type</option>
@@ -309,6 +364,24 @@ const Pets: React.FC = () => {
                   ))}
                 </select>
               </div>
+
+              {/* Other Pet Type Input */}
+              {petType === "Other" && (
+                <div>
+                  <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
+                    Specify Pet Type <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={otherPetType}
+                    onChange={(e) => setOtherPetType(e.target.value)}
+                    placeholder="e.g., Parrot, Ferret, Iguana..."
+                    className="w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
+                    maxLength={50}
+                    required
+                  />
+                </div>
+              )}
 
               {/* Requires Care Checkbox */}
               <div>
@@ -324,8 +397,8 @@ const Pets: React.FC = () => {
                       onClick={() => setRequiresCare(!requiresCare)}
                       className={`w-5 h-5 rounded border-2 cursor-pointer flex items-center justify-center transition-colors ${
                         requiresCare
-                          ? 'bg-purple-700 border-purple-700'
-                          : 'bg-white border-gray-300 hover:border-purple-400'
+                          ? 'bg-purple-600 border-purple-600'
+                          : 'bg-white dark:bg-[#13131a] border-purple-300 dark:border-purple-500/50 hover:border-purple-400'
                       }`}
                     >
                       {requiresCare && (
@@ -335,21 +408,21 @@ const Pets: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">Requires Care</span>
+                  <span className="text-base font-bold text-purple-700 dark:text-purple-400">Requires Care</span>
                 </label>
               </div>
 
               {/* Care Details Textarea */}
               {requiresCare && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
                     Care Details
                   </label>
                   <textarea
                     value={careDetails}
                     onChange={(e) => setCareDetails(e.target.value)}
                     rows={3}
-                    className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 resize-none"
                     placeholder="Describe the care requirements..."
                   />
                 </div>
@@ -357,8 +430,8 @@ const Pets: React.FC = () => {
 
               {/* Pet Traits */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Traits <span className="text-gray-500">(Select up to 3)</span>
+                <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
+                  Traits <span className="text-sm text-gray-500 dark:text-gray-400">(Select up to 3)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {PET_TRAITS.map(trait => (
@@ -367,12 +440,12 @@ const Pets: React.FC = () => {
                       type="button"
                       onClick={() => handleTraitToggle(trait)}
                       disabled={!selectedTraits.includes(trait) && selectedTraits.length >= 3}
-                      className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
+                      className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
                         selectedTraits.includes(trait)
-                          ? 'bg-purple-100 border-purple-500 text-purple-700'
+                          ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100'
                           : selectedTraits.length >= 3
-                          ? 'bg-gray-100 border-gray-300 text-gray-400 cursor-not-allowed'
-                          : 'bg-white border-gray-300 text-gray-700 hover:border-purple-400 hover:bg-purple-50'
+                          ? 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400 cursor-not-allowed'
+                          : 'bg-white dark:bg-[#13131a] border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10'
                       }`}
                     >
                       {trait}
@@ -384,8 +457,8 @@ const Pets: React.FC = () => {
 
             {/* Error Display */}
             {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="mt-4 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
+                ⚠️ {error}
               </div>
             )}
 
@@ -394,14 +467,14 @@ const Pets: React.FC = () => {
               <button
                 onClick={() => setShowModal(false)}
                 disabled={loading}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitPet}
-                disabled={!petType || loading}
-                className="flex-1 px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!petType || (petType === "Other" && !otherPetType.trim()) || loading}
+                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? "Adding..." : "Add Pet"}
               </button>
@@ -412,28 +485,28 @@ const Pets: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && petToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border-2 border-purple-200 dark:border-purple-500/30">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
-                <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 15.5c-.77.833.192 2.5 1.732 2.5z" />
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">Delete Pet</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Pet</h3>
               </div>
             </div>
             
             <div className="mb-6">
-              <p className="text-sm text-gray-600">
-                Are you sure you want to delete <span className="font-semibold capitalize">{petToDelete.type}</span>? This action cannot be undone.
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Are you sure you want to delete <span className="font-semibold capitalize text-purple-700 dark:text-purple-400">{petToDelete.type}</span>? This action cannot be undone.
               </p>
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-600 text-sm">{error}</p>
+              <div className="mb-4 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
+                ⚠️ {error}
               </div>
             )}
 
@@ -441,14 +514,14 @@ const Pets: React.FC = () => {
               <button
                 onClick={cancelDelete}
                 disabled={deleteLoading}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeletePet}
                 disabled={deleteLoading}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold shadow-lg hover:bg-red-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {deleteLoading ? "Deleting..." : "Delete"}
               </button>

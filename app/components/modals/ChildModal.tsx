@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { handleApiError } from '../utils/errorMessages';
-import { Modal } from './Modal';
+import { createPortal } from 'react-dom';
+import { handleApiError } from '../../utils/errorMessages';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const TRAITS = [
   'Allergies', 'Special Needs', 'Disabled', 'Asthma', 'ADHD',
@@ -77,6 +78,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to parent forms
     setError('');
     setLoading(true);
     
@@ -126,15 +128,31 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
     }
   };
 
-  return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Add Child">
-      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-        <div className="space-y-4">
-          <h2 className="text-lg font-medium text-gray-900">Gender</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <label className={`flex items-center justify-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
-              gender === 'female' ? 'border-primary-500 bg-primary-50 text-primary-900' : 'border-gray-200 bg-white hover:bg-gray-50'
-            }`}>
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 max-h-[90vh] overflow-y-auto">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors z-10"
+        >
+          <XMarkIcon className="h-6 w-6" />
+        </button>
+
+        <div className="flex items-center gap-2 mb-6">
+          <span className="text-3xl">👶🏿</span>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Add Child</h3>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Gender <span className="text-red-500">*</span></h2>
+            <div className="grid grid-cols-2 gap-4">
+              <label className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer shadow-sm text-lg font-medium transition-all ${
+                gender === 'female' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/10'
+              }`}>
               <input
                 type="radio"
                 name="gender"
@@ -148,8 +166,8 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
               </svg>
               <span>Female</span>
             </label>
-            <label className={`flex items-center justify-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
-              gender === 'male' ? 'border-primary-500 bg-primary-50 text-primary-900' : 'border-gray-200 bg-white hover:bg-gray-50'
+            <label className={`flex items-center justify-center gap-3 p-4 rounded-xl border-2 cursor-pointer shadow-sm text-lg font-medium transition-all ${
+              gender === 'male' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20 text-purple-900 dark:text-purple-100' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/10'
             }`}>
               <input
                 type="radio"
@@ -168,7 +186,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
         </div>
 
         <div className="space-y-2">
-          <label className="block text-lg font-medium text-gray-900">Date of Birth</label>
+          <label className="block text-lg font-semibold text-gray-900 dark:text-white">Date of Birth <span className="text-red-500">*</span></label>
           <input
             type="date"
             value={dateOfBirth}
@@ -184,15 +202,15 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
                 setError('Child must be under 18 years old');
               }
             }}
-            className="block w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors text-gray-900"
+            className="block w-full px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-all"
             max={new Date().toISOString().split('T')[0]}
             required
           />
         </div>
 
         <div>
-          <label className="block mb-2 font-semibold text-gray-700">
-            Traits <span className="text-xs text-gray-400">(Select up to 3)</span>
+          <label className="block mb-2 font-semibold text-gray-900 dark:text-white">
+            Traits <span className="text-red-500">*</span> <span className="text-xs text-gray-400">(Select up to 3)</span>
           </label>
           <div className="flex flex-wrap gap-3">
             {TRAITS.map(trait => (
@@ -201,7 +219,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
                 type="button"
                 onClick={() => handleTraitChange(trait)}
                 disabled={traits.length === 3 && !traits.includes(trait)}
-                className={`px-4 py-2 rounded-lg border text-base font-medium ${traits.includes(trait) ? 'bg-primary-100 border-primary-500 text-primary-800' : 'bg-gray-50 border-gray-200 text-gray-700 hover:bg-primary-50'} ${traits.length === 3 && !traits.includes(trait) ? 'opacity-40 cursor-not-allowed' : ''}`}
+                className={`px-4 py-2 rounded-xl border-2 text-base font-medium transition-all ${traits.includes(trait) ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100' : 'bg-gray-50 dark:bg-gray-800 border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/10'} ${traits.length === 3 && !traits.includes(trait) ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
                 {trait}
               </button>
@@ -211,7 +229,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
           {/* Custom input field for "Other" trait */}
           {traits.includes('Other') && (
             <div className="mt-4">
-              <label className="block mb-2 text-sm font-medium text-gray-700">
+              <label className="block mb-2 text-sm font-medium text-gray-700 dark:text-gray-300">
                 Please specify the trait:
               </label>
               <input
@@ -219,32 +237,44 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
                 value={otherTrait}
                 onChange={(e) => setOtherTrait(e.target.value)}
                 placeholder="Enter custom trait..."
-                className="w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors text-gray-900 placeholder-gray-500"
+                className="w-full px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-all"
                 maxLength={50}
               />
             </div>
           )}
         </div>
 
-        {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+        {error && <div className="text-red-500 dark:text-red-400 text-sm text-center font-medium">{error}</div>}
 
-        <button 
-          type="submit" 
-          className="bg-primary-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-primary-700 flex justify-center items-center h-10"
-          disabled={loading}
-        >
-          {loading ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Saving...
-            </>
-          ) : 'Save Child'}
-        </button>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="flex-1 px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancel
+          </button>
+          <button 
+            type="submit" 
+            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all flex justify-center items-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            disabled={loading || !gender || !dateOfBirth || traits.length === 0 || (traits.includes('Other') && !otherTrait.trim())}
+          >
+            {loading ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Saving...
+              </>
+            ) : 'Save Child'}
+          </button>
+        </div>
       </form>
-    </Modal>
+      </div>
+    </div>,
+    document.body
   );
 };
 

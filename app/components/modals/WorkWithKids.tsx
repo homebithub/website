@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { handleApiError } from '../../utils/errorMessages';
+import { API_BASE_URL } from '~/config/api';
 
 type WorkPreference = 'with_kids' | 'chores_only';
 type AgeRange = '0-2' | '2-5' | '5-10' | '10+';
@@ -74,7 +75,7 @@ const WorkWithKids = () => {
                     : 0
             };
 
-            const response = await fetch(`http://localhost:8080/api/v1/househelps/me/fields`, {
+            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

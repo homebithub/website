@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { handleApiError } from '../utils/errorMessages';
+import { API_BASE_URL } from '~/config/api';
 
 const Gender = () => {
     const [gender, setGender] = useState<'female' | 'male'>('female');
@@ -44,7 +45,7 @@ const Gender = () => {
                 throw new Error('Authentication token not found');
             }
 
-            const response = await fetch(`http://localhost:8080/api/v1/househelps/me/fields`, {
+            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',

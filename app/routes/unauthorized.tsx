@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 import { Error } from "~/components/Error";
 
 export default function Unauthorized() {

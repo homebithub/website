@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HouseholdProfileData } from '../../types/household-profile';
+import { HouseholdProfileData } from '../../../types/household-profile';
 
 interface BudgetStepProps {
   data: HouseholdProfileData;

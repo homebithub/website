@@ -38,4 +38,7 @@ export interface HouseholdProfileData {
     size: 'bedsitter' | '1-bedroom' | '2-bedroom' | '3-bedroom' | '4+bedroom';
     hasSeparateSQ: boolean;
   };
-} 
+}
+
+// Re-export to ensure proper module resolution
+export type { HouseholdProfileData as default };

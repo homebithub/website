@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { useNavigate } from "@remix-run/react";
-import type { LoginRequest, LoginResponse, LoginErrorResponse } from "../types/users";
+import { useNavigate, useLocation } from "react-router";
+import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/types/users";
+import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
+import { migratePreferences } from '~/utils/preferencesApi';
 
 interface User {
   id: string;
@@ -22,23 +24,50 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   const [user, setUser] = useState<LoginResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  // Public routes that don't need auth check
+  const isPublicRoute = () => {
+    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies'];
+    return publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === '/';
+  };
+
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, [location.pathname]);
 
   const checkAuth = async () => {
     try {
+      // Skip auth check on public routes
+      if (isPublicRoute()) {
+        setLoading(false);
+        return;
+      }
+
       const token = localStorage.getItem("token");
       if (!token) {
         console.log("not token found in local storage")
+        setLoading(false);
         return;
       }
-      const response = await fetch("http://localhost:8080/api/v1/auth/me", {
+      
+      // First, try to load user from localStorage to avoid flash of unauthenticated state
+      const userObj = localStorage.getItem("user_object");
+      if (userObj) {
+        try {
+          const parsedUser = JSON.parse(userObj);
+          setUser(parsedUser);
+        } catch (e) {
+          console.error("Failed to parse user_object from localStorage:", e);
+        }
+      }
+      
+      // Then verify with the server
+      const response = await fetch(API_ENDPOINTS.auth.me, {
         headers: {
           "Authorization": `Bearer ${localStorage.getItem("token")}`,
         },
@@ -47,11 +76,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (response.ok) {
         const user = await response.json();
         setUser(user);
+        // Update localStorage with fresh data
+        localStorage.setItem("user_object", JSON.stringify(user));
       }else{
         console.log("not logged in")
+        // If server says not logged in, clear local state
+        setUser(null);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user_object");
       }
     } catch (error) {
       console.error("Error checking auth:", error);
+      // On error, keep the user from localStorage if it exists
     } finally {
       setLoading(false);
     }
@@ -62,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:8080/api/v1/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -81,19 +117,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       delete (userData as any).token;
       localStorage.setItem("user_object", JSON.stringify(userData));
       setUser(data as LoginResponse);
+      
+      // Migrate anonymous preferences to user account
+      migratePreferences().catch(err => {
+        console.error("Failed to migrate preferences:", err);
+        // Don't block login if migration fails
+      });
+      
       // Redirect to specific dashboard based on profile_type
       const profileType = userData.profile_type;
       console.log("User data after login:", userData);
       console.log("Profile type:", profileType);
-      
+
       // Bureau users should not login through regular flow
       if (profileType === "bureau") {
         console.log("Bureau user detected, redirecting to home");
         navigate("/");
         return;
       }
-      
-      if (profileType === "household" || profileType === "employer") {
+
+      if (profileType === "household" || profileType === "household") {
         console.log("Redirecting to /household/profile");
         navigate("/household/profile");
       } else if (profileType === "househelp") {
@@ -116,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch("http://localhost:8080/auth/signup", {
+      const response = await fetch(`${AUTH_API_BASE_URL}/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,6 +175,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { token, user } = await response.json();
       localStorage.setItem("token", token);
       setUser(user);
+      
+      // Migrate anonymous preferences to user account
+      migratePreferences().catch(err => {
+        console.error("Failed to migrate preferences:", err);
+        // Don't block signup if migration fails
+      });
+      
       navigate("/");
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -148,7 +198,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Try to call logout endpoint (optional - for server-side cleanup)
       try {
-        await fetch("http://localhost:8080/api/v1/auth/logout", {
+        await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
           method: "POST",
           headers: {
             "Authorization": `Bearer ${localStorage.getItem("token")}`,

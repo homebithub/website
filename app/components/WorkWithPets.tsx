@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router';
 import { handleApiError } from '../utils/errorMessages';
+import { API_BASE_URL } from '~/config/api';
 
 type PetPreference = 'with_pets' | 'no_pets';
 type PetType = 'dog' | 'cat' | 'bird' | 'fish' | 'reptile' | 'small_mammal' | 'other';
@@ -93,13 +94,20 @@ const WorkWithPets = () => {
                 pet_types: petPreference === 'with_pets' ? petTypes.join(',') : '',
             };
 
-            const response = await fetch(`http://localhost:8080/api/v1/househelps/me/fields`, {
+            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${token}`
                 },
-                body: JSON.stringify({ updates })
+                body: JSON.stringify({ 
+                    updates,
+                    _step_metadata: {
+                        step_id: "workwithpets",
+                        step_number: 8,
+                        is_completed: true
+                    }
+                })
             });
 
             const data = await response.json();
@@ -116,51 +124,51 @@ const WorkWithPets = () => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6">
+        <div className="max-w-2xl mx-auto">
+            <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">🐾 Work with Pets</h2>
+            <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
+                Are you comfortable working with pets?
+            </p>
             <h1 className="text-2xl font-bold text-gray-900 mb-6">Pet Work Preferences</h1>
             
             {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-md text-sm">
-                    {error}
+                <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
+                    ⚠️ {error}
                 </div>
             )}
             
             {success && (
-                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-md text-sm">
-                    {success}
+                <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+                    ✓ {success}
                 </div>
             )}
             
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div>
                     <h2 className="text-lg font-medium text-gray-900 mb-4">Pet Work Preference</h2>
-                    <div className="space-y-4">
-                        <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
-                            petPreference === 'with_pets' 
-                                ? 'border-primary-500 bg-primary-50 text-primary-900' 
-                                : 'border-gray-200 bg-white hover:bg-gray-50'
+                    <div className="grid grid-cols-2 gap-4">
+                        <label className={`flex items-center justify-center gap-3 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${
+                            petPreference === 'with_pets' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                         }`}>
                             <input
                                 type="radio"
                                 name="petPreference"
                                 checked={petPreference === 'with_pets'}
                                 onChange={() => setPetPreference('with_pets')}
-                                className="form-radio h-5 w-5 text-primary-600 border-gray-300"
+                                className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span>I can work with pets</span>
                         </label>
                         
-                        <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
-                            petPreference === 'no_pets' 
-                                ? 'border-primary-500 bg-primary-50 text-primary-900' 
-                                : 'border-gray-200 bg-white hover:bg-gray-50'
+                        <label className={`flex items-center justify-center gap-3 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${
+                            petPreference === 'no_pets' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                         }`}>
                             <input
                                 type="radio"
                                 name="petPreference"
                                 checked={petPreference === 'no_pets'}
                                 onChange={() => setPetPreference('no_pets')}
-                                className="form-radio h-5 w-5 text-primary-600 border-gray-300"
+                                className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span>I prefer not to work with pets</span>
                         </label>
@@ -169,43 +177,43 @@ const WorkWithPets = () => {
 
                 {petPreference === 'with_pets' && (
                     <div className="space-y-4">
-                        <h3 className="text-md font-medium text-gray-900">
-                            What types of pets can you work with? (Select all that apply)
+                        <h3 className="text-base font-bold text-purple-700 dark:text-purple-400 mb-3">
+                            What types of pets can you work with?
                         </h3>
-                        <div className="grid grid-cols-1 gap-3">
-                            {petTypes.map((pet) => (
-                                <div key={pet.value}>
-                                    <label 
-                                        className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
-                                            selectedPets.includes(pet.value)
-                                                ? 'border-primary-500 bg-primary-50 text-primary-900'
-                                                : 'border-gray-200 bg-white hover:bg-gray-50'
-                                        }`}
-                                    >
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedPets.includes(pet.value)}
-                                            onChange={() => togglePetType(pet.value)}
-                                            className="form-checkbox h-5 w-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                                        />                                  
-                                        <span>{pet.label}</span>
+                        <div className="space-y-3">
+                            {petTypes.map(({ value, label }) => (
+                                <div key={value}>
+                                    <label className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${
+                                        selectedPets.includes(value) ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                    }`}>
+                                        <div className={`w-6 h-6 rounded border-2 flex items-center justify-center ${
+                                            selectedPets.includes(value) ? 'border-purple-500 bg-purple-500' : 'border-purple-300 dark:border-purple-500/50'
+                                        }`}>
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedPets.includes(value)}
+                                                onChange={() => togglePetType(value)}
+                                                className="sr-only"
+                                            />
+                                            {selectedPets.includes(value) && (
+                                                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        <span>{label}</span>
                                     </label>
-                                    
-                                    {pet.value === 'other' && showOtherPetsInput && (
-                                        <div className="mt-4 w-full">
+                                    {value === 'other' && showOtherPetsInput && (
+                                        <div className="mt-3 ml-10">
                                             <input
                                                 type="text"
                                                 value={otherPets}
                                                 onChange={(e) => setOtherPets(e.target.value)}
-                                                placeholder="Please specify the types of pets"
-                                                className={`w-full p-4 rounded-lg border text-lg font-medium ${
-                                                    otherPetsError 
-                                                        ? 'border-red-500 bg-red-50 text-red-900' 
-                                                        : 'border-gray-200 bg-white hover:bg-gray-50'
-                                                } shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
+                                                placeholder="e.g., Rabbits, Ferrets"
+                                                className="w-full h-14 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
                                             />
                                             {otherPetsError && (
-                                                <p className="mt-1 text-sm text-red-600">{otherPetsError}</p>
+                                                <p className="text-red-600 dark:text-red-400 text-sm font-semibold mt-1">⚠️ {otherPetsError}</p>
                                             )}
                                         </div>
                                     )}
@@ -219,11 +227,21 @@ const WorkWithPets = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${
-                            loading ? 'opacity-70 cursor-not-allowed' : ''
-                        }`}
+                        className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                     >
-                        {loading ? 'Saving...' : 'Continue'}
+                        {loading ? (
+                            <>
+                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                Saving...
+                            </>
+                        ) : (
+                            <>
+                                💾 Save
+                            </>
+                        )}
                     </button>
                 </div>
             </form>

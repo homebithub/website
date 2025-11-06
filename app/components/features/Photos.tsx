@@ -1,5 +1,7 @@
-import React, { useState, useCallback, useRef, ChangeEvent } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import type { ChangeEvent } from 'react';
 import { XMarkIcon, ArrowLeftIcon, ArrowRightIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { API_BASE_URL } from '~/config/api';
 
 type ImageFile = {
   id: string;
@@ -147,11 +149,74 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
     setSuccess('');
     
     try {
-      // Here you would typically upload the images to your backend
-      console.log('Uploading images:', images);
+      const token = localStorage.getItem('token');
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Upload images to image service first
+      const formData = new FormData();
+      images.forEach((image) => {
+        formData.append('images', image.file);
+      });
+      
+      const uploadResponse = await fetch(`${API_BASE_URL}/api/v1/images/upload`, {
+        method: 'POST',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: formData,
+      });
+      
+      if (!uploadResponse.ok) {
+        throw new Error('Failed to upload images');
+      }
+      
+      const uploadData = await uploadResponse.json();
+      const imageUrls = uploadData.urls || uploadData.images || [];
+      
+      // For household, update profile with photos and step metadata
+      if (userType === 'household') {
+        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            photos: imageUrls,
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 8,
+              is_completed: true
+            }
+          }),
+        });
+        
+        if (!profileResponse.ok) {
+          throw new Error('Failed to save photos to profile');
+        }
+      } else {
+        // For househelp, update househelp profile with step tracking
+        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            updates: {
+              photos: imageUrls
+            },
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 15,
+              is_completed: true
+            }
+          }),
+        });
+        
+        if (!profileResponse.ok) {
+          throw new Error('Failed to save photos to profile');
+        }
+      }
       
       setSuccess('Your photos have been uploaded successfully!');
     } catch (err) {

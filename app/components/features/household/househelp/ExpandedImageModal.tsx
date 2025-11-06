@@ -1,4 +1,5 @@
 import React from "react";
+import { API_BASE_URL } from '~/config/api';
 
 interface ExpandedImageModalProps {
   images: any[];
@@ -27,7 +28,7 @@ export default function ExpandedImageModal({
       </button>
       <div className="relative w-full max-w-2xl h-[70vh] flex items-center justify-center">
         <img
-          src={"http://localhost:8080/images/" + images[currentIdx].path.replace(/^src\//, '/')}
+          src={`${API_BASE_URL}/images/${images[currentIdx].path.replace(/^src\//, '/')}`}
           alt={`User image ${currentIdx + 1}`}
           className="object-contain w-full h-full rounded-xl shadow border dark:border-slate-700 bg-white dark:bg-slate-900"
         />

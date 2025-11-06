@@ -1,4 +1,5 @@
 // Authentication utilities for route protection
+import { API_ENDPOINTS } from '~/config/api';
 
 export interface AuthUser {
   token: string;
@@ -35,7 +36,7 @@ export async function checkAuthentication(request?: Request): Promise<AuthUser |
       return null;
     }
 
-    const response = await fetch("http://localhost:8080/api/v1/auth/me", {
+    const response = await fetch(API_ENDPOINTS.auth.me, {
       headers: {
         "Authorization": `Bearer ${token}`,
       },

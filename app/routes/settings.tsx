@@ -1,8 +1,10 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { json, redirect } from "@remix-run/node";
-import { useLoaderData, Form, useNavigate, useLocation } from "@remix-run/react";
+import { API_ENDPOINTS, AUTH_API_BASE_URL, API_BASE_URL } from '~/config/api';
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData, Form, useNavigate, useLocation } from "react-router";
 import React, { useEffect } from "react";
 import { Navigation } from "~/components/Navigation";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
 import { useAuth } from "~/contexts/AuthContext";
@@ -19,7 +21,7 @@ interface UserSettings {
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const cookie = request.headers.get("cookie") || "";
-  const res = await fetch("http://localhost:8080/users/settings", {
+  const res = await fetch(API_ENDPOINTS.users.settings, {
     headers: { "cookie": cookie },
     credentials: "include",
   });
@@ -27,7 +29,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     throw new Response("Failed to fetch user settings", { status: res.status });
   }
   const settings = await res.json();
-  return json({ settings });
+  return { settings };
 };
 
 export const action = async ({ request }: LoaderFunctionArgs) => {
@@ -40,19 +42,19 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
   const notifications = formData.get("notifications") === "on";
 
   // Fetch current settings to compare emails
-  const resSettings = await fetch("http://localhost:8080/users/settings", {
+  const resSettings = await fetch(API_ENDPOINTS.users.settings, {
     headers: { "cookie": cookie },
     credentials: "include",
   });
   if (!resSettings.ok) {
-    return json({ error: "Failed to fetch user settings" }, { status: resSettings.status });
+    return Response.json({ error: "Failed to fetch user settings" }, { status: resSettings.status });
   }
   const currentSettings = await resSettings.json();
   const prevEmail = currentSettings.email;
 
   // If email changed, call backend to update email
   if (email && email !== prevEmail) {
-    const updateRes = await fetch("http://localhost:8080/auth/update-email", {
+    const updateRes = await fetch(`${AUTH_API_BASE_URL}/update-email`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -69,14 +71,14 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
         email: data.verification.target,
         type: data.verification.type,
       });
-      return redirect(`/verify-otp?${params.toString()}`);
+      return Response.redirect(`/verify-otp?${params.toString()}`);
     } else {
-      return json({ error: data.message || "Failed to update email" }, { status: updateRes.status });
+      return Response.json({ error: data.message || "Failed to update email" }, { status: updateRes.status });
     }
   }
 
   // Otherwise, update other settings
-  const updateRes = await fetch("http://localhost:8080/users/settings", {
+  const updateRes = await fetch(API_ENDPOINTS.users.settings, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -87,9 +89,9 @@ export const action = async ({ request }: LoaderFunctionArgs) => {
   });
   if (!updateRes.ok) {
     const data = await updateRes.json();
-    return json({ error: data.message || "Failed to update settings" }, { status: updateRes.status });
+    return Response.json({ error: data.message || "Failed to update settings" }, { status: updateRes.status });
   }
-  return redirect("/settings");
+  return Response.redirect("/settings");
 };
 
 export default function SettingsPage() {
@@ -121,29 +123,33 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-background bg-white dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8 animate-fadeIn">
-        <div className="card w-full max-w-2xl text-center bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-700">
-          <h1 className="text-4xl font-extrabold text-primary mb-6 dark:text-primary-400">Settings</h1>
-          <p className="text-lg text-text mb-8 dark:text-primary-200">Manage your account settings and preferences.</p>
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+        <div className="w-full max-w-2xl text-center bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-8">
+          <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">⚙️ Settings</h1>
+          <p className="text-lg text-gray-600 mb-8">Manage your account settings and preferences.</p>
           
           <div className="space-y-6">
-            <div className="bg-accent rounded-xl shadow-card p-6 dark:bg-slate-800">
-              <div className="font-bold text-primary mb-1 dark:text-primary-300">Account Settings</div>
-              <div className="text-text text-sm mb-2 dark:text-primary-200">Update your account information and preferences.</div>
-              <a href="/profile" className="btn-primary">Edit Account</a>
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-100 p-6 hover:border-purple-200 transition-all">
+              <div className="font-bold text-purple-700 text-xl mb-2">👤 Account Settings</div>
+              <div className="text-gray-600 text-sm mb-4">Update your account information and preferences.</div>
+              <a href="/profile" className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all">Edit Account</a>
             </div>
             
-            <div className="bg-accent rounded-xl shadow-card p-6 dark:bg-slate-800">
-              <div className="font-bold text-primary mb-1 dark:text-primary-300">Security Settings</div>
-              <div className="text-text text-sm mb-2 dark:text-primary-200">Change your password and manage security settings.</div>
-              <a href="/change-password" className="btn-primary">Change Password</a>
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-purple-100 p-6 hover:border-purple-200 transition-all">
+              <div className="font-bold text-purple-700 text-xl mb-2">🔒 Security Settings</div>
+              <div className="text-gray-600 text-sm mb-4">Change your password and manage security settings.</div>
+              <a href="/change-password" className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all">Change Password</a>
             </div>
           </div>
         </div>
       </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );
 } 
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

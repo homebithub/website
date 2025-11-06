@@ -10,10 +10,11 @@
 /build
 /dist
 
-# Remix specific
+# React Router specific
 /.cache
 /build
 /public/build
+/.react-router
 
 # Environment files
 .env

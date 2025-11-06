@@ -1,5 +1,8 @@
-import React, { useState, useCallback, useRef, ChangeEvent } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+import type { ChangeEvent } from 'react';
 import { XMarkIcon, ArrowLeftIcon, ArrowRightIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import { API_BASE_URL } from '~/config/api';
+import { handleApiError } from '../utils/errorMessages';
 
 type ImageFile = {
   id: string;
@@ -9,19 +12,22 @@ type ImageFile = {
 
 interface PhotosProps {
   userType?: 'househelp' | 'household';
+  onComplete?: () => void;
 }
 
 const MAX_FILES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
-const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
+const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) => {
   const [images, setImages] = useState<ImageFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSkipping, setIsSkipping] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): { valid: boolean; message?: string } => {
@@ -134,28 +140,197 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
     }
   };
 
+  const handleSkip = async () => {
+    console.log('Skip button clicked, onComplete:', onComplete);
+    setIsSkipping(true);
+    setError('');
+    setSuccess('');
+    
+    try {
+      // Just mark the step as completed without uploading photos
+      const token = localStorage.getItem('token');
+      
+      if (userType === 'household') {
+        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 8,
+              is_completed: true
+            }
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to skip photos');
+        }
+      } else {
+        // For househelp
+        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            updates: {},
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 13,
+              is_completed: true
+            }
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to skip photos');
+        }
+      }
+
+      setSuccess('Skipped photos. You can add them later from your profile!');
+      console.log('Skip successful, calling onComplete...');
+      // Trigger completion callback if provided
+      if (onComplete) {
+        console.log('onComplete exists, calling it...');
+        setTimeout(() => {
+          console.log('Executing onComplete callback');
+          onComplete();
+        }, 500);
+      } else {
+        console.log('No onComplete callback provided!');
+      }
+    } catch (err: any) {
+      setError(handleApiError(err, 'photos', 'Failed to skip. Please try again.'));
+      console.error(err);
+    } finally {
+      setIsSkipping(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (images.length === 0) {
-      setError('Please upload at least one image');
+      setError('Please upload at least one image or click "Skip for Now"');
       return;
     }
     
     setIsSubmitting(true);
     setError('');
     setSuccess('');
+    setUploadProgress(0);
     
     try {
-      // Here you would typically upload the images to your backend
-      console.log('Uploading images:', images);
+      const token = localStorage.getItem('token');
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Step 1: Upload images to documents service with progress tracking
+      const formData = new FormData();
+      images.forEach((image) => {
+        formData.append('files', image.file);
+      });
+      // Add document metadata
+      formData.append('document_type', 'profile_photo');
+      formData.append('is_public', 'true');
+      formData.append('description', 'Profile photo');
       
+      // Use XMLHttpRequest for upload progress tracking
+      const uploadData = await new Promise<any>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        // Track upload progress
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(percentComplete);
+          }
+        });
+        
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (err) {
+              reject(new Error('Invalid response from server'));
+            }
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        });
+        
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error during upload'));
+        });
+        
+        xhr.open('POST', `${API_BASE_URL}/api/v1/documents/upload`);
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+        xhr.send(formData);
+      });
+      
+      // Extract URLs from document objects
+      const imageUrls = uploadData.documents 
+        ? uploadData.documents.map((doc: any) => doc.url || doc.public_url)
+        : [];
+      
+      // Step 2: Save image URLs to profile
+      if (userType === 'household') {
+        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            photos: imageUrls,
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 8,
+              is_completed: true
+            }
+          }),
+        });
+        
+        if (!profileResponse.ok) {
+          throw new Error('Failed to save photos to profile');
+        }
+      } else {
+        // For househelp
+        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            updates: {
+              photos: imageUrls
+            },
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 13,
+              is_completed: true
+            }
+          }),
+        });
+        
+        if (!profileResponse.ok) {
+          throw new Error('Failed to save photos to profile');
+        }
+      }
+
       setSuccess('Your photos have been uploaded successfully!');
-    } catch (err) {
-      setError('Failed to upload photos. Please try again.');
+      // Trigger completion callback if provided
+      if (onComplete) {
+        setTimeout(() => onComplete(), 500);
+      }
+    } catch (err: any) {
+      setError(handleApiError(err, 'photos', 'Failed to upload photos. Please try again.'));
       console.error(err);
     } finally {
       setIsSubmitting(false);
@@ -205,44 +380,73 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
   // Dynamic content based on user type
   const content = {
     househelp: {
-      title: 'Upload Your Photos',
-      description: `Add up to ${MAX_FILES} photos to showcase your work and experience. High-quality images help you stand out.`,
-      uploadText: 'Click to upload photos or drag and drop',
-      supportText: 'JPG, PNG, WEBP, GIF up to 10MB each'
+      title: '📸 Your Photos',
+      description: `Add up to ${MAX_FILES} photos to showcase yourself`,
+      uploadText: 'Click to upload or drag and drop',
+      supportText: 'JPG, PNG, WEBP, GIF up to 10MB each',
+      benefitText: '✨ Profiles with photos get 3x more responses from households!'
     },
     household: {
-      title: 'Upload Photos of Your Home',
-      description: `Add up to ${MAX_FILES} photos of your home and living spaces. This helps househelps understand your environment and needs.`,
-      uploadText: 'Click to upload home photos or drag and drop',
-      supportText: 'JPG, PNG, WEBP, GIF up to 10MB each'
+      title: '📸 Home Photos',
+      description: `Add up to ${MAX_FILES} photos of your home`,
+      uploadText: 'Click to upload or drag and drop',
+      supportText: 'JPG, PNG, WEBP, GIF up to 10MB each',
+      benefitText: '✨ Profiles with photos get 5x more applications from qualified househelps!'
     }
   };
 
   const currentContent = content[userType];
 
   return (
-    <div className="max-w-4xl mx-auto bg-white rounded-xl shadow-sm p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-2">{currentContent.title} (Optional)</h1>
-      <p className="text-gray-600 mb-6">
+    <div className="max-w-4xl mx-auto">
+      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">{currentContent.title} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(Optional)</span></h2>
+      <p className="text-base text-gray-600 dark:text-gray-400 mb-2">
         {currentContent.description}
       </p>
       
+      {/* Benefit Message */}
+      <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-500/30">
+        <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 text-center">
+          {currentContent.benefitText}
+        </p>
+      </div>
+      
       {error && (
-        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-md text-sm whitespace-pre-line">
-          {error}
+        <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30 whitespace-pre-line">
+          ⚠️ {error}
         </div>
       )}
       
       {success && (
-        <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-md text-sm">
-          {success}
+        <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+          ✓ {success}
+        </div>
+      )}
+      
+      {/* Upload Progress Indicator */}
+      {isSubmitting && uploadProgress > 0 && uploadProgress < 100 && (
+        <div className="mb-6 p-4 rounded-xl border-2 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-blue-800 dark:text-blue-400">
+              Uploading to Linode Object Storage...
+            </span>
+            <span className="text-sm font-bold text-blue-800 dark:text-blue-400">
+              {uploadProgress}%
+            </span>
+          </div>
+          <div className="w-full bg-blue-200 dark:bg-blue-900/40 rounded-full h-3 overflow-hidden">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
         </div>
       )}
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div 
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-            isDragging ? 'border-primary-500 bg-primary-50' : 'border-gray-300 hover:border-primary-400 bg-gray-50'
+          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all ${
+            isDragging ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 scale-105' : 'border-purple-300 dark:border-purple-500/50 hover:border-purple-400 bg-purple-50/50 dark:bg-purple-900/10'
           }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -250,7 +454,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
         >
           <div className="space-y-2">
             <svg 
-              className="mx-auto h-12 w-12 text-gray-400" 
+              className="mx-auto h-12 w-12 text-purple-400 dark:text-purple-500" 
               fill="none" 
               viewBox="0 0 24 24" 
               stroke="currentColor"
@@ -262,28 +466,34 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
               />
             </svg>
-            <div className="flex text-sm text-gray-600">
-              <label
-                htmlFor="file-upload"
-                className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500 mx-auto"
-              >
-                <span>{currentContent.uploadText}</span>
-                <input
-                  id="file-upload"
-                  name="file-upload"
-                  type="file"
-                  className="sr-only"
-                  multiple
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  ref={fileInputRef}
-                />
-              </label>
+            <div className="text-purple-700 dark:text-purple-400 font-bold text-lg">
+              {currentContent.uploadText}
             </div>
-            <p className="text-xs text-gray-500">
+            <div className="text-sm text-gray-600 dark:text-gray-400">
               {currentContent.supportText}
-            </p>
+            </div>
+            <div className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+              {images.length}/{MAX_FILES} images uploaded
+            </div>
           </div>
+          <input
+            id="file-upload"
+            name="file-upload"
+            type="file"
+            className="sr-only"
+            multiple
+            accept="image/*"
+            onChange={handleFileChange}
+            ref={fileInputRef}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            disabled={images.length >= MAX_FILES}
+          >
+            📁 Choose Files
+          </button>
         </div>
         
         {/* Image Previews */}
@@ -323,25 +533,46 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
           </div>
         )}
         
-        <div className="pt-2">
+        <div className="flex flex-col sm:flex-row gap-3">
           <button
-            type="submit"
-            disabled={isSubmitting || images.length === 0}
-            className={`w-full px-6 py-3 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-              images.length > 0 
-                ? 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500' 
-                : 'bg-gray-200 text-gray-500 cursor-not-allowed'
-            }`}
+            type="button"
+            onClick={handleSkip}
+            disabled={isSubmitting || isSkipping}
+            className="flex-1 px-8 py-4 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-400 font-bold text-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            {isSkipping ? (
+              <>
+                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
+                Skipping...
+              </>
+            ) : (
+              <>
+                ⏭️ Skip for Now
+              </>
+            )}
+          </button>
+          
+          <button
+            type="submit"
+            disabled={isSubmitting || isSkipping || images.length === 0}
+            className="flex-1 px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
                 Uploading...
-              </span>
-            ) : 'Save Photos'}
+              </>
+            ) : (
+              <>
+                💾 Upload & Continue
+              </>
+            )}
           </button>
         </div>
       </form>

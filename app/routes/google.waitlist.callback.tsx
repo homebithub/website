@@ -1,5 +1,4 @@
-import type { LoaderFunctionArgs } from "@remix-run/node";
-import { redirect } from "@remix-run/node";
+import type { LoaderFunctionArgs } from "react-router";
 
 // Google OAuth waitlist callback
 // Receives `code` from Google, exchanges it with the Auth API, and redirects
@@ -10,10 +9,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const rawState = url.searchParams.get("state") || "";
 
   if (!code) {
-    return redirect(`/?waitlist=1&error=missing_code`);
+    return Response.redirect(`/?waitlist=1&error=missing_code`);
   }
 
-  const baseUrl = process.env.AUTH_API_BASE_URL || "https://api.homexpert.co.ke/auth";
+  const baseUrl = process.env.AUTH_API_BASE_URL || "https://api.homebit.co.ke/auth";
 
   try {
     const resp = await fetch(`${baseUrl}/api/v1/auth/google/signin`, {
@@ -23,7 +22,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
 
     if (!resp.ok) {
-      return redirect(`/?waitlist=1&error=signin_failed`);
+      return Response.redirect(`/?waitlist=1&error=signin_failed`);
     }
 
     const data: {
@@ -63,7 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
       if (createResp.ok) {
         params.set("success", "1");
-        return redirect(`/?${params.toString()}`);
+        return Response.redirect(`/?${params.toString()}`);
       } else {
         // Try to surface backend validation errors if present
         let errText = "waitlist_create_failed";
@@ -72,12 +71,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
           errText = err?.error || Object.values(err?.errors || {}).join(" ") || errText;
         } catch {}
         params.set("error", encodeURIComponent(String(errText)));
-        return redirect(`/?${params.toString()}`);
+        return Response.redirect(`/?${params.toString()}`);
       }
     }
     // Fall back to opening the modal prefilled; user can enter phone and submit
-    return redirect(`/?${params.toString()}`);
+    return Response.redirect(`/?${params.toString()}`);
   } catch (e) {
-    return redirect(`/?waitlist=1&error=network_error`);
+    return Response.redirect(`/?waitlist=1&error=network_error`);
   }
 }

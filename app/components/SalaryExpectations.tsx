@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useSubmit } from '@remix-run/react';
+import { useSubmit } from 'react-router';
+import { API_BASE_URL } from '~/config/api';
+import { handleApiError } from '../utils/errorMessages';
 
 type SalaryFrequency = 'Daily' | 'Weekly' | 'Monthly';
 type SalaryRange = string;
@@ -33,6 +35,7 @@ const SalaryExpectations: React.FC = () => {
   const [selectedRange, setSelectedRange] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const submit = useSubmit();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,46 +48,64 @@ const SalaryExpectations: React.FC = () => {
 
     setIsSubmitting(true);
     setError('');
+    setSuccess('');
 
     try {
-      // Here you would typically save the data to your backend
-      // For now, we'll just log it and show a success message
-      console.log({ frequency, salaryRange: selectedRange });
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Show success message
-      alert('Salary expectations saved successfully!');
-      
-      // Reset form
-      setSelectedRange('');
-    } catch (err) {
-      setError('Failed to save salary expectations. Please try again.');
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          updates: {
+            salary_frequency: frequency.toLowerCase(),
+            salary_expectation: selectedRange,
+          },
+          _step_metadata: {
+            step_id: "salary",
+            step_number: 6,
+            is_completed: true
+          }
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save salary expectations');
+      }
+
+      setSuccess('Salary expectations saved successfully!');
+      console.log('Salary expectations saved successfully');
+    } catch (err: any) {
+      setError(handleApiError(err, 'salary', 'Failed to save salary expectations. Please try again.'));
       console.error(err);
-    } finally {
+    } finally{
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-2xl mx-auto bg-white rounded-xl shadow-sm p-6 sm:p-8">
-      <h1 className="text-2xl font-bold text-gray-900 mb-8">Salary Expectations</h1>
+    <div className="max-w-2xl mx-auto">
+      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">💰 Salary Expectations</h2>
+      <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
+        What are your salary requirements?
+      </p>
       
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Salary Frequency Dropdown */}
-        <div className="space-y-2">
-          <label htmlFor="frequency" className="block text-lg font-medium text-gray-900">
-            Salary Frequency
+        <div className="space-y-3">
+          <label htmlFor="frequency" className="block text-base font-bold text-purple-700 dark:text-purple-400">
+            📅 Payment Frequency
           </label>
           <select
             id="frequency"
             value={frequency}
             onChange={(e) => {
               setFrequency(e.target.value as SalaryFrequency);
-              setSelectedRange(''); // Reset selected range when frequency changes
+              setSelectedRange('');
             }}
-            className="block w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors text-gray-900"
+            className="block w-full h-14 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 text-base font-medium"
           >
             <option value="Daily">Daily</option>
             <option value="Weekly">Weekly</option>
@@ -94,17 +115,20 @@ const SalaryExpectations: React.FC = () => {
 
         {/* Salary Range Radio Group */}
         <div className="space-y-4">
-          <h2 className="text-lg font-medium text-gray-900">
-            Expected {frequency} Salary (KES)
-          </h2>
+          <h3 className="text-base font-bold text-purple-700 dark:text-purple-400">
+            Your {frequency} Salary (KES)
+          </h3>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            Select your expected salary range
+          </p>
           <div className="space-y-3">
             {SALARY_RANGES[frequency].map((range) => (
               <label 
                 key={range} 
-                className={`flex items-center p-4 rounded-lg border cursor-pointer transition-colors ${
+                className={`flex items-center p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${
                   selectedRange === range 
-                    ? 'border-primary-500 bg-primary-50 text-primary-900' 
-                    : 'border-gray-200 bg-white hover:bg-gray-50'
+                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' 
+                    : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                 }`}
               >
                 <input
@@ -115,44 +139,52 @@ const SalaryExpectations: React.FC = () => {
                   onChange={() => setSelectedRange(range)}
                   className="sr-only"
                 />
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 flex-shrink-0 ${
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center mr-4 flex-shrink-0 ${
                   selectedRange === range 
-                    ? 'border-primary-500 bg-primary-500' 
-                    : 'border-gray-300'
+                    ? 'border-purple-500 bg-purple-500' 
+                    : 'border-purple-300 dark:border-purple-500/50'
                 }`}>
                   {selectedRange === range && (
-                    <div className="w-2.5 h-2.5 rounded-full bg-white"></div>
+                    <div className="w-3 h-3 rounded-full bg-white"></div>
                   )}
                 </div>
-                <span className="text-gray-900">{range}</span>
+                <span className="flex-1">{range}</span>
               </label>
             ))}
           </div>
         </div>
 
-        {error && (
-          <div className="p-4 bg-red-50 text-red-700 rounded-md text-sm">
-            {error}
+        {success && (
+          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+            ✓ {success}
           </div>
         )}
 
-        <div className="pt-4">
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <span className="flex items-center justify-center">
-                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-              </span>
-            ) : 'Save Salary Expectations'}
-          </button>
-        </div>
+        {error && (
+          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
+            ⚠️ {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isSubmitting || !selectedRange}
+          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+        >
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Saving...
+            </>
+          ) : (
+            <>
+              💾 Save
+            </>
+          )}
+        </button>
       </form>
     </div>
   );

@@ -333,7 +333,7 @@ const SignupFlow = ({ isOpen, onClose, initialUserType }: SignupFlowProps) => {
             </h3>
             <p className="text-sm text-gray-500">
               {userType === 'househelp'
-                ? 'We\'ll use this to match you with potential employers in your area.'
+                ? 'We\'ll use this to match you with potential households in your area.'
                 : 'We\'ll show you available househelp in your area.'}
             </p>
             <input
@@ -859,7 +859,7 @@ const SignupFlow = ({ isOpen, onClose, initialUserType }: SignupFlowProps) => {
         return (
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Upload at least 3 photos</h3>
-            <p className="text-sm text-gray-500">Upload clear photos of yourself to help employers get to know you better.</p>
+            <p className="text-sm text-gray-500">Upload clear photos of yourself to help households get to know you better.</p>
             <input
               type="file"
               name="photos"

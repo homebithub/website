@@ -1,5 +1,6 @@
 import React, {useState, useRef, useEffect} from "react";
 import { handleApiError } from '../utils/errorMessages';
+import { API_BASE_URL } from '~/config/api';
 
 interface LocationSuggestion {
     name: string;
@@ -22,7 +23,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     const [submitStatus, setSubmitStatus] = useState<{success: boolean; message: string} | null>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const baseUrl = 'http://localhost:8080'
+    const baseUrl = API_BASE_URL
     useEffect(() => {
         if (input.length > 2) {
             setLoading(true);
@@ -119,7 +120,12 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                     'Authorization': token ? `Bearer ${token}` : ''
                 },
                 body: JSON.stringify({
-                    mapbox_id: selectedLocation.mapbox_id
+                    mapbox_id: selectedLocation.mapbox_id,
+                    _step_metadata: {
+                        step_id: "location",
+                        step_number: 1,
+                        is_completed: true
+                    }
                 })
             });
 
@@ -148,7 +154,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
 
     return (
         <div className="w-full max-w-md mx-auto relative">
-            <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6 bg-white border border-gray-100 p-8 rounded-xl shadow-lg">
+            <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6 bg-white dark:bg-[#13131a] border border-gray-100 dark:border-purple-500/30 p-8 rounded-xl shadow-lg dark:shadow-glow-md transition-colors duration-300">
                 <div className="relative">
                     <label htmlFor="location-input" className="block text-sm font-medium text-primary mb-1">
                         Location
@@ -169,7 +175,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                     {showDropdown && suggestions.length > 0 && (
                         <div
                             ref={dropdownRef}
-                            className="absolute left-0 w-full bg-white border border-gray-200 rounded-b-xl shadow-lg z-10 max-h-56 overflow-y-auto"
+                            className="absolute left-0 w-full bg-white dark:bg-[#13131a] border border-gray-200 dark:border-purple-500/30 rounded-b-xl shadow-lg dark:shadow-glow-md z-10 max-h-56 overflow-y-auto transition-colors duration-300"
                             style={{ top: '100%' }}
                         >
                             {loading && (

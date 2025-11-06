@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../utils/errorMessages';
 import { UserGroupIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import Kids from "./Kids";
+import { API_BASE_URL } from '~/config/api';
 
 export interface Child {
   id?: string | number;
   gender: string;
   date_of_birth?: string;
   expected_date?: string;
+  notes?: string;
   traits?: string[];
   isExpecting?: boolean;
   is_expecting?: boolean;
@@ -22,26 +24,89 @@ const options = [
 const Children: React.FC = () => {
   const [selected, setSelected] = useState<string>("");
   const [childrenList, setChildrenList] = useState<Child[]>([]);
-  const [showModal, setShowModal] = useState(false);
-  const [gender, setGender] = useState<string>("");
-  const [dob, setDob] = useState<string>("");
-  const [traits, setTraits] = useState<string[]>([]);
-  const [error, setError] = useState<string>("");
-  const [loading, setLoading] = useState(false);
-  const [showExpectingModal, setShowExpectingModal] = useState(false);
-  const [expectingDate, setExpectingDate] = useState("");
-  const [expectingLoading, setExpectingLoading] = useState(false);
-  const [expectingError, setExpectingError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
-  const handleOptionChange = (value: string) => {
+  // Load existing children on mount
+  useEffect(() => {
+    const loadChildren = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        
+        // First, check if there are any kids
+        const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
+          method: "GET",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        
+        if (kidsRes.ok) {
+          const kids = await kidsRes.json();
+          if (kids && kids.length > 0) {
+            setChildrenList(kids);
+            setSelected("have_or_expecting");
+            return; // Exit early if we have kids
+          }
+        }
+        
+        // If no kids, check if user has progressed beyond this step
+        const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          method: "GET",
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+        });
+        
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          // If they have data in steps beyond children (like chores, budget, religion, bio)
+          // but no children, assume they selected "no children"
+          if (profile.chores || profile.budget_min || profile.religion || profile.bio) {
+            setSelected("no_children");
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load children:", err);
+      }
+    };
+    
+    loadChildren();
+  }, []);
+
+  const handleOptionChange = async (value: string) => {
     setSelected(value);
+    
+    // If user selects "no children", save immediately
+    if (value === "no_children") {
+      await saveChildrenPreference(false);
+    }
   };
 
-  const handleTraitChange = (trait: string) => {
-    if (traits.includes(trait)) {
-      setTraits(traits.filter((t) => t !== trait));
-    } else if (traits.length < 3) {
-      setTraits([...traits, trait]);
+  const saveChildrenPreference = async (hasChildren: boolean) => {
+    setSaving(true);
+    setSaveMessage(null);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          has_children: hasChildren,
+        }),
+      });
+      
+      if (!res.ok) throw new Error("Failed to save preference");
+      
+      setSaveMessage({ type: 'success', text: 'Preference saved successfully' });
+      // Note: Step completion is tracked server-side when kids are added
+    } catch (err: any) {
+      setSaveMessage({ type: 'error', text: handleApiError(err, 'children', 'Failed to save preference') });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -49,88 +114,21 @@ const Children: React.FC = () => {
     setChildrenList(children);
   };
 
-  const handleChildSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!gender || !dob || traits.length === 0) {
-      setError("Please fill all fields and select up to 3 traits.");
-      return;
-    }
-    // Date of birth must be today or in the past
-    const today = new Date();
-    today.setHours(0,0,0,0);
-    const dobDate = new Date(dob);
-    dobDate.setHours(0,0,0,0);
-    if (dobDate > today) {
-      setError("Date of birth cannot be in the future.");
-      return;
-    }
-    setError("");
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/household_kids", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          gender,
-          date_of_birth: dob,
-          traits,
-        }),
-      });
-      if (!res.ok) throw new Error("Failed to save child. Please try again.");
-      const saved = await res.json();
-      setChildrenList([...childrenList, saved]);
-      setShowModal(false);
-      setGender("");
-      setDob("");
-      setTraits([]);
-    } catch (err: any) {
-      setError(handleApiError(err, 'children', 'An error occurred.'));
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Submitting children data:", childrenList);
-    // Handle form submission with childrenList
-    try {
-      const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8080/api/v1/household_kids", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(childrenList),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save children data");
-      }
-      
-      // Handle successful save
-      const result = await response.json();
-      console.log("Children data saved successfully:", result);
-    } catch (error) {
-      console.error("Error saving children data:", error);
-    }
-  };
-
   return (
     <div className="w-full max-w-3xl mx-auto">
-      <form className="bg-white border p-8 rounded-xl shadow-lg flex flex-col gap-8" onSubmit={handleSubmit}>
-        <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Children</h2>
-        <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-8">
+        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">👶 Children</h2>
+        <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
+          Tell us about your children so we can find the perfect match
+        </p>
+        <div className="flex flex-col gap-4">
           {options.map((opt) => (
             <label
               key={opt.value}
-              className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+              className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${
                 selected === opt.value
-                  ? "border-primary-500 bg-primary-50 text-primary-900"
-                  : "border-gray-200 bg-white hover:bg-gray-50"
+                  ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105"
+                  : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"
               }`}
             >
               <input
@@ -139,31 +137,33 @@ const Children: React.FC = () => {
                 value={opt.value}
                 checked={selected === opt.value}
                 onChange={() => handleOptionChange(opt.value)}
-                className="form-radio h-5 w-5 text-primary-600 border-gray-300"
+                className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
               />
-              <opt.icon className="h-7 w-7 text-primary-500" aria-hidden="true" />
-              <span>{opt.label}</span>
+              <opt.icon className="h-8 w-8 text-purple-600 dark:text-purple-400" aria-hidden="true" />
+              <span className="flex-1">{opt.label}</span>
             </label>
           ))}
 
           {selected === "have_or_expecting" && (
             <Kids 
-              onChildrenUpdate={handleChildrenUpdate} 
+              onChildrenUpdate={handleChildrenUpdate}
               initialChildren={childrenList}
               className="mt-4"
             />
           )}
         </div>
 
-        <div className="flex justify-end">
-          <button
-            type="submit"
-            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
-          >
-            Save Changes
-          </button>
-        </div>
-      </form>
+        {/* Save Status Message */}
+        {saveMessage && (
+          <div className={`p-4 rounded-xl text-sm font-semibold border-2 ${
+            saveMessage.type === 'success'
+              ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30'
+              : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30'
+          }`}>
+            {saveMessage.type === 'success' ? '✓ ' : '⚠️ '}{saveMessage.text}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

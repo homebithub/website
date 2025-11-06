@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../../utils/errorMessages';
 import { UserGroupIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import Kids from "./Kids";
+import { API_BASE_URL } from '~/config/api';
 
 export interface Child {
   id?: string | number;
@@ -68,7 +69,7 @@ const Children: React.FC = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:8080/api/v1/household_kids", {
+      const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -98,7 +99,7 @@ const Children: React.FC = () => {
     // Handle form submission with childrenList
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:8080/api/v1/household_kids", {
+      const response = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

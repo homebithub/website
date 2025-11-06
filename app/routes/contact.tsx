@@ -1,9 +1,12 @@
 import React, { useState } from "react";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Error as ErrorComponent } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Footer } from "~/components/Footer";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
+import { API_ENDPOINTS } from '~/config/api';
 
 interface ApiError {
   message: string;
@@ -34,7 +37,7 @@ export default function Contact() {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:8080/contact", {
+      const response = await fetch(API_ENDPOINTS.contact, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -68,26 +71,30 @@ export default function Contact() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-purple-200 fade-in-scroll overflow-x-hidden flex flex-col">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="flex-1 container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto bg-white/90 p-8 rounded-3xl shadow-xl backdrop-blur-lg transition-transform duration-500 hover:scale-105 hover:shadow-2xl fade-in-scroll">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Contact Us
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
+      <main className="flex-1 container mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
+        <div className="max-w-4xl mx-auto bg-white/90 dark:bg-[#13131a]/95 p-8 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg backdrop-blur-lg transition-all duration-500 hover:scale-105 hover:shadow-light-glow-lg dark:hover:shadow-glow-lg fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/30">
+          <div className="mb-8 text-center">
+            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+              Contact Us 💬
             </h1>
-            <p className="mt-2 text-gray-600">
-              Have questions? We'd love to hear from you.
+            <p className="text-lg text-gray-600">
+              Have questions? We'd love to hear from you. 😊
             </p>
           </div>
 
           {error && <ErrorComponent title="Error" message={error} />}
 
           {success ? (
-            <div className="bg-green-50 p-4 rounded-md">
-              <p className="text-green-800">
-                Thank you for your message! We'll get back to you soon.
-              </p>
+            <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-6 shadow-md">
+              <div className="flex items-center justify-center">
+                <span className="text-3xl mr-3">🎉</span>
+                <p className="text-lg font-bold text-green-800">
+                  Thank you for your message! We'll get back to you soon. ✔️
+                </p>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
@@ -96,7 +103,7 @@ export default function Contact() {
                   <div>
                     <label
                       htmlFor="name"
-                      className="block text-sm font-medium text-gray-700"
+                      className="block text-sm font-semibold text-purple-700 mb-2"
                     >
                       Name
                     </label>
@@ -107,14 +114,14 @@ export default function Contact() {
                       required
                       value={formData.name}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-base h-12 px-4 py-3 transition"
+                      className="auth-input"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="email"
-                      className="block text-sm font-medium text-gray-700"
+                      className="block text-sm font-semibold text-purple-700 mb-2"
                     >
                       Email
                     </label>
@@ -125,14 +132,14 @@ export default function Contact() {
                       required
                       value={formData.email}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-base h-12 px-4 py-3 transition"
+                      className="auth-input"
                     />
                   </div>
 
                   <div>
                     <label
                       htmlFor="subject"
-                      className="block text-sm font-medium text-gray-700"
+                      className="block text-sm font-semibold text-purple-700 mb-2"
                     >
                       Subject
                     </label>
@@ -142,7 +149,7 @@ export default function Contact() {
                       required
                       value={formData.subject}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-lg border border-gray-300 bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-base h-12 px-4 py-3 transition"
+                      className="auth-input"
                     >
                       <option value="">Select a subject</option>
                       <option value="general">General Inquiry</option>
@@ -155,7 +162,7 @@ export default function Contact() {
                   <div>
                     <label
                       htmlFor="message"
-                      className="block text-sm font-medium text-gray-700"
+                      className="block text-sm font-semibold text-purple-700 mb-2"
                     >
                       Message
                     </label>
@@ -166,22 +173,22 @@ export default function Contact() {
                       required
                       value={formData.message}
                       onChange={handleChange}
-                      className="mt-1 block w-full rounded-lg border-gray-300 bg-gray-50 text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-base px-4 py-3 transition"
+                      className="auth-input min-h-[120px]"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition"
+                    className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
-                    Send Message
+                    🚀 Send Message
                   </button>
                 </form>
               </div>
 
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                     Contact Information
                   </h3>
                   <div className="mt-4 space-y-4">
@@ -195,7 +202,7 @@ export default function Contact() {
                     <p className="text-gray-600">
                       <strong>Email:</strong>
                       <br />
-                      contact@homexpert.com
+                      contact@homebit.com
                     </p>
                     <p className="text-gray-600">
                       <strong>Phone:</strong>
@@ -206,7 +213,7 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <h3 className="text-lg font-medium text-gray-900">
+                  <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                     Business Hours
                   </h3>
                   <div className="mt-4 space-y-2">
@@ -226,7 +233,10 @@ export default function Contact() {
           )}
         </div>
       </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );
 }
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

@@ -1,12 +1,17 @@
 import React from "react";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 import { Navigation } from "~/components/Navigation";
+import { Footer } from "~/components/Footer";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 export default function Terms() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="container mx-auto px-4 py-8 border-2 border-purple-500 dark:border-purple-400 rounded-xl bg-white dark:bg-black text-slate-900 dark:text-white shadow-card">
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <main className="container mx-auto px-4 py-8">
+        <PurpleCard hover={false} glow={true} className="p-8">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
@@ -27,7 +32,7 @@ export default function Terms() {
             <h2>2. Use License</h2>
             <p>
               Permission is granted to temporarily download one copy of the materials (information or
-              software) on HomeXpert's website for personal, non-commercial transitory viewing only.
+              software) on Homebit's website for personal, non-commercial transitory viewing only.
             </p>
 
             <h2>3. User Account</h2>
@@ -51,7 +56,7 @@ export default function Terms() {
 
             <h2>6. Disclaimer</h2>
             <p>
-              The materials on HomeXpert's website are provided on an 'as is' basis. HomeXpert makes
+              The materials on Homebit's website are provided on an 'as is' basis. Homebit makes
               no warranties, expressed or implied, and hereby disclaims and negates all other
               warranties including, without limitation, implied warranties or conditions of
               merchantability, fitness for a particular purpose, or non-infringement of intellectual
@@ -60,28 +65,28 @@ export default function Terms() {
 
             <h2>7. Limitations</h2>
             <p>
-              In no event shall HomeXpert or its suppliers be liable for any damages (including,
+              In no event shall Homebit or its suppliers be liable for any damages (including,
               without limitation, damages for loss of data or profit, or due to business interruption)
-              arising out of the use or inability to use the materials on HomeXpert's website.
+              arising out of the use or inability to use the materials on Homebit's website.
             </p>
 
             <h2>8. Revisions and Errata</h2>
             <p>
-              The materials appearing on HomeXpert's website could include technical, typographical,
-              or photographic errors. HomeXpert does not warrant that any of the materials on its
+              The materials appearing on Homebit's website could include technical, typographical,
+              or photographic errors. Homebit does not warrant that any of the materials on its
               website are accurate, complete, or current.
             </p>
 
             <h2>9. Links</h2>
             <p>
-              HomeXpert has not reviewed all of the sites linked to its website and is not
+              Homebit has not reviewed all of the sites linked to its website and is not
               responsible for the contents of any such linked site. The inclusion of any link does not
-              imply endorsement by HomeXpert of the site.
+              imply endorsement by Homebit of the site.
             </p>
 
             <h2>10. Modifications</h2>
             <p>
-              HomeXpert may revise these terms of service for its website at any time without notice.
+              Homebit may revise these terms of service for its website at any time without notice.
               By using this website, you are agreeing to be bound by the then current version of these
               terms of service.
             </p>
@@ -102,7 +107,12 @@ export default function Terms() {
             </Link>
           </div>
         </div>
+        </PurpleCard>
       </main>
+      </PurpleThemeWrapper>
+      <Footer />
     </div>
   );
 } 
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";

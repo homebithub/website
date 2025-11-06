@@ -1,12 +1,17 @@
 import React from "react";
-import { Link } from "@remix-run/react";
+import { Link } from "react-router";
 import { Navigation } from "~/components/Navigation";
+import { Footer } from "~/components/Footer";
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { PurpleCard } from '~/components/ui/PurpleCard';
 
 export default function Privacy() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <main className="container mx-auto px-4 py-8 border-2 border-purple-500 dark:border-purple-400 rounded-xl bg-white dark:bg-black text-slate-900 dark:text-white shadow-card">
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <main className="container mx-auto px-4 py-8">
+        <PurpleCard hover={false} glow={true} className="p-8">
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
@@ -45,7 +50,7 @@ export default function Privacy() {
               We may share your information with:
             </p>
             <ul>
-              <li>Employers for job applications</li>
+              <li>Households for job applications</li>
               <li>Service providers who assist in our operations</li>
               <li>Legal authorities when required by law</li>
             </ul>
@@ -93,7 +98,7 @@ export default function Privacy() {
             <p>
               If you have any questions about this privacy policy, please contact us at:
               <br />
-              Email: privacy@homexpert.com
+              Email: privacy@homebit.com
               <br />
               Address: 123 Main Street, City, State, ZIP
             </p>
@@ -108,7 +113,12 @@ export default function Privacy() {
             </Link>
           </div>
         </div>
+        </PurpleCard>
       </main>
+      </PurpleThemeWrapper>
+      <Footer />
     </div>
   );
 } 
+// Error boundary for better error handling
+export { ErrorBoundary } from "~/components/ErrorBoundary";
