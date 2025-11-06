@@ -126,7 +126,7 @@ function HousehelpProfileSetupContent() {
       
       try {
         await saveProfileToBackend();
-        await saveProgressToBackend(STEPS.length, timeSpent, true);
+        await saveProgressToBackend(STEPS.length - 1, timeSpent, true);
         // Show congratulations modal
         setShowCongratulations(true);
         // Auto-redirect after 3 seconds
@@ -174,7 +174,10 @@ function HousehelpProfileSetupContent() {
       const token = localStorage.getItem('token');
       if (!token) return;
       
-      const completedSteps = Array.from({ length: step + 1 }, (_, i) => i + 1);
+      // Handle case when step is beyond STEPS array (completion)
+      const actualStep = Math.min(step, STEPS.length - 1);
+      // Backend expects step IDs (strings), not step numbers
+      const completedSteps = Array.from({ length: actualStep + 1 }, (_, i) => STEPS[i].id);
       
       await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
         method: 'POST',
@@ -183,15 +186,11 @@ function HousehelpProfileSetupContent() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          profile_type: 'househelp',
-          current_step: step + 1,
-          last_completed_step: step + 1,
+          current_step: actualStep + 1,
+          last_completed_step: actualStep + 1,
           completed_steps: completedSteps,
-          step_id: STEPS[step].id,
-          time_spent_seconds: timeOnStep,
-          status: isComplete ? 'completed' : 'in_progress',
-          skipped: skipped,
-          is_auto_save: isAutoSave
+          step_id: STEPS[actualStep]?.id || 'completed',
+          time_spent_seconds: timeOnStep
         })
       });
     } catch (error) {

@@ -1,15 +1,15 @@
 import React, {useEffect, useState} from "react";
 import {Navigation} from "~/components/Navigation";
 import { FloatingBubbles } from '~/components/ui/FloatingBubbles';
-import ProfileOverviewSection from "../components/househelp/ProfileOverviewSection";
-import EmploymentSalaryEditSection from "../components/househelp/EmploymentSalaryEditSection";
-import PersonalDetailsSection from "../components/househelp/PersonalDetailsSection";
-import PersonalDetailsEditSection from "../components/househelp/PersonalDetailsEditSection";
-import FamilyContactsEditSection from "../components/househelp/FamilyContactsEditSection";
-import EducationHealthEditSection from "../components/househelp/EducationHealthEditSection";
-import FamilyContactsSection from "../components/househelp/FamilyContactsSection";
-import EducationHealthSection from "../components/househelp/EducationHealthSection";
-import EmploymentSalarySection from "../components/househelp/EmploymentSalarySection";
+import ProfileOverviewSection from "~/components/features/household/househelp/ProfileOverviewSection";
+import EmploymentSalaryEditSection from "~/components/features/household/househelp/EmploymentSalaryEditSection";
+import PersonalDetailsSection from "~/components/features/household/househelp/PersonalDetailsSection";
+import PersonalDetailsEditSection from "~/components/features/household/househelp/PersonalDetailsEditSection";
+import FamilyContactsEditSection from "~/components/features/household/househelp/FamilyContactsEditSection";
+import EducationHealthEditSection from "~/components/features/household/househelp/EducationHealthEditSection";
+import FamilyContactsSection from "~/components/features/household/househelp/FamilyContactsSection";
+import EducationHealthSection from "~/components/features/household/househelp/EducationHealthSection";
+import EmploymentSalarySection from "~/components/features/household/househelp/EmploymentSalarySection";
 import Joi from 'joi';
 import { API_ENDPOINTS } from '~/config/api';
 

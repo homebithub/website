@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import {useSearchParams, useNavigate, useLocation} from "react-router";
 import { ArrowLeftIcon, HeartIcon, TrashIcon } from "@heroicons/react/24/outline";
-import ReadOnlyUserImageCarousel from "~/components/househelp/ReadOnlyUserImageCarousel";
-import ImageLightbox from "~/components/househelp/ImageLightbox";
+import ReadOnlyUserImageCarousel from "~/components/features/household/househelp/ReadOnlyUserImageCarousel";
+import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
 import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
 
 export default function HousehelpProfile() {
@@ -256,7 +256,7 @@ export default function HousehelpProfile() {
                 images={images}
                 carouselIdx={carouselIdx}
                 setCarouselIdx={setCarouselIdx}
-                onExpand={(idx) => {
+                onExpand={(idx: number) => {
                   setLightboxOpen(true);
                   setLightboxIdx(idx);
                 }}

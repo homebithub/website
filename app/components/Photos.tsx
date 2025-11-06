@@ -27,6 +27,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSkipping, setIsSkipping] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = (file: File): { valid: boolean; message?: string } => {
@@ -148,25 +149,47 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
     try {
       // Just mark the step as completed without uploading photos
       const token = localStorage.getItem('token');
-      const endpoint = `${API_BASE_URL}/api/v1/household/profile`;
       
-      const response = await fetch(endpoint, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          _step_metadata: {
-            step_id: "photos",
-            step_number: 8,
-            is_completed: true
-          }
-        }),
-      });
+      if (userType === 'household') {
+        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 8,
+              is_completed: true
+            }
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error('Failed to skip photos');
+        if (!response.ok) {
+          throw new Error('Failed to skip photos');
+        }
+      } else {
+        // For househelp
+        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            updates: {},
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 13,
+              is_completed: true
+            }
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to skip photos');
+        }
       }
 
       setSuccess('Skipped photos. You can add them later from your profile!');
@@ -200,29 +223,105 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
     setIsSubmitting(true);
     setError('');
     setSuccess('');
+    setUploadProgress(0);
     
     try {
       const token = localStorage.getItem('token');
+      
+      // Step 1: Upload images to documents service with progress tracking
       const formData = new FormData();
+      images.forEach((image) => {
+        formData.append('files', image.file);
+      });
+      // Add document metadata
+      formData.append('document_type', 'profile_photo');
+      formData.append('is_public', 'true');
+      formData.append('description', 'Profile photo');
       
-      images.forEach((image, index) => {
-        formData.append('photos', image.file);
+      // Use XMLHttpRequest for upload progress tracking
+      const uploadData = await new Promise<any>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        
+        // Track upload progress
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            setUploadProgress(percentComplete);
+          }
+        });
+        
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              resolve(JSON.parse(xhr.responseText));
+            } catch (err) {
+              reject(new Error('Invalid response from server'));
+            }
+          } else {
+            reject(new Error(`Upload failed with status ${xhr.status}`));
+          }
+        });
+        
+        xhr.addEventListener('error', () => {
+          reject(new Error('Network error during upload'));
+        });
+        
+        xhr.open('POST', `${API_BASE_URL}/api/v1/documents/upload`);
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+        xhr.send(formData);
       });
       
-      const endpoint = userType === 'household'
-        ? `${API_BASE_URL}/api/v1/household/profile/photos`
-        : `${API_BASE_URL}/api/v1/househelp-profile/photos`;
+      // Extract URLs from document objects
+      const imageUrls = uploadData.documents 
+        ? uploadData.documents.map((doc: any) => doc.url || doc.public_url)
+        : [];
       
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to upload photos');
+      // Step 2: Save image URLs to profile
+      if (userType === 'household') {
+        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            photos: imageUrls,
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 8,
+              is_completed: true
+            }
+          }),
+        });
+        
+        if (!profileResponse.ok) {
+          throw new Error('Failed to save photos to profile');
+        }
+      } else {
+        // For househelp
+        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            updates: {
+              photos: imageUrls
+            },
+            _step_metadata: {
+              step_id: "photos",
+              step_number: 13,
+              is_completed: true
+            }
+          }),
+        });
+        
+        if (!profileResponse.ok) {
+          throw new Error('Failed to save photos to profile');
+        }
       }
 
       setSuccess('Your photos have been uploaded successfully!');
@@ -321,6 +420,26 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
       {success && (
         <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
           ✓ {success}
+        </div>
+      )}
+      
+      {/* Upload Progress Indicator */}
+      {isSubmitting && uploadProgress > 0 && uploadProgress < 100 && (
+        <div className="mb-6 p-4 rounded-xl border-2 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-semibold text-blue-800 dark:text-blue-400">
+              Uploading to Linode Object Storage...
+            </span>
+            <span className="text-sm font-bold text-blue-800 dark:text-blue-400">
+              {uploadProgress}%
+            </span>
+          </div>
+          <div className="w-full bg-blue-200 dark:bg-blue-900/40 rounded-full h-3 overflow-hidden">
+            <div 
+              className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-300 ease-out"
+              style={{ width: `${uploadProgress}%` }}
+            />
+          </div>
         </div>
       )}
       

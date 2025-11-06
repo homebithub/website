@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { handleApiError } from '../../utils/errorMessages';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
@@ -77,6 +78,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to parent forms
     setError('');
     setLoading(true);
     
@@ -128,7 +130,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 max-h-[90vh] overflow-y-auto">
         <button
@@ -271,7 +273,8 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
         </div>
       </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 interface ExpectingModalProps {
@@ -14,6 +15,7 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation(); // Prevent event from bubbling to parent forms
 
     onSave({
       gender,
@@ -30,7 +32,7 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md p-6 relative shadow-2xl border-2 border-purple-200 dark:border-purple-500/30">
         <button
@@ -94,7 +96,8 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

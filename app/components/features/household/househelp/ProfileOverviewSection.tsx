@@ -45,7 +45,7 @@ export default function ProfileOverviewSection({
         <div className="mb-6 w-full flex flex-col items-center">
           <div className="relative w-full max-w-xs h-48 sm:h-56 flex items-center justify-center">
             <img
-              src={API_BASE_URL/images/" + userImages[carouselIdx].path.replace(/^src\//, '/')}
+              src={`${API_BASE_URL}/images/${userImages[carouselIdx].path.replace(/^src\//, '/')}`}
               alt={`User image ${carouselIdx + 1}`}
               className="object-contain w-full h-full rounded-xl shadow border dark:border-slate-700 bg-white dark:bg-slate-900 cursor-pointer transition-transform duration-200 active:scale-95"
               onClick={() => {

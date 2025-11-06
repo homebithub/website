@@ -35,6 +35,7 @@ const SalaryExpectations: React.FC = () => {
   const [selectedRange, setSelectedRange] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const submit = useSubmit();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -47,6 +48,7 @@ const SalaryExpectations: React.FC = () => {
 
     setIsSubmitting(true);
     setError('');
+    setSuccess('');
 
     try {
       const token = localStorage.getItem('token');
@@ -73,6 +75,7 @@ const SalaryExpectations: React.FC = () => {
         throw new Error('Failed to save salary expectations');
       }
 
+      setSuccess('Salary expectations saved successfully!');
       console.log('Salary expectations saved successfully');
     } catch (err: any) {
       setError(handleApiError(err, 'salary', 'Failed to save salary expectations. Please try again.'));
@@ -150,6 +153,12 @@ const SalaryExpectations: React.FC = () => {
             ))}
           </div>
         </div>
+
+        {success && (
+          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+            ✓ {success}
+          </div>
+        )}
 
         {error && (
           <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">

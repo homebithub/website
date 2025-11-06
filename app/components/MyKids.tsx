@@ -13,6 +13,48 @@ const MyKids = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     
+    // Load existing children and profile data on mount
+    useEffect(() => {
+        const loadData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                
+                // Load children
+                const kidsRes = await fetch(`${API_BASE_URL}/api/v1/househelp_kids`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (kidsRes.ok) {
+                    const kids = await kidsRes.json();
+                    if (kids && kids.length > 0) {
+                        setChildren(kids);
+                    }
+                }
+                
+                // Load profile to get has_kids and needs_accommodation status
+                const profileRes = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                
+                if (profileRes.ok) {
+                    const profile = await profileRes.json();
+                    if (profile.needs_accommodation) {
+                        setKidOption('needs_accommodation');
+                    } else if (profile.has_kids) {
+                        setKidOption('has_kids_no_accommodation');
+                    } else {
+                        setKidOption('has_kids');
+                    }
+                }
+            } catch (err) {
+                console.error('Failed to load data:', err);
+            }
+        };
+        
+        loadData();
+    }, []);
+    
     const handleChildrenUpdate = (updatedChildren: Child[]) => {
         setChildren(updatedChildren);
     };

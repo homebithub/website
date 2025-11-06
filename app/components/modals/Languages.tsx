@@ -227,25 +227,28 @@ const Languages = () => {
                     
                     {/* Other Languages */}
                     <div className="relative" ref={dropdownRef}>
-                        <label 
+                        <div 
                             className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
                                 selectedLanguages.some(lang => !['English', 'Swahili'].includes(lang))
                                     ? 'border-primary-500 bg-primary-50 text-primary-900'
                                     : 'border-gray-200 bg-white hover:bg-gray-50'
                             }`} 
-                            onClick={toggleOtherLanguages}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                toggleOtherLanguages();
+                            }}
                         >
                             <input
                                 type="checkbox"
                                 checked={selectedLanguages.some(lang => !['English', 'Swahili'].includes(lang))}
                                 readOnly
-                                className="form-checkbox h-5 w-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                                className="form-checkbox h-5 w-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 pointer-events-none"
                             />
                             <span>Other Languages</span>
                             <svg className={`ml-auto h-5 w-5 text-gray-400 transform transition-transform ${showOtherLanguages ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                             </svg>
-                        </label>
+                        </div>
                         
                         {showOtherLanguages && (
                             <div className="mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-10">

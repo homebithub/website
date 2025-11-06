@@ -99,7 +99,7 @@ function HouseholdProfileSetupContent() {
       try {
         await saveProfileToBackend();
         // Mark as completed
-        await saveProgressToBackend(STEPS.length, timeSpent, true);
+        await saveProgressToBackend(STEPS.length - 1, timeSpent, true);
         // Show congratulations modal
         setShowCongratulations(true);
         // Auto-redirect after 3 seconds
