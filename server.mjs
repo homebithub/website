@@ -1,79 +1,66 @@
 import Fastify from "fastify";
-import cors from "@fastify/cors";
 import fastifyStatic from "@fastify/static";
-import { createRequestHandler } from "@react-router/express";
+import fastifyCors from "@fastify/cors";
 import path from "path";
-import * as build from "./build/server/index.js";
 import { fileURLToPath } from "url";
+import { createRequestHandler } from "@react-router/express"; // React Router SSR handler
+import * as build from "./build/server/index.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const app = Fastify({
-  logger: true,
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const fastify = Fastify({
+    logger: true,
 });
 
-// Enable CORS (dev-friendly)
-await app.register(cors, { origin: true });
+await fastify.register(fastifyCors);
 
-// Serve static assets — no caching for now
-await app.register(fastifyStatic, {
-  root: path.join(__dirname, "build/client/assets"),
-  prefix: "/assets/",
-  setHeaders: (res) => {
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-  },
+// ✅ Serve assets from specific prefixes to avoid route conflicts
+fastify.register(fastifyStatic, {
+    root: path.join(__dirname, "build/client/assets"),
+    prefix: "/assets/",
+    setHeaders(res) {
+        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+    },
 });
 
-await app.register(fastifyStatic, {
-  root: path.join(__dirname, "build/client"),
-  prefix: "/",
-  decorateReply: false,
-  setHeaders: (res) => {
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-  },
+fastify.register(fastifyStatic, {
+    root: path.join(__dirname, "build/client"),
+    prefix: "/client/",
+    setHeaders(res) {
+        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+    },
 });
 
-await app.register(fastifyStatic, {
-  root: path.join(__dirname, "public"),
-  prefix: "/",
-  decorateReply: false,
-  setHeaders: (res) => {
-    res.setHeader("Cache-Control", "no-store");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-  },
+fastify.register(fastifyStatic, {
+    root: path.join(__dirname, "public"),
+    prefix: "/public/",
+    setHeaders(res) {
+        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+    },
 });
 
-// Health check endpoint
-app.get("/healthz", async (_, reply) => {
-  return reply.code(200).send({ status: "ok" });
+// ✅ Health check
+fastify.get("/healthz", async () => ({ status: "ok" }));
+
+// ✅ Catch-all route — after all statics
+fastify.all("/*", (req, reply) => {
+    const handler = createRequestHandler({ build });
+    handler(req.raw, reply.raw);
 });
 
-// Handle all other routes with React Router’s SSR handler
-app.all("/*", async (req, reply) => {
-  const handler = createRequestHandler({ build });
-  const nodeReq = {
-    method: req.method,
-    headers: req.headers,
-    url: req.url,
-  };
-  const nodeRes = {
-    writeHead: (status, headers) => reply.code(status).headers(headers),
-    end: (body) => reply.send(body),
-  };
-  return handler(nodeReq, nodeRes);
-});
-
-// Start server
 const PORT = process.env.PORT || 3000;
-app.listen({ port: PORT, host: "0.0.0.0" })
-  .then(() => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
-  })
-  .catch((err) => {
-    app.log.error(err);
-    process.exit(1);
-  });
+
+fastify.listen({ port: PORT, host: "0.0.0.0" }, (err) => {
+    if (err) {
+        fastify.log.error(err);
+        process.exit(1);
+    }
+    fastify.log.info(`✅ Server listening on port ${PORT}`);
+});
