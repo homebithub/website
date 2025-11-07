@@ -4,33 +4,31 @@ import fastifyCors from "@fastify/cors";
 import fastifyHttpProxy from "@fastify/http-proxy";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createRequestHandler } from "@react-router/node";
 import * as build from "./build/server/index.js";
+import { createRequestHandler } from "@react-router/serve";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const fastify = Fastify({
-    logger: true,
-});
+const fastify = Fastify({ logger: true });
 
-// ✅ Enable CORS
+// Enable CORS
 await fastify.register(fastifyCors, {
     origin: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 });
 
-// ✅ Serve static files
+// Serve static assets
 await fastify.register(fastifyStatic, {
     root: path.join(__dirname, "public"),
-    prefix: "/static/",
+    prefix: "/",
     decorateReply: false,
     setHeaders(res) {
         res.setHeader("Cache-Control", "no-store");
     },
 });
 
-// ✅ Proxy API calls to backend (example: auth service)
+// Proxy backend API calls (Go microservices, etc.)
 await fastify.register(fastifyHttpProxy, {
     upstream: "http://auth-srv:3000",
     prefix: "/api",
@@ -38,40 +36,28 @@ await fastify.register(fastifyHttpProxy, {
     http2: false,
 });
 
-// ✅ Health check
+// Health check
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
-// ✅ React Router SSR universal handler
-fastify.route({
-    method: ["GET", "POST", "PUT", "DELETE"],
-    url: "/*",
-    handler: async (req, reply) => {
-        const handler = createRequestHandler({ build });
-        const response = await handler(req.raw, {
-            // Bridge Fastify’s request/response with the Web Fetch API
-            request: {
-                method: req.raw.method,
-                headers: req.headers,
-                body: req.raw,
-                url: `${req.protocol}://${req.hostname}${req.raw.url}`,
-            },
-        });
+// ✅ Use the universal React Router handler from @react-router/serve
+const handleRequest = createRequestHandler({ build });
 
-        reply.status(response.status);
-        for (const [key, value] of response.headers.entries()) {
-            reply.header(key, value);
-        }
-        const body = await response.text();
-        reply.send(body);
-    },
+fastify.all("/*", async (req, reply) => {
+    const response = await handleRequest(req.raw);
+    reply.status(response.status);
+    for (const [key, value] of response.headers.entries()) {
+        reply.header(key, value);
+    }
+    const body = await response.text();
+    reply.send(body);
 });
 
-// ✅ Start server
+// Start server
 const PORT = process.env.PORT || 3000;
 fastify.listen({ port: PORT, host: "0.0.0.0" }, (err) => {
     if (err) {
         fastify.log.error(err);
         process.exit(1);
     }
-    fastify.log.info(`🚀 Server listening on port ${PORT}`);
+    fastify.log.info(`🚀 Fastify SSR server running on port ${PORT}`);
 });
