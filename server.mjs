@@ -18,17 +18,17 @@ await fastify.register(fastifyCors, {
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 });
 
-// Serve static assets
+// Serve static assets from a dedicated prefix
 await fastify.register(fastifyStatic, {
     root: path.join(__dirname, "public"),
-    prefix: "/",
+    prefix: "/assets/", // only /assets/* is handled here
     decorateReply: false,
     setHeaders(res) {
         res.setHeader("Cache-Control", "no-store");
     },
 });
 
-// Proxy backend API calls (Go microservices, etc.)
+// Proxy backend API calls
 await fastify.register(fastifyHttpProxy, {
     upstream: "http://auth-srv:3000",
     prefix: "/api",
@@ -39,7 +39,7 @@ await fastify.register(fastifyHttpProxy, {
 // Health check
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
-// ✅ Use the universal React Router handler from @react-router/serve
+// Universal React Router handler
 const handleRequest = createRequestHandler({ build });
 
 fastify.all("/*", async (req, reply) => {
