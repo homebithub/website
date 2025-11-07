@@ -1,10 +1,9 @@
-// server.mjs
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import fastifyCors from "@fastify/cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createRequestHandler } from "@react-router/express"; // React Router SSR
+import { createRequestHandler } from "@react-router/express";
 import * as build from "./build/server/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,29 +13,31 @@ const fastify = Fastify({
     logger: true,
 });
 
-// ✅ Register CORS first
+// ✅ Enable CORS (GET, POST, PUT, DELETE, OPTIONS)
 await fastify.register(fastifyCors, {
     origin: true,
-    methods: ["GET", "POST", "OPTIONS","DELETE","PUT"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 });
 
-// ✅ Register static files (only once per decorator!)
+// ✅ Serve static assets (React build + public)
 await fastify.register(fastifyStatic, {
     root: path.join(__dirname, "public"),
     prefix: "/",
-    decorateReply: false, // prevents duplicate .sendFile() decorator
+    decorateReply: false, // prevents sendFile redeclaration
     setHeaders(res) {
-        res.setHeader("Cache-Control", "public, max-age=3600");
+        // No cache while in active development
+        res.setHeader("Cache-Control", "no-store");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
     },
 });
 
-// ✅ Health endpoint (same as Express)
+// ✅ Health check route
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
-// ✅ Catch-all handler for React Router SSR
-// Use `fastify.route` instead of `all()` to avoid duplicate OPTIONS routes
+// ✅ Catch-all route for React Router SSR
 fastify.route({
-    method:["GET", "POST", "OPTIONS","DELETE","PUT"],
+    method: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     url: "/*",
     handler: async (req, reply) => {
         const handler = createRequestHandler({ build });
@@ -44,17 +45,12 @@ fastify.route({
     },
 });
 
-// ✅ Start the server
+// ✅ Start server
 const PORT = process.env.PORT || 3000;
-fastify.listen({ port: PORT, host: "0.0.0.0" }, async (err) => {
+fastify.listen({ port: PORT, host: "0.0.0.0" }, (err) => {
     if (err) {
         fastify.log.error(err);
         process.exit(1);
     }
-
-    if (process.env.NODE_ENV === "development") {
-        broadcastDevReady(build);
-    }
-
     fastify.log.info(`🚀 Server listening on port ${PORT}`);
 });
