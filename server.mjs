@@ -1,9 +1,11 @@
+// server.mjs
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import fastifyCors from "@fastify/cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createRequestHandler } from "@react-router/express";
+import { createRequestHandler } from "@react-router/express"; // React Router SSR
+import { broadcastDevReady } from "@react-router/node";
 import * as build from "./build/server/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,49 +15,47 @@ const fastify = Fastify({
     logger: true,
 });
 
-// ✅ CORS
+// ✅ Register CORS first
 await fastify.register(fastifyCors, {
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    origin: true,
+    methods: ["GET", "POST", "OPTIONS","DELETE","PUT"],
 });
 
-// ✅ Serve static assets from unique prefixes to avoid route overlap
+// ✅ Register static files (only once per decorator!)
 await fastify.register(fastifyStatic, {
-    root: [
-        path.join(__dirname, "build/client/assets"),
-        path.join(__dirname, "build/client"),
-        path.join(__dirname, "public")
-    ],
-    prefix: "/", // serve everything from root
+    root: path.join(__dirname, "public"),
+    prefix: "/",
+    decorateReply: false, // prevents duplicate .sendFile() decorator
     setHeaders(res) {
-        res.setHeader("Cache-Control", "no-store");
-        res.setHeader("Pragma", "no-cache");
-        res.setHeader("Expires", "0");
+        res.setHeader("Cache-Control", "public, max-age=3600");
     },
 });
 
+// ✅ Health endpoint (same as Express)
+fastify.get("/healthz", async () => ({ status: "ok" }));
 
-// ✅ Health check
-fastify.get("/health", async () => ({ status: "ok" }));
-
-// ✅ Catch-all React Router handler
-fastify.all("/*", async (req, reply) => {
-    const handler = createRequestHandler({ build });
-
-    // Let Express-style handler process the raw Node request
-    await handler(req.raw, reply.raw);
-
-    // Tell Fastify the response was already handled
-    reply.sent = true;
+// ✅ Catch-all handler for React Router SSR
+// Use `fastify.route` instead of `all()` to avoid duplicate OPTIONS routes
+fastify.route({
+    method:["GET", "POST", "OPTIONS","DELETE","PUT"],
+    url: "/*",
+    handler: async (req, reply) => {
+        const handler = createRequestHandler({ build });
+        handler(req.raw, reply.raw);
+    },
 });
 
-// ✅ Start server
+// ✅ Start the server
 const PORT = process.env.PORT || 3000;
+fastify.listen({ port: PORT, host: "0.0.0.0" }, async (err) => {
+    if (err) {
+        fastify.log.error(err);
+        process.exit(1);
+    }
 
-try {
-    await fastify.listen({ port: PORT, host: "0.0.0.0" });
-    fastify.log.info(`✅ Server listening on port ${PORT}`);
-} catch (err) {
-    fastify.log.error(err);
-    process.exit(1);
-}
+    if (process.env.NODE_ENV === "development") {
+        broadcastDevReady(build);
+    }
+
+    fastify.log.info(`🚀 Server listening on port ${PORT}`);
+});
