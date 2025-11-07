@@ -1,12 +1,11 @@
 import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import fastifyCors from "@fastify/cors";
+import fastifyHttpProxy from "@fastify/http-proxy";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createRequestHandler } from "@react-router/express";
 import * as build from "./build/server/index.js";
-import fastifyHttpProxy from "@fastify/http-proxy";
-
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,37 +20,35 @@ await fastify.register(fastifyCors, {
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 });
 
-// ✅ Serve static assets (React build + public)
+// ✅ Serve static assets from React build/public
 await fastify.register(fastifyStatic, {
     root: path.join(__dirname, "public"),
-    prefix: "/",
-    decorateReply: false, // prevents sendFile redeclaration
+    prefix: "/static/", // 🔧 changed from "/" to avoid conflict
+    decorateReply: false,
     setHeaders(res) {
-        // No cache while in active development
         res.setHeader("Cache-Control", "no-store");
         res.setHeader("Pragma", "no-cache");
         res.setHeader("Expires", "0");
     },
 });
+
+// ✅ Proxy API requests to Go backend service
 await fastify.register(fastifyHttpProxy, {
     upstream: "http://auth-srv:3000",
-    prefix: "/api", // forward all /api/* calls
+    prefix: "/api",
     rewritePrefix: "/api",
+    http2: false,
 });
-// ✅ Health check route
+
+// ✅ Health check
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
-// ✅ Catch-all route for React Router SSR
-fastify.route({
-    method: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    url: "/*",
-    handler: async (req, reply) => {
-        const handler = createRequestHandler({ build });
-        handler(req.raw, reply.raw);
-    },
+// ✅ React Router SSR handler (catch-all)
+fastify.all("/*", async (req, reply) => {
+    const handler = createRequestHandler({ build });
+    handler(req.raw, reply.raw);
 });
 
-// ✅ Start server
 const PORT = process.env.PORT || 3000;
 fastify.listen({ port: PORT, host: "0.0.0.0" }, (err) => {
     if (err) {
