@@ -21,8 +21,12 @@ await fastify.register(fastifyCors, {
 
 // ✅ Serve static assets from unique prefixes to avoid route overlap
 await fastify.register(fastifyStatic, {
-    root: path.join(__dirname, "build/client/assets"),
-    prefix: "/assets/",
+    root: [
+        path.join(__dirname, "build/client/assets"),
+        path.join(__dirname, "build/client"),
+        path.join(__dirname, "public")
+    ],
+    prefix: "/", // serve everything from root
     setHeaders(res) {
         res.setHeader("Cache-Control", "no-store");
         res.setHeader("Pragma", "no-cache");
@@ -30,25 +34,6 @@ await fastify.register(fastifyStatic, {
     },
 });
 
-await fastify.register(fastifyStatic, {
-    root: path.join(__dirname, "build/client"),
-    prefix: "/client/",
-    setHeaders(res) {
-        res.setHeader("Cache-Control", "no-store");
-        res.setHeader("Pragma", "no-cache");
-        res.setHeader("Expires", "0");
-    },
-});
-
-await fastify.register(fastifyStatic, {
-    root: path.join(__dirname, "public"),
-    prefix: "/public/",
-    setHeaders(res) {
-        res.setHeader("Cache-Control", "no-store");
-        res.setHeader("Pragma", "no-cache");
-        res.setHeader("Expires", "0");
-    },
-});
 
 // ✅ Health check
 fastify.get("/health", async () => ({ status: "ok" }));
