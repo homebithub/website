@@ -17,7 +17,7 @@ const fastify = Fastify({
 // ✅ Enable CORS (GET, POST, PUT, DELETE, OPTIONS)
 await fastify.register(fastifyCors, {
     origin: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
 });
 
 // ✅ Serve static assets from React build/public
