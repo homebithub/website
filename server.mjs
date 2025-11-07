@@ -21,7 +21,7 @@ await fastify.register(fastifyCors, {
 // Serve static assets from a dedicated prefix
 await fastify.register(fastifyStatic, {
     root: path.join(__dirname, "public"),
-    prefix: "/assets/", // only /assets/* is handled here
+    prefix: "/assets/", // static files only served under /assets/*
     decorateReply: false,
     setHeaders(res) {
         res.setHeader("Cache-Control", "no-store");
@@ -39,10 +39,11 @@ await fastify.register(fastifyHttpProxy, {
 // Health check
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
-// Universal React Router handler
+// Universal React Router handler (SSR)
 const handleRequest = createRequestHandler({ build });
 
-fastify.all("/*", async (req, reply) => {
+// Use GET only, not all methods, to avoid OPTIONS conflicts with CORS
+fastify.get("/*", async (req, reply) => {
     const response = await handleRequest(req.raw);
     reply.status(response.status);
     for (const [key, value] of response.headers.entries()) {
