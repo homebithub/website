@@ -5,6 +5,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { createRequestHandler } from "@react-router/express";
 import * as build from "./build/server/index.js";
+import fastifyHttpProxy from "@fastify/http-proxy";
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +33,11 @@ await fastify.register(fastifyStatic, {
         res.setHeader("Expires", "0");
     },
 });
-
+await fastify.register(fastifyHttpProxy, {
+    upstream: "http://auth-srv:3000",
+    prefix: "/api", // forward all /api/* calls
+    rewritePrefix: "/api",
+});
 // ✅ Health check route
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
