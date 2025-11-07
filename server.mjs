@@ -14,16 +14,16 @@ const fastify = Fastify({
     logger: true,
 });
 
-// ✅ Enable CORS (GET, POST, PUT, DELETE, OPTIONS)
+// ✅ Enable CORS (Fastify handles OPTIONS internally)
 await fastify.register(fastifyCors, {
     origin: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 });
 
-// ✅ Serve static assets from React build/public
+// ✅ Serve static assets
 await fastify.register(fastifyStatic, {
     root: path.join(__dirname, "public"),
-    prefix: "/static/", // 🔧 changed from "/" to avoid conflict
+    prefix: "/static/",
     decorateReply: false,
     setHeaders(res) {
         res.setHeader("Cache-Control", "no-store");
@@ -32,7 +32,7 @@ await fastify.register(fastifyStatic, {
     },
 });
 
-// ✅ Proxy API requests to Go backend service
+// ✅ Proxy API requests to backend
 await fastify.register(fastifyHttpProxy, {
     upstream: "http://auth-srv:3000",
     prefix: "/api",
@@ -43,10 +43,14 @@ await fastify.register(fastifyHttpProxy, {
 // ✅ Health check
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
-// ✅ React Router SSR handler (catch-all)
-fastify.all("/*", async (req, reply) => {
-    const handler = createRequestHandler({ build });
-    handler(req.raw, reply.raw);
+// ✅ React Router SSR handler — exclude OPTIONS to prevent conflict
+fastify.route({
+    method: ["GET", "POST", "PUT", "DELETE"],
+    url: "/*",
+    handler: async (req, reply) => {
+        const handler = createRequestHandler({ build });
+        handler(req.raw, reply.raw);
+    },
 });
 
 const PORT = process.env.PORT || 3000;
