@@ -5,7 +5,7 @@ import fastifyHttpProxy from "@fastify/http-proxy";
 import path from "path";
 import { fileURLToPath } from "url";
 import * as build from "./build/server/index.js";
-import { createRequestHandler } from "@react-router/serve";
+import { createRequestHandler } from "@react-router/express";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
