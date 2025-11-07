@@ -4,7 +4,7 @@ import fastifyCors from "@fastify/cors";
 import fastifyHttpProxy from "@fastify/http-proxy";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createRequestHandler } from "@react-router/express";
+import { createRequestHandler } from "@react-router/node"; // ✅ universal version
 import * as build from "./build/server/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,25 +14,23 @@ const fastify = Fastify({
     logger: true,
 });
 
-// ✅ Enable CORS (Fastify handles OPTIONS internally)
+// ✅ Enable CORS
 await fastify.register(fastifyCors, {
     origin: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
 });
 
-// ✅ Serve static assets
+// ✅ Serve static files
 await fastify.register(fastifyStatic, {
     root: path.join(__dirname, "public"),
     prefix: "/static/",
     decorateReply: false,
     setHeaders(res) {
         res.setHeader("Cache-Control", "no-store");
-        res.setHeader("Pragma", "no-cache");
-        res.setHeader("Expires", "0");
     },
 });
 
-// ✅ Proxy API requests to backend
+// ✅ Proxy API calls to backend (example: auth service)
 await fastify.register(fastifyHttpProxy, {
     upstream: "http://auth-srv:3000",
     prefix: "/api",
@@ -43,16 +41,32 @@ await fastify.register(fastifyHttpProxy, {
 // ✅ Health check
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
-// ✅ React Router SSR handler — exclude OPTIONS to prevent conflict
+// ✅ React Router SSR universal handler
 fastify.route({
     method: ["GET", "POST", "PUT", "DELETE"],
     url: "/*",
     handler: async (req, reply) => {
         const handler = createRequestHandler({ build });
-        handler(req.raw, reply.raw);
+        const response = await handler(req.raw, {
+            // Bridge Fastify’s request/response with the Web Fetch API
+            request: {
+                method: req.raw.method,
+                headers: req.headers,
+                body: req.raw,
+                url: `${req.protocol}://${req.hostname}${req.raw.url}`,
+            },
+        });
+
+        reply.status(response.status);
+        for (const [key, value] of response.headers.entries()) {
+            reply.header(key, value);
+        }
+        const body = await response.text();
+        reply.send(body);
     },
 });
 
+// ✅ Start server
 const PORT = process.env.PORT || 3000;
 fastify.listen({ port: PORT, host: "0.0.0.0" }, (err) => {
     if (err) {
