@@ -5,7 +5,6 @@ import fastifyCors from "@fastify/cors";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createRequestHandler } from "@react-router/express"; // React Router SSR
-import { broadcastDevReady } from "@react-router/node";
 import * as build from "./build/server/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
