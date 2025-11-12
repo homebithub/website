@@ -15,7 +15,7 @@ const navigation = [
 ];
 
 export function Navigation() {
-    const { user, logout } = useAuth();
+    const { user, logout, loading } = useAuth();
     const [profileType, setProfileType] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
     const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
@@ -108,7 +108,7 @@ export function Navigation() {
     };
 
     // Show auth buttons only if user is not logged in and not on app host
-    const showAuthButtons = !user && !isAppHost;
+    const showAuthButtons = !user && !isAppHost && !loading;
 
 
 

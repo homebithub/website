@@ -160,16 +160,16 @@ export default function Index() {
       <div className="mt-12 sm:mt-16 md:mt-20 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 fade-in-scroll">
         <div className="grid grid-cols-2 gap-4 sm:gap-6 md:flex md:justify-center md:gap-8">
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/assets/kufua.png" alt="Laundry Service" className="w-full h-full object-cover rounded-md" />
+            <img src="/assets/kufua.png" alt="Laundry Service" className="w-full h-full object-cover rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/kufua.png';}}} />
           </div>
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/assets/lady laundry.jpg" alt="Woman doing laundry" className="w-full h-full object-cover rounded-md" />
+            <img src="/assets/lady laundry.jpg" alt="Woman doing laundry" className="w-full h-full object-cover rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/lady laundry.jpg';}}} />
           </div>
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/assets/man dishes.png" alt="Man washing dishes" className="w-full h-full object-cover rounded-md" />
+            <img src="/assets/man dishes.png" alt="Man washing dishes" className="w-full h-full object-cover rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/man dishes.png';}}} />
           </div>
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/assets/babysitter.webp" alt="Babysitter with child" className="w-full h-full object-cover rounded-md" />
+            <img src="/assets/babysitter.webp" alt="Babysitter with child" className="w-full h-full object-cover rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/babysitter.webp';}}} />
           </div>
         </div>
       </div>
@@ -181,7 +181,7 @@ export default function Index() {
         >
           Get Started
         </Link>
-        <img src="/assets/glitter.png" alt="Sparkle icon" className="h-8 w-8 sm:h-10 sm:w-10 animate-float" />
+        <img src="/assets/glitter.png" alt="Sparkle icon" className="h-8 w-8 sm:h-10 sm:w-10 animate-float" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/glitter.png';}}} />
       </div>
     </div>
   </div>
@@ -258,6 +258,7 @@ export default function Index() {
   src="/assets/how it works.jpg" 
   alt="How It Works" 
   className="w-full h-auto object-cover rounded-3xl"
+  onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/how it works.jpg';}}}
 />
           </div>
         </div>
