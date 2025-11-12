@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSearchParams, useLocation } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { API_BASE_URL } from '~/config/api';
 import { apiClient } from '~/utils/apiClient';
+import HousehelpFilters, { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 
 interface HousehelpProfile {
   id: number;
@@ -11,42 +13,196 @@ interface HousehelpProfile {
   last_name: string;
   profile_picture?: string;
   years_of_experience?: number;
+  experience?: number;
   salary_expectation?: string;
   salary_frequency?: string;
   location?: string;
+  county_of_residence?: string;
   bio?: string;
 }
 
 export default function AuthenticatedHome() {
-  const [searchQuery, setSearchQuery] = useState('');
+  const initialFields: HousehelpSearchFields = {
+    status: "active",
+    househelp_type: "",
+    gender: "",
+    experience: "",
+    town: "",
+    salary_frequency: "monthly",
+    skill: "",
+    traits: "",
+    min_rating: "",
+    salary_min: "",
+    salary_max: "",
+    can_work_with_kids: "",
+    can_work_with_pets: "",
+    offers_live_in: "",
+    offers_day_worker: "",
+    available_from: "",
+  };
+  const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
   const [househelps, setHousehelps] = useState<HousehelpProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const limit = 12;
+  const [hasMore, setHasMore] = useState(true);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
+  const lastSetQueryRef = useRef<string | null>(null);
 
+  // Initialize from URL params on mount
   useEffect(() => {
-    loadHousehelps();
+    const fromParams = paramsToFields(searchParams, initialFields);
+    setFields(fromParams);
+    // Kick off initial search with params
+    handleSearch(undefined, fromParams);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const loadHousehelps = async () => {
+  // React to back/forward changes in query params
+  useEffect(() => {
+    const currentQs = searchParams.toString();
+    if (lastSetQueryRef.current === currentQs) {
+      // Skip self-triggered updates
+      lastSetQueryRef.current = null;
+      return;
+    }
+    const fromParams = paramsToFields(searchParams, initialFields);
+    setFields(fromParams);
+    handleSearch(undefined, fromParams);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.search]);
+
+  const handleFieldChange = (name: string, value: string) => {
+    setFields(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSearch = async (e?: React.FormEvent, overrideFields?: HousehelpSearchFields) => {
+    if (e) e.preventDefault();
+    setLoading(true);
+    setError('');
     try {
-      // Requires auth; redirect on 401
-      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps`, { method: 'GET' });
-      const data = await apiClient.json<HousehelpProfile[]>(res);
-      setHousehelps(data);
+      const f = overrideFields || fields;
+      setHasSearched(true);
+      setOffset(0);
+      setHasMore(true);
+
+      // Persist filters to URL
+      const qs = new URLSearchParams(
+        Object.fromEntries(
+          Object.entries(f).filter(([, v]) => v !== undefined && v !== null && v !== "")
+        )
+      ).toString();
+      lastSetQueryRef.current = qs;
+      setSearchParams(qs);
+
+      const payload = Object.fromEntries(
+        Object.entries({
+          ...f,
+          experience: f.experience ? Number(f.experience) : undefined,
+          min_rating: f.min_rating ? Number(f.min_rating) : undefined,
+          salary_min: f.salary_min ? Number(f.salary_min) : undefined,
+          salary_max: f.salary_max ? Number(f.salary_max) : undefined,
+          can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
+          can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
+          offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
+          offers_day_worker: f.offers_day_worker === 'true' ? true : f.offers_day_worker === 'false' ? false : undefined,
+          available_from: f.available_from || undefined,
+          limit,
+          offset: 0,
+        }).filter(([, v]) => v !== undefined && v !== null && v !== "")
+      );
+      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await apiClient.json<{ data: HousehelpProfile[] }>(res);
+      const rows = data.data || [];
+      setHousehelps(rows);
+      setHasMore(rows.length === limit);
     } catch (err) {
       console.error('Error loading househelps:', err);
-      // Error is already handled by apiClient for 401; still show message
       setError('Failed to load househelps');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Implement search functionality
-    console.log('Searching for:', searchQuery);
+  const handleClear = () => {
+    setFields(initialFields);
   };
+
+  // Load more (infinite scroll)
+  const loadMore = async () => {
+    if (loading || !hasSearched || !hasMore) return;
+    setLoading(true);
+    try {
+      const f = fields;
+      const nextOffset = offset + limit;
+      const payload = Object.fromEntries(
+        Object.entries({
+          ...f,
+          experience: f.experience ? Number(f.experience) : undefined,
+          min_rating: f.min_rating ? Number(f.min_rating) : undefined,
+          salary_min: f.salary_min ? Number(f.salary_min) : undefined,
+          salary_max: f.salary_max ? Number(f.salary_max) : undefined,
+          can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
+          can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
+          offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
+          offers_day_worker: f.offers_day_worker === 'true' ? true : f.offers_day_worker === 'false' ? false : undefined,
+          available_from: f.available_from || undefined,
+          limit,
+          offset: nextOffset,
+        }).filter(([, v]) => v !== undefined && v !== null && v !== "")
+      );
+      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps/search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await apiClient.json<{ data: HousehelpProfile[] }>(res);
+      const rows = data.data || [];
+      setHousehelps(prev => [...prev, ...rows]);
+      setOffset(nextOffset);
+      setHasMore(rows.length === limit);
+    } catch (err) {
+      setHasMore(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Observe sentinel for infinite scroll
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const el = sentinelRef.current;
+    const io = new IntersectionObserver((entries) => {
+      const first = entries[0];
+      if (first.isIntersecting) {
+        loadMore();
+      }
+    }, { rootMargin: '200px' });
+    io.observe(el);
+    return () => io.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sentinelRef.current, hasSearched, offset, loading, hasMore, fields]);
+
+  // Helper: map URLSearchParams to fields
+  function paramsToFields(sp: URLSearchParams, base: HousehelpSearchFields): HousehelpSearchFields {
+    const keys = [
+      'status','househelp_type','gender','experience','town','salary_frequency','skill','traits','min_rating','salary_min','salary_max','can_work_with_kids','can_work_with_pets','offers_live_in','offers_day_worker','available_from'
+    ];
+    const obj: Record<string, string> = {};
+    keys.forEach(k => {
+      const v = sp.get(k);
+      if (v !== null) obj[k] = v;
+    });
+    return { ...base, ...obj } as HousehelpSearchFields;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -54,26 +210,21 @@ export default function AuthenticatedHome() {
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
         <main className="flex-1 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Search Bar Section */}
+            {/* Filters Section */}
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg">
               <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4">
                 Find Your Perfect Househelp
               </h1>
-              <form onSubmit={handleSearch} className="relative">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search by name, location, or skills..."
-                  className="w-full px-6 py-4 rounded-xl text-lg focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
-                />
-                <button
-                  type="submit"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all"
-                >
-                  🔍 Search
-                </button>
-              </form>
+              <p className="text-purple-100">Use the filters below to refine your search.</p>
+            </div>
+
+            <div className="mb-8">
+              <HousehelpFilters
+                fields={fields}
+                onChange={handleFieldChange}
+                onSearch={() => handleSearch()}
+                onClear={handleClear}
+              />
             </div>
 
             {/* Househelp Profiles Section */}
@@ -124,16 +275,16 @@ export default function AuthenticatedHome() {
                       </h3>
 
                       {/* Location */}
-                      {househelp.location && (
+                      {(househelp.county_of_residence || househelp.location) && (
                         <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
-                          📍 {househelp.location}
+                          📍 {househelp.county_of_residence || househelp.location}
                         </p>
                       )}
 
                       {/* Experience */}
-                      {househelp.years_of_experience && (
+                      {(househelp.years_of_experience ?? househelp.experience) && (
                         <p className="text-sm text-purple-600 dark:text-purple-400 text-center mb-3">
-                          ⭐ {househelp.years_of_experience} years experience
+                          ⭐ {househelp.years_of_experience ?? househelp.experience} years experience
                         </p>
                       )}
 
@@ -160,6 +311,8 @@ export default function AuthenticatedHome() {
                   ))}
                 </div>
               )}
+              {/* Infinite scroll sentinel */}
+              <div ref={sentinelRef} className="h-1" />
             </div>
           </div>
         </main>

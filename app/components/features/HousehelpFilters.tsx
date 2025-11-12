@@ -12,6 +12,13 @@ export type HousehelpSearchFields = {
   skill: string;
   traits: string;
   min_rating: string;
+  salary_min: string;
+  salary_max: string;
+  can_work_with_kids: string;
+  can_work_with_pets: string;
+  offers_live_in: string;
+  offers_day_worker: string;
+  available_from: string;
 };
 
 // Curated options (kept in sync with backend expectations)
@@ -112,6 +119,32 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
         </select>
       </div>
 
+      {/* Salary range */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex flex-col">
+          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min salary</label>
+          <input
+            type="number"
+            min="0"
+            className={inputBase}
+            value={fields.salary_min}
+            onChange={(e) => onChange("salary_min", e.target.value)}
+            placeholder="e.g. 15000"
+          />
+        </div>
+        <div className="flex flex-col">
+          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Max salary</label>
+          <input
+            type="number"
+            min="0"
+            className={inputBase}
+            value={fields.salary_max}
+            onChange={(e) => onChange("salary_max", e.target.value)}
+            placeholder="e.g. 35000"
+          />
+        </div>
+      </div>
+
       {/* Skill */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Skill</label>
@@ -130,6 +163,49 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
             <option key={t} value={t}>{t || "Any"}</option>
           ))}
         </select>
+      </div>
+
+      {/* Compatibility and availability */}
+      <div className="flex flex-col">
+        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Works with kids</label>
+        <select className={inputBase} value={fields.can_work_with_kids} onChange={(e) => onChange("can_work_with_kids", e.target.value)}>
+          <option value="">Any</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+      <div className="flex flex-col">
+        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Works with pets</label>
+        <select className={inputBase} value={fields.can_work_with_pets} onChange={(e) => onChange("can_work_with_pets", e.target.value)}>
+          <option value="">Any</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+      <div className="flex flex-col">
+        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Live-in</label>
+        <select className={inputBase} value={fields.offers_live_in} onChange={(e) => onChange("offers_live_in", e.target.value)}>
+          <option value="">Any</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+      <div className="flex flex-col">
+        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Day worker</label>
+        <select className={inputBase} value={fields.offers_day_worker} onChange={(e) => onChange("offers_day_worker", e.target.value)}>
+          <option value="">Any</option>
+          <option value="true">Yes</option>
+          <option value="false">No</option>
+        </select>
+      </div>
+      <div className="flex flex-col">
+        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Available from</label>
+        <input
+          type="date"
+          className={inputBase}
+          value={fields.available_from}
+          onChange={(e) => onChange("available_from", e.target.value)}
+        />
       </div>
 
       {/* Min rating */}

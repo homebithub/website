@@ -108,16 +108,16 @@ export default function SecondHome() {
       <div className="mt-12 sm:mt-16 md:mt-20 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 fade-in-scroll">
         <div className="grid grid-cols-2 gap-4 sm:gap-6 md:flex md:justify-center md:gap-8">
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/kufua.png" alt="Laundry Service" className="w-full h-full object-cover rounded-md" />
+            <img src="/assets/kufua.png" alt="Laundry Service" className="w-full h-full object-cover rounded-md" />
           </div>
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/lady laundry.jpg" alt="Woman doing laundry" className="w-full h-full object-cover rounded-md" />
+            <img src="/assets/lady laundry.jpg" alt="Woman doing laundry" className="w-full h-full object-cover rounded-md" />
           </div>
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/man dishes.png" alt="Man washing dishes" className="w-full h-full object-cover rounded-md" />
+            <img src="/assets/man dishes.png" alt="Man washing dishes" className="w-full h-full object-cover rounded-md" />
           </div>
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/babysitter.webp" alt="Babysitter with child" className="w-full h-full object-cover rounded-md" />
+            <img src="/assets/babysitter.webp" alt="Babysitter with child" className="w-full h-full object-cover rounded-md" />
           </div>
         </div>
       </div>
@@ -129,7 +129,7 @@ export default function SecondHome() {
         >
           Get Started
         </Link>
-        <img src="/glitter.png" alt="Sparkle icon" className="h-8 w-8 sm:h-10 sm:w-10 animate-float" />
+        <img src="/assets/glitter.png" alt="Sparkle icon" className="h-8 w-8 sm:h-10 sm:w-10 animate-float" />
       </div>
     </div>
   </div>
@@ -203,7 +203,7 @@ export default function SecondHome() {
         <div className="lg:w-1/2 flex justify-center lg:justify-end fade-in-scroll">
           <div className="w-full max-w-[500px] rounded-3xl overflow-hidden shadow-xl dark:shadow-glow-lg border-4 border-primary-200 dark:border-purple-500/30 animate-fadeIn group transition-all duration-500 hover:scale-110 hover:shadow-2xl dark:hover:shadow-glow-lg">
             <img 
-  src="/how it works.jpg" 
+  src="/assets/how it works.jpg" 
   alt="How It Works" 
   className="w-full h-auto object-cover rounded-3xl"
 />

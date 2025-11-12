@@ -126,8 +126,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       // Redirect to specific dashboard based on profile_type
       const profileType = userData.profile_type;
+      try { localStorage.setItem("userType", profileType || ""); } catch {}
       console.log("User data after login:", userData);
-      console.log("Profile type:", profileType);
+      console.log("Redirecting to home with profile type:", profileType);
 
       // Bureau users should not login through regular flow
       if (profileType === "bureau") {
@@ -137,14 +138,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (profileType === "household" || profileType === "household") {
-        console.log("Redirecting to /household/profile");
-        navigate("/household/profile");
+        console.log("Redirecting to /");
+        navigate("/");
       } else if (profileType === "househelp") {
-        console.log("Redirecting to /househelp");
-        navigate("/househelp");
+        console.log("Redirecting to /");
+        navigate("/");
       } else {
         console.log("No valid profile type found, redirecting to /");
-        navigate("/"); // fallback
+        navigate("/");
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");

@@ -17,6 +17,13 @@ const initialFields: HousehelpSearchFields = {
   skill: "",
   traits: "",
   min_rating: "",
+  salary_min: "",
+  salary_max: "",
+  can_work_with_kids: "",
+  can_work_with_pets: "",
+  offers_live_in: "",
+  offers_day_worker: "",
+  available_from: "",
 };
 
 export default function HouseholdEmployment() {
@@ -149,6 +156,13 @@ export default function HouseholdEmployment() {
               ...fields,
               experience: fields.experience ? Number(fields.experience) : undefined,
               min_rating: fields.min_rating ? Number(fields.min_rating) : undefined,
+              salary_min: fields.salary_min ? Number(fields.salary_min) : undefined,
+              salary_max: fields.salary_max ? Number(fields.salary_max) : undefined,
+              can_work_with_kids: fields.can_work_with_kids === 'true' ? true : fields.can_work_with_kids === 'false' ? false : undefined,
+              can_work_with_pets: fields.can_work_with_pets === 'true' ? true : fields.can_work_with_pets === 'false' ? false : undefined,
+              offers_live_in: fields.offers_live_in === 'true' ? true : fields.offers_live_in === 'false' ? false : undefined,
+              offers_day_worker: fields.offers_day_worker === 'true' ? true : fields.offers_day_worker === 'false' ? false : undefined,
+              available_from: fields.available_from || undefined,
               limit,
               offset: 0,
             }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
@@ -183,6 +197,13 @@ export default function HouseholdEmployment() {
               ...fields,
               experience: fields.experience ? Number(fields.experience) : undefined,
               min_rating: fields.min_rating ? Number(fields.min_rating) : undefined,
+              salary_min: fields.salary_min ? Number(fields.salary_min) : undefined,
+              salary_max: fields.salary_max ? Number(fields.salary_max) : undefined,
+              can_work_with_kids: fields.can_work_with_kids === 'true' ? true : fields.can_work_with_kids === 'false' ? false : undefined,
+              can_work_with_pets: fields.can_work_with_pets === 'true' ? true : fields.can_work_with_pets === 'false' ? false : undefined,
+              offers_live_in: fields.offers_live_in === 'true' ? true : fields.offers_live_in === 'false' ? false : undefined,
+              offers_day_worker: fields.offers_day_worker === 'true' ? true : fields.offers_day_worker === 'false' ? false : undefined,
+              available_from: fields.available_from || undefined,
               limit,
               offset: nextOffset,
             }).filter(([_, v]) => v !== undefined && v !== null && v !== "")

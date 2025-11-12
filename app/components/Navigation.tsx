@@ -41,6 +41,15 @@ export function Navigation() {
         return null;
     }, [profileType]);
 
+    const authLinks = React.useMemo(() => {
+        const shortlistHref = profileType === 'household' ? '/household/employment?tab=shortlist' : '/shortlist';
+        return [
+            { name: 'Shortlist', href: shortlistHref },
+            { name: 'Inbox', href: '/inbox' },
+            { name: 'Hiring history', href: '/hiring-history' },
+        ];
+    }, [profileType]);
+
     // Parse user profile type and name from localStorage
     useEffect(() => {
         if (user) {
@@ -126,7 +135,7 @@ export function Navigation() {
                 {/* Public Navigation Links - Show on non-app hosts for all users */}
                 {!isAppHost && (
                     <div className="hidden lg:flex items-center space-x-4 ml-auto">
-                        {navigation.map((item) => (
+                        {(user ? authLinks : navigation).map((item) => (
                             <Link
                                 key={item.name}
                                 to={item.href}
@@ -242,18 +251,9 @@ export function Navigation() {
                     {/* App navigation for authenticated users on app subdomain */}
                     {isAppHost && user && (
                         <div className="hidden lg:flex items-center space-x-3 ml-4">
-                            {profileType === 'household' || profileType === 'household' ? (
-                                <>
-                                    <Link to="/household/profile" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">Profile</Link>
-                                    <Link to="/household/employment" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">Find Househelps</Link>
-                                    <Link to="/household/employment?tab=shortlist" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">Shortlist</Link>
-                                </>
-                            ) : profileType === 'househelp' ? (
-                                <>
-                                    <Link to="/househelp" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">Profile</Link>
-                                    <Link to="/househelp/find-households" prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">Find Households</Link>
-                                </>
-                            ) : null}
+                            {authLinks.map((item) => (
+                                <Link key={item.name} to={item.href} prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">{item.name}</Link>
+                            ))}
                         </div>
                     )}
 
@@ -274,8 +274,8 @@ export function Navigation() {
                         >
                             <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white/90 dark:bg-[#13131a]/95 border-2 border-primary-200 dark:border-purple-500/30 shadow-xl shadow-purple-200/50 dark:shadow-glow-sm focus:outline-none backdrop-blur-xl">
                                 <div className="py-2">
-                                    {/* Public navigation links in mobile menu (non-app host only) */}
-                                    {!isAppHost && navigation.map((item) => (
+                                    {/* Navigation links in mobile menu (non-app host) */}
+                                    {!isAppHost && (user ? authLinks : navigation).map((item) => (
                                         <Menu.Item key={item.name}>
                                             {({ active }) => (
                                                 <Link
@@ -350,38 +350,13 @@ export function Navigation() {
                                             {/* App links for mobile on app host */}
                                             {isAppHost ? (
                                                 <>
-                                                    {profileType === 'household' || profileType === 'household' ? (
-                                                        <>
-                                                            <Menu.Item>{({ active }) => (
-                                                                <Link to="/household/profile" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
-                                                                    <UserIcon className="mr-3 h-5 w-5" /> Profile
-                                                                </Link>
-                                                            )}</Menu.Item>
-                                                            <Menu.Item>{({ active }) => (
-                                                                <Link to="/household/employment" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
-                                                                    Find Househelps
-                                                                </Link>
-                                                            )}</Menu.Item>
-                                                            <Menu.Item>{({ active }) => (
-                                                                <Link to="/household/employment?tab=shortlist" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
-                                                                    Shortlist
-                                                                </Link>
-                                                            )}</Menu.Item>
-                                                        </>
-                                                    ) : profileType === 'househelp' ? (
-                                                        <>
-                                                            <Menu.Item>{({ active }) => (
-                                                                <Link to="/househelp" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
-                                                                    <UserIcon className="mr-3 h-5 w-5" /> Profile
-                                                                </Link>
-                                                            )}</Menu.Item>
-                                                            <Menu.Item>{({ active }) => (
-                                                                <Link to="/househelp/find-households" className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
-                                                                    Find Households
-                                                                </Link>
-                                                            )}</Menu.Item>
-                                                        </>
-                                                    ) : null}
+                                                    {authLinks.map((item) => (
+                                                        <Menu.Item key={item.name}>{({ active }) => (
+                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
+                                                                {item.name}
+                                                            </Link>
+                                                        )}</Menu.Item>
+                                                    ))}
                                                 </>
                                             ) : (
                                                 <Menu.Item>
