@@ -46,6 +46,40 @@ export default function AuthenticatedHome() {
     offers_day_worker: "",
     available_from: "",
   };
+
+  // Card actions
+  const handleViewProfile = (profileId: string) => {
+    navigate('/household/househelp/profile', { state: { profileId } });
+  };
+
+  const handleStartChat = async (profileId: string) => {
+    try {
+      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/inbox/start/househelp/${profileId}`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error('Failed to start conversation');
+      const data = await apiClient.json<any>(res);
+      const convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
+      if (convId) navigate(`/inbox/${convId}`);
+      else navigate('/inbox');
+    } catch (e) {
+      navigate('/inbox');
+    }
+  };
+
+  const handleShortlist = async (profileId: string) => {
+    try {
+      const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile_id: profileId, profile_type: 'househelp' }),
+      });
+      if (!res.ok) throw new Error('Failed to shortlist');
+      navigate('/household/employment?tab=shortlist');
+    } catch (e) {
+      navigate('/household/employment?tab=shortlist');
+    }
+  };
   const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
   const [househelps, setHousehelps] = useState<HousehelpProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -256,7 +290,7 @@ export default function AuthenticatedHome() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className="flex-1 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Compact Filters Section */}
@@ -316,7 +350,7 @@ export default function AuthenticatedHome() {
                 )}
                 <button
                   onClick={() => handleSearch()}
-                  className="px-6 py-3 bg-white text-purple-700 font-bold rounded-xl hover:bg-purple-50 transition"
+                  className="px-6 py-3 rounded-xl font-bold bg-white text-purple-700 border border-white/30 ring-1 ring-purple-300/40 shadow-lg shadow-[0_0_14px_rgba(168,85,247,0.22)] hover:bg-purple-50 transition-all dark:bg-white/90 dark:text-purple-700 dark:hover:bg-white focus:outline-none focus:ring-2 focus:ring-white/70 dark:shadow-[0_0_20px_rgba(168,85,247,0.35)]"
                 >
                   Search
                 </button>
@@ -416,7 +450,7 @@ export default function AuthenticatedHome() {
                       )}
 
                       {/* Experience */}
-                      {(househelp.years_of_experience ?? househelp.experience) && (
+                      {((househelp.years_of_experience ?? househelp.experience) as number) > 0 && (
                         <p className="text-sm text-purple-600 dark:text-purple-400 text-center mb-3">
                           ⭐ {househelp.years_of_experience ?? househelp.experience} years experience
                         </p>
@@ -441,7 +475,7 @@ export default function AuthenticatedHome() {
                       <div className="mt-4 flex items-center justify-between">
                         <button
                           onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleViewProfile(String(househelp.profile_id)); }}
-                          className="px-4 py-2 rounded-xl border-2 border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition"
+                          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >
                           View more
                         </button>

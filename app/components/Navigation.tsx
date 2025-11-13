@@ -42,7 +42,7 @@ export function Navigation() {
     }, [profileType]);
 
     const authLinks = React.useMemo(() => {
-        const shortlistHref = profileType === 'household' ? '/household/employment?tab=shortlist' : '/shortlist';
+        const shortlistHref = profileType === 'household' ? '/household/shortlist' : '/shortlist';
         return [
             { name: 'Shortlist', href: shortlistHref },
             { name: 'Inbox', href: '/inbox' },
