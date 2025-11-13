@@ -53,16 +53,31 @@ export default function Index() {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
       const userTypeStored = localStorage.getItem('userType');
-      
-      if (token && userTypeStored) {
+
+      let resolvedType: 'household' | 'househelp' | null = null;
+      if (userTypeStored === 'household' || userTypeStored === 'househelp') {
+        resolvedType = userTypeStored as 'household' | 'househelp';
+      } else {
+        // Fallback: derive from user_object if present
+        try {
+          const raw = localStorage.getItem('user_object');
+          if (raw) {
+            const obj = JSON.parse(raw);
+            const pt = obj?.profile_type || obj?.role || obj?.profileType;
+            if (pt === 'household' || pt === 'househelp') {
+              resolvedType = pt;
+            }
+          }
+        } catch {}
+      }
+
+      if (token) {
         setIsAuthenticated(true);
-        if (userTypeStored === 'household' || userTypeStored === 'househelp') {
-          setUserType(userTypeStored as 'household' | 'househelp');
-        }
+        if (resolvedType) setUserType(resolvedType);
       } else {
         setIsAuthenticated(false);
       }
-      
+
       // Simulate a brief loading time for smooth transition
       setTimeout(() => {
         setIsLoading(false);
@@ -71,6 +86,8 @@ export default function Index() {
 
     checkAuth();
   }, []);
+
+  // No redirect: both authenticated roles stay on '/'
 
   const openSignupModal = (type: 'househelp' | 'household') => {
     setUserType(type);
@@ -108,6 +125,7 @@ export default function Index() {
     if (userType === 'househelp') {
       return <HousehelpHome />;
     }
+    // Default for authenticated users (household): show househelp search
     return <AuthenticatedHome />;
   }
 

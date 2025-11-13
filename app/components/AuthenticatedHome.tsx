@@ -1,24 +1,30 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSearchParams, useLocation } from "react-router";
+import { useSearchParams, useLocation, useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { API_BASE_URL } from '~/config/api';
+import { API_ENDPOINTS } from '~/config/api';
 import { apiClient } from '~/utils/apiClient';
-import HousehelpFilters, { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
+import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
+import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
+import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
 
 interface HousehelpProfile {
-  id: number;
+  id: number | string;
+  profile_id: string;
   first_name: string;
   last_name: string;
+  avatar_url?: string;
   profile_picture?: string;
   years_of_experience?: number;
   experience?: number;
-  salary_expectation?: string;
+  salary_expectation?: string | number;
   salary_frequency?: string;
   location?: string;
   county_of_residence?: string;
   bio?: string;
+  created_at?: string;
 }
 
 export default function AuthenticatedHome() {
@@ -48,10 +54,14 @@ export default function AuthenticatedHome() {
   const [offset, setOffset] = useState(0);
   const limit = 12;
   const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState<number | null>(null);
+  const countTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
+  const navigate = useNavigate();
   const lastSetQueryRef = useRef<string | null>(null);
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
 
   // Initialize from URL params on mount
   useEffect(() => {
@@ -79,6 +89,45 @@ export default function AuthenticatedHome() {
   const handleFieldChange = (name: string, value: string) => {
     setFields(prev => ({ ...prev, [name]: value }));
   };
+
+  const buildCountPayload = (f: HousehelpSearchFields) => {
+    return Object.fromEntries(
+      Object.entries({
+        ...f,
+        experience: f.experience ? Number(f.experience) : undefined,
+        min_rating: f.min_rating ? Number(f.min_rating) : undefined,
+        salary_min: f.salary_min ? Number(f.salary_min) : undefined,
+        salary_max: f.salary_max ? Number(f.salary_max) : undefined,
+        can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
+        can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
+        offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
+        offers_day_worker: f.offers_day_worker === 'true' ? true : f.offers_day_worker === 'false' ? false : undefined,
+        available_from: f.available_from || undefined,
+      }).filter(([, v]) => v !== undefined && v !== null && v !== "")
+    );
+  };
+
+  useEffect(() => {
+    if (countTimerRef.current) clearTimeout(countTimerRef.current);
+    const payload = buildCountPayload(fields);
+    countTimerRef.current = setTimeout(async () => {
+      try {
+        const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps/search/count`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await apiClient.json<{ count: number }>(res);
+        setTotalCount(typeof data.count === 'number' ? data.count : 0);
+      } catch (e) {
+        setTotalCount(null);
+      }
+    }, 400);
+    return () => {
+      if (countTimerRef.current) clearTimeout(countTimerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fields]);
 
   const handleSearch = async (e?: React.FormEvent, overrideFields?: HousehelpSearchFields) => {
     if (e) e.preventDefault();
@@ -210,25 +259,90 @@ export default function AuthenticatedHome() {
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
         <main className="flex-1 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            {/* Filters Section */}
+            {/* Compact Filters Section */}
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg">
-              <h1 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-                Find Your Perfect Househelp
-              </h1>
-              <p className="text-purple-100">Use the filters below to refine your search.</p>
+              <div className="flex items-center justify-between mb-4">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white">Find Househelps</h1>
+                <button
+                  onClick={() => setShowMoreFilters(true)}
+                  className="px-4 py-2 bg-white/15 text-white font-semibold rounded-xl border border-white/20 hover:bg-white/25 transition"
+                >
+                  More filters
+                </button>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="flex flex-col">
+                  <label className="mb-2 text-sm font-semibold text-white">Town</label>
+                  <select
+                    value={fields.town || ''}
+                    onChange={(e) => handleFieldChange('town', e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                  >
+                    {['', 'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika'].map((t) => (
+                      <option key={t} value={t}>
+                        {t || 'Any'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col">
+                  <label className="mb-2 text-sm font-semibold text-white">Status</label>
+                  <select
+                    value={fields.status || ''}
+                    onChange={(e) => handleFieldChange('status', e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                  >
+                    {['', 'active', 'inactive'].map((s) => (
+                      <option key={s} value={s}>
+                        {s || 'Any'}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col">
+                  <label className="mb-2 text-sm font-semibold text-white">Skill</label>
+                  <input
+                    type="text"
+                    value={fields.skill || ''}
+                    onChange={(e) => handleFieldChange('skill', e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                    placeholder="e.g. laundry, cooking"
+                  />
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-end gap-3">
+                {totalCount !== null && (
+                  <span className="text-white font-semibold">{totalCount} results</span>
+                )}
+                <button
+                  onClick={() => handleSearch()}
+                  className="px-6 py-3 bg-white text-purple-700 font-bold rounded-xl hover:bg-purple-50 transition"
+                >
+                  Search
+                </button>
+              </div>
             </div>
 
-            <div className="mb-8">
-              <HousehelpFilters
-                fields={fields}
-                onChange={handleFieldChange}
-                onSearch={() => handleSearch()}
-                onClear={handleClear}
-              />
-            </div>
+            {/* Slide-over Drawer for full filters */}
+            {showMoreFilters && (
+              <div className="fixed inset-0 z-50">
+                <div className="absolute inset-0 bg-black/40" onClick={() => setShowMoreFilters(false)} />
+                <div className="absolute right-0 top-24 sm:top-28 bottom-20 sm:bottom-24 w-full max-w-md bg-white dark:bg-[#13131a] shadow-xl rounded-l-3xl p-6 overflow-y-auto">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">More Filters</h2>
+                    <button onClick={() => setShowMoreFilters(false)} className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">✕</button>
+                  </div>
+                  <HousehelpMoreFilters
+                    fields={fields}
+                    onChange={handleFieldChange}
+                    onSearch={() => { setShowMoreFilters(false); handleSearch(); }}
+                    onClear={handleClear}
+                  />
+                </div>
+              </div>
+            )}
 
-            {/* Househelp Profiles Section */}
-            <div>
+            <div className="mt-6 sm:mt-8">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
                 Available Househelps
               </h2>
@@ -252,16 +366,36 @@ export default function AuthenticatedHome() {
                   {househelps.map((househelp) => (
                     <div
                       key={househelp.id}
-                      className="bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
+                      onClick={() => househelp.profile_id && handleViewProfile(String(househelp.profile_id))}
+                      className="relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
                     >
+                      {/* Top-right actions */}
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleStartChat(String(househelp.profile_id)); }}
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-purple-700 dark:text-purple-200 shadow"
+                          aria-label="Chat"
+                          title="Chat"
+                        >
+                          <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleShortlist(String(househelp.profile_id)); }}
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300 shadow"
+                          aria-label="Shortlist"
+                          title="Shortlist"
+                        >
+                          <HeartIcon className="w-5 h-5" />
+                        </button>
+                      </div>
                       {/* Profile Picture */}
                       <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg">
-                          {househelp.profile_picture ? (
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden">
+                          {househelp.avatar_url || househelp.profile_picture ? (
                             <img
-                              src={househelp.profile_picture}
+                              src={(househelp.avatar_url as string) || (househelp.profile_picture as string)}
                               alt={`${househelp.first_name} ${househelp.last_name}`}
-                              className="w-full h-full rounded-full object-cover"
+                              className="w-full h-full object-cover"
                             />
                           ) : (
                             `${househelp.first_name?.[0] || ''}${househelp.last_name?.[0] || ''}`
@@ -303,10 +437,18 @@ export default function AuthenticatedHome() {
                         </p>
                       )}
 
-                      {/* View Profile Button */}
-                      <button className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
-                        View Profile
-                      </button>
+                      {/* Bottom actions */}
+                      <div className="mt-4 flex items-center justify-between">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleViewProfile(String(househelp.profile_id)); }}
+                          className="px-4 py-2 rounded-xl border-2 border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition"
+                        >
+                          View more
+                        </button>
+                        <div className="text-xs text-gray-400">
+                          {househelp.created_at ? new Date(househelp.created_at).toLocaleDateString() : ''}
+                        </div>
+                      </div>
                     </div>
                   ))}
                 </div>

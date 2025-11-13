@@ -116,8 +116,17 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSignIn = () => {
-    window.location.href = `${AUTH_API_BASE_URL}/google`; // Adjust to your backend endpoint
+  const handleGoogleSignIn = async () => {
+    try {
+      const base = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || AUTH_API_BASE_URL || API_BASE_URL;
+      const res = await fetch(`${base}/api/v1/auth/google/url?flow=auth`);
+      const data = await res.json();
+      if (data?.url) {
+        window.location.href = data.url as string;
+      }
+    } catch (e) {
+      /* no-op */
+    }
   };
 
   const getFieldError = (fieldName: string) => {

@@ -152,7 +152,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
       
       if (userType === 'household') {
         const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          method: 'PATCH',
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -281,7 +281,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
       // Step 2: Save image URLs to profile
       if (userType === 'household') {
         const profileResponse = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          method: 'PATCH',
+          method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
             ...(token ? { Authorization: `Bearer ${token}` } : {}),

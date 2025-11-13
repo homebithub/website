@@ -78,7 +78,7 @@ export default function HiringHistoryPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className="flex-1 py-8">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-6">Hiring history</h1>
