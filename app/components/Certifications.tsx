@@ -212,7 +212,7 @@ const Certifications: React.FC = () => {
                     </svg>
                   )}
                 </div>
-                <span className="ml-3 text-gray-900">{cert}</span>
+                <span className="ml-3 text-gray-900 dark:text-gray-100">{cert}</span>
               </label>
             ))}
           </div>
@@ -301,7 +301,7 @@ const Certifications: React.FC = () => {
                     </svg>
                   )}
                 </div>
-                <span className="ml-3 text-gray-900">{help}</span>
+                <span className="ml-3 text-gray-900 dark:text-gray-100">{help}</span>
               </label>
             ))}
           </div>

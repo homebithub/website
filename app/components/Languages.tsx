@@ -188,7 +188,7 @@ const Languages = () => {
             <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
                 What languages do you speak?
             </p>
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Languages You Speak</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Languages You Speak</h1>
             
             {error && (
                 <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
@@ -204,13 +204,13 @@ const Languages = () => {
             
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
-                    <h2 className="text-lg font-medium text-gray-900">Select languages you're comfortable with</h2>
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Select languages you're comfortable with</h2>
                     
                     {/* English */}
                     <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
                         selectedLanguages.includes('English')
-                            ? 'border-primary-500 bg-primary-50 text-primary-900'
-                            : 'border-gray-200 bg-white hover:bg-gray-50'
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
+                            : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                     }`}>
                         <input
                             type="checkbox"
@@ -218,14 +218,14 @@ const Languages = () => {
                             onChange={() => toggleLanguage('English')}
                             className="form-checkbox h-5 w-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <span>English</span>
+                        <span className="text-gray-900 dark:text-gray-100">English</span>
                     </label>
                     
                     {/* Swahili */}
                     <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
                         selectedLanguages.includes('Swahili')
-                            ? 'border-primary-500 bg-primary-50 text-primary-900'
-                            : 'border-gray-200 bg-white hover:bg-gray-50'
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
+                            : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                     }`}>
                         <input
                             type="checkbox"
@@ -233,7 +233,7 @@ const Languages = () => {
                             onChange={() => toggleLanguage('Swahili')}
                             className="form-checkbox h-5 w-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
                         />
-                        <span>Swahili</span>
+                        <span className="text-gray-900 dark:text-gray-100">Swahili</span>
                     </label>
                     
                     {/* Other Languages */}
@@ -241,8 +241,8 @@ const Languages = () => {
                         <div 
                             className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
                                 selectedLanguages.some(lang => !['English', 'Swahili'].includes(lang))
-                                    ? 'border-primary-500 bg-primary-50 text-primary-900'
-                                    : 'border-gray-200 bg-white hover:bg-gray-50'
+                                    ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
+                                    : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                             }`} 
                             onClick={(e) => {
                                 e.preventDefault();
@@ -255,14 +255,14 @@ const Languages = () => {
                                 readOnly
                                 className="form-checkbox h-5 w-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500 pointer-events-none"
                             />
-                            <span>Other Languages</span>
+                            <span className="text-gray-900 dark:text-gray-100">Other Languages</span>
                             <svg className={`ml-auto h-5 w-5 text-gray-400 transform transition-transform ${showOtherLanguages ? 'rotate-180' : ''}`} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
                             </svg>
                         </div>
                         
                         {showOtherLanguages && (
-                            <div className="mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-10">
+                            <div className="mt-2 w-full bg-white dark:bg-[#0b0b10] rounded-lg shadow-lg border border-gray-200 dark:border-purple-500/30 overflow-hidden z-10">
                                 {/* Search input */}
                                 <div className="p-3 border-b border-gray-200">
                                     <div className="relative">
@@ -327,7 +327,7 @@ const Languages = () => {
                                                 
                                                 return (
                                                     <div key={group} className="py-1">
-                                                        <div className="px-4 py-2 text-sm font-medium text-gray-500 bg-gray-50 sticky top-0 z-10">
+                                                        <div className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-[#11111a] sticky top-0 z-10">
                                                             {groupName}
                                                         </div>
                                                         <div className="divide-y divide-gray-100">

@@ -129,7 +129,7 @@ const WorkWithPets = () => {
             <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
                 Are you comfortable working with pets?
             </p>
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Pet Work Preferences</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Pet Work Preferences</h1>
             
             {error && (
                 <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
@@ -145,7 +145,7 @@ const WorkWithPets = () => {
             
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div>
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Pet Work Preference</h2>
+                    <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Pet Work Preference</h2>
                     <div className="grid grid-cols-2 gap-4">
                         <label className={`flex items-center justify-center gap-3 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${
                             petPreference === 'with_pets' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -157,7 +157,7 @@ const WorkWithPets = () => {
                                 onChange={() => setPetPreference('with_pets')}
                                 className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
-                            <span>I can work with pets</span>
+                            <span className="text-gray-900 dark:text-gray-100">I can work with pets</span>
                         </label>
                         
                         <label className={`flex items-center justify-center gap-3 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${
@@ -170,7 +170,7 @@ const WorkWithPets = () => {
                                 onChange={() => setPetPreference('no_pets')}
                                 className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
-                            <span>I prefer not to work with pets</span>
+                            <span className="text-gray-900 dark:text-gray-100">I prefer not to work with pets</span>
                         </label>
                     </div>
                 </div>
@@ -201,7 +201,7 @@ const WorkWithPets = () => {
                                                 </svg>
                                             )}
                                         </div>
-                                        <span>{label}</span>
+                                        <span className="text-gray-900 dark:text-gray-100">{label}</span>
                                     </label>
                                     {value === 'other' && showOtherPetsInput && (
                                         <div className="mt-3 ml-10">
