@@ -1,3 +1,11 @@
+    const startGoogle = async (flow: 'auth' | 'signup' = 'auth') => {
+        try {
+            const base = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL;
+            const res = await fetch(`${base}/api/v1/auth/google/url?flow=${flow}`);
+            const data = await res.json();
+            if (data?.url) window.location.href = data.url as string;
+        } catch {}
+    };
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
@@ -427,15 +435,15 @@ export default function SignupPage() {
       
       {/* Google Sign Up - Primary Option */}
       <div className="mb-6">
-    <button
-        type="button"
-        onClick={() => window.location.href = `${API_BASE_URL}/google`}
-        className="w-full inline-flex justify-center items-center px-6 py-4 border-2 border-purple-300 dark:border-purple-500/50 rounded-xl shadow-lg dark:shadow-glow bg-white dark:bg-[#13131a] text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:border-purple-400 dark:hover:border-purple-500/70 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
-    >
-        <FcGoogle className="h-6 w-6 mr-3" />
-        Continue with Google
-    </button>
-</div>
+        <button
+            type="button"
+            onClick={() => startGoogle('auth')}
+            className="w-full inline-flex justify-center items-center px-6 py-4 border-2 border-purple-300 dark:border-purple-500/50 rounded-xl shadow-lg dark:shadow-glow bg-white dark:bg-[#13131a] text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:border-purple-400 dark:hover:border-purple-500/70 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+        >
+            <FcGoogle className="h-6 w-6 mr-3" />
+            Continue with Google
+        </button>
+      </div>
 
 <div className="relative my-6">
     <div className="absolute inset-0 flex items-center">

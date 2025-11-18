@@ -1,8 +1,8 @@
 import React, {useEffect, useState} from "react";
 import {useSearchParams, useNavigate, useLocation} from "react-router";
 import {ArrowLeftIcon, HeartIcon, TrashIcon, LockClosedIcon, LockOpenIcon} from "@heroicons/react/24/outline";
-import ReadOnlyUserImageCarousel from "~/components/househelp/ReadOnlyUserImageCarousel";
-import ImageLightbox from "~/components/househelp/ImageLightbox";
+import ReadOnlyUserImageCarousel from "~/components/features/household/househelp/ReadOnlyUserImageCarousel";
+import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
 import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
 
 export default function HousehelpProfile() {
@@ -245,7 +245,7 @@ export default function HousehelpProfile() {
                     }
                   }}
                 >
-                  <img src="/mpesa-logo.svg" alt="M-PESA" className="w-6 h-6" />
+                  <img src="/assets/mpesa-logo.svg" alt="M-PESA" className="w-6 h-6" />
                   Pay with M-PESA
                 </button>
               </div>
@@ -369,7 +369,7 @@ export default function HousehelpProfile() {
                     images={images}
                     carouselIdx={carouselIdx}
                     setCarouselIdx={setCarouselIdx}
-                    onExpand={(idx) => {
+                    onExpand={(idx: number) => {
                       setLightboxOpen(true);
                       setLightboxIdx(idx);
                     }}

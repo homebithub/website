@@ -38,7 +38,7 @@ const Budget: React.FC = () => {
   const [success, setSuccess] = useState('');
   const submit = useSubmit();
 
-  // Load existing data
+  // Load existing data (once on mount)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -51,13 +51,15 @@ const Budget: React.FC = () => {
         
         if (response.ok) {
           const data = await response.json();
+          let effectiveFreq: BudgetFrequency = frequency;
           if (data.salary_frequency) {
             const freq = data.salary_frequency.charAt(0).toUpperCase() + data.salary_frequency.slice(1);
             setFrequency(freq as BudgetFrequency);
+            effectiveFreq = freq as BudgetFrequency;
           }
           if (data.budget_min || data.budget_max) {
-            // Try to match to a range
-            const ranges = BUDGET_RANGES[frequency];
+            // Try to match to a range using the fetched/effective frequency
+            const ranges = BUDGET_RANGES[effectiveFreq];
             const matchedRange = ranges.find(range => {
               if (range === 'Negotiable') return data.budget_min === 0 && data.budget_max === 0;
               const parts = range.split('-');
@@ -76,7 +78,7 @@ const Budget: React.FC = () => {
       }
     };
     loadData();
-  }, [frequency]);
+  }, []);
 
   // Save budget to household profile
   const saveBudget = async () => {

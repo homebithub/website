@@ -22,7 +22,7 @@ export function loader() {
         ENV: {
             GOOGLE_CLIENT_ID:
                 process.env.GOOGLE_CLIENT_ID ||
-                "562184165636-klkgj2b74194819lgh5netj4s2e343o2.apps.googleusercontent.com",
+                "180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",
             API_BASE_URL: apiBaseUrl,
             AUTH_API_BASE_URL: apiBaseUrl, // Same as API_BASE_URL for local dev
         },
