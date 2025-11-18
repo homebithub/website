@@ -21,7 +21,7 @@ interface ThemeProviderProps {
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const location = useLocation();
-  const [theme, setThemeState] = useState<Theme>('light');
+  const [theme, setThemeState] = useState<Theme>('dark');
   const [mounted, setMounted] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -48,9 +48,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           setThemeState(savedTheme);
           applyTheme(savedTheme);
         } else {
-          // Check system preference
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const defaultTheme = prefersDark ? 'dark' : 'light';
+          // Default to dark theme for new/public users
+          const defaultTheme: Theme = 'dark';
           setThemeState(defaultTheme);
           applyTheme(defaultTheme);
         }
@@ -78,9 +77,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
           // Sync to backend
           updatePreferences({ theme: savedTheme }).catch(console.error);
         } else {
-          // Check system preference
-          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          const defaultTheme = prefersDark ? 'dark' : 'light';
+          // Default to dark theme when no preference exists
+          const defaultTheme: Theme = 'dark';
           setThemeState(defaultTheme);
           applyTheme(defaultTheme);
           // Save to backend

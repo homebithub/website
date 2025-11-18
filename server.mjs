@@ -6,7 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "node:fs";
 import * as build from "./build/server/index.js";
-import { createRequestHandler } from "@react-router/node";
+import { createRequestHandler } from "@react-router/express";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
