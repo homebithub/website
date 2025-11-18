@@ -214,8 +214,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear user state
       setUser(null);
 
-      // Navigate to home page instead of login to avoid redirect loops
-      navigate("/");
+      // Force full page reload to ensure unauthenticated homepage is shown
+      if (typeof window !== "undefined") {
+        window.location.href = "/";
+      } else {
+        navigate("/");
+      }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
       throw error;
