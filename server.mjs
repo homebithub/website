@@ -6,7 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "node:fs";
 import * as build from "./build/server/index.js";
-import { createRequestHandler } from "@react-router/express";
+import { createRequestHandler } from "@react-router/node";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -38,7 +38,8 @@ await fastify.register(fastifyHttpProxy, {
     http2: false,
 });
 
-// Health check
+// Health checks (support both /health and /healthz for compatibility with probes)
+fastify.get("/health", async () => ({ status: "ok" }));
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
 // Universal React Router handler (SSR)
