@@ -4,6 +4,7 @@ import { API_BASE_URL } from '~/config/api';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import ImageViewModal from '~/components/ImageViewModal';
 
 interface HouseholdData {
   house_size?: string;
@@ -21,6 +22,7 @@ interface HouseholdData {
   bio?: string;
   address?: string;
   location?: any;
+  photos?: string[];
 }
 
 export default function HouseholdPublicProfile() {
@@ -30,6 +32,7 @@ export default function HouseholdPublicProfile() {
   const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -128,6 +131,32 @@ export default function HouseholdPublicProfile() {
           </button>
         </div>
       </div>
+
+      {/* Profile Photos */}
+      {profile.photos && profile.photos.length > 0 && (
+        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📸 Home Photos</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            {profile.photos.map((photo, idx) => (
+              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer" onClick={() => setSelectedImage(photo)}>
+                <img
+                  src={photo}
+                  alt={`Home photo ${idx + 1}`}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  onError={(e) => {
+                    e.currentTarget.src = '/assets/placeholder-image.png';
+                  }}
+                />
+                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-lg text-sm font-semibold">
+                    View Full
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* House Size & Notes */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
@@ -268,6 +297,15 @@ export default function HouseholdPublicProfile() {
       </main>
       </PurpleThemeWrapper>
       <Footer />
+      
+      {/* Image View Modal */}
+      {selectedImage && (
+        <ImageViewModal
+          imageUrl={selectedImage}
+          altText="Home photo"
+          onClose={() => setSelectedImage(null)}
+        />
+      )}
     </div>
   );
 }
