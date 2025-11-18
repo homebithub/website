@@ -210,6 +210,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear all auth-related data from localStorage
       localStorage.removeItem("token");
       localStorage.removeItem("user_object");
+      localStorage.removeItem("userType");
 
       // Clear user state
       setUser(null);

@@ -17,6 +17,7 @@ interface HousehelpProfile {
   last_name: string;
   avatar_url?: string;
   profile_picture?: string;
+  photos?: string[];
   years_of_experience?: number;
   experience?: number;
   salary_expectation?: string | number;
@@ -29,12 +30,12 @@ interface HousehelpProfile {
 
 export default function AuthenticatedHome() {
   const initialFields: HousehelpSearchFields = {
-    status: "active",
+    status: "",
     househelp_type: "",
     gender: "",
     experience: "",
     town: "",
-    salary_frequency: "monthly",
+    salary_frequency: "",
     skill: "",
     traits: "",
     min_rating: "",
@@ -82,7 +83,7 @@ export default function AuthenticatedHome() {
   };
   const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
   const [househelps, setHousehelps] = useState<HousehelpProfile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [offset, setOffset] = useState(0);
@@ -101,8 +102,10 @@ export default function AuthenticatedHome() {
   useEffect(() => {
     const fromParams = paramsToFields(searchParams, initialFields);
     setFields(fromParams);
-    // Kick off initial search with params
-    handleSearch(undefined, fromParams);
+    // Only search if there are URL params (user navigated with filters)
+    if (searchParams.toString()) {
+      handleSearch(undefined, fromParams);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -173,14 +176,17 @@ export default function AuthenticatedHome() {
       setOffset(0);
       setHasMore(true);
 
-      // Persist filters to URL
-      const qs = new URLSearchParams(
-        Object.fromEntries(
-          Object.entries(f).filter(([, v]) => v !== undefined && v !== null && v !== "")
-        )
-      ).toString();
-      lastSetQueryRef.current = qs;
-      setSearchParams(qs);
+      // Persist filters to URL (only if there are actual filters)
+      const filteredEntries = Object.entries(f).filter(([, v]) => v !== undefined && v !== null && v !== "");
+      if (filteredEntries.length > 0) {
+        const qs = new URLSearchParams(Object.fromEntries(filteredEntries)).toString();
+        lastSetQueryRef.current = qs;
+        setSearchParams(qs);
+      } else {
+        // No filters - clear URL params completely
+        lastSetQueryRef.current = '';
+        setSearchParams({});
+      }
 
       const payload = Object.fromEntries(
         Object.entries({
@@ -389,10 +395,36 @@ export default function AuthenticatedHome() {
                 <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 rounded-xl p-6 text-center">
                   <p className="text-red-600 dark:text-red-400">{error}</p>
                 </div>
+              ) : !hasSearched ? (
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
+                  <div className="mb-4">
+                    <svg className="mx-auto h-16 w-16 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                    Ready to find your perfect househelp?
+                  </h3>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
+                    Use the filters above to search for househelps, or click Search to see all available profiles.
+                  </p>
+                  <button
+                    onClick={() => handleSearch()}
+                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    Show All Househelps
+                  </button>
+                </div>
               ) : househelps.length === 0 ? (
                 <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
-                  <p className="text-gray-600 dark:text-gray-400 text-lg">
-                    No househelps available at the moment. Check back soon!
+                  <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
+                    No househelps found matching your criteria.
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-500 text-sm">
+                    Try adjusting your filters or search again.
                   </p>
                 </div>
               ) : (
@@ -425,9 +457,14 @@ export default function AuthenticatedHome() {
                       {/* Profile Picture */}
                       <div className="flex justify-center mb-4">
                         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden">
-                          {househelp.avatar_url || househelp.profile_picture ? (
+                          {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) ? (
                             <img
-                              src={(househelp.avatar_url as string) || (househelp.profile_picture as string)}
+                              src={
+                                (househelp.avatar_url as string) || 
+                                (househelp.profile_picture as string) || 
+                                (househelp.photos && househelp.photos[0]) || 
+                                ''
+                              }
                               alt={`${househelp.first_name} ${househelp.last_name}`}
                               className="w-full h-full object-cover"
                             />
@@ -460,7 +497,12 @@ export default function AuthenticatedHome() {
                       {househelp.salary_expectation && (
                         <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center mb-3">
                           💰 {househelp.salary_expectation}
-                          {househelp.salary_frequency && ` per ${househelp.salary_frequency.replace('ly', '')}`}
+                          {househelp.salary_frequency && ` per ${
+                            househelp.salary_frequency === 'daily' ? 'day' :
+                            househelp.salary_frequency === 'weekly' ? 'week' :
+                            househelp.salary_frequency === 'monthly' ? 'month' :
+                            househelp.salary_frequency
+                          }`}
                         </p>
                       )}
 

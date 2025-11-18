@@ -52,28 +52,41 @@ export default function Index() {
   useEffect(() => {
     const checkAuth = () => {
       const token = localStorage.getItem('token');
-      const userTypeStored = localStorage.getItem('userType');
 
       let resolvedType: 'household' | 'househelp' | null = null;
-      if (userTypeStored === 'household' || userTypeStored === 'househelp') {
-        resolvedType = userTypeStored as 'household' | 'househelp';
-      } else {
-        // Fallback: derive from user_object if present
-        try {
-          const raw = localStorage.getItem('user_object');
-          if (raw) {
-            const obj = JSON.parse(raw);
-            const pt = obj?.profile_type || obj?.role || obj?.profileType;
-            if (pt === 'household' || pt === 'househelp') {
-              resolvedType = pt;
-            }
+      
+      // Primary source: derive from user_object (most reliable)
+      try {
+        const raw = localStorage.getItem('user_object');
+        if (raw) {
+          const obj = JSON.parse(raw);
+          const pt = obj?.profile_type || obj?.role || obj?.profileType;
+          if (pt === 'household' || pt === 'househelp') {
+            resolvedType = pt;
+            // Sync userType to localStorage for consistency
+            localStorage.setItem('userType', pt);
           }
-        } catch {}
+        }
+      } catch (e) {
+        console.error('Failed to parse user_object:', e);
+      }
+
+      // Fallback: check localStorage userType if user_object failed
+      if (!resolvedType) {
+        const userTypeStored = localStorage.getItem('userType');
+        if (userTypeStored === 'household' || userTypeStored === 'househelp') {
+          resolvedType = userTypeStored as 'household' | 'househelp';
+        }
       }
 
       if (token) {
         setIsAuthenticated(true);
-        if (resolvedType) setUserType(resolvedType);
+        if (resolvedType) {
+          setUserType(resolvedType);
+          console.log('Authenticated user type:', resolvedType);
+        } else {
+          console.warn('Authenticated but no valid user type found');
+        }
       } else {
         setIsAuthenticated(false);
       }
