@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useLocation } from "react-router";
 import { API_BASE_URL } from "~/config/api";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -23,8 +23,9 @@ interface HouseholdData {
   location?: any;
 }
 
-export default function HouseholdPublicProfileByUser() {
+export default function HouseholdPublicProfilePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user_id } = useParams();
   const [profile, setProfile] = useState<HouseholdData | null>(null);
   const [kids, setKids] = useState<any[]>([]);
@@ -121,17 +122,24 @@ export default function HouseholdPublicProfileByUser() {
         <main className="flex-1 py-8">
           <div className="max-w-5xl mx-auto px-4">
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 sm:p-8 text-white rounded-t-3xl">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl dark:border-b dark:border-purple-500/20">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div>
                   <h1 className="text-2xl sm:text-3xl font-bold mb-2">🏠 Household Profile</h1>
-                  <p className="text-purple-100 text-sm sm:text-base">Public view - This is how others see this profile</p>
+                  <p className="text-purple-100 dark:text-purple-300 text-sm sm:text-base">Public view - This is how others see this profile</p>
                 </div>
                 <button
-                  onClick={() => navigate(-1)}
+                  onClick={() => {
+                    // Check if coming from inbox
+                    if (location.state?.fromInbox) {
+                      navigate('/inbox');
+                    } else {
+                      navigate(-1);
+                    }
+                  }}
                   className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
                 >
-                  ← Back
+                  ← {location.state?.fromInbox ? 'Back to Inbox' : 'Back'}
                 </button>
               </div>
             </div>

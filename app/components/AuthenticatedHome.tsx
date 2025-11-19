@@ -48,9 +48,12 @@ export default function AuthenticatedHome() {
     available_from: "",
   };
 
+  // Track image loading state for each profile
+  const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
+
   // Card actions
   const handleViewProfile = (profileId: string) => {
-    navigate('/household/househelp/profile', { state: { profileId } });
+    navigate('/househelp/public-profile', { state: { profileId } });
   };
 
   const handleStartChat = async (profileId: string) => {
@@ -300,12 +303,12 @@ export default function AuthenticatedHome() {
         <main className="flex-1 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Compact Filters Section */}
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg dark:border dark:border-purple-500/20">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl sm:text-3xl font-bold text-white">Find Househelps</h1>
                 <button
                   onClick={() => setShowMoreFilters(true)}
-                  className="px-4 py-2 bg-white/15 text-white font-semibold rounded-xl border border-white/20 hover:bg-white/25 transition"
+                  className="px-4 py-2 bg-white/15 dark:bg-purple-600/30 text-white font-semibold rounded-xl border border-white/20 dark:border-purple-500/30 hover:bg-white/25 dark:hover:bg-purple-600/50 transition"
                 >
                   More filters
                 </button>
@@ -456,18 +459,33 @@ export default function AuthenticatedHome() {
                       </div>
                       {/* Profile Picture */}
                       <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden relative">
                           {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) ? (
-                            <img
-                              src={
-                                (househelp.avatar_url as string) || 
-                                (househelp.profile_picture as string) || 
-                                (househelp.photos && househelp.photos[0]) || 
-                                ''
-                              }
-                              alt={`${househelp.first_name} ${househelp.last_name}`}
-                              className="w-full h-full object-cover"
-                            />
+                            <>
+                              {/* Skeleton loader - shows while image is loading */}
+                              {imageLoadingStates[househelp.profile_id] !== false && (
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                              )}
+                              <img
+                                src={
+                                  (househelp.avatar_url as string) || 
+                                  (househelp.profile_picture as string) || 
+                                  (househelp.photos && househelp.photos[0]) || 
+                                  ''
+                                }
+                                alt={`${househelp.first_name} ${househelp.last_name}`}
+                                className={`w-full h-full object-cover transition-opacity duration-300 ${
+                                  imageLoadingStates[househelp.profile_id] === false ? 'opacity-100' : 'opacity-0'
+                                }`}
+                                onLoad={() => {
+                                  setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
+                                }}
+                                onError={(e) => {
+                                  setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            </>
                           ) : (
                             `${househelp.first_name?.[0] || ''}${househelp.last_name?.[0] || ''}`
                           )}

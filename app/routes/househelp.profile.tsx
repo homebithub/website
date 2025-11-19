@@ -333,11 +333,11 @@ export default function HousehelpProfile() {
       <main className="flex-1 py-8">
     <div className="max-w-5xl mx-auto px-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-4 sm:p-8 text-white rounded-t-3xl">
+      <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl dark:border-b dark:border-purple-500/20">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold mb-2">👤 My Househelp Profile</h1>
-            <p className="text-purple-100 text-sm sm:text-base">View and manage your professional information</p>
+            <p className="text-purple-100 dark:text-purple-300 text-sm sm:text-base">View and manage your professional information</p>
           </div>
           <button
             onClick={() => navigate('/househelp/public-profile')}
