@@ -348,7 +348,7 @@ export function Navigation() {
 
 
                                             {/* App links for mobile on app host */}
-                                            {isAppHost ? (
+                                            {isAppHost && (
                                                 <>
                                                     {authLinks.map((item) => (
                                                         <Menu.Item key={item.name}>{({ active }) => (
@@ -358,21 +358,22 @@ export function Navigation() {
                                                         )}</Menu.Item>
                                                     ))}
                                                 </>
-                                            ) : (
-                                                <Menu.Item>
-                                                    {({ active }) => (
-                                                        <Link
-                                                            to="/profile"
-                                                            className={`${
-                                                                active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                                                            } flex items-center px-4 py-2 text-sm`}
-                                                        >
-                                                            <UserIcon className="mr-3 h-5 w-5" />
-                                                            Profile
-                                                        </Link>
-                                                    )}
-                                                </Menu.Item>
                                             )}
+                                            
+                                            {/* Profile link based on profile type */}
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link
+                                                        to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
+                                                        className={`${
+                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                                                        } flex items-center px-4 py-2 text-sm`}
+                                                    >
+                                                        <UserIcon className="mr-3 h-5 w-5" />
+                                                        {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
                                             <Menu.Item>
                                                 {({ active }) => (
                                                     <Link
