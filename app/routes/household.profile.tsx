@@ -46,6 +46,7 @@ export default function HouseholdProfile() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Household invitation code state
@@ -116,6 +117,16 @@ export default function HouseholdProfile() {
         if (petsRes.ok) {
           const petsData = await petsRes.json();
           setPets(petsData);
+        }
+
+        // Fetch photos from documents table
+        const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (docsRes.ok) {
+          const docsData = await docsRes.json();
+          const photoUrls = docsData.documents?.map((doc: any) => doc.url || doc.public_url).filter(Boolean) || [];
+          setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
         }
       } catch (err: any) {
         console.error("Error loading profile:", err);
@@ -346,24 +357,15 @@ export default function HouseholdProfile() {
 
       if (!imageUrl) throw new Error('No image URL returned');
 
-      // Update profile with new photo
-      const updatedPhotos = [...(profile?.photos || []), imageUrl];
-      
-      const updateRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          photos: updatedPhotos,
-        }),
+      // Refetch profile to get updated photos from documents table
+      const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!updateRes.ok) throw new Error('Failed to update profile');
-
-      // Update local state
-      setProfile(prev => prev ? { ...prev, photos: updatedPhotos } : null);
+      
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        setProfile(profileData);
+      }
       
       // Reset file input
       if (fileInputRef.current) {
@@ -424,25 +426,16 @@ export default function HouseholdProfile() {
         }
       }
 
-      // Step 3: Remove from profile photos array
-      setDeleteStatus('Updating profile...');
-      const updatedPhotos = (profile?.photos || []).filter(p => p !== photoUrl);
-
-      const updateRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          photos: updatedPhotos,
-        }),
+      // Step 3: Refetch profile to get updated photos from documents table
+      setDeleteStatus('Refreshing profile...');
+      const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!updateRes.ok) throw new Error('Failed to update profile');
-
-      // Update local state
-      setProfile(prev => prev ? { ...prev, photos: updatedPhotos } : null);
+      if (!profileRes.ok) throw new Error('Failed to refresh profile');
+      
+      const profileData = await profileRes.json();
+      setProfile(profileData);
     } catch (err: any) {
       console.error('Error deleting photo:', err);
       setUploadError(err.message || 'Failed to delete photo');
@@ -803,16 +796,36 @@ export default function HouseholdProfile() {
         {profile.photos && profile.photos.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {profile.photos.map((photo, idx) => (
-              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group">
+              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group bg-gray-200 dark:bg-gray-800">
+                {/* Blur placeholder */}
+                {!loadedImages.has(photo) && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 animate-pulse" />
+                    <div className="absolute">
+                      <svg className="animate-spin h-8 w-8 text-purple-600 dark:text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  </div>
+                )}
                 <img
                   src={photo}
                   alt={`Home photo ${idx + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 ${
+                    loadedImages.has(photo) ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  onLoad={() => {
+                    setLoadedImages(prev => new Set(prev).add(photo));
+                  }}
                   onError={(e) => {
                     e.currentTarget.src = '/assets/placeholder-image.png';
+                    setLoadedImages(prev => new Set(prev).add(photo));
                   }}
                 />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center gap-2">
+                <div className={`absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center gap-2 ${
+                  !loadedImages.has(photo) ? 'pointer-events-none' : ''
+                }`}>
                   <button
                     onClick={() => setSelectedImage(photo)}
                     className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-lg text-sm font-semibold hover:bg-purple-50"
