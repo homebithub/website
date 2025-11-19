@@ -527,10 +527,10 @@ export default function InboxPage() {
         <main className="flex-1 flex flex-col relative">
           {/* Desktop: Split view */}
           <div className="hidden lg:flex flex-1 max-w-7xl mx-auto w-full">
-            <div className="w-1/3 border-r border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a]">
+            <div className="w-1/3 border-r border-l border-b border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] rounded-bl-2xl overflow-hidden">
               <ConversationsList />
             </div>
-            <div className="flex-1">
+            <div className="flex-1 border-r border-b border-purple-200 dark:border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] rounded-br-2xl overflow-hidden">
               <MessagesView />
             </div>
           </div>
@@ -538,9 +538,11 @@ export default function InboxPage() {
           {/* Mobile: Single view */}
           <div className="lg:hidden flex-1">
             {selectedConversationId ? (
-              <MessagesView />
+              <div className="h-full border-l border-r border-b border-purple-200 dark:border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] rounded-b-2xl overflow-hidden">
+                <MessagesView />
+              </div>
             ) : (
-              <div className="h-full bg-white dark:bg-[#13131a]">
+              <div className="h-full bg-white dark:bg-[#13131a] border-l border-r border-b border-purple-200 dark:border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] rounded-b-2xl overflow-hidden">
                 <ConversationsList />
               </div>
             )}
