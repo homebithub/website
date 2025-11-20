@@ -8,7 +8,7 @@ import * as build from "./build/server/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const PUBLIC_DIR = path.join(__dirname, "public");
+const BUILD_CLIENT_DIR = path.join(__dirname, "build", "client");
 
 const app = express();
 
@@ -32,16 +32,17 @@ app.use("/api", createProxyMiddleware({
     },
 }));
 
-// Serve static assets from /assets prefix
-app.use("/assets", express.static(path.join(PUBLIC_DIR), {
-    setHeaders: (res) => {
-        res.setHeader("Cache-Control", "no-store");
-    },
-}));
-
-// Serve other static files from public root (favicon, robots.txt, etc.)
-app.use(express.static(PUBLIC_DIR, {
+// Serve static assets from build/client (includes /assets/* and root files like favicon, images, etc.)
+app.use(express.static(BUILD_CLIENT_DIR, {
     index: false, // Don't serve index.html automatically
+    setHeaders: (res, filePath) => {
+        // Cache static assets but not HTML
+        if (filePath.endsWith('.js') || filePath.endsWith('.css') || filePath.endsWith('.woff2')) {
+            res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        } else {
+            res.setHeader("Cache-Control", "no-store");
+        }
+    },
 }));
 
 // React Router SSR handler - must be last
