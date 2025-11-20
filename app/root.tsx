@@ -5,6 +5,7 @@ import type { Route } from "./+types/root";
 import { AuthProvider } from "~/contexts/AuthContext";
 import { ThemeProvider } from "~/contexts/ThemeContext";
 import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
+import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
 import { API_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
@@ -50,7 +51,9 @@ export default function App() {
                 <ThemeProvider>
                     <AuthProvider>
                         <ProfileSetupProvider>
-                            <Outlet/>
+                            <ProfileSetupGuard>
+                                <Outlet/>
+                            </ProfileSetupGuard>
                         </ProfileSetupProvider>
                     </AuthProvider>
                 </ThemeProvider>
