@@ -135,7 +135,7 @@ export default function HousehelpPublicProfile() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
-      <main className="flex-1 py-8">
+      <main className="py-8">
     <div className="max-w-5xl mx-auto px-4">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl dark:border-b dark:border-purple-500/20">
@@ -226,7 +226,7 @@ export default function HousehelpPublicProfile() {
       {/* Profile Image & Photos */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex flex-col items-center mb-6">
-          <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-purple-500 shadow-xl mb-4 relative">
+          <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-purple-500 shadow-xl mb-4 relative bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
             {(profile.avatar_url || (profile.photos && profile.photos.length > 0)) ? (
               <>
                 {/* Skeleton loader for main profile image */}
@@ -240,19 +240,20 @@ export default function HousehelpPublicProfile() {
                     imageLoaded['main'] ? 'opacity-100' : 'opacity-0'
                   }`}
                   onLoad={() => setImageLoaded(prev => ({ ...prev, main: true }))}
-                  onError={(e) => {
-                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent((profile.user?.first_name || profile.first_name || '') + ' ' + (profile.user?.last_name || profile.last_name || ''))}&size=128&background=9333ea&color=fff`;
+                  onError={() => {
                     setImageLoaded(prev => ({ ...prev, main: true }));
                   }}
                 />
               </>
-            ) : (
-              <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-4xl font-bold">
-                {(profile.user?.first_name || profile.first_name || '?')[0]}{(profile.user?.last_name || profile.last_name || '')[0]}
+            ) : null}
+            {/* Always show initials as fallback or when no image */}
+            {(!profile.avatar_url && !(profile.photos && profile.photos.length > 0)) && (
+              <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold">
+                {(profile.user?.first_name || profile.first_name || '?')[0]?.toUpperCase()}{(profile.user?.last_name || profile.last_name || '')[0]?.toUpperCase()}
               </div>
             )}
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {profile.user?.first_name || profile.first_name || 'Not specified'} {profile.user?.last_name || profile.last_name || ''}
           </h2>
           {profile['househelp-type'] && (
@@ -614,6 +615,8 @@ export default function HousehelpPublicProfile() {
       </main>
       </PurpleThemeWrapper>
       <Footer />
+      
+      {/* Image View Modal */}
       
       {/* Image View Modal */}
       {selectedImage && (

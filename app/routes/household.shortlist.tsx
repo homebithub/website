@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -37,8 +39,7 @@ export default function HouseholdShortlistPage() {
   // Map of profile_id -> househelp profile data
   const [profilesById, setProfilesById] = useState<Record<string, any>>({});
   const [loadingProfiles, setLoadingProfiles] = useState(false);
-  const [unlockStatus, setUnlockStatus] = useState<Record<string, { unlocked: boolean; unlocked_by_me: boolean }>>({});
-  const [contactInfo, setContactInfo] = useState<Record<string, { phone?: string; email?: string }>>({});
+  const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
 
   // Load shortlist entries (mine)
   useEffect(() => {
@@ -104,43 +105,13 @@ export default function HouseholdShortlistPage() {
     };
   }, [items, API_BASE, profilesById]);
 
-  // Fetch unlock status for each shortlisted househelp profile
-  useEffect(() => {
-    const pids = items
-      .filter((s) => s.profile_type === "househelp")
-      .map((s) => s.profile_id)
-      .filter((pid) => pid && !(pid in unlockStatus));
-    if (pids.length === 0) return;
-    let cancelled = false;
-    async function fetchStatuses() {
-      try {
-        const results = await Promise.all(
-          pids.map(async (pid) => {
-            const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/unlock-status/${pid}`);
-            if (!res.ok) return { pid, data: { unlocked: false, unlocked_by_me: false } };
-            const data = await apiClient.json<{ unlocked: boolean; unlocked_by_me: boolean }>(res);
-            return { pid, data };
-          })
-        );
-        if (cancelled) return;
-        setUnlockStatus((prev) => {
-          const next = { ...prev } as Record<string, { unlocked: boolean; unlocked_by_me: boolean }>;
-          for (const r of results) next[r.pid] = { unlocked: !!(r as any).data.unlocked, unlocked_by_me: !!(r as any).data.unlocked_by_me };
-          return next;
-        });
-      } catch {
-        // ignore
-      }
-    }
-    fetchStatuses();
-    return () => { cancelled = true; };
-  }, [items, API_BASE, unlockStatus]);
-
   async function handleRemove(profileId: string) {
     try {
       const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/${profileId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to remove from shortlist');
       setItems((prev) => prev.filter((s) => s.profile_id !== profileId));
+      // Trigger event to update badge count in navigation
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch {}
   }
 
@@ -153,20 +124,6 @@ export default function HouseholdShortlistPage() {
     } catch {}
   }
 
-  async function handleUnlock(profileId?: string) {
-    if (!profileId) return;
-    try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/unlock`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile_id: profileId }),
-      });
-      if (!res.ok) throw new Error('Failed to unlock');
-      const data = await apiClient.json<{ status: string; phone?: string; email?: string }>(res);
-      setUnlockStatus((prev) => ({ ...prev, [profileId]: { unlocked: true, unlocked_by_me: true } }));
-      setContactInfo((prev) => ({ ...prev, [profileId]: { phone: data.phone, email: data.email } }));
-    } catch {}
-  }
 
   // Infinite scroll
   useEffect(() => {
@@ -201,58 +158,102 @@ export default function HouseholdShortlistPage() {
               <div className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-4 text-red-700 dark:text-red-300 mb-4">{error}</div>
             )}
 
-            <ul className="space-y-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {items
                 .filter((s) => s.profile_type === "househelp")
                 .map((s) => {
                   const h = profilesById[s.profile_id];
-                  const us = unlockStatus[s.profile_id];
                   return (
-                    <li
+                    <div
                       key={s.id}
-                      className="rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-4 hover:bg-primary-50/40 dark:hover:bg-primary-900/20 transition"
+                      onClick={() => navigate('/househelp/public-profile', { state: { profileId: s.profile_id } })}
+                      className="househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
                     >
-                      <div className="flex items-center gap-4">
-                        <img
-                          src={(h && h.avatar_url) || "https://placehold.co/56x56?text=HH"}
-                          alt={(h && `${h.first_name || ""} ${h.last_name || ""}`) || "Househelp"}
-                          className="w-14 h-14 rounded-full object-cover bg-gray-200"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="font-bold text-lg text-primary-700 dark:text-primary-200 truncate">
-                            {(h && `${h.first_name || ""} ${h.last_name || ""}`) || "Househelp"}
-                          </div>
-                          <div className="text-gray-500 dark:text-gray-300 text-sm">
-                            Salary: {(h && h.salary_expectation) || "N/A"} {h && h.salary_frequency}
-                          </div>
-                          <div className="text-gray-500 dark:text-gray-300 text-sm">
-                            Location: {(h && h.county_of_residence) || "N/A"}
-                          </div>
-                          <div className="mt-1 flex items-center gap-2">
-                            <span className={`text-xs px-2 py-1 rounded-full border ${us && us.unlocked ? 'border-green-300 text-green-700 bg-green-50 dark:bg-green-900/20' : 'border-yellow-300 text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20'}`}>
-                              {us && us.unlocked ? 'Unlocked' : 'Locked'}
-                            </span>
-                            {us && us.unlocked && contactInfo[s.profile_id] && (
-                              <span className="text-xs text-gray-600 dark:text-gray-300">
-                                {contactInfo[s.profile_id].phone ? `Phone: ${contactInfo[s.profile_id].phone}` : ''}
-                                {contactInfo[s.profile_id].email ? `${contactInfo[s.profile_id].phone ? ' • ' : ''}Email: ${contactInfo[s.profile_id].email}` : ''}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2 whitespace-nowrap">
-                          <button onClick={(e) => { e.stopPropagation(); navigate(`/household/househelp/contact?profile_id=${s.profile_id}`); }} className="px-3 py-2 text-sm rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700">View</button>
-                          <button onClick={(e) => { e.stopPropagation(); handleChatWithHousehelp(s.profile_id); }} className="px-3 py-2 text-sm rounded-lg border-2 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-300">Chat</button>
-                          {!(us && us.unlocked) && (
-                            <button onClick={(e) => { e.stopPropagation(); handleUnlock(s.profile_id); }} className="px-3 py-2 text-sm rounded-lg border-2 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-500/40 dark:text-amber-300">Unlock</button>
-                          )}
-                          <button onClick={(e) => { e.stopPropagation(); handleRemove(s.profile_id); }} className="px-3 py-2 text-sm rounded-lg border-2 border-red-300 text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:text-red-300">Remove</button>
+                      {/* Top-right actions */}
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleChatWithHousehelp(s.profile_id); }}
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-purple-700 dark:text-purple-200 shadow"
+                          aria-label="Chat"
+                          title="Chat"
+                        >
+                          <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRemove(s.profile_id); }}
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-full border shadow transition-all bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white hover:from-purple-700 hover:to-pink-700"
+                          aria-label="Remove from shortlist"
+                          title="Remove from shortlist"
+                        >
+                          <HeartIconSolid className="w-5 h-5" />
+                        </button>
+                      </div>
+
+                      {/* Profile Picture */}
+                      <div className="flex justify-center mb-4">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden relative">
+                          {(() => {
+                            const imageUrl = h?.avatar_url || h?.profile_picture || (h?.photos && h.photos[0]);
+                            if (imageUrl) {
+                              return (
+                                <>
+                                  {imageLoadingStates[s.profile_id] !== false && (
+                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                                  )}
+                                  <img
+                                    src={imageUrl}
+                                    alt={`${h?.first_name || ''} ${h?.last_name || ''}`}
+                                    className={`w-full h-full object-cover transition-opacity duration-300 ${
+                                      imageLoadingStates[s.profile_id] === false ? 'opacity-100' : 'opacity-0'
+                                    }`}
+                                    onLoad={() => setImageLoadingStates(prev => ({ ...prev, [s.profile_id]: false }))}
+                                    onError={(e) => {
+                                      setImageLoadingStates(prev => ({ ...prev, [s.profile_id]: false }));
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                </>
+                              );
+                            }
+                            return `${h?.first_name?.[0] || ''}${h?.last_name?.[0] || 'HH'}`;
+                          })()}
                         </div>
                       </div>
-                    </li>
+
+                      {/* Name */}
+                      <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
+                        {h ? `${h.first_name || ''} ${h.last_name || ''}` : 'Loading...'}
+                      </h3>
+
+                      {/* Salary */}
+                      {h && h.salary_expectation && (
+                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center mb-3">
+                          💰 {h.salary_expectation}
+                          {h.salary_frequency && ` per ${
+                            h.salary_frequency === 'daily' ? 'day' :
+                            h.salary_frequency === 'weekly' ? 'week' :
+                            h.salary_frequency === 'monthly' ? 'month' :
+                            h.salary_frequency
+                          }`}
+                        </p>
+                      )}
+
+                      {/* Bottom actions */}
+                      <div className="mt-4 flex items-center justify-between">
+                        <div className="text-xs text-gray-400">
+                          {s.created_at ? new Date(s.created_at).toLocaleDateString() : ''}
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); navigate('/househelp/public-profile', { state: { profileId: s.profile_id } }); }}
+                          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
+                        >
+                          View more
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
-            </ul>
+            </div>
 
             <div ref={sentinelRef} className="h-8" />
             {(loading || loadingProfiles) && (

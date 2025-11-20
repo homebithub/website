@@ -42,16 +42,6 @@ export default function HousehelpProfile() {
         } catch {
           throw new Error('Failed to shortlist');
         }
-        if (
-          res.status === 400 &&
-          errData.message === 'profile is currently unlocked and not expired'
-        ) {
-          setShortlistDisabled(true);
-          setShortlisted(false);
-          setShortlistDisabledReason('This profile is currently unlocked and cannot be shortlisted until it expires.');
-          setError('This profile is currently unlocked and cannot be shortlisted until it expires.')
-          return;
-        }
         throw new Error(errData.message || 'Failed to shortlist');
       }
       // Optionally, show success or update UI
