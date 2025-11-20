@@ -34,7 +34,7 @@ export type LoginErrorResponse = {
 };
 
 export default function LoginPage() {
-  const { login, loading, user } = useAuth();
+  const { login, loading, user, error: authError } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [formData, setFormData] = useState({
@@ -45,6 +45,7 @@ export default function LoginPage() {
   // Validation state
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Get redirect URL from query params
   const searchParams = new URLSearchParams(location.search);
@@ -54,6 +55,11 @@ export default function LoginPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Clear login error when user starts typing
+    if (loginError) {
+      setLoginError(null);
+    }
     
     // Clear field error when user starts typing
     if (fieldErrors[name]) {
@@ -94,6 +100,9 @@ export default function LoginPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Clear previous login error
+    setLoginError(null);
+    
     // Validate entire form
     const validation = validateForm(loginSchema, formData);
     
@@ -112,7 +121,9 @@ export default function LoginPage() {
       await login(formData.phone, formData.password);
       // Login successful, redirect will be handled by useEffect
     } catch (error) {
-      // Error is handled by the auth context
+      // Capture login error and display it
+      const errorMessage = error instanceof Error ? error.message : 'Invalid phone number or password. Please try again.';
+      setLoginError(errorMessage);
     }
   };
 
@@ -149,6 +160,20 @@ export default function LoginPage() {
         <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
           <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 text-center">Welcome Back! 👋</h1>
+          
+          {/* Login Error Alert */}
+          {loginError && (
+            <div className="mb-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 p-4 shadow-md">
+              <div className="flex items-start">
+                <span className="text-2xl mr-3">⚠️</span>
+                <div className="flex-1">
+                  <p className="text-base font-semibold text-red-700 dark:text-red-400 mb-1">Login Failed</p>
+                  <p className="text-sm text-red-600 dark:text-red-300">{loginError}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {loading && (
             <div className="mb-6 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 p-4 shadow-md">
               <div className="flex items-center justify-center">
