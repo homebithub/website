@@ -123,8 +123,8 @@ export function Navigation() {
   </Link>
 </div>
 
-                {/* Public Navigation Links - Show on non-app hosts for all users */}
-                {!isAppHost && (
+                {/* Public Navigation Links - Show on non-app hosts for NON-AUTHENTICATED users only */}
+                {!isAppHost && !user && (
                     <div className="hidden lg:flex items-center space-x-4 ml-auto">
                         {navigation.map((item) => (
                             <Link
@@ -274,8 +274,8 @@ export function Navigation() {
                         >
                             <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white/90 dark:bg-[#13131a]/95 border-2 border-primary-200 dark:border-purple-500/30 shadow-xl shadow-purple-200/50 dark:shadow-glow-sm focus:outline-none backdrop-blur-xl">
                                 <div className="py-2">
-                                    {/* Public navigation links in mobile menu (non-app host only) */}
-                                    {!isAppHost && navigation.map((item) => (
+                                    {/* Public navigation links in mobile menu (non-app host and NON-AUTHENTICATED only) */}
+                                    {!isAppHost && !user && navigation.map((item) => (
                                         <Menu.Item key={item.name}>
                                             {({ active }) => (
                                                 <Link
