@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import fastifyCors from "@fastify/cors";
 import fastifyHttpProxy from "@fastify/http-proxy";
+import { createRequestHandler } from "@react-router/node";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "node:fs";
@@ -41,6 +42,9 @@ await fastify.register(fastifyHttpProxy, {
 fastify.get("/health", async () => ({ status: "ok" }));
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
+// Create the React Router request handler
+const reactRouterHandler = createRequestHandler({ build });
+
 // Use GET only, not all methods, to avoid OPTIONS conflicts with CORS
 fastify.get("/*", async (req, reply) => {
     // First: if request maps to a real file in public/ at the root path, serve it
@@ -73,11 +77,8 @@ fastify.get("/*", async (req, reply) => {
     });
 
     try {
-        // React Router v7 uses build.module.default.fetch
-        const handler = build.module.default || build.default;
-        const response = await handler.fetch(webRequest, {
-            context: {},
-        });
+        // Use the React Router handler
+        const response = await reactRouterHandler(webRequest);
         
         reply.status(response.status);
         for (const [key, value] of response.headers.entries()) {
