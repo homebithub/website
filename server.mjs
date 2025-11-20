@@ -44,8 +44,11 @@ app.use(express.static(PUBLIC_DIR, {
     index: false, // Don't serve index.html automatically
 }));
 
-// React Router SSR handler
-app.all("*", createRequestHandler({ build }));
+// React Router SSR handler - must be last
+app.all("*", createRequestHandler({ 
+    build,
+    mode: process.env.NODE_ENV || "production"
+}));
 
 // Start server
 const PORT = process.env.PORT || 3000;
