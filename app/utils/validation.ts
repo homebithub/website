@@ -36,16 +36,19 @@ export const signupSchema = Joi.object({
 
 export const loginSchema = Joi.object({
   phone: Joi.string().pattern(phonePattern).required().messages({
+    'string.empty': 'Please enter your phone number',
     'string.pattern.base': 'Please enter a valid phone number (e.g., 0712345678)',
     'any.required': 'Please enter your phone number'
   }),
   password: Joi.string().required().messages({
+    'string.empty': 'Please enter your password',
     'any.required': 'Please enter your password'
   })
 });
 
 export const otpSchema = Joi.object({
   otp: Joi.string().length(6).pattern(/^\d{6}$/).required().messages({
+    'string.empty': 'Please enter your OTP code',
     'string.length': 'Please enter all 6 digits of your OTP',
     'string.pattern.base': 'OTP should only contain numbers',
     'any.required': 'Please enter your OTP code'
@@ -54,13 +57,16 @@ export const otpSchema = Joi.object({
 
 export const changePasswordSchema = Joi.object({
   currentPassword: Joi.string().required().messages({
+    'string.empty': 'Please enter your current password',
     'any.required': 'Please enter your current password'
   }),
   newPassword: Joi.string().min(4).required().messages({
+    'string.empty': 'Please enter your new password',
     'string.min': 'Password must be at least 4 characters',
     'any.required': 'Please enter your new password'
   }),
   confirmPassword: Joi.string().valid(Joi.ref('newPassword')).required().messages({
+    'string.empty': 'Please confirm your new password',
     'any.only': 'Your passwords don\'t match. Please try again',
     'any.required': 'Please confirm your new password'
   })
@@ -68,6 +74,7 @@ export const changePasswordSchema = Joi.object({
 
 export const forgotPasswordSchema = Joi.object({
   phone: Joi.string().pattern(phonePattern).required().messages({
+    'string.empty': 'Please enter your phone number',
     'string.pattern.base': 'Please enter a valid phone number (e.g., 0712345678)',
     'any.required': 'Please enter your phone number'
   })
@@ -75,6 +82,7 @@ export const forgotPasswordSchema = Joi.object({
 
 export const updatePhoneSchema = Joi.object({
   phone: Joi.string().pattern(phonePattern).required().messages({
+    'string.empty': 'Please enter your phone number',
     'string.pattern.base': 'Please enter a valid phone number (e.g., 0712345678)',
     'any.required': 'Please enter your phone number'
   })
@@ -82,6 +90,7 @@ export const updatePhoneSchema = Joi.object({
 
 export const updateEmailSchema = Joi.object({
   email: Joi.string().email({ tlds: { allow: false } }).required().messages({
+    'string.empty': 'Please enter your email address',
     'string.email': 'Please enter a valid email address',
     'any.required': 'Please enter your email address'
   })
