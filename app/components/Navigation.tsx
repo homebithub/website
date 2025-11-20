@@ -6,6 +6,7 @@ import { useAuth } from "~/contexts/AuthContext";
 import { Waitlist } from "~/components/features/Waitlist";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
+import { API_BASE_URL } from "~/config/api";
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -18,6 +19,7 @@ export function Navigation() {
     const { user, logout, loading } = useAuth();
     const [profileType, setProfileType] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
+    const [shortlistCount, setShortlistCount] = useState<number>(0);
     const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
     const [prefillEmail, setPrefillEmail] = useState<string | undefined>(undefined);
     const [prefillFirstName, setPrefillFirstName] = useState<string | undefined>(undefined);
@@ -50,6 +52,25 @@ export function Navigation() {
         ];
     }, [profileType]);
 
+    // Fetch shortlist count
+    const fetchShortlistCount = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+            
+            const res = await fetch(`${API_BASE_URL}/api/v1/shortlists/count`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                setShortlistCount(data.count || 0);
+            }
+        } catch (error) {
+            console.error("Failed to fetch shortlist count:", error);
+        }
+    };
+
     // Parse user profile type and name from localStorage
     useEffect(() => {
         if (user) {
@@ -70,6 +91,11 @@ export function Navigation() {
                     // Get user name for greeting
                     const firstName = parsed.first_name || parsed.firstName || "";
                     setUserName(firstName);
+                    
+                    // Fetch shortlist count for household users
+                    if (profileType === "household") {
+                        fetchShortlistCount();
+                    }
                 } else {
                     setProfileType(null);
                     setUserName(null);
@@ -81,8 +107,19 @@ export function Navigation() {
         } else {
             setProfileType(null);
             setUserName(null);
+            setShortlistCount(0);
         }
     }, [user]);
+
+    // Listen for shortlist updates
+    useEffect(() => {
+        const handleShortlistUpdate = () => {
+            fetchShortlistCount();
+        };
+        
+        window.addEventListener('shortlist-updated', handleShortlistUpdate);
+        return () => window.removeEventListener('shortlist-updated', handleShortlistUpdate);
+    }, []);
 
     // Open waitlist modal automatically if URL contains waitlist params (used by OAuth callback)
     useEffect(() => {
@@ -252,7 +289,20 @@ export function Navigation() {
                     {isAppHost && user && (
                         <div className="hidden lg:flex items-center space-x-3 ml-4">
                             {authLinks.map((item) => (
-                                <Link key={item.name} to={item.href} prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">{item.name}</Link>
+                                <Link 
+                                    key={item.name} 
+                                    to={item.href} 
+                                    prefetch="intent" 
+                                    className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105 relative"
+                                    id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
+                                >
+                                    {item.name}
+                                    {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                        <span className="absolute -top-1 -right-1 bg-gradient-to-r from-pink-500 to-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center animate-pulse">
+                                            {shortlistCount}
+                                        </span>
+                                    )}
+                                </Link>
                             ))}
                         </div>
                     )}
@@ -352,8 +402,13 @@ export function Navigation() {
                                                 <>
                                                     {authLinks.map((item) => (
                                                         <Menu.Item key={item.name}>{({ active }) => (
-                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
-                                                                {item.name}
+                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center justify-between px-4 py-2 text-sm relative`}>
+                                                                <span>{item.name}</span>
+                                                                {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                                                    <span className="bg-gradient-to-r from-pink-500 to-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
+                                                                        {shortlistCount}
+                                                                    </span>
+                                                                )}
                                                             </Link>
                                                         )}</Menu.Item>
                                                     ))}

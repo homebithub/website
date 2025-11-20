@@ -71,17 +71,58 @@ export default function AuthenticatedHome() {
     }
   };
 
-  const handleShortlist = async (profileId: string) => {
+  const handleShortlist = async (profileId: string, event: React.MouseEvent<HTMLButtonElement>) => {
     try {
+      // Get the button element and shortlist link
+      const button = event.currentTarget;
+      const card = button.closest('.househelp-card');
+      const shortlistLink = document.getElementById('shortlist-link');
+      
+      if (card && shortlistLink) {
+        // Get positions
+        const cardRect = card.getBoundingClientRect();
+        const linkRect = shortlistLink.getBoundingClientRect();
+        
+        // Create clone for animation
+        const clone = card.cloneNode(true) as HTMLElement;
+        clone.style.position = 'fixed';
+        clone.style.top = `${cardRect.top}px`;
+        clone.style.left = `${cardRect.left}px`;
+        clone.style.width = `${cardRect.width}px`;
+        clone.style.height = `${cardRect.height}px`;
+        clone.style.zIndex = '9999';
+        clone.style.transition = 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        clone.style.pointerEvents = 'none';
+        document.body.appendChild(clone);
+        
+        // Trigger animation
+        requestAnimationFrame(() => {
+          clone.style.top = `${linkRect.top + linkRect.height / 2}px`;
+          clone.style.left = `${linkRect.left + linkRect.width / 2}px`;
+          clone.style.width = '0px';
+          clone.style.height = '0px';
+          clone.style.opacity = '0';
+          clone.style.transform = 'scale(0)';
+        });
+        
+        // Remove clone after animation
+        setTimeout(() => {
+          document.body.removeChild(clone);
+        }, 600);
+      }
+      
       const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profile_id: profileId, profile_type: 'househelp' }),
       });
-      if (!res.ok) throw new Error('Failed to shortlist');
-      navigate('/household/employment?tab=shortlist');
+      
+      if (res.ok) {
+        // Trigger a custom event to update the shortlist count in Navigation
+        window.dispatchEvent(new CustomEvent('shortlist-updated'));
+      }
     } catch (e) {
-      navigate('/household/employment?tab=shortlist');
+      console.error('Failed to shortlist:', e);
     }
   };
   const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
@@ -436,7 +477,7 @@ export default function AuthenticatedHome() {
                     <div
                       key={househelp.id}
                       onClick={() => househelp.profile_id && handleViewProfile(String(househelp.profile_id))}
-                      className="relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
+                      className="househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
                     >
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">
@@ -449,7 +490,7 @@ export default function AuthenticatedHome() {
                           <ChatBubbleLeftRightIcon className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleShortlist(String(househelp.profile_id)); }}
+                          onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleShortlist(String(househelp.profile_id), e); }}
                           className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300 shadow"
                           aria-label="Shortlist"
                           title="Shortlist"

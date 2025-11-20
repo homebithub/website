@@ -6,7 +6,6 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "node:fs";
 import * as build from "./build/server/index.js";
-import { createRequestHandler } from "@react-router/express";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -42,9 +41,6 @@ await fastify.register(fastifyHttpProxy, {
 fastify.get("/health", async () => ({ status: "ok" }));
 fastify.get("/healthz", async () => ({ status: "ok" }));
 
-// Universal React Router handler (SSR)
-const handleRequest = createRequestHandler({ build });
-
 // Use GET only, not all methods, to avoid OPTIONS conflicts with CORS
 fastify.get("/*", async (req, reply) => {
     // First: if request maps to a real file in public/ at the root path, serve it
@@ -65,13 +61,35 @@ fastify.get("/*", async (req, reply) => {
     } catch {}
 
     // Otherwise fall back to SSR
-    const response = await handleRequest(req.raw);
-    reply.status(response.status);
-    for (const [key, value] of response.headers.entries()) {
-        reply.header(key, value);
+    // Create a proper Web Request from Fastify request
+    const protocol = req.headers["x-forwarded-proto"] || req.protocol || "http";
+    const host = req.headers["x-forwarded-host"] || req.headers.host || "localhost";
+    const url = new URL(req.raw.url, `${protocol}://${host}`);
+    
+    const webRequest = new Request(url.toString(), {
+        method: req.method,
+        headers: new Headers(req.headers),
+        body: req.method !== "GET" && req.method !== "HEAD" ? req.raw : undefined,
+    });
+
+    try {
+        // React Router v7 uses build.module.default.fetch
+        const handler = build.module.default || build.default;
+        const response = await handler.fetch(webRequest, {
+            context: {},
+        });
+        
+        reply.status(response.status);
+        for (const [key, value] of response.headers.entries()) {
+            reply.header(key, value);
+        }
+        
+        const body = await response.text();
+        reply.send(body);
+    } catch (error) {
+        fastify.log.error(error);
+        reply.status(500).send({ error: "Internal Server Error", message: error.message });
     }
-    const body = await response.text();
-    reply.send(body);
 });
 
 // Start server
