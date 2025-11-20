@@ -9,6 +9,7 @@ import { apiClient } from '~/utils/apiClient';
 import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { TOWNS, SKILLS, EXPERIENCE_LEVELS } from '~/constants/profileOptions';
 
 interface HousehelpProfile {
@@ -74,56 +75,93 @@ export default function AuthenticatedHome() {
 
   const handleShortlist = async (profileId: string, event: React.MouseEvent<HTMLButtonElement>) => {
     try {
+      const isShortlisted = shortlistedProfiles.has(profileId);
+      console.log(isShortlisted ? 'Removing from shortlist:' : 'Adding to shortlist:', profileId);
+      
       // Get the button element and shortlist link
       const button = event.currentTarget;
       const card = button.closest('.househelp-card');
       const shortlistLink = document.getElementById('shortlist-link');
       
-      if (card && shortlistLink) {
-        // Get positions
-        const cardRect = card.getBoundingClientRect();
-        const linkRect = shortlistLink.getBoundingClientRect();
-        
-        // Create clone for animation
-        const clone = card.cloneNode(true) as HTMLElement;
-        clone.style.position = 'fixed';
-        clone.style.top = `${cardRect.top}px`;
-        clone.style.left = `${cardRect.left}px`;
-        clone.style.width = `${cardRect.width}px`;
-        clone.style.height = `${cardRect.height}px`;
-        clone.style.zIndex = '9999';
-        clone.style.transition = 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
-        clone.style.pointerEvents = 'none';
-        document.body.appendChild(clone);
-        
-        // Trigger animation
-        requestAnimationFrame(() => {
-          clone.style.top = `${linkRect.top + linkRect.height / 2}px`;
-          clone.style.left = `${linkRect.left + linkRect.width / 2}px`;
-          clone.style.width = '0px';
-          clone.style.height = '0px';
-          clone.style.opacity = '0';
-          clone.style.transform = 'scale(0)';
+      if (isShortlisted) {
+        // Remove from shortlist
+        const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}/${profileId}`, {
+          method: 'DELETE',
         });
         
-        // Remove clone after animation
-        setTimeout(() => {
-          document.body.removeChild(clone);
-        }, 600);
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ message: 'Failed to remove from shortlist' }));
+          console.error('Remove shortlist error:', errorData);
+          alert(errorData.message || 'Failed to remove from shortlist. Please try again.');
+          return;
+        }
+        
+        console.log('Successfully removed from shortlist');
+        setShortlistedProfiles(prev => {
+          const next = new Set(prev);
+          next.delete(profileId);
+          return next;
+        });
+      } else {
+        // Add to shortlist
+        const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profile_id: profileId, profile_type: 'househelp' }),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ message: 'Failed to add to shortlist' }));
+          console.error('Shortlist error:', errorData);
+          alert(errorData.message || 'Failed to add to shortlist. Please try again.');
+          return;
+        }
+        
+        console.log('Successfully added to shortlist');
+        setShortlistedProfiles(prev => new Set(prev).add(profileId));
+        
+        // Animate after successful API call
+        if (card && shortlistLink) {
+          // Get positions
+          const cardRect = card.getBoundingClientRect();
+          const linkRect = shortlistLink.getBoundingClientRect();
+          
+          // Create clone for animation
+          const clone = card.cloneNode(true) as HTMLElement;
+          clone.style.position = 'fixed';
+          clone.style.top = `${cardRect.top}px`;
+          clone.style.left = `${cardRect.left}px`;
+          clone.style.width = `${cardRect.width}px`;
+          clone.style.height = `${cardRect.height}px`;
+          clone.style.zIndex = '9999';
+          clone.style.transition = 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+          clone.style.pointerEvents = 'none';
+          document.body.appendChild(clone);
+          
+          // Trigger animation
+          requestAnimationFrame(() => {
+            clone.style.top = `${linkRect.top + linkRect.height / 2}px`;
+            clone.style.left = `${linkRect.left + linkRect.width / 2}px`;
+            clone.style.width = '0px';
+            clone.style.height = '0px';
+            clone.style.opacity = '0';
+            clone.style.transform = 'scale(0)';
+          });
+          
+          // Remove clone after animation
+          setTimeout(() => {
+            if (document.body.contains(clone)) {
+              document.body.removeChild(clone);
+            }
+          }, 600);
+        }
       }
       
-      const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile_id: profileId, profile_type: 'househelp' }),
-      });
-      
-      if (res.ok) {
-        // Trigger a custom event to update the shortlist count in Navigation
-        window.dispatchEvent(new CustomEvent('shortlist-updated'));
-      }
+      // Trigger a custom event to update the shortlist count in Navigation
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (e) {
-      console.error('Failed to shortlist:', e);
+      console.error('Failed to toggle shortlist:', e);
+      alert('Failed to update shortlist. Please check your connection and try again.');
     }
   };
   const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
@@ -131,6 +169,7 @@ export default function AuthenticatedHome() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
+  const [shortlistedProfiles, setShortlistedProfiles] = useState<Set<string>>(new Set());
   const [offset, setOffset] = useState(0);
   const limit = 12;
   const [hasMore, setHasMore] = useState(true);
@@ -282,6 +321,45 @@ export default function AuthenticatedHome() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fields]);
+
+  // Fetch shortlist status for loaded profiles
+  useEffect(() => {
+    if (househelps.length === 0) return;
+    
+    const fetchShortlistStatus = async () => {
+      try {
+        const profileIds = househelps.map(h => h.profile_id).filter(Boolean);
+        console.log('Fetching shortlist status for profiles:', profileIds);
+        
+        const results = await Promise.all(
+          profileIds.map(async (profileId) => {
+            try {
+              const res = await apiClient.auth(API_ENDPOINTS.shortlists.exists(profileId));
+              if (!res.ok) {
+                console.log(`Profile ${profileId} not shortlisted (status: ${res.status})`);
+                return { profileId, exists: false };
+              }
+              const data = await apiClient.json<{ exists: boolean }>(res);
+              console.log(`Profile ${profileId} shortlist status:`, data.exists);
+              return { profileId, exists: data.exists };
+            } catch (err) {
+              console.error(`Error checking shortlist for ${profileId}:`, err);
+              return { profileId, exists: false };
+            }
+          })
+        );
+        
+        const shortlisted = results.filter(r => r.exists).map(r => r.profileId);
+        console.log('Shortlisted profiles:', shortlisted);
+        
+        setShortlistedProfiles(new Set(shortlisted));
+      } catch (e) {
+        console.error('Failed to fetch shortlist status:', e);
+      }
+    };
+    
+    fetchShortlistStatus();
+  }, [househelps]);
 
   const handleSearch = async (e?: React.FormEvent, overrideFields?: HousehelpSearchFields) => {
     if (e) e.preventDefault();
@@ -676,11 +754,19 @@ export default function AuthenticatedHome() {
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleShortlist(String(househelp.profile_id), e); }}
-                          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300 shadow"
-                          aria-label="Shortlist"
-                          title="Shortlist"
+                          className={`inline-flex items-center justify-center w-9 h-9 rounded-full border shadow transition-all ${
+                            shortlistedProfiles.has(househelp.profile_id)
+                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white hover:from-purple-700 hover:to-pink-700'
+                              : 'bg-white/80 dark:bg-white/10 border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300'
+                          }`}
+                          aria-label={shortlistedProfiles.has(househelp.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
+                          title={shortlistedProfiles.has(househelp.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
                         >
-                          <HeartIcon className="w-5 h-5" />
+                          {shortlistedProfiles.has(househelp.profile_id) ? (
+                            <HeartIconSolid className="w-5 h-5" />
+                          ) : (
+                            <HeartIcon className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
                       {/* Profile Picture */}
@@ -759,15 +845,15 @@ export default function AuthenticatedHome() {
 
                       {/* Bottom actions */}
                       <div className="mt-4 flex items-center justify-between">
+                        <div className="text-xs text-gray-400">
+                          {househelp.created_at ? new Date(househelp.created_at).toLocaleDateString() : ''}
+                        </div>
                         <button
                           onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleViewProfile(String(househelp.profile_id)); }}
                           className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >
                           View more
                         </button>
-                        <div className="text-xs text-gray-400">
-                          {househelp.created_at ? new Date(househelp.created_at).toLocaleDateString() : ''}
-                        </div>
                       </div>
                     </div>
                   ))}
