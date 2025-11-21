@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { API_BASE_URL } from '~/config/api';
 
 interface Househelp {
   id: string;
@@ -91,7 +92,7 @@ const HousehelpsTable = () => {
         localStorage.setItem('jwt', token);
 
         const response = await fetch(
-          'http://localhost:8000/api/v1/househelps/bureau/e0eabd6e-491f-4dea-92ea-e27a198a47f9?limit=20&offset=0',
+          `${API_BASE_URL}/api/v1/househelps/bureau/e0eabd6e-491f-4dea-92ea-e27a198a47f9?limit=20&offset=0`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
