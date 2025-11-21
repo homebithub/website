@@ -121,13 +121,13 @@ export default function Index() {
   // Loading screen
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-600 to-pink-600">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-600 to-pink-600 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-purple-950 transition-colors duration-300">
         <div className="text-center">
           <div className="mb-8">
-            <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-white mx-auto"></div>
+            <div className="animate-spin rounded-full h-20 w-20 border-t-4 border-b-4 border-white dark:border-purple-400 mx-auto"></div>
           </div>
           <h2 className="text-3xl font-bold text-white mb-2">🏠 Homebit</h2>
-          <p className="text-purple-100 text-lg">Loading your experience...</p>
+          <p className="text-purple-100 dark:text-purple-300 text-lg">Loading your experience...</p>
         </div>
       </div>
     );
