@@ -9,6 +9,8 @@ import { apiClient } from '~/utils/apiClient';
 import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
+import { TOWNS, SKILLS, EXPERIENCE_LEVELS } from '~/constants/profileOptions';
 
 interface HousehelpProfile {
   id: number | string;
@@ -71,17 +73,95 @@ export default function AuthenticatedHome() {
     }
   };
 
-  const handleShortlist = async (profileId: string) => {
+  const handleShortlist = async (profileId: string, event: React.MouseEvent<HTMLButtonElement>) => {
     try {
-      const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile_id: profileId, profile_type: 'househelp' }),
-      });
-      if (!res.ok) throw new Error('Failed to shortlist');
-      navigate('/household/employment?tab=shortlist');
+      const isShortlisted = shortlistedProfiles.has(profileId);
+      console.log(isShortlisted ? 'Removing from shortlist:' : 'Adding to shortlist:', profileId);
+      
+      // Get the button element and shortlist link
+      const button = event.currentTarget;
+      const card = button.closest('.househelp-card');
+      const shortlistLink = document.getElementById('shortlist-link');
+      
+      if (isShortlisted) {
+        // Remove from shortlist
+        const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}/${profileId}`, {
+          method: 'DELETE',
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ message: 'Failed to remove from shortlist' }));
+          console.error('Remove shortlist error:', errorData);
+          alert(errorData.message || 'Failed to remove from shortlist. Please try again.');
+          return;
+        }
+        
+        console.log('Successfully removed from shortlist');
+        setShortlistedProfiles(prev => {
+          const next = new Set(prev);
+          next.delete(profileId);
+          return next;
+        });
+      } else {
+        // Add to shortlist
+        const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profile_id: profileId, profile_type: 'househelp' }),
+        });
+        
+        if (!res.ok) {
+          const errorData = await res.json().catch(() => ({ message: 'Failed to add to shortlist' }));
+          console.error('Shortlist error:', errorData);
+          alert(errorData.message || 'Failed to add to shortlist. Please try again.');
+          return;
+        }
+        
+        console.log('Successfully added to shortlist');
+        setShortlistedProfiles(prev => new Set(prev).add(profileId));
+        
+        // Animate after successful API call
+        if (card && shortlistLink) {
+          // Get positions
+          const cardRect = card.getBoundingClientRect();
+          const linkRect = shortlistLink.getBoundingClientRect();
+          
+          // Create clone for animation
+          const clone = card.cloneNode(true) as HTMLElement;
+          clone.style.position = 'fixed';
+          clone.style.top = `${cardRect.top}px`;
+          clone.style.left = `${cardRect.left}px`;
+          clone.style.width = `${cardRect.width}px`;
+          clone.style.height = `${cardRect.height}px`;
+          clone.style.zIndex = '9999';
+          clone.style.transition = 'all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1)';
+          clone.style.pointerEvents = 'none';
+          document.body.appendChild(clone);
+          
+          // Trigger animation
+          requestAnimationFrame(() => {
+            clone.style.top = `${linkRect.top + linkRect.height / 2}px`;
+            clone.style.left = `${linkRect.left + linkRect.width / 2}px`;
+            clone.style.width = '0px';
+            clone.style.height = '0px';
+            clone.style.opacity = '0';
+            clone.style.transform = 'scale(0)';
+          });
+          
+          // Remove clone after animation
+          setTimeout(() => {
+            if (document.body.contains(clone)) {
+              document.body.removeChild(clone);
+            }
+          }, 600);
+        }
+      }
+      
+      // Trigger a custom event to update the shortlist count in Navigation
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (e) {
-      navigate('/household/employment?tab=shortlist');
+      console.error('Failed to toggle shortlist:', e);
+      alert('Failed to update shortlist. Please check your connection and try again.');
     }
   };
   const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
@@ -89,6 +169,7 @@ export default function AuthenticatedHome() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
+  const [shortlistedProfiles, setShortlistedProfiles] = useState<Set<string>>(new Set());
   const [offset, setOffset] = useState(0);
   const limit = 12;
   const [hasMore, setHasMore] = useState(true);
@@ -100,6 +181,14 @@ export default function AuthenticatedHome() {
   const navigate = useNavigate();
   const lastSetQueryRef = useRef<string | null>(null);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [showSkillsDropdown, setShowSkillsDropdown] = useState(false);
+  const [skillSearchTerm, setSkillSearchTerm] = useState('');
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
+  const [showExperienceDropdown, setShowExperienceDropdown] = useState(false);
+  const skillsDropdownRef = useRef<HTMLDivElement>(null);
+  const typeDropdownRef = useRef<HTMLDivElement>(null);
+  const experienceDropdownRef = useRef<HTMLDivElement>(null);
 
   // Initialize from URL params on mount
   useEffect(() => {
@@ -126,9 +215,73 @@ export default function AuthenticatedHome() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (skillsDropdownRef.current && !skillsDropdownRef.current.contains(event.target as Node)) {
+        setShowSkillsDropdown(false);
+      }
+      if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) {
+        setShowTypeDropdown(false);
+      }
+      if (experienceDropdownRef.current && !experienceDropdownRef.current.contains(event.target as Node)) {
+        setShowExperienceDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   const handleFieldChange = (name: string, value: string) => {
     setFields(prev => ({ ...prev, [name]: value }));
   };
+
+  // Helper to derive type value from offers_live_in and offers_day_worker
+  const getTypeValue = () => {
+    const liveIn = fields.offers_live_in === "true";
+    const dayWorker = fields.offers_day_worker === "true";
+    if (liveIn && !dayWorker) return "live_in";
+    if (dayWorker && !liveIn) return "day_worker";
+    return "";
+  };
+
+  const setTypeValue = (val: string) => {
+    if (val === "live_in") {
+      setFields(prev => ({ ...prev, offers_live_in: "true", offers_day_worker: "" }));
+    } else if (val === "day_worker") {
+      setFields(prev => ({ ...prev, offers_live_in: "", offers_day_worker: "true" }));
+    } else {
+      setFields(prev => ({ ...prev, offers_live_in: "", offers_day_worker: "" }));
+    }
+  };
+
+  // Filter skills based on search term
+  const filteredSkills = SKILLS.filter(skill =>
+    skill.toLowerCase().includes(skillSearchTerm.toLowerCase())
+  );
+
+  // Toggle skill selection
+  const toggleSkill = (skill: string) => {
+    setSelectedSkills(prev => {
+      const newSkills = prev.includes(skill)
+        ? prev.filter(s => s !== skill)
+        : [...prev, skill];
+      
+      // Update the skill field with comma-separated values
+      handleFieldChange('skill', newSkills.join(', '));
+      return newSkills;
+    });
+  };
+
+  // Initialize selected skills from fields.skill
+  useEffect(() => {
+    if (fields.skill) {
+      const skills = fields.skill.split(',').map(s => s.trim()).filter(Boolean);
+      setSelectedSkills(skills);
+    } else {
+      setSelectedSkills([]);
+    }
+  }, [fields.skill]);
 
   const buildCountPayload = (f: HousehelpSearchFields) => {
     return Object.fromEntries(
@@ -168,6 +321,45 @@ export default function AuthenticatedHome() {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fields]);
+
+  // Fetch shortlist status for loaded profiles
+  useEffect(() => {
+    if (househelps.length === 0) return;
+    
+    const fetchShortlistStatus = async () => {
+      try {
+        const profileIds = househelps.map(h => h.profile_id).filter(Boolean);
+        console.log('Fetching shortlist status for profiles:', profileIds);
+        
+        const results = await Promise.all(
+          profileIds.map(async (profileId) => {
+            try {
+              const res = await apiClient.auth(API_ENDPOINTS.shortlists.exists(profileId));
+              if (!res.ok) {
+                console.log(`Profile ${profileId} not shortlisted (status: ${res.status})`);
+                return { profileId, exists: false };
+              }
+              const data = await apiClient.json<{ exists: boolean }>(res);
+              console.log(`Profile ${profileId} shortlist status:`, data.exists);
+              return { profileId, exists: data.exists };
+            } catch (err) {
+              console.error(`Error checking shortlist for ${profileId}:`, err);
+              return { profileId, exists: false };
+            }
+          })
+        );
+        
+        const shortlisted = results.filter(r => r.exists).map(r => r.profileId);
+        console.log('Shortlisted profiles:', shortlisted);
+        
+        setShortlistedProfiles(new Set(shortlisted));
+      } catch (e) {
+        console.error('Failed to fetch shortlist status:', e);
+      }
+    };
+    
+    fetchShortlistStatus();
+  }, [househelps]);
 
   const handleSearch = async (e?: React.FormEvent, overrideFields?: HousehelpSearchFields) => {
     if (e) e.preventDefault();
@@ -303,7 +495,7 @@ export default function AuthenticatedHome() {
         <main className="flex-1 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Compact Filters Section */}
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg dark:border dark:border-purple-500/20">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg shadow-purple-500/50 dark:shadow-[0_0_20px_rgba(100,100,120,0.3)] dark:border dark:border-gray-700/50">
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl sm:text-3xl font-bold text-white">Find Househelps</h1>
                 <button
@@ -314,52 +506,164 @@ export default function AuthenticatedHome() {
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-white">Town</label>
-                  <select
-                    value={fields.town || ''}
-                    onChange={(e) => handleFieldChange('town', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
-                  >
-                    {['', 'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika'].map((t) => (
-                      <option key={t} value={t}>
-                        {t || 'Any'}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex flex-col relative" ref={typeDropdownRef}>
+                  <label className="mb-2 text-sm font-semibold text-white">Type of Househelp</label>
+                  <div className="relative">
+                    <div
+                      onClick={() => setShowTypeDropdown(!showTypeDropdown)}
+                      className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
+                    >
+                      <span className={getTypeValue() ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
+                        {getTypeValue() === 'live_in' ? 'Live-in' : getTypeValue() === 'day_worker' ? 'Day worker' : 'Any'}
+                      </span>
+                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                    {showTypeDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
+                        {[
+                          { value: '', label: 'Any' },
+                          { value: 'live_in', label: 'Live-in' },
+                          { value: 'day_worker', label: 'Day worker' }
+                        ].map((option) => (
+                          <div
+                            key={option.value}
+                            onClick={() => {
+                              setTypeValue(option.value);
+                              setShowTypeDropdown(false);
+                            }}
+                            className="px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                          >
+                            {option.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-white">Status</label>
-                  <select
-                    value={fields.status || ''}
-                    onChange={(e) => handleFieldChange('status', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
-                  >
-                    {['', 'active', 'inactive'].map((s) => (
-                      <option key={s} value={s}>
-                        {s || 'Any'}
-                      </option>
-                    ))}
-                  </select>
+                <div className="flex flex-col relative" ref={experienceDropdownRef}>
+                  <label className="mb-2 text-sm font-semibold text-white">Experience</label>
+                  <div className="relative">
+                    <div
+                      onClick={() => setShowExperienceDropdown(!showExperienceDropdown)}
+                      className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
+                    >
+                      <span className={fields.experience ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
+                        {fields.experience ? EXPERIENCE_LEVELS.find(l => l.value === fields.experience)?.label : 'Any'}
+                      </span>
+                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                    {showExperienceDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        <div
+                          onClick={() => {
+                            handleFieldChange('experience', '');
+                            setShowExperienceDropdown(false);
+                          }}
+                          className="px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800"
+                        >
+                          Any
+                        </div>
+                        {EXPERIENCE_LEVELS.map((level) => (
+                          <div
+                            key={level.value}
+                            onClick={() => {
+                              handleFieldChange('experience', level.value);
+                              setShowExperienceDropdown(false);
+                            }}
+                            className="px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                          >
+                            {level.label}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-white">Skill</label>
-                  <input
-                    type="text"
-                    value={fields.skill || ''}
-                    onChange={(e) => handleFieldChange('skill', e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
-                    placeholder="e.g. laundry, cooking"
-                  />
+                <div className="flex flex-col relative" ref={skillsDropdownRef}>
+                  <label className="mb-2 text-sm font-semibold text-white">Skills / Can Help With</label>
+                  <div className="relative">
+                    <div
+                      onClick={() => setShowSkillsDropdown(!showSkillsDropdown)}
+                      className="w-full min-h-[48px] px-4 py-2 rounded-xl text-base bg-white dark:bg-[#13131a] border-2 border-transparent focus-within:border-purple-500 focus-within:ring-4 focus-within:ring-purple-300 shadow-md cursor-pointer"
+                    >
+                      {selectedSkills.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {selectedSkills.map((skill) => (
+                            <span
+                              key={skill}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-800/40 text-purple-800 dark:text-purple-200 rounded-lg text-sm font-medium"
+                            >
+                              {skill}
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleSkill(skill);
+                                }}
+                                className="hover:text-purple-900 dark:hover:text-purple-100"
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className="text-gray-500 dark:text-gray-400">Select skills...</span>
+                      )}
+                    </div>
+                    {showSkillsDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
+                        {/* Search input */}
+                        <div className="p-2 border-b border-gray-200 dark:border-gray-700">
+                          <input
+                            type="text"
+                            value={skillSearchTerm}
+                            onChange={(e) => setSkillSearchTerm(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1a1a1f] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Search skills..."
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                        {/* Skills list */}
+                        <div className="overflow-y-auto max-h-48">
+                          {filteredSkills.length > 0 ? (
+                            filteredSkills.map((skill) => (
+                              <label
+                                key={skill}
+                                className="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSkills.includes(skill)}
+                                  onChange={() => toggleSkill(skill)}
+                                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                                />
+                                <span>{skill}</span>
+                              </label>
+                            ))
+                          ) : (
+                            <div className="px-4 py-3 text-gray-500 dark:text-gray-400 text-center">
+                              No skills found
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="mt-4 flex items-center justify-end gap-3">
-                {totalCount !== null && (
-                  <span className="text-white font-semibold">{totalCount} results</span>
-                )}
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                <div className="sm:col-span-2 flex items-center">
+                  {totalCount !== null && (
+                    <span className="text-white font-semibold">{totalCount} results</span>
+                  )}
+                </div>
                 <button
                   onClick={() => handleSearch()}
-                  className="px-6 py-3 rounded-xl font-bold bg-white text-purple-700 border border-white/30 ring-1 ring-purple-300/40 shadow-lg shadow-[0_0_14px_rgba(168,85,247,0.22)] hover:bg-purple-50 transition-all dark:bg-white/90 dark:text-purple-700 dark:hover:bg-white focus:outline-none focus:ring-2 focus:ring-white/70 dark:shadow-[0_0_20px_rgba(168,85,247,0.35)]"
+                  className="w-full px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300"
                 >
                   Search
                 </button>
@@ -436,7 +740,7 @@ export default function AuthenticatedHome() {
                     <div
                       key={househelp.id}
                       onClick={() => househelp.profile_id && handleViewProfile(String(househelp.profile_id))}
-                      className="relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
+                      className="househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
                     >
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">
@@ -449,12 +753,20 @@ export default function AuthenticatedHome() {
                           <ChatBubbleLeftRightIcon className="w-5 h-5" />
                         </button>
                         <button
-                          onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleShortlist(String(househelp.profile_id)); }}
-                          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300 shadow"
-                          aria-label="Shortlist"
-                          title="Shortlist"
+                          onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleShortlist(String(househelp.profile_id), e); }}
+                          className={`inline-flex items-center justify-center w-9 h-9 rounded-full border shadow transition-all ${
+                            shortlistedProfiles.has(househelp.profile_id)
+                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white hover:from-purple-700 hover:to-pink-700'
+                              : 'bg-white/80 dark:bg-white/10 border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300'
+                          }`}
+                          aria-label={shortlistedProfiles.has(househelp.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
+                          title={shortlistedProfiles.has(househelp.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
                         >
-                          <HeartIcon className="w-5 h-5" />
+                          {shortlistedProfiles.has(househelp.profile_id) ? (
+                            <HeartIconSolid className="w-5 h-5" />
+                          ) : (
+                            <HeartIcon className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
                       {/* Profile Picture */}
@@ -533,15 +845,15 @@ export default function AuthenticatedHome() {
 
                       {/* Bottom actions */}
                       <div className="mt-4 flex items-center justify-between">
+                        <div className="text-xs text-gray-400">
+                          {househelp.created_at ? new Date(househelp.created_at).toLocaleDateString() : ''}
+                        </div>
                         <button
                           onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleViewProfile(String(househelp.profile_id)); }}
                           className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >
                           View more
                         </button>
-                        <div className="text-xs text-gray-400">
-                          {househelp.created_at ? new Date(househelp.created_at).toLocaleDateString() : ''}
-                        </div>
                       </div>
                     </div>
                   ))}

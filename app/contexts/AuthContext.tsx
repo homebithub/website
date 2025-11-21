@@ -113,6 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = {...data as LoginResponse};
       delete (userData as any).token;
       localStorage.setItem("user_object", JSON.stringify(userData));
+      localStorage.setItem("profile_type", userData.profile_type || "");
       setUser(data as LoginResponse);
       
       // Migrate anonymous preferences to user account
@@ -134,6 +135,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      // Check if profile setup is complete
+      if (profileType === "household" || profileType === "househelp") {
+        try {
+          const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+            headers: {
+              'Authorization': `Bearer ${(data as LoginResponse).token}`
+            }
+          });
+
+          if (setupResponse.ok) {
+            const setupData = await setupResponse.json();
+            const isComplete = setupData.is_complete || false;
+            const lastStep = setupData.last_completed_step || 0;
+
+            console.log("Profile setup status:", { isComplete, lastStep });
+
+            if (!isComplete) {
+              // Redirect to profile setup at the last completed step
+              const setupRoute = profileType === "household" 
+                ? `/profile-setup/household?step=${lastStep + 1}`
+                : `/profile-setup/househelp?step=${lastStep + 1}`;
+              
+              console.log("Profile incomplete, redirecting to:", setupRoute);
+              navigate(setupRoute);
+              return;
+            }
+          }
+        } catch (err) {
+          console.error("Failed to check profile setup status:", err);
+          // Continue to home if check fails
+        }
+      }
+
+      // Profile is complete or setup check failed, redirect to home
       if (profileType === "household" || profileType === "household") {
         console.log("Redirecting to /");
         navigate("/");

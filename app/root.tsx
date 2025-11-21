@@ -5,6 +5,7 @@ import type { Route } from "./+types/root";
 import { AuthProvider } from "~/contexts/AuthContext";
 import { ThemeProvider } from "~/contexts/ThemeContext";
 import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
+import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
 import { API_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
@@ -38,6 +39,32 @@ export default function App() {
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <Meta/>
                 <Links/>
+                {/* Blocking script to prevent theme flash - runs before React hydrates */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                            (function() {
+                                try {
+                                    // Check localStorage for saved theme
+                                    const savedTheme = localStorage.getItem('theme');
+                                    
+                                    // Default to dark theme if no preference exists
+                                    const theme = savedTheme || 'dark';
+                                    
+                                    // Apply theme immediately
+                                    if (theme === 'dark') {
+                                        document.documentElement.classList.add('dark');
+                                    } else {
+                                        document.documentElement.classList.remove('dark');
+                                    }
+                                } catch (e) {
+                                    // Fallback to dark theme on error
+                                    document.documentElement.classList.add('dark');
+                                }
+                            })();
+                        `,
+                    }}
+                />
                 {/* Google Identity Services */}
                 <script src="https://accounts.google.com/gsi/client" async defer></script>
                 <link rel="icon" href="/favicon.ico" />
@@ -50,7 +77,9 @@ export default function App() {
                 <ThemeProvider>
                     <AuthProvider>
                         <ProfileSetupProvider>
-                            <Outlet/>
+                            <ProfileSetupGuard>
+                                <Outlet/>
+                            </ProfileSetupGuard>
                         </ProfileSetupProvider>
                     </AuthProvider>
                 </ThemeProvider>

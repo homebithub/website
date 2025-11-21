@@ -46,7 +46,33 @@ export default function HouseholdProfile() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Household invitation code state
+  const [invitationCode, setInvitationCode] = useState<string | null>(null);
+  const [invitationExpiresAt, setInvitationExpiresAt] = useState<string | null>(null);
+  const [invitationLoading, setInvitationLoading] = useState(false);
+  const [invitationError, setInvitationError] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
+  const [, setTimeUpdate] = useState(0); // Force re-render for countdown
+  
+  // Household members state
+  const [members, setMembers] = useState<any[]>([]);
+  const [membersLoading, setMembersLoading] = useState(false);
+  const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+
+  // Update countdown every minute
+  useEffect(() => {
+    if (!invitationExpiresAt) return;
+    
+    const interval = setInterval(() => {
+      setTimeUpdate(prev => prev + 1);
+    }, 60000); // Update every minute
+    
+    return () => clearInterval(interval);
+  }, [invitationExpiresAt]);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -56,41 +82,54 @@ export default function HouseholdProfile() {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Not authenticated");
         
-        // Fetch profile
         const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!profileRes.ok) throw new Error("Failed to fetch profile");
         const profileData = await profileRes.json();
         setProfile(profileData);
-        
-        // Fetch kids
+
+        // Load existing invitation code if available
         try {
-          const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
+          const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/${profileData.id}/invitation-code`, {
             headers: { Authorization: `Bearer ${token}` },
           });
-          if (kidsRes.ok) {
-            const kidsData = await kidsRes.json();
-            setKids(kidsData || []);
+          if (inviteRes.ok) {
+            const inviteData = await inviteRes.json();
+            setInvitationCode(inviteData.invite_code);
+            setInvitationExpiresAt(inviteData.expires_at);
           }
         } catch (err) {
-          console.error("Failed to fetch kids:", err);
+          console.log("No existing invitation code or error loading it:", err);
         }
-        
-        // Fetch pets
-        try {
-          const petsRes = await fetch(`${API_BASE_URL}/api/v1/pets`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (petsRes.ok) {
-            const petsData = await petsRes.json();
-            setPets(petsData || []);
-          }
-        } catch (err) {
-          console.error("Failed to fetch pets:", err);
+
+        const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household/kids`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (kidsRes.ok) {
+          const kidsData = await kidsRes.json();
+          setKids(kidsData);
+        }
+
+        const petsRes = await fetch(`${API_BASE_URL}/api/v1/household/pets`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (petsRes.ok) {
+          const petsData = await petsRes.json();
+          setPets(petsData);
+        }
+
+        // Fetch photos from documents table
+        const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (docsRes.ok) {
+          const docsData = await docsRes.json();
+          const photoUrls = docsData.documents?.map((doc: any) => doc.url || doc.public_url).filter(Boolean) || [];
+          setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
         }
       } catch (err: any) {
-        console.error("Error loading household profile:", err);
+        console.error("Error loading profile:", err);
         setError(err.message || "Failed to load profile");
         setHasError(true);
       } finally {
@@ -107,11 +146,140 @@ export default function HouseholdProfile() {
     }
   }, []);
 
+  // Fetch members when profile loads
+  useEffect(() => {
+    if (profile) {
+      fetchMembers();
+    }
+  }, [profile]);
+
   const handleEditSection = (section: string) => {
     // Navigate to the specific setup step for editing with state (secure, can't be URL-manipulated)
     navigate('/profile-setup/household', { 
       state: { fromProfile: true, editSection: section }
     });
+  };
+
+  const fetchInvitationCode = async () => {
+    if (!profile) return;
+    
+    setInvitationLoading(true);
+    setInvitationError(null);
+    
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
+      
+      // Get household ID from profile
+      const householdRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!householdRes.ok) throw new Error("Failed to fetch household");
+      const householdData = await householdRes.json();
+      const householdId = householdData.id;
+      
+      // Get or create invitation code
+      const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/${householdId}/invitation-code`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (!inviteRes.ok) {
+        const errorData = await inviteRes.json().catch(() => ({ error: "Unknown error" }));
+        console.error("Invitation code error:", errorData);
+        throw new Error(errorData.error || `Failed to fetch invitation code (${inviteRes.status})`);
+      }
+      const inviteData = await inviteRes.json();
+      setInvitationCode(inviteData.invite_code);
+      setInvitationExpiresAt(inviteData.expires_at);
+    } catch (err: any) {
+      console.error("Error fetching invitation code:", err);
+      setInvitationError(err.message || "Failed to load invitation code");
+    } finally {
+      setInvitationLoading(false);
+    }
+  };
+
+  const handleCopyCode = () => {
+    if (invitationCode) {
+      navigator.clipboard.writeText(invitationCode);
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    }
+  };
+
+  const getTimeRemaining = () => {
+    if (!invitationExpiresAt) return null;
+    
+    const now = new Date();
+    const expiresAt = new Date(invitationExpiresAt);
+    const diffMs = expiresAt.getTime() - now.getTime();
+    
+    if (diffMs <= 0) return "Expired";
+    
+    const days = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diffMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (days > 0) {
+      return `${days} day${days !== 1 ? 's' : ''} ${hours} hour${hours !== 1 ? 's' : ''}`;
+    } else if (hours > 0) {
+      const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+      return `${hours} hour${hours !== 1 ? 's' : ''} ${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    } else {
+      const minutes = Math.floor(diffMs / (1000 * 60));
+      return `${minutes} minute${minutes !== 1 ? 's' : ''}`;
+    }
+  };
+
+  const fetchMembers = async () => {
+    if (!profile?.id) return;
+    
+    setMembersLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      
+      const res = await fetch(`${API_BASE_URL}/api/v1/households/${profile.id}/members`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (res.ok) {
+        const data = await res.json();
+        setMembers(data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching members:", err);
+    } finally {
+      setMembersLoading(false);
+    }
+  };
+
+  const handleRemoveMember = async (userId: string) => {
+    if (!profile?.id) return;
+    if (!confirm("Are you sure you want to remove this member from your household?")) return;
+    
+    setRemovingMemberId(userId);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
+      
+      const res = await fetch(`${API_BASE_URL}/api/v1/households/${profile.id}/members/${userId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "Failed to remove member" }));
+        throw new Error(errorData.error || "Failed to remove member");
+      }
+      
+      // Refresh members list
+      await fetchMembers();
+    } catch (err: any) {
+      console.error("Error removing member:", err);
+      alert(err.message || "Failed to remove member");
+    } finally {
+      setRemovingMemberId(null);
+    }
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -189,24 +357,15 @@ export default function HouseholdProfile() {
 
       if (!imageUrl) throw new Error('No image URL returned');
 
-      // Update profile with new photo
-      const updatedPhotos = [...(profile?.photos || []), imageUrl];
-      
-      const updateRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          photos: updatedPhotos,
-        }),
+      // Refetch profile to get updated photos from documents table
+      const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!updateRes.ok) throw new Error('Failed to update profile');
-
-      // Update local state
-      setProfile(prev => prev ? { ...prev, photos: updatedPhotos } : null);
+      
+      if (profileRes.ok) {
+        const profileData = await profileRes.json();
+        setProfile(profileData);
+      }
       
       // Reset file input
       if (fileInputRef.current) {
@@ -267,25 +426,16 @@ export default function HouseholdProfile() {
         }
       }
 
-      // Step 3: Remove from profile photos array
-      setDeleteStatus('Updating profile...');
-      const updatedPhotos = (profile?.photos || []).filter(p => p !== photoUrl);
-
-      const updateRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          photos: updatedPhotos,
-        }),
+      // Step 3: Refetch profile to get updated photos from documents table
+      setDeleteStatus('Refreshing profile...');
+      const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      if (!updateRes.ok) throw new Error('Failed to update profile');
-
-      // Update local state
-      setProfile(prev => prev ? { ...prev, photos: updatedPhotos } : null);
+      if (!profileRes.ok) throw new Error('Failed to refresh profile');
+      
+      const profileData = await profileRes.json();
+      setProfile(profileData);
     } catch (err: any) {
       console.error('Error deleting photo:', err);
       setUploadError(err.message || 'Failed to delete photo');
@@ -378,6 +528,184 @@ export default function HouseholdProfile() {
         </div>
       </div>
 
+      {/* Household Invitation Code */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex justify-between items-start mb-4">
+          <div>
+            <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🔑 Household Code</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              Share this code with your partner to give them access to this household profile
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/household/requests')}
+            className="relative px-4 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-semibold rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-all flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+            </svg>
+            View Requests
+            {pendingRequestsCount > 0 && (
+              <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
+                {pendingRequestsCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {!invitationCode && !invitationLoading && (
+          <button
+            onClick={fetchInvitationCode}
+            className="px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Generate Household Code
+          </button>
+        )}
+
+        {invitationLoading && (
+          <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+            <svg className="animate-spin h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span className="text-gray-600 dark:text-gray-400">Generating code...</span>
+          </div>
+        )}
+
+        {invitationError && (
+          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-xl">
+            <p className="text-sm text-red-600 dark:text-red-400">⚠️ {invitationError}</p>
+          </div>
+        )}
+
+        {invitationCode && (
+          <div className="space-y-4">
+            <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Your Household Code:</p>
+                  <p className="text-3xl font-bold text-purple-900 dark:text-purple-100 tracking-wider font-mono">
+                    {invitationCode}
+                  </p>
+                  {invitationExpiresAt && (
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                      ⏰ Expires in: <span className="font-semibold text-purple-600 dark:text-purple-400">{getTimeRemaining()}</span>
+                    </p>
+                  )}
+                </div>
+                <button
+                  onClick={handleCopyCode}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-full hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-2"
+                >
+                  {codeCopied ? (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Copy Code
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-xl">
+              <p className="text-sm text-blue-800 dark:text-blue-200">
+                <strong>ℹ️ How it works:</strong>
+              </p>
+              <ul className="mt-2 space-y-1 text-sm text-blue-700 dark:text-blue-300 list-disc list-inside">
+                <li>Share this code with your partner</li>
+                <li>They'll use it to request access to this household</li>
+                <li>You'll receive a notification to approve their request</li>
+                <li>Once approved, they'll have full access to manage this household</li>
+              </ul>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Household Members */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👥 Household Members</h2>
+        </div>
+
+        {membersLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <svg className="animate-spin h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </div>
+        ) : members.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500 dark:text-gray-400">No members yet. Share your household code to invite members!</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {members.map((member: any) => (
+              <div
+                key={member.id}
+                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl border border-purple-200 dark:border-purple-500/30"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                    {member.user?.first_name?.[0] || member.user?.email?.[0] || "M"}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900 dark:text-white">
+                      {member.user?.first_name && member.user?.last_name
+                        ? `${member.user.first_name} ${member.user.last_name}`
+                        : member.user?.email || "Unknown Member"}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                        member.role === 'owner' 
+                          ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                          : member.role === 'admin'
+                          ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                          : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                      }`}>
+                        {member.role}
+                      </span>
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        Joined {new Date(member.joined_at || member.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {member.role !== 'owner' && (
+                  <button
+                    onClick={() => handleRemoveMember(member.user_id)}
+                    disabled={removingMemberId === member.user_id}
+                    className="px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                  >
+                    {removingMemberId === member.user_id ? (
+                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    ) : (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    )}
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Profile Photos */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
@@ -468,16 +796,36 @@ export default function HouseholdProfile() {
         {profile.photos && profile.photos.length > 0 ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {profile.photos.map((photo, idx) => (
-              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group">
+              <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group bg-gray-200 dark:bg-gray-800">
+                {/* Blur placeholder */}
+                {!loadedImages.has(photo) && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-full h-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 animate-pulse" />
+                    <div className="absolute">
+                      <svg className="animate-spin h-8 w-8 text-purple-600 dark:text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  </div>
+                )}
                 <img
                   src={photo}
                   alt={`Home photo ${idx + 1}`}
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                  className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-110 ${
+                    loadedImages.has(photo) ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  onLoad={() => {
+                    setLoadedImages(prev => new Set(prev).add(photo));
+                  }}
                   onError={(e) => {
                     e.currentTarget.src = '/assets/placeholder-image.png';
+                    setLoadedImages(prev => new Set(prev).add(photo));
                   }}
                 />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center gap-2">
+                <div className={`absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center gap-2 ${
+                  !loadedImages.has(photo) ? 'pointer-events-none' : ''
+                }`}>
                   <button
                     onClick={() => setSelectedImage(photo)}
                     className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-lg text-sm font-semibold hover:bg-purple-50"

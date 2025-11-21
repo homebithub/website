@@ -6,6 +6,7 @@ import { useAuth } from "~/contexts/AuthContext";
 import { Waitlist } from "~/components/features/Waitlist";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
+import { API_BASE_URL } from "~/config/api";
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -18,6 +19,8 @@ export function Navigation() {
     const { user, logout, loading } = useAuth();
     const [profileType, setProfileType] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
+    const [shortlistCount, setShortlistCount] = useState<number>(0);
+    const [inboxCount, setInboxCount] = useState<number>(0);
     const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
     const [prefillEmail, setPrefillEmail] = useState<string | undefined>(undefined);
     const [prefillFirstName, setPrefillFirstName] = useState<string | undefined>(undefined);
@@ -29,6 +32,7 @@ export function Navigation() {
     const isAppHost = React.useMemo(() => {
         if (typeof window === 'undefined') return false;
         const host = window.location.host || '';
+        // Only check for production app subdomain
         return host.startsWith('app.') || host === 'app.homebit.co.ke';
     }, []);
 
@@ -50,6 +54,57 @@ export function Navigation() {
         ];
     }, [profileType]);
 
+    // Fetch shortlist count
+    const fetchShortlistCount = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) {
+                console.log('[Shortlist Count] No token found');
+                return;
+            }
+            
+            console.log('[Shortlist Count] Fetching from:', `${API_BASE_URL}/api/v1/shortlists/count`);
+            const res = await fetch(`${API_BASE_URL}/api/v1/shortlists/count`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            
+            console.log('[Shortlist Count] Response status:', res.status);
+            
+            if (res.ok) {
+                const data = await res.json();
+                console.log('[Shortlist Count] Data received:', data);
+                const count = data.count || 0;
+                console.log('[Shortlist Count] Setting count to:', count);
+                setShortlistCount(count);
+            } else {
+                const errorText = await res.text();
+                console.error('[Shortlist Count] Error response:', res.status, errorText);
+            }
+        } catch (error) {
+            console.error("[Shortlist Count] Failed to fetch:", error);
+        }
+    };
+
+    // Fetch inbox unread count
+    const fetchInboxCount = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+            
+            const res = await fetch(`${API_BASE_URL}/api/v1/inbox/conversations?limit=100`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            
+            if (res.ok) {
+                const conversations = await res.json();
+                const totalUnread = conversations.reduce((sum: number, conv: any) => sum + (conv.unread_count || 0), 0);
+                setInboxCount(totalUnread);
+            }
+        } catch (error) {
+            console.error("Failed to fetch inbox count:", error);
+        }
+    };
+
     // Parse user profile type and name from localStorage
     useEffect(() => {
         if (user) {
@@ -70,6 +125,18 @@ export function Navigation() {
                     // Get user name for greeting
                     const firstName = parsed.first_name || parsed.firstName || "";
                     setUserName(firstName);
+                    
+                    console.log('[Navigation] Profile type:', profileType);
+                    console.log('[Navigation] Is household?', profileType === "household");
+                    
+                    // Fetch counts for authenticated users
+                    if (profileType === "household") {
+                        console.log('[Navigation] Fetching shortlist count for household user');
+                        fetchShortlistCount();
+                    } else {
+                        console.log('[Navigation] Not fetching shortlist count - profile type is:', profileType);
+                    }
+                    fetchInboxCount();
                 } else {
                     setProfileType(null);
                     setUserName(null);
@@ -81,8 +148,28 @@ export function Navigation() {
         } else {
             setProfileType(null);
             setUserName(null);
+            setShortlistCount(0);
+            setInboxCount(0);
         }
     }, [user]);
+
+    // Listen for shortlist and inbox updates
+    useEffect(() => {
+        const handleShortlistUpdate = () => {
+            fetchShortlistCount();
+        };
+        
+        const handleInboxUpdate = () => {
+            fetchInboxCount();
+        };
+        
+        window.addEventListener('shortlist-updated', handleShortlistUpdate);
+        window.addEventListener('inbox-updated', handleInboxUpdate);
+        return () => {
+            window.removeEventListener('shortlist-updated', handleShortlistUpdate);
+            window.removeEventListener('inbox-updated', handleInboxUpdate);
+        };
+    }, []);
 
     // Open waitlist modal automatically if URL contains waitlist params (used by OAuth callback)
     useEffect(() => {
@@ -143,6 +230,33 @@ export function Navigation() {
                                 className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110"
                             >
                                 {item.name}
+                            </Link>
+                        ))}
+                    </div>
+                )}
+
+                {/* App navigation for authenticated users on app subdomain */}
+                {isAppHost && user && (
+                    <div className="hidden lg:flex items-center space-x-3 ml-auto">
+                        {authLinks.map((item) => (
+                            <Link 
+                                key={item.name} 
+                                to={item.href} 
+                                prefetch="intent" 
+                                className="link text-lg font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
+                                id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
+                            >
+                                {item.name}
+                                {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-purple-500/50" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+                                        {shortlistCount}
+                                    </span>
+                                )}
+                                {item.name === 'Inbox' && inboxCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-purple-500/50" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+                                        {inboxCount}
+                                    </span>
+                                )}
                             </Link>
                         ))}
                     </div>
@@ -248,15 +362,6 @@ export function Navigation() {
                         </Menu>
                     )}
 
-                    {/* App navigation for authenticated users on app subdomain */}
-                    {isAppHost && user && (
-                        <div className="hidden lg:flex items-center space-x-3 ml-4">
-                            {authLinks.map((item) => (
-                                <Link key={item.name} to={item.href} prefetch="intent" className="text-primary-700 dark:text-purple-400 font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:scale-105">{item.name}</Link>
-                            ))}
-                        </div>
-                    )}
-
                     {/* Menu Dropdown - Only show on mobile */}
                     <Menu as="div" className="relative inline-block text-left lg:hidden">
                         <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 dark:from-purple-600 dark:to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 dark:shadow-glow-sm hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-glow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
@@ -348,31 +453,42 @@ export function Navigation() {
 
 
                                             {/* App links for mobile on app host */}
-                                            {isAppHost ? (
+                                            {isAppHost && (
                                                 <>
                                                     {authLinks.map((item) => (
                                                         <Menu.Item key={item.name}>{({ active }) => (
-                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'} flex items-center px-4 py-2 text-sm`}>
-                                                                {item.name}
+                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-2 text-sm relative`}>
+                                                                <span>{item.name}</span>
+                                                                {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                                                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md shadow-purple-500/40" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+                                                                        {shortlistCount}
+                                                                    </span>
+                                                                )}
+                                                                {item.name === 'Inbox' && inboxCount > 0 && (
+                                                                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md shadow-purple-500/40" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+                                                                        {inboxCount}
+                                                                    </span>
+                                                                )}
                                                             </Link>
                                                         )}</Menu.Item>
                                                     ))}
                                                 </>
-                                            ) : (
-                                                <Menu.Item>
-                                                    {({ active }) => (
-                                                        <Link
-                                                            to="/profile"
-                                                            className={`${
-                                                                active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                                                            } flex items-center px-4 py-2 text-sm`}
-                                                        >
-                                                            <UserIcon className="mr-3 h-5 w-5" />
-                                                            Profile
-                                                        </Link>
-                                                    )}
-                                                </Menu.Item>
                                             )}
+                                            
+                                            {/* Profile link based on profile type */}
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link
+                                                        to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
+                                                        className={`${
+                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                                                        } flex items-center px-4 py-2 text-sm`}
+                                                    >
+                                                        <UserIcon className="mr-3 h-5 w-5" />
+                                                        {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
                                             <Menu.Item>
                                                 {({ active }) => (
                                                     <Link
