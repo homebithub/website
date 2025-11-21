@@ -28,11 +28,12 @@ export function Navigation() {
     const navigate = useNavigate();
     const location = useLocation();
 
-    // Detect if running on app subdomain or localhost
+    // Detect if running on app subdomain
     const isAppHost = React.useMemo(() => {
         if (typeof window === 'undefined') return false;
         const host = window.location.host || '';
-        return host.startsWith('app.') || host === 'app.homebit.co.ke' || host.startsWith('localhost');
+        // Only check for production app subdomain
+        return host.startsWith('app.') || host === 'app.homebit.co.ke';
     }, []);
 
     // Memoized dashboard path based on profile type
