@@ -225,44 +225,55 @@ export default function HousehelpPublicProfile() {
     <div className="max-w-7xl mx-auto">
       {/* Header */}
       <div className="bg-white dark:bg-[#13131a] border-b border-purple-200/40 dark:border-purple-500/30 p-4 sm:p-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          {/* Left: Back button */}
-          {isViewingOther ? (
-            <button
-              onClick={() => {
-                // Check where the user came from
-                if (location.state?.fromInbox) {
-                  navigate('/inbox');
-                } else if (location.state?.fromShortlist) {
-                  navigate('/household/shortlist');
-                } else {
-                  navigate('/');
-                }
-              }}
-              className="px-4 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-2 w-fit"
-            >
-              ← Back
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate('/househelp/profile')}
-              className="px-4 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-sm sm:text-base whitespace-nowrap w-fit"
-            >
-              ← Back to My Profile
-            </button>
-          )}
+        <div className="flex flex-col gap-4">
+          {/* Top row: Back button and Title */}
+          <div className="flex items-start justify-between gap-4">
+            {/* Left: Back button */}
+            {isViewingOther ? (
+              <button
+                onClick={() => {
+                  // Check where the user came from
+                  if (location.state?.fromInbox) {
+                    navigate('/inbox');
+                  } else if (location.state?.fromShortlist) {
+                    navigate('/household/shortlist');
+                  } else {
+                    navigate('/');
+                  }
+                }}
+                className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-2 flex-shrink-0"
+              >
+                ← Back
+              </button>
+            ) : (
+              <button
+                onClick={() => navigate('/househelp/profile')}
+                className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-sm sm:text-base whitespace-nowrap flex-shrink-0"
+              >
+                ← Back to My Profile
+              </button>
+            )}
 
-          {/* Center: Title */}
-          <div className="text-center sm:absolute sm:left-1/2 sm:transform sm:-translate-x-1/2">
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-gray-900 dark:text-white">👤 Househelp Profile</h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+            {/* Title - hidden on mobile, shown on larger screens */}
+            <div className="hidden sm:block text-center flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-gray-900 dark:text-white">👤 Househelp Profile</h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+                {isViewingOther ? 'View this househelp\'s profile' : 'Public view - This is how others see this profile'}
+              </p>
+            </div>
+          </div>
+
+          {/* Mobile title - shown only on mobile */}
+          <div className="sm:hidden text-center">
+            <h1 className="text-xl font-bold mb-1 text-gray-900 dark:text-white">👤 Househelp Profile</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
               {isViewingOther ? 'View this househelp\'s profile' : 'Public view - This is how others see this profile'}
             </p>
           </div>
 
-          {/* Right: Action buttons */}
+          {/* Action buttons */}
           {isViewingOther && (
-            <div className="flex flex-wrap gap-3 sm:ml-auto">
+            <div className="flex flex-wrap gap-2 sm:gap-3 justify-center sm:justify-end">
               <button
                 onClick={async () => {
                   setActionLoading('chat');
@@ -273,7 +284,7 @@ export default function HousehelpPublicProfile() {
                     if (!res.ok) throw new Error('Failed to start conversation');
                     const data = await apiClient.json<any>(res);
                     const convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
-                    if (convId) navigate(`/inbox/${convId}`);
+                    if (convId) navigate(`/inbox?conversation=${convId}`);
                     else navigate('/inbox');
                   } catch (e) {
                     console.error('Failed to start chat:', e);
@@ -283,9 +294,9 @@ export default function HousehelpPublicProfile() {
                   }
                 }}
                 disabled={actionLoading === 'chat'}
-                className="px-4 sm:px-6 py-2 sm:py-3 bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 font-semibold rounded-lg hover:bg-purple-50 dark:hover:bg-slate-700 transition-colors border border-purple-200 dark:border-purple-500/30 text-sm sm:text-base whitespace-nowrap flex items-center gap-2 disabled:opacity-50"
+                className="px-3 sm:px-6 py-2 sm:py-3 bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 font-semibold rounded-lg hover:bg-purple-50 dark:hover:bg-slate-700 transition-colors border border-purple-200 dark:border-purple-500/30 text-sm sm:text-base whitespace-nowrap flex items-center gap-1 sm:gap-2 disabled:opacity-50 flex-1 sm:flex-initial justify-center"
               >
-                <MessageCircle className="w-5 h-5" />
+                <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
                 {actionLoading === 'chat' ? 'Starting...' : 'Chat'}
               </button>
               <button
@@ -333,18 +344,18 @@ export default function HousehelpPublicProfile() {
                   }
                 }}
                 disabled={actionLoading === 'shortlist'}
-                className="px-4 sm:px-6 py-2 sm:py-3 bg-pink-500 text-white font-semibold rounded-lg hover:bg-pink-600 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-2 disabled:opacity-50"
+                className="px-3 sm:px-6 py-2 sm:py-3 bg-pink-500 text-white font-semibold rounded-lg hover:bg-pink-600 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-1 sm:gap-2 disabled:opacity-50 flex-1 sm:flex-initial justify-center"
               >
-                <Heart className="w-5 h-5" />
+                <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
                 {actionLoading === 'shortlist' 
                   ? (isShortlisted ? 'Removing...' : 'Adding...') 
                   : (isShortlisted ? 'Unshortlist' : 'Shortlist')}
               </button>
               <button
                 onClick={() => setIsHireModalOpen(true)}
-                className="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-2"
+                className="px-3 sm:px-6 py-2 sm:py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-1 sm:gap-2 flex-1 sm:flex-initial justify-center"
               >
-                <Briefcase className="w-5 h-5" />
+                <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
                 Hire
               </button>
             </div>
@@ -393,9 +404,9 @@ export default function HousehelpPublicProfile() {
           )}
         </div>
         
-        {profile.photos && profile.photos.length > 0 && (
-          <div>
-            <h3 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-3">📸 Photo Gallery</h3>
+        <div>
+          <h3 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-3">📸 Photo Gallery</h3>
+          {profile.photos && profile.photos.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {profile.photos.map((photo, idx) => (
                 <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer" onClick={() => setSelectedImage(photo)}>
@@ -411,7 +422,8 @@ export default function HousehelpPublicProfile() {
                     }`}
                     onLoad={() => setImageLoaded(prev => ({ ...prev, [`photo-${idx}`]: true }))}
                     onError={(e) => {
-                      e.currentTarget.src = '/assets/placeholder-image.png';
+                      // Hide broken images instead of showing placeholder
+                      e.currentTarget.style.display = 'none';
                       setImageLoaded(prev => ({ ...prev, [`photo-${idx}`]: true }));
                     }}
                   />
@@ -423,8 +435,12 @@ export default function HousehelpPublicProfile() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-8 text-center">
+              <p className="text-gray-600 dark:text-gray-400">User has not uploaded any photos yet</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Personal Information */}

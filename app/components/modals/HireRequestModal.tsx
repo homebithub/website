@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { apiClient } from '~/utils/apiClient';
 import { API_ENDPOINTS } from '~/config/api';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface HireRequestModalProps {
   isOpen: boolean;
@@ -179,7 +180,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
 
             {/* Job Type */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
                 Job Type *
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -188,9 +189,9 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                     key={type}
                     type="button"
                     onClick={() => setJobType(type)}
-                    className={`px-4 py-3 rounded-lg border-2 font-medium capitalize transition-colors ${
+                    className={`px-4 py-3 rounded-lg border-2 font-semibold capitalize transition-all ${
                       jobType === type
-                        ? 'bg-purple-600 text-white border-purple-600'
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent shadow-lg'
                         : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-purple-400'
                     }`}
                   >
@@ -202,7 +203,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
 
             {/* Start Date */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
                 Preferred Start Date (Optional)
               </label>
               <input
@@ -210,14 +211,14 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
 
             {/* Salary */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
                   Salary Offered (KES) *
                 </label>
                 <input
@@ -227,30 +228,30 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                   min="0"
                   step="100"
                   required
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                  className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
                   Frequency *
                 </label>
-                <select
+                <CustomSelect
                   value={salaryFrequency}
-                  onChange={(e) => setSalaryFrequency(e.target.value)}
+                  onChange={(value) => setSalaryFrequency(value)}
+                  options={[
+                    { value: 'daily', label: 'Daily' },
+                    { value: 'weekly', label: 'Weekly' },
+                    { value: 'monthly', label: 'Monthly' },
+                    { value: 'yearly', label: 'Yearly' },
+                  ]}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                >
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
+                />
               </div>
             </div>
 
             {/* Work Schedule */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-3">
                 Work Schedule
               </label>
               <div className="space-y-2">
@@ -282,7 +283,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
 
             {/* Special Requirements */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
                 Special Requirements (Optional)
               </label>
               <textarea
@@ -290,7 +291,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                 onChange={(e) => setSpecialRequirements(e.target.value)}
                 rows={4}
                 placeholder="Any specific requirements or expectations..."
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white resize-none"
+                className="w-full text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
               />
             </div>
 
@@ -331,7 +332,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
               <button
                 type="submit"
                 disabled={loading || !termsAccepted}
-                className="flex-1 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Sending...' : 'Send Hire Request'}
               </button>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { apiClient } from '~/utils/apiClient';
 import { API_ENDPOINTS } from '~/config/api';
 import { ChevronLeft, ChevronRight, Check, Briefcase, DollarSign, Calendar, Clock, FileText } from 'lucide-react';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface ConversationHireWizardProps {
   househelpId: string;
@@ -226,17 +227,17 @@ export default function ConversationHireWizard({
         <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
           Frequency *
         </label>
-        <select
+        <CustomSelect
           value={salaryFrequency}
-          onChange={(e) => setSalaryFrequency(e.target.value)}
+          onChange={(value) => setSalaryFrequency(value)}
+          options={[
+            { value: 'daily', label: 'Daily' },
+            { value: 'weekly', label: 'Weekly' },
+            { value: 'monthly', label: 'Monthly' },
+            { value: 'yearly', label: 'Yearly' },
+          ]}
           required
-          className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
-        >
-          <option value="daily">Daily</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-          <option value="yearly">Yearly</option>
-        </select>
+        />
       </div>
 
       <div>
