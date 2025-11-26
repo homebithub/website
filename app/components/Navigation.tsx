@@ -247,7 +247,7 @@ export function Navigation() {
                                 id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
-                                {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                {item.name === 'Shortlist' && (
                                     <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-purple-500/50" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
                                         {shortlistCount}
                                     </span>
@@ -459,7 +459,7 @@ export function Navigation() {
                                                         <Menu.Item key={item.name}>{({ active }) => (
                                                             <Link to={item.href} className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-2 text-sm relative`}>
                                                                 <span>{item.name}</span>
-                                                                {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                                                {item.name === 'Shortlist' && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md shadow-purple-500/40" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
                                                                         {shortlistCount}
                                                                     </span>

@@ -56,6 +56,8 @@ export default function HouseholdShortlistPage() {
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
         setHasMore(data.length === limit);
+        // Trigger event to update badge count in navigation
+        window.dispatchEvent(new CustomEvent('shortlist-updated'));
       } catch (e: any) {
         if (!cancelled) setError(e?.message || "Failed to load shortlist");
       } finally {
@@ -166,7 +168,7 @@ export default function HouseholdShortlistPage() {
                   return (
                     <div
                       key={s.id}
-                      onClick={() => navigate('/househelp/public-profile', { state: { profileId: s.profile_id } })}
+                      onClick={() => navigate('/househelp/public-profile', { state: { profileId: s.profile_id, fromShortlist: true } })}
                       className="househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
                     >
                       {/* Top-right actions */}
@@ -244,7 +246,7 @@ export default function HouseholdShortlistPage() {
                           {s.created_at ? new Date(s.created_at).toLocaleDateString() : ''}
                         </div>
                         <button
-                          onClick={(e) => { e.stopPropagation(); navigate('/househelp/public-profile', { state: { profileId: s.profile_id } }); }}
+                          onClick={(e) => { e.stopPropagation(); navigate('/househelp/public-profile', { state: { profileId: s.profile_id, fromShortlist: true } }); }}
                           className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >
                           View more
