@@ -7,6 +7,8 @@ import { API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon } from '@heroicons/react/24/outline';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
+import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
+import HireContextBanner from '~/components/hiring/HireContextBanner';
 
 type Conversation = {
   id: string;
@@ -54,6 +56,11 @@ export default function InboxPage() {
   const messagesSentinelRef = useRef<HTMLDivElement | null>(null);
   const emojiPickerRef = useRef<HTMLDivElement | null>(null);
   const messagesLimit = 50;
+  
+  // Hire wizard state
+  const [showHireWizard, setShowHireWizard] = useState(false);
+  const [hireRequestStatus, setHireRequestStatus] = useState<string | undefined>();
+  const [hireRequestId, setHireRequestId] = useState<string | undefined>();
   
   const currentUserId = useMemo(() => {
     try {
@@ -438,6 +445,25 @@ export default function InboxPage() {
         <div className="flex-1 overflow-y-auto p-4 space-y-2">
           <div ref={messagesSentinelRef} />
           
+          {/* Hire Context Banner */}
+          {selectedConversation && (
+            <HireContextBanner
+              hireRequestStatus={hireRequestStatus}
+              hireRequestId={hireRequestId}
+              onViewDetails={() => {
+                if (hireRequestId) {
+                  if (currentUserProfileType?.toLowerCase() === 'household') {
+                    navigate(`/household/hire-request/${hireRequestId}`);
+                  } else {
+                    navigate(`/househelp/hire-requests`);
+                  }
+                }
+              }}
+              onSendHireRequest={() => setShowHireWizard(true)}
+              userRole={currentUserProfileType?.toLowerCase() as 'household' | 'househelp'}
+            />
+          )}
+          
           {messagesLoading && messages.length === 0 && (
             <div className="flex justify-center py-8">
               <svg className="animate-spin h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -550,6 +576,38 @@ export default function InboxPage() {
         </main>
       </PurpleThemeWrapper>
       <Footer />
+      
+      {/* Hire Wizard Modal */}
+      {showHireWizard && selectedConversation && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+          <ConversationHireWizard
+            househelpId={currentUserProfileType?.toLowerCase() === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id}
+            househelpName={selectedConversation.participant_name || 'User'}
+            onClose={() => setShowHireWizard(false)}
+            onSuccess={(newHireRequestId) => {
+              setShowHireWizard(false);
+              setHireRequestStatus('pending');
+              setHireRequestId(newHireRequestId);
+              // Optionally send a message about the hire request
+              const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
+              apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${selectedConversationId}/messages`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ body }),
+              }).then(res => {
+                if (res.ok) {
+                  return apiClient.json<Message>(res);
+                }
+              }).then(msg => {
+                if (msg) {
+                  setMessages((prev) => [...prev, msg]);
+                  setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+                }
+              }).catch(console.error);
+            }}
+          />
+        </div>
+      )}
     </div>
   );
 }

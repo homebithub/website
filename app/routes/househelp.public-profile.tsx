@@ -8,6 +8,7 @@ import ImageViewModal from '~/components/ImageViewModal';
 import { apiClient } from '~/utils/apiClient';
 import { API_ENDPOINTS } from '~/config/api';
 import { MessageCircle, Heart, Briefcase } from 'lucide-react';
+import HireRequestModal from '~/components/modals/HireRequestModal';
 
 interface UserData {
   id?: string;
@@ -129,6 +130,7 @@ export default function HousehelpPublicProfile() {
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
+  const [isHireModalOpen, setIsHireModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -339,25 +341,11 @@ export default function HousehelpPublicProfile() {
                   : (isShortlisted ? 'Unshortlist' : 'Shortlist')}
               </button>
               <button
-                onClick={async () => {
-                  setActionLoading('hire');
-                  try {
-                    // TODO: Implement hire functionality
-                    // This is a placeholder for the hire action
-                    console.log('Hire button clicked for profile:', profile?.id);
-                    alert('Hire functionality will be implemented here. Let\'s discuss the workflow!');
-                  } catch (e) {
-                    console.error('Failed to initiate hire:', e);
-                    alert(e instanceof Error ? e.message : 'Failed to initiate hire');
-                  } finally {
-                    setActionLoading(null);
-                  }
-                }}
-                disabled={actionLoading === 'hire'}
-                className="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-2 disabled:opacity-50"
+                onClick={() => setIsHireModalOpen(true)}
+                className="px-4 sm:px-6 py-2 sm:py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-2"
               >
                 <Briefcase className="w-5 h-5" />
-                {actionLoading === 'hire' ? 'Processing...' : 'Hire'}
+                Hire
               </button>
             </div>
           )}
@@ -981,6 +969,18 @@ export default function HousehelpPublicProfile() {
           imageUrl={selectedImage}
           altText="Profile photo"
           onClose={() => setSelectedImage(null)}
+        />
+      )}
+      
+      {/* Hire Request Modal */}
+      {isViewingOther && profile && (
+        <HireRequestModal
+          isOpen={isHireModalOpen}
+          onClose={() => setIsHireModalOpen(false)}
+          househelpId={profile.id || ''}
+          househelpName={`${profile.first_name || ''} ${profile.last_name || ''}`.trim()}
+          househelpSalaryExpectation={profile.salary_expectation}
+          househelpSalaryFrequency={profile.salary_frequency}
         />
       )}
     </div>
