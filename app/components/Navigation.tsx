@@ -21,6 +21,7 @@ export function Navigation() {
     const [userName, setUserName] = useState<string | null>(null);
     const [shortlistCount, setShortlistCount] = useState<number>(0);
     const [inboxCount, setInboxCount] = useState<number>(0);
+    const [hireRequestCount, setHireRequestCount] = useState<number>(0);
     const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
     const [prefillEmail, setPrefillEmail] = useState<string | undefined>(undefined);
     const [prefillFirstName, setPrefillFirstName] = useState<string | undefined>(undefined);
@@ -47,12 +48,13 @@ export function Navigation() {
 
     const authLinks = React.useMemo(() => {
         const shortlistHref = profileType === 'household' ? '/household/shortlist' : '/shortlist';
+        const hiringHistoryHref = profileType === 'household' ? '/household/hiring-history' : '/househelp/hire-requests';
         return [
-            { name: 'Shortlist', href: shortlistHref },
-            { name: 'Inbox', href: '/inbox' },
-            { name: 'Hiring history', href: '/hiring-history' },
+            { name: 'Shortlist', href: shortlistHref, count: shortlistCount },
+            { name: 'Inbox', href: '/inbox', count: inboxCount },
+            { name: 'Hiring history', href: hiringHistoryHref, count: hireRequestCount },
         ];
-    }, [profileType]);
+    }, [profileType, shortlistCount, inboxCount, hireRequestCount]);
 
     // Fetch shortlist count
     const fetchShortlistCount = async () => {
@@ -105,6 +107,31 @@ export function Navigation() {
         }
     };
 
+    // Fetch hire request count (pending requests for househelps, or all for households)
+    const fetchHireRequestCount = async () => {
+        try {
+            const token = localStorage.getItem("token");
+            if (!token) return;
+            
+            const status = profileType === 'househelp' ? 'pending' : '';
+            const params = status ? `?status=${status}&limit=100` : '?limit=100';
+            
+            const res = await fetch(`${API_BASE_URL}/api/v1/hire-requests${params}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            
+            if (res.ok) {
+                const data = await res.json();
+                const count = profileType === 'househelp' 
+                    ? (data.total || 0) // Pending requests for househelps
+                    : (data.data?.filter((req: any) => req.status === 'pending' || req.status === 'accepted').length || 0); // Active requests for households
+                setHireRequestCount(count);
+            }
+        } catch (error) {
+            console.error("Failed to fetch hire request count:", error);
+        }
+    };
+
     // Parse user profile type and name from localStorage
     useEffect(() => {
         if (user) {
@@ -137,6 +164,7 @@ export function Navigation() {
                         console.log('[Navigation] Not fetching shortlist count - profile type is:', profileType);
                     }
                     fetchInboxCount();
+                    fetchHireRequestCount();
                 } else {
                     setProfileType(null);
                     setUserName(null);
@@ -247,7 +275,7 @@ export function Navigation() {
                                 id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
-                                {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                {item.name === 'Shortlist' && (
                                     <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-purple-500/50" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
                                         {shortlistCount}
                                     </span>
@@ -255,6 +283,11 @@ export function Navigation() {
                                 {item.name === 'Inbox' && inboxCount > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-purple-500/50" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
                                         {inboxCount}
+                                    </span>
+                                )}
+                                {item.name === 'Hiring history' && hireRequestCount > 0 && (
+                                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-green-500/50" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+                                        {hireRequestCount}
                                     </span>
                                 )}
                             </Link>
@@ -459,7 +492,7 @@ export function Navigation() {
                                                         <Menu.Item key={item.name}>{({ active }) => (
                                                             <Link to={item.href} className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-2 text-sm relative`}>
                                                                 <span>{item.name}</span>
-                                                                {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                                                {item.name === 'Shortlist' && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md shadow-purple-500/40" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
                                                                         {shortlistCount}
                                                                     </span>

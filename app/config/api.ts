@@ -90,6 +90,25 @@ export const API_ENDPOINTS = {
     join: `${AUTH_API_BASE_URL}/waitlist/join`,
     google: `${AUTH_API_BASE_URL}/waitlist/google`,
   },
+  
+  // Hiring system endpoints
+  hiring: {
+    requests: {
+      base: `${API_BASE_URL}/api/v1/hire-requests`,
+      byId: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}`,
+      accept: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}/accept`,
+      decline: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}/decline`,
+      finalize: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}/finalize`,
+      negotiate: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}/negotiate`,
+      negotiations: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}/negotiations`,
+    },
+    contracts: {
+      base: `${API_BASE_URL}/api/v1/hire-contracts`,
+      byId: (id: string) => `${API_BASE_URL}/api/v1/hire-contracts/${id}`,
+      complete: (id: string) => `${API_BASE_URL}/api/v1/hire-contracts/${id}/complete`,
+      terminate: (id: string) => `${API_BASE_URL}/api/v1/hire-contracts/${id}/terminate`,
+    },
+  },
 } as const;
 
 /**

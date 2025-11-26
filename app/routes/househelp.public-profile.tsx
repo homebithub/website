@@ -7,15 +7,44 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import { apiClient } from '~/utils/apiClient';
 import { API_ENDPOINTS } from '~/config/api';
-import { MessageCircle, Heart } from 'lucide-react';
+import { MessageCircle, Heart, Briefcase } from 'lucide-react';
+import HireRequestModal from '~/components/modals/HireRequestModal';
 
 interface UserData {
+  id?: string;
+  email?: string;
   first_name?: string;
   last_name?: string;
+  phone?: string;
+  email_verified?: boolean;
+  country?: string;
+  role?: string;
+  status?: string;
+  auth_provider?: string;
+  profile_type?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface LocationData {
+  place?: string;
+  latitude?: number;
+  longitude?: number;
+}
+
+interface AvailabilitySchedule {
+  monday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  tuesday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  wednesday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  thursday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  friday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  saturday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  sunday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
 }
 
 interface HousehelpData {
   id?: string;
+  user_id?: string;
   profile_id?: string;
   user?: UserData;
   first_name?: string;
@@ -39,12 +68,14 @@ interface HousehelpData {
   salary_expectation?: number;
   salary_frequency?: string;
   bio?: string;
-  location?: any;
+  location?: LocationData;
+  address?: string;
+  town?: string;
   available_from?: string;
   offers_live_in?: boolean;
   off_days?: string[];
   offers_day_worker?: boolean;
-  availability_schedule?: any;
+  availability?: AvailabilitySchedule;
   skills?: string[];
   traits?: string[];
   talent_with_kids?: string[];
@@ -60,18 +91,46 @@ interface HousehelpData {
   photos?: string[];
   avatar_url?: string;
   'househelp-type'?: string;
+  status?: string;
+  verified?: boolean;
+  premium?: boolean;
+  rating?: number;
+  review_count?: number;
+  reference?: string;
+  national_id_no?: string;
+  next_of_kin?: string;
+  next_of_kin_tel?: string;
+  background_check_consent?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface ProfileResponse {
+  data?: {
+    Househelp?: HousehelpData;
+    User?: UserData;
+  };
+  // For backward compatibility with direct response
+  id?: string;
+  user?: UserData;
+  [key: string]: any;
 }
 
 export default function HousehelpPublicProfile() {
   const navigate = useNavigate();
   const location = useLocation();
   const [profile, setProfile] = useState<HousehelpData | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isViewingOther, setIsViewingOther] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState<Record<string, boolean>>({});
+  const [isShortlisted, setIsShortlisted] = useState(false);
+  const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<Record<string, boolean>>({});
+  const [isHireModalOpen, setIsHireModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -84,6 +143,9 @@ export default function HousehelpPublicProfile() {
         // Get profileId from navigation state
         const profileId = (location.state as any)?.profileId;
         
+        // Store the profileId we're viewing
+        setViewingProfileId(profileId || null);
+        
         // If profileId is provided, fetch that specific profile, otherwise fetch own profile
         const endpoint = profileId 
           ? `${API_BASE_URL}/api/v1/househelps/${profileId}/profile_with_user`
@@ -93,9 +155,33 @@ export default function HousehelpPublicProfile() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!profileRes.ok) throw new Error("Failed to fetch profile");
-        const profileData = await profileRes.json();
-        setProfile(profileData);
+        const profileData: ProfileResponse = await profileRes.json();
+        
+        // Handle nested response structure (data.Househelp and data.User)
+        if (profileData.data?.Househelp) {
+          setProfile(profileData.data.Househelp);
+          setUser(profileData.data.User || null);
+        } else {
+          // Fallback for direct response format
+          setProfile(profileData as HousehelpData);
+          setUser(profileData.user || null);
+        }
         setIsViewingOther(!!profileId); // Set to true if viewing someone else's profile
+        
+        // Check if profile is shortlisted (only if viewing someone else's profile)
+        if (profileId) {
+          try {
+            const shortlistRes = await fetch(`${API_ENDPOINTS.shortlists.exists(profileId)}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (shortlistRes.ok) {
+              const shortlistData = await shortlistRes.json();
+              setIsShortlisted(shortlistData.exists || false);
+            }
+          } catch (err) {
+            console.error('Error checking shortlist status:', err);
+          }
+        }
       } catch (err: any) {
         console.error("Error loading househelp profile:", err);
         setError(err.message || "Failed to load profile");
@@ -135,91 +221,145 @@ export default function HousehelpPublicProfile() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
-      <main className="py-8">
-    <div className="max-w-5xl mx-auto px-4">
+      <main className="flex-1">
+    <div className="max-w-7xl mx-auto">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl dark:border-b dark:border-purple-500/20">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">👤 Househelp Profile</h1>
-            <p className="text-purple-100 dark:text-purple-300 text-sm sm:text-base">
-              {isViewingOther ? 'View this househelp\'s profile' : 'Public view - This is how others see this profile'}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-3">
+      <div className="bg-white dark:bg-[#13131a] border-b border-purple-200/40 dark:border-purple-500/30 p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col gap-4">
+          {/* Top row: Back button and Title */}
+          <div className="flex items-start justify-between gap-4">
+            {/* Left: Back button */}
             {isViewingOther ? (
-              <>
-                <button
-                  onClick={() => {
-                    // Check if coming from inbox
-                    if (location.state?.fromInbox) {
-                      navigate('/inbox');
-                    } else {
-                      navigate('/');
-                    }
-                  }}
-                  className="px-4 sm:px-6 py-2 sm:py-3 bg-white/20 text-white font-bold rounded-xl hover:bg-white/30 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap flex items-center gap-2"
-                >
-                  ← {location.state?.fromInbox ? 'Back to Inbox' : 'Back to Home'}
-                </button>
-                <button
-                  onClick={async () => {
-                    setActionLoading('chat');
-                    try {
-                      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/inbox/start/househelp/${profile?.profile_id || profile?.id}`, {
-                        method: 'POST',
-                      });
-                      if (!res.ok) throw new Error('Failed to start conversation');
-                      const data = await apiClient.json<any>(res);
-                      const convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
-                      if (convId) navigate(`/inbox/${convId}`);
-                      else navigate('/inbox');
-                    } catch (e) {
-                      console.error('Failed to start chat:', e);
-                      navigate('/inbox');
-                    } finally {
-                      setActionLoading(null);
-                    }
-                  }}
-                  disabled={actionLoading === 'chat'}
-                  className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap flex items-center gap-2 disabled:opacity-50"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                  {actionLoading === 'chat' ? 'Starting...' : 'Chat'}
-                </button>
-                <button
-                  onClick={async () => {
-                    setActionLoading('shortlist');
-                    try {
-                      const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ profile_id: profile?.profile_id || profile?.id, profile_type: 'househelp' }),
-                      });
-                      if (!res.ok) throw new Error('Failed to shortlist');
-                      navigate('/household/employment?tab=shortlist');
-                    } catch (e) {
-                      console.error('Failed to shortlist:', e);
-                    } finally {
-                      setActionLoading(null);
-                    }
-                  }}
-                  disabled={actionLoading === 'shortlist'}
-                  className="px-4 sm:px-6 py-2 sm:py-3 bg-pink-500 text-white font-bold rounded-xl hover:bg-pink-600 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap flex items-center gap-2 disabled:opacity-50"
-                >
-                  <Heart className="w-5 h-5" />
-                  {actionLoading === 'shortlist' ? 'Adding...' : 'Shortlist'}
-                </button>
-              </>
+              <button
+                onClick={() => {
+                  // Check where the user came from
+                  if (location.state?.fromInbox) {
+                    navigate('/inbox');
+                  } else if (location.state?.fromShortlist) {
+                    navigate('/household/shortlist');
+                  } else {
+                    navigate('/');
+                  }
+                }}
+                className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-2 flex-shrink-0"
+              >
+                ← Back
+              </button>
             ) : (
               <button
                 onClick={() => navigate('/househelp/profile')}
-                className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
+                className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-sm sm:text-base whitespace-nowrap flex-shrink-0"
               >
                 ← Back to My Profile
               </button>
             )}
+
+            {/* Title - hidden on mobile, shown on larger screens */}
+            <div className="hidden sm:block text-center flex-1">
+              <h1 className="text-2xl sm:text-3xl font-bold mb-1 text-gray-900 dark:text-white">👤 Househelp Profile</h1>
+              <p className="text-gray-600 dark:text-gray-400 text-sm sm:text-base">
+                {isViewingOther ? 'View this househelp\'s profile' : 'Public view - This is how others see this profile'}
+              </p>
+            </div>
           </div>
+
+          {/* Mobile title - shown only on mobile */}
+          <div className="sm:hidden text-center">
+            <h1 className="text-xl font-bold mb-1 text-gray-900 dark:text-white">👤 Househelp Profile</h1>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              {isViewingOther ? 'View this househelp\'s profile' : 'Public view - This is how others see this profile'}
+            </p>
+          </div>
+
+          {/* Action buttons */}
+          {isViewingOther && (
+            <div className="flex flex-wrap gap-2 sm:gap-3 justify-center sm:justify-end">
+              <button
+                onClick={async () => {
+                  setActionLoading('chat');
+                  try {
+                    const res = await apiClient.auth(`${API_BASE_URL}/api/v1/inbox/start/househelp/${profile?.profile_id || profile?.id}`, {
+                      method: 'POST',
+                    });
+                    if (!res.ok) throw new Error('Failed to start conversation');
+                    const data = await apiClient.json<any>(res);
+                    const convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
+                    if (convId) navigate(`/inbox?conversation=${convId}`);
+                    else navigate('/inbox');
+                  } catch (e) {
+                    console.error('Failed to start chat:', e);
+                    navigate('/inbox');
+                  } finally {
+                    setActionLoading(null);
+                  }
+                }}
+                disabled={actionLoading === 'chat'}
+                className="px-3 sm:px-6 py-2 sm:py-3 bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 font-semibold rounded-lg hover:bg-purple-50 dark:hover:bg-slate-700 transition-colors border border-purple-200 dark:border-purple-500/30 text-sm sm:text-base whitespace-nowrap flex items-center gap-1 sm:gap-2 disabled:opacity-50 flex-1 sm:flex-initial justify-center"
+              >
+                <MessageCircle className="w-4 h-4 sm:w-5 sm:h-5" />
+                {actionLoading === 'chat' ? 'Starting...' : 'Chat'}
+              </button>
+              <button
+                onClick={async () => {
+                  setActionLoading('shortlist');
+                  try {
+                    // Use the stored viewing profile ID, or fall back to profile fields
+                    const profileId = viewingProfileId || profile?.profile_id || profile?.id;
+                    if (!profileId) {
+                      console.error('Profile data:', profile);
+                      console.error('Viewing profile ID:', viewingProfileId);
+                      throw new Error('Profile ID not found');
+                    }
+                    
+                    if (isShortlisted) {
+                      // Remove from shortlist
+                      const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.byId(profileId)}`, {
+                        method: 'DELETE',
+                      });
+                      if (!res.ok) {
+                        const errorData = await res.text();
+                        console.error('Delete failed:', errorData);
+                        throw new Error('Failed to remove from shortlist');
+                      }
+                      setIsShortlisted(false);
+                    } else {
+                      // Add to shortlist
+                      const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ profile_id: profileId, profile_type: 'househelp' }),
+                      });
+                      if (!res.ok) {
+                        const errorData = await res.text();
+                        console.error('Add failed:', errorData);
+                        throw new Error('Failed to add to shortlist');
+                      }
+                      setIsShortlisted(true);
+                    }
+                  } catch (e) {
+                    console.error('Failed to update shortlist:', e);
+                    alert(e instanceof Error ? e.message : 'Failed to update shortlist');
+                  } finally {
+                    setActionLoading(null);
+                  }
+                }}
+                disabled={actionLoading === 'shortlist'}
+                className="px-3 sm:px-6 py-2 sm:py-3 bg-pink-500 text-white font-semibold rounded-lg hover:bg-pink-600 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-1 sm:gap-2 disabled:opacity-50 flex-1 sm:flex-initial justify-center"
+              >
+                <Heart className="w-4 h-4 sm:w-5 sm:h-5" />
+                {actionLoading === 'shortlist' 
+                  ? (isShortlisted ? 'Removing...' : 'Adding...') 
+                  : (isShortlisted ? 'Unshortlist' : 'Shortlist')}
+              </button>
+              <button
+                onClick={() => setIsHireModalOpen(true)}
+                className="px-3 sm:px-6 py-2 sm:py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-1 sm:gap-2 flex-1 sm:flex-initial justify-center"
+              >
+                <Briefcase className="w-4 h-4 sm:w-5 sm:h-5" />
+                Hire
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -227,7 +367,7 @@ export default function HousehelpPublicProfile() {
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex flex-col items-center mb-6">
           <div className="w-32 h-32 rounded-full overflow-hidden border-4 border-purple-500 shadow-xl mb-4 relative bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center">
-            {(profile.avatar_url || (profile.photos && profile.photos.length > 0)) ? (
+            {(profile.avatar_url || (profile.photos && profile.photos.length > 0)) && !imageError['main'] ? (
               <>
                 {/* Skeleton loader for main profile image */}
                 {!imageLoaded['main'] && (
@@ -236,34 +376,37 @@ export default function HousehelpPublicProfile() {
                 <img
                   src={profile.avatar_url || profile.photos![0]}
                   alt="Profile"
-                  className={`w-full h-full object-cover transition-opacity duration-300 ${
+                  className={`w-full h-full object-cover absolute inset-0 transition-opacity duration-300 ${
                     imageLoaded['main'] ? 'opacity-100' : 'opacity-0'
                   }`}
                   onLoad={() => setImageLoaded(prev => ({ ...prev, main: true }))}
                   onError={() => {
                     setImageLoaded(prev => ({ ...prev, main: true }));
+                    setImageError(prev => ({ ...prev, main: true }));
                   }}
                 />
               </>
             ) : null}
-            {/* Always show initials as fallback or when no image */}
-            {(!profile.avatar_url && !(profile.photos && profile.photos.length > 0)) && (
+            {/* Show initials as fallback when no image or image failed to load */}
+            {(!profile.avatar_url && !(profile.photos && profile.photos.length > 0)) || imageError['main'] ? (
               <div className="w-full h-full flex items-center justify-center text-white text-4xl font-bold">
                 {(profile.user?.first_name || profile.first_name || '?')[0]?.toUpperCase()}{(profile.user?.last_name || profile.last_name || '')[0]?.toUpperCase()}
               </div>
-            )}
+            ) : null}
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {profile.user?.first_name || profile.first_name || 'Not specified'} {profile.user?.last_name || profile.last_name || ''}
-          </h2>
+          {((profile.user?.first_name || profile.first_name) || (profile.user?.last_name || profile.last_name)) && (
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              {profile.user?.first_name || profile.first_name || ''} {profile.user?.last_name || profile.last_name || ''}
+            </h2>
+          )}
           {profile['househelp-type'] && (
             <p className="text-purple-600 dark:text-purple-400 font-semibold capitalize">{profile['househelp-type']}</p>
           )}
         </div>
         
-        {profile.photos && profile.photos.length > 0 && (
-          <div>
-            <h3 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-3">📸 Photo Gallery</h3>
+        <div>
+          <h3 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-3">📸 Photo Gallery</h3>
+          {profile.photos && profile.photos.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
               {profile.photos.map((photo, idx) => (
                 <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer" onClick={() => setSelectedImage(photo)}>
@@ -279,7 +422,8 @@ export default function HousehelpPublicProfile() {
                     }`}
                     onLoad={() => setImageLoaded(prev => ({ ...prev, [`photo-${idx}`]: true }))}
                     onError={(e) => {
-                      e.currentTarget.src = '/assets/placeholder-image.png';
+                      // Hide broken images instead of showing placeholder
+                      e.currentTarget.style.display = 'none';
                       setImageLoaded(prev => ({ ...prev, [`photo-${idx}`]: true }));
                     }}
                   />
@@ -291,8 +435,12 @@ export default function HousehelpPublicProfile() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-8 text-center">
+              <p className="text-gray-600 dark:text-gray-400">User has not uploaded any photos yet</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Personal Information */}
@@ -337,6 +485,33 @@ export default function HousehelpPublicProfile() {
           )}
         </div>
       </div>
+
+      {/* Location & Contact Area */}
+      {(profile.location || profile.address || profile.town) && (
+        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📍 Location</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {profile.location?.place && (
+              <div>
+                <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Area</span>
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.location.place}</p>
+              </div>
+            )}
+            {profile.town && (
+              <div>
+                <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Town</span>
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.town}</p>
+              </div>
+            )}
+            {profile.address && (
+              <div className="md:col-span-2">
+                <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Address</span>
+                <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.address}</p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Experience & Skills */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
@@ -411,33 +586,35 @@ export default function HousehelpPublicProfile() {
         </div>
       </div>
 
-      {/* Certifications & Abilities */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📜 Certifications & Abilities</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {profile.first_aid_certificate !== undefined && (
-            <div className={`p-4 rounded-lg ${profile.first_aid_certificate ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
-              <p className={`font-semibold ${profile.first_aid_certificate ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
-                {profile.first_aid_certificate ? '✅' : '❌'} First Aid Certificate
-              </p>
-            </div>
-          )}
-          {profile.certificate_of_good_conduct !== undefined && (
-            <div className={`p-4 rounded-lg ${profile.certificate_of_good_conduct ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
-              <p className={`font-semibold ${profile.certificate_of_good_conduct ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
-                {profile.certificate_of_good_conduct ? '✅' : '❌'} Certificate of Good Conduct
-              </p>
-            </div>
-          )}
-          {profile.can_drive !== undefined && (
-            <div className={`p-4 rounded-lg ${profile.can_drive ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
-              <p className={`font-semibold ${profile.can_drive ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'}`}>
-                {profile.can_drive ? '✅' : '❌'} Can Drive
-              </p>
-            </div>
-          )}
+      {/* Certifications & Abilities - Only show if at least one is true */}
+      {(profile.first_aid_certificate || profile.certificate_of_good_conduct || profile.can_drive) && (
+        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📜 Certifications & Abilities</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {profile.first_aid_certificate && (
+              <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
+                <p className="font-semibold text-green-900 dark:text-green-100">
+                  ✅ First Aid Certificate
+                </p>
+              </div>
+            )}
+            {profile.certificate_of_good_conduct && (
+              <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
+                <p className="font-semibold text-green-900 dark:text-green-100">
+                  ✅ Certificate of Good Conduct
+                </p>
+              </div>
+            )}
+            {profile.can_drive && (
+              <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500">
+                <p className="font-semibold text-blue-900 dark:text-blue-100">
+                  ✅ Can Drive
+                </p>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Work with Children Details */}
       {profile.can_work_with_kid && (
@@ -578,8 +755,59 @@ export default function HousehelpPublicProfile() {
               </p>
             </div>
           )}
+          {profile.off_days && profile.off_days.length > 0 && (
+            <div>
+              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Off Days</span>
+              <div className="flex flex-wrap gap-2">
+                {profile.off_days.map((day, idx) => (
+                  <span key={idx} className="px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100 rounded-lg font-medium">
+                    📅 {day}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Availability Schedule */}
+      {profile.availability && Object.keys(profile.availability).length > 0 && (
+        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📅 Weekly Availability</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {Object.entries(profile.availability).map(([day, times]) => {
+              const dayTimes = times as { morning?: boolean; afternoon?: boolean; evening?: boolean };
+              const availableTimes = [];
+              if (dayTimes.morning) availableTimes.push('Morning');
+              if (dayTimes.afternoon) availableTimes.push('Afternoon');
+              if (dayTimes.evening) availableTimes.push('Evening');
+              
+              return (
+                <div key={day} className={`p-3 rounded-lg border-2 ${
+                  availableTimes.length > 0 
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-500' 
+                    : 'bg-gray-50 dark:bg-gray-900/20 border-gray-300 dark:border-gray-700'
+                }`}>
+                  <p className={`font-semibold capitalize mb-1 ${
+                    availableTimes.length > 0 
+                      ? 'text-green-900 dark:text-green-100' 
+                      : 'text-gray-900 dark:text-gray-100'
+                  }`}>
+                    {day}
+                  </p>
+                  {availableTimes.length > 0 ? (
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
+                      {availableTimes.join(', ')}
+                    </p>
+                  ) : (
+                    <p className="text-xs text-gray-500 dark:text-gray-500">Not available</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Salary Expectations */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
@@ -604,6 +832,139 @@ export default function HousehelpPublicProfile() {
         )}
       </div>
 
+      {/* References */}
+      {profile.reference && profile.reference.trim() && (
+        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📝 References</h2>
+          {(() => {
+            try {
+              // The reference field is a JSON string that needs to be parsed twice
+              const parsedOnce = JSON.parse(profile.reference);
+              const references = typeof parsedOnce === 'string' ? JSON.parse(parsedOnce) : parsedOnce;
+              
+              if (Array.isArray(references) && references.length > 0) {
+                return (
+                  <div className="space-y-4">
+                    {references.map((ref: any, idx: number) => (
+                      <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {ref.name && (
+                            <div>
+                              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Name</span>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ref.name}</p>
+                            </div>
+                          )}
+                          {ref.relationship && (
+                            <div>
+                              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Relationship</span>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ref.relationship}</p>
+                            </div>
+                          )}
+                          {ref.duration && (
+                            <div>
+                              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Duration</span>
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ref.duration} years</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              }
+            } catch (e) {
+              console.error('Error parsing references:', e);
+            }
+            return <p className="text-gray-500 dark:text-gray-400">No references provided</p>;
+          })()}
+        </div>
+      )}
+
+      {/* Status & Verification */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">✅ Status & Verification</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {profile.status && (
+            <div className={`p-4 rounded-lg ${
+              profile.status === 'active' 
+                ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' 
+                : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'
+            }`}>
+              <p className={`font-semibold ${
+                profile.status === 'active' 
+                  ? 'text-green-900 dark:text-green-100' 
+                  : 'text-gray-900 dark:text-gray-100'
+              }`}>
+                Profile Status
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 capitalize">{profile.status}</p>
+            </div>
+          )}
+          {profile.verified !== undefined && (
+            <div className={`p-4 rounded-lg ${
+              profile.verified 
+                ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500' 
+                : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'
+            }`}>
+              <p className={`font-semibold ${
+                profile.verified 
+                  ? 'text-blue-900 dark:text-blue-100' 
+                  : 'text-gray-900 dark:text-gray-100'
+              }`}>
+                {profile.verified ? '✅' : '❌'} Verified Profile
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {profile.verified ? 'Identity verified' : 'Not verified'}
+              </p>
+            </div>
+          )}
+          {profile.premium !== undefined && (
+            <div className={`p-4 rounded-lg ${
+              profile.premium 
+                ? 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500' 
+                : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'
+            }`}>
+              <p className={`font-semibold ${
+                profile.premium 
+                  ? 'text-yellow-900 dark:text-yellow-100' 
+                  : 'text-gray-900 dark:text-gray-100'
+              }`}>
+                {profile.premium ? '⭐' : '○'} Premium Member
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {profile.premium ? 'Premium account' : 'Standard account'}
+              </p>
+            </div>
+          )}
+          {profile.background_check_consent !== undefined && (
+            <div className={`p-4 rounded-lg ${
+              profile.background_check_consent 
+                ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' 
+                : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'
+            }`}>
+              <p className={`font-semibold ${
+                profile.background_check_consent 
+                  ? 'text-green-900 dark:text-green-100' 
+                  : 'text-gray-900 dark:text-gray-100'
+              }`}>
+                {profile.background_check_consent ? '✅' : '❌'} Background Check
+              </p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {profile.background_check_consent ? 'Consented to check' : 'Not consented'}
+              </p>
+            </div>
+          )}
+          {(profile.rating !== undefined || profile.review_count !== undefined) && (
+            <div className="p-4 rounded-lg bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-500">
+              <p className="font-semibold text-purple-900 dark:text-purple-100">⭐ Rating</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {profile.rating || 0} / 5 ({profile.review_count || 0} reviews)
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Bio */}
       {profile.bio && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
@@ -624,6 +985,18 @@ export default function HousehelpPublicProfile() {
           imageUrl={selectedImage}
           altText="Profile photo"
           onClose={() => setSelectedImage(null)}
+        />
+      )}
+      
+      {/* Hire Request Modal */}
+      {isViewingOther && profile && (
+        <HireRequestModal
+          isOpen={isHireModalOpen}
+          onClose={() => setIsHireModalOpen(false)}
+          househelpId={profile.id || ''}
+          househelpName={`${profile.first_name || ''} ${profile.last_name || ''}`.trim()}
+          househelpSalaryExpectation={profile.salary_expectation}
+          househelpSalaryFrequency={profile.salary_frequency}
         />
       )}
     </div>
