@@ -5,6 +5,7 @@ import { Loading } from "~/components/Loading";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { API_BASE_URL } from '~/config/api';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface ApiError {
   message: string;
@@ -144,20 +145,21 @@ export default function Contact() {
                 >
                   Subject
                 </label>
-                <select
-                  name="subject"
-                  id="subject"
-                  required
+                <CustomSelect
                   value={formData.subject}
-                  onChange={handleChange}
-                  className="auth-input"
-                >
-                  <option value="">Select a subject</option>
-                  <option value="general">General Inquiry</option>
-                  <option value="support">Technical Support</option>
-                  <option value="billing">Billing Question</option>
-                  <option value="feedback">Feedback</option>
-                </select>
+                  onChange={(value) =>
+                    setFormData((prev) => ({ ...prev, subject: value }))
+                  }
+                  placeholder="Select a subject"
+                  options={[
+                    { value: "", label: "Select a subject" },
+                    { value: "general", label: "General Inquiry" },
+                    { value: "support", label: "Technical Support" },
+                    { value: "billing", label: "Billing Question" },
+                    { value: "feedback", label: "Feedback" },
+                  ]}
+                  className="w-full"
+                />
               </div>
 
               <div>
