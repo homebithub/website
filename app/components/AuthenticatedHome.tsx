@@ -495,19 +495,19 @@ export default function AuthenticatedHome() {
         <main className="flex-1 py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Compact Filters Section */}
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg shadow-purple-500/50 dark:shadow-[0_0_20px_rgba(100,100,120,0.3)] dark:border dark:border-gray-700/50">
+            <div className="bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-gray-700/50">
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">Find Househelps</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Find Househelps</h1>
                 <button
                   onClick={() => setShowMoreFilters(true)}
-                  className="px-4 py-2 bg-white/15 dark:bg-purple-600/30 text-white font-semibold rounded-xl border border-white/20 dark:border-purple-500/30 hover:bg-white/25 dark:hover:bg-purple-600/50 transition"
+                  className="px-4 py-2 bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold rounded-xl border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition"
                 >
                   More filters
                 </button>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex flex-col relative" ref={typeDropdownRef}>
-                  <label className="mb-2 text-sm font-semibold text-white">Type of Househelp</label>
+                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Type of Househelp</label>
                   <div className="relative">
                     <div
                       onClick={() => setShowTypeDropdown(!showTypeDropdown)}
@@ -543,7 +543,7 @@ export default function AuthenticatedHome() {
                   </div>
                 </div>
                 <div className="flex flex-col relative" ref={experienceDropdownRef}>
-                  <label className="mb-2 text-sm font-semibold text-white">Experience</label>
+                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Experience</label>
                   <div className="relative">
                     <div
                       onClick={() => setShowExperienceDropdown(!showExperienceDropdown)}
@@ -584,7 +584,7 @@ export default function AuthenticatedHome() {
                   </div>
                 </div>
                 <div className="flex flex-col relative" ref={skillsDropdownRef}>
-                  <label className="mb-2 text-sm font-semibold text-white">Skills / Can Help With</label>
+                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Skills / Can Help With</label>
                   <div className="relative">
                     <div
                       onClick={() => setShowSkillsDropdown(!showSkillsDropdown)}
@@ -658,12 +658,12 @@ export default function AuthenticatedHome() {
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
                 <div className="sm:col-span-2 flex items-center">
                   {totalCount !== null && (
-                    <span className="text-white font-semibold">{totalCount} results</span>
+                    <span className="text-gray-700 dark:text-white font-semibold">{totalCount} results</span>
                   )}
                 </div>
                 <button
                   onClick={() => handleSearch()}
-                  className="w-full px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300"
+                  className="w-full px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500"
                 >
                   Search
                 </button>

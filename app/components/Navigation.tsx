@@ -48,11 +48,11 @@ export function Navigation() {
 
     const authLinks = React.useMemo(() => {
         const shortlistHref = profileType === 'household' ? '/household/shortlist' : '/shortlist';
-        const hiringHistoryHref = profileType === 'household' ? '/household/hiring-history' : '/househelp/hire-requests';
+        const hiringHistoryHref = profileType === 'household' ? '/household/hiring' : '/househelp/hire-requests';
         return [
             { name: 'Shortlist', href: shortlistHref, count: shortlistCount },
             { name: 'Inbox', href: '/inbox', count: inboxCount },
-            { name: 'Hiring history', href: hiringHistoryHref, count: hireRequestCount },
+            { name: 'Hiring', href: hiringHistoryHref, count: hireRequestCount },
         ];
     }, [profileType, shortlistCount, inboxCount, hireRequestCount]);
 
@@ -64,14 +64,14 @@ export function Navigation() {
                 console.log('[Shortlist Count] No token found');
                 return;
             }
-            
+
             console.log('[Shortlist Count] Fetching from:', `${API_BASE_URL}/api/v1/shortlists/count`);
             const res = await fetch(`${API_BASE_URL}/api/v1/shortlists/count`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            
+
             console.log('[Shortlist Count] Response status:', res.status);
-            
+
             if (res.ok) {
                 const data = await res.json();
                 console.log('[Shortlist Count] Data received:', data);
@@ -92,11 +92,11 @@ export function Navigation() {
         try {
             const token = localStorage.getItem("token");
             if (!token) return;
-            
+
             const res = await fetch(`${API_BASE_URL}/api/v1/inbox/conversations?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            
+
             if (res.ok) {
                 const conversations = await res.json();
                 const totalUnread = conversations.reduce((sum: number, conv: any) => sum + (conv.unread_count || 0), 0);
@@ -112,17 +112,17 @@ export function Navigation() {
         try {
             const token = localStorage.getItem("token");
             if (!token) return;
-            
+
             const status = profileType === 'househelp' ? 'pending' : '';
             const params = status ? `?status=${status}&limit=100` : '?limit=100';
-            
+
             const res = await fetch(`${API_BASE_URL}/api/v1/hire-requests${params}`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
-            
+
             if (res.ok) {
                 const data = await res.json();
-                const count = profileType === 'househelp' 
+                const count = profileType === 'househelp'
                     ? (data.total || 0) // Pending requests for househelps
                     : (data.data?.filter((req: any) => req.status === 'pending' || req.status === 'accepted').length || 0); // Active requests for households
                 setHireRequestCount(count);
@@ -152,10 +152,10 @@ export function Navigation() {
                     // Get user name for greeting
                     const firstName = parsed.first_name || parsed.firstName || "";
                     setUserName(firstName);
-                    
+
                     console.log('[Navigation] Profile type:', profileType);
                     console.log('[Navigation] Is household?', profileType === "household");
-                    
+
                     // Fetch counts for authenticated users
                     if (profileType === "household") {
                         console.log('[Navigation] Fetching shortlist count for household user');
@@ -186,11 +186,11 @@ export function Navigation() {
         const handleShortlistUpdate = () => {
             fetchShortlistCount();
         };
-        
+
         const handleInboxUpdate = () => {
             fetchInboxCount();
         };
-        
+
         window.addEventListener('shortlist-updated', handleShortlistUpdate);
         window.addEventListener('inbox-updated', handleInboxUpdate);
         return () => {
@@ -267,10 +267,10 @@ export function Navigation() {
                 {isAppHost && user && (
                     <div className="hidden lg:flex items-center space-x-3 ml-auto">
                         {authLinks.map((item) => (
-                            <Link 
-                                key={item.name} 
-                                to={item.href} 
-                                prefetch="intent" 
+                            <Link
+                                key={item.name}
+                                to={item.href}
+                                prefetch="intent"
                                 className="link text-lg font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
                                 id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
                             >
@@ -285,7 +285,7 @@ export function Navigation() {
                                         {inboxCount}
                                     </span>
                                 )}
-                                {item.name === 'Hiring history' && hireRequestCount > 0 && (
+                                {item.name === 'Hiring' && hireRequestCount > 0 && (
                                     <span className="absolute -top-1 -right-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-green-500/50" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
                                         {hireRequestCount}
                                     </span>
@@ -299,12 +299,12 @@ export function Navigation() {
                 <div className="flex items-center space-x-4 ml-6 relative">
   {/* Floating sparkle icon */}
   <svg className="absolute -top-6 right-0 w-8 h-8 opacity-40 animate-float delay-1000 z-0" viewBox="0 0 32 32"><path d="M16 2 L20 12 L30 16 L20 20 L16 30 L12 20 L2 16 L12 12 Z" fill="#a855f7" /></svg>
-                    
+
                     {/* Theme Toggle - Always visible on desktop */}
                     <div className="hidden lg:block">
                         <ThemeToggle size="md" />
                     </div>
-                    
+
                     {showAuthButtons && (
                         <div className="flex items-center space-x-3">
                             <button
@@ -507,7 +507,7 @@ export function Navigation() {
                                                     ))}
                                                 </>
                                             )}
-                                            
+
                                             {/* Profile link based on profile type */}
                                             <Menu.Item>
                                                 {({ active }) => (

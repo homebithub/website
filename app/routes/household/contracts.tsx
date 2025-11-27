@@ -47,7 +47,7 @@ export default function HouseholdContracts() {
   const fetchContracts = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -174,13 +174,13 @@ export default function HouseholdContracts() {
               No contracts yet
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {activeTab === 'active' 
+              {activeTab === 'active'
                 ? 'You don\'t have any active employment contracts'
                 : `No ${activeTab} contracts found`
               }
             </p>
             <button
-              onClick={() => navigate('/household/hiring-history')}
+              onClick={() => navigate('/household/hiring')}
               className="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors"
             >
               View Hire Requests

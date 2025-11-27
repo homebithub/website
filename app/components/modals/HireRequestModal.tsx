@@ -27,6 +27,20 @@ interface WorkSchedule {
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 const TIME_SLOTS = ['morning', 'afternoon', 'evening'] as const;
 
+type DayKey = typeof DAYS[number];
+type TimeSlotKey = typeof TIME_SLOTS[number];
+type DayScheduleState = WorkSchedule[DayKey];
+
+const DAY_LABELS: Record<DayKey, string> = {
+  monday: "Monday",
+  tuesday: "Tuesday",
+  wednesday: "Wednesday",
+  thursday: "Thursday",
+  friday: "Friday",
+  saturday: "Saturday",
+  sunday: "Sunday",
+};
+
 const HireRequestModal: React.FC<HireRequestModalProps> = ({
   isOpen,
   onClose,
@@ -37,7 +51,9 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
 }) => {
   const [jobType, setJobType] = useState<string>('live-in');
   const [startDate, setStartDate] = useState('');
-  const [salaryOffered, setSalaryOffered] = useState(househelpSalaryExpectation || 0);
+  const [salaryOffered, setSalaryOffered] = useState<string>(
+    househelpSalaryExpectation ? String(househelpSalaryExpectation) : ''
+  );
   const [salaryFrequency, setSalaryFrequency] = useState(househelpSalaryFrequency || 'monthly');
   const [specialRequirements, setSpecialRequirements] = useState('');
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -60,7 +76,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
     if (isOpen) {
       setJobType('live-in');
       setStartDate('');
-      setSalaryOffered(househelpSalaryExpectation || 0);
+      setSalaryOffered(househelpSalaryExpectation ? String(househelpSalaryExpectation) : '');
       setSalaryFrequency(househelpSalaryFrequency || 'monthly');
       setSpecialRequirements('');
       setTermsAccepted(false);
@@ -69,7 +85,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
     }
   }, [isOpen, househelpSalaryExpectation, househelpSalaryFrequency]);
 
-  const toggleTimeSlot = (day: typeof DAYS[number], slot: typeof TIME_SLOTS[number]) => {
+  const toggleTimeSlot = (day: DayKey, slot: TimeSlotKey) => {
     setWorkSchedule(prev => ({
       ...prev,
       [day]: {
@@ -77,6 +93,31 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
         [slot]: !prev[day][slot],
       },
     }));
+  };
+
+  const toggleDaySlots = (day: DayKey) => {
+    const allSelected = TIME_SLOTS.every(slot => workSchedule[day][slot]);
+    setWorkSchedule(prev => ({
+      ...prev,
+      [day]: TIME_SLOTS.reduce((acc, slot) => {
+        acc[slot] = !allSelected;
+        return acc;
+      }, { ...prev[day] } as DayScheduleState),
+    }));
+  };
+
+  const toggleTimeColumn = (slot: TimeSlotKey) => {
+    const allSelected = DAYS.every(day => workSchedule[day][slot]);
+    setWorkSchedule(prev => {
+      const updated = { ...prev };
+      DAYS.forEach(day => {
+        updated[day] = {
+          ...updated[day],
+          [slot]: !allSelected,
+        };
+      });
+      return updated;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -89,7 +130,8 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
       return;
     }
 
-    if (salaryOffered <= 0) {
+    const salaryValue = parseFloat(salaryOffered);
+    if (Number.isNaN(salaryValue) || salaryValue <= 0) {
       setError('Salary offered must be greater than zero');
       return;
     }
@@ -104,7 +146,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
           househelp_id: househelpId,
           job_type: jobType,
           start_date: startDate || null,
-          salary_offered: salaryOffered,
+          salary_offered: salaryValue,
           salary_frequency: salaryFrequency,
           work_schedule: workSchedule,
           special_requirements: specialRequirements,
@@ -224,7 +266,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                 <input
                   type="number"
                   value={salaryOffered}
-                  onChange={(e) => setSalaryOffered(Number(e.target.value))}
+                  onChange={(e) => setSalaryOffered(e.target.value)}
                   min="0"
                   step="100"
                   required
@@ -254,30 +296,69 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
               <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-3">
                 Work Schedule
               </label>
-              <div className="space-y-2">
-                {DAYS.map((day) => (
-                  <div key={day} className="flex items-center gap-3">
-                    <span className="w-24 text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
-                      {day}
-                    </span>
-                    <div className="flex gap-2">
+              <div className="bg-purple-50 dark:bg-purple-900/20 p-5 rounded-2xl border border-purple-200 dark:border-purple-500/30 overflow-x-auto">
+                <div className="mb-4 font-semibold text-center text-sm text-gray-600 dark:text-gray-300">
+                  Click day names or time slots to toggle entire rows or columns. Use the grid to fine-tune availability.
+                </div>
+                <table className="min-w-full table-fixed border-separate border-spacing-y-1">
+                  <thead>
+                    <tr>
+                      <th className="w-24"></th>
                       {TIME_SLOTS.map((slot) => (
-                        <button
-                          key={slot}
-                          type="button"
-                          onClick={() => toggleTimeSlot(day, slot)}
-                          className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
-                            workSchedule[day][slot]
-                              ? 'bg-green-600 text-white'
-                              : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
-                          }`}
-                        >
-                          {slot}
-                        </button>
+                        <th key={slot} className="px-2 py-1 text-xs uppercase tracking-wide text-purple-700 dark:text-purple-300">
+                          <button
+                            type="button"
+                            className="w-full px-2 py-1 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-800/40 transition"
+                            onClick={() => toggleTimeColumn(slot)}
+                          >
+                            {slot}
+                          </button>
+                        </th>
                       ))}
-                    </div>
-                  </div>
-                ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {DAYS.map((day) => (
+                      <tr key={day}>
+                        <td className="px-2 py-1 font-semibold text-purple-700 dark:text-purple-300 text-sm">
+                          <button
+                            type="button"
+                            className="w-full text-left px-2 py-1 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-800/40 transition"
+                            onClick={() => toggleDaySlots(day)}
+                          >
+                            {DAY_LABELS[day]}
+                          </button>
+                        </td>
+                        {TIME_SLOTS.map((slot) => (
+                          <td key={slot} className="px-2 py-1 text-center">
+                            <button
+                              type="button"
+                              aria-label={`Toggle ${DAY_LABELS[day]} ${slot}`}
+                              onClick={() => toggleTimeSlot(day, slot)}
+                              className={`w-10 h-10 rounded-xl border transition focus:outline-none ${
+                                workSchedule[day][slot]
+                                  ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white shadow-lg'
+                                  : 'bg-white dark:bg-[#13131a] border-purple-200 dark:border-purple-600 text-purple-600 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                              }`}
+                            >
+                              {workSchedule[day][slot] && (
+                                <svg
+                                  className="w-4 h-4 mx-auto"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2.5"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </button>
+                          </td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 

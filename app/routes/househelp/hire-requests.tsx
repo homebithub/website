@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { API_ENDPOINTS } from '~/config/api';
 import { apiClient } from '~/utils/apiClient';
 import { Clock, CheckCircle, XCircle, MessageCircle, Briefcase, Calendar, DollarSign } from 'lucide-react';
@@ -30,6 +30,7 @@ type TabType = 'all' | 'pending' | 'accepted' | 'declined';
 
 export default function HousehelpHireRequests() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<TabType>('pending');
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -41,6 +42,21 @@ export default function HousehelpHireRequests() {
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState('');
   const limit = 20;
+  const backToPath = `${location.pathname}${location.search || ''}`;
+
+  const removeHouseholdFromShortlist = async (profileId?: string | null) => {
+    if (!profileId) return;
+    try {
+      const response = await apiClient.auth(API_ENDPOINTS.shortlists.byId(profileId), {
+        method: 'DELETE',
+      });
+      if (response.ok) {
+        window.dispatchEvent(new CustomEvent('shortlist-updated'));
+      }
+    } catch (err) {
+      console.warn('Failed to remove household from shortlist:', err);
+    }
+  };
 
   useEffect(() => {
     fetchHireRequests();
@@ -118,10 +134,11 @@ export default function HousehelpHireRequests() {
       return;
     }
 
-    setActionLoading(selectedRequest);
+    const decliningId = selectedRequest;
+    setActionLoading(decliningId);
     try {
       const response = await apiClient.auth(
-        API_ENDPOINTS.hiring.requests.decline(selectedRequest),
+        API_ENDPOINTS.hiring.requests.decline(decliningId),
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -133,6 +150,9 @@ export default function HousehelpHireRequests() {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to decline hire request');
       }
+
+      const declinedRequest = hireRequests.find((req) => req.id === decliningId);
+      await removeHouseholdFromShortlist(declinedRequest?.household_id);
 
       // Refresh the list
       fetchHireRequests();
@@ -390,9 +410,15 @@ export default function HousehelpHireRequests() {
                         ✓ You accepted this request
                       </p>
                       <button
-                        onClick={() => navigate(`/household/public-profile`, {
-                          state: { profileId: request.household_id }
-                        })}
+                        onClick={() =>
+                          navigate(`/household/public-profile`, {
+                            state: {
+                              profileId: request.household_id,
+                              backTo: backToPath,
+                              backLabel: 'Back to Hire Requests',
+                            },
+                          })
+                        }
                         className="px-4 py-2 text-sm bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
                       >
                         Contact Household
