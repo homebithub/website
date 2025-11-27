@@ -59,6 +59,25 @@ export default function HouseholdEmployment() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
+  const timeAgo = (iso?: string) => {
+    if (!iso) return '';
+    const then = new Date(iso).getTime();
+    const now = Date.now();
+    const diff = Math.max(0, now - then);
+    const minutes = Math.floor(diff / (1000 * 60));
+    if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} day${days === 1 ? '' : 's'} ago`;
+  };
+
+  const isNewHere = (iso?: string) => {
+    if (!iso) return false;
+    const then = new Date(iso).getTime();
+    const days = (Date.now() - then) / (1000 * 60 * 60 * 24);
+    return days < 7;
+  };
 
   useEffect(() => {
     const fetchShortlist = async () => {
@@ -305,7 +324,14 @@ export default function HouseholdEmployment() {
                       <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
                       <div className="text-gray-500 dark:text-gray-300 text-sm">Salary: {h.salary_expectation || 'N/A'} {h.salary_frequency}</div>
                       <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
-                      <div className="text-gray-400 text-xs">Joined: {h.created_at ? new Date(h.created_at).toLocaleDateString() : ''}</div>
+                      <div className="text-xs text-gray-900 dark:text-gray-300 flex items-center gap-2">
+                        <span>Joined: {timeAgo(h.created_at)}</span>
+                        {isNewHere(h.created_at) && (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700">
+                            New here
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -368,7 +394,14 @@ export default function HouseholdEmployment() {
                 <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
                 <div className="text-gray-500 dark:text-gray-300 text-sm">Salary: {h.salary_expectation || 'N/A'} {h.salary_frequency}</div>
                 <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
-                <div className="text-gray-400 text-xs">Joined: {h.created_at ? new Date(h.created_at).toLocaleDateString() : ''}</div>
+              <div className="text-xs text-gray-900 dark:text-gray-300 flex items-center gap-2">
+                <span>Joined: {timeAgo(h.created_at)}</span>
+                {isNewHere(h.created_at) && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-green-100 text-green-700">
+                    New here
+                  </span>
+                )}
+              </div>
               </div>
             </div>
           ))}
