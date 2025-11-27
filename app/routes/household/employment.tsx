@@ -239,7 +239,7 @@ export default function HouseholdEmployment() {
   }, [sentinelRef.current, hasSearched, offset, loading, hasMore, fields]);
 
   return (
-    <div className="w-full bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8">
+    <div className="w-full bg-white dark:bg-gradient-to-br dark:from-purple-900/20 dark:to-gray-800 rounded-3xl shadow-2xl shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-purple-500/30 p-6 sm:p-8">
       {/* Tabs */}
       <div className="flex items-center border-b border-gray-200 dark:border-slate-700 mb-6">
         <button

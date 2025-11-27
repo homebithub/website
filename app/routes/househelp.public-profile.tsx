@@ -131,6 +131,39 @@ export default function HousehelpPublicProfile() {
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
   const [isHireModalOpen, setIsHireModalOpen] = useState(false);
+  const navigationState = (location.state ?? {}) as {
+    backTo?: string;
+    backLabel?: string;
+    fromInbox?: boolean;
+    fromShortlist?: boolean;
+    fromHireRequests?: boolean;
+  };
+
+  const handleBackNavigation = () => {
+    if (navigationState.backTo) {
+      navigate(navigationState.backTo);
+      return;
+    }
+    if (navigationState.fromInbox) {
+      navigate('/inbox');
+      return;
+    }
+    if (navigationState.fromShortlist) {
+      navigate('/household/shortlist');
+      return;
+    }
+    navigate('/');
+  };
+
+  const backButtonLabel =
+    navigationState.backLabel ||
+    (navigationState.fromInbox
+      ? 'Back to Inbox'
+      : navigationState.fromShortlist
+      ? 'Back to Shortlist'
+      : navigationState.fromHireRequests
+      ? 'Back to Hiring'
+      : 'Back');
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -231,19 +264,10 @@ export default function HousehelpPublicProfile() {
             {/* Left: Back button */}
             {isViewingOther ? (
               <button
-                onClick={() => {
-                  // Check where the user came from
-                  if (location.state?.fromInbox) {
-                    navigate('/inbox');
-                  } else if (location.state?.fromShortlist) {
-                    navigate('/household/shortlist');
-                  } else {
-                    navigate('/');
-                  }
-                }}
+                onClick={handleBackNavigation}
                 className="px-3 sm:px-6 py-2 sm:py-3 bg-gray-100 dark:bg-slate-800 text-gray-700 dark:text-gray-200 font-semibold rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 transition-colors text-sm sm:text-base whitespace-nowrap flex items-center gap-2 flex-shrink-0"
               >
-                ← Back
+                ← {backButtonLabel}
               </button>
             ) : (
               <button

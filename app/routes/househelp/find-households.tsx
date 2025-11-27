@@ -133,8 +133,8 @@ export default function HousehelpFindHouseholds() {
   }, [sentinelRef.current, hasSearched, offset, loading, hasMore, filters]);
 
   return (
-    <div className="w-full bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-6 sm:p-8">
-      <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6">🏠 Find Households</h1>
+    <div className="w-full bg-white dark:bg-gradient-to-br dark:from-purple-900/20 dark:to-gray-800 rounded-3xl shadow-2xl shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-purple-500/30 p-6 sm:p-8">
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">🏠 Find Households</h1>
 
       {/* Filters (dropdowns only) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-4 mb-4">

@@ -32,6 +32,28 @@ export default function HouseholdPublicProfilePage() {
   const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigationState = (location.state ?? {}) as {
+    backTo?: string;
+    backLabel?: string;
+    fromInbox?: boolean;
+    fromHireRequests?: boolean;
+  };
+
+  const handleBackNavigation = () => {
+    if (navigationState.backTo) {
+      navigate(navigationState.backTo);
+      return;
+    }
+    if (navigationState.fromInbox) {
+      navigate('/inbox');
+      return;
+    }
+    navigate(-1);
+  };
+
+  const backLabel =
+    navigationState.backLabel ||
+    (navigationState.fromInbox ? 'Back to Inbox' : navigationState.fromHireRequests ? 'Back to Hiring' : 'Back');
 
   const API_BASE = useMemo(
     () => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL,
@@ -129,17 +151,10 @@ export default function HouseholdPublicProfilePage() {
                   <p className="text-purple-100 dark:text-purple-300 text-sm sm:text-base">Public view - This is how others see this profile</p>
                 </div>
                 <button
-                  onClick={() => {
-                    // Check if coming from inbox
-                    if (location.state?.fromInbox) {
-                      navigate('/inbox');
-                    } else {
-                      navigate(-1);
-                    }
-                  }}
+                  onClick={handleBackNavigation}
                   className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
                 >
-                  ← {location.state?.fromInbox ? 'Back to Inbox' : 'Back'}
+                  ← {backLabel}
                 </button>
               </div>
             </div>

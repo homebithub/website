@@ -99,7 +99,7 @@ export default function HireRequestDetail() {
       }
 
       alert('Hire request cancelled successfully');
-      navigate('/household/hiring-history');
+      navigate('/household/hiring');
     } catch (err: any) {
       alert(err.message || 'Failed to cancel hire request');
     } finally {
@@ -188,7 +188,7 @@ export default function HireRequestDetail() {
     if (!schedule) return null;
 
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    
+
     return (
       <div className="grid grid-cols-7 gap-2">
         {days.map(day => {
@@ -239,10 +239,10 @@ export default function HireRequestDetail() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 max-w-md w-full">
           <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Hire request not found'}</p>
           <button
-            onClick={() => navigate('/household/hiring-history')}
+            onClick={() => navigate('/household/hiring')}
             className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
-            Back to Hiring History
+            Back to Hiring
           </button>
         </div>
       </div>
@@ -255,7 +255,7 @@ export default function HireRequestDetail() {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => navigate('/household/hiring-history')}
+            onClick={() => navigate('/household/hiring')}
             className="text-purple-600 dark:text-purple-400 hover:underline mb-4"
           >
             ← Back to Hiring History
@@ -452,20 +452,20 @@ export default function HireRequestDetail() {
       {showContractModal && (
         <div className="fixed inset-0 z-50 overflow-y-auto">
           <div className="flex min-h-screen items-center justify-center p-4">
-            <div 
+            <div
               className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
               onClick={() => setShowContractModal(false)}
             />
-            
+
             <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Create Employment Contract
               </h3>
-              
+
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                 This will finalize the hire request and create an active employment contract.
               </p>
-              
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Contract Notes (Optional)
@@ -478,7 +478,7 @@ export default function HireRequestDetail() {
                   className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white resize-none"
                 />
               </div>
-              
+
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowContractModal(false)}
