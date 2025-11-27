@@ -160,32 +160,37 @@ export default function HousehelpProfile() {
     return (
       <>
         {showUnlockModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-md">
-            <div className="bg-white  rounded-xl shadow-lg p-6 w-full max-w-md relative">
-              <h2 className="text-lg font-bold mb-2 text-center text-primary-700">Unlock Contact</h2>
-              <p className="mb-3 text-sm text-gray-700 dark:text-gray-200 text-center">
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-3 sm:p-4">
+              <div 
+                className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-md"
+                onClick={() => setShowUnlockModal(false)}
+              />
+              <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 w-full max-w-[calc(100%-1.5rem)] sm:max-w-md">
+              <h2 className="text-base sm:text-lg font-bold mb-2 text-center text-primary-700 dark:text-primary-300">Unlock Contact</h2>
+              <p className="mb-3 text-xs sm:text-sm text-gray-700 dark:text-gray-200 text-center">
                 You are allowed to unlock up to 3 profiles. Make sure you go through the profile before you make a decision.<br />
-                <span className="font-semibold text-primary-700">We shall charge you KES 1000 for this.</span>
+                <span className="font-semibold text-primary-700 dark:text-primary-300">We shall charge you KES 1000 for this.</span>
               </p>
               <div className="mb-3">
-                <label className="block text-xs mb-1 font-semibold">Phone Number</label>
+                <label className="block text-xs mb-1 font-semibold text-gray-700 dark:text-gray-300">Phone Number</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="text"
-                    className="border rounded px-2 py-1 flex-1 text-sm"
+                    className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 flex-1 text-xs sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     value={phone}
                     onChange={e => setPhone(e.target.value)}
                     disabled={!editingPhone}
                   />
                   {!editingPhone ? (
-                    <button className="text-xs text-blue-600 underline" onClick={() => setEditingPhone(true)}>Edit</button>
+                    <button className="text-xs text-blue-600 dark:text-blue-400 underline whitespace-nowrap" onClick={() => setEditingPhone(true)}>Edit</button>
                   ) : (
-                    <button className="text-xs text-green-600 underline" onClick={() => setEditingPhone(false)}>Done</button>
+                    <button className="text-xs text-green-600 dark:text-green-400 underline whitespace-nowrap" onClick={() => setEditingPhone(false)}>Done</button>
                   )}
                 </div>
               </div>
 
-              <table className="w-full mb-3 text-sm">
+              <table className="w-full mb-3 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
                 <tbody>
                   <tr>
                     <td className="py-1">Service fee</td>
@@ -195,26 +200,26 @@ export default function HousehelpProfile() {
                     <td className="py-1">Househelp charge</td>
                     <td className="py-1 text-right">KES 500</td>
                   </tr>
-                  <tr className="font-bold border-t">
+                  <tr className="font-bold border-t border-gray-300 dark:border-gray-600">
                     <td className="py-1">Total</td>
                     <td className="py-1 text-right">KES 1000</td>
                   </tr>
                 </tbody>
               </table>
 
-              <div className="mb-4 text-xs text-gray-500 dark:text-gray-300 text-center">
+              <div className="mb-4 text-xs text-gray-500 dark:text-gray-400 text-center">
                 The househelp will be required to reimburse you if you hire them.
               </div>
 
-              <div className="flex justify-end gap-3">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                 <button
-                  className="px-4 py-2 rounded bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold"
+                  className="px-4 py-2 text-sm rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                   onClick={() => setShowUnlockModal(false)}
                 >
                   Cancel
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-2 rounded bg-green-600 hover:bg-green-700 text-white font-bold shadow"
+                  className="flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold shadow transition-colors"
                   onClick={async () => {
                     try {
                       const token = localStorage.getItem('token');
@@ -236,10 +241,11 @@ export default function HousehelpProfile() {
                     }
                   }}
                 >
-                  <img src="/assets/mpesa-logo.svg" alt="M-PESA" className="w-6 h-6" />
-                  Pay with M-PESA
+                  <img src="/assets/mpesa-logo.svg" alt="M-PESA" className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <span>Pay with M-PESA</span>
                 </button>
               </div>
+            </div>
             </div>
           </div>
         )}
