@@ -40,6 +40,9 @@ interface Props {
 export default function HousehelpFilters({ fields, onChange, onSearch, onClose, onClear }: Props) {
   const inputBase =
     "w-full h-11 px-4 py-2 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all";
+  const selectBase =
+    "w-full h-11 px-4 py-2 rounded-[10px] bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all border-0 dark:bg-[#13131a] dark:text-white";
+  const gradientWrap = "rounded-xl p-[2px] bg-gradient-to-r from-purple-500 to-pink-500 dark:p-0 dark:bg-transparent";
 
   return (
     <aside className="w-full sm:w-72 bg-white dark:bg-[#13131a] border border-purple-200/60 dark:border-purple-500/30 rounded-2xl shadow-lg p-4 sm:p-5 space-y-4">
@@ -63,60 +66,72 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
       {/* Status */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Status</label>
-        <select className={inputBase} value={fields.status} onChange={(e) => onChange("status", e.target.value)}>
-          <option value="active">Active</option>
-          <option value="inactive">Inactive</option>
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.status} onChange={(e) => onChange("status", e.target.value)}>
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
       </div>
 
       {/* Nanny type */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Nanny type</label>
-        <select className={inputBase} value={fields.househelp_type} onChange={(e) => onChange("househelp_type", e.target.value)}>
-          {NANNY_TYPES.map((t) => (
-            <option key={t} value={t}>{t || "Any"}</option>
-          ))}
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.househelp_type} onChange={(e) => onChange("househelp_type", e.target.value)}>
+            {NANNY_TYPES.map((t) => (
+              <option key={t} value={t}>{t || "Any"}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Gender */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Gender</label>
-        <select className={inputBase} value={fields.gender} onChange={(e) => onChange("gender", e.target.value)}>
-          {GENDERS.map((g) => (
-            <option key={g} value={g}>{g || "Any"}</option>
-          ))}
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.gender} onChange={(e) => onChange("gender", e.target.value)}>
+            {GENDERS.map((g) => (
+              <option key={g} value={g}>{g || "Any"}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Experience */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Experience (min)</label>
-        <select className={inputBase} value={fields.experience} onChange={(e) => onChange("experience", e.target.value)}>
-          {EXPERIENCES.map((y) => (
-            <option key={y} value={y}>{y}</option>
-          ))}
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.experience} onChange={(e) => onChange("experience", e.target.value)}>
+            {EXPERIENCES.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Town */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Town</label>
-        <select className={inputBase} value={fields.town} onChange={(e) => onChange("town", e.target.value)}>
-          {TOWNS.map((t) => (
-            <option key={t} value={t}>{t || "Any"}</option>
-          ))}
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.town} onChange={(e) => onChange("town", e.target.value)}>
+            {TOWNS.map((t) => (
+              <option key={t} value={t}>{t || "Any"}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Salary frequency */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Salary frequency</label>
-        <select className={inputBase} value={fields.salary_frequency} onChange={(e) => onChange("salary_frequency", e.target.value)}>
-          <option value="monthly">Monthly</option>
-          <option value="weekly">Weekly</option>
-          <option value="daily">Daily</option>
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.salary_frequency} onChange={(e) => onChange("salary_frequency", e.target.value)}>
+            <option value="monthly">Monthly</option>
+            <option value="weekly">Weekly</option>
+            <option value="daily">Daily</option>
+          </select>
+        </div>
       </div>
 
       {/* Salary range */}
@@ -148,55 +163,67 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
       {/* Skill */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Skill</label>
-        <select className={inputBase} value={fields.skill} onChange={(e) => onChange("skill", e.target.value)}>
-          {SKILLS.map((s) => (
-            <option key={s} value={s}>{s || "Any"}</option>
-          ))}
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.skill} onChange={(e) => onChange("skill", e.target.value)}>
+            {SKILLS.map((s) => (
+              <option key={s} value={s}>{s || "Any"}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Trait */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Trait</label>
-        <select className={inputBase} value={fields.traits} onChange={(e) => onChange("traits", e.target.value)}>
-          {TRAITS.map((t) => (
-            <option key={t} value={t}>{t || "Any"}</option>
-          ))}
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.traits} onChange={(e) => onChange("traits", e.target.value)}>
+            {TRAITS.map((t) => (
+              <option key={t} value={t}>{t || "Any"}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Compatibility and availability */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Works with kids</label>
-        <select className={inputBase} value={fields.can_work_with_kids} onChange={(e) => onChange("can_work_with_kids", e.target.value)}>
-          <option value="">Any</option>
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.can_work_with_kids} onChange={(e) => onChange("can_work_with_kids", e.target.value)}>
+            <option value="">Any</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
       </div>
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Works with pets</label>
-        <select className={inputBase} value={fields.can_work_with_pets} onChange={(e) => onChange("can_work_with_pets", e.target.value)}>
-          <option value="">Any</option>
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.can_work_with_pets} onChange={(e) => onChange("can_work_with_pets", e.target.value)}>
+            <option value="">Any</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
       </div>
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Live-in</label>
-        <select className={inputBase} value={fields.offers_live_in} onChange={(e) => onChange("offers_live_in", e.target.value)}>
-          <option value="">Any</option>
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.offers_live_in} onChange={(e) => onChange("offers_live_in", e.target.value)}>
+            <option value="">Any</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
       </div>
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Day worker</label>
-        <select className={inputBase} value={fields.offers_day_worker} onChange={(e) => onChange("offers_day_worker", e.target.value)}>
-          <option value="">Any</option>
-          <option value="true">Yes</option>
-          <option value="false">No</option>
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.offers_day_worker} onChange={(e) => onChange("offers_day_worker", e.target.value)}>
+            <option value="">Any</option>
+            <option value="true">Yes</option>
+            <option value="false">No</option>
+          </select>
+        </div>
       </div>
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Available from</label>
@@ -211,11 +238,13 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
       {/* Min rating */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min rating</label>
-        <select className={inputBase} value={fields.min_rating} onChange={(e) => onChange("min_rating", e.target.value)}>
-          {["", "5", "4", "3", "2", "1"].map((r) => (
-            <option key={r} value={r}>{r ? `${r}+` : "Any"}</option>
-          ))}
-        </select>
+        <div className={gradientWrap}>
+          <select className={selectBase} value={fields.min_rating} onChange={(e) => onChange("min_rating", e.target.value)}>
+            {["", "5", "4", "3", "2", "1"].map((r) => (
+              <option key={r} value={r}>{r ? `${r}+` : "Any"}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">
