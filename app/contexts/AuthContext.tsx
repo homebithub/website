@@ -1,8 +1,9 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/types/users";
 import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
 import { migratePreferences } from '~/utils/preferencesApi';
+import { AuthContext, type AuthContextType } from "./AuthContextCore";
 
 interface User {
   id: string;
@@ -11,17 +12,6 @@ interface User {
   lastName: string;
   role: string;
 }
-
-interface AuthContextType {
-  user: LoginResponse | null;
-  loading: boolean;
-  error: string | null;
-  login: (phone: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
-  logout: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -192,7 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${AUTH_API_BASE_URL}/signup`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -278,12 +268,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 }

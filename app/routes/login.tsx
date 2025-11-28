@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate, Form } from "react-router";
-import { useAuth } from "~/contexts/AuthContext";
+import { useAuth } from "~/contexts/useAuth";
 import { Error } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Navigation } from "~/components/Navigation";
@@ -129,8 +129,8 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const base = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || AUTH_API_BASE_URL || API_BASE_URL;
-      const res = await fetch(`${base}/api/v1/auth/google/url?flow=auth`);
+      const base = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL;
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/google/url?flow=auth`);
       const data = await res.json();
       if (data?.url) {
         window.location.href = data.url as string;

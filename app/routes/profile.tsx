@@ -3,7 +3,7 @@ import { Navigation } from "~/components/Navigation";
 import { FloatingBubbles } from '~/components/ui/FloatingBubbles';
 import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
-import { useAuth } from "~/contexts/AuthContext";
+import { useAuth } from "~/contexts/useAuth";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
 import { API_ENDPOINTS } from '~/config/api';

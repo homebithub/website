@@ -13,7 +13,7 @@ import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { signupSchema, validateForm, validateField } from '~/utils/validation';
 import { handleApiError } from '~/utils/errorMessages';
-import { useAuth } from '~/contexts/AuthContext';
+import { useAuth } from '~/contexts/useAuth';
 import { Loading } from '~/components/Loading';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { FcGoogle } from 'react-icons/fc';

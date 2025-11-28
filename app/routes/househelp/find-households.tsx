@@ -133,14 +133,14 @@ export default function HousehelpFindHouseholds() {
   }, [sentinelRef.current, hasSearched, offset, loading, hasMore, filters]);
 
   return (
-    <div className="w-full bg-white dark:bg-gradient-to-br dark:from-purple-900/20 dark:to-gray-800 rounded-3xl shadow-2xl shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-purple-500/30 p-6 sm:p-8">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">🏠 Find Households</h1>
-
-      {/* Filters (dropdowns only) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-4 mb-4">
+    <div className="w-full">
+      {/* Filters header with gradient theme to match household page */}
+      <div className="rounded-3xl bg-gradient-to-r from-purple-600 via-pink-600 to-pink-500 p-6 sm:p-8 shadow-2xl shadow-purple-500/30 mb-6">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-6">Find Households</h1>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-4">
         <div className="flex flex-col">
-          <label className="mb-2 text-sm font-semibold text-purple-700">Town</label>
-          <select name="town" value={filters.town} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
+          <label className="mb-1 text-sm font-medium text-white/90">Town</label>
+          <select name="town" value={filters.town} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             {TOWNS.map((t) => (
               <option key={t} value={t}>
                 {t || "Any"}
@@ -149,8 +149,8 @@ export default function HousehelpFindHouseholds() {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">House Size</label>
-          <select name="house_size" value={filters.house_size} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
+          <label className="mb-1 text-sm font-medium text-white/90">House Size</label>
+          <select name="house_size" value={filters.house_size} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             {HOUSE_SIZES.map((s) => (
               <option key={s} value={s}>
                 {s || "Any"}
@@ -159,32 +159,32 @@ export default function HousehelpFindHouseholds() {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Verified</label>
-          <select name="verified" value={filters.verified} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
+          <label className="mb-1 text-sm font-medium text-white/90">Verified</label>
+          <select name="verified" value={filters.verified} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             <option value="">Any</option>
             <option value="true">Verified</option>
             <option value="false">Not verified</option>
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Has Kids</label>
-          <select name="has_kids" value={filters.has_kids} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
+          <label className="mb-1 text-sm font-medium text-white/90">Has Kids</label>
+          <select name="has_kids" value={filters.has_kids} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             <option value="">Any</option>
             <option value="true">Yes</option>
             <option value="false">No</option>
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Has Pets</label>
-          <select name="has_pets" value={filters.has_pets} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
+          <label className="mb-1 text-sm font-medium text-white/90">Has Pets</label>
+          <select name="has_pets" value={filters.has_pets} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             <option value="">Any</option>
             <option value="true">Yes</option>
             <option value="false">No</option>
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Pet Type</label>
-          <select name="pet_type" value={filters.pet_type} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
+          <label className="mb-1 text-sm font-medium text-white/90">Pet Type</label>
+          <select name="pet_type" value={filters.pet_type} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             {PET_TYPES.map((p) => (
               <option key={p} value={p}>
                 {p || "Any"}
@@ -193,8 +193,8 @@ export default function HousehelpFindHouseholds() {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Nanny Type</label>
-          <select name="type_of_househelp" value={filters.type_of_househelp} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
+          <label className="mb-1 text-sm font-medium text-white/90">Type of Househelp</label>
+          <select name="type_of_househelp" value={filters.type_of_househelp} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             {NANNY_TYPES.map((t) => (
               <option key={t} value={t}>
                 {t || "Any"}
@@ -203,8 +203,8 @@ export default function HousehelpFindHouseholds() {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min Rating</label>
-          <select name="min_rating" value={filters.min_rating} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
+          <label className="mb-1 text-sm font-medium text-white/90">Min Rating</label>
+          <select name="min_rating" value={filters.min_rating} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             {RATING_OPTS.map((r) => (
               <option key={r?.toString() || "any"} value={r?.toString() || ""}>
                 {r ? `${r}+` : "Any"}
@@ -212,12 +212,12 @@ export default function HousehelpFindHouseholds() {
             ))}
           </select>
         </div>
-      </div>
-
-      <div className="flex justify-end mb-6">
-        <button onClick={search} className="bg-primary text-white py-2 px-4 rounded-lg font-semibold shadow-md bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-400">
-          Search
-        </button>
+        </div>
+        <div className="flex justify-end mt-6">
+          <button onClick={search} className="inline-flex items-center px-6 py-2.5 rounded-xl bg-white text-purple-700 font-semibold shadow hover:bg-purple-50 transition">
+            Search
+          </button>
+        </div>
       </div>
 
       {loading && <div className="text-center py-4">Loading...</div>}
@@ -234,22 +234,39 @@ export default function HousehelpFindHouseholds() {
         {results.map((r) => (
           <div
             key={r.profile_id}
-            className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow"
+            className="bg-black/60 dark:bg-[#0d0d15] border border-purple-800/40 rounded-2xl p-6 shadow-2xl shadow-purple-900/40 hover:shadow-purple-700 transition-all"
           >
-            <img
-              src={r.avatar_url || "https://placehold.co/56x56?text=HH"}
-              alt={r.first_name}
-              className="w-14 h-14 rounded-full object-cover bg-gray-200"
-            />
-            <div className="flex-1">
-              <div className="font-bold text-lg text-primary-700 dark:text-primary-200">
-                {r.first_name} {r.last_name}
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold">
+                {r.avatar_url ? (
+                  <img src={r.avatar_url} alt={`${r.first_name} ${r.last_name}`} className="w-full h-full object-cover" />
+                ) : (
+                  getInitials(r.first_name, r.last_name)
+                )}
               </div>
-              <div className="text-gray-500 dark:text-gray-300 text-sm">Town: {r.town || "-"}</div>
-              <div className="text-gray-500 dark:text-gray-300 text-sm">House size: {r.house_size || "-"}</div>
-              {r.verified && (
-                <span className="inline-block mt-1 text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">Verified</span>
-              )}
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-lg font-semibold text-white">{r.first_name} {r.last_name}</h3>
+                  {r.verified && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
+                      Verified
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm text-purple-100">
+                  <div><span className="text-purple-300">Town</span><p className="font-medium text-white">{r.town || "-"}</p></div>
+                  <div><span className="text-purple-300">House Size</span><p className="font-medium text-white">{r.house_size || "-"}</p></div>
+                  <div><span className="text-purple-300">Kids</span><p className="font-medium text-white">{r.has_kids ? 'Yes' : 'No'}</p></div>
+                </div>
+              </div>
+              <button
+                onClick={() => navigate(`/household/public-profile?profile_id=${r.profile_id}`, {
+                  state: { backTo: '/househelp/find-households', backLabel: 'Back to results' }
+                })}
+                className="ml-4 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all"
+              >
+                View more
+              </button>
             </div>
           </div>
         ))}

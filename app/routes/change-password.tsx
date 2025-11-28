@@ -5,7 +5,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
 import { changePasswordSchema, validateForm, validateField } from '~/utils/validation';
-import { useAuth } from "~/contexts/AuthContext";
+import { useAuth } from "~/contexts/useAuth";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
 import { API_BASE_URL } from '~/config/api';
