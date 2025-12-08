@@ -7,6 +7,7 @@ import { API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import HouseholdFilters, { type HouseholdSearchFields } from "~/components/features/HouseholdFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 
 interface HouseholdItem {
   id?: string; // household user id
@@ -19,6 +20,52 @@ interface HouseholdItem {
   verified?: boolean;
   created_at?: string;
 }
+
+const RELATIVE_TIME_FORMATTER = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+const TIME_DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
+  { amount: 60, unit: "second" },
+  { amount: 60, unit: "minute" },
+  { amount: 24, unit: "hour" },
+  { amount: 7, unit: "day" },
+  { amount: 4.34524, unit: "week" },
+  { amount: 12, unit: "month" },
+  { amount: Infinity, unit: "year" },
+];
+
+const formatTimeAgo = (dateString?: string) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "";
+  let duration = (date.getTime() - Date.now()) / 1000;
+
+  for (const division of TIME_DIVISIONS) {
+    if (Math.abs(duration) < division.amount) {
+      return RELATIVE_TIME_FORMATTER.format(
+        Math.round(duration),
+        division.unit
+      );
+    }
+    duration /= division.amount;
+  }
+  return "";
+};
+
+const getFriendlyErrorMessage = (error?: string | null) => {
+  if (!error) return "";
+  const trimmed = error.trim();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && typeof parsed === "object") {
+        if (typeof parsed.message === "string") return parsed.message;
+        if (typeof parsed.error === "string") return parsed.error;
+      }
+    } catch {
+      // fall back to original string
+    }
+  }
+  return error;
+};
 
 export default function HousehelpHome() {
   type FilterState = HouseholdSearchFields & { town: string; house_size: string; verified: string };
@@ -37,6 +84,7 @@ export default function HousehelpHome() {
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const countTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [shortlistedProfiles, setShortlistedProfiles] = useState<Set<string>>(new Set());
 
   const API_BASE = useMemo(
     () => (typeof window !== "undefined" && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL,
@@ -62,26 +110,53 @@ export default function HousehelpHome() {
       const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/start/household/${householdUserId}`, { method: 'POST' });
       if (!res.ok) throw new Error('Failed to start conversation');
       const data = await apiClient.json<any>(res);
-      const convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
-      if (convId) navigate(`/inbox/${convId}`); else navigate('/inbox');
+      let convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
+
+      if (!convId || !UUID_REGEX.test(convId)) {
+        try {
+          const convRes = await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations?offset=0&limit=50`);
+          if (convRes.ok) {
+            const conversations = await apiClient.json<Array<{ id?: string; ID?: string; household_id?: string }>>(convRes);
+            const match = conversations.find((c) => c.household_id === householdUserId);
+            convId = match?.id || match?.ID;
+          }
+        } catch (err) {
+          console.error('Failed to hydrate conversation id', err);
+        }
+      }
+
+      if (convId) navigate(`/inbox?conversation=${convId}`); else navigate('/inbox');
     } catch {
       navigate('/inbox');
     }
   };
 
   const handleShortlist = async (profileId: string) => {
+    if (!profileId) return;
     try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile_id: profileId, profile_type: 'household' }),
-      });
-      if (res.ok) {
-        alert('Added to shortlist');
+      const isShortlisted = shortlistedProfiles.has(profileId);
+      if (isShortlisted) {
+        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/${profileId}`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) throw new Error('Failed to remove from shortlist');
+        setShortlistedProfiles((prev) => {
+          const next = new Set(prev);
+          next.delete(profileId);
+          return next;
+        });
       } else {
-        alert('Shortlist for households will be available soon.');
+        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ profile_id: profileId, profile_type: 'household' }),
+        });
+        if (!res.ok) throw new Error('Failed to add to shortlist');
+        setShortlistedProfiles((prev) => new Set(prev).add(profileId));
       }
-    } catch {
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
+    } catch (err) {
+      console.error('Failed to update shortlist', err);
       alert('Shortlist for households will be available soon.');
     }
   };
@@ -143,6 +218,41 @@ export default function HousehelpHome() {
     search();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Fetch shortlist status for current results
+  useEffect(() => {
+    if (!results.length) {
+      setShortlistedProfiles(new Set());
+      return;
+    }
+    let cancelled = false;
+    const fetchStatuses = async () => {
+      try {
+        const profileIds = Array.from(new Set(results.map((r) => r.profile_id).filter(Boolean)));
+        const statuses = await Promise.all(
+          profileIds.map(async (profileId) => {
+            try {
+              const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/exists/${profileId}`);
+              if (!res.ok) return { profileId, exists: false };
+              const data = await apiClient.json<{ exists: boolean }>(res);
+              return { profileId, exists: data.exists };
+            } catch {
+              return { profileId, exists: false };
+            }
+          })
+        );
+        if (cancelled) return;
+        const shortlisted = statuses.filter((s) => s.exists).map((s) => s.profileId);
+        setShortlistedProfiles(new Set(shortlisted));
+      } catch (err) {
+        console.error('Failed to fetch shortlist statuses', err);
+      }
+    };
+    fetchStatuses();
+    return () => {
+      cancelled = true;
+    };
+  }, [results, API_BASE]);
 
   // Debounced count updates on filter changes
   useEffect(() => {
@@ -317,7 +427,7 @@ export default function HousehelpHome() {
                 </div>
               ) : error ? (
                 <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 rounded-xl p-6 text-center">
-                  <p className="text-red-600 dark:text-red-400">{error}</p>
+                  <p className="text-red-600 dark:text-red-400">{getFriendlyErrorMessage(error)}</p>
                 </div>
               ) : results.length === 0 ? (
                 <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
@@ -343,11 +453,19 @@ export default function HousehelpHome() {
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleShortlist(r.profile_id); }}
-                          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300 shadow"
-                          aria-label="Shortlist"
-                          title="Shortlist"
+                          className={`inline-flex items-center justify-center w-9 h-9 rounded-full border shadow transition-all ${
+                            shortlistedProfiles.has(r.profile_id)
+                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white hover:from-purple-700 hover:to-pink-700'
+                              : 'bg-white/80 dark:bg-white/10 border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300'
+                          }`}
+                          aria-label={shortlistedProfiles.has(r.profile_id) ? 'Remove from shortlist' : 'Add to shortlist'}
+                          title={shortlistedProfiles.has(r.profile_id) ? 'Remove from shortlist' : 'Add to shortlist'}
                         >
-                          <HeartIcon className="w-5 h-5" />
+                          {shortlistedProfiles.has(r.profile_id) ? (
+                            <HeartIconSolid className="w-5 h-5" />
+                          ) : (
+                            <HeartIcon className="w-5 h-5" />
+                          )}
                         </button>
                       </div>
 
@@ -368,9 +486,9 @@ export default function HousehelpHome() {
                       </h3>
 
                       {/* Town */}
-                      {r.town && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">📍 {r.town}</p>
-                      )}
+                      <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
+                        📍 {r.town?.trim() || "No location specified"}
+                      </p>
 
                       {/* House size */}
                       {r.house_size && (
@@ -383,16 +501,16 @@ export default function HousehelpHome() {
                       )}
 
                       {/* Bottom actions */}
-                      <div className="mt-4 flex items-center justify-between">
+                      <div className="mt-6 flex items-center gap-3">
+                        <div className="text-xs font-semibold tracking-wide uppercase text-gray-400">
+                          {formatTimeAgo(r.created_at)}
+                        </div>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleViewMore(r); }}
-                          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
+                          className="ml-auto px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >
                           View more
                         </button>
-                        <div className="text-xs text-gray-400">
-                          {r.created_at ? new Date(r.created_at).toLocaleDateString() : ''}
-                        </div>
                       </div>
                     </div>
                   ))}

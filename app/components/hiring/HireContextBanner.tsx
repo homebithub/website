@@ -6,6 +6,9 @@ interface HireContextBannerProps {
   hireRequestId?: string;
   onViewDetails?: () => void;
   onSendHireRequest?: () => void;
+  onAccept?: () => void;
+  onDecline?: () => void;
+  actionLoading?: 'accept' | 'decline' | null;
   userRole: 'household' | 'househelp';
 }
 
@@ -14,6 +17,9 @@ export default function HireContextBanner({
   hireRequestId,
   onViewDetails,
   onSendHireRequest,
+  onAccept,
+  onDecline,
+  actionLoading,
   userRole,
 }: HireContextBannerProps) {
   if (!hireRequestStatus && userRole === 'household') {
@@ -119,6 +125,29 @@ export default function HireContextBanner({
             >
               View Details
             </button>
+          )}
+
+          {userRole === 'househelp' && hireRequestStatus === 'pending' && (onAccept || onDecline) && (
+            <div className="mt-3 flex flex-wrap gap-3">
+              {onAccept && (
+                <button
+                  onClick={onAccept}
+                  disabled={actionLoading === 'accept'}
+                  className="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                >
+                  {actionLoading === 'accept' ? 'Accepting...' : 'Accept Request'}
+                </button>
+              )}
+              {onDecline && (
+                <button
+                  onClick={onDecline}
+                  disabled={actionLoading === 'decline'}
+                  className="px-4 py-2 rounded-lg border border-red-400 text-red-600 font-semibold hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                >
+                  {actionLoading === 'decline' ? 'Declining...' : 'Decline'}
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
