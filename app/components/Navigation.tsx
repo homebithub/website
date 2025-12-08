@@ -48,7 +48,7 @@ export function Navigation() {
 
     const authLinks = React.useMemo(() => {
         const shortlistHref = profileType === 'household' ? '/household/shortlist' : '/shortlist';
-        const hiringHistoryHref = profileType === 'household' ? '/household/hiring' : '/househelp/hire-requests';
+        const hiringHistoryHref = profileType === 'household' ? '/household/hiring' : '/househelp/hiring';
         return [
             { name: 'Shortlist', href: shortlistHref, count: shortlistCount },
             { name: 'Inbox', href: '/inbox', count: inboxCount },
