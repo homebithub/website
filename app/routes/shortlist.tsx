@@ -194,7 +194,9 @@ export default function ShortlistPage() {
                   return (
                     <div
                       key={s.id}
-                      onClick={() => navigate(`/household/public-profile/${s.user_id}`)}
+                      onClick={() => navigate(`/household/public-profile?user_id=${s.user_id}`, {
+                        state: { profileId: s.user_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
+                      })}
                       className="relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
                     >
                       <div className="absolute top-3 right-3 flex items-center gap-2">
@@ -265,7 +267,9 @@ export default function ShortlistPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/household/public-profile/${s.user_id}`);
+                            navigate(`/household/public-profile?user_id=${s.user_id}`, {
+                              state: { profileId: s.user_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
+                            });
                           }}
                           className="ml-auto px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >

@@ -109,6 +109,19 @@ export const API_ENDPOINTS = {
       terminate: (id: string) => `${API_BASE_URL}/api/v1/hire-contracts/${id}/terminate`,
     },
   },
+  
+  // Interest endpoints (househelps showing interest in households)
+  interests: {
+    base: `${API_BASE_URL}/api/v1/interests`,
+    byId: (id: string) => `${API_BASE_URL}/api/v1/interests/${id}`,
+    exists: (householdId: string) => `${API_BASE_URL}/api/v1/interests/exists/${householdId}`,
+    household: `${API_BASE_URL}/api/v1/interests/household`,
+    househelp: `${API_BASE_URL}/api/v1/interests/househelp`,
+    count: `${API_BASE_URL}/api/v1/interests/count`,
+    markViewed: (id: string) => `${API_BASE_URL}/api/v1/interests/${id}/viewed`,
+    accept: (id: string) => `${API_BASE_URL}/api/v1/interests/${id}/accept`,
+    decline: (id: string) => `${API_BASE_URL}/api/v1/interests/${id}/decline`,
+  },
 } as const;
 
 /**

@@ -520,8 +520,9 @@ export default function HouseholdProfile() {
             <p className="text-purple-100 dark:text-purple-300 text-sm sm:text-base">View and manage your household information</p>
           </div>
           <button
-            onClick={() => navigate('/household/public-profile')}
+            onClick={() => navigate(`/household/public-profile?user_id=${profile?.user_id || ''}`)}
             className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
+            disabled={!profile?.user_id}
           >
             👁️ View Public Profile
           </button>

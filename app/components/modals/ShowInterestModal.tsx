@@ -5,158 +5,78 @@ import { apiClient } from '~/utils/apiClient';
 import { API_ENDPOINTS } from '~/config/api';
 import CustomSelect from '~/components/ui/CustomSelect';
 
-interface HireRequestModalProps {
+interface ShowInterestModalProps {
   isOpen: boolean;
   onClose: () => void;
-  househelpId: string;
-  househelpName: string;
-  househelpSalaryExpectation?: number;
-  househelpSalaryFrequency?: string;
+  householdId: string;
+  householdName: string;
 }
 
-interface WorkSchedule {
-  monday: { morning: boolean; afternoon: boolean; evening: boolean };
-  tuesday: { morning: boolean; afternoon: boolean; evening: boolean };
-  wednesday: { morning: boolean; afternoon: boolean; evening: boolean };
-  thursday: { morning: boolean; afternoon: boolean; evening: boolean };
-  friday: { morning: boolean; afternoon: boolean; evening: boolean };
-  saturday: { morning: boolean; afternoon: boolean; evening: boolean };
-  sunday: { morning: boolean; afternoon: boolean; evening: boolean };
-}
-
-const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
-const TIME_SLOTS = ['morning', 'afternoon', 'evening'] as const;
-
-type DayKey = typeof DAYS[number];
-type TimeSlotKey = typeof TIME_SLOTS[number];
-type DayScheduleState = WorkSchedule[DayKey];
-
-const DAY_LABELS: Record<DayKey, string> = {
-  monday: "Monday",
-  tuesday: "Tuesday",
-  wednesday: "Wednesday",
-  thursday: "Thursday",
-  friday: "Friday",
-  saturday: "Saturday",
-  sunday: "Sunday",
-};
-
-const HireRequestModal: React.FC<HireRequestModalProps> = ({
+const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
   isOpen,
   onClose,
-  househelpId,
-  househelpName,
-  househelpSalaryExpectation,
-  househelpSalaryFrequency,
+  householdId,
+  householdName,
 }) => {
+  const [salaryExpectation, setSalaryExpectation] = useState<string>('');
+  const [salaryFrequency, setSalaryFrequency] = useState('monthly');
+  const [availableFrom, setAvailableFrom] = useState('');
   const [jobType, setJobType] = useState<string>('live-in');
-  const [startDate, setStartDate] = useState('');
-  const [salaryOffered, setSalaryOffered] = useState<string>(
-    househelpSalaryExpectation ? String(househelpSalaryExpectation) : ''
-  );
-  const [salaryFrequency, setSalaryFrequency] = useState(househelpSalaryFrequency || 'monthly');
-  const [specialRequirements, setSpecialRequirements] = useState('');
-  const [termsAccepted, setTermsAccepted] = useState(false);
-  const [workSchedule, setWorkSchedule] = useState<WorkSchedule>({
-    monday: { morning: true, afternoon: true, evening: false },
-    tuesday: { morning: true, afternoon: true, evening: false },
-    wednesday: { morning: true, afternoon: true, evening: false },
-    thursday: { morning: true, afternoon: true, evening: false },
-    friday: { morning: true, afternoon: true, evening: false },
-    saturday: { morning: false, afternoon: false, evening: false },
-    sunday: { morning: false, afternoon: false, evening: false },
-  });
+  const [comments, setComments] = useState('');
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
+      setSalaryExpectation('');
+      setSalaryFrequency('monthly');
+      setAvailableFrom('');
       setJobType('live-in');
-      setStartDate('');
-      setSalaryOffered(househelpSalaryExpectation ? String(househelpSalaryExpectation) : '');
-      setSalaryFrequency(househelpSalaryFrequency || 'monthly');
-      setSpecialRequirements('');
-      setTermsAccepted(false);
+      setComments('');
       setError('');
       setSuccess(false);
+      setTermsAccepted(false);
     }
-  }, [isOpen, househelpSalaryExpectation, househelpSalaryFrequency]);
-
-  const toggleTimeSlot = (day: DayKey, slot: TimeSlotKey) => {
-    setWorkSchedule(prev => ({
-      ...prev,
-      [day]: {
-        ...prev[day],
-        [slot]: !prev[day][slot],
-      },
-    }));
-  };
-
-  const toggleDaySlots = (day: DayKey) => {
-    const allSelected = TIME_SLOTS.every(slot => workSchedule[day][slot]);
-    setWorkSchedule(prev => ({
-      ...prev,
-      [day]: TIME_SLOTS.reduce((acc, slot) => {
-        acc[slot] = !allSelected;
-        return acc;
-      }, { ...prev[day] } as DayScheduleState),
-    }));
-  };
-
-  const toggleTimeColumn = (slot: TimeSlotKey) => {
-    const allSelected = DAYS.every(day => workSchedule[day][slot]);
-    setWorkSchedule(prev => {
-      const updated = { ...prev };
-      DAYS.forEach(day => {
-        updated[day] = {
-          ...updated[day],
-          [slot]: !allSelected,
-        };
-      });
-      return updated;
-    });
-  };
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    // Validation
     if (!termsAccepted) {
       setError('You must accept the terms and conditions');
       return;
     }
 
-    const salaryValue = parseFloat(salaryOffered);
+    const salaryValue = parseFloat(salaryExpectation);
     if (Number.isNaN(salaryValue) || salaryValue <= 0) {
-      setError('Salary offered must be greater than zero');
+      setError('Salary expectation must be greater than zero');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.requests.base, {
+      const response = await apiClient.auth(API_ENDPOINTS.interests.base, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          househelp_id: househelpId,
-          job_type: jobType,
-          start_date: startDate || null,
-          salary_offered: salaryValue,
+          household_id: householdId,
+          salary_expectation: salaryValue,
           salary_frequency: salaryFrequency,
-          work_schedule: workSchedule,
-          special_requirements: specialRequirements,
-          terms_accepted: termsAccepted,
+          available_from: availableFrom || null,
+          job_type: jobType,
+          comments: comments,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send hire request');
+        throw new Error(errorData.message || 'Failed to express interest');
       }
 
       setSuccess(true);
@@ -164,7 +84,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
         onClose();
       }, 2000);
     } catch (err: any) {
-      setError(err.message || 'Failed to send hire request');
+      setError(err.message || 'Failed to express interest');
     } finally {
       setLoading(false);
     }
@@ -182,11 +102,11 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
         />
         
         {/* Modal */}
-        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
           {/* Header */}
           <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Send Hire Request
+              Show Interest
             </h2>
             <button
               onClick={onClose}
@@ -200,7 +120,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
           {success && (
             <div className="mx-6 mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
               <p className="text-green-800 dark:text-green-200 font-medium">
-                ✅ Hire request sent successfully to {househelpName}!
+                ✅ Your interest has been sent to {householdName}! They will be notified and can view your profile.
               </p>
             </div>
           )}
@@ -214,16 +134,16 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            {/* Househelp Info */}
+            {/* Household Info */}
             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Hiring</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{househelpName}</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Expressing interest to work for</p>
+              <p className="text-lg font-semibold text-gray-900 dark:text-white">{householdName}</p>
             </div>
 
             {/* Job Type */}
             <div>
               <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                Job Type *
+                Preferred Job Type *
               </label>
               <div className="grid grid-cols-2 gap-3">
                 {['live-in', 'day-worker', 'part-time'].map((type) => (
@@ -243,33 +163,34 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
               </div>
             </div>
 
-            {/* Start Date */}
+            {/* Available From */}
             <div>
               <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                Preferred Start Date (Optional)
+                Available From (Optional)
               </label>
               <input
                 type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
+                value={availableFrom}
+                onChange={(e) => setAvailableFrom(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
                 className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
 
-            {/* Salary */}
+            {/* Salary Expectation */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                  Salary Offered (KES) *
+                  Salary Expectation (KES) *
                 </label>
                 <input
                   type="number"
-                  value={salaryOffered}
-                  onChange={(e) => setSalaryOffered(e.target.value)}
+                  value={salaryExpectation}
+                  onChange={(e) => setSalaryExpectation(e.target.value)}
                   min="0"
                   step="100"
                   required
+                  placeholder="e.g. 25000"
                   className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                 />
               </div>
@@ -291,18 +212,26 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
               </div>
             </div>
 
-            {/* Special Requirements */}
+            {/* Comments */}
             <div>
               <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
-                Special Requirements (Optional)
+                Message to Household (Optional)
               </label>
               <textarea
-                value={specialRequirements}
-                onChange={(e) => setSpecialRequirements(e.target.value)}
+                value={comments}
+                onChange={(e) => setComments(e.target.value)}
                 rows={4}
-                placeholder="Any specific requirements or expectations..."
+                placeholder="Introduce yourself, mention your experience, or ask any questions..."
                 className="w-full text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
               />
+            </div>
+
+            {/* Info Box */}
+            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-500/30">
+              <p className="text-sm text-purple-800 dark:text-purple-200">
+                <strong>What happens next?</strong> The household will receive a notification about your interest. 
+                They can view your profile and contact you if they're interested in hiring you.
+              </p>
             </div>
 
             {/* Terms & Conditions */}
@@ -322,9 +251,9 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                     rel="noopener noreferrer"
                     className="text-purple-600 dark:text-purple-400 hover:underline"
                   >
-                    terms and conditions of hiring
+                    terms and conditions
                   </a>
-                  {' '}and understand that this is a formal hire request.
+                  {' '}and understand that this is a formal expression of interest.
                 </span>
               </label>
             </div>
@@ -341,10 +270,10 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={loading || !termsAccepted}
+                disabled={loading || success || !termsAccepted}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Sending...' : 'Send Hire Request'}
+                {loading ? 'Sending...' : 'Send Interest'}
               </button>
             </div>
           </form>
@@ -356,4 +285,4 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
   return createPortal(modalContent, document.body);
 };
 
-export default HireRequestModal;
+export default ShowInterestModal;

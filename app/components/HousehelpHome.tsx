@@ -100,7 +100,9 @@ export default function HousehelpHome() {
   // Actions
   const handleViewMore = (item: HouseholdItem) => {
     if (item?.id) {
-      navigate(`/household/public-profile/${item.id}`);
+      navigate(`/household/public-profile?user_id=${item.id}`, {
+        state: { profileId: item.id, backTo: '/', backLabel: 'Back to results' },
+      });
     }
   };
 
