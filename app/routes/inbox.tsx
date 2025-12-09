@@ -4,7 +4,7 @@ import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, API_ENDPOINTS } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
-import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
@@ -29,6 +29,17 @@ type Message = {
   read_at?: string | null;
   created_at: string;
   _status?: MessageStatus; // Client-side status tracking
+  // New fields to support actions
+  deleted_at?: string | null;
+  edited_at?: string | null;
+  reply_to_id?: string | null;
+  reactions?: Array<{ emoji: string; user_id: string }>;
+};
+
+type ToastItem = {
+  id: string;
+  message: string;
+  type: 'success' | 'error';
 };
 
 type HireRequestSummary = {
@@ -71,7 +82,34 @@ export default function InboxPage() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileModalUrl, setProfileModalUrl] = useState<string | null>(null);
   const [profileModalLoading, setProfileModalLoading] = useState(false);
+  const profileModalTimeoutId = useRef<number | null>(null);
+  const [profileModalTimedOut, setProfileModalTimedOut] = useState(false);
+  const [profileModalReloadKey, setProfileModalReloadKey] = useState(0);
+  const [openMsgMenuId, setOpenMsgMenuId] = useState<string | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
+  const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+  const [editingDraft, setEditingDraft] = useState<string>("");
+  const [editingSaving, setEditingSaving] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
+  const messageRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [highlightMsgId, setHighlightMsgId] = useState<string | null>(null);
+  const [openReactPickerMsgId, setOpenReactPickerMsgId] = useState<string | null>(null);
+  const [infoForMsgId, setInfoForMsgId] = useState<string | null>(null);
+  const [deleteConfirmMsg, setDeleteConfirmMsg] = useState<Message | null>(null);
+  const [msgMenuFocusIndex, setMsgMenuFocusIndex] = useState<number>(0);
+  const msgMenuRef = useRef<HTMLDivElement | null>(null);
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
   const messagesLimit = 50;
+  const pushToast = useCallback((message: string, type: 'success' | 'error') => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    setToasts((prev) => [...prev, { id, message, type }]);
+    window.setTimeout(() => {
+      setToasts((prev) => prev.filter((t) => t.id !== id));
+    }, 3000);
+  }, []);
+  const removeToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
   
   // Hire wizard state
   const [showHireWizard, setShowHireWizard] = useState(false);
@@ -332,6 +370,157 @@ export default function InboxPage() {
     return () => window.clearTimeout(id);
   }, [showEmojiPicker]);
 
+  // Message action helpers
+  const isDeletable = useCallback((m: Message) => {
+    const mine = currentUserId && m.sender_id === currentUserId;
+    const created = new Date(m.created_at).getTime();
+    const now = Date.now();
+    const within15m = now - created <= 15 * 60 * 1000;
+    return Boolean(mine && within15m && !m.deleted_at);
+  }, [currentUserId]);
+
+  const handleDeleteMessage = useCallback(async (msg: Message) => {
+    if (!isDeletable(msg)) {
+      setMessagesError('Message can be deleted only within 15 minutes of sending.');
+      pushToast('Cannot delete after 15 minutes', 'error');
+      return;
+    }
+    // Optimistic update
+    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, deleted_at: new Date().toISOString(), body: '' } : m));
+    setOpenMsgMenuId(null);
+    try {
+      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${msg.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to delete');
+      pushToast('Message deleted', 'success');
+    } catch (e: any) {
+      // Reload messages on failure to restore
+      setMessagesError(e?.message || 'Failed to delete message');
+      setMessagesOffset(0);
+      pushToast('Failed to delete message', 'error');
+    }
+  }, [API_BASE, isDeletable, pushToast]);
+
+  const isEditable = useCallback((m: Message) => isDeletable(m) && !m.deleted_at, [isDeletable]);
+
+  const startEditMessage = useCallback((m: Message) => {
+    if (!isEditable(m)) return;
+    setEditingMessageId(m.id);
+    setEditingDraft(m.body || "");
+    setOpenMsgMenuId(null);
+  }, [isEditable]);
+
+  const cancelEditMessage = useCallback(() => {
+    setEditingMessageId(null);
+    setEditingDraft("");
+  }, []);
+
+  const saveEditMessage = useCallback(async () => {
+    if (!editingMessageId) return;
+    const target = messages.find(m => m.id === editingMessageId);
+    if (!target) return;
+    if (!isEditable(target)) {
+      setMessagesError('Message can be edited only within 15 minutes of sending.');
+      return;
+    }
+    const newBody = editingDraft.trim();
+    if (!newBody) return;
+    setEditingSaving(true);
+    const editedAt = new Date().toISOString();
+    // Optimistic update
+    setMessages(prev => prev.map(m => m.id === editingMessageId ? { ...m, body: newBody, edited_at: editedAt } : m));
+    try {
+      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${editingMessageId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ body: newBody }),
+      });
+      if (!res.ok) throw new Error('Failed to edit message');
+      setEditingMessageId(null);
+      setEditingDraft("");
+      pushToast('Message edited', 'success');
+    } catch (e: any) {
+      setMessagesError(e?.message || 'Failed to edit message');
+      // Fallback: refetch messages to restore original server truth
+      setMessagesOffset(0);
+      pushToast('Failed to edit message', 'error');
+    } finally {
+      setEditingSaving(false);
+    }
+  }, [API_BASE, editingMessageId, editingDraft, isEditable, messages, pushToast]);
+
+  const messageById = useMemo(() => {
+    const map = new Map<string, Message>();
+    messages.forEach((m) => map.set(m.id, m));
+    return map;
+  }, [messages]);
+  const infoMsg = useMemo(() => (infoForMsgId ? (messageById.get(infoForMsgId) || null) : null), [infoForMsgId, messageById]);
+  const nameForUser = useCallback((uid?: string | null) => {
+    if (!uid) return 'User';
+    if (uid === currentUserId) return 'You';
+    return selectedConversation?.participant_name || 'User';
+  }, [currentUserId, selectedConversation]);
+
+  const handleReplyMessage = useCallback((m: Message) => {
+    setReplyTo(m);
+    setOpenMsgMenuId(null);
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  }, []);
+
+  const clearReply = useCallback(() => setReplyTo(null), []);
+
+  const scrollToMessage = useCallback((id: string) => {
+    const el = messageRefs.current[id];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightMsgId(id);
+      window.setTimeout(() => setHighlightMsgId(null), 1500);
+    }
+  }, []);
+
+  const toggleReaction = useCallback(async (msg: Message, emoji: string) => {
+    const me = currentUserId || '';
+    const had = (msg.reactions || []).some(r => r.emoji === emoji && r.user_id === me);
+    // Optimistic
+    setMessages(prev => prev.map(m => {
+      if (m.id !== msg.id) return m;
+      const current = m.reactions || [];
+      const next = had ? current.filter(r => !(r.emoji === emoji && r.user_id === me)) : [...current, { emoji, user_id: me }];
+      return { ...m, reactions: next };
+    }));
+    setOpenReactPickerMsgId(null);
+    try {
+      // Use POST to toggle reaction; backend can interpret toggle behavior
+      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${msg.id}/reactions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ emoji }),
+      });
+      if (!res.ok) throw new Error('Failed to update reaction');
+    } catch (e: any) {
+      // Revert by refetch
+      setMessagesError(e?.message || 'Failed to update reaction');
+      setMessagesOffset(0);
+    }
+  }, [API_BASE, currentUserId]);
+
+  useEffect(() => {
+    if (openMsgMenuId) {
+      setMsgMenuFocusIndex(0);
+      setTimeout(() => msgMenuRef.current?.focus(), 0);
+    }
+  }, [openMsgMenuId]);
+
+  const startLongPress = (id: string) => {
+    if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = window.setTimeout(() => setOpenMsgMenuId(id), 500);
+  };
+  const cancelLongPress = () => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
   // Close emoji picker when clicking outside (but keep open for clicks inside the picker root)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -367,6 +556,7 @@ export default function InboxPage() {
       body,
       created_at: new Date().toISOString(),
       _status: 'sending',
+      reply_to_id: replyTo?.id || null,
     };
     
     setMessages((prev) => [...prev, optimisticMessage]);
@@ -378,7 +568,7 @@ export default function InboxPage() {
       const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body }),
+        body: JSON.stringify({ body, reply_to_id: replyTo?.id }),
       });
       if (!res.ok) throw new Error("Failed to send message");
       const msg = await apiClient.json<Message>(res);
@@ -386,6 +576,7 @@ export default function InboxPage() {
       setMessages((prev) => prev.map(m => 
         m.id === tempId ? { ...msg, _status: 'delivered' as MessageStatus } : m
       ));
+      setReplyTo(null);
     } catch (e: any) {
       // Remove failed message and show error
       setMessages((prev) => prev.filter(m => m.id !== tempId));
@@ -454,12 +645,20 @@ export default function InboxPage() {
       // Household viewing househelp profile (supports query param in iframe)
       const url = `/househelp/public-profile?profileId=${encodeURIComponent(selectedConversation.househelp_id)}&embed=1`;
       setProfileModalLoading(true);
+      setProfileModalTimedOut(false);
+      if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
+      profileModalTimeoutId.current = window.setTimeout(() => setProfileModalTimedOut(true), 8000);
+      setProfileModalReloadKey((k) => k + 1);
       setProfileModalUrl(url);
       setShowProfileModal(true);
     } else {
       // Househelp viewing household public profile: pass user_id via query to non-param route
       const url = `/household/public-profile?user_id=${encodeURIComponent(selectedConversation.household_id)}&embed=1`;
       setProfileModalLoading(true);
+      setProfileModalTimedOut(false);
+      if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
+      profileModalTimeoutId.current = window.setTimeout(() => setProfileModalTimedOut(true), 8000);
+      setProfileModalReloadKey((k) => k + 1);
       setProfileModalUrl(url);
       setShowProfileModal(true);
     }
@@ -574,6 +773,84 @@ export default function InboxPage() {
             </div>
           </div>
         )}
+
+      {/* Delete Confirm Modal */}
+      {deleteConfirmMsg && (
+        <div
+          className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/60"
+          onClick={() => setDeleteConfirmMsg(null)}
+        >
+          <div
+            className="relative w-full max-w-md rounded-2xl overflow-hidden border-2 border-red-300/40 shadow-[0_0_30px_rgba(220,38,38,0.35)] bg-white dark:bg-[#0a0a0f]"
+            onClick={(e) => e.stopPropagation()}
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape') setDeleteConfirmMsg(null);
+              if (e.key === 'Enter') { handleDeleteMessage(deleteConfirmMsg); setDeleteConfirmMsg(null); }
+            }}
+          >
+            <button
+              type="button"
+              className="absolute top-3 right-3 z-[76] p-2 rounded-full bg-white/90 dark:bg-[#13131a]/90 border border-red-200/50 dark:border-red-500/30 shadow hover:scale-105 transition"
+              onClick={() => setDeleteConfirmMsg(null)}
+              aria-label="Close delete confirm"
+            >
+              <XMarkIcon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+            </button>
+            <div className="p-6">
+              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Delete message?</h3>
+              <p className="text-sm text-gray-700 dark:text-gray-200 mb-4">
+                This message will be removed for both participants. You can only delete messages within 15 minutes of sending.
+              </p>
+              <div className="rounded-md border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/40 p-3 text-sm text-gray-800 dark:text-gray-100 mb-4">
+                “{deleteConfirmMsg.body || 'Message'}”
+              </div>
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800"
+                  onClick={() => setDeleteConfirmMsg(null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 shadow"
+                  onClick={() => { handleDeleteMessage(deleteConfirmMsg); setDeleteConfirmMsg(null); }}
+                >
+                  Delete for everyone
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Message Info Modal */}
+      {infoForMsgId && infoMsg && (
+        <div className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/60" onClick={() => setInfoForMsgId(null)}>
+          <div className="relative w-full max-w-md rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)] bg-white dark:bg-[#0a0a0f]" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="absolute top-3 right-3 z-[66] p-2 rounded-full bg-white/90 dark:bg-[#13131a]/90 border border-purple-200 dark:border-purple-500/30 shadow hover:scale-105 transition"
+              onClick={() => setInfoForMsgId(null)}
+              aria-label="Close message info"
+            >
+              <XMarkIcon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+            </button>
+            <div className="p-5">
+              <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-3">Message info</h3>
+              <div className="space-y-2 text-sm text-gray-700 dark:text-gray-200">
+                <div className="flex justify-between"><span>Sent</span><span>{new Date(infoMsg.created_at).toLocaleString()}</span></div>
+                <div className="flex justify-between"><span>Status</span><span>{(infoMsg._status || (infoMsg.read_at ? 'read' : 'delivered'))}</span></div>
+                <div className="flex justify-between"><span>Read</span><span>{infoMsg.read_at ? new Date(infoMsg.read_at).toLocaleString() : 'Not read yet'}</span></div>
+                <div className="flex justify-between"><span>Message ID</span><span className="truncate max-w-[14rem]" title={infoMsg.id}>{infoMsg.id}</span></div>
+              </div>
+              <div className="mt-4 text-xs opacity-70">Exact delivery time may be unavailable.</div>
+            </div>
+          </div>
+        </div>
+      )}
 
         {items.length === 0 && !loading && !error && (
           <div className="p-8 text-center">
@@ -763,42 +1040,200 @@ export default function InboxPage() {
               {group.items.map((m) => {
                 const mine = currentUserId && m.sender_id === currentUserId;
                 const status = m._status || (m.read_at ? 'read' : 'delivered');
+                const replyMsg = m.reply_to_id ? messageById.get(m.reply_to_id) : undefined;
+                const replyFromName = replyMsg ? (replyMsg.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')) : '';
                 return (
-                  <div key={m.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                  <div
+                    key={m.id}
+                    className={`group relative flex ${mine ? 'justify-end' : 'justify-start'} ${highlightMsgId === m.id ? 'ring-2 ring-purple-400 rounded-xl' : ''}`}
+                    onTouchStart={() => startLongPress(m.id)}
+                    onTouchEnd={cancelLongPress}
+                    ref={(el) => { messageRefs.current[m.id] = el; }}
+                  >
+                    {/* 3-dot action button (visible on hover desktop) */}
+                    <button
+                      type="button"
+                      className={`absolute -top-2 ${mine ? '-left-2' : '-right-2'} hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow opacity-0 group-hover:opacity-100 transition`}
+                      onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
+                      aria-label="Message options"
+                    >
+                      <EllipsisVerticalIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                    </button>
+
+                    {/* Quick reactions on hover */}
+                    {openReactPickerMsgId !== m.id && (
+                      <div className={`absolute ${mine ? 'left-0' : 'right-0'} -top-8 z-40 hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition`}> 
+                        {['👍','❤️','😂','😮','😢'].map(em => (
+                          <button key={em} className="text-base px-1 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => toggleReaction(m, em)}>{em}</button>
+                        ))}
+                        <button className="text-xs px-2 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => setOpenReactPickerMsgId(m.id)}>+</button>
+                      </div>
+                    )}
+
+                    {/* Message bubble */}
                     <div className={`max-w-[75%] rounded-2xl px-4 py-2 shadow ${
                       mine 
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100'
-                    } ${status === 'sending' ? 'opacity-70' : ''}`}>
-                      <div className="whitespace-pre-wrap break-words">{m.body}</div>
-                      <div className={`mt-1 text-[10px] flex items-center justify-end gap-1 ${mine ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
-                        <span>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        {mine && (
-                          <span className="inline-flex items-center ml-1">
-                            {status === 'sending' && (
-                              /* Single grey tick - sending */
-                              <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
+                    } ${status === 'sending' ? 'opacity-70' : ''} ${m.deleted_at ? 'opacity-60 italic' : ''}`}>
+                      {/* Reply snippet inside bubble */}
+                      {!editingMessageId && m.reply_to_id && (
+                        <button
+                          type="button"
+                          onClick={() => scrollToMessage(m.reply_to_id!)}
+                          className={`mb-2 w-full text-left text-xs rounded-lg border ${mine ? 'border-white/30 bg-white/10 text-white/90' : 'border-purple-200 dark:border-purple-500/30 bg-white/60 dark:bg-slate-900/40 text-gray-700 dark:text-gray-200'} px-3 py-2 hover:opacity-90`}
+                          aria-label="Go to replied message"
+                        >
+                          <div className="flex gap-2 items-start">
+                            <span className="font-semibold">{replyFromName}</span>
+                            <span className="line-clamp-2">{replyMsg?.body || 'Original message'}</span>
+                          </div>
+                        </button>
+                      )}
+
+                      {editingMessageId === m.id ? (
+                        <div>
+                          <textarea
+                            className={`w-full resize-none rounded-xl px-3 py-2 text-sm ${mine ? 'text-white placeholder-white/70 bg-white/10' : 'text-gray-900 dark:text-gray-100 bg-white/80 dark:bg-slate-900'}`}
+                            rows={1}
+                            value={editingDraft}
+                            placeholder="Edit message"
+                            onChange={(e) => {
+                              const ta = e.currentTarget;
+                              ta.style.height = 'auto';
+                              ta.style.height = Math.min(ta.scrollHeight, 150) + 'px';
+                              setEditingDraft(e.target.value);
+                            }}
+                            onKeyDown={(e) => {
+                              if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+                                e.preventDefault();
+                                saveEditMessage();
+                              } else if (e.key === 'Escape') {
+                                e.preventDefault();
+                                cancelEditMessage();
+                              }
+                            }}
+                            autoFocus
+                          />
+                          <div className="mt-2 flex items-center gap-2 justify-end text-xs">
+                            <button
+                              type="button"
+                              className={`px-3 py-1 rounded-lg border ${mine ? 'border-white/40 text-white/90 hover:bg-white/10' : 'border-purple-300 text-purple-700 hover:bg-purple-50 dark:text-purple-200 dark:border-purple-500/40 dark:hover:bg-slate-800'}`}
+                              onClick={cancelEditMessage}
+                              disabled={editingSaving}
+                            >Cancel</button>
+                            <button
+                              type="button"
+                              className={`px-3 py-1 rounded-lg ${mine ? 'bg-white text-purple-700' : 'bg-purple-600 text-white'} hover:opacity-90 disabled:opacity-60`}
+                              onClick={saveEditMessage}
+                              disabled={editingSaving || editingDraft.trim().length === 0}
+                            >{editingSaving ? 'Saving…' : 'Save'}</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="whitespace-pre-wrap break-words">
+                            {m.deleted_at ? (
+                              <span className="text-xs">Message deleted</span>
+                            ) : (
+                              m.body
                             )}
-                            {status === 'delivered' && (
-                              /* Double grey ticks - saved in DB */
-                              <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M2 13l4 4L16 7" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M8 13l4 4L22 7" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
+                          </div>
+                          <div className={`mt-1 text-[10px] flex items-center justify-end gap-1 ${mine ? 'text-white/80' : 'text-gray-500 dark:text-gray-400'}`}>
+                            {m.edited_at && !m.deleted_at && <span className="mr-1 opacity-70">edited</span>}
+                            <span>{new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {mine && !m.deleted_at && (
+                              <span className="inline-flex items-center ml-1">
+                                {status === 'sending' && (
+                                  /* Single grey tick - sending */
+                                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                )}
+                                {status === 'delivered' && (
+                                  /* Double grey ticks - saved in DB */
+                                  <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M2 13l4 4L16 7" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M8 13l4 4L22 7" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                )}
+                                {status === 'read' && (
+                                  /* Double purple ticks - read */
+                                  <svg className="w-4 h-4 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <path d="M2 13l4 4L16 7" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M8 13l4 4L22 7" strokeLinecap="round" strokeLinejoin="round" />
+                                  </svg>
+                                )}
+                              </span>
                             )}
-                            {status === 'read' && (
-                              /* Double purple ticks - read */
-                              <svg className="w-4 h-4 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <path d="M2 13l4 4L16 7" strokeLinecap="round" strokeLinejoin="round" />
-                                <path d="M8 13l4 4L22 7" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            )}
-                          </span>
-                        )}
-                      </div>
+                          </div>
+
+                          {/* Reactions chips */}
+                          {m.reactions && m.reactions.length > 0 && (
+                            <div className={`mt-1 flex flex-wrap gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                              {Object.entries(m.reactions.reduce((acc: Record<string, string[]>, r) => {
+                                const list = acc[r.emoji] || (acc[r.emoji] = []);
+                                list.push(nameForUser(r.user_id));
+                                return acc;
+                              }, {})).map(([emoji, names]) => (
+                                <span
+                                  key={emoji}
+                                  title={names.join(', ')}
+                                  className={`px-2 py-0.5 text-xs rounded-full border ${mine ? 'border-white/30 text-white/90' : 'border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-200'} bg-white/20`}
+                                >
+                                  {emoji} {names.length}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
                     </div>
+
+                    {/* Reactions picker */}
+                    {openReactPickerMsgId === m.id && (
+                      <div className={`absolute ${mine ? 'left-0' : 'right-0'} -top-8 z-50 rounded-full border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg px-2 py-1 flex gap-1`}
+                           onMouseLeave={() => setOpenReactPickerMsgId(null)}>
+                        {['👍','❤️','😂','😮','😢','🙏'].map(em => (
+                          <button key={em} className="text-lg" onClick={() => toggleReaction(m, em)}>{em}</button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Actions popover */}
+                    {openMsgMenuId === m.id && (() => {
+                      const options = [
+                        { label: 'Delete', disabled: !isDeletable(m), action: () => setDeleteConfirmMsg(m), danger: true },
+                        { label: 'Edit (15 min)', disabled: !isEditable(m), action: () => startEditMessage(m) },
+                        { label: 'Reply', disabled: false, action: () => handleReplyMessage(m) },
+                        { label: 'React', disabled: false, action: () => setOpenReactPickerMsgId(m.id) },
+                        { label: 'Message info', disabled: false, action: () => { setInfoForMsgId(m.id); setOpenMsgMenuId(null); } },
+                      ];
+                      return (
+                        <div
+                          ref={msgMenuRef}
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'ArrowDown') { e.preventDefault(); setMsgMenuFocusIndex((i) => Math.min(i + 1, options.length - 1)); }
+                            else if (e.key === 'ArrowUp') { e.preventDefault(); setMsgMenuFocusIndex((i) => Math.max(i - 1, 0)); }
+                            else if (e.key === 'Enter') { e.preventDefault(); const opt = options[msgMenuFocusIndex]; if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }
+                            else if (e.key === 'Escape') { e.preventDefault(); setOpenMsgMenuId(null); }
+                          }}
+                          className={`absolute ${mine ? 'left-0' : 'right-0'} top-6 z-50 w-48 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg`}
+                          onMouseLeave={() => setOpenMsgMenuId(null)}
+                        >
+                          {options.map((opt, idx) => (
+                            <button
+                              key={opt.label}
+                              className={`w-full text-left px-3 py-2 text-sm ${opt.danger ? 'text-red-600' : 'text-gray-700 dark:text-gray-200'} ${opt.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50 dark:hover:bg-slate-800'} ${msgMenuFocusIndex === idx ? 'bg-purple-50 dark:bg-slate-800' : ''}`}
+                              disabled={opt.disabled}
+                              onClick={() => { if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }}
+                              onMouseEnter={() => setMsgMenuFocusIndex(idx)}
+                            >{opt.label}</button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 );
               })}
@@ -841,6 +1276,26 @@ export default function InboxPage() {
 
         {/* Input - At bottom (grid row) */}
         <div className="p-4 border-t border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a]">
+          {replyTo && (
+            <div className="mb-2 flex items-start justify-between rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50/60 dark:bg-slate-800/60 px-3 py-2">
+              <div className="text-xs">
+                <div className="font-semibold text-purple-700 dark:text-purple-300">
+                  Replying to {replyTo.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')}
+                </div>
+                <div className="line-clamp-2 opacity-80 text-gray-700 dark:text-gray-200 max-w-[85vw] lg:max-w-[40rem]">{replyTo.body || 'Message'}</div>
+                <button
+                  type="button"
+                  className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 dark:text-purple-300 hover:underline"
+                  onClick={() => replyTo?.id && scrollToMessage(replyTo.id)}
+                >
+                  Go to original
+                </button>
+              </div>
+              <button type="button" className="ml-3 p-1 rounded hover:bg-purple-100 dark:hover:bg-slate-700" aria-label="Cancel reply" onClick={clearReply}>
+                <XMarkIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+              </button>
+            </div>
+          )}
           
           <form onSubmit={handleSend} className="flex items-center gap-2">
             <button
@@ -923,19 +1378,50 @@ export default function InboxPage() {
           </div>
         </main>
       </PurpleThemeWrapper>
+      {toasts.length > 0 && (
+        <div className="fixed top-4 right-4 z-[80] space-y-2 pointer-events-none">
+          {toasts.map((t) => (
+            <div
+              key={t.id}
+              role={t.type === 'error' ? 'alert' : 'status'}
+              className={`pointer-events-auto flex items-start gap-2 rounded-xl border p-3 shadow-lg ${t.type === 'error' ? 'border-red-300/60 bg-red-50 dark:bg-red-900/20' : 'border-emerald-300/60 bg-emerald-50 dark:bg-emerald-900/20'}`}
+            >
+              <div className="mt-0.5">
+                {t.type === 'error' ? (
+                  <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400" />
+                ) : (
+                  <CheckCircleIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                )}
+              </div>
+              <div className="text-sm text-gray-800 dark:text-gray-100">{t.message}</div>
+              <button
+                type="button"
+                className="ml-2 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
+                aria-label="Dismiss notification"
+                onClick={() => removeToast(t.id)}
+              >
+                <XMarkIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
       
       {/* Profile Modal */}
       {showProfileModal && profileModalUrl && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60" onClick={() => { setShowProfileModal(false); setProfileModalUrl(null); }}>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60" onClick={() => { setShowProfileModal(false); setProfileModalUrl(null); setProfileModalLoading(false); setProfileModalTimedOut(false); if (profileModalTimeoutId.current) { window.clearTimeout(profileModalTimeoutId.current); profileModalTimeoutId.current = null; } }}>
           <div className="relative w-full max-w-6xl h-[85vh] rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)]" onClick={(e) => e.stopPropagation()}>
             <button
               type="button"
               className="absolute top-3 right-3 z-[71] p-2 rounded-full bg-white/90 dark:bg-[#13131a]/90 border border-purple-200 dark:border-purple-500/30 shadow hover:scale-105 transition"
-              onClick={() => { setShowProfileModal(false); setProfileModalUrl(null); }}
+              onClick={() => { setShowProfileModal(false); setProfileModalUrl(null); setProfileModalLoading(false); setProfileModalTimedOut(false); if (profileModalTimeoutId.current) { window.clearTimeout(profileModalTimeoutId.current); profileModalTimeoutId.current = null; } }}
               aria-label="Close profile"
             >
               <XMarkIcon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
             </button>
+            {profileModalLoading && (
+              <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-r from-purple-600/20 via-pink-500/20 to-purple-600/20 animate-pulse border-b border-purple-500/30 z-[71]" />
+            )}
             {profileModalLoading && (
               <div className="absolute inset-0 z-[72] grid place-items-center bg-black/10">
                 <svg className="animate-spin h-10 w-10 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -944,7 +1430,34 @@ export default function InboxPage() {
                 </svg>
               </div>
             )}
-            <iframe src={profileModalUrl} title="Public profile" className="w-full h-full bg-white dark:bg-[#0a0a0f]" onLoad={() => setProfileModalLoading(false)} />
+            {profileModalTimedOut && (
+              <div className="absolute inset-0 z-[73] flex flex-col items-center justify-center gap-3 bg-black/20 text-center px-6">
+                <div className="text-white font-semibold">This is taking longer than usual…</div>
+                <div className="text-white/80 text-sm">Please check your connection or try again.</div>
+                <div className="mt-2 flex gap-3">
+                  <button
+                    className="px-4 py-2 rounded-lg bg-white text-purple-600 font-semibold shadow hover:shadow-lg"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setProfileModalLoading(true);
+                      setProfileModalTimedOut(false);
+                      if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
+                      profileModalTimeoutId.current = window.setTimeout(() => setProfileModalTimedOut(true), 8000);
+                      setProfileModalReloadKey((k) => k + 1);
+                    }}
+                  >
+                    Retry
+                  </button>
+                  <button
+                    className="px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold shadow hover:bg-purple-700"
+                    onClick={() => { setShowProfileModal(false); setProfileModalUrl(null); setProfileModalLoading(false); setProfileModalTimedOut(false); if (profileModalTimeoutId.current) { window.clearTimeout(profileModalTimeoutId.current); profileModalTimeoutId.current = null; } }}
+                  >
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
+            <iframe key={`${profileModalUrl}-${profileModalReloadKey}`} src={profileModalUrl} title="Public profile" className="w-full h-full bg-white dark:bg-[#0a0a0f]" onLoad={() => { setProfileModalLoading(false); setProfileModalTimedOut(false); if (profileModalTimeoutId.current) { window.clearTimeout(profileModalTimeoutId.current); profileModalTimeoutId.current = null; } }} />
           </div>
         </div>
       )}
