@@ -2,9 +2,10 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { API_ENDPOINTS } from '~/config/api';
 import { apiClient } from '~/utils/apiClient';
+import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
-  Eye, HandHeart, Building2, Star, Ban
+  Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User
 } from 'lucide-react';
 
 interface HireRequest {
@@ -122,7 +123,14 @@ export default function HousehelpHiringHistory() {
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
   const [declineReason, setDeclineReason] = useState('');
+  const [showInterestModal, setShowInterestModal] = useState(false);
+  const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
+  
+  // Confirmation dialog states
+  const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
+  const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
 
@@ -202,7 +210,7 @@ export default function HousehelpHiringHistory() {
       const response = await apiClient.auth(`${API_ENDPOINTS.interests.househelp}?${params.toString()}`, { method: 'GET' });
       if (!response.ok) throw new Error('Failed to fetch interests');
       const data = await response.json();
-      setInterests(data.data || []);
+      setInterests(data.items || data.data || []);
       setInterestsTotal(data.total || 0);
     } catch (err: any) {
       setError(err.message || 'Failed to load interests');
@@ -211,21 +219,27 @@ export default function HousehelpHiringHistory() {
     }
   };
 
-  const handleAcceptRequest = async (requestId: string) => {
-    if (!confirm('Are you sure you want to accept this hire request?')) return;
-    setActionLoading(requestId);
+  const openAcceptConfirm = (requestId: string) => {
+    setPendingActionId(requestId);
+    setShowAcceptConfirm(true);
+  };
+
+  const handleAcceptRequest = async () => {
+    if (!pendingActionId) return;
+    setActionLoading(pendingActionId);
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.requests.accept(requestId), { method: 'POST' });
+      const response = await apiClient.auth(API_ENDPOINTS.hiring.requests.accept(pendingActionId), { method: 'POST' });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to accept hire request');
       }
       fetchHireRequests();
-      alert('Hire request accepted successfully!');
     } catch (err: any) {
-      alert(err.message || 'Failed to accept hire request');
+      setError(err.message || 'Failed to accept hire request');
     } finally {
       setActionLoading(null);
+      setShowAcceptConfirm(false);
+      setPendingActionId(null);
     }
   };
 
@@ -256,21 +270,29 @@ export default function HousehelpHiringHistory() {
     }
   };
 
-  const handleWithdrawInterest = async (interestId: string) => {
-    if (!confirm('Are you sure you want to withdraw your interest?')) return;
-    setActionLoading(interestId);
+  const openWithdrawConfirm = (interestId: string) => {
+    setPendingActionId(interestId);
+    setShowWithdrawConfirm(true);
+  };
+
+  const handleWithdrawInterest = async () => {
+    if (!pendingActionId) return;
+    setActionLoading(pendingActionId);
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.interests.byId(interestId), { method: 'DELETE' });
+      const response = await apiClient.auth(API_ENDPOINTS.interests.byId(pendingActionId), { method: 'DELETE' });
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Failed to withdraw interest');
       }
       fetchInterests();
-      alert('Interest withdrawn successfully');
+      setShowInterestModal(false);
+      setSelectedInterest(null);
     } catch (err: any) {
-      alert(err.message || 'Failed to withdraw interest');
+      setError(err.message || 'Failed to withdraw interest');
     } finally {
       setActionLoading(null);
+      setShowWithdrawConfirm(false);
+      setPendingActionId(null);
     }
   };
 
@@ -313,7 +335,7 @@ export default function HousehelpHiringHistory() {
   const loading = activeTab === 'requests' ? requestsLoading : activeTab === 'work-history' ? contractsLoading : interestsLoading;
 
   return (
-    <div className="min-h-screen">
+    <div>
       {/* Main Card Container */}
       <div className="bg-white dark:bg-purple-950/40 rounded-2xl shadow-lg border border-purple-100 dark:border-purple-800/40 overflow-hidden">
         {/* Header */}
@@ -411,12 +433,12 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
-                        <button onClick={() => navigate(`/household/${request.household?.user_id}?backTo=${encodeURIComponent(backToPath)}`)} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => navigate(`/household/public-profile?user_id=${request.household?.user_id}`, { state: { profileId: request.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Details
                         </button>
                         {request.status === 'pending' && (
                           <>
-                            <button onClick={() => handleAcceptRequest(request.id)} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50">
+                            <button onClick={() => openAcceptConfirm(request.id)} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50">
                               <CheckCircle className="w-4 h-4" /> Accept
                             </button>
                             <button onClick={() => { setSelectedRequest(request.id); setShowDeclineModal(true); }} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
@@ -480,7 +502,7 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
-                        <button onClick={() => navigate(`/household/${contract.household?.user_id}?backTo=${encodeURIComponent(backToPath)}`)} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => navigate(`/household/public-profile?user_id=${contract.household?.user_id}`, { state: { profileId: contract.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Details
                         </button>
                       </div>
@@ -547,11 +569,11 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
-                        <button onClick={() => navigate(`/household/${interest.household?.user_id}?backTo=${encodeURIComponent(backToPath)}`)} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => { setSelectedInterest(interest); setShowInterestModal(true); }} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Details
                         </button>
                         {interest.status === 'pending' && (
-                          <button onClick={() => handleWithdrawInterest(interest.id)} disabled={actionLoading === interest.id} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
+                          <button onClick={() => openWithdrawConfirm(interest.id)} disabled={actionLoading === interest.id} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
                             <XCircle className="w-4 h-4" /> Withdraw
                           </button>
                         )}
@@ -602,6 +624,149 @@ export default function HousehelpHiringHistory() {
           </div>
         </div>
       )}
+
+      {/* Interest Details Modal */}
+      {showInterestModal && selectedInterest && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => { setShowInterestModal(false); setSelectedInterest(null); }} />
+            <div className="relative bg-white dark:bg-[#1a1a2e] rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
+              {/* Header */}
+              <div className="relative bg-gradient-to-r from-gray-700 to-gray-600 dark:from-gray-800 dark:to-gray-700 px-6 py-8">
+                <button 
+                  onClick={() => { setShowInterestModal(false); setSelectedInterest(null); }}
+                  className="absolute top-4 right-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+                <div className="flex items-center gap-4">
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-white/20 flex-shrink-0 ring-4 ring-white/30">
+                    {selectedInterest.household?.avatar_url ? (
+                      <img src={selectedInterest.household.avatar_url} alt={getHouseholdName(selectedInterest.household)} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+                        {getHouseholdInitials(selectedInterest.household)}
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-white">{getHouseholdName(selectedInterest.household)}</h3>
+                    {selectedInterest.household?.town && (
+                      <p className="text-white/80 flex items-center gap-1 mt-1">
+                        <MapPin className="w-4 h-4" /> {selectedInterest.household.town}
+                      </p>
+                    )}
+                    <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium mt-2 ${getStatusColor(selectedInterest.status)}`}>
+                      {getStatusIcon(selectedInterest.status)}
+                      {selectedInterest.status.charAt(0).toUpperCase() + selectedInterest.status.slice(1)}
+                      {selectedInterest.viewed_at && selectedInterest.status === 'pending' && (
+                        <span className="ml-1 flex items-center gap-1"><Eye className="w-3 h-3" /> Viewed</span>
+                      )}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Content */}
+              <div className="p-6 space-y-6">
+                {/* Interest Details */}
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">Your Interest Details</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    {selectedInterest.job_type && (
+                      <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
+                        <div className="flex items-center gap-2 text-gray-500 dark:text-purple-300 mb-1">
+                          <Briefcase className="w-4 h-4" />
+                          <span className="text-xs font-medium">Job Type</span>
+                        </div>
+                        <p className="font-semibold text-gray-900 dark:text-white capitalize">{selectedInterest.job_type.replace('-', ' ')}</p>
+                      </div>
+                    )}
+                    <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
+                      <div className="flex items-center gap-2 text-gray-500 dark:text-purple-300 mb-1">
+                        <DollarSign className="w-4 h-4" />
+                        <span className="text-xs font-medium">Salary Expected</span>
+                      </div>
+                      <p className="font-semibold text-gray-900 dark:text-white">{formatSalary(selectedInterest.salary_expectation, selectedInterest.salary_frequency)}</p>
+                    </div>
+                    {selectedInterest.available_from && (
+                      <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
+                        <div className="flex items-center gap-2 text-gray-500 dark:text-purple-300 mb-1">
+                          <Calendar className="w-4 h-4" />
+                          <span className="text-xs font-medium">Available From</span>
+                        </div>
+                        <p className="font-semibold text-gray-900 dark:text-white">{formatDate(selectedInterest.available_from)}</p>
+                      </div>
+                    )}
+                    <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
+                      <div className="flex items-center gap-2 text-gray-500 dark:text-purple-300 mb-1">
+                        <Clock className="w-4 h-4" />
+                        <span className="text-xs font-medium">Sent On</span>
+                      </div>
+                      <p className="font-semibold text-gray-900 dark:text-white">{formatDate(selectedInterest.created_at)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Message */}
+                {selectedInterest.comments && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">Your Message</h4>
+                    <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
+                      <p className="text-gray-700 dark:text-gray-300">{selectedInterest.comments}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    onClick={() => navigate(`/household/public-profile?user_id=${selectedInterest.household?.user_id}`, { state: { profileId: selectedInterest.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all"
+                  >
+                    <User className="w-4 h-4" /> View Household Profile
+                  </button>
+                  {selectedInterest.status === 'pending' && (
+                    <button 
+                      onClick={() => openWithdrawConfirm(selectedInterest.id)}
+                      disabled={actionLoading === selectedInterest.id}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                    >
+                      <XCircle className="w-4 h-4" /> Withdraw
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Accept Hire Request Confirmation */}
+      <ConfirmDialog
+        isOpen={showAcceptConfirm}
+        onClose={() => { setShowAcceptConfirm(false); setPendingActionId(null); }}
+        onConfirm={handleAcceptRequest}
+        title="Accept Hire Request"
+        message="Are you sure you want to accept this hire request? This will create a work contract with the household."
+        confirmText="Accept"
+        cancelText="Cancel"
+        variant="info"
+        isLoading={actionLoading !== null}
+      />
+
+      {/* Withdraw Interest Confirmation */}
+      <ConfirmDialog
+        isOpen={showWithdrawConfirm}
+        onClose={() => { setShowWithdrawConfirm(false); setPendingActionId(null); }}
+        onConfirm={handleWithdrawInterest}
+        title="Withdraw Interest"
+        message="Are you sure you want to withdraw your interest? The household will no longer see your application."
+        confirmText="Withdraw"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={actionLoading !== null}
+      />
     </div>
   );
 }
