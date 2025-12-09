@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { Loading } from '~/components/Loading';
-import { useAuth } from '~/contexts/AuthContext';
+import { useAuth } from '~/contexts/useAuth';
 import { InviteCodeGenerator } from '~/components/household/InviteCodeGenerator';
 import {
   listMembers,

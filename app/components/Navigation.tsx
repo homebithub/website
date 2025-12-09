@@ -2,7 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router";
 import React, { useEffect, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/20/solid";
-import { useAuth } from "~/contexts/AuthContext";
+import { useAuth } from "~/contexts/useAuth";
 import { Waitlist } from "~/components/features/Waitlist";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
@@ -48,7 +48,7 @@ export function Navigation() {
 
     const authLinks = React.useMemo(() => {
         const shortlistHref = profileType === 'household' ? '/household/shortlist' : '/shortlist';
-        const hiringHistoryHref = profileType === 'household' ? '/household/hiring' : '/househelp/hire-requests';
+        const hiringHistoryHref = profileType === 'household' ? '/household/hiring' : '/househelp/hiring';
         return [
             { name: 'Shortlist', href: shortlistHref, count: shortlistCount },
             { name: 'Inbox', href: '/inbox', count: inboxCount },

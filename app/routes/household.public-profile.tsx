@@ -1,12 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router";
-import { API_BASE_URL } from '~/config/api';
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useLocation } from "react-router";
+import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
+import ShowInterestModal from '~/components/modals/ShowInterestModal';
+import { MessageCircle, Heart, HandHeart } from "lucide-react";
 
 interface HouseholdData {
+  id?: string;
+  user_id?: string;
   house_size?: string;
   household_notes?: string;
   needs_live_in?: boolean;
@@ -27,12 +31,48 @@ interface HouseholdData {
 
 export default function HouseholdPublicProfile() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const navigationState = (location.state ?? {}) as {
+    profileId?: string;
+    backTo?: string;
+    backLabel?: string;
+    fromInbox?: boolean;
+    fromShortlist?: boolean;
+    fromHireRequests?: boolean;
+  };
+  const currentUserId = useMemo(() => {
+    try {
+      const raw = localStorage.getItem("user_object");
+      return raw ? JSON.parse(raw)?.id ?? null : null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const [viewerProfileType, setViewerProfileType] = useState<string | null>(null);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user_object");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setViewerProfileType(parsed?.profile_type || null);
+      }
+    } catch {
+      setViewerProfileType(null);
+    }
+  }, []);
+  const resolvedUserId =
+    params.get("user_id") || params.get("profileId") || navigationState.profileId || currentUserId;
   const [profile, setProfile] = useState<HouseholdData | null>(null);
   const [kids, setKids] = useState<any[]>([]);
   const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [isShortlisted, setIsShortlisted] = useState(false);
+  const [isInterestModalOpen, setIsInterestModalOpen] = useState(false);
+  const [hasExpressedInterest, setHasExpressedInterest] = useState(false);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -41,31 +81,17 @@ export default function HouseholdPublicProfile() {
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Not authenticated");
-        
-        // Fetch profile
-        const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+        if (!resolvedUserId) throw new Error("Missing household user id");
+
+        const profileRes = await fetch(`${API_BASE_URL}/api/v1/profile/household/${resolvedUserId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!profileRes.ok) throw new Error("Failed to fetch profile");
         const profileData = await profileRes.json();
         setProfile(profileData);
-        
-        // Fetch kids
+
         try {
-          const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (kidsRes.ok) {
-            const kidsData = await kidsRes.json();
-            setKids(kidsData || []);
-          }
-        } catch (err) {
-          console.error("Failed to fetch kids:", err);
-        }
-        
-        // Fetch pets
-        try {
-          const petsRes = await fetch(`${API_BASE_URL}/api/v1/household_pets`, {
+          const petsRes = await fetch(`${API_BASE_URL}/api/v1/pets/user/${resolvedUserId}`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (petsRes.ok) {
@@ -75,6 +101,20 @@ export default function HouseholdPublicProfile() {
         } catch (err) {
           console.error("Failed to fetch pets:", err);
         }
+
+        try {
+          if (currentUserId && resolvedUserId === currentUserId) {
+            const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (kidsRes.ok) {
+              const kidsData = await kidsRes.json();
+              setKids(kidsData || []);
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch kids:", err);
+        }
       } catch (err: any) {
         console.error("Error loading household profile:", err);
         setError(err.message || "Failed to load profile");
@@ -82,9 +122,182 @@ export default function HouseholdPublicProfile() {
         setLoading(false);
       }
     };
-    
+
     fetchAllData();
-  }, []);
+  }, [resolvedUserId, currentUserId]);
+
+  const isViewingOwn = !!currentUserId && resolvedUserId === currentUserId;
+  const viewerType = viewerProfileType?.toLowerCase();
+  const canInteract = viewerType === "househelp" && !isViewingOwn;
+  const canShortlist = canInteract && !!profile?.id;
+  const canChat = canInteract && !!resolvedUserId;
+
+  useEffect(() => {
+    if (!canShortlist || !profile?.id) {
+      setIsShortlisted(false);
+      return;
+    }
+
+    let cancelled = false;
+    const checkShortlist = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("Not authenticated");
+        const res = await fetch(`${API_BASE_URL}/api/v1/shortlists/exists/${profile.id}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setIsShortlisted(Boolean(data?.exists));
+        }
+      } catch (err) {
+        console.error("Failed to fetch shortlist status", err);
+      }
+    };
+    checkShortlist();
+    return () => {
+      cancelled = true;
+    };
+  }, [canShortlist, profile?.id]);
+
+  // Check if househelp has already expressed interest
+  useEffect(() => {
+    if (!canInteract || !profile?.id) {
+      setHasExpressedInterest(false);
+      return;
+    }
+
+    let cancelled = false;
+    const checkInterest = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+        const res = await fetch(API_ENDPOINTS.interests.exists(profile.id!), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!cancelled && res.ok) {
+          const data = await res.json();
+          setHasExpressedInterest(Boolean(data?.exists));
+        }
+      } catch (err) {
+        console.error("Failed to check interest status", err);
+      }
+    };
+    checkInterest();
+    return () => {
+      cancelled = true;
+    };
+  }, [canInteract, profile?.id]);
+
+  const handleBackNavigation = () => {
+    if (navigationState.backTo) {
+      navigate(navigationState.backTo);
+      return;
+    }
+    if (navigationState.fromInbox) {
+      navigate('/inbox');
+      return;
+    }
+    if (navigationState.fromShortlist) {
+      navigate('/shortlist');
+      return;
+    }
+    if (navigationState.fromHireRequests) {
+      navigate('/househelp/hire-requests');
+      return;
+    }
+    if (isViewingOwn) {
+      navigate('/household/profile');
+      return;
+    }
+    navigate(-1);
+  };
+
+  const backLabel =
+    navigationState.backLabel ||
+    (navigationState.fromInbox
+      ? 'Back to Inbox'
+      : navigationState.fromShortlist
+      ? 'Back to Shortlist'
+      : navigationState.fromHireRequests
+      ? 'Back to Hiring'
+      : isViewingOwn
+      ? 'Back to My Profile'
+      : 'Back');
+
+  const handleToggleShortlist = async () => {
+    if (!profile?.id) return;
+    setActionLoading('shortlist');
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
+      if (isShortlisted) {
+        const res = await fetch(`${API_BASE_URL}/api/v1/shortlists/${profile.id}`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) throw new Error('Failed to remove from shortlist');
+        setIsShortlisted(false);
+      } else {
+        const res = await fetch(`${API_BASE_URL}/api/v1/shortlists`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ profile_id: profile.id, profile_type: 'household' }),
+        });
+        if (!res.ok) throw new Error('Failed to add to shortlist');
+        setIsShortlisted(true);
+      }
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
+    } catch (err) {
+      console.error('Failed to update shortlist', err);
+      alert(err instanceof Error ? err.message : 'Failed to update shortlist');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleStartChat = async () => {
+    if (!resolvedUserId) return;
+    setActionLoading('chat');
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated");
+      const res = await fetch(`${API_BASE_URL}/api/v1/inbox/start/household/${resolvedUserId}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error('Failed to start conversation');
+      let convId: string | undefined;
+      try {
+        const data = await res.json();
+        convId = data?.id || data?.ID || data?.conversation_id;
+      } catch {
+        convId = undefined;
+      }
+      if (!convId) {
+        const convRes = await fetch(`${API_BASE_URL}/api/v1/inbox/conversations?offset=0&limit=50`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (convRes.ok) {
+          const conversations: Array<{ id?: string; ID?: string; household_id?: string }> = await convRes.json();
+          const match = conversations.find((c) => c.household_id === resolvedUserId);
+          convId = match?.id || match?.ID;
+        }
+      }
+      if (convId) navigate(`/inbox?conversation=${convId}`); else navigate('/inbox');
+    } catch (err) {
+      console.error('Failed to start chat', err);
+      navigate('/inbox');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const shouldShowBackButton = true;
+  const showActions = canShortlist || canChat;
 
   if (loading) {
     return (
@@ -114,23 +327,75 @@ export default function HouseholdPublicProfile() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
-      <main className="flex-1 py-8">
-    <div className="max-w-5xl mx-auto px-4">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl dark:border-b dark:border-purple-500/20">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">🏠 Household Profile</h1>
-            <p className="text-purple-100 dark:text-purple-300 text-sm sm:text-base">Public view - This is how others see this profile</p>
-          </div>
-          <button
-            onClick={() => navigate('/household/profile')}
-            className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
-          >
-            ← Back to My Profile
-          </button>
-        </div>
-      </div>
+        <main className="flex-1 py-8">
+          <div className="max-w-6xl mx-auto px-4">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl shadow-lg border border-white/10 dark:border-purple-500/20">
+              <div className="flex flex-col gap-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-4">
+                    {shouldShowBackButton && (
+                      <button
+                        onClick={handleBackNavigation}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold transition-colors text-sm sm:text-base"
+                      >
+                        ← {backLabel}
+                      </button>
+                    )}
+                    <div>
+                      <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                        🏠 Household Profile
+                      </h1>
+                    </div>
+                  </div>
+
+                  {showActions && (
+                    <div className="flex items-center gap-3 sm:gap-4 self-start lg:self-auto">
+                      {canShortlist && (
+                        <button
+                          onClick={handleToggleShortlist}
+                          disabled={actionLoading === 'shortlist'}
+                          aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+                          className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all ${
+                            isShortlisted
+                              ? 'bg-pink-500 border-pink-200 text-white hover:bg-pink-600'
+                              : 'bg-white/20 border-white/40 text-white hover:bg-white/30'
+                          } ${actionLoading === 'shortlist' ? 'opacity-70 cursor-not-allowed' : ''}`}
+                        >
+                          <Heart className="w-5 h-5" />
+                        </button>
+                      )}
+                      {canChat && (
+                        <button
+                          onClick={handleStartChat}
+                          disabled={actionLoading === 'chat'}
+                          aria-label="Chat"
+                          className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all bg-white text-purple-600 ${
+                            actionLoading === 'chat' ? 'opacity-70 cursor-not-allowed' : 'hover:scale-105'
+                          }`}
+                        >
+                          <MessageCircle className="w-5 h-5" />
+                        </button>
+                      )}
+                      {canInteract && (
+                        <button
+                          onClick={() => setIsInterestModalOpen(true)}
+                          disabled={hasExpressedInterest}
+                          className={`px-4 py-2 rounded-full font-semibold shadow-lg transition-all flex items-center gap-2 ${
+                            hasExpressedInterest
+                              ? 'bg-gray-400 text-white cursor-not-allowed'
+                              : 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
+                          }`}
+                        >
+                          <HandHeart className="w-5 h-5" />
+                          {hasExpressedInterest ? 'Interest Sent' : 'Show Interest'}
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
 
       {/* Profile Photos */}
       {profile.photos && profile.photos.length > 0 && (
@@ -304,6 +569,19 @@ export default function HouseholdPublicProfile() {
           imageUrl={selectedImage}
           altText="Home photo"
           onClose={() => setSelectedImage(null)}
+        />
+      )}
+
+      {/* Show Interest Modal */}
+      {canInteract && profile && (
+        <ShowInterestModal
+          isOpen={isInterestModalOpen}
+          onClose={() => {
+            setIsInterestModalOpen(false);
+            setHasExpressedInterest(true);
+          }}
+          householdId={profile.id || ''}
+          householdName="this household"
         />
       )}
     </div>

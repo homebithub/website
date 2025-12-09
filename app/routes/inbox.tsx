@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL } from "~/config/api";
+import { API_BASE_URL, API_ENDPOINTS } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon } from '@heroicons/react/24/outline';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
@@ -29,11 +29,19 @@ type Message = {
   created_at: string;
 };
 
+type HireRequestSummary = {
+  id: string;
+  household_id: string;
+  househelp_id: string;
+  status: string;
+};
+
 export default function InboxPage() {
   const API_BASE = React.useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const selectedConversationId = searchParams.get('conversation');
+  const [activeConversationId, setActiveConversationId] = useState<string | null>(selectedConversationId);
   
   // Conversations list state
   const [items, setItems] = useState<Conversation[]>([]);
@@ -61,6 +69,7 @@ export default function InboxPage() {
   const [showHireWizard, setShowHireWizard] = useState(false);
   const [hireRequestStatus, setHireRequestStatus] = useState<string | undefined>();
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
+  const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
   
   const currentUserId = useMemo(() => {
     try {
@@ -84,10 +93,48 @@ export default function InboxPage() {
     }
   }, []);
   
-  const selectedConversation = items.find(c => c.id === selectedConversationId);
+  useEffect(() => {
+    setActiveConversationId(selectedConversationId);
+  }, [selectedConversationId]);
+
+  const selectedConversation = items.find(c => c.id === activeConversationId);
   
   // Track image loading state for avatars
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
+
+  const fetchHireContext = useCallback(async (conversation?: Conversation) => {
+    if (!conversation) {
+      setHireRequestStatus(undefined);
+      setHireRequestId(undefined);
+      return;
+    }
+    try {
+      const params = new URLSearchParams({ limit: "50" });
+      const res = await apiClient.auth(`${API_BASE}/api/v1/hire-requests?${params.toString()}`);
+      if (!res.ok) throw new Error('Failed to load hire requests');
+      const payload = await apiClient.json<{ data?: HireRequestSummary[] }>(res);
+      const match = payload?.data?.find(
+        (req) =>
+          req.household_id === conversation.household_id &&
+          req.househelp_id === conversation.househelp_id
+      );
+      if (match) {
+        setHireRequestStatus(match.status);
+        setHireRequestId(match.id);
+      } else {
+        setHireRequestStatus(undefined);
+        setHireRequestId(undefined);
+      }
+    } catch (err) {
+      console.error('Failed to fetch hire request context', err);
+      setHireRequestStatus(undefined);
+      setHireRequestId(undefined);
+    }
+  }, [API_BASE]);
+
+  useEffect(() => {
+    fetchHireContext(selectedConversation);
+  }, [selectedConversation, fetchHireContext]);
 
   // Load conversations list
   useEffect(() => {
@@ -144,7 +191,7 @@ export default function InboxPage() {
         setMessagesLoading(true);
         setMessagesError(null);
         const res = await apiClient.auth(
-          `${API_BASE}/api/v1/inbox/conversations/${selectedConversationId}/messages?offset=${messagesOffset}&limit=${messagesLimit}`
+          `${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${messagesOffset}&limit=${messagesLimit}`
         );
         if (!res.ok) throw new Error("Failed to load messages");
         const data = await apiClient.json<Message[]>(res);
@@ -161,20 +208,20 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE, selectedConversationId, messagesOffset]);
+  }, [API_BASE, activeConversationId, messagesOffset]);
 
   // Mark conversation as read
   useEffect(() => {
-    if (!selectedConversationId) return;
+    if (!activeConversationId) return;
     async function markRead() {
       try {
-        await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${selectedConversationId}/read`, {
+        await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, {
           method: "POST",
         });
       } catch {}
     }
     markRead();
-  }, [API_BASE, selectedConversationId, messages.length]);
+  }, [API_BASE, activeConversationId, messages.length]);
 
   // Auto scroll to bottom on new messages
   useEffect(() => {
@@ -185,12 +232,12 @@ export default function InboxPage() {
 
   // Polling: refresh messages
   useEffect(() => {
-    if (!selectedConversationId) return;
+    if (!activeConversationId) return;
     const id = setInterval(async () => {
       try {
         const count = messages.length > 0 ? messages.length + 10 : messagesLimit;
         const res = await apiClient.auth(
-          `${API_BASE}/api/v1/inbox/conversations/${selectedConversationId}/messages?offset=0&limit=${count}`
+          `${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=0&limit=${count}`
         );
         if (!res.ok) return;
         const data = await apiClient.json<Message[]>(res);
@@ -199,11 +246,11 @@ export default function InboxPage() {
           setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
         }
         // Mark as read
-        try { await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${selectedConversationId}/read`, { method: "POST" }); } catch {}
+        try { await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, { method: "POST" }); } catch {}
       } catch {}
     }, 12000);
     return () => clearInterval(id);
-  }, [API_BASE, selectedConversationId, messages.length]);
+  }, [API_BASE, activeConversationId, messages.length]);
 
   // Close emoji picker when clicking outside
   useEffect(() => {
@@ -244,6 +291,7 @@ export default function InboxPage() {
   }, [input, selectedConversationId, API_BASE]);
 
   const handleConversationClick = useCallback((conversationId: string) => {
+    setActiveConversationId(conversationId);
     setSearchParams({ conversation: conversationId });
     setMessagesOffset(0);
     setInput(""); // Clear input when switching conversations
@@ -251,6 +299,7 @@ export default function InboxPage() {
   }, [setSearchParams]);
 
   const handleBackToList = useCallback(() => {
+    setActiveConversationId(null);
     setSearchParams({});
     setMessages([]);
     setMessagesOffset(0);
@@ -280,6 +329,67 @@ export default function InboxPage() {
       });
     }
   }, [selectedConversation, currentUserProfileType, navigate]);
+
+  const handleAcceptHireRequest = useCallback(async () => {
+    if (!hireRequestId || !activeConversationId) return;
+    setHireActionLoading('accept');
+    try {
+      const res = await apiClient.auth(API_ENDPOINTS.hiring.requests.accept(hireRequestId), {
+        method: 'POST',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to accept hire request');
+      }
+      setHireRequestStatus('accepted');
+      await fetchHireContext(selectedConversation || undefined);
+      if (activeConversationId) {
+        const body = 'I have accepted your hire request. Looking forward to working with you!';
+        await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ body }),
+        }).catch(() => undefined);
+      }
+    } catch (error: any) {
+      alert(error?.message || 'Failed to accept hire request');
+    } finally {
+      setHireActionLoading(null);
+    }
+  }, [API_ENDPOINTS.hiring.requests, API_BASE, fetchHireContext, hireRequestId, selectedConversation, selectedConversationId]);
+
+  const handleDeclineHireRequest = useCallback(async () => {
+    if (!hireRequestId) return;
+    const reasonInput = window.prompt('Why are you declining this hire request?', 'Currently unavailable');
+    if (reasonInput === null) return;
+    const reason = reasonInput.trim() || 'Unavailable';
+    setHireActionLoading('decline');
+    try {
+      const res = await apiClient.auth(API_ENDPOINTS.hiring.requests.decline(hireRequestId), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || 'Failed to decline hire request');
+      }
+      setHireRequestStatus('declined');
+      await fetchHireContext(selectedConversation || undefined);
+      if (activeConversationId) {
+        const body = `I've declined the hire request: ${reason}.`;
+        await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ body }),
+        }).catch(() => undefined);
+      }
+    } catch (error: any) {
+      alert(error?.message || 'Failed to decline hire request');
+    } finally {
+      setHireActionLoading(null);
+    }
+  }, [API_ENDPOINTS.hiring.requests, API_BASE, fetchHireContext, hireRequestId, selectedConversation, selectedConversationId]);
 
   // Conversation list component
   const ConversationsList = () => (
@@ -317,7 +427,7 @@ export default function InboxPage() {
               key={c.id}
               onClick={() => handleConversationClick(c.id)}
               className={`w-full p-4 hover:bg-purple-50 dark:hover:bg-slate-800/60 transition-colors text-left ${
-                selectedConversationId === c.id ? 'bg-purple-100 dark:bg-slate-800' : ''
+                activeConversationId === c.id ? 'bg-purple-100 dark:bg-slate-800' : ''
               }`}
             >
               <div className="flex items-center gap-3">
@@ -460,6 +570,9 @@ export default function InboxPage() {
                 }
               }}
               onSendHireRequest={() => setShowHireWizard(true)}
+              onAccept={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
+              onDecline={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
+              actionLoading={hireActionLoading}
               userRole={currentUserProfileType?.toLowerCase() as 'household' | 'househelp'}
             />
           )}
@@ -563,7 +676,7 @@ export default function InboxPage() {
 
           {/* Mobile: Single view */}
           <div className="lg:hidden flex-1">
-            {selectedConversationId ? (
+            {activeConversationId ? (
               <div className="h-full border-l border-r border-b border-purple-200 dark:border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_20px_rgba(168,85,247,0.3)] rounded-b-2xl overflow-hidden">
                 <MessagesView />
               </div>
@@ -590,7 +703,7 @@ export default function InboxPage() {
               setHireRequestId(newHireRequestId);
               // Optionally send a message about the hire request
               const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
-              apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${selectedConversationId}/messages`, {
+              apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ body }),

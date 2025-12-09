@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 interface FloatingBubblesProps {
   variant?: 'light' | 'dark' | 'mixed';
@@ -18,15 +18,18 @@ export const FloatingBubbles: React.FC<FloatingBubblesProps> = ({
     return index % 2 === 0 ? '#c084fc' : '#a855f7'; // purple-400 and purple-500
   };
 
-  const bubbles = Array.from({ length: bubbleCount }, (_, i) => ({
-    id: i,
-    size: Math.random() * 200 + 100, // 100-300px
-    top: Math.random() * 100,
-    left: Math.random() * 100,
-    delay: Math.random() * 2000,
-    duration: Math.random() * 3000 + 4000, // 4-7s
-    shape: i % 3 === 0 ? 'circle' : i % 3 === 1 ? 'ellipse' : 'rounded-rect',
-  }));
+  const bubbles = useMemo(() => {
+    return Array.from({ length: bubbleCount }, (_, i) => ({
+      id: i,
+      size: Math.random() * 200 + 100, // 100-300px
+      top: Math.random() * 100,
+      left: Math.random() * 100,
+      delay: Math.random() * 2000,
+      duration: Math.random() * 3000 + 4000, // 4-7s
+      shape: i % 3 === 0 ? 'circle' : i % 3 === 1 ? 'ellipse' : 'rounded-rect',
+      color: getBubbleColor(i),
+    }));
+  }, [bubbleCount, variant]);
 
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">

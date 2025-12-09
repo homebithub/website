@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
+import { HeartIcon } from "@heroicons/react/24/outline";
+import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
+import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 
 type ShortlistItem = {
   id: string;
@@ -15,6 +19,32 @@ type ShortlistItem = {
   is_locked: boolean;
   expires_at?: string | null;
   created_at: string;
+};
+
+const RELATIVE_TIME_FORMATTER = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+const TIME_DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
+  { amount: 60, unit: "second" },
+  { amount: 60, unit: "minute" },
+  { amount: 24, unit: "hour" },
+  { amount: 7, unit: "day" },
+  { amount: 4.34524, unit: "week" },
+  { amount: 12, unit: "month" },
+  { amount: Infinity, unit: "year" },
+];
+
+const formatTimeAgo = (dateString?: string) => {
+  if (!dateString) return "";
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "";
+  let duration = (date.getTime() - Date.now()) / 1000;
+
+  for (const division of TIME_DIVISIONS) {
+    if (Math.abs(duration) < division.amount) {
+      return RELATIVE_TIME_FORMATTER.format(Math.round(duration), division.unit);
+    }
+    duration /= division.amount;
+  }
+  return "";
 };
 
 export default function ShortlistPage() {
@@ -29,6 +59,8 @@ export default function ShortlistPage() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
   const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
+  const fetchedProfilesRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     let cancelled = false;
@@ -54,13 +86,21 @@ export default function ShortlistPage() {
 
   // Fetch household public profiles for newly loaded shortlist items (househelp's own shortlist)
   useEffect(() => {
-    // Only fetch for items where profile_type is household
-    const neededUserIds = items
-      .filter((s) => s.profile_type === 'household')
-      .map((s) => s.user_id)
-      .filter(Boolean);
-    const missing = neededUserIds.filter((uid) => !(uid in profiles));
+    const neededUserIds = Array.from(
+      new Set(
+        items
+          .filter((s) => s.profile_type === 'household')
+          .map((s) => s.user_id)
+          .filter(Boolean)
+      )
+    );
+
+    const missing = neededUserIds.filter(
+      (uid) => uid && !fetchedProfilesRef.current.has(uid)
+    );
+
     if (missing.length === 0) return;
+
     let cancelled = false;
     async function fetchProfiles() {
       try {
@@ -77,7 +117,10 @@ export default function ShortlistPage() {
         setProfiles((prev) => {
           const next = { ...prev } as Record<string, any>;
           for (const r of results) {
-            if (r.data) next[r.uid] = r.data;
+            if (r.uid && r.data) {
+              next[r.uid] = r.data;
+              fetchedProfilesRef.current.add(r.uid);
+            }
           }
           return next;
         });
@@ -87,7 +130,7 @@ export default function ShortlistPage() {
     }
     fetchProfiles();
     return () => { cancelled = true; };
-  }, [items, API_BASE, profiles]);
+  }, [items, API_BASE]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -107,6 +150,7 @@ export default function ShortlistPage() {
       const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/${profileId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to remove from shortlist');
       setItems((prev) => prev.filter((s) => s.profile_id !== profileId));
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (e) {
       // optionally surface error
     }
@@ -133,7 +177,8 @@ export default function ShortlistPage() {
 
             {items.length === 0 && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
-                <p className="text-gray-600 dark:text-gray-300 text-lg">No shortlisted items yet.</p>
+                <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
+                <p className="text-gray-600 dark:text-gray-300 text-lg">No shortlisted households yet.</p>
               </div>
             )}
 
@@ -141,47 +186,100 @@ export default function ShortlistPage() {
               <div className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-4 text-red-700 dark:text-red-300 mb-4">{error}</div>
             )}
 
-            <ul className="space-y-3">
-              {items.map((s) => {
-                const prof = s.user_id ? profiles[s.user_id] : null;
-                return (
-                  <li key={s.id} className="rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="font-semibold text-primary-700 dark:text-purple-300">{s.profile_type === 'household' ? 'Household' : 'Profile'}</div>
-                        <span className={`text-xs px-2 py-1 rounded-full border ${s.is_locked ? 'border-yellow-300 text-yellow-700 bg-yellow-50 dark:bg-yellow-900/20' : 'border-green-300 text-green-700 bg-green-50 dark:bg-green-900/20'}`}>
-                          {s.is_locked ? 'Locked' : 'Unlocked'}
-                        </span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {items
+                .filter((s) => s.profile_type === "household")
+                .map((s) => {
+                  const prof = s.user_id ? profiles[s.user_id] : null;
+                  return (
+                    <div
+                      key={s.id}
+                      onClick={() => navigate(`/household/public-profile?user_id=${s.user_id}`, {
+                        state: { profileId: s.user_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
+                      })}
+                      className="relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
+                    >
+                      <div className="absolute top-3 right-3 flex items-center gap-2">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleChatWithHousehold(s.user_id); }}
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-purple-700 dark:text-purple-200 shadow"
+                          aria-label="Chat"
+                          title="Chat"
+                        >
+                          <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRemove(s.profile_id); }}
+                          className="inline-flex items-center justify-center w-9 h-9 rounded-full border shadow transition-all bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white hover:from-purple-700 hover:to-pink-700"
+                          aria-label="Remove from shortlist"
+                          title="Remove from shortlist"
+                        >
+                          <HeartIconSolid className="w-5 h-5" />
+                        </button>
                       </div>
-                      <div className="text-sm text-gray-500">{new Date(s.created_at).toLocaleDateString()}</div>
+
+                      <div className="flex justify-center mb-4">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-2xl font-bold shadow-lg overflow-hidden relative">
+                          {(() => {
+                            const imageUrl = prof?.avatar_url;
+                            if (imageUrl) {
+                              return (
+                                <>
+                                  {imageLoadingStates[s.profile_id] !== false && (
+                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                                  )}
+                                  <img
+                                    src={imageUrl}
+                                    alt={`${prof?.first_name || ""} ${prof?.last_name || ""}`}
+                                    className={`w-full h-full object-cover transition-opacity duration-300 ${
+                                      imageLoadingStates[s.profile_id] === false ? "opacity-100" : "opacity-0"
+                                    }`}
+                                    onLoad={() => setImageLoadingStates((prev) => ({ ...prev, [s.profile_id]: false }))}
+                                    onError={(e) => {
+                                      setImageLoadingStates((prev) => ({ ...prev, [s.profile_id]: false }));
+                                      e.currentTarget.style.display = "none";
+                                    }}
+                                  />
+                                </>
+                              );
+                            }
+                            return `${prof?.first_name?.[0] || "H"}${prof?.last_name?.[0] || "H"}`;
+                          })()}
+                        </div>
+                      </div>
+
+                      <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
+                        {prof ? `${prof.first_name || ""} ${prof.last_name || ""}`.trim() || "Household" : "Loading..."}
+                      </h3>
+
+                      <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
+                        📍 {prof?.town?.trim() || "No location specified"}
+                      </p>
+
+                      {prof?.house_size && (
+                        <p className="text-sm text-purple-600 dark:text-purple-400 text-center mb-3">🏠 {prof.house_size}</p>
+                      )}
+
+                      <div className="mt-6 flex items-center gap-3">
+                        <div className="text-xs font-semibold tracking-wide uppercase text-gray-400">
+                          {formatTimeAgo(s.created_at)}
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/household/public-profile?user_id=${s.user_id}`, {
+                              state: { profileId: s.user_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
+                            });
+                          }}
+                          className="ml-auto px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
+                        >
+                          View more
+                        </button>
+                      </div>
                     </div>
-                    {prof ? (
-                      <div className="mt-2 flex items-center gap-4">
-                        <img src={prof.avatar_url || "https://placehold.co/48x48?text=HH"} alt={prof.address || 'Household'} className="w-12 h-12 rounded-full object-cover bg-gray-200" />
-                        <div className="flex-1">
-                          <div className="text-primary-800 dark:text-primary-200 font-semibold">{prof.address || 'Household'}</div>
-                          {prof.budget_min && (
-                            <div className="text-sm text-gray-600 dark:text-gray-300">Budget: {prof.budget_min}{prof.salary_frequency ? `/${prof.salary_frequency}` : ''}{prof.budget_max ? ` - ${prof.budget_max}` : ''}</div>
-                          )}
-                          {prof.house_size && (
-                            <div className="text-sm text-gray-600 dark:text-gray-300">House size: {prof.house_size}</div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <a href={`/household/public-profile/${s.user_id}`} className="px-3 py-2 text-sm rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700">View</a>
-                          <button onClick={() => handleChatWithHousehold(s.user_id)} className="px-3 py-2 text-sm rounded-lg border-2 border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-300">Chat</button>
-                          <button onClick={() => handleRemove(s.profile_id)} className="px-3 py-2 text-sm rounded-lg border-2 border-red-300 text-red-700 hover:bg-red-50 dark:border-red-500/40 dark:text-red-300">Remove</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-gray-600 dark:text-gray-300 mt-1 text-sm break-all">Profile ID: {s.profile_id}</div>
-                    )}
-                    <div className="text-gray-600 dark:text-gray-300 mt-1 text-sm">Status: {s.is_locked ? 'Locked' : 'Unlocked'}</div>
-                    {s.expires_at && <div className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Expires: {new Date(s.expires_at).toLocaleString()}</div>}
-                  </li>
-                );
-              })}
-            </ul>
+                  );
+                })}
+            </div>
 
             <div ref={sentinelRef} className="h-8" />
             {(loading || loadingProfiles) && (

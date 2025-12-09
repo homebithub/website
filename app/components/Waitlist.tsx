@@ -75,8 +75,8 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
       };
       const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL)
         ? (window as any).ENV.AUTH_API_BASE_URL
-        : 'https://api.homebit.co.ke/auth';
-      const response = await fetch(`${baseUrl}/api/v1/waitlist`, {
+        : API_BASE_URL;
+      const response = await fetch(`${API_BASE_URL}/api/v1/waitlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -228,7 +228,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
     try {
       const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL)
         ? (window as any).ENV.AUTH_API_BASE_URL
-        : 'https://api.homebit.co.ke/auth';
+        : API_BASE_URL;
       // Include phone/message in state so callback can auto-create waitlist if possible
       const normalizeKenyanPhone = (phone: string) => {
         const p = phone.trim();
@@ -243,7 +243,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
         message: formData.message || undefined,
       };
       const state = encodeURIComponent(JSON.stringify(statePayload));
-      const resp = await fetch(`${baseUrl}/api/v1/auth/google/url?flow=waitlist&state=${state}`);
+      const resp = await fetch(`${API_BASE_URL}/api/v1/auth/google/url?flow=waitlist&state=${state}`);
       const data = await resp.json();
       if (data?.url) {
         window.location.href = data.url as string;

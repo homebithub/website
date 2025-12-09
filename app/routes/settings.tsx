@@ -7,7 +7,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
-import { useAuth } from "~/contexts/AuthContext";
+import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 
 interface UserSettings {
