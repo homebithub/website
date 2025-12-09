@@ -493,9 +493,9 @@ export default function HousehelpHome() {
                       </p>
 
                       {/* House size */}
-                      {r.house_size && (
-                        <p className="text-sm text-purple-600 dark:text-purple-400 text-center mb-3">🏠 {r.house_size}</p>
-                      )}
+                      <p className="text-sm text-purple-600 dark:text-purple-400 text-center mb-3">
+                        🏠 {r.house_size || "House size not specified"}
+                      </p>
 
                       {/* Verified */}
                       {r.verified && (
