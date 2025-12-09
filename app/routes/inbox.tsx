@@ -110,6 +110,11 @@ export default function InboxPage() {
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+  const [openReactionNames, setOpenReactionNames] = useState<{ msgId: string; emoji: string } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const deleteTimersRef = useRef<Record<string, number>>({});
+  const deletedBackupRef = useRef<Record<string, { body: string }>>({});
+  const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
   
   // Hire wizard state
   const [showHireWizard, setShowHireWizard] = useState(false);
@@ -385,20 +390,42 @@ export default function InboxPage() {
       pushToast('Cannot delete after 15 minutes', 'error');
       return;
     }
-    // Optimistic update
+    // Save backup for undo and set optimistic deleted
+    deletedBackupRef.current[msg.id] = { body: msg.body };
     setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, deleted_at: new Date().toISOString(), body: '' } : m));
     setOpenMsgMenuId(null);
-    try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${msg.id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to delete');
-      pushToast('Message deleted', 'success');
-    } catch (e: any) {
-      // Reload messages on failure to restore
-      setMessagesError(e?.message || 'Failed to delete message');
-      setMessagesOffset(0);
-      pushToast('Failed to delete message', 'error');
-    }
+    setPendingDeleteIds(prev => { const next = new Set(prev); next.add(msg.id); return next; });
+    // Schedule actual delete after 5s
+    if (deleteTimersRef.current[msg.id]) window.clearTimeout(deleteTimersRef.current[msg.id]);
+    deleteTimersRef.current[msg.id] = window.setTimeout(async () => {
+      try {
+        const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${msg.id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Failed to delete');
+        pushToast('Message deleted', 'success');
+      } catch (e: any) {
+        setMessagesError(e?.message || 'Failed to delete message');
+        setMessagesOffset(0);
+        pushToast('Failed to delete message', 'error');
+      } finally {
+        setPendingDeleteIds(prev => { const next = new Set(prev); next.delete(msg.id); return next; });
+        delete deletedBackupRef.current[msg.id];
+        const t = deleteTimersRef.current[msg.id];
+        if (t) window.clearTimeout(t);
+        delete deleteTimersRef.current[msg.id];
+      }
+    }, 5000);
   }, [API_BASE, isDeletable, pushToast]);
+
+  const undoDelete = useCallback((id: string) => {
+    const t = deleteTimersRef.current[id];
+    if (t) window.clearTimeout(t);
+    const backup = deletedBackupRef.current[id];
+    setMessages(prev => prev.map(m => m.id === id ? { ...m, deleted_at: null, body: backup?.body ?? m.body } : m));
+    setPendingDeleteIds(prev => { const next = new Set(prev); next.delete(id); return next; });
+    delete deleteTimersRef.current[id];
+    delete deletedBackupRef.current[id];
+    pushToast('Deletion undone', 'success');
+  }, [pushToast]);
 
   const isEditable = useCallback((m: Message) => isDeletable(m) && !m.deleted_at, [isDeletable]);
 
@@ -502,6 +529,33 @@ export default function InboxPage() {
       setMessagesOffset(0);
     }
   }, [API_BASE, currentUserId]);
+
+  // Draft persistence per conversation
+  useEffect(() => {
+    if (!activeConversationId) return;
+    try {
+      const key = `inbox-draft-${activeConversationId}`;
+      const saved = localStorage.getItem(key);
+      if (saved !== null) {
+        setInput(saved);
+        setTimeout(() => {
+          const t = textareaRef.current;
+          if (t) {
+            t.style.height = 'auto';
+            t.style.height = Math.min(t.scrollHeight, 150) + 'px';
+          }
+        }, 0);
+      }
+    } catch {}
+  }, [activeConversationId]);
+
+  useEffect(() => {
+    if (!activeConversationId) return;
+    try {
+      const key = `inbox-draft-${activeConversationId}`;
+      localStorage.setItem(key, input);
+    } catch {}
+  }, [input, activeConversationId]);
 
   useEffect(() => {
     if (openMsgMenuId) {
@@ -1045,7 +1099,7 @@ export default function InboxPage() {
                 return (
                   <div
                     key={m.id}
-                    className={`group relative flex ${mine ? 'justify-end' : 'justify-start'} ${highlightMsgId === m.id ? 'ring-2 ring-purple-400 rounded-xl' : ''}`}
+                    className={`group relative flex ${mine ? 'justify-end' : 'justify-start'} ${(highlightMsgId === m.id || selectedIds.has(m.id)) ? 'ring-2 ring-purple-400 rounded-xl' : ''}`}
                     onTouchStart={() => startLongPress(m.id)}
                     onTouchEnd={cancelLongPress}
                     ref={(el) => { messageRefs.current[m.id] = el; }}
@@ -1134,7 +1188,15 @@ export default function InboxPage() {
                         <>
                           <div className="whitespace-pre-wrap break-words">
                             {m.deleted_at ? (
-                              <span className="text-xs">Message deleted</span>
+                              <span className="text-xs">
+                                Message deleted
+                                {pendingDeleteIds.has(m.id) && (
+                                  <>
+                                    {' · '}
+                                    <button type="button" className="underline font-semibold" onClick={() => undoDelete(m.id)}>Undo</button>
+                                  </>
+                                )}
+                              </span>
                             ) : (
                               m.body
                             )}
@@ -1170,21 +1232,45 @@ export default function InboxPage() {
 
                           {/* Reactions chips */}
                           {m.reactions && m.reactions.length > 0 && (
-                            <div className={`mt-1 flex flex-wrap gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
-                              {Object.entries(m.reactions.reduce((acc: Record<string, string[]>, r) => {
-                                const list = acc[r.emoji] || (acc[r.emoji] = []);
-                                list.push(nameForUser(r.user_id));
-                                return acc;
-                              }, {})).map(([emoji, names]) => (
-                                <span
-                                  key={emoji}
-                                  title={names.join(', ')}
-                                  className={`px-2 py-0.5 text-xs rounded-full border ${mine ? 'border-white/30 text-white/90' : 'border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-200'} bg-white/20`}
-                                >
-                                  {emoji} {names.length}
-                                </span>
-                              ))}
-                            </div>
+                            <>
+                              {(() => {
+                                const reactionMap = (m.reactions || []).reduce((acc: Record<string, string[]>, r) => {
+                                  const list = acc[r.emoji] || (acc[r.emoji] = []);
+                                  list.push(nameForUser(r.user_id));
+                                  return acc;
+                                }, {} as Record<string, string[]>);
+                                return (
+                                  <>
+                                    <div className={`mt-1 flex flex-wrap gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+                                      {Object.entries(reactionMap).map(([emoji, names]) => (
+                                        <button
+                                          key={emoji}
+                                          type="button"
+                                          onClick={() => setOpenReactionNames(openReactionNames && openReactionNames.msgId === m.id && openReactionNames.emoji === emoji ? null : { msgId: m.id, emoji })}
+                                          title={names.join(', ')}
+                                          className={`px-2 py-0.5 text-xs rounded-full border ${mine ? 'border-white/30 text-white/90' : 'border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-200'} bg-white/20`}
+                                        >
+                                          {emoji} {names.length}
+                                        </button>
+                                      ))}
+                                    </div>
+                                    {openReactionNames && openReactionNames.msgId === m.id && (
+                                      <div className={`mt-1 flex ${mine ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-xs text-xs rounded-md border ${mine ? 'border-white/30 bg-white/10 text-white/90' : 'border-purple-200 dark:border-purple-500/30 bg-white/90 dark:bg-slate-900/80 text-gray-800 dark:text-gray-200'} shadow px-2 py-1`}
+                                        >
+                                          <div className="font-semibold mb-1">{openReactionNames.emoji} reactions</div>
+                                          <div className="flex flex-wrap gap-1">
+                                            {(reactionMap[openReactionNames.emoji] || []).map((n, idx) => (
+                                              <span key={idx} className="px-1 py-0.5 rounded bg-black/5 dark:bg-white/10">{n}</span>
+                                            ))}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </>
+                                );
+                              })()}
+                            </>
                           )}
                         </>
                       )}
@@ -1202,7 +1288,11 @@ export default function InboxPage() {
 
                     {/* Actions popover */}
                     {openMsgMenuId === m.id && (() => {
+                      const selected = selectedIds.has(m.id);
                       const options = [
+                        { label: 'Copy text', disabled: !!m.deleted_at || !m.body, action: async () => { try { await navigator.clipboard.writeText(m.body || ''); pushToast('Copied message', 'success'); } catch { pushToast('Copy failed', 'error'); } } },
+                        { label: 'Forward', disabled: !!m.deleted_at || !m.body, action: () => { if (!m.body) return; setInput(prev => (prev ? (prev + (prev.endsWith('\n') ? '' : '\n') + m.body) : m.body)); setTimeout(() => textareaRef.current?.focus(), 0); pushToast('Added to composer', 'success'); } },
+                        { label: selected ? 'Deselect' : 'Select', disabled: false, action: () => { setSelectedIds(prev => { const next = new Set(prev); if (next.has(m.id)) next.delete(m.id); else next.add(m.id); return next; }); } },
                         { label: 'Delete', disabled: !isDeletable(m), action: () => setDeleteConfirmMsg(m), danger: true },
                         { label: 'Edit (15 min)', disabled: !isEditable(m), action: () => startEditMessage(m) },
                         { label: 'Reply', disabled: false, action: () => handleReplyMessage(m) },
@@ -1276,6 +1366,41 @@ export default function InboxPage() {
 
         {/* Input - At bottom (grid row) */}
         <div className="p-4 border-t border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a]">
+          {selectedIds.size > 0 && (
+            <div className="mb-2 flex items-center justify-between rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50/60 dark:bg-slate-800/60 px-3 py-2">
+              <div className="text-xs font-semibold">{selectedIds.size} selected</div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  className="px-2 py-1 rounded-lg border border-purple-300 text-purple-700 hover:bg-purple-50 dark:text-purple-200 dark:border-purple-500/40 dark:hover:bg-slate-800 text-xs"
+                  onClick={async () => {
+                    const ids = Array.from(selectedIds);
+                    const sel = messages.filter(m => ids.includes(m.id) && !m.deleted_at && m.body).sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                    const text = sel.map(m => m.body).join('\n');
+                    try { await navigator.clipboard.writeText(text); pushToast('Copied selection', 'success'); } catch { pushToast('Copy failed', 'error'); }
+                  }}
+                >Copy</button>
+                <button
+                  type="button"
+                  className="px-2 py-1 rounded-lg border border-purple-300 text-purple-700 hover:bg-purple-50 dark:text-purple-200 dark:border-purple-500/40 dark:hover:bg-slate-800 text-xs"
+                  onClick={() => {
+                    const ids = Array.from(selectedIds);
+                    const sel = messages.filter(m => ids.includes(m.id) && !m.deleted_at && m.body).sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                    const text = sel.map(m => m.body).join('\n');
+                    setInput(prev => prev ? (prev + (prev.endsWith('\n') ? '' : '\n') + text) : text);
+                    setSelectedIds(new Set());
+                    setTimeout(() => textareaRef.current?.focus(), 0);
+                    pushToast('Added to composer', 'success');
+                  }}
+                >Forward</button>
+                <button
+                  type="button"
+                  className="px-2 py-1 rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 text-xs"
+                  onClick={() => setSelectedIds(new Set())}
+                >Cancel</button>
+              </div>
+            </div>
+          )}
           {replyTo && (
             <div className="mb-2 flex items-start justify-between rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50/60 dark:bg-slate-800/60 px-3 py-2">
               <div className="text-xs">
