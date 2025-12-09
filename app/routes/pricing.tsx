@@ -54,7 +54,7 @@ export default function Pricing() {
         <div className="mx-auto max-w-4xl text-center">
           <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-4">Pricing</h1>
         </div>
-        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
+        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600 dark:text-gray-300">
           Choose an affordable plan that's packed with the best features for engaging your audience, creating customer loyalty, and driving sales.
         </p>
         <div className="isolate mx-auto mt-16 grid max-w-md grid-cols-1 gap-8 sm:mt-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
@@ -68,10 +68,10 @@ export default function Pricing() {
                 </h3>
                 <div className="mt-4 flex items-baseline gap-x-2">
                   <span className="text-5xl font-bold tracking-tight text-gray-900 dark:text-white">Ksh {tier.priceMonthly.replace('$', '').replace('15', '1,500').replace('30', '3,000').replace('60', '6,000')}</span>
-<span className="text-base font-semibold leading-7 text-gray-600">/month</span>
+<span className="text-base font-semibold leading-7 text-gray-600 dark:text-gray-300">/month</span>
                 </div>
-                <p className="mt-6 text-base leading-7 text-gray-600">{tier.description}</p>
-                <ul role="list" className="mt-10 space-y-4 text-sm leading-6 text-gray-600">
+                <p className="mt-6 text-base leading-7 text-gray-600 dark:text-gray-300">{tier.description}</p>
+                <ul role="list" className="mt-10 space-y-4 text-sm leading-6 text-gray-600 dark:text-gray-300">
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex gap-x-3">
                       <CheckIcon className="h-6 w-5 flex-none text-slate-900 dark:text-purple-400" aria-hidden="true" />
