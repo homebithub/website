@@ -4,7 +4,7 @@ import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, API_ENDPOINTS } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
-import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon } from '@heroicons/react/24/outline';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
@@ -76,6 +76,7 @@ export default function InboxPage() {
   const bottomRef = useRef<HTMLDivElement | null>(null);
   const messagesSentinelRef = useRef<HTMLDivElement | null>(null);
   const emojiPickerRef = useRef<HTMLDivElement | null>(null);
+  const reactionPickerRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
@@ -426,6 +427,13 @@ export default function InboxPage() {
     delete deletedBackupRef.current[id];
     pushToast('Deletion undone', 'success');
   }, [pushToast]);
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
 
   const isEditable = useCallback((m: Message) => isDeletable(m) && !m.deleted_at, [isDeletable]);
 
@@ -563,6 +571,20 @@ export default function InboxPage() {
       setTimeout(() => msgMenuRef.current?.focus(), 0);
     }
   }, [openMsgMenuId]);
+
+  // Close message reaction picker on outside click
+  useEffect(() => {
+    if (!openReactPickerMsgId) return;
+    const onDocClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement | null;
+      const node = reactionPickerRef.current;
+      if (node && target && !node.contains(target)) {
+        setOpenReactPickerMsgId(null);
+      }
+    };
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [openReactPickerMsgId]);
 
   const startLongPress = (id: string) => {
     if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
@@ -1104,32 +1126,70 @@ export default function InboxPage() {
                     onTouchEnd={cancelLongPress}
                     ref={(el) => { messageRefs.current[m.id] = el; }}
                   >
-                    {/* 3-dot action button (visible on hover desktop) */}
-                    <button
-                      type="button"
-                      className={`absolute -top-2 ${mine ? '-left-2' : '-right-2'} hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow opacity-0 group-hover:opacity-100 transition`}
-                      onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
-                      aria-label="Message options"
-                    >
-                      <EllipsisVerticalIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                    </button>
-
-                    {/* Quick reactions on hover */}
-                    {openReactPickerMsgId !== m.id && (
-                      <div className={`absolute ${mine ? 'left-0' : 'right-0'} -top-8 z-40 hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition`}> 
-                        {['👍','❤️','😂','😮','😢'].map(em => (
-                          <button key={em} className="text-base px-1 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => toggleReaction(m, em)}>{em}</button>
-                        ))}
-                        <button className="text-xs px-2 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => setOpenReactPickerMsgId(m.id)}>+</button>
-                      </div>
+                    {selectedIds.size > 0 && (
+                      <button
+                        type="button"
+                        className={`absolute top-1 ${mine ? '-right-8' : '-left-8'} z-10 flex items-center justify-center w-6 h-6 rounded-full border shadow ${selectedIds.has(m.id) ? 'bg-purple-600 text-white border-purple-600' : 'bg-white/80 dark:bg-[#0f0f16]/80 border-purple-200 dark:border-purple-500/30'}`}
+                        onClick={(e) => { e.stopPropagation(); toggleSelect(m.id); }}
+                        aria-pressed={selectedIds.has(m.id)}
+                        aria-label={selectedIds.has(m.id) ? 'Deselect message' : 'Select message'}
+                      >
+                        {selectedIds.has(m.id) ? (
+                          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M5 12l5 5L20 7" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        ) : (
+                          <span className="block w-3 h-3 rounded border border-gray-400 dark:border-gray-500" />
+                        )}
+                      </button>
                     )}
-
                     {/* Message bubble */}
-                    <div className={`max-w-[75%] rounded-2xl px-4 py-2 shadow ${
+                    <div className={`relative max-w-[75%] rounded-2xl px-4 py-2 shadow ${
                       mine 
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100'
                     } ${status === 'sending' ? 'opacity-70' : ''} ${m.deleted_at ? 'opacity-60 italic' : ''}`}>
+                      {/* Bubble controls (desktop): 3-dots and quick reactions anchored to bubble */}
+                      <button
+                        type="button"
+                        className={`absolute -top-2 -right-2 hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow opacity-0 group-hover:opacity-100 transition`}
+                        onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
+                        aria-label="Message options"
+                      >
+                        <EllipsisVerticalIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                      </button>
+
+                      {openReactPickerMsgId !== m.id && (
+                        <div className={`absolute -top-8 right-0 z-40 hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition`}>
+                          {['👍','❤️','😂','😮','😢'].map(em => (
+                            <button key={em} className="text-base px-1 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => toggleReaction(m, em)}>{em}</button>
+                          ))}
+                          <button className="text-xs px-2 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => setOpenReactPickerMsgId(m.id)}>+</button>
+                        </div>
+                      )}
+                      {openReactPickerMsgId === m.id && (
+                        <div ref={reactionPickerRef} className="absolute right-0 bottom-full mb-2 z-50">
+                          <EmojiPicker
+                            onEmojiClick={(emojiData) => {
+                              let emoji = (emojiData as any)?.emoji as string | undefined;
+                              if (!emoji) {
+                                const unified = (emojiData as any)?.unified as string | undefined;
+                                if (unified) {
+                                  try {
+                                    const codePoints = unified.split('-').map((u: string) => parseInt(u, 16));
+                                    emoji = String.fromCodePoint(...codePoints);
+                                  } catch {}
+                                }
+                              }
+                              if (!emoji) return;
+                              toggleReaction(m, emoji);
+                              setOpenReactPickerMsgId(null);
+                            }}
+                            theme={Theme.AUTO}
+                            width={320}
+                            height={380}
+                            lazyLoadEmojis
+                          />
+                        </div>
+                      )}
                       {/* Reply snippet inside bubble */}
                       {!editingMessageId && m.reply_to_id && (
                         <button
@@ -1274,56 +1334,43 @@ export default function InboxPage() {
                           )}
                         </>
                       )}
+                      {openMsgMenuId === m.id && (() => {
+                        const selected = selectedIds.has(m.id);
+                        const options = [
+                          { label: 'Copy text', disabled: !!m.deleted_at || !m.body, action: async () => { try { await navigator.clipboard.writeText(m.body || ''); pushToast('Copied message', 'success'); } catch { pushToast('Copy failed', 'error'); } } },
+                          { label: selected ? 'Deselect' : 'Select', disabled: false, action: () => toggleSelect(m.id) },
+                          { label: 'Delete', disabled: !isDeletable(m), action: () => setDeleteConfirmMsg(m), danger: true },
+                          { label: 'Edit (15 min)', disabled: !isEditable(m), action: () => startEditMessage(m) },
+                          { label: 'Reply', disabled: false, action: () => handleReplyMessage(m) },
+                          { label: 'React', disabled: false, action: () => setOpenReactPickerMsgId(m.id) },
+                          { label: 'Message info', disabled: false, action: () => { setInfoForMsgId(m.id); setOpenMsgMenuId(null); } },
+                        ];
+                        return (
+                          <div
+                            ref={msgMenuRef}
+                            tabIndex={0}
+                            onKeyDown={(e) => {
+                              if (e.key === 'ArrowDown') { e.preventDefault(); setMsgMenuFocusIndex((i) => Math.min(i + 1, options.length - 1)); }
+                              else if (e.key === 'ArrowUp') { e.preventDefault(); setMsgMenuFocusIndex((i) => Math.max(i - 1, 0)); }
+                              else if (e.key === 'Enter') { e.preventDefault(); const opt = options[msgMenuFocusIndex]; if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }
+                              else if (e.key === 'Escape') { e.preventDefault(); setOpenMsgMenuId(null); }
+                            }}
+                            className={`absolute top-6 right-0 z-50 w-48 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg`}
+                            onMouseLeave={() => setOpenMsgMenuId(null)}
+                          >
+                            {options.map((opt, idx) => (
+                              <button
+                                key={opt.label}
+                                className={`w-full text-left px-3 py-2 text-sm ${opt.danger ? 'text-red-600' : 'text-gray-700 dark:text-gray-200'} ${opt.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50 dark:hover:bg-slate-800'} ${msgMenuFocusIndex === idx ? 'bg-purple-50 dark:bg-slate-800' : ''}`}
+                                disabled={opt.disabled}
+                                onClick={() => { if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }}
+                                onMouseEnter={() => setMsgMenuFocusIndex(idx)}
+                              >{opt.label}</button>
+                            ))}
+                          </div>
+                        );
+                      })()}
                     </div>
-
-                    {/* Reactions picker */}
-                    {openReactPickerMsgId === m.id && (
-                      <div className={`absolute ${mine ? 'left-0' : 'right-0'} -top-8 z-50 rounded-full border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg px-2 py-1 flex gap-1`}
-                           onMouseLeave={() => setOpenReactPickerMsgId(null)}>
-                        {['👍','❤️','😂','😮','😢','🙏'].map(em => (
-                          <button key={em} className="text-lg" onClick={() => toggleReaction(m, em)}>{em}</button>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Actions popover */}
-                    {openMsgMenuId === m.id && (() => {
-                      const selected = selectedIds.has(m.id);
-                      const options = [
-                        { label: 'Copy text', disabled: !!m.deleted_at || !m.body, action: async () => { try { await navigator.clipboard.writeText(m.body || ''); pushToast('Copied message', 'success'); } catch { pushToast('Copy failed', 'error'); } } },
-                        { label: 'Forward', disabled: !!m.deleted_at || !m.body, action: () => { if (!m.body) return; setInput(prev => (prev ? (prev + (prev.endsWith('\n') ? '' : '\n') + m.body) : m.body)); setTimeout(() => textareaRef.current?.focus(), 0); pushToast('Added to composer', 'success'); } },
-                        { label: selected ? 'Deselect' : 'Select', disabled: false, action: () => { setSelectedIds(prev => { const next = new Set(prev); if (next.has(m.id)) next.delete(m.id); else next.add(m.id); return next; }); } },
-                        { label: 'Delete', disabled: !isDeletable(m), action: () => setDeleteConfirmMsg(m), danger: true },
-                        { label: 'Edit (15 min)', disabled: !isEditable(m), action: () => startEditMessage(m) },
-                        { label: 'Reply', disabled: false, action: () => handleReplyMessage(m) },
-                        { label: 'React', disabled: false, action: () => setOpenReactPickerMsgId(m.id) },
-                        { label: 'Message info', disabled: false, action: () => { setInfoForMsgId(m.id); setOpenMsgMenuId(null); } },
-                      ];
-                      return (
-                        <div
-                          ref={msgMenuRef}
-                          tabIndex={0}
-                          onKeyDown={(e) => {
-                            if (e.key === 'ArrowDown') { e.preventDefault(); setMsgMenuFocusIndex((i) => Math.min(i + 1, options.length - 1)); }
-                            else if (e.key === 'ArrowUp') { e.preventDefault(); setMsgMenuFocusIndex((i) => Math.max(i - 1, 0)); }
-                            else if (e.key === 'Enter') { e.preventDefault(); const opt = options[msgMenuFocusIndex]; if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }
-                            else if (e.key === 'Escape') { e.preventDefault(); setOpenMsgMenuId(null); }
-                          }}
-                          className={`absolute ${mine ? 'left-0' : 'right-0'} top-6 z-50 w-48 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg`}
-                          onMouseLeave={() => setOpenMsgMenuId(null)}
-                        >
-                          {options.map((opt, idx) => (
-                            <button
-                              key={opt.label}
-                              className={`w-full text-left px-3 py-2 text-sm ${opt.danger ? 'text-red-600' : 'text-gray-700 dark:text-gray-200'} ${opt.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50 dark:hover:bg-slate-800'} ${msgMenuFocusIndex === idx ? 'bg-purple-50 dark:bg-slate-800' : ''}`}
-                              disabled={opt.disabled}
-                              onClick={() => { if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }}
-                              onMouseEnter={() => setMsgMenuFocusIndex(idx)}
-                            >{opt.label}</button>
-                          ))}
-                        </div>
-                      );
-                    })()}
                   </div>
                 );
               })}
@@ -1380,19 +1427,6 @@ export default function InboxPage() {
                     try { await navigator.clipboard.writeText(text); pushToast('Copied selection', 'success'); } catch { pushToast('Copy failed', 'error'); }
                   }}
                 >Copy</button>
-                <button
-                  type="button"
-                  className="px-2 py-1 rounded-lg border border-purple-300 text-purple-700 hover:bg-purple-50 dark:text-purple-200 dark:border-purple-500/40 dark:hover:bg-slate-800 text-xs"
-                  onClick={() => {
-                    const ids = Array.from(selectedIds);
-                    const sel = messages.filter(m => ids.includes(m.id) && !m.deleted_at && m.body).sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-                    const text = sel.map(m => m.body).join('\n');
-                    setInput(prev => prev ? (prev + (prev.endsWith('\n') ? '' : '\n') + text) : text);
-                    setSelectedIds(new Set());
-                    setTimeout(() => textareaRef.current?.focus(), 0);
-                    pushToast('Added to composer', 'success');
-                  }}
-                >Forward</button>
                 <button
                   type="button"
                   className="px-2 py-1 rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 text-xs"
