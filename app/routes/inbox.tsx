@@ -512,6 +512,38 @@ export default function InboxPage() {
     }
   }, []);
 
+  // Ensure a message is loaded; if not, progressively fetch older pages and then scroll to it
+  const ensureMessageVisibleAndScroll = useCallback(async (id: string) => {
+    if (!activeConversationId) return;
+    if (messageRefs.current[id]) { scrollToMessage(id); return; }
+    try {
+      let off = messages.length; // fetch older pages beyond what's loaded
+      for (let i = 0; i < 20; i++) { // hard cap to avoid infinite loops
+        const res = await apiClient.auth(
+          `${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${off}&limit=${messagesLimit}`
+        );
+        if (!res.ok) break;
+        const data = await apiClient.json<Message[]>(res);
+        if (!data || data.length === 0) break;
+        const withStatus = data.map(m => ({ ...m, _status: 'delivered' as MessageStatus }));
+        setMessages(prev => {
+          const ids = new Set(prev.map(x => x.id));
+          const merged = [...prev];
+          for (const mm of withStatus) if (!ids.has(mm.id)) merged.push(mm);
+          return merged;
+        });
+        off += data.length;
+        await new Promise(r => setTimeout(r, 0));
+        if (messageRefs.current[id]) { setTimeout(() => scrollToMessage(id), 50); return; }
+        if (data.length < messagesLimit) break; // no more pages
+      }
+      // Fallback toast
+      if (!messageRefs.current[id]) pushToast('Original message not found in history', 'error');
+    } catch {
+      pushToast('Failed to load original message', 'error');
+    }
+  }, [API_BASE, activeConversationId, messages.length, messagesLimit, scrollToMessage, pushToast]);
+
   const toggleReaction = useCallback(async (msg: Message, emoji: string) => {
     const me = currentUserId || '';
     const had = (msg.reactions || []).some(r => r.emoji === emoji && r.user_id === me);
@@ -1194,7 +1226,7 @@ export default function InboxPage() {
                       {!editingMessageId && m.reply_to_id && (
                         <button
                           type="button"
-                          onClick={() => scrollToMessage(m.reply_to_id!)}
+                          onClick={() => ensureMessageVisibleAndScroll(m.reply_to_id!)}
                           className={`mb-2 w-full text-left text-xs rounded-lg border ${mine ? 'border-white/30 bg-white/10 text-white/90' : 'border-purple-200 dark:border-purple-500/30 bg-white/60 dark:bg-slate-900/40 text-gray-700 dark:text-gray-200'} px-3 py-2 hover:opacity-90`}
                           aria-label="Go to replied message"
                         >
@@ -1302,17 +1334,20 @@ export default function InboxPage() {
                                 return (
                                   <>
                                     <div className={`mt-1 flex flex-wrap gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
-                                      {Object.entries(reactionMap).map(([emoji, names]) => (
-                                        <button
-                                          key={emoji}
-                                          type="button"
-                                          onClick={() => setOpenReactionNames(openReactionNames && openReactionNames.msgId === m.id && openReactionNames.emoji === emoji ? null : { msgId: m.id, emoji })}
-                                          title={names.join(', ')}
-                                          className={`px-2 py-0.5 text-xs rounded-full border ${mine ? 'border-white/30 text-white/90' : 'border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-200'} bg-white/20`}
-                                        >
-                                          {emoji} {names.length}
-                                        </button>
-                                      ))}
+                                      {Object.entries(reactionMap).map(([emoji, names]) => {
+                                        const mineReact = (m.reactions || []).some(r => r.emoji === emoji && r.user_id === (currentUserId || ''));
+                                        return (
+                                          <button
+                                            key={emoji}
+                                            type="button"
+                                            onClick={() => setOpenReactionNames(openReactionNames && openReactionNames.msgId === m.id && openReactionNames.emoji === emoji ? null : { msgId: m.id, emoji })}
+                                            title={names.join(', ')}
+                                            className={`px-2 py-0.5 text-xs rounded-full border ${mine ? 'border-white/30 text-white/90' : 'border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-200'} ${mineReact ? 'bg-emerald-500/20 ring-2 ring-emerald-400 font-semibold' : 'bg-white/20'}`}
+                                          >
+                                            {emoji} {names.length}
+                                          </button>
+                                        );
+                                      })}
                                     </div>
                                     {openReactionNames && openReactionNames.msgId === m.id && (
                                       <div className={`mt-1 flex ${mine ? 'justify-end' : 'justify-start'}`}>
@@ -1445,7 +1480,7 @@ export default function InboxPage() {
                 <button
                   type="button"
                   className="mt-1 inline-flex items-center gap-1 text-[11px] font-semibold text-purple-700 dark:text-purple-300 hover:underline"
-                  onClick={() => replyTo?.id && scrollToMessage(replyTo.id)}
+                  onClick={() => replyTo?.id && ensureMessageVisibleAndScroll(replyTo.id)}
                 >
                   Go to original
                 </button>
