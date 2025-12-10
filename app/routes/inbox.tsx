@@ -299,7 +299,10 @@ export default function InboxPage() {
   }, []);
 
   const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const el = messagesContainerRef.current;
+    if (el) {
+      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    }
     setShowScrollToBottom(false);
   }, []);
 
@@ -307,9 +310,15 @@ export default function InboxPage() {
   useEffect(() => {
     if (messagesOffset === 0 && messages.length > 0) {
       const el = messagesContainerRef.current;
-      const atTopInitial = el ? el.scrollTop === 0 && el.scrollHeight > el.clientHeight : true;
+      if (!el) return;
+      const atTopInitial = el.scrollTop === 0 && el.scrollHeight > el.clientHeight;
       if (isNearBottom() || atTopInitial) {
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+        // Scroll to bottom of the container
+        setTimeout(() => {
+          if (el) {
+            el.scrollTop = el.scrollHeight;
+          }
+        }, 100);
       }
     }
   }, [messages, messagesOffset, isNearBottom]);
@@ -328,7 +337,10 @@ export default function InboxPage() {
         if (data.length !== messages.length) {
           setMessages(data);
           if (isNearBottom()) {
-            setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+            setTimeout(() => {
+              const el = messagesContainerRef.current;
+              if (el) el.scrollTop = el.scrollHeight;
+            }, 50);
           }
         }
         // Mark as read
@@ -505,8 +517,14 @@ export default function InboxPage() {
 
   const scrollToMessage = useCallback((id: string) => {
     const el = messageRefs.current[id];
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const container = messagesContainerRef.current;
+    if (el && container) {
+      // Calculate position to center the message in the container
+      const containerRect = container.getBoundingClientRect();
+      const elementRect = el.getBoundingClientRect();
+      const scrollTop = container.scrollTop + (elementRect.top - containerRect.top) - (containerRect.height / 2) + (elementRect.height / 2);
+      
+      container.scrollTo({ top: scrollTop, behavior: 'smooth' });
       setHighlightMsgId(id);
       window.setTimeout(() => setHighlightMsgId(null), 1500);
     }
@@ -670,7 +688,10 @@ export default function InboxPage() {
     setMessages((prev) => [...prev, optimisticMessage]);
     setInput("");
     setShowEmojiPicker(false);
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    setTimeout(() => {
+      const el = messagesContainerRef.current;
+      if (el) el.scrollTop = el.scrollHeight;
+    }, 50);
     
     try {
       const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
@@ -1153,7 +1174,13 @@ export default function InboxPage() {
                 return (
                   <div
                     key={m.id}
-                    className={`group relative flex ${mine ? 'justify-end' : 'justify-start'} ${(highlightMsgId === m.id || selectedIds.has(m.id)) ? 'ring-2 ring-purple-400 rounded-xl' : ''}`}
+                    className={`group relative flex ${mine ? 'justify-end' : 'justify-start'} ${
+                      highlightMsgId === m.id 
+                        ? 'animate-[highlight-blink_1.5s_ease-in-out] rounded-xl ring-2 ring-purple-400/60' 
+                        : selectedIds.has(m.id) 
+                        ? 'ring-2 ring-purple-400 rounded-xl' 
+                        : ''
+                    }`}
                     onTouchStart={() => startLongPress(m.id)}
                     onTouchEnd={cancelLongPress}
                     ref={(el) => { messageRefs.current[m.id] = el; }}
@@ -1201,17 +1228,24 @@ export default function InboxPage() {
                         <div ref={reactionPickerRef} className="absolute right-0 bottom-full mb-2 z-50">
                           <EmojiPicker
                             onEmojiClick={(emojiData) => {
-                              let emoji = (emojiData as any)?.emoji as string | undefined;
-                              if (!emoji) {
-                                const unified = (emojiData as any)?.unified as string | undefined;
-                                if (unified) {
-                                  try {
-                                    const codePoints = unified.split('-').map((u: string) => parseInt(u, 16));
-                                    emoji = String.fromCodePoint(...codePoints);
-                                  } catch {}
+                              // Extract emoji with fallback to unified code points
+                              let emoji = emojiData?.emoji as string | undefined;
+                              if (!emoji && emojiData?.unified) {
+                                try {
+                                  const codePoints = emojiData.unified.split('-').map((u: string) => parseInt(u, 16));
+                                  emoji = String.fromCodePoint(...codePoints);
+                                } catch (err) {
+                                  console.error('Failed to parse emoji:', err);
                                 }
                               }
-                              if (!emoji) return;
+                              // Additional fallback: try imageUrl or native
+                              if (!emoji && (emojiData as any)?.native) {
+                                emoji = (emojiData as any).native;
+                              }
+                              if (!emoji) {
+                                console.warn('Could not extract emoji from:', emojiData);
+                                return;
+                              }
                               toggleReaction(m, emoji);
                               setOpenReactPickerMsgId(null);
                             }}

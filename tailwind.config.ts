@@ -96,6 +96,24 @@ export default {
           '0%, 100%': { backgroundPosition: '0% 50%' },
           '50%': { backgroundPosition: '100% 50%' },
         },
+        'highlight-blink': {
+          '0%, 100%': { 
+            backgroundColor: 'transparent',
+            transform: 'scale(1)',
+          },
+          '25%': { 
+            backgroundColor: 'rgba(168, 85, 247, 0.25)',
+            transform: 'scale(1.02)',
+          },
+          '50%': { 
+            backgroundColor: 'rgba(168, 85, 247, 0.15)',
+            transform: 'scale(1)',
+          },
+          '75%': { 
+            backgroundColor: 'rgba(168, 85, 247, 0.25)',
+            transform: 'scale(1.02)',
+          },
+        },
       },
       animation: {
         fadeIn: 'fadeIn 0.7s ease-in',
