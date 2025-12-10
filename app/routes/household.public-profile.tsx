@@ -33,6 +33,7 @@ export default function HouseholdPublicProfile() {
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
+  const isEmbed = params.get("embed") === "1" || params.get("embed") === "true";
   const navigationState = (location.state ?? {}) as {
     profileId?: string;
     backTo?: string;
@@ -325,77 +326,79 @@ export default function HouseholdPublicProfile() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navigation />
+      {isEmbed ? null : <Navigation />}
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
         <main className="flex-1 py-8">
           <div className="max-w-6xl mx-auto px-4">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl shadow-lg border border-white/10 dark:border-purple-500/20">
-              <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-4">
-                    {shouldShowBackButton && (
-                      <button
-                        onClick={handleBackNavigation}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold transition-colors text-sm sm:text-base"
-                      >
-                        ← {backLabel}
-                      </button>
-                    )}
-                    <div>
-                      <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
-                        🏠 Household Profile
-                      </h1>
+            {/* Header (hidden in embed mode) */}
+            {!isEmbed && (
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl shadow-lg border border-white/10 dark:border-purple-500/20">
+                <div className="flex flex-col gap-6">
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-4">
+                      {shouldShowBackButton && (
+                        <button
+                          onClick={handleBackNavigation}
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold transition-colors text-sm sm:text-base"
+                        >
+                          ← {backLabel}
+                        </button>
+                      )}
+                      <div>
+                        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                          🏠 Household Profile
+                        </h1>
+                      </div>
                     </div>
-                  </div>
 
-                  {showActions && (
-                    <div className="flex items-center gap-3 sm:gap-4 self-start lg:self-auto">
-                      {canShortlist && (
-                        <button
-                          onClick={handleToggleShortlist}
-                          disabled={actionLoading === 'shortlist'}
-                          aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
-                          className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all ${
-                            isShortlisted
-                              ? 'bg-pink-500 border-pink-200 text-white hover:bg-pink-600'
-                              : 'bg-white/20 border-white/40 text-white hover:bg-white/30'
-                          } ${actionLoading === 'shortlist' ? 'opacity-70 cursor-not-allowed' : ''}`}
-                        >
-                          <Heart className="w-5 h-5" />
-                        </button>
-                      )}
-                      {canChat && (
-                        <button
-                          onClick={handleStartChat}
-                          disabled={actionLoading === 'chat'}
-                          aria-label="Chat"
-                          className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all bg-white text-purple-600 ${
-                            actionLoading === 'chat' ? 'opacity-70 cursor-not-allowed' : 'hover:scale-105'
-                          }`}
-                        >
-                          <MessageCircle className="w-5 h-5" />
-                        </button>
-                      )}
-                      {canInteract && (
-                        <button
-                          onClick={() => setIsInterestModalOpen(true)}
-                          disabled={hasExpressedInterest}
-                          className={`px-4 py-2 rounded-full font-semibold shadow-lg transition-all flex items-center gap-2 ${
-                            hasExpressedInterest
-                              ? 'bg-gray-400 text-white cursor-not-allowed'
-                              : 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
-                          }`}
-                        >
-                          <HandHeart className="w-5 h-5" />
-                          {hasExpressedInterest ? 'Interest Sent' : 'Show Interest'}
-                        </button>
-                      )}
-                    </div>
-                  )}
+                    {showActions && (
+                      <div className="flex items-center gap-3 sm:gap-4 self-start lg:self-auto">
+                        {canShortlist && (
+                          <button
+                            onClick={handleToggleShortlist}
+                            disabled={actionLoading === 'shortlist'}
+                            aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
+                            className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all ${
+                              isShortlisted
+                                ? 'bg-pink-500 border-pink-200 text-white hover:bg-pink-600'
+                                : 'bg-white/20 border-white/40 text-white hover:bg-white/30'
+                            } ${actionLoading === 'shortlist' ? 'opacity-70 cursor-not-allowed' : ''}`}
+                          >
+                            <Heart className="w-5 h-5" />
+                          </button>
+                        )}
+                        {canChat && (
+                          <button
+                            onClick={handleStartChat}
+                            disabled={actionLoading === 'chat'}
+                            aria-label="Chat"
+                            className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all bg-white text-purple-600 ${
+                              actionLoading === 'chat' ? 'opacity-70 cursor-not-allowed' : 'hover:scale-105'
+                            }`}
+                          >
+                            <MessageCircle className="w-5 h-5" />
+                          </button>
+                        )}
+                        {canInteract && (
+                          <button
+                            onClick={() => setIsInterestModalOpen(true)}
+                            disabled={hasExpressedInterest}
+                            className={`px-4 py-2 rounded-full font-semibold shadow-lg transition-all flex items-center gap-2 ${
+                              hasExpressedInterest
+                                ? 'bg-gray-400 text-white cursor-not-allowed'
+                                : 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
+                            }`}
+                          >
+                            <HandHeart className="w-5 h-5" />
+                            {hasExpressedInterest ? 'Interest Sent' : 'Show Interest'}
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
       {/* Profile Photos */}
       {profile.photos && profile.photos.length > 0 && (
@@ -561,7 +564,7 @@ export default function HouseholdPublicProfile() {
     </div>
       </main>
       </PurpleThemeWrapper>
-      <Footer />
+      {isEmbed ? null : <Footer />}
       
       {/* Image View Modal */}
       {selectedImage && (

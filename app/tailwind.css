@@ -16,6 +16,41 @@
     --color-primary-900: #581c87;
   }
 
+/* Emoji Picker React theming (matches app purple/dark theme) */
+@layer base {
+  /* Base overrides */
+  .EmojiPickerReact {
+    /* Core colors */
+    --epr-bg-color: #13131a; /* panel background */
+    --epr-text-color: #e5e7eb; /* text */
+    --epr-highlight-color: #a855f7; /* accent - active items, toggles */
+    --epr-hover-bg-color: rgba(168, 85, 247, 0.08);
+    --epr-emoji-hover-bg-color: rgba(168, 85, 247, 0.15);
+    --epr-category-label-bg-color: #0a0a0f;
+    --epr-search-input-bg-color: #0f0f16;
+    --epr-search-input-text-color: #e5e7eb;
+    --epr-preview-bg-color: #0f0f16;
+    --epr-picker-border-color: rgba(168, 85, 247, 0.3);
+
+    border: 2px solid var(--epr-picker-border-color);
+    border-radius: 0.75rem;
+    box-shadow: 0 0 20px rgba(168, 85, 247, 0.25);
+  }
+
+  /* Dark theme specific (when library adds .epr-dark-theme) */
+  .EmojiPickerReact.epr-dark-theme {
+    --epr-bg-color: #13131a;
+    --epr-text-color: #e5e7eb;
+    --epr-highlight-color: #c084fc;
+    --epr-hover-bg-color: rgba(168, 85, 247, 0.1);
+    --epr-emoji-hover-bg-color: rgba(168, 85, 247, 0.2);
+    --epr-search-input-bg-color: #0f0f16;
+    --epr-search-input-text-color: #e5e7eb;
+    --epr-category-label-bg-color: #0a0a0f;
+    --epr-preview-bg-color: #0f0f16;
+  }
+}
+
   body {
     @apply text-primary-900;
   }

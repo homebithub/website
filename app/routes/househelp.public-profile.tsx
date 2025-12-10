@@ -119,6 +119,8 @@ interface ProfileResponse {
 export default function HousehelpPublicProfile() {
   const navigate = useNavigate();
   const location = useLocation();
+  const params = new URLSearchParams(location.search);
+  const isEmbed = params.get('embed') === '1' || params.get('embed') === 'true';
   const [profile, setProfile] = useState<HousehelpData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -187,8 +189,8 @@ export default function HousehelpPublicProfile() {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("Not authenticated");
         
-        // Get profileId from navigation state
-        const profileId = (location.state as any)?.profileId;
+        // Get profileId from query string (for iframe modal) or navigation state fallback
+        const profileId = new URLSearchParams(location.search).get('profileId') || (location.state as any)?.profileId;
         
         // Store the profileId we're viewing
         setViewingProfileId(profileId || null);
@@ -238,7 +240,7 @@ export default function HousehelpPublicProfile() {
     };
     
     fetchProfile();
-  }, [location.state]);
+  }, [location.state, location.search]);
 
   const targetProfileId = viewingProfileId || profile?.profile_id || profile?.id;
 
@@ -327,11 +329,12 @@ export default function HousehelpPublicProfile() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navigation />
+      {isEmbed ? null : <Navigation />}
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
         <main className="flex-1">
-          <div className="max-w-6xl mx-auto px-4 pb-6 pt-6 sm:pt-8">
-            {/* Header */}
+          <div className={`max-w-6xl mx-auto px-4 pb-6 ${isEmbed ? 'pt-4' : 'pt-6 sm:pt-8'}`}>
+            {/* Header (hidden in embed) */}
+            {!isEmbed && (
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 text-white rounded-t-3xl p-4 sm:p-8 shadow-lg border border-white/10 dark:border-purple-500/20">
               <div className="flex flex-col gap-6">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -392,6 +395,7 @@ export default function HousehelpPublicProfile() {
                 </div>
               </div>
             </div>
+            )}
 
             {/* Photo Gallery */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
