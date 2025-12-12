@@ -8,6 +8,9 @@ import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMark
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
+import { useWebSocket } from '~/hooks/useWebSocket';
+import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved } from '~/types/websocket';
+import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 
 type Conversation = {
   id: string;
@@ -122,6 +125,25 @@ export default function InboxPage() {
   const [hireRequestStatus, setHireRequestStatus] = useState<string | undefined>();
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
   const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
+  
+  // WebSocket connection
+  const token = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('token');
+  }, []);
+  
+  const wsUrl = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    const base = API_BASE.replace(/^http/, 'ws');
+    return `${base}/api/v1/inbox/ws`;
+  }, [API_BASE]);
+  
+  const { connectionState, addEventListener } = useWebSocket({
+    url: wsUrl,
+    token,
+    reconnectInterval: 3000,
+    maxReconnectAttempts: 10,
+  });
   
   const currentUserId = useMemo(() => {
     try {
@@ -323,9 +345,74 @@ export default function InboxPage() {
     }
   }, [messages, messagesOffset, isNearBottom]);
 
-  // Polling: refresh messages
+  // WebSocket event handlers
   useEffect(() => {
     if (!activeConversationId) return;
+    
+    // Handle new messages
+    const unsubscribeNew = addEventListener(WSEventNewMessage, (event: WSMessageEvent) => {
+      if (event.conversation_id === activeConversationId && event.message) {
+        setMessages(prev => {
+          // Check if message already exists (avoid duplicates)
+          if (prev.some(m => m.id === event.message!.id)) {
+            return prev;
+          }
+          return [...prev, event.message!];
+        });
+        
+        // Auto-scroll if near bottom
+        if (isNearBottom()) {
+          setTimeout(() => {
+            const el = messagesContainerRef.current;
+            if (el) el.scrollTop = el.scrollHeight;
+          }, 50);
+        }
+      }
+    });
+    
+    // Handle message edits
+    const unsubscribeEdit = addEventListener(WSEventMessageEdited, (event: WSMessageEvent) => {
+      if (event.conversation_id === activeConversationId && event.message) {
+        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
+      }
+    });
+    
+    // Handle message deletes
+    const unsubscribeDelete = addEventListener(WSEventMessageDeleted, (event: WSMessageEvent) => {
+      if (event.conversation_id === activeConversationId && event.message) {
+        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
+      }
+    });
+    
+    // Handle reactions
+    const unsubscribeReaction = addEventListener(WSEventReactionAdded, (event: WSMessageEvent) => {
+      if (event.conversation_id === activeConversationId && event.message) {
+        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
+      }
+    });
+    
+    const unsubscribeReactionRemoved = addEventListener(WSEventReactionRemoved, (event: WSMessageEvent) => {
+      if (event.conversation_id === activeConversationId && event.message) {
+        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
+      }
+    });
+    
+    return () => {
+      unsubscribeNew();
+      unsubscribeEdit();
+      unsubscribeDelete();
+      unsubscribeReaction();
+      unsubscribeReactionRemoved();
+    };
+  }, [activeConversationId, addEventListener, isNearBottom]);
+  
+  // Polling: refresh messages (fallback when WebSocket disconnected, or slower interval when connected)
+  // Use longer interval when WebSocket is connected (30s), shorter when disconnected (12s)
+  const pollInterval = connectionState === 'connected' ? 30000 : 12000;
+  
+  useEffect(() => {
+    if (!activeConversationId) return;
+    
     const id = setInterval(async () => {
       try {
         const count = messages.length > 0 ? messages.length + 10 : messagesLimit;
@@ -346,9 +433,9 @@ export default function InboxPage() {
         // Mark as read
         try { await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, { method: "POST" }); } catch {}
       } catch {}
-    }, 12000);
+    }, pollInterval);
     return () => clearInterval(id);
-  }, [API_BASE, activeConversationId, messages.length, isNearBottom]);
+  }, [API_BASE, activeConversationId, messages.length, isNearBottom, connectionState, pollInterval]);
 
   useEffect(() => {
     handleMessagesScroll();
@@ -1209,7 +1296,7 @@ export default function InboxPage() {
                       {/* Bubble controls (desktop): 3-dots and quick reactions anchored to bubble */}
                       <button
                         type="button"
-                        className={`absolute -top-2 -right-2 hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow opacity-0 group-hover:opacity-100 transition`}
+                        className={`absolute -top-2 ${mine ? '-right-2' : '-left-2'} hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow opacity-0 group-hover:opacity-100 transition`}
                         onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
                         aria-label="Message options"
                       >
@@ -1217,7 +1304,7 @@ export default function InboxPage() {
                       </button>
 
                       {openReactPickerMsgId !== m.id && (
-                        <div className={`absolute -top-8 right-0 z-40 hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition`}>
+                        <div className={`absolute -top-8 ${mine ? 'right-0' : 'left-0'} z-40 hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition`}>
                           {['👍','❤️','😂','😮','😢'].map(em => (
                             <button key={em} className="text-base px-1 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => toggleReaction(m, em)}>{em}</button>
                           ))}
@@ -1225,7 +1312,7 @@ export default function InboxPage() {
                         </div>
                       )}
                       {openReactPickerMsgId === m.id && (
-                        <div ref={reactionPickerRef} className="absolute right-0 bottom-full mb-2 z-50">
+                        <div ref={reactionPickerRef} className={`absolute ${mine ? 'right-0' : 'left-0'} bottom-full mb-2 z-50`}>
                           <EmojiPicker
                             onEmojiClick={(emojiData) => {
                               // Extract emoji with fallback to unified code points
@@ -1424,7 +1511,7 @@ export default function InboxPage() {
                               else if (e.key === 'Enter') { e.preventDefault(); const opt = options[msgMenuFocusIndex]; if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }
                               else if (e.key === 'Escape') { e.preventDefault(); setOpenMsgMenuId(null); }
                             }}
-                            className={`absolute top-6 right-0 z-50 w-48 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg`}
+                            className={`absolute top-6 ${mine ? 'right-0' : 'left-0'} z-50 w-48 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg`}
                             onMouseLeave={() => setOpenMsgMenuId(null)}
                           >
                             {options.map((opt, idx) => (
