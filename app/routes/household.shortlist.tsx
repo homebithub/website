@@ -5,7 +5,7 @@ import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL } from "~/config/api";
+import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 
@@ -120,7 +120,7 @@ export default function HouseholdShortlistPage() {
   async function handleChatWithHousehelp(profileId?: string) {
     if (!profileId) return;
     try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/start/househelp/${profileId}`, { method: 'POST' });
+      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/start/househelp/${profileId}`, { method: 'POST' });
       if (!res.ok) throw new Error('Failed to start chat');
       navigate('/inbox');
     } catch {}

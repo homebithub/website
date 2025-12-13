@@ -26,9 +26,28 @@ const getApiBaseUrl = (): string => {
   return 'https://api.homexpert.co.ke';
 };
 
+const getNotificationsApiBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const envUrl = (window as any).ENV?.NOTIFICATIONS_API_BASE_URL;
+    if (envUrl) return envUrl;
+  }
+
+  if (typeof process !== 'undefined' && process.env.NOTIFICATIONS_API_BASE_URL) {
+    return process.env.NOTIFICATIONS_API_BASE_URL;
+  }
+
+  const base = getApiBaseUrl();
+  if (/^https?:\/\/localhost(:\d+)?$/i.test(base)) {
+    return 'http://localhost:3001/notifications';
+  }
+
+  return `${base}/notifications`;
+};
+
 // Base URLs
 export const API_BASE_URL = getApiBaseUrl();
 export const AUTH_API_BASE_URL = `${API_BASE_URL}/auth`;
+export const NOTIFICATIONS_API_BASE_URL = getNotificationsApiBaseUrl();
 
 // API Endpoints
 export const API_ENDPOINTS = {

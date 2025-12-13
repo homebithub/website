@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL } from "~/config/api";
+import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import HouseholdFilters, { type HouseholdSearchFields } from "~/components/features/HouseholdFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
@@ -31,6 +31,8 @@ const TIME_DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = 
   { amount: 12, unit: "month" },
   { amount: Infinity, unit: "year" },
 ];
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const formatTimeAgo = (dateString?: string) => {
   if (!dateString) return "";
@@ -90,6 +92,10 @@ export default function HousehelpHome() {
     () => (typeof window !== "undefined" && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL,
     []
   );
+  const NOTIFICATIONS_BASE = useMemo(
+    () => (typeof window !== "undefined" && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL,
+    []
+  );
   const navigate = useNavigate();
 
   const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -109,14 +115,14 @@ export default function HousehelpHome() {
   const handleStartChat = async (householdUserId?: string) => {
     try {
       if (!householdUserId) throw new Error('Missing user id');
-      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/start/household/${householdUserId}`, { method: 'POST' });
+      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/start/household/${householdUserId}`, { method: 'POST' });
       if (!res.ok) throw new Error('Failed to start conversation');
       const data = await apiClient.json<any>(res);
       let convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
 
       if (!convId || !UUID_REGEX.test(convId)) {
         try {
-          const convRes = await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations?offset=0&limit=50`);
+          const convRes = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=0&limit=50`);
           if (convRes.ok) {
             const conversations = await apiClient.json<Array<{ id?: string; ID?: string; household_id?: string }>>(convRes);
             const match = conversations.find((c) => c.household_id === householdUserId);

@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from "react"
 import { useSearchParams, useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL, API_ENDPOINTS } from "~/config/api";
+import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon } from '@heroicons/react/24/outline';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
@@ -54,6 +54,10 @@ type HireRequestSummary = {
 
 export default function InboxPage() {
   const API_BASE = React.useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
+  const NOTIFICATIONS_BASE = React.useMemo(
+    () => (typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL,
+    []
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const selectedConversationId = searchParams.get('conversation');
@@ -134,9 +138,9 @@ export default function InboxPage() {
   
   const wsUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
-    const base = API_BASE.replace(/^http/, 'ws');
+    const base = NOTIFICATIONS_BASE.replace(/^http/, 'ws');
     return `${base}/api/v1/inbox/ws`;
-  }, [API_BASE]);
+  }, [NOTIFICATIONS_BASE]);
   
   const { connectionState, addEventListener } = useWebSocket({
     url: wsUrl,
@@ -217,7 +221,7 @@ export default function InboxPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations?offset=${offset}&limit=${limit}`);
+        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=${offset}&limit=${limit}`);
         if (!res.ok) throw new Error("Failed to load conversations");
         const data = await apiClient.json<Conversation[]>(res);
         if (cancelled) return;
@@ -239,7 +243,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [offset, API_BASE]);
+  }, [offset, NOTIFICATIONS_BASE]);
 
   // Polling refresh conversations
   useEffect(() => {
@@ -247,7 +251,7 @@ export default function InboxPage() {
       if (loading) return;
       try {
         const count = items.length > 0 ? items.length : limit;
-        const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations?offset=0&limit=${count}`);
+        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=0&limit=${count}`);
         if (!res.ok) return;
         const data = await apiClient.json<Conversation[]>(res);
         setItems(data);
@@ -255,7 +259,7 @@ export default function InboxPage() {
       } catch {}
     }, 15000);
     return () => clearInterval(id);
-  }, [API_BASE, items.length, loading]);
+  }, [NOTIFICATIONS_BASE, items.length, loading]);
 
   // Load messages for selected conversation
   useEffect(() => {
@@ -271,7 +275,7 @@ export default function InboxPage() {
         setMessagesLoading(true);
         setMessagesError(null);
         const res = await apiClient.auth(
-          `${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${messagesOffset}&limit=${messagesLimit}`
+          `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${messagesOffset}&limit=${messagesLimit}`
         );
         if (!res.ok) throw new Error("Failed to load messages");
         const data = await apiClient.json<Message[]>(res);
@@ -290,20 +294,20 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE, activeConversationId, messagesOffset]);
+  }, [NOTIFICATIONS_BASE, activeConversationId, messagesOffset]);
 
   // Mark conversation as read
   useEffect(() => {
     if (!activeConversationId) return;
     async function markRead() {
       try {
-        await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, {
+        await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, {
           method: "POST",
         });
       } catch {}
     }
     markRead();
-  }, [API_BASE, activeConversationId, messages.length]);
+  }, [NOTIFICATIONS_BASE, activeConversationId, messages.length]);
 
   const isNearBottom = useCallback(() => {
     const el = messagesContainerRef.current;
@@ -417,7 +421,7 @@ export default function InboxPage() {
       try {
         const count = messages.length > 0 ? messages.length + 10 : messagesLimit;
         const res = await apiClient.auth(
-          `${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=0&limit=${count}`
+          `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=0&limit=${count}`
         );
         if (!res.ok) return;
         const data = await apiClient.json<Message[]>(res);
@@ -431,11 +435,11 @@ export default function InboxPage() {
           }
         }
         // Mark as read
-        try { await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, { method: "POST" }); } catch {}
+        try { await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, { method: "POST" }); } catch {}
       } catch {}
     }, pollInterval);
     return () => clearInterval(id);
-  }, [API_BASE, activeConversationId, messages.length, isNearBottom, connectionState, pollInterval]);
+  }, [NOTIFICATIONS_BASE, activeConversationId, messages.length, isNearBottom, connectionState, pollInterval]);
 
   useEffect(() => {
     handleMessagesScroll();
@@ -499,7 +503,7 @@ export default function InboxPage() {
     if (deleteTimersRef.current[msg.id]) window.clearTimeout(deleteTimersRef.current[msg.id]);
     deleteTimersRef.current[msg.id] = window.setTimeout(async () => {
       try {
-        const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${msg.id}`, { method: 'DELETE' });
+        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/messages/${msg.id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete');
         pushToast('Message deleted', 'success');
       } catch (e: any) {
@@ -563,7 +567,7 @@ export default function InboxPage() {
     // Optimistic update
     setMessages(prev => prev.map(m => m.id === editingMessageId ? { ...m, body: newBody, edited_at: editedAt } : m));
     try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${editingMessageId}`, {
+      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/messages/${editingMessageId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ body: newBody }),
@@ -625,7 +629,7 @@ export default function InboxPage() {
       let off = messages.length; // fetch older pages beyond what's loaded
       for (let i = 0; i < 20; i++) { // hard cap to avoid infinite loops
         const res = await apiClient.auth(
-          `${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${off}&limit=${messagesLimit}`
+          `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${off}&limit=${messagesLimit}`
         );
         if (!res.ok) break;
         const data = await apiClient.json<Message[]>(res);
@@ -662,7 +666,7 @@ export default function InboxPage() {
     setOpenReactPickerMsgId(null);
     try {
       // Use POST to toggle reaction; backend can interpret toggle behavior
-      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${msg.id}/reactions`, {
+      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/messages/${msg.id}/reactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emoji }),
@@ -781,7 +785,7 @@ export default function InboxPage() {
     }, 50);
     
     try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body, reply_to_id: replyTo?.id }),
@@ -895,7 +899,7 @@ export default function InboxPage() {
       await fetchHireContext(selectedConversation || undefined);
       if (activeConversationId) {
         const body = 'I have accepted your hire request. Looking forward to working with you!';
-        await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+        await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ body }),
@@ -928,7 +932,7 @@ export default function InboxPage() {
       await fetchHireContext(selectedConversation || undefined);
       if (activeConversationId) {
         const body = `I've declined the hire request: ${reason}.`;
-        await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+        await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ body }),
@@ -1790,7 +1794,7 @@ export default function InboxPage() {
               setHireRequestId(newHireRequestId);
               // Optionally send a message about the hire request
               const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
-              apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+              apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ body }),
