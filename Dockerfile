@@ -18,6 +18,8 @@ RUN npm run build
 FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+ENV AUTH_API_BASE_URL=https://homebit.co.ke/auth
+ENV NOTIFICATIONS_API_BASE_URL=https://homebit.co.ke/notifications
 
 # Install only production dependencies
 COPY package*.json ./
