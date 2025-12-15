@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
+import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -266,7 +266,7 @@ export default function HouseholdPublicProfile() {
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Not authenticated");
-      const res = await fetch(`${API_BASE_URL}/api/v1/inbox/start/household/${resolvedUserId}`, {
+      const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/start/household/${resolvedUserId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -279,7 +279,7 @@ export default function HouseholdPublicProfile() {
         convId = undefined;
       }
       if (!convId) {
-        const convRes = await fetch(`${API_BASE_URL}/api/v1/inbox/conversations?offset=0&limit=50`, {
+        const convRes = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations?offset=0&limit=50`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (convRes.ok) {

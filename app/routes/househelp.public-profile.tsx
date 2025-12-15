@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { API_BASE_URL } from '~/config/api';
+import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import { apiClient } from '~/utils/apiClient';
-import { API_ENDPOINTS } from '~/config/api';
 import { MessageCircle, Heart, Briefcase } from 'lucide-react';
 import HireRequestModal from '~/components/modals/HireRequestModal';
 
@@ -248,7 +247,7 @@ export default function HousehelpPublicProfile() {
     if (!targetProfileId) return;
     setActionLoading('chat');
     try {
-      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/inbox/start/househelp/${targetProfileId}`, {
+      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/start/househelp/${targetProfileId}`, {
         method: 'POST',
       });
       if (!res.ok) throw new Error('Failed to start conversation');

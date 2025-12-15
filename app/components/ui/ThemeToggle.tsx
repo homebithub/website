@@ -13,7 +13,19 @@ export default function ThemeToggle({
   size = 'md',
   showLabel = false 
 }: ThemeToggleProps) {
-  const { theme, toggleTheme } = useTheme();
+  // Safely handle theme context - return null if not available
+  let theme: 'light' | 'dark' = 'dark';
+  let toggleTheme: () => void = () => {};
+  
+  try {
+    const themeContext = useTheme();
+    theme = themeContext.theme;
+    toggleTheme = themeContext.toggleTheme;
+  } catch (error) {
+    // ThemeProvider not available yet (SSR or hydration)
+    // Return null to prevent rendering until provider is ready
+    return null;
+  }
 
   const sizeClasses = {
     sm: 'h-5 w-5',
@@ -62,7 +74,18 @@ export default function ThemeToggle({
 
 // Animated toggle switch variant
 export function ThemeToggleSwitch({ className = '' }: { className?: string }) {
-  const { theme, toggleTheme } = useTheme();
+  // Safely handle theme context - return null if not available
+  let theme: 'light' | 'dark' = 'dark';
+  let toggleTheme: () => void = () => {};
+  
+  try {
+    const themeContext = useTheme();
+    theme = themeContext.theme;
+    toggleTheme = themeContext.toggleTheme;
+  } catch (error) {
+    // ThemeProvider not available yet (SSR or hydration)
+    return null;
+  }
 
   return (
     <button

@@ -3,9 +3,8 @@ import { useSearchParams, useLocation, useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { API_BASE_URL } from '~/config/api';
-import { API_ENDPOINTS } from '~/config/api';
-import { apiClient } from '~/utils/apiClient';
+import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { apiClient } from "~/utils/apiClient";
 import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
@@ -60,7 +59,7 @@ export default function AuthenticatedHome() {
 
   const handleStartChat = async (profileId: string) => {
     try {
-      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/inbox/start/househelp/${profileId}`, {
+      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/start/househelp/${profileId}`, {
         method: 'POST',
       });
       if (!res.ok) throw new Error('Failed to start conversation');

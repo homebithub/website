@@ -6,7 +6,7 @@ import { useAuth } from "~/contexts/useAuth";
 import { Waitlist } from "~/components/features/Waitlist";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
-import { API_BASE_URL } from "~/config/api";
+import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -93,7 +93,7 @@ export function Navigation() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const res = await fetch(`${API_BASE_URL}/api/v1/inbox/conversations?limit=100`, {
+            const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 

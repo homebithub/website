@@ -2,12 +2,15 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from "react"
 import { useSearchParams, useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL, API_ENDPOINTS } from "~/config/api";
+import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon } from '@heroicons/react/24/outline';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
+import { useWebSocket } from '~/hooks/useWebSocket';
+import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved } from '~/types/websocket';
+import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 
 type Conversation = {
   id: string;
@@ -51,6 +54,10 @@ type HireRequestSummary = {
 
 export default function InboxPage() {
   const API_BASE = React.useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
+  const NOTIFICATIONS_BASE = React.useMemo(
+    () => (typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL,
+    []
+  );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const selectedConversationId = searchParams.get('conversation');
@@ -122,6 +129,25 @@ export default function InboxPage() {
   const [hireRequestStatus, setHireRequestStatus] = useState<string | undefined>();
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
   const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
+  
+  // WebSocket connection
+  const token = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem('token');
+  }, []);
+  
+  const wsUrl = useMemo(() => {
+    if (typeof window === 'undefined') return '';
+    const base = NOTIFICATIONS_BASE.replace(/^http/, 'ws');
+    return `${base}/api/v1/inbox/ws`;
+  }, [NOTIFICATIONS_BASE]);
+  
+  const { connectionState, addEventListener } = useWebSocket({
+    url: wsUrl,
+    token,
+    reconnectInterval: 3000,
+    maxReconnectAttempts: 10,
+  });
   
   const currentUserId = useMemo(() => {
     try {
@@ -195,7 +221,7 @@ export default function InboxPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations?offset=${offset}&limit=${limit}`);
+        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=${offset}&limit=${limit}`);
         if (!res.ok) throw new Error("Failed to load conversations");
         const data = await apiClient.json<Conversation[]>(res);
         if (cancelled) return;
@@ -217,7 +243,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [offset, API_BASE]);
+  }, [offset, NOTIFICATIONS_BASE]);
 
   // Polling refresh conversations
   useEffect(() => {
@@ -225,7 +251,7 @@ export default function InboxPage() {
       if (loading) return;
       try {
         const count = items.length > 0 ? items.length : limit;
-        const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations?offset=0&limit=${count}`);
+        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=0&limit=${count}`);
         if (!res.ok) return;
         const data = await apiClient.json<Conversation[]>(res);
         setItems(data);
@@ -233,7 +259,7 @@ export default function InboxPage() {
       } catch {}
     }, 15000);
     return () => clearInterval(id);
-  }, [API_BASE, items.length, loading]);
+  }, [NOTIFICATIONS_BASE, items.length, loading]);
 
   // Load messages for selected conversation
   useEffect(() => {
@@ -249,7 +275,7 @@ export default function InboxPage() {
         setMessagesLoading(true);
         setMessagesError(null);
         const res = await apiClient.auth(
-          `${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${messagesOffset}&limit=${messagesLimit}`
+          `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${messagesOffset}&limit=${messagesLimit}`
         );
         if (!res.ok) throw new Error("Failed to load messages");
         const data = await apiClient.json<Message[]>(res);
@@ -268,20 +294,20 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE, activeConversationId, messagesOffset]);
+  }, [NOTIFICATIONS_BASE, activeConversationId, messagesOffset]);
 
   // Mark conversation as read
   useEffect(() => {
     if (!activeConversationId) return;
     async function markRead() {
       try {
-        await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, {
+        await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, {
           method: "POST",
         });
       } catch {}
     }
     markRead();
-  }, [API_BASE, activeConversationId, messages.length]);
+  }, [NOTIFICATIONS_BASE, activeConversationId, messages.length]);
 
   const isNearBottom = useCallback(() => {
     const el = messagesContainerRef.current;
@@ -323,14 +349,79 @@ export default function InboxPage() {
     }
   }, [messages, messagesOffset, isNearBottom]);
 
-  // Polling: refresh messages
+  // WebSocket event handlers
   useEffect(() => {
     if (!activeConversationId) return;
+    
+    // Handle new messages
+    const unsubscribeNew = addEventListener(WSEventNewMessage, (event: WSMessageEvent) => {
+      if (event.conversation_id === activeConversationId && event.message) {
+        setMessages(prev => {
+          // Check if message already exists (avoid duplicates)
+          if (prev.some(m => m.id === event.message!.id)) {
+            return prev;
+          }
+          return [...prev, event.message!];
+        });
+        
+        // Auto-scroll if near bottom
+        if (isNearBottom()) {
+          setTimeout(() => {
+            const el = messagesContainerRef.current;
+            if (el) el.scrollTop = el.scrollHeight;
+          }, 50);
+        }
+      }
+    });
+    
+    // Handle message edits
+    const unsubscribeEdit = addEventListener(WSEventMessageEdited, (event: WSMessageEvent) => {
+      if (event.conversation_id === activeConversationId && event.message) {
+        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
+      }
+    });
+    
+    // Handle message deletes
+    const unsubscribeDelete = addEventListener(WSEventMessageDeleted, (event: WSMessageEvent) => {
+      if (event.conversation_id === activeConversationId && event.message) {
+        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
+      }
+    });
+    
+    // Handle reactions
+    const unsubscribeReaction = addEventListener(WSEventReactionAdded, (event: WSMessageEvent) => {
+      if (event.conversation_id === activeConversationId && event.message) {
+        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
+      }
+    });
+    
+    const unsubscribeReactionRemoved = addEventListener(WSEventReactionRemoved, (event: WSMessageEvent) => {
+      if (event.conversation_id === activeConversationId && event.message) {
+        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
+      }
+    });
+    
+    return () => {
+      unsubscribeNew();
+      unsubscribeEdit();
+      unsubscribeDelete();
+      unsubscribeReaction();
+      unsubscribeReactionRemoved();
+    };
+  }, [activeConversationId, addEventListener, isNearBottom]);
+  
+  // Polling: refresh messages (fallback when WebSocket disconnected, or slower interval when connected)
+  // Use longer interval when WebSocket is connected (30s), shorter when disconnected (12s)
+  const pollInterval = connectionState === 'connected' ? 30000 : 12000;
+  
+  useEffect(() => {
+    if (!activeConversationId) return;
+    
     const id = setInterval(async () => {
       try {
         const count = messages.length > 0 ? messages.length + 10 : messagesLimit;
         const res = await apiClient.auth(
-          `${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=0&limit=${count}`
+          `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=0&limit=${count}`
         );
         if (!res.ok) return;
         const data = await apiClient.json<Message[]>(res);
@@ -344,11 +435,11 @@ export default function InboxPage() {
           }
         }
         // Mark as read
-        try { await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, { method: "POST" }); } catch {}
+        try { await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/read`, { method: "POST" }); } catch {}
       } catch {}
-    }, 12000);
+    }, pollInterval);
     return () => clearInterval(id);
-  }, [API_BASE, activeConversationId, messages.length, isNearBottom]);
+  }, [NOTIFICATIONS_BASE, activeConversationId, messages.length, isNearBottom, connectionState, pollInterval]);
 
   useEffect(() => {
     handleMessagesScroll();
@@ -412,7 +503,7 @@ export default function InboxPage() {
     if (deleteTimersRef.current[msg.id]) window.clearTimeout(deleteTimersRef.current[msg.id]);
     deleteTimersRef.current[msg.id] = window.setTimeout(async () => {
       try {
-        const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${msg.id}`, { method: 'DELETE' });
+        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/messages/${msg.id}`, { method: 'DELETE' });
         if (!res.ok) throw new Error('Failed to delete');
         pushToast('Message deleted', 'success');
       } catch (e: any) {
@@ -476,7 +567,7 @@ export default function InboxPage() {
     // Optimistic update
     setMessages(prev => prev.map(m => m.id === editingMessageId ? { ...m, body: newBody, edited_at: editedAt } : m));
     try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${editingMessageId}`, {
+      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/messages/${editingMessageId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ body: newBody }),
@@ -538,7 +629,7 @@ export default function InboxPage() {
       let off = messages.length; // fetch older pages beyond what's loaded
       for (let i = 0; i < 20; i++) { // hard cap to avoid infinite loops
         const res = await apiClient.auth(
-          `${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${off}&limit=${messagesLimit}`
+          `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${off}&limit=${messagesLimit}`
         );
         if (!res.ok) break;
         const data = await apiClient.json<Message[]>(res);
@@ -575,7 +666,7 @@ export default function InboxPage() {
     setOpenReactPickerMsgId(null);
     try {
       // Use POST to toggle reaction; backend can interpret toggle behavior
-      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/messages/${msg.id}/reactions`, {
+      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/messages/${msg.id}/reactions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ emoji }),
@@ -694,7 +785,7 @@ export default function InboxPage() {
     }, 50);
     
     try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body, reply_to_id: replyTo?.id }),
@@ -808,7 +899,7 @@ export default function InboxPage() {
       await fetchHireContext(selectedConversation || undefined);
       if (activeConversationId) {
         const body = 'I have accepted your hire request. Looking forward to working with you!';
-        await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+        await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ body }),
@@ -841,7 +932,7 @@ export default function InboxPage() {
       await fetchHireContext(selectedConversation || undefined);
       if (activeConversationId) {
         const body = `I've declined the hire request: ${reason}.`;
-        await apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+        await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ body }),
@@ -1209,7 +1300,7 @@ export default function InboxPage() {
                       {/* Bubble controls (desktop): 3-dots and quick reactions anchored to bubble */}
                       <button
                         type="button"
-                        className={`absolute -top-2 -right-2 hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow opacity-0 group-hover:opacity-100 transition`}
+                        className={`absolute -top-2 ${mine ? '-right-2' : '-left-2'} hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow opacity-0 group-hover:opacity-100 transition`}
                         onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
                         aria-label="Message options"
                       >
@@ -1217,7 +1308,7 @@ export default function InboxPage() {
                       </button>
 
                       {openReactPickerMsgId !== m.id && (
-                        <div className={`absolute -top-8 right-0 z-40 hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition`}>
+                        <div className={`absolute -top-8 ${mine ? 'right-0' : 'left-0'} z-40 hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition`}>
                           {['👍','❤️','😂','😮','😢'].map(em => (
                             <button key={em} className="text-base px-1 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => toggleReaction(m, em)}>{em}</button>
                           ))}
@@ -1225,7 +1316,7 @@ export default function InboxPage() {
                         </div>
                       )}
                       {openReactPickerMsgId === m.id && (
-                        <div ref={reactionPickerRef} className="absolute right-0 bottom-full mb-2 z-50">
+                        <div ref={reactionPickerRef} className={`absolute ${mine ? 'right-0' : 'left-0'} bottom-full mb-2 z-50`}>
                           <EmojiPicker
                             onEmojiClick={(emojiData) => {
                               // Extract emoji with fallback to unified code points
@@ -1424,7 +1515,7 @@ export default function InboxPage() {
                               else if (e.key === 'Enter') { e.preventDefault(); const opt = options[msgMenuFocusIndex]; if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }
                               else if (e.key === 'Escape') { e.preventDefault(); setOpenMsgMenuId(null); }
                             }}
-                            className={`absolute top-6 right-0 z-50 w-48 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg`}
+                            className={`absolute top-6 ${mine ? 'right-0' : 'left-0'} z-50 w-48 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg`}
                             onMouseLeave={() => setOpenMsgMenuId(null)}
                           >
                             {options.map((opt, idx) => (
@@ -1703,7 +1794,7 @@ export default function InboxPage() {
               setHireRequestId(newHireRequestId);
               // Optionally send a message about the hire request
               const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
-              apiClient.auth(`${API_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+              apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ body }),
