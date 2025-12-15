@@ -16,16 +16,17 @@ export const headers: Route.HeadersFunction = () => ({
 });
 
 export function loader() {
-    // Get API base URL from environment (server-side)
-    const apiBaseUrl = process.env.API_BASE_URL || "http://localhost:3000";
+    // Get API base URLs from environment (server-side)
+    const authApiBaseUrl = process.env.AUTH_API_BASE_URL || "http://localhost:3000";
+    const notificationsApiBaseUrl = process.env.NOTIFICATIONS_API_BASE_URL || "http://localhost:3001";
     
     return {
         ENV: {
             GOOGLE_CLIENT_ID:
                 process.env.GOOGLE_CLIENT_ID ||
                 "180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",
-            API_BASE_URL: apiBaseUrl,
-            AUTH_API_BASE_URL: apiBaseUrl, // Same as API_BASE_URL for local dev
+            AUTH_API_BASE_URL: authApiBaseUrl,
+            NOTIFICATIONS_API_BASE_URL: notificationsApiBaseUrl,
         },
     };
 }

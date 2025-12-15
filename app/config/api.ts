@@ -5,8 +5,8 @@
  * Update API_BASE_URL to switch between development and production.
  */
 
-// Get base URL from environment or use default
-const getApiBaseUrl = (): string => {
+// Get auth service base URL from environment or use default
+const getAuthApiBaseUrl = (): string => {
   // Check if running in browser
   if (typeof window !== 'undefined') {
     // Try to get from window.ENV (set in root.tsx)
@@ -16,130 +16,137 @@ const getApiBaseUrl = (): string => {
   }
   
   // Check environment variable
-  if (typeof process !== 'undefined' && process.env.API_BASE_URL) {
-    console.log('[API Config] Server - process.env.API_BASE_URL:', process.env.API_BASE_URL);
-    return process.env.API_BASE_URL;
+  if (typeof process !== 'undefined' && process.env.AUTH_API_BASE_URL) {
+    console.log('[API Config] Server - process.env.AUTH_API_BASE_URL:', process.env.AUTH_API_BASE_URL);
+    return process.env.AUTH_API_BASE_URL;
   }
   
   // Default to production
-  console.warn('[API Config] No environment variable found, using production URL');
-  return 'https://api.homexpert.co.ke';
+  console.warn('[API Config] No AUTH_API_BASE_URL environment variable found, using production URL');
+  return 'https://homebit.co.ke/auth';
 };
 
+// Get notifications service base URL from environment or use default
 const getNotificationsApiBaseUrl = (): string => {
+  // Check if running in browser
   if (typeof window !== 'undefined') {
     const envUrl = (window as any).ENV?.NOTIFICATIONS_API_BASE_URL;
+    console.log('[API Config] Browser - window.ENV.NOTIFICATIONS_API_BASE_URL:', envUrl);
     if (envUrl) return envUrl;
   }
 
+  // Check environment variable
   if (typeof process !== 'undefined' && process.env.NOTIFICATIONS_API_BASE_URL) {
+    console.log('[API Config] Server - process.env.NOTIFICATIONS_API_BASE_URL:', process.env.NOTIFICATIONS_API_BASE_URL);
     return process.env.NOTIFICATIONS_API_BASE_URL;
   }
 
-  const base = getApiBaseUrl();
-  if (/^https?:\/\/localhost(:\d+)?$/i.test(base)) {
-    return 'http://localhost:3001/notifications';
-  }
-
-  return `${base}/notifications`;
+  // Default to production
+  console.warn('[API Config] No NOTIFICATIONS_API_BASE_URL environment variable found, using production URL');
+  return 'https://homebit.co.ke/notifications';
 };
 
-// Base URLs
-export const API_BASE_URL = getApiBaseUrl();
-export const AUTH_API_BASE_URL = `${API_BASE_URL}/auth`;
+// Base URLs for each service
+export const AUTH_API_BASE_URL = getAuthApiBaseUrl();
 export const NOTIFICATIONS_API_BASE_URL = getNotificationsApiBaseUrl();
+
+// Legacy API_BASE_URL for backward compatibility (points to auth service)
+export const API_BASE_URL = AUTH_API_BASE_URL;
 
 // API Endpoints
 export const API_ENDPOINTS = {
   // Auth endpoints
   auth: {
-    me: `${API_BASE_URL}/api/v1/auth/me`,
-    login: `${AUTH_API_BASE_URL}/login`,
-    signup: `${AUTH_API_BASE_URL}/signup`,
-    forgotPassword: `${AUTH_API_BASE_URL}/forgot-password`,
-    resetPassword: `${AUTH_API_BASE_URL}/reset-password`,
-    verifyEmail: `${AUTH_API_BASE_URL}/verify-email`,
-    verifyOtp: `${AUTH_API_BASE_URL}/verify-otp`,
-    updateEmail: `${AUTH_API_BASE_URL}/update-email`,
-    changePassword: `${AUTH_API_BASE_URL}/change-password`,
-    googleCallback: `${AUTH_API_BASE_URL}/google/callback`,
+    me: `${AUTH_API_BASE_URL}/api/v1/auth/me`,
+    login: `${AUTH_API_BASE_URL}/api/v1/auth/login`,
+    signup: `${AUTH_API_BASE_URL}/api/v1/auth/register`,
+    forgotPassword: `${AUTH_API_BASE_URL}/api/v1/auth/forgot-password`,
+    resetPassword: `${AUTH_API_BASE_URL}/api/v1/auth/reset-password`,
+    verifyEmail: `${AUTH_API_BASE_URL}/api/v1/auth/verify-email`,
+    verifyOtp: `${AUTH_API_BASE_URL}/api/v1/verifications/verify-otp`,
+    updateEmail: `${AUTH_API_BASE_URL}/api/v1/auth/update-email`,
+    changePassword: `${AUTH_API_BASE_URL}/api/v1/auth/change-password`,
+    googleCallback: `${AUTH_API_BASE_URL}/api/v1/auth/google/callback`,
+    googleSignIn: `${AUTH_API_BASE_URL}/api/v1/auth/google/signin`,
+    googleUrl: `${AUTH_API_BASE_URL}/api/v1/auth/google/url`,
+    googleComplete: `${AUTH_API_BASE_URL}/api/v1/auth/google/complete`,
   },
   
   // Profile endpoints
   profile: {
     househelp: {
-      me: `${API_BASE_URL}/api/v1/profile/househelp/me`,
-      byId: (id: string) => `${API_BASE_URL}/api/v1/househelps/${id}/profile_with_user`,
+      me: `${AUTH_API_BASE_URL}/api/v1/profile/househelp/me`,
+      byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/househelps/${id}/profile_with_user`,
     },
     household: {
-      me: `${API_BASE_URL}/api/v1/profile/household/me`,
+      me: `${AUTH_API_BASE_URL}/api/v1/profile/household/me`,
     },
   },
   
   // Images endpoints
   images: {
-    upload: `${API_BASE_URL}/api/v1/images/upload`,
-    user: `${API_BASE_URL}/api/v1/images/user`,
-    userById: (userId: string) => `${API_BASE_URL}/api/v1/images/user/${userId}`,
-    delete: (imageId: string) => `${API_BASE_URL}/api/v1/images/${imageId}`,
+    upload: `${AUTH_API_BASE_URL}/api/v1/images/upload`,
+    user: `${AUTH_API_BASE_URL}/api/v1/images/user`,
+    userById: (userId: string) => `${AUTH_API_BASE_URL}/api/v1/images/user/${userId}`,
+    delete: (imageId: string) => `${AUTH_API_BASE_URL}/api/v1/images/${imageId}`,
   },
   
   // Shortlist endpoints
   shortlists: {
-    base: `${API_BASE_URL}/api/v1/shortlists`,
-    exists: (profileId: string) => `${API_BASE_URL}/api/v1/shortlists/exists/${profileId}`,
-    byId: (profileId: string) => `${API_BASE_URL}/api/v1/shortlists/${profileId}`,
+    base: `${AUTH_API_BASE_URL}/api/v1/shortlists`,
+    exists: (profileId: string) => `${AUTH_API_BASE_URL}/api/v1/shortlists/exists/${profileId}`,
+    byId: (profileId: string) => `${AUTH_API_BASE_URL}/api/v1/shortlists/${profileId}`,
   },
   
   // Profile view tracking
   profileView: {
-    record: `${API_BASE_URL}/api/v1/profile-view/record`,
+    record: `${AUTH_API_BASE_URL}/api/v1/profile-view/record`,
   },
   
   // User settings
   users: {
-    settings: `${API_BASE_URL}/users/settings`,
+    settings: `${AUTH_API_BASE_URL}/users/settings`,
   },
   
   // Contact
-  contact: `${API_BASE_URL}/contact`,
+  contact: `${AUTH_API_BASE_URL}/contact`,
   
   // Waitlist
   waitlist: {
-    join: `${AUTH_API_BASE_URL}/waitlist/join`,
-    google: `${AUTH_API_BASE_URL}/waitlist/google`,
+    join: `${AUTH_API_BASE_URL}/api/v1/waitlist`,
+    google: `${AUTH_API_BASE_URL}/api/v1/waitlist/google`,
   },
   
   // Hiring system endpoints
   hiring: {
     requests: {
-      base: `${API_BASE_URL}/api/v1/hire-requests`,
-      byId: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}`,
-      accept: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}/accept`,
-      decline: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}/decline`,
-      finalize: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}/finalize`,
-      negotiate: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}/negotiate`,
-      negotiations: (id: string) => `${API_BASE_URL}/api/v1/hire-requests/${id}/negotiations`,
+      base: `${AUTH_API_BASE_URL}/api/v1/hire-requests`,
+      byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-requests/${id}`,
+      accept: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-requests/${id}/accept`,
+      decline: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-requests/${id}/decline`,
+      finalize: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-requests/${id}/finalize`,
+      negotiate: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-requests/${id}/negotiate`,
+      negotiations: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-requests/${id}/negotiations`,
     },
     contracts: {
-      base: `${API_BASE_URL}/api/v1/hire-contracts`,
-      byId: (id: string) => `${API_BASE_URL}/api/v1/hire-contracts/${id}`,
-      complete: (id: string) => `${API_BASE_URL}/api/v1/hire-contracts/${id}/complete`,
-      terminate: (id: string) => `${API_BASE_URL}/api/v1/hire-contracts/${id}/terminate`,
+      base: `${AUTH_API_BASE_URL}/api/v1/hire-contracts`,
+      byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-contracts/${id}`,
+      complete: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-contracts/${id}/complete`,
+      terminate: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-contracts/${id}/terminate`,
     },
   },
   
   // Interest endpoints (househelps showing interest in households)
   interests: {
-    base: `${API_BASE_URL}/api/v1/interests`,
-    byId: (id: string) => `${API_BASE_URL}/api/v1/interests/${id}`,
-    exists: (householdId: string) => `${API_BASE_URL}/api/v1/interests/exists/${householdId}`,
-    household: `${API_BASE_URL}/api/v1/interests/household`,
-    househelp: `${API_BASE_URL}/api/v1/interests/househelp`,
-    count: `${API_BASE_URL}/api/v1/interests/count`,
-    markViewed: (id: string) => `${API_BASE_URL}/api/v1/interests/${id}/viewed`,
-    accept: (id: string) => `${API_BASE_URL}/api/v1/interests/${id}/accept`,
-    decline: (id: string) => `${API_BASE_URL}/api/v1/interests/${id}/decline`,
+    base: `${AUTH_API_BASE_URL}/api/v1/interests`,
+    byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/interests/${id}`,
+    exists: (householdId: string) => `${AUTH_API_BASE_URL}/api/v1/interests/exists/${householdId}`,
+    household: `${AUTH_API_BASE_URL}/api/v1/interests/household`,
+    househelp: `${AUTH_API_BASE_URL}/api/v1/interests/househelp`,
+    count: `${AUTH_API_BASE_URL}/api/v1/interests/count`,
+    markViewed: (id: string) => `${AUTH_API_BASE_URL}/api/v1/interests/${id}/viewed`,
+    accept: (id: string) => `${AUTH_API_BASE_URL}/api/v1/interests/${id}/accept`,
+    decline: (id: string) => `${AUTH_API_BASE_URL}/api/v1/interests/${id}/decline`,
   },
 } as const;
 
@@ -194,8 +201,9 @@ export const apiFetch = async (
 
 // Export for easy access
 export default {
-  BASE_URL: API_BASE_URL,
   AUTH_BASE_URL: AUTH_API_BASE_URL,
+  NOTIFICATIONS_BASE_URL: NOTIFICATIONS_API_BASE_URL,
+  BASE_URL: API_BASE_URL, // Legacy - points to auth service
   ENDPOINTS: API_ENDPOINTS,
   buildUrl: buildApiUrl,
   getAuthHeaders,
