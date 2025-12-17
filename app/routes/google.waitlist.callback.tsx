@@ -7,9 +7,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
   const rawState = url.searchParams.get("state") || "";
+  
+  // Get base URL for redirects
+  const origin = url.origin;
 
   if (!code) {
-    return Response.redirect(`/?waitlist=1&error=missing_code`);
+    return Response.redirect(`${origin}/?waitlist=1&error=missing_code`);
   }
 
   const baseUrl = process.env.AUTH_API_BASE_URL || "https://api.homebit.co.ke/auth";
@@ -22,7 +25,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
 
     if (!resp.ok) {
-      return Response.redirect(`/?waitlist=1&error=signin_failed`);
+      return Response.redirect(`${origin}/?waitlist=1&error=signin_failed`);
     }
 
     const data: {
@@ -62,7 +65,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       });
       if (createResp.ok) {
         params.set("success", "1");
-        return Response.redirect(`/?${params.toString()}`);
+        return Response.redirect(`${origin}/?${params.toString()}`);
       } else {
         // Try to surface backend validation errors if present
         let errText = "waitlist_create_failed";
@@ -71,12 +74,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
           errText = err?.error || Object.values(err?.errors || {}).join(" ") || errText;
         } catch {}
         params.set("error", encodeURIComponent(String(errText)));
-        return Response.redirect(`/?${params.toString()}`);
+        return Response.redirect(`${origin}/?${params.toString()}`);
       }
     }
     // Fall back to opening the modal prefilled; user can enter phone and submit
-    return Response.redirect(`/?${params.toString()}`);
+    return Response.redirect(`${origin}/?${params.toString()}`);
   } catch (e) {
-    return Response.redirect(`/?waitlist=1&error=network_error`);
+    return Response.redirect(`${origin}/?waitlist=1&error=network_error`);
   }
 }
