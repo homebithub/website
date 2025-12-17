@@ -13,6 +13,7 @@ import { Modal } from '~/components/features/Modal';
 import { API_BASE_URL } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import type { LoginResponse as AuthLoginResponse } from "~/types/users";
 
 // Types for request and response
 export type SignupRequest = {
@@ -244,35 +245,63 @@ export default function SignupPage() {
                     profile_type: form.profile_type,
                     ...(form.profile_type === 'househelp' && bureauId ? { bureau_id: bureauId } : {})
                 };
-                
+
                 const res = await fetch(`${base_url}/api/v1/auth/google/complete`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(googlePayload),
                 });
-                
+
                 if (!res.ok) {
                     const err = await res.json();
                     throw new Error(err.message || 'Google signup completion failed');
                 }
-                
-                const data: SignupResponse = await res.json();
-                
-                // Store auth data and redirect
+
+                // /api/v1/auth/google/complete returns the same shape as LoginResponse
+                const data: AuthLoginResponse = await res.json();
+
                 if (data.token) {
+                    // Store auth data in the same format as the regular login flow
                     localStorage.setItem('token', data.token);
-                    localStorage.setItem('user_object', JSON.stringify(data.user));
-                    localStorage.setItem('user_id', data.user.user_id);
-                    localStorage.setItem('profile_type', data.user.profile_type || form.profile_type);
-                    
-                    // Redirect based on profile type
-                    if (form.profile_type === 'household') {
-                        navigate('/household/profile');
-                    } else if (form.profile_type === 'househelp') {
-                        navigate('/househelp');
-                    } else {
-                        navigate('/');
+                    const userData: any = { ...data };
+                    delete userData.token;
+                    localStorage.setItem('user_object', JSON.stringify(userData));
+                    localStorage.setItem('profile_type', userData.profile_type || form.profile_type);
+                    try { localStorage.setItem('userType', userData.profile_type || ''); } catch {}
+
+                    const profileType = userData.profile_type;
+
+                    // Mirror the profile setup redirect logic used in AuthContext login
+                    if (profileType === 'household' || profileType === 'househelp') {
+                        try {
+                            const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+                                headers: {
+                                    'Authorization': `Bearer ${data.token}`,
+                                },
+                            });
+
+                            if (setupResponse.ok) {
+                                const setupData = await setupResponse.json();
+                                const isComplete = setupData.is_complete || false;
+                                const lastStep = setupData.last_completed_step || 0;
+
+                                if (!isComplete) {
+                                    const setupRoute = profileType === 'household'
+                                        ? `/profile-setup/household?step=${lastStep + 1}`
+                                        : `/profile-setup/househelp?step=${lastStep + 1}`;
+
+                                    navigate(setupRoute);
+                                    return;
+                                }
+                            }
+                        } catch (err) {
+                            console.error('Failed to check profile setup status after Google signup:', err);
+                            // If this fails, fall through to default redirect below
+                        }
                     }
+
+                    // If profile is complete or setup check failed, send them to home
+                    navigate('/');
                 }
                 return;
             }
@@ -561,54 +590,54 @@ export default function SignupPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">First Name</label>
-                            <input
-                                type="text"
-                                name="first_name"
-                                value={form.first_name}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                required
-                                readOnly={!!googleData}
-                                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
-                                    googleData ? 'bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : ''
-                                } ${
-                                    getFieldError('first_name') 
-                                        ? 'border-red-300' 
-                                        : isFieldValid('first_name')
-                                        ? 'border-green-300'
-                                        : 'border-purple-200'
-                                }`}
-                            />
-                            {getFieldError('first_name') && (
-                                <p className="text-red-600 text-sm mt-1">{getFieldError('first_name')}</p>
-                            )}
-                        </div>
-                        <div>
-                            <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">Last Name</label>
-                            <input
-                                type="text"
-                                name="last_name"
-                                value={form.last_name}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                required
-                                readOnly={!!googleData}
-                                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
-                                    googleData ? 'bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : ''
-                                } ${
-                                    getFieldError('last_name') 
-                                        ? 'border-red-300' 
-                                        : isFieldValid('last_name')
-                                        ? 'border-green-300'
-                                        : 'border-purple-200'
-                                }`}
-                            />
-                            {getFieldError('last_name') && (
-                                <p className="text-red-600 text-sm mt-1">{getFieldError('last_name')}</p>
-                            )}
-                        </div>
+                        {/* Only show name fields for non-Google signups; for Google we use the
+                            values returned by Google but don't ask the user to edit them. */}
+                        {!googleData && (
+                          <>
+                            <div>
+                                <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">First Name</label>
+                                <input
+                                    type="text"
+                                    name="first_name"
+                                    value={form.first_name}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    required
+                                    className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                                        getFieldError('first_name') 
+                                            ? 'border-red-300' 
+                                            : isFieldValid('first_name')
+                                            ? 'border-green-300'
+                                            : 'border-purple-200'
+                                    }`}
+                                />
+                                {getFieldError('first_name') && (
+                                    <p className="text-red-600 text-sm mt-1">{getFieldError('first_name')}</p>
+                                )}
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">Last Name</label>
+                                <input
+                                    type="text"
+                                    name="last_name"
+                                    value={form.last_name}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    required
+                                    className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                                        getFieldError('last_name') 
+                                            ? 'border-red-300' 
+                                            : isFieldValid('last_name')
+                                            ? 'border-green-300'
+                                            : 'border-purple-200'
+                                    }`}
+                                />
+                                {getFieldError('last_name') && (
+                                    <p className="text-red-600 text-sm mt-1">{getFieldError('last_name')}</p>
+                                )}
+                            </div>
+                          </>
+                        )}
                          
                         {/* Only show password field for non-Google signups */}
                         {!googleData && (
