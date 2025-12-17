@@ -283,7 +283,8 @@ export default function HouseholdPublicProfile() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (convRes.ok) {
-          const conversations: Array<{ id?: string; ID?: string; household_id?: string }> = await convRes.json();
+          const response = await convRes.json();
+          const conversations: Array<{ id?: string; ID?: string; household_id?: string }> = response.conversations || [];
           const match = conversations.find((c) => c.household_id === resolvedUserId);
           convId = match?.id || match?.ID;
         }

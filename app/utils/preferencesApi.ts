@@ -31,10 +31,10 @@ export interface PreferencesResponse {
 }
 
 const PREFERENCES_ENDPOINTS = {
-  get: `${API_BASE_URL}/api/v1/preferences`,
-  update: `${API_BASE_URL}/api/v1/preferences`,
-  migrate: `${API_BASE_URL}/api/v1/preferences/migrate`,
-  delete: `${API_BASE_URL}/api/v1/preferences`,
+  get: `${API_BASE_URL}/auth/api/v1/preferences`,
+  update: `${API_BASE_URL}/auth/api/v1/preferences`,
+  migrate: `${API_BASE_URL}/auth/api/v1/preferences/migrate`,
+  delete: `${API_BASE_URL}/auth/api/v1/preferences`,
 };
 
 /**

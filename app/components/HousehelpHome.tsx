@@ -124,7 +124,8 @@ export default function HousehelpHome() {
         try {
           const convRes = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations?offset=0&limit=50`);
           if (convRes.ok) {
-            const conversations = await apiClient.json<Array<{ id?: string; ID?: string; household_id?: string }>>(convRes);
+            const response = await apiClient.json<{ conversations: Array<{ id?: string; ID?: string; household_id?: string }> }>(convRes);
+            const conversations = response.conversations || [];
             const match = conversations.find((c) => c.household_id === householdUserId);
             convId = match?.id || match?.ID;
           }

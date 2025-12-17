@@ -98,7 +98,8 @@ export function Navigation() {
             });
 
             if (res.ok) {
-                const conversations = await res.json();
+                const data = await res.json();
+                const conversations = data.conversations || [];
                 const totalUnread = conversations.reduce((sum: number, conv: any) => sum + (conv.unread_count || 0), 0);
                 setInboxCount(totalUnread);
             }
