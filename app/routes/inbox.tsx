@@ -223,7 +223,8 @@ export default function InboxPage() {
         setError(null);
         const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations?offset=${offset}&limit=${limit}`);
         if (!res.ok) throw new Error("Failed to load conversations");
-        const data = await apiClient.json<Conversation[]>(res);
+        const response = await apiClient.json<{ conversations: Conversation[] }>(res);
+        const data = response.conversations || [];
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
         setHasMore(data.length === limit);
@@ -253,7 +254,8 @@ export default function InboxPage() {
         const count = items.length > 0 ? items.length : limit;
         const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations?offset=0&limit=${count}`);
         if (!res.ok) return;
-        const data = await apiClient.json<Conversation[]>(res);
+        const response = await apiClient.json<{ conversations: Conversation[] }>(res);
+        const data = response.conversations || [];
         setItems(data);
         setHasMore(data.length >= count);
       } catch {}
