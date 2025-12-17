@@ -41,9 +41,9 @@ const getNotificationsApiBaseUrl = (): string => {
     return process.env.NOTIFICATIONS_API_BASE_URL;
   }
 
-  // Default to production
+  // Default to production (without /notifications suffix - the code adds it)
   console.warn('[API Config] No NOTIFICATIONS_API_BASE_URL environment variable found, using production URL');
-  return 'https://homebit.co.ke/notifications';
+  return 'https://homebit.co.ke';
 };
 
 // Base URLs for each service
