@@ -30,8 +30,8 @@ COPY --from=builder /app/build ./build
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/server.mjs ./server.mjs
 
-# Add Fastify dependencies
-RUN npm install fastify @fastify/cors @fastify/static
+## Add Fastify dependencies
+#RUN npm install fastify @fastify/cors @fastify/static
 
 # Add curl for healthcheck
 RUN apk add --no-cache curl
