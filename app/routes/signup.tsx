@@ -79,7 +79,11 @@ export default function SignupPage() {
     
     const [form, setForm] = useState<SignupRequest>({
         profile_type: googleProfileType || '',
-        password: '',
+        // For Google signups we don't actually use the password field,
+        // but the shared validation schema expects a non-empty value.
+        // Use a dummy value so validation and UI enablement pass while
+        // the backend relies solely on Google auth.
+        password: isGoogleSignup ? 'GOOGLE' : '',
         first_name: googleFirstName,
         last_name: googleLastName,
         phone: '',
@@ -656,11 +660,27 @@ export default function SignupPage() {
 <button
     type="submit"
     className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-    disabled={formLoading || !form.profile_type || Object.keys(fieldErrors).some(key => fieldErrors[key]) || !form.first_name || !form.last_name || !form.password || !form.phone}
+    disabled={
+        formLoading ||
+        !form.profile_type ||
+        Object.keys(fieldErrors).some(key => fieldErrors[key]) ||
+        !form.first_name ||
+        !form.last_name ||
+        // For Google signups, password is handled by Google so we
+        // don't require a local password field.
+        (!googleData && !form.password) ||
+        !form.phone
+    }
 >
     {formLoading ? '✨ Signing up...' : '🚀 Sign Up'}
 </button>
-{(!form.profile_type || !form.first_name || !form.last_name || !form.password || !form.phone) && (
+{(
+    !form.profile_type ||
+    !form.first_name ||
+    !form.last_name ||
+    (!googleData && !form.password) ||
+    !form.phone
+) && (
     <p className="text-amber-600 text-sm mt-2 text-center">
         Please fill in all required fields to continue
     </p>
