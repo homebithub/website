@@ -56,8 +56,9 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    e.stopPropagation();
     setIsSubmitting(true);
     setError(null);
 
