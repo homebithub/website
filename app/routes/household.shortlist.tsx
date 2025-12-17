@@ -40,6 +40,16 @@ export default function HouseholdShortlistPage() {
   const [profilesById, setProfilesById] = useState<Record<string, any>>({});
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
+  const currentUser = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("user_object");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const currentUserId: string | undefined = currentUser?.id;
 
   // Load shortlist entries (mine)
   useEffect(() => {
@@ -117,13 +127,39 @@ export default function HouseholdShortlistPage() {
     } catch {}
   }
 
-  async function handleChatWithHousehelp(profileId?: string) {
-    if (!profileId) return;
+  async function handleChatWithHousehelp(profileId?: string, househelpUserId?: string) {
+    if (!profileId || !househelpUserId || !currentUserId) return;
     try {
-      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/start/househelp/${profileId}`, { method: 'POST' });
+      const payload: Record<string, any> = {
+        household_user_id: currentUserId,
+        househelp_user_id: househelpUserId,
+        househelp_profile_id: profileId,
+      };
+
+      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
       if (!res.ok) throw new Error('Failed to start chat');
+
+      let convId: string | undefined;
+      try {
+        const data = await apiClient.json<any>(res);
+        convId = data?.id || data?.ID || data?.conversation_id;
+      } catch {
+        convId = undefined;
+      }
+
+      if (convId) {
+        navigate(`/inbox?conversation=${convId}`);
+      } else {
+        navigate('/inbox');
+      }
+    } catch (e) {
+      console.error('Failed to start chat from shortlist (househelp)', e);
       navigate('/inbox');
-    } catch {}
+    }
   }
 
 
@@ -174,7 +210,7 @@ export default function HouseholdShortlistPage() {
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleChatWithHousehelp(s.profile_id); }}
+                          onClick={(e) => { e.stopPropagation(); handleChatWithHousehelp(s.profile_id, s.user_id); }}
                           className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-purple-700 dark:text-purple-200 shadow"
                           aria-label="Chat"
                           title="Chat"
