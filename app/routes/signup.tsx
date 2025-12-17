@@ -1,11 +1,3 @@
-    const startGoogle = async (flow: 'auth' | 'signup' = 'auth') => {
-        try {
-            const base = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL;
-            const res = await fetch(`${base}/api/v1/auth/google/url?flow=${flow}`);
-            const data = await res.json();
-            if (data?.url) window.location.href = data.url as string;
-        } catch {}
-    };
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
@@ -73,6 +65,12 @@ export default function SignupPage() {
     const location = useLocation();
     const dropdownRef = useRef<HTMLDivElement>(null);
     
+    // Get redirect URL and bureauId from query params - must be before state initialization
+    const searchParams = new URLSearchParams(location.search);
+    //const redirectUrl = searchParams.get('redirect');
+    const bureauId = searchParams.get('bureauId');
+    const googleProfileType = searchParams.get('profile_type');
+    
     const [form, setForm] = useState<SignupRequest>({
         profile_type: '',
         password: '',
@@ -85,17 +83,12 @@ export default function SignupPage() {
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
     const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
     
-    // Modal state
-    const [isProfileModalOpen, setIsProfileModalOpen] = useState(true);
+    // Modal state - check if profile_type is in URL params from Google callback
+    const [isProfileModalOpen, setIsProfileModalOpen] = useState(!googleProfileType);
     
     const [formLoading, setFormLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<SignupResponse | null>(null);
-
-    // Get redirect URL and bureauId from query params
-    const searchParams = new URLSearchParams(location.search);
-    //const redirectUrl = searchParams.get('redirect');
-    const bureauId = searchParams.get('bureauId');
 
     useEffect(() => {
         // If user is already authenticated, redirect them
@@ -114,7 +107,12 @@ export default function SignupPage() {
                 navigate("/");
             }
         }
-    }, [user, navigate, bureauId]);
+        
+        // Restore profile_type from URL params if coming back from Google OAuth
+        if (googleProfileType && !form.profile_type) {
+            setForm(prev => ({ ...prev, profile_type: googleProfileType }));
+        }
+    }, [user, navigate, bureauId, googleProfileType, form.profile_type]);
 
     // No longer needed since we're using a modal instead of dropdown
     // useEffect(() => {
@@ -320,6 +318,32 @@ export default function SignupPage() {
     const getSelectedProfileLabel = () => {
         const selected = profileOptions.find(option => option.value === form.profile_type);
         return selected ? selected.label : 'Select profile type';
+    };
+
+    const startGoogle = async (flow: 'auth' | 'signup' = 'auth') => {
+        try {
+            const base = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL;
+            // Pass profile_type in state to preserve it through OAuth redirect
+            const statePayload = {
+                profile_type: form.profile_type,
+                bureau_id: bureauId || undefined
+            };
+            const state = encodeURIComponent(JSON.stringify(statePayload));
+            console.log('[GOOGLE_AUTH] Requesting OAuth URL with state:', statePayload);
+            const res = await fetch(`${base}/api/v1/auth/google/url?flow=${flow}&state=${state}`);
+            const data = await res.json();
+            console.log('[GOOGLE_AUTH] Received response:', data);
+            if (data?.url) {
+                console.log('[GOOGLE_AUTH] Redirecting to:', data.url);
+                window.location.href = data.url as string;
+            } else {
+                console.error('[GOOGLE_AUTH] No URL in response');
+                setError('Failed to start Google sign-in. Please try again.');
+            }
+        } catch (err) {
+            console.error('[GOOGLE_AUTH] Error:', err);
+            setError('Network error. Please try again.');
+        }
     };
 
     // If auth is loading and it's not a bureau registering a househelp, show loader

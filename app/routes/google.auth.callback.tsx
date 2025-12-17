@@ -50,6 +50,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     // New user - redirect to signup with Google data prefilled
     if (data.requires_signup) {
+      // Parse state to extract profile_type and bureau_id
+      console.log('[GOOGLE_CALLBACK] Raw state from Google:', state);
+      let stateData: any = {};
+      try {
+        stateData = state ? JSON.parse(decodeURIComponent(state)) : {};
+        console.log('[GOOGLE_CALLBACK] Parsed state data:', stateData);
+      } catch (e) {
+        console.error('[GOOGLE_CALLBACK] Failed to parse state:', e);
+        stateData = {};
+      }
+
       const params = new URLSearchParams({
         google_signup: "1",
         email: data.email || "",
@@ -58,6 +69,19 @@ export async function loader({ request }: LoaderFunctionArgs) {
         google_id: data.google_id || "",
         picture: data.picture || "",
       });
+      
+      // Preserve profile_type and bureau_id from state
+      if (stateData.profile_type) {
+        console.log('[GOOGLE_CALLBACK] Adding profile_type to params:', stateData.profile_type);
+        params.set("profile_type", stateData.profile_type);
+      } else {
+        console.warn('[GOOGLE_CALLBACK] No profile_type in state data');
+      }
+      if (stateData.bureau_id) {
+        params.set("bureauId", stateData.bureau_id);
+      }
+      
+      console.log('[GOOGLE_CALLBACK] Final redirect URL:', `${origin}/signup?${params.toString()}`);
       return Response.redirect(`${origin}/signup?${params.toString()}`);
     }
 
