@@ -93,7 +93,7 @@ export function Navigation() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations?limit=100`, {
+            const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 

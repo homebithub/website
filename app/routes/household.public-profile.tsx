@@ -279,7 +279,7 @@ export default function HouseholdPublicProfile() {
         convId = undefined;
       }
       if (!convId) {
-        const convRes = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations?offset=0&limit=50`, {
+        const convRes = await fetch(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations?offset=0&limit=50`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (convRes.ok) {
