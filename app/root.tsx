@@ -66,6 +66,12 @@ export default function App() {
                         `,
                     }}
                 />
+                {/* Expose server env to client - in head to prevent visual flash */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `window.ENV=${JSON.stringify(ENV)}`,
+                    }}
+                />
                 {/* Google Identity Services */}
                 <script src="https://accounts.google.com/gsi/client" async defer></script>
                 <link rel="icon" href="/favicon.ico" />
@@ -74,7 +80,7 @@ export default function App() {
                 <link rel="apple-touch-icon" href="/logo_512x512.png" sizes="180x180" />
                 <title>Homebit</title>
             </head>
-            <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300">
+            <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300" suppressHydrationWarning>
                 <ThemeProvider>
                     <AuthProvider>
                         <ProfileSetupProvider>
@@ -85,12 +91,6 @@ export default function App() {
                     </AuthProvider>
                 </ThemeProvider>
                 <ScrollRestoration/>
-                {/* Expose server env to client */}
-                <script
-                    dangerouslySetInnerHTML={{
-                        __html: `window.ENV = ${JSON.stringify(ENV)}`,
-                    }}
-                />
                 <Scripts/>
             </body>
         </html>
