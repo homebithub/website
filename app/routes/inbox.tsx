@@ -899,7 +899,7 @@ export default function InboxPage() {
       await fetchHireContext(selectedConversation || undefined);
       if (activeConversationId) {
         const body = 'I have accepted your hire request. Looking forward to working with you!';
-        await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+        await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ body }),
@@ -932,7 +932,7 @@ export default function InboxPage() {
       await fetchHireContext(selectedConversation || undefined);
       if (activeConversationId) {
         const body = `I've declined the hire request: ${reason}.`;
-        await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`, {
+        await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ body }),
