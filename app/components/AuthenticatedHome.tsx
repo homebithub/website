@@ -65,8 +65,11 @@ export default function AuthenticatedHome() {
       if (!res.ok) throw new Error('Failed to start conversation');
       const data = await apiClient.json<any>(res);
       const convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
-      if (convId) navigate(`/inbox/${convId}`);
-      else navigate('/inbox');
+      if (convId) {
+        navigate(`/inbox?conversation=${convId}`);
+      } else {
+        navigate('/inbox');
+      }
     } catch (e) {
       navigate('/inbox');
     }

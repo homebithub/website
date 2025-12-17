@@ -97,6 +97,17 @@ export default function HousehelpHome() {
     []
   );
   const navigate = useNavigate();
+  const currentUser = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("user_object");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const currentUserId: string | undefined = currentUser?.id;
+  const currentProfileType: string | undefined = currentUser?.profile_type;
 
   const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -114,19 +125,51 @@ export default function HousehelpHome() {
 
   const handleStartChat = async (householdUserId?: string) => {
     try {
-      if (!householdUserId) throw new Error('Missing user id');
-      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/start/household/${householdUserId}`, { method: 'POST' });
+      if (!householdUserId) throw new Error('Missing household user id');
+      if (!currentUserId) throw new Error('Missing current user id');
+
+      const profileType = (currentProfileType || '').toLowerCase();
+      let householdId = householdUserId;
+      let househelpId = currentUserId;
+
+      if (profileType === 'household') {
+        householdId = currentUserId;
+        househelpId = householdUserId;
+      }
+
+      const payload: Record<string, any> = {
+        household_user_id: householdId,
+        househelp_user_id: househelpId,
+      };
+
+      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
       if (!res.ok) throw new Error('Failed to start conversation');
-      const data = await apiClient.json<any>(res);
-      let convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
+
+      let convId: string | undefined;
+      try {
+        const data = await apiClient.json<any>(res);
+        convId = data?.id || data?.ID || data?.conversation_id;
+      } catch {
+        convId = undefined;
+      }
 
       if (!convId || !UUID_REGEX.test(convId)) {
         try {
           const convRes = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations?offset=0&limit=50`);
           if (convRes.ok) {
-            const response = await apiClient.json<{ conversations: Array<{ id?: string; ID?: string; household_id?: string }> }>(convRes);
+            const response = await apiClient.json<{
+              conversations: Array<{ id?: string; ID?: string; household_id?: string; househelp_id?: string }>;
+            }>(convRes);
             const conversations = response.conversations || [];
-            const match = conversations.find((c) => c.household_id === householdUserId);
+            const match = conversations.find(
+              (c) =>
+                (c.household_id === householdId && c.househelp_id === househelpId) ||
+                (c.household_id === househelpId && c.househelp_id === householdId),
+            );
             convId = match?.id || match?.ID;
           }
         } catch (err) {
@@ -134,8 +177,13 @@ export default function HousehelpHome() {
         }
       }
 
-      if (convId) navigate(`/inbox?conversation=${convId}`); else navigate('/inbox');
-    } catch {
+      if (convId) {
+        navigate(`/inbox?conversation=${convId}`);
+      } else {
+        navigate('/inbox');
+      }
+    } catch (err) {
+      console.error('Failed to start chat from households list', err);
       navigate('/inbox');
     }
   };
