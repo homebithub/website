@@ -12,7 +12,6 @@ const Footer = () => {
           <Link to="/privacy" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Privacy Policy</Link>
           <Link to="/terms" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Terms of Service</Link>
           <Link to="/contact" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Contact</Link>
-          <Link to="/second_home" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Second Home</Link>
         </div>
       </div>
     </footer>
