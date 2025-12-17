@@ -70,14 +70,34 @@ export default function SignupPage() {
     //const redirectUrl = searchParams.get('redirect');
     const bureauId = searchParams.get('bureauId');
     const googleProfileType = searchParams.get('profile_type');
+    const isGoogleSignup = searchParams.get('google_signup') === '1';
+    const googleEmail = searchParams.get('email') || '';
+    const googleFirstName = searchParams.get('first_name') || '';
+    const googleLastName = searchParams.get('last_name') || '';
+    const googleId = searchParams.get('google_id') || '';
+    const googlePicture = searchParams.get('picture') || '';
     
     const [form, setForm] = useState<SignupRequest>({
-        profile_type: '',
-        password: '',
-        first_name: '',
-        last_name: '',
+        profile_type: googleProfileType || '',
+        // For Google signups we don't actually use the password field,
+        // but the shared validation schema expects a non-empty value.
+        // Use a dummy value so validation and UI enablement pass while
+        // the backend relies solely on Google auth.
+        password: isGoogleSignup ? 'GOOGLE' : '',
+        first_name: googleFirstName,
+        last_name: googleLastName,
         phone: '',
     });
+    
+    const [googleData, setGoogleData] = useState<{
+        email: string;
+        google_id: string;
+        picture: string;
+    } | null>(isGoogleSignup ? {
+        email: googleEmail,
+        google_id: googleId,
+        picture: googlePicture
+    } : null);
     
     // Validation state
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
@@ -107,12 +127,7 @@ export default function SignupPage() {
                 navigate("/");
             }
         }
-        
-        // Restore profile_type from URL params if coming back from Google OAuth
-        if (googleProfileType && !form.profile_type) {
-            setForm(prev => ({ ...prev, profile_type: googleProfileType }));
-        }
-    }, [user, navigate, bureauId, googleProfileType, form.profile_type]);
+    }, [user, navigate]);
 
     // No longer needed since we're using a modal instead of dropdown
     // useEffect(() => {
@@ -217,7 +232,52 @@ export default function SignupPage() {
         localStorage.removeItem('profile_type');
         
         try {
-            // Prepare payload
+            // Check if this is a Google signup completion
+            if (googleData) {
+                // Complete Google signup with phone number
+                const googlePayload = {
+                    google_id: googleData.google_id,
+                    email: googleData.email,
+                    first_name: form.first_name,
+                    last_name: form.last_name,
+                    phone: form.phone,
+                    profile_type: form.profile_type,
+                    ...(form.profile_type === 'househelp' && bureauId ? { bureau_id: bureauId } : {})
+                };
+                
+                const res = await fetch(`${base_url}/api/v1/auth/google/complete`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(googlePayload),
+                });
+                
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.message || 'Google signup completion failed');
+                }
+                
+                const data: SignupResponse = await res.json();
+                
+                // Store auth data and redirect
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('user_object', JSON.stringify(data.user));
+                    localStorage.setItem('user_id', data.user.user_id);
+                    localStorage.setItem('profile_type', data.user.profile_type || form.profile_type);
+                    
+                    // Redirect based on profile type
+                    if (form.profile_type === 'household') {
+                        navigate('/household/profile');
+                    } else if (form.profile_type === 'househelp') {
+                        navigate('/househelp');
+                    } else {
+                        navigate('/');
+                    }
+                }
+                return;
+            }
+            
+            // Regular signup flow
             let payload = { ...form };
             if (form.profile_type === 'househelp' && bureauId) {
                 payload = { ...payload, bureau_id: bureauId };
@@ -457,26 +517,48 @@ export default function SignupPage() {
         </div>
       )}
       
-      {/* Google Sign Up - Primary Option */}
-      <div className="mb-6">
-        <button
-            type="button"
-            onClick={() => startGoogle('auth')}
-            className="w-full inline-flex justify-center items-center px-6 py-4 border-2 border-purple-300 dark:border-purple-500/50 rounded-xl shadow-lg dark:shadow-glow bg-white dark:bg-[#13131a] text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:border-purple-400 dark:hover:border-purple-500/70 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
-        >
-            <FcGoogle className="h-6 w-6 mr-3" />
-            Continue with Google
-        </button>
-      </div>
+      {/* Google Sign Up - Primary Option (hide if already signed in with Google) */}
+      {!googleData && (
+        <>
+          <div className="mb-6">
+            <button
+                type="button"
+                onClick={() => startGoogle('auth')}
+                className="w-full inline-flex justify-center items-center px-6 py-4 border-2 border-purple-300 dark:border-purple-500/50 rounded-xl shadow-lg dark:shadow-glow bg-white dark:bg-[#13131a] text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:border-purple-400 dark:hover:border-purple-500/70 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+            >
+                <FcGoogle className="h-6 w-6 mr-3" />
+                Continue with Google
+            </button>
+          </div>
 
-<div className="relative my-6">
-    <div className="absolute inset-0 flex items-center">
-        <div className="w-full border-t-2 border-purple-200 dark:border-purple-500/30"></div>
-    </div>
-    <div className="relative flex justify-center text-sm">
-        <span className="px-4 bg-white dark:bg-[#13131a] text-gray-500 dark:text-gray-400 font-medium">Or sign up with phone</span>
-    </div>
-</div>
+          <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t-2 border-purple-200 dark:border-purple-500/30"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                  <span className="px-4 bg-white dark:bg-[#13131a] text-gray-500 dark:text-gray-400 font-medium">Or sign up with phone</span>
+              </div>
+          </div>
+        </>
+      )}
+      
+      {/* Show Google account info if signed in with Google */}
+      {googleData && (
+        <div className="mb-6 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-500/30 p-4 shadow-md">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {googleData.picture && (
+                <img src={googleData.picture} alt="Google profile" className="w-12 h-12 rounded-full border-2 border-green-300" />
+              )}
+              <div>
+                <p className="text-sm font-semibold text-green-800 dark:text-green-300">Signed in with Google</p>
+                <p className="text-xs text-green-700 dark:text-green-400">{googleData.email}</p>
+              </div>
+            </div>
+            <FcGoogle className="h-6 w-6" />
+          </div>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
@@ -488,7 +570,10 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
+                                readOnly={!!googleData}
                                 className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                                    googleData ? 'bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : ''
+                                } ${
                                     getFieldError('first_name') 
                                         ? 'border-red-300' 
                                         : isFieldValid('first_name')
@@ -509,7 +594,10 @@ export default function SignupPage() {
                                 onChange={handleChange}
                                 onBlur={handleBlur}
                                 required
+                                readOnly={!!googleData}
                                 className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                                    googleData ? 'bg-gray-50 dark:bg-gray-800/50 cursor-not-allowed' : ''
+                                } ${
                                     getFieldError('last_name') 
                                         ? 'border-red-300' 
                                         : isFieldValid('last_name')
@@ -522,27 +610,30 @@ export default function SignupPage() {
                             )}
                         </div>
                          
-                        <div>
-                            <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">Password</label>
-                            <input
-                                type="password"
-                                name="password"
-                                value={form.password}
-                                onChange={handleChange}
-                                onBlur={handleBlur}
-                                required
-                                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
-                                    getFieldError('password') 
-                                        ? 'border-red-300' 
-                                        : isFieldValid('password')
-                                        ? 'border-green-300'
-                                        : 'border-purple-200'
-                                }`}
-                            />
-                            {getFieldError('password') && (
-                                <p className="text-red-600 text-sm mt-1">{getFieldError('password')}</p>
-                            )}
-                        </div>
+                        {/* Only show password field for non-Google signups */}
+                        {!googleData && (
+                            <div>
+                                <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">Password</label>
+                                <input
+                                    type="password"
+                                    name="password"
+                                    value={form.password}
+                                    onChange={handleChange}
+                                    onBlur={handleBlur}
+                                    required
+                                    className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                                        getFieldError('password') 
+                                            ? 'border-red-300' 
+                                            : isFieldValid('password')
+                                            ? 'border-green-300'
+                                            : 'border-purple-200'
+                                    }`}
+                                />
+                                {getFieldError('password') && (
+                                    <p className="text-red-600 text-sm mt-1">{getFieldError('password')}</p>
+                                )}
+                            </div>
+                        )}
                         <div>
     <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">Phone</label>
     <input
@@ -569,11 +660,27 @@ export default function SignupPage() {
 <button
     type="submit"
     className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-    disabled={formLoading || !form.profile_type || Object.keys(fieldErrors).some(key => fieldErrors[key]) || !form.first_name || !form.last_name || !form.password || !form.phone}
+    disabled={
+        formLoading ||
+        !form.profile_type ||
+        Object.keys(fieldErrors).some(key => fieldErrors[key]) ||
+        !form.first_name ||
+        !form.last_name ||
+        // For Google signups, password is handled by Google so we
+        // don't require a local password field.
+        (!googleData && !form.password) ||
+        !form.phone
+    }
 >
     {formLoading ? '✨ Signing up...' : '🚀 Sign Up'}
 </button>
-{(!form.profile_type || !form.first_name || !form.last_name || !form.password || !form.phone) && (
+{(
+    !form.profile_type ||
+    !form.first_name ||
+    !form.last_name ||
+    (!googleData && !form.password) ||
+    !form.phone
+) && (
     <p className="text-amber-600 text-sm mt-2 text-center">
         Please fill in all required fields to continue
     </p>
