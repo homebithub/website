@@ -9,6 +9,7 @@ import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
+import { formatTimeAgo } from "~/utils/timeAgo";
 
 type ShortlistItem = {
   id: string;
@@ -19,32 +20,6 @@ type ShortlistItem = {
   is_locked: boolean;
   expires_at?: string | null;
   created_at: string;
-};
-
-const RELATIVE_TIME_FORMATTER = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-const TIME_DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
-  { amount: 60, unit: "second" },
-  { amount: 60, unit: "minute" },
-  { amount: 24, unit: "hour" },
-  { amount: 7, unit: "day" },
-  { amount: 4.34524, unit: "week" },
-  { amount: 12, unit: "month" },
-  { amount: Infinity, unit: "year" },
-];
-
-const formatTimeAgo = (dateString?: string) => {
-  if (!dateString) return "";
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return "";
-  let duration = (date.getTime() - Date.now()) / 1000;
-
-  for (const division of TIME_DIVISIONS) {
-    if (Math.abs(duration) < division.amount) {
-      return RELATIVE_TIME_FORMATTER.format(Math.round(duration), division.unit);
-    }
-    duration /= division.amount;
-  }
-  return "";
 };
 
 export default function ShortlistPage() {

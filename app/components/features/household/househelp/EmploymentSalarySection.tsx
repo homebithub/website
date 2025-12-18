@@ -1,4 +1,5 @@
 import React from "react";
+import { formatTimeAgo } from "~/utils/timeAgo";
 
 interface EmploymentSalarySectionProps {
   profile: any;
@@ -39,7 +40,7 @@ export default function EmploymentSalarySection({ profile, onEdit }: EmploymentS
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Signed Date</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.signed_date ? new Date(profile.signed_date).toLocaleString() : '-'}</span>
+          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.signed_date ? formatTimeAgo(profile.signed_date) : '-'}</span>
         </div>
       </div>
     </section>

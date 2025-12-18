@@ -4,6 +4,7 @@ import { ArrowLeftIcon, HeartIcon, TrashIcon } from "@heroicons/react/24/outline
 import ReadOnlyUserImageCarousel from "~/components/features/household/househelp/ReadOnlyUserImageCarousel";
 import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
 import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
+import { formatTimeAgo } from "~/utils/timeAgo";
 
 export default function HousehelpProfile() {
   // Carousel state (ALWAYS at the top)
@@ -281,7 +282,7 @@ export default function HousehelpProfile() {
           <div><span className="font-semibold">Rating:</span> {Househelp.rating} ({Househelp.review_count} reviews)</div>
           <div><span className="font-semibold">References:</span> {Househelp.references ? Househelp.references : '-'}</div>
           <div><span className="font-semibold">Images:</span> {Househelp.images ? JSON.stringify(Househelp.images) : '-'}</div>
-          <div><span className="font-semibold">Created At:</span> {Househelp.created_at ? new Date(Househelp.created_at).toLocaleString() : '-'}</div>
+          <div><span className="font-semibold">Created At:</span> {Househelp.created_at ? formatTimeAgo(Househelp.created_at) : '-'}</div>
 
         </div>
       </div>
