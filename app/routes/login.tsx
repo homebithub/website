@@ -8,7 +8,7 @@ import { Footer } from "~/components/Footer";
 import { FcGoogle } from 'react-icons/fc';
 import { loginSchema, validateForm, validateField } from '~/utils/validation';
 import { handleApiError } from '~/utils/errorMessages';
-import { API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
+import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 
@@ -46,10 +46,90 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
   const [loginError, setLoginError] = useState<string | null>(null);
+  const [processingGoogleLogin, setProcessingGoogleLogin] = useState(false);
 
   // Get redirect URL from query params
   const searchParams = new URLSearchParams(location.search);
   const redirectUrl = searchParams.get('redirect');
+
+  // Handle return from Google OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const googleLogin = params.get('google_login');
+    const token = params.get('token');
+    const errorParam = params.get('error');
+
+    if (errorParam && !loginError) {
+      setLoginError('Google login failed. Please try again or use phone and password.');
+    }
+
+    if (googleLogin === 'success' && token && !processingGoogleLogin) {
+      setProcessingGoogleLogin(true);
+      (async () => {
+        try {
+          // Store token immediately so subsequent API calls are authenticated
+          localStorage.setItem('token', token);
+
+          // Fetch user profile using the provided token
+          const meResp = await fetch(API_ENDPOINTS.auth.me, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+
+          if (!meResp.ok) {
+            throw new Error('Failed to fetch user after Google login');
+          }
+
+          const userData: any = await meResp.json();
+          localStorage.setItem('user_object', JSON.stringify(userData));
+          const profileType: string = userData.profile_type || '';
+          localStorage.setItem('profile_type', profileType);
+          try { localStorage.setItem('userType', profileType || ''); } catch {}
+
+          // Mirror the profile-setup redirect logic used in AuthContext.login
+          if (profileType === 'household' || profileType === 'househelp') {
+            try {
+              const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              if (setupResponse.ok) {
+                const setupData = await setupResponse.json();
+                const isComplete = setupData.is_complete || false;
+                const lastStep = setupData.last_completed_step || 0;
+
+                if (!isComplete) {
+                  const setupRoute = profileType === 'household'
+                    ? `/profile-setup/household?step=${lastStep + 1}`
+                    : `/profile-setup/househelp?step=${lastStep + 1}`;
+                  navigate(setupRoute, { replace: true });
+                  return;
+                }
+              }
+            } catch (err) {
+              console.error('Failed to check profile setup status after Google login:', err);
+              // If this fails, fall through to default redirect below
+            }
+          }
+
+          // If profile is complete or setup check failed, redirect
+          if (redirectUrl) {
+            navigate(redirectUrl, { replace: true });
+          } else {
+            navigate('/', { replace: true });
+          }
+        } catch (err) {
+          console.error('Google login completion error:', err);
+          setLoginError('Google login failed. Please try again or use phone and password.');
+        } finally {
+          setProcessingGoogleLogin(false);
+        }
+      })();
+    }
+  }, [location.search, redirectUrl, loginError, navigate, processingGoogleLogin]);
 
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -130,7 +210,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     try {
       const base = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL;
-      const res = await fetch(`${API_BASE_URL}/api/v1/auth/google/url?flow=auth`);
+      const res = await fetch(`${base}/api/v1/auth/google/url?flow=auth`);
       const data = await res.json();
       if (data?.url) {
         window.location.href = data.url as string;
