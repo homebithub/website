@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useLocation, useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -15,6 +15,7 @@ import { fetchPreferences } from "~/utils/preferencesApi";
 
 interface HousehelpProfile {
   id: number | string;
+  user_id?: string;
   profile_id: string;
   first_name: string;
   last_name: string;
@@ -57,25 +58,67 @@ export default function AuthenticatedHome() {
   const [compactView, setCompactView] = useState(false);
   const [accessibilityMode, setAccessibilityMode] = useState(false);
 
+  // Current user (used for chat payloads)
+  const currentUser = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const raw = localStorage.getItem('user_object');
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+  const currentUserId: string | undefined = currentUser?.id;
+  const currentProfileType: string | undefined = currentUser?.profile_type;
+
   // Card actions
   const handleViewProfile = (profileId: string) => {
     navigate('/househelp/public-profile', { state: { profileId } });
   };
 
-  const handleStartChat = async (profileId: string) => {
+  const handleStartChat = async (targetUserId?: string, househelpProfileId?: string) => {
+    if (!targetUserId || !currentUserId) return;
     try {
-      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/start/househelp/${profileId}`, {
+      const profileType = (currentProfileType || '').toLowerCase();
+      let householdId = currentUserId;
+      let househelpId = targetUserId;
+
+      // If somehow a househelp is browsing this view, flip roles
+      if (profileType === 'househelp') {
+        householdId = targetUserId;
+        househelpId = currentUserId;
+      }
+
+      const payload: Record<string, any> = {
+        household_user_id: householdId,
+        househelp_user_id: househelpId,
+      };
+      if (househelpProfileId) {
+        payload.househelp_profile_id = househelpProfileId;
+      }
+
+      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Failed to start conversation');
-      const data = await apiClient.json<any>(res);
-      const convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
+
+      let convId: string | undefined;
+      try {
+        const data = await apiClient.json<any>(res);
+        convId = data?.id || data?.ID || data?.conversation_id;
+      } catch {
+        convId = undefined;
+      }
+
       if (convId) {
         navigate(`/inbox?conversation=${convId}`);
       } else {
         navigate('/inbox');
       }
     } catch (e) {
+      console.error('Failed to start chat from househelps search', e);
       navigate('/inbox');
     }
   };
@@ -797,7 +840,13 @@ export default function AuthenticatedHome() {
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">
                         <button
-                          onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleStartChat(String(househelp.profile_id)); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const targetUserId = househelp.user_id || househelp.id;
+                            if (targetUserId && househelp.profile_id) {
+                              handleStartChat(String(targetUserId), househelp.profile_id);
+                            }
+                          }}
                           className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-purple-700 dark:text-purple-200 shadow"
                           aria-label="Chat"
                           title="Chat"
