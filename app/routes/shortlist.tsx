@@ -10,6 +10,7 @@ import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { formatTimeAgo } from "~/utils/timeAgo";
+import { fetchPreferences } from "~/utils/preferencesApi";
 
 type ShortlistItem = {
   id: string;
@@ -36,6 +37,8 @@ export default function ShortlistPage() {
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
   const fetchedProfilesRef = useRef<Set<string>>(new Set());
+  const [compactView, setCompactView] = useState(false);
+  const [accessibilityMode, setAccessibilityMode] = useState(false);
   const currentUser = useMemo(() => {
     if (typeof window === 'undefined') return null;
     try {
@@ -47,6 +50,32 @@ export default function ShortlistPage() {
   }, []);
   const currentUserId: string | undefined = currentUser?.id;
   const currentProfileType: string | undefined = currentUser?.profile_type;
+
+  // Load UI preferences (compact view, accessibility)
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPrefs = async () => {
+      try {
+        const prefs = await fetchPreferences();
+        if (cancelled) return;
+        const settings = prefs?.settings || {};
+        setCompactView(Boolean(settings.compact_view));
+        setAccessibilityMode(Boolean(settings.accessibility_mode));
+      } catch {
+        if (!cancelled) {
+          setCompactView(false);
+          setAccessibilityMode(false);
+        }
+      }
+    };
+
+    loadPrefs();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -192,7 +221,7 @@ export default function ShortlistPage() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className="flex-1 py-8">
+        <main className={`flex-1 py-8 ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
 
@@ -207,7 +236,7 @@ export default function ShortlistPage() {
               <div className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-4 text-red-700 dark:text-red-300 mb-4">{error}</div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${compactView ? 'gap-4' : 'gap-6'}`}>
               {items
                 .filter((s) => s.profile_type === "household")
                 .map((s) => {
@@ -218,7 +247,7 @@ export default function ShortlistPage() {
                       onClick={() => navigate(`/household/public-profile?user_id=${s.user_id}`, {
                         state: { profileId: s.user_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
                       })}
-                      className="relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
+                      className={`relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 transition-all duration-300 cursor-pointer`}
                     >
                       <div className="absolute top-3 right-3 flex items-center gap-2">
                         <button
