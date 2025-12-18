@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { Navigation } from "~/components/Navigation";
@@ -141,18 +141,21 @@ export default function HousehelpPublicProfile() {
     fromHireRequests?: boolean;
   };
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  const currentUser = useMemo(() => {
+    if (typeof window === 'undefined') return null;
     try {
-      const raw = localStorage.getItem("user_object");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setViewerProfileType(parsed?.profile_type || null);
-      }
+      const raw = localStorage.getItem('user_object');
+      return raw ? JSON.parse(raw) : null;
     } catch {
-      setViewerProfileType(null);
+      return null;
     }
   }, []);
+  const currentUserId: string | undefined = currentUser?.id;
+  const currentProfileType: string | undefined = currentUser?.profile_type;
+
+  useEffect(() => {
+    setViewerProfileType(currentProfileType || null);
+  }, [currentProfileType]);
 
   const handleBackNavigation = () => {
     if (navigationState.backTo) {
@@ -244,15 +247,40 @@ export default function HousehelpPublicProfile() {
   const targetProfileId = viewingProfileId || profile?.profile_id || profile?.id;
 
   const handleChat = async () => {
-    if (!targetProfileId) return;
+    if (!targetProfileId || !currentUserId || !user?.id) return;
     setActionLoading('chat');
     try {
-      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/start/househelp/${targetProfileId}`, {
+      const profileType = (currentProfileType || '').toLowerCase();
+      let householdId = currentUserId;
+      let househelpId = user.id as string;
+
+      // If viewer is househelp and this profile belongs to a household (unlikely here), flip roles
+      if (profileType === 'househelp') {
+        householdId = user.id as string;
+        househelpId = currentUserId;
+      }
+
+      const payload: Record<string, any> = {
+        household_user_id: householdId,
+        househelp_user_id: househelpId,
+        househelp_profile_id: targetProfileId,
+      };
+
+      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Failed to start conversation');
-      const data = await apiClient.json<any>(res);
-      const convId = (data && (data.id || data.ID || data.conversation_id)) as string | undefined;
+
+      let convId: string | undefined;
+      try {
+        const data = await apiClient.json<any>(res);
+        convId = data?.id || data?.ID || data?.conversation_id;
+      } catch {
+        convId = undefined;
+      }
+
       if (convId) navigate(`/inbox?conversation=${convId}`);
       else navigate('/inbox');
     } catch (e) {

@@ -261,16 +261,31 @@ export default function HouseholdPublicProfile() {
   };
 
   const handleStartChat = async () => {
-    if (!resolvedUserId) return;
+    if (!resolvedUserId || !currentUserId) return;
     setActionLoading('chat');
     try {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Not authenticated");
-      const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/start/household/${resolvedUserId}`, {
+
+      // In this view, the current user is typically a househelp viewing a household profile.
+      const payload: Record<string, any> = {
+        household_user_id: resolvedUserId,
+        househelp_user_id: currentUserId,
+      };
+      if (profile?.id) {
+        payload.household_profile_id = profile.id;
+      }
+
+      const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations`, {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error('Failed to start conversation');
+
       let convId: string | undefined;
       try {
         const data = await res.json();
@@ -278,18 +293,9 @@ export default function HouseholdPublicProfile() {
       } catch {
         convId = undefined;
       }
-      if (!convId) {
-        const convRes = await fetch(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations?offset=0&limit=50`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (convRes.ok) {
-          const response = await convRes.json();
-          const conversations: Array<{ id?: string; ID?: string; household_id?: string }> = response.conversations || [];
-          const match = conversations.find((c) => c.household_id === resolvedUserId);
-          convId = match?.id || match?.ID;
-        }
-      }
-      if (convId) navigate(`/inbox?conversation=${convId}`); else navigate('/inbox');
+
+      if (convId) navigate(`/inbox?conversation=${convId}`);
+      else navigate('/inbox');
     } catch (err) {
       console.error('Failed to start chat', err);
       navigate('/inbox');
