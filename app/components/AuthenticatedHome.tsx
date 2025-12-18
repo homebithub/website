@@ -10,6 +10,8 @@ import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { TOWNS, SKILLS, EXPERIENCE_LEVELS } from '~/constants/profileOptions';
+import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
+import { fetchPreferences } from "~/utils/preferencesApi";
 
 interface HousehelpProfile {
   id: number | string;
@@ -51,6 +53,9 @@ export default function AuthenticatedHome() {
 
   // Track image loading state for each profile
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
+  const [showTips, setShowTips] = useState(false);
+  const [compactView, setCompactView] = useState(false);
+  const [accessibilityMode, setAccessibilityMode] = useState(false);
 
   // Card actions
   const handleViewProfile = (profileId: string) => {
@@ -202,6 +207,50 @@ export default function AuthenticatedHome() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Load display preferences (onboarding, compact view, accessibility)
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPrefs = async () => {
+      try {
+        const hiddenForSession = typeof window !== 'undefined' && sessionStorage.getItem("hide_onboarding_tips") === "1";
+        const prefs = await fetchPreferences();
+        if (cancelled) return;
+        const settings = prefs?.settings || {};
+        setCompactView(Boolean(settings.compact_view));
+        setAccessibilityMode(Boolean(settings.accessibility_mode));
+        if (!hiddenForSession) {
+          setShowTips(Boolean(settings.show_onboarding));
+        } else {
+          setShowTips(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setShowTips(false);
+          setCompactView(false);
+          setAccessibilityMode(false);
+        }
+      }
+    };
+
+    loadPrefs();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleDismissTips = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem("hide_onboarding_tips", "1");
+      }
+    } catch {
+      // ignore storage errors
+    }
+    setShowTips(false);
+  };
 
   // React to back/forward changes in query params
   useEffect(() => {
@@ -494,10 +543,11 @@ export default function AuthenticatedHome() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className="flex-1 py-8">
+        <main className={`flex-1 py-8 ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {showTips && <OnboardingTipsBanner role="household" onDismiss={handleDismissTips} />}
             {/* Compact Filters Section */}
-            <div className="bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-gray-700/50">
+            <div className={`bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-gray-700/50`}>
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Find Househelps</h1>
                 <button
@@ -737,12 +787,12 @@ export default function AuthenticatedHome() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>
                   {househelps.map((househelp) => (
                     <div
                       key={househelp.id}
                       onClick={() => househelp.profile_id && handleViewProfile(String(househelp.profile_id))}
-                      className="househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
+                      className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 transition-all duration-300 cursor-pointer`}
                     >
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">

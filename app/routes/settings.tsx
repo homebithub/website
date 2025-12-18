@@ -7,14 +7,12 @@ import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
-import { useTheme } from "~/contexts/ThemeContext";
 import { fetchPreferences, updatePreferences, type UserPreferences } from "~/utils/preferencesApi";
 
 export default function SettingsPage() {
 	const { user, loading } = useAuth();
 	const navigate = useNavigate();
 	const location = useLocation();
-	const { setTheme } = useTheme();
 	const [preferences, setPreferences] = useState<UserPreferences | null>(null);
 	const [prefsLoading, setPrefsLoading] = useState(true);
 	const [saving, setSaving] = useState(false);
@@ -85,14 +83,6 @@ export default function SettingsPage() {
 			}
 			setSuccessMessage("Preferences updated successfully");
 			setPreferences(res.settings);
-			// Apply theme immediately when preference changes
-			if (res.settings?.theme) {
-				const prefTheme = res.settings.theme;
-				const appliedTheme: "light" | "dark" = prefTheme === "system"
-					? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-					: prefTheme;
-				setTheme(appliedTheme);
-			}
 		} catch (err: any) {
 			setErrorMessage(err?.message || "Failed to save preferences");
 		} finally {
@@ -150,22 +140,6 @@ export default function SettingsPage() {
 						<div className="space-y-4">
 							<div className="flex items-center justify-between">
 								<div>
-									<div className="font-medium text-gray-900 dark:text-gray-100">Theme</div>
-									<p className="text-sm text-gray-500 dark:text-gray-400">Choose how the app theme behaves.</p>
-								</div>
-								<select
-									className="mt-1 block w-40 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#020617] px-3 py-2 text-sm shadow-sm text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 transition-colors duration-300"
-									value={preferences?.theme || "system"}
-									onChange={(e) => handlePrefChange("theme", e.target.value as UserPreferences["theme"])}
-								>
-									<option value="system">System default</option>
-									<option value="light">Light</option>
-									<option value="dark">Dark</option>
-								</select>
-							</div>
-							
-							<div className="flex items-center justify-between">
-								<div>
 									<div className="font-medium text-gray-900 dark:text-gray-100">Email notifications</div>
 									<p className="text-sm text-gray-500 dark:text-gray-400">Receive important updates about matches and hires.</p>
 								</div>
@@ -193,6 +167,40 @@ export default function SettingsPage() {
 										className="sr-only peer"
 										checked={Boolean(preferences?.show_onboarding)}
 										onChange={(e) => handlePrefChange("show_onboarding", e.target.checked)}
+									/>
+									<div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:bg-purple-600 transition-all relative">
+										<span className="absolute top-0.5 left-0.5 h-5 w-5 bg-white rounded-full shadow transform transition-transform peer-checked:translate-x-5" />
+									</div>
+								</label>
+							</div>
+							<div className="flex items-center justify-between">
+								<div>
+									<div className="font-medium text-gray-900 dark:text-gray-100">Compact view</div>
+									<p className="text-sm text-gray-500 dark:text-gray-400">Use denser layouts and tighter spacing in search results.</p>
+								</div>
+								<label className="inline-flex items-center cursor-pointer">
+									<input
+										type="checkbox"
+										className="sr-only peer"
+										checked={Boolean(preferences?.compact_view)}
+										onChange={(e) => handlePrefChange("compact_view", e.target.checked)}
+									/>
+									<div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:bg-purple-600 transition-all relative">
+										<span className="absolute top-0.5 left-0.5 h-5 w-5 bg-white rounded-full shadow transform transition-transform peer-checked:translate-x-5" />
+									</div>
+								</label>
+							</div>
+							<div className="flex items-center justify-between">
+								<div>
+									<div className="font-medium text-gray-900 dark:text-gray-100">Accessibility mode</div>
+									<p className="text-sm text-gray-500 dark:text-gray-400">Increase text size and improve contrast in key lists.</p>
+								</div>
+								<label className="inline-flex items-center cursor-pointer">
+									<input
+										type="checkbox"
+										className="sr-only peer"
+										checked={Boolean(preferences?.accessibility_mode)}
+										onChange={(e) => handlePrefChange("accessibility_mode", e.target.checked)}
 									/>
 									<div className="w-11 h-6 bg-gray-200 dark:bg-gray-700 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:bg-purple-600 transition-all relative">
 										<span className="absolute top-0.5 left-0.5 h-5 w-5 bg-white rounded-full shadow transform transition-transform peer-checked:translate-x-5" />

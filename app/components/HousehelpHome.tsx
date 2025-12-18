@@ -9,6 +9,8 @@ import HouseholdFilters, { type HouseholdSearchFields } from "~/components/featu
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { formatTimeAgo } from "~/utils/timeAgo";
+import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
+import { fetchPreferences } from "~/utils/preferencesApi";
 
 interface HouseholdItem {
   id?: string; // household user id
@@ -59,6 +61,9 @@ export default function HousehelpHome() {
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const countTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [shortlistedProfiles, setShortlistedProfiles] = useState<Set<string>>(new Set());
+  const [showTips, setShowTips] = useState(false);
+  const [compactView, setCompactView] = useState(false);
+  const [accessibilityMode, setAccessibilityMode] = useState(false);
 
   const API_BASE = useMemo(
     () => (typeof window !== "undefined" && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL,
@@ -80,6 +85,49 @@ export default function HousehelpHome() {
   }, []);
   const currentUserId: string | undefined = currentUser?.id;
   const currentProfileType: string | undefined = currentUser?.profile_type;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPrefs = async () => {
+      try {
+        const hiddenForSession = typeof window !== 'undefined' && sessionStorage.getItem("hide_onboarding_tips") === "1";
+        const prefs = await fetchPreferences();
+        if (cancelled) return;
+        const settings = prefs?.settings || {};
+        setCompactView(Boolean(settings.compact_view));
+        setAccessibilityMode(Boolean(settings.accessibility_mode));
+        if (!hiddenForSession) {
+          setShowTips(Boolean(settings.show_onboarding));
+        } else {
+          setShowTips(false);
+        }
+      } catch {
+        if (!cancelled) {
+          setShowTips(false);
+          setCompactView(false);
+          setAccessibilityMode(false);
+        }
+      }
+    };
+
+    loadPrefs();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const handleDismissTips = () => {
+    try {
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem("hide_onboarding_tips", "1");
+      }
+    } catch {
+      // ignore storage errors
+    }
+    setShowTips(false);
+  };
 
   const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -310,9 +358,10 @@ export default function HousehelpHome() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className="flex-1 py-8">
+        <main className={`flex-1 py-8 ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl p-6 sm:p-8 mb-8 shadow-lg">
+            {showTips && <OnboardingTipsBanner role="househelp" onDismiss={handleDismissTips} />}
+            <div className={`bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg`}>
               <div className="flex items-center justify-between mb-4">
                 <h1 className="text-2xl sm:text-3xl font-bold text-white">Find Households</h1>
                 <button
@@ -463,12 +512,12 @@ export default function HousehelpHome() {
                   <p className="text-gray-600 dark:text-gray-400 text-lg">No households found. Try adjusting filters.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>
                   {results.map((r) => (
                     <div
                       key={r.profile_id}
                       onClick={() => handleViewMore(r)}
-                      className="relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-6 hover:scale-105 transition-all duration-300 cursor-pointer"
+                      className={`relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 transition-all duration-300 cursor-pointer`}
                     >
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">

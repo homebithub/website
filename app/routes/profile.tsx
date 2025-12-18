@@ -1,8 +1,7 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Navigation } from "~/components/Navigation";
-import { FloatingBubbles } from '~/components/ui/FloatingBubbles';
+import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { Footer } from "~/components/Footer";
-import { Error } from "~/components/Error";
 import { useAuth } from "~/contexts/useAuth";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
@@ -126,12 +125,11 @@ export default function ProfilePage() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen flex flex-col w-full">
+    <div className="min-h-screen flex flex-col">
       <Navigation />
-      <div className="relative min-h-screen flex flex-col w-full bg-gradient-to-br from-purple-50 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#0a0a0f] dark:to-[#13131a] transition-colors duration-300">
-        <FloatingBubbles variant="light" density="low" />
-        <div className="mx-auto w-full max-w-md sm:max-w-lg flex flex-col items-center">
-          <div className="w-full bg-gradient-to-br from-purple-50 to-white dark:from-[#020617] dark:to-[#020617] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 p-8 mt-4 transition-colors duration-300">
+      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+        <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
+          <div className="w-full max-w-3xl bg-gradient-to-br from-purple-50 to-white dark:from-[#020617] dark:to-[#020617] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 p-8 transition-colors duration-300">
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 text-center">My Profile 👤</h1>
             <p className="text-center text-gray-600 dark:text-gray-300 mb-6">Manage your profile information. Only email, name and phone are editable.</p>
 
@@ -300,8 +298,8 @@ export default function ProfilePage() {
               </div>
             </form>
           </div>
-        </div>
-      </div>
+        </main>
+      </PurpleThemeWrapper>
       <Footer />
     </div>
   );
