@@ -5,6 +5,7 @@ import { Footer } from '~/components/Footer';
 import { Loading } from '~/components/Loading';
 import { useAuth } from '~/contexts/useAuth';
 import { InviteCodeGenerator } from '~/components/household/InviteCodeGenerator';
+import { formatTimeAgo } from "~/utils/timeAgo";
 import {
   listMembers,
   listPendingRequests,
@@ -195,7 +196,7 @@ export default function HouseholdMembersPage() {
                         </div>
                       )}
                       <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                        Requested {new Date(request.created_at).toLocaleString()}
+                        Requested {formatTimeAgo(request.created_at)}
                       </div>
                     </div>
                     <div className="flex gap-2 ml-4">

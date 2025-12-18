@@ -4,6 +4,7 @@ import {ArrowLeftIcon, HeartIcon, TrashIcon, LockClosedIcon, LockOpenIcon} from 
 import ReadOnlyUserImageCarousel from "~/components/features/household/househelp/ReadOnlyUserImageCarousel";
 import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
 import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
+import { formatTimeAgo } from "~/utils/timeAgo";
 
 export default function HousehelpProfile() {
     const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -428,7 +429,7 @@ export default function HousehelpProfile() {
 
               <div>
                 <div className="text-gray-400 ">User Created At</div>
-                <div className="text-sm text-slate-900  font-medium">{User.created_at ? new Date(User.created_at).toLocaleString() : '-'}</div>
+                <div className="text-sm text-slate-900  font-medium">{User.created_at ? formatTimeAgo(User.created_at) : '-'}</div>
               </div>
 
 

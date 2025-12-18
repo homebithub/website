@@ -165,22 +165,22 @@ export default function ChangePasswordPage() {
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
         <PurpleCard hover={false} glow={true} className="w-full max-w-2xl p-8 sm:p-10">
           <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Change Password 🔐</h1>
-          <p className="text-base text-gray-600 mb-8">Update your password and manage security settings.</p>
+          <p className="text-base text-gray-600 dark:text-gray-300 mb-8">Update your password and manage security settings.</p>
           
           {error && (
-            <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
+            <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/40 dark:to-pink-950/40 border-2 border-red-200 dark:border-red-500/40 p-5 shadow-md transition-colors duration-300">
               <div className="flex items-center justify-center">
                 <span className="text-2xl mr-3">⚠️</span>
-                <p className="text-base font-semibold text-red-800">{error}</p>
+                <p className="text-base font-semibold text-red-800 dark:text-red-200">{error}</p>
               </div>
             </div>
           )}
           
           {success && (
-            <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-5 shadow-md">
+            <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-5 shadow-md transition-colors duration-300">
               <div className="flex items-center justify-center">
                 <span className="text-2xl mr-3">🎉</span>
-                <p className="text-base font-bold text-green-800">Password changed successfully! ✔️</p>
+                <p className="text-base font-bold text-green-800 dark:text-green-200">Password changed successfully! ✔️</p>
               </div>
             </div>
           )}
@@ -197,7 +197,7 @@ export default function ChangePasswordPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
-                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
+                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                     getFieldError('currentPassword') 
                       ? 'border-red-300 dark:border-red-600' 
                       : isFieldValid('currentPassword')
@@ -219,7 +219,7 @@ export default function ChangePasswordPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
-                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
+                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                     getFieldError('newPassword') 
                       ? 'border-red-300 dark:border-red-600' 
                       : isFieldValid('newPassword')
@@ -241,7 +241,7 @@ export default function ChangePasswordPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
-                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
+                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                     getFieldError('confirmPassword') 
                       ? 'border-red-300 dark:border-red-600' 
                       : isFieldValid('confirmPassword')

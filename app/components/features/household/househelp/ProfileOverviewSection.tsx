@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import ExpandedImageModal from "./ExpandedImageModal";
 import ImageUploadModal from "./ImageUploadModal";
 import { API_BASE_URL } from '~/config/api';
+import { formatTimeAgo } from "~/utils/timeAgo";
 
 interface ProfileOverviewSectionProps {
   profile: any;
@@ -109,11 +110,11 @@ export default function ProfileOverviewSection({
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Created At</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.created_at ? new Date(profile.created_at).toLocaleString() : '-'}</span>
+          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.created_at ? formatTimeAgo(profile.created_at) : '-'}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Updated At</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.updated_at ? new Date(profile.updated_at).toLocaleString() : '-'}</span>
+          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.updated_at ? formatTimeAgo(profile.updated_at) : '-'}</span>
         </div>
         <div className="sm:col-span-2">
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Bio</span>

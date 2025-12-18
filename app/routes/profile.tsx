@@ -7,6 +7,7 @@ import { useAuth } from "~/contexts/useAuth";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
 import { API_ENDPOINTS } from '~/config/api';
+import { formatTimeAgo } from "~/utils/timeAgo";
 
 interface UserProfile {
   id: string;
@@ -127,15 +128,15 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen flex flex-col w-full">
       <Navigation />
-      <div className="relative min-h-screen flex flex-col w-full bg-gradient-to-br from-purple-50 via-white to-purple-100">
+      <div className="relative min-h-screen flex flex-col w-full bg-gradient-to-br from-purple-50 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#0a0a0f] dark:to-[#13131a] transition-colors duration-300">
         <FloatingBubbles variant="light" density="low" />
         <div className="mx-auto w-full max-w-md sm:max-w-lg flex flex-col items-center">
-          <div className="w-full bg-gradient-to-br from-purple-50 to-white rounded-3xl shadow-2xl border-2 border-purple-200 p-8 mt-4">
+          <div className="w-full bg-gradient-to-br from-purple-50 to-white dark:from-[#020617] dark:to-[#020617] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 p-8 mt-4 transition-colors duration-300">
             <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 text-center">My Profile 👤</h1>
-            <p className="text-center text-gray-600 mb-6">Manage your profile information. Only email, name and phone are editable.</p>
+            <p className="text-center text-gray-600 dark:text-gray-300 mb-6">Manage your profile information. Only email, name and phone are editable.</p>
 
-            {error && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-4 shadow-md mb-4"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800">{error}</p></div></div>}
-            {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-4 shadow-md mb-4"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800">{success}</p></div></div>}
+            {error && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/40 dark:to-pink-950/40 border-2 border-red-200 dark:border-red-500/40 p-4 shadow-md mb-4 transition-colors duration-300"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800 dark:text-red-200">{error}</p></div></div>}
+            {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-4 shadow-md mb-4 transition-colors duration-300"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800 dark:text-green-200">{success}</p></div></div>}
 
             <form className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -147,7 +148,7 @@ export default function ProfilePage() {
                       name="first_name"
                       value={form.first_name}
                       onChange={handleChange}
-                      className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                      className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                       autoComplete="given-name"
                     />
                   ) : (
@@ -164,7 +165,7 @@ export default function ProfilePage() {
                       name="last_name"
                       value={form.last_name}
                       onChange={handleChange}
-                      className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                      className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                       autoComplete="family-name"
                     />
                   ) : (
@@ -259,11 +260,11 @@ export default function ProfilePage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                 <div>
                   <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Created At</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.created_at ? new Date(profile.created_at).toLocaleString() : '-'}</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.created_at ? formatTimeAgo(profile.created_at) : '-'}</span>
                 </div>
                 <div>
                   <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Updated At</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.updated_at ? new Date(profile.updated_at).toLocaleString() : '-'}</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.updated_at ? formatTimeAgo(profile.updated_at) : '-'}</span>
                 </div>
               </div>
               <div className="flex justify-center gap-3 mt-6">
@@ -288,7 +289,7 @@ export default function ProfilePage() {
                     </button>
                     <button
                       type="button"
-                      className="px-6 py-3 rounded-xl border-2 border-purple-200 bg-white text-purple-600 font-semibold hover:bg-purple-50 hover:border-purple-300 transition-all"
+                      className="px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-transparent text-purple-600 dark:text-purple-300 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-400 transition-all"
                       onClick={handleCancel}
                       disabled={saving}
                     >

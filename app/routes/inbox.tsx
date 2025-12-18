@@ -11,6 +11,7 @@ import HireContextBanner from '~/components/hiring/HireContextBanner';
 import { useWebSocket } from '~/hooks/useWebSocket';
 import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved } from '~/types/websocket';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
+import { formatTimeAgo } from "~/utils/timeAgo";
 
 type Conversation = {
   id: string;
@@ -1063,9 +1064,9 @@ export default function InboxPage() {
             <div className="p-5">
               <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-3">Message info</h3>
               <div className="space-y-2 text-sm text-gray-700 dark:text-gray-200">
-                <div className="flex justify-between"><span>Sent</span><span>{new Date(infoMsg.created_at).toLocaleString()}</span></div>
+                <div className="flex justify-between"><span>Sent</span><span>{formatTimeAgo(infoMsg.created_at)}</span></div>
                 <div className="flex justify-between"><span>Status</span><span>{(infoMsg._status || (infoMsg.read_at ? 'read' : 'delivered'))}</span></div>
-                <div className="flex justify-between"><span>Read</span><span>{infoMsg.read_at ? new Date(infoMsg.read_at).toLocaleString() : 'Not read yet'}</span></div>
+                <div className="flex justify-between"><span>Read</span><span>{infoMsg.read_at ? formatTimeAgo(infoMsg.read_at) : 'Not read yet'}</span></div>
                 <div className="flex justify-between"><span>Message ID</span><span className="truncate max-w-[14rem]" title={infoMsg.id}>{infoMsg.id}</span></div>
               </div>
               <div className="mt-4 text-xs opacity-70">Exact delivery time may be unavailable.</div>
