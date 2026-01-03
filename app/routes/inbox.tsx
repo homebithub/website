@@ -347,7 +347,404 @@ export default function InboxPage() {
     return () => clearInterval(id);
   }, [NOTIFICATIONS_BASE, items.length, loading, limit]);
 
-  // ... rest of the code remains the same ...
+  // --- Derived helpers & handlers ---
+
+  const handleBackToList = useCallback(() => {
+    // Clear active conversation on mobile and remove query param
+    setActiveConversationId(null);
+    setSearchParams({}, { replace: true });
+  }, [setSearchParams]);
+
+  const handleViewProfile = useCallback(() => {
+    if (!selectedConversation) return;
+    const role = currentUserProfileType?.toLowerCase();
+    if (role === 'household') {
+      // Household viewing househelp profile: prefer profile ID when available
+      const househelpProfileId = (selectedConversation as any).househelp_profile_id || selectedConversation.househelp_id;
+      if (!househelpProfileId) return;
+      const url = `/househelp/public-profile?profileId=${encodeURIComponent(househelpProfileId)}&embed=1`;
+      setProfileModalLoading(true);
+      setProfileModalTimedOut(false);
+      if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
+      profileModalTimeoutId.current = window.setTimeout(() => setProfileModalTimedOut(true), 8000);
+      setProfileModalReloadKey((k) => k + 1);
+      setProfileModalUrl(url);
+      setShowProfileModal(true);
+    } else {
+      // Househelp viewing household public profile: pass user_id via query
+      const url = `/household/public-profile?user_id=${encodeURIComponent(selectedConversation.household_id)}&embed=1`;
+      setProfileModalLoading(true);
+      setProfileModalTimedOut(false);
+      if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
+      profileModalTimeoutId.current = window.setTimeout(() => setProfileModalTimedOut(true), 8000);
+      setProfileModalReloadKey((k) => k + 1);
+      setProfileModalUrl(url);
+      setShowProfileModal(true);
+    }
+  }, [selectedConversation, currentUserProfileType]);
+
+  const handleMessagesScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+    setShowScrollToBottom(!nearBottom);
+  }, []);
+
+  // Group messages by date for rendering
+  const groupedMessages = useMemo(() => {
+    if (!Array.isArray(messages) || messages.length === 0) return [] as { key: string; label: string; items: Message[] }[];
+    const sorted = [...messages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const groups: { key: string; label: string; items: Message[] }[] = [];
+    const map = new Map<string, { label: string; items: Message[] }>();
+    for (const m of sorted) {
+      const d = new Date(m.created_at);
+      if (Number.isNaN(d.getTime())) continue;
+      const key = d.toISOString().slice(0, 10);
+      if (!map.has(key)) {
+        const label = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+        const entry = { label, items: [] as Message[] };
+        map.set(key, entry);
+        groups.push({ key, label, items: entry.items });
+      }
+      map.get(key)!.items.push(m);
+    }
+    return groups;
+  }, [messages]);
+
+  const messageById = useMemo(() => {
+    const m = new Map<string, Message>();
+    for (const msg of messages) {
+      m.set(msg.id, msg);
+    }
+    return m;
+  }, [messages]);
+
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 10);
+  }, []);
+
+  const ensureMessageVisibleAndScroll = useCallback((id: string) => {
+    const el = messageRefs.current[id];
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightMsgId(id);
+      window.setTimeout(() => setHighlightMsgId(null), 1500);
+    }
+  }, []);
+
+  const startLongPress = useCallback((id: string) => {
+    if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
+    longPressTimerRef.current = window.setTimeout(() => {
+      setSelectedIds((prev) => new Set(prev).add(id));
+    }, 400);
+  }, []);
+
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimerRef.current) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  }, []);
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const nameForUser = useCallback((userId: string) => {
+    if (!userId) return 'User';
+    if (userId === currentUserId) return 'You';
+    return 'User';
+  }, [currentUserId]);
+
+  const isEditable = useCallback((m: Message) => {
+    if (!currentUserId || m.sender_id !== currentUserId) return false;
+    if (m.deleted_at) return false;
+    const created = new Date(m.created_at).getTime();
+    return Date.now() - created <= 15 * 60 * 1000;
+  }, [currentUserId]);
+
+  const isDeletable = useCallback((m: Message) => {
+    return isEditable(m);
+  }, [isEditable]);
+
+  const undoDelete = useCallback((id: string) => {
+    const backup = deletedBackupRef.current[id];
+    if (!backup) return;
+    setPendingDeleteIds((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, body: backup.body, deleted_at: null } : m)));
+  }, []);
+
+  const clearReply = useCallback(() => setReplyTo(null), []);
+
+  const handleReplyMessage = useCallback((m: Message) => {
+    setReplyTo(m);
+  }, []);
+
+  const cancelEditMessage = useCallback(() => {
+    setEditingMessageId(null);
+    setEditingDraft("");
+  }, []);
+
+  const startEditMessage = useCallback((m: Message) => {
+    if (!isEditable(m)) return;
+    setEditingMessageId(m.id);
+    setEditingDraft(m.body);
+  }, [isEditable]);
+
+  const saveEditMessage = useCallback(async () => {
+    if (!editingMessageId) return;
+    const msg = messageById.get(editingMessageId);
+    if (!msg) return;
+    const newBody = editingDraft.trim();
+    if (!newBody) return;
+    try {
+      setEditingSaving(true);
+      const res = await apiClient.auth(
+        `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/messages/${encodeURIComponent(msg.id)}`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ body: newBody }),
+        },
+      );
+      if (!res.ok) throw new Error('Failed to edit message');
+      const updated = await apiClient.json<Message>(res);
+      setMessages((prev) => prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)));
+      cancelEditMessage();
+    } catch (err) {
+      console.error(err);
+      pushToast('Failed to edit message', 'error');
+    } finally {
+      setEditingSaving(false);
+    }
+  }, [editingMessageId, editingDraft, messageById, NOTIFICATIONS_BASE, cancelEditMessage, pushToast]);
+
+  const toggleReaction = useCallback(async (m: Message, emoji: string) => {
+    try {
+      const res = await apiClient.auth(
+        `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/messages/${encodeURIComponent(m.id)}/reactions`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emoji }),
+        },
+      );
+      if (!res.ok) return;
+      const updated = await apiClient.json<Message>(res);
+      setMessages((prev) => prev.map((msg) => (msg.id === updated.id ? { ...msg, ...updated } : msg)));
+    } catch (err) {
+      console.error(err);
+    }
+  }, [NOTIFICATIONS_BASE]);
+
+  const addEmoji = useCallback((emojiData: EmojiClickData) => {
+    let emoji = emojiData?.emoji as string | undefined;
+    if (!emoji && (emojiData as any)?.native) {
+      emoji = (emojiData as any).native;
+    }
+    if (!emoji && emojiData?.unified) {
+      try {
+        const codePoints = emojiData.unified.split('-').map((u: string) => parseInt(u, 16));
+        emoji = String.fromCodePoint(...codePoints);
+      } catch {}
+    }
+    if (!emoji) return;
+    setInput((prev) => prev + emoji);
+    setShowEmojiPicker(false);
+  }, []);
+
+  const handleSend = useCallback(async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeConversationId) return;
+    const body = input.trim();
+    if (!body) return;
+    try {
+      const tempId = `temp-${Date.now()}`;
+      const optimistic: Message = {
+        id: tempId,
+        conversation_id: activeConversationId,
+        sender_id: currentUserId || '',
+        body,
+        created_at: new Date().toISOString(),
+        _status: 'sending',
+      };
+      setMessages((prev) => [...prev, optimistic]);
+      setInput('');
+      scrollToBottom();
+      const res = await apiClient.auth(
+        `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${encodeURIComponent(activeConversationId)}/messages`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ body }),
+        },
+      );
+      if (!res.ok) throw new Error('Failed to send message');
+      const saved = await apiClient.json<Message>(res);
+      setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...saved, _status: 'sent' } : m)));
+    } catch (err) {
+      console.error(err);
+      pushToast('Failed to send message', 'error');
+    }
+  }, [activeConversationId, input, currentUserId, NOTIFICATIONS_BASE, scrollToBottom, pushToast]);
+
+  const handleAcceptHireRequest = useCallback(async () => {
+    if (!hireRequestId) return;
+    try {
+      setHireActionLoading('accept');
+      const res = await apiClient.auth(`${API_BASE}/api/v1/hire-requests/${encodeURIComponent(hireRequestId)}/accept`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error('Failed to accept hire request');
+      setHireRequestStatus('accepted');
+    } catch (err) {
+      console.error(err);
+      pushToast('Failed to accept hire request', 'error');
+    } finally {
+      setHireActionLoading(null);
+    }
+  }, [hireRequestId, API_BASE, pushToast]);
+
+  const handleDeclineHireRequest = useCallback(async () => {
+    if (!hireRequestId) return;
+    try {
+      setHireActionLoading('decline');
+      const res = await apiClient.auth(`${API_BASE}/api/v1/hire-requests/${encodeURIComponent(hireRequestId)}/decline`, {
+        method: 'POST',
+      });
+      if (!res.ok) throw new Error('Failed to decline hire request');
+      setHireRequestStatus('declined');
+    } catch (err) {
+      console.error(err);
+      pushToast('Failed to decline hire request', 'error');
+    } finally {
+      setHireActionLoading(null);
+    }
+  }, [hireRequestId, API_BASE, pushToast]);
+
+  // Basic WebSocket wiring for new incoming messages
+  useEffect(() => {
+    // Subscribe to inbox events; the backend sends typed events that useWebSocket
+    // has already parsed into our WSMessageEvent type.
+    const off = addEventListener('inbox', (event: WSMessageEvent) => {
+      try {
+        const type = (event as any)?.type as string | undefined;
+        const payload = (event as any)?.payload ?? event;
+        if (!type || !payload) return;
+
+        if (type === 'new_message') {
+          const msg = payload as Message;
+          setMessages((prev) => {
+            if (prev.some((m) => m.id === msg.id)) return prev;
+            return [...prev, msg];
+          });
+        } else if (type === 'message_edited') {
+          const msg = payload as Message;
+          setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
+        } else if (type === 'message_deleted') {
+          const msg = payload as Message;
+          setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
+        } else if (type === 'reaction_added' || type === 'reaction_removed') {
+          const msg = payload as Message;
+          setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
+        }
+      } catch (err) {
+        console.error('Failed to handle WS inbox event', err);
+      }
+    });
+    return () => {
+      off?.();
+    };
+  }, [addEventListener]);
+
+  // Conversations list JSX (left sidebar)
+  const conversationsList = (
+    <div className="flex flex-col h-full bg-white dark:bg-[#13131a]">
+      <div className="px-4 py-3 border-b border-purple-200 dark:border-purple-500/30 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Conversations</h2>
+        {loading && (
+          <span className="text-xs text-gray-500 dark:text-gray-400">Loading…</span>
+        )}
+      </div>
+
+      {error && (
+        <div className="m-3 rounded-md border border-red-300 bg-red-50 dark:bg-red-900/20 p-2 text-xs text-red-700 dark:text-red-300">
+          {error}
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto">
+        {items.length === 0 && !loading && !error && (
+          <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+            No conversations yet.
+          </div>
+        )}
+
+        <ul className="divide-y divide-purple-100 dark:divide-purple-500/20">
+          {items.map((c) => {
+            const isActive = c.id === activeConversationId;
+            const lastAt = c.last_message_at ? new Date(c.last_message_at) : null;
+            const subtitle = lastAt && !Number.isNaN(lastAt.getTime()) ? formatTimeAgo(lastAt.toISOString()) : '';
+            const unread = c.unread_count || 0;
+            return (
+              <li key={c.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveConversationId(c.id);
+                    setSearchParams({ conversation: c.id }, { replace: true });
+                  }}
+                  className={`w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-purple-50 dark:hover:bg-slate-800/70 transition ${
+                    isActive ? 'bg-purple-50/70 dark:bg-slate-800/80' : ''
+                  }`}
+                >
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                    {(c.participant_name || 'U')[0].toUpperCase()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                        {c.participant_name || 'Unknown User'}
+                      </p>
+                      {subtitle && (
+                        <span className="ml-2 text-[11px] text-gray-500 dark:text-gray-400 flex-shrink-0">{subtitle}</span>
+                      )}
+                    </div>
+                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">
+                      {unread > 0 ? `${unread} unread message${unread === 1 ? '' : 's'}` : 'No new messages'}
+                    </p>
+                  </div>
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+
+        <div ref={sentinelRef} />
+
+        {hasMore && !loading && (
+          <div className="py-3 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setOffset((prev) => prev + limit)}
+              className="px-3 py-1.5 text-xs rounded-full border border-purple-300 dark:border-purple-500/40 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-slate-800"
+            >
+              Load more
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+
   // Messages view JSX
   const messagesView = !selectedConversation ? (
     <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-[#0a0a0f]">
@@ -927,15 +1324,39 @@ export default function InboxPage() {
           ))}
         </div>
       )}
-      
+
       {/* Profile Modal */}
       {showProfileModal && profileModalUrl && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60" onClick={() => { setShowProfileModal(false); setProfileModalUrl(null); setProfileModalLoading(false); setProfileModalTimedOut(false); if (profileModalTimeoutId.current) { window.clearTimeout(profileModalTimeoutId.current); profileModalTimeoutId.current = null; } }}>
-          <div className="relative w-full max-w-6xl h-[85vh] rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)]" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60"
+          onClick={() => {
+            setShowProfileModal(false);
+            setProfileModalUrl(null);
+            setProfileModalLoading(false);
+            setProfileModalTimedOut(false);
+            if (profileModalTimeoutId.current) {
+              window.clearTimeout(profileModalTimeoutId.current);
+              profileModalTimeoutId.current = null;
+            }
+          }}
+        >
+          <div
+            className="relative w-full max-w-6xl h-[85vh] rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)]"
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               className="absolute top-3 right-3 z-[71] p-2 rounded-full bg-white/90 dark:bg-[#13131a]/90 border border-purple-200 dark:border-purple-500/30 shadow hover:scale-105 transition"
-              onClick={() => { setShowProfileModal(false); setProfileModalUrl(null); setProfileModalLoading(false); setProfileModalTimedOut(false); if (profileModalTimeoutId.current) { window.clearTimeout(profileModalTimeoutId.current); profileModalTimeoutId.current = null; } }}
+              onClick={() => {
+                setShowProfileModal(false);
+                setProfileModalUrl(null);
+                setProfileModalLoading(false);
+                setProfileModalTimedOut(false);
+                if (profileModalTimeoutId.current) {
+                  window.clearTimeout(profileModalTimeoutId.current);
+                  profileModalTimeoutId.current = null;
+                }
+              }}
               aria-label="Close profile"
             >
               <XMarkIcon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
@@ -945,36 +1366,84 @@ export default function InboxPage() {
             )}
             {profileModalLoading && (
               <div className="absolute inset-0 z-[72] grid place-items-center bg-black/10">
-                <svg className="animate-spin h-10 w-10 text-purple-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                <svg
+                  className="animate-spin h-10 w-10 text-purple-500"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  ></path>
                 </svg>
               </div>
+            )}
+            <iframe
+              key={profileModalReloadKey}
+              src={profileModalUrl}
+              className="w-full h-full border-0 bg-white"
+              onLoad={() => {
+                setProfileModalLoading(false);
+                if (profileModalTimeoutId.current) {
+                  window.clearTimeout(profileModalTimeoutId.current);
+                  profileModalTimeoutId.current = null;
+                }
+              }}
+              title="Profile"
+            />
+          </div>
+        </div>
+      )}
+
+      {showHireWizard && selectedConversation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <ConversationHireWizard
-            househelpId={currentUserProfileType?.toLowerCase() === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id}
-            househelpName={selectedConversation.participant_name || 'User'}
+            househelpId={
+              currentUserProfileType?.toLowerCase() === 'household'
+                ? selectedConversation!.househelp_id
+                : selectedConversation!.household_id
+            }
+            househelpName={selectedConversation!.participant_name || 'User'}
             onClose={() => setShowHireWizard(false)}
             onSuccess={(newHireRequestId) => {
               setShowHireWizard(false);
               setHireRequestStatus('pending');
               setHireRequestId(newHireRequestId);
-              // Optionally send a message about the hire request
               const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
-              apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ body }),
-              }).then(res => {
-                if (res.ok) {
-                  return apiClient.json<Message>(res);
-                }
-              }).then(msg => {
-                if (msg) {
-                  setMessages((prev) => [...prev, msg]);
-                  setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
-                }
-              }).catch(console.error);
+              apiClient
+                .auth(
+                  `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages`,
+                  {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ body }),
+                  },
+                )
+                .then((res) => {
+                  if (res.ok) {
+                    return apiClient.json<Message>(res);
+                  }
+                })
+                .then((msg) => {
+                  if (msg) {
+                    setMessages((prev) => [...prev, msg]);
+                    setTimeout(
+                      () => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }),
+                      50,
+                    );
+                  }
+                })
+                .catch(console.error);
             }}
           />
         </div>
