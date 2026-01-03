@@ -925,17 +925,16 @@ export default function AuthenticatedHome() {
                       )}
 
                       {/* Salary */}
-                      {househelp.salary_expectation && (
-                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center mb-3">
-                          💰 {househelp.salary_expectation}
-                          {househelp.salary_frequency && ` per ${
-                            househelp.salary_frequency === 'daily' ? 'day' :
-                            househelp.salary_frequency === 'weekly' ? 'week' :
-                            househelp.salary_frequency === 'monthly' ? 'month' :
-                            househelp.salary_frequency
-                          }`}
-                        </p>
-                      )}
+                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center mb-3">
+                        💰 {househelp.salary_expectation && Number(househelp.salary_expectation) > 0 
+                          ? `${househelp.salary_expectation}${househelp.salary_frequency ? ` per ${
+                              househelp.salary_frequency === 'daily' ? 'day' :
+                              househelp.salary_frequency === 'weekly' ? 'week' :
+                              househelp.salary_frequency === 'monthly' ? 'month' :
+                              househelp.salary_frequency
+                            }` : ''}`
+                          : 'No salary expectations specified'}
+                      </p>
 
                       {/* Bio Preview */}
                       {househelp.bio && (
