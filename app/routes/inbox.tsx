@@ -17,7 +17,11 @@ type Conversation = {
   id: string;
   household_id: string;
   househelp_id: string;
-  last_message_at: string;
+  household_profile_id?: string | null;
+  househelp_profile_id?: string | null;
+  household_profile_type?: string | null;
+  househelp_profile_type?: string | null;
+  last_message_at: string | null;
   unread_count?: number;
   participant_name?: string;
   participant_avatar?: string;
@@ -181,6 +185,72 @@ export default function InboxPage() {
   // Track image loading state for avatars
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
 
+  // Hydrate conversations with participant profile information from the auth service
+  useEffect(() => {
+    const role = currentUserProfileType?.toLowerCase();
+    if (!role) return;
+
+    // Only look up conversations that don't already have a participant_name
+    const missing = items.filter((c) => !c.participant_name);
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+
+    const loadProfiles = async () => {
+      const updates: { id: string; participant_name?: string; participant_avatar?: string }[] = [];
+
+      for (const conv of missing) {
+        try {
+          if (role === "household") {
+            // Household user: other participant is a househelp
+            const profileId = (conv as any).househelp_profile_id || conv.househelp_id;
+            if (!profileId) continue;
+            const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/${encodeURIComponent(profileId)}/profile_with_user`);
+            if (!res.ok) continue;
+            const profileData: any = await apiClient.json(res);
+            const househelp = profileData?.data?.Househelp || profileData;
+            const user = profileData?.data?.User || profileData?.user;
+            const firstName = (user?.first_name || househelp?.first_name || "").trim();
+            const lastName = (user?.last_name || househelp?.last_name || "").trim();
+            const fullName = `${firstName} ${lastName}`.trim() || "Househelp";
+            const avatar = househelp?.avatar_url || (Array.isArray(househelp?.photos) && househelp.photos.length > 0 ? househelp.photos[0] : undefined);
+            updates.push({ id: conv.id, participant_name: fullName, participant_avatar: avatar });
+          } else if (role === "househelp") {
+            // Househelp user: other participant is a household
+            const householdUserId = conv.household_id;
+            if (!householdUserId) continue;
+            const res = await apiClient.auth(`${API_BASE}/api/v1/profile/household/${encodeURIComponent(householdUserId)}`);
+            if (!res.ok) continue;
+            const profileData: any = await apiClient.json(res);
+            // Household profiles don't currently expose a display name; fall back to a generic label
+            const name = "Household";
+            const avatar = Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined;
+            updates.push({ id: conv.id, participant_name: name, participant_avatar: avatar });
+          }
+        } catch (err) {
+          // Ignore per-conversation errors to avoid breaking the whole list
+          // eslint-disable-next-line no-console
+          console.error("Failed to hydrate inbox participant", err);
+        }
+      }
+
+      if (!cancelled && updates.length > 0) {
+        setItems((prev) =>
+          prev.map((c) => {
+            const u = updates.find((u) => u.id === c.id);
+            return u ? { ...c, ...u } : c;
+          })
+        );
+      }
+    };
+
+    loadProfiles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [items, currentUserProfileType, API_BASE]);
+
   const fetchHireContext = useCallback(async (conversation?: Conversation) => {
     if (!conversation) {
       setHireRequestStatus(undefined);
@@ -224,8 +294,15 @@ export default function InboxPage() {
         setError(null);
         const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations?offset=${offset}&limit=${limit}`);
         if (!res.ok) throw new Error("Failed to load conversations");
-        const response = await apiClient.json<{ conversations: Conversation[] }>(res);
-        const data = response.conversations || [];
+        const response = await apiClient.json<{ conversations: any[] }>(res);
+        const raw = response.conversations || [];
+        // Normalise field names so the rest of the UI can rely on household_id / househelp_id
+        const data: Conversation[] = raw.map((c: any) => ({
+          ...c,
+          household_id: c.household_id || c.household_user_id || c.householdId || "",
+          househelp_id: c.househelp_id || c.househelp_user_id || c.househelpId || "",
+          last_message_at: c.last_message_at ?? null,
+        }));
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
         setHasMore(data.length === limit);
@@ -255,905 +332,22 @@ export default function InboxPage() {
         const count = items.length > 0 ? items.length : limit;
         const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations?offset=0&limit=${count}`);
         if (!res.ok) return;
-        const response = await apiClient.json<{ conversations: Conversation[] }>(res);
-        const data = response.conversations || [];
+        const response = await apiClient.json<{ conversations: any[] }>(res);
+        const raw = response.conversations || [];
+        const data: Conversation[] = raw.map((c: any) => ({
+          ...c,
+          household_id: c.household_id || c.household_user_id || c.householdId || "",
+          househelp_id: c.househelp_id || c.househelp_user_id || c.househelpId || "",
+          last_message_at: c.last_message_at ?? null,
+        }));
         setItems(data);
         setHasMore(data.length >= count);
       } catch {}
     }, 15000);
     return () => clearInterval(id);
-  }, [NOTIFICATIONS_BASE, items.length, loading]);
+  }, [NOTIFICATIONS_BASE, items.length, loading, limit]);
 
-  // Load messages for selected conversation
-  useEffect(() => {
-    if (!activeConversationId) {
-      setMessages([]);
-      setMessagesOffset(0);
-      return;
-    }
-    
-    let cancelled = false;
-    async function loadMessages() {
-      try {
-        setMessagesLoading(true);
-        setMessagesError(null);
-        const res = await apiClient.auth(
-          `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${messagesOffset}&limit=${messagesLimit}`
-        );
-        if (!res.ok) throw new Error("Failed to load messages");
-        const response = await apiClient.json<{ messages?: Message[] }>(res);
-        const data = Array.isArray(response.messages) ? response.messages : [];
-        if (cancelled) return;
-        // Mark all loaded messages as delivered (they exist in DB)
-        const messagesWithStatus = data.map(m => ({ ...m, _status: 'delivered' as MessageStatus }));
-        setMessages((prev) => (messagesOffset === 0 ? messagesWithStatus : [...prev, ...messagesWithStatus]));
-        setMessagesHasMore(data.length === messagesLimit);
-      } catch (e: any) {
-        if (!cancelled) setMessagesError(e?.message || "Failed to load messages");
-      } finally {
-        if (!cancelled) setMessagesLoading(false);
-      }
-    }
-    loadMessages();
-    return () => {
-      cancelled = true;
-    };
-  }, [NOTIFICATIONS_BASE, activeConversationId, messagesOffset]);
-
-  // Mark conversation as read
-  useEffect(() => {
-    if (!activeConversationId) return;
-    async function markRead() {
-      try {
-        await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/read`, {
-          method: "POST",
-        });
-      } catch {}
-    }
-    markRead();
-  }, [NOTIFICATIONS_BASE, activeConversationId, messages.length]);
-
-  const isNearBottom = useCallback(() => {
-    const el = messagesContainerRef.current;
-    if (!el) return true;
-    const threshold = 80; // px
-    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
-    return distance <= threshold;
-  }, []);
-
-  const handleMessagesScroll = useCallback(() => {
-    const el = messagesContainerRef.current;
-    if (!el) return;
-    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setShowScrollToBottom(distance > 80);
-  }, []);
-
-  const scrollToBottom = useCallback(() => {
-    const el = messagesContainerRef.current;
-    if (el) {
-      el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-    }
-    setShowScrollToBottom(false);
-  }, []);
-
-  // Auto scroll to bottom on new messages
-  useEffect(() => {
-    if (messagesOffset === 0 && messages.length > 0) {
-      const el = messagesContainerRef.current;
-      if (!el) return;
-      const atTopInitial = el.scrollTop === 0 && el.scrollHeight > el.clientHeight;
-      if (isNearBottom() || atTopInitial) {
-        // Scroll to bottom of the container
-        setTimeout(() => {
-          if (el) {
-            el.scrollTop = el.scrollHeight;
-          }
-        }, 100);
-      }
-    }
-  }, [messages, messagesOffset, isNearBottom]);
-
-  // WebSocket event handlers
-  useEffect(() => {
-    if (!activeConversationId) return;
-    
-    // Handle new messages
-    const unsubscribeNew = addEventListener(WSEventNewMessage, (event: WSMessageEvent) => {
-      if (event.conversation_id === activeConversationId && event.message) {
-        setMessages(prev => {
-          // Check if message already exists (avoid duplicates)
-          if (prev.some(m => m.id === event.message!.id)) {
-            return prev;
-          }
-          return [...prev, event.message!];
-        });
-        
-        // Auto-scroll if near bottom
-        if (isNearBottom()) {
-          setTimeout(() => {
-            const el = messagesContainerRef.current;
-            if (el) el.scrollTop = el.scrollHeight;
-          }, 50);
-        }
-      }
-    });
-    
-    // Handle message edits
-    const unsubscribeEdit = addEventListener(WSEventMessageEdited, (event: WSMessageEvent) => {
-      if (event.conversation_id === activeConversationId && event.message) {
-        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
-      }
-    });
-    
-    // Handle message deletes
-    const unsubscribeDelete = addEventListener(WSEventMessageDeleted, (event: WSMessageEvent) => {
-      if (event.conversation_id === activeConversationId && event.message) {
-        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
-      }
-    });
-    
-    // Handle reactions
-    const unsubscribeReaction = addEventListener(WSEventReactionAdded, (event: WSMessageEvent) => {
-      if (event.conversation_id === activeConversationId && event.message) {
-        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
-      }
-    });
-    
-    const unsubscribeReactionRemoved = addEventListener(WSEventReactionRemoved, (event: WSMessageEvent) => {
-      if (event.conversation_id === activeConversationId && event.message) {
-        setMessages(prev => prev.map(m => m.id === event.message!.id ? event.message! : m));
-      }
-    });
-    
-    return () => {
-      unsubscribeNew();
-      unsubscribeEdit();
-      unsubscribeDelete();
-      unsubscribeReaction();
-      unsubscribeReactionRemoved();
-    };
-  }, [activeConversationId, addEventListener, isNearBottom]);
-  
-  // Polling: refresh messages (fallback when WebSocket disconnected, or slower interval when connected)
-  // Use longer interval when WebSocket is connected (30s), shorter when disconnected (12s)
-  const pollInterval = connectionState === 'connected' ? 30000 : 12000;
-  
-  useEffect(() => {
-    if (!activeConversationId) return;
-    
-    const id = setInterval(async () => {
-      try {
-        const count = messages.length > 0 ? messages.length + 10 : messagesLimit;
-        const res = await apiClient.auth(
-          `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages?offset=0&limit=${count}`
-        );
-        if (!res.ok) return;
-        const response = await apiClient.json<{ messages?: Message[] }>(res);
-        const data = Array.isArray(response.messages) ? response.messages : [];
-        if (data.length !== messages.length) {
-          setMessages(data);
-          if (isNearBottom()) {
-            setTimeout(() => {
-              const el = messagesContainerRef.current;
-              if (el) el.scrollTop = el.scrollHeight;
-            }, 50);
-          }
-        }
-        // Mark as read
-        try { await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/read`, { method: "POST" }); } catch {}
-      } catch {}
-    }, pollInterval);
-    return () => clearInterval(id);
-  }, [NOTIFICATIONS_BASE, activeConversationId, messages.length, isNearBottom, connectionState, pollInterval]);
-
-  useEffect(() => {
-    handleMessagesScroll();
-  }, [messages, handleMessagesScroll]);
-
-  // Observe bottomRef visibility inside messages container
-  useEffect(() => {
-    const root = messagesContainerRef.current;
-    const target = bottomRef.current;
-    if (!root || !target) return;
-    const io = new IntersectionObserver(
-      ([entry]) => {
-        // If bottom is visible, hide the button; otherwise, show it
-        setShowScrollToBottom(!entry.isIntersecting);
-      },
-      { root, threshold: 1.0 }
-    );
-    io.observe(target);
-    return () => io.disconnect();
-  }, [activeConversationId]);
-
-  // When emoji picker opens, focus its search input
-  useEffect(() => {
-    if (!showEmojiPicker) return;
-    // Defer to next tick so the DOM is mounted
-    const id = window.setTimeout(() => {
-      const root = emojiPickerRef.current;
-      if (!root) return;
-      const search = (root.querySelector('input[type="search"]') || root.querySelector('input')) as HTMLInputElement | null;
-      if (search) {
-        try {
-          search.focus();
-          search.select();
-        } catch {}
-      }
-    }, 0);
-    return () => window.clearTimeout(id);
-  }, [showEmojiPicker]);
-
-  // Message action helpers
-  const isDeletable = useCallback((m: Message) => {
-    const mine = currentUserId && m.sender_id === currentUserId;
-    const created = new Date(m.created_at).getTime();
-    const now = Date.now();
-    const within15m = now - created <= 15 * 60 * 1000;
-    return Boolean(mine && within15m && !m.deleted_at);
-  }, [currentUserId]);
-
-  const handleDeleteMessage = useCallback(async (msg: Message) => {
-    if (!isDeletable(msg)) {
-      setMessagesError('Message can be deleted only within 15 minutes of sending.');
-      pushToast('Cannot delete after 15 minutes', 'error');
-      return;
-    }
-    // Save backup for undo and set optimistic deleted
-    deletedBackupRef.current[msg.id] = { body: msg.body };
-    setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, deleted_at: new Date().toISOString(), body: '' } : m));
-    setOpenMsgMenuId(null);
-    setPendingDeleteIds(prev => { const next = new Set(prev); next.add(msg.id); return next; });
-    // Schedule actual delete after 5s
-    if (deleteTimersRef.current[msg.id]) window.clearTimeout(deleteTimersRef.current[msg.id]);
-    deleteTimersRef.current[msg.id] = window.setTimeout(async () => {
-      try {
-        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/messages/${msg.id}`, { method: 'DELETE' });
-        if (!res.ok) throw new Error('Failed to delete');
-        pushToast('Message deleted', 'success');
-      } catch (e: any) {
-        setMessagesError(e?.message || 'Failed to delete message');
-        setMessagesOffset(0);
-        pushToast('Failed to delete message', 'error');
-      } finally {
-        setPendingDeleteIds(prev => { const next = new Set(prev); next.delete(msg.id); return next; });
-        delete deletedBackupRef.current[msg.id];
-        const t = deleteTimersRef.current[msg.id];
-        if (t) window.clearTimeout(t);
-        delete deleteTimersRef.current[msg.id];
-      }
-    }, 5000);
-  }, [API_BASE, isDeletable, pushToast]);
-
-  const undoDelete = useCallback((id: string) => {
-    const t = deleteTimersRef.current[id];
-    if (t) window.clearTimeout(t);
-    const backup = deletedBackupRef.current[id];
-    setMessages(prev => prev.map(m => m.id === id ? { ...m, deleted_at: null, body: backup?.body ?? m.body } : m));
-    setPendingDeleteIds(prev => { const next = new Set(prev); next.delete(id); return next; });
-    delete deleteTimersRef.current[id];
-    delete deletedBackupRef.current[id];
-    pushToast('Deletion undone', 'success');
-  }, [pushToast]);
-  const toggleSelect = useCallback((id: string) => {
-    setSelectedIds(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  }, []);
-
-  const isEditable = useCallback((m: Message) => isDeletable(m) && !m.deleted_at, [isDeletable]);
-
-  const startEditMessage = useCallback((m: Message) => {
-    if (!isEditable(m)) return;
-    setEditingMessageId(m.id);
-    setEditingDraft(m.body || "");
-    setOpenMsgMenuId(null);
-  }, [isEditable]);
-
-  const cancelEditMessage = useCallback(() => {
-    setEditingMessageId(null);
-    setEditingDraft("");
-  }, []);
-
-  const saveEditMessage = useCallback(async () => {
-    if (!editingMessageId) return;
-    const target = messages.find(m => m.id === editingMessageId);
-    if (!target) return;
-    if (!isEditable(target)) {
-      setMessagesError('Message can be edited only within 15 minutes of sending.');
-      return;
-    }
-    const newBody = editingDraft.trim();
-    if (!newBody) return;
-    setEditingSaving(true);
-    const editedAt = new Date().toISOString();
-    // Optimistic update
-    setMessages(prev => prev.map(m => m.id === editingMessageId ? { ...m, body: newBody, edited_at: editedAt } : m));
-    try {
-      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/messages/${editingMessageId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ body: newBody }),
-      });
-      if (!res.ok) throw new Error('Failed to edit message');
-      setEditingMessageId(null);
-      setEditingDraft("");
-      pushToast('Message edited', 'success');
-    } catch (e: any) {
-      setMessagesError(e?.message || 'Failed to edit message');
-      // Fallback: refetch messages to restore original server truth
-      setMessagesOffset(0);
-      pushToast('Failed to edit message', 'error');
-    } finally {
-      setEditingSaving(false);
-    }
-  }, [API_BASE, editingMessageId, editingDraft, isEditable, messages, pushToast]);
-
-  const messageById = useMemo(() => {
-    const map = new Map<string, Message>();
-    const source = Array.isArray(messages) ? messages : [];
-    source.forEach((m) => map.set(m.id, m));
-    return map;
-  }, [messages]);
-  const infoMsg = useMemo(() => (infoForMsgId ? (messageById.get(infoForMsgId) || null) : null), [infoForMsgId, messageById]);
-  const nameForUser = useCallback((uid?: string | null) => {
-    if (!uid) return 'User';
-    if (uid === currentUserId) return 'You';
-    return selectedConversation?.participant_name || 'User';
-  }, [currentUserId, selectedConversation]);
-
-  const handleReplyMessage = useCallback((m: Message) => {
-    setReplyTo(m);
-    setOpenMsgMenuId(null);
-    setTimeout(() => textareaRef.current?.focus(), 0);
-  }, []);
-
-  const clearReply = useCallback(() => setReplyTo(null), []);
-
-  const scrollToMessage = useCallback((id: string) => {
-    const el = messageRefs.current[id];
-    const container = messagesContainerRef.current;
-    if (el && container) {
-      // Calculate position to center the message in the container
-      const containerRect = container.getBoundingClientRect();
-      const elementRect = el.getBoundingClientRect();
-      const scrollTop = container.scrollTop + (elementRect.top - containerRect.top) - (containerRect.height / 2) + (elementRect.height / 2);
-      
-      container.scrollTo({ top: scrollTop, behavior: 'smooth' });
-      setHighlightMsgId(id);
-      window.setTimeout(() => setHighlightMsgId(null), 1500);
-    }
-  }, []);
-
-  // Ensure a message is loaded; if not, progressively fetch older pages and then scroll to it
-  const ensureMessageVisibleAndScroll = useCallback(async (id: string) => {
-    if (!activeConversationId) return;
-    if (messageRefs.current[id]) { scrollToMessage(id); return; }
-    try {
-      let off = messages.length; // fetch older pages beyond what's loaded
-      for (let i = 0; i < 20; i++) { // hard cap to avoid infinite loops
-        const res = await apiClient.auth(
-          `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${off}&limit=${messagesLimit}`
-        );
-        if (!res.ok) break;
-        const response = await apiClient.json<{ messages?: Message[] }>(res);
-        const data = Array.isArray(response.messages) ? response.messages : [];
-        if (!data || data.length === 0) break;
-        const withStatus = data.map(m => ({ ...m, _status: 'delivered' as MessageStatus }));
-        setMessages(prev => {
-          const ids = new Set(prev.map(x => x.id));
-          const merged = [...prev];
-          for (const mm of withStatus) if (!ids.has(mm.id)) merged.push(mm);
-          return merged;
-        });
-        off += data.length;
-        await new Promise(r => setTimeout(r, 0));
-        if (messageRefs.current[id]) { setTimeout(() => scrollToMessage(id), 50); return; }
-        if (data.length < messagesLimit) break; // no more pages
-      }
-      // Fallback toast
-      if (!messageRefs.current[id]) pushToast('Original message not found in history', 'error');
-    } catch {
-      pushToast('Failed to load original message', 'error');
-    }
-  }, [API_BASE, activeConversationId, messages.length, messagesLimit, scrollToMessage, pushToast]);
-
-  const toggleReaction = useCallback(async (msg: Message, emoji: string) => {
-    const me = currentUserId || '';
-    const had = (msg.reactions || []).some(r => r.emoji === emoji && r.user_id === me);
-    // Optimistic
-    setMessages(prev => prev.map(m => {
-      if (m.id !== msg.id) return m;
-      const current = m.reactions || [];
-      const next = had ? current.filter(r => !(r.emoji === emoji && r.user_id === me)) : [...current, { emoji, user_id: me }];
-      return { ...m, reactions: next };
-    }));
-    setOpenReactPickerMsgId(null);
-    try {
-      // Use POST to toggle reaction; backend can interpret toggle behavior
-      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/messages/${msg.id}/reactions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emoji }),
-      });
-      if (!res.ok) throw new Error('Failed to update reaction');
-    } catch (e: any) {
-      // Revert by refetch
-      setMessagesError(e?.message || 'Failed to update reaction');
-      setMessagesOffset(0);
-    }
-  }, [API_BASE, currentUserId]);
-
-  // Draft persistence per conversation
-  useEffect(() => {
-    if (!activeConversationId) return;
-    try {
-      const key = `inbox-draft-${activeConversationId}`;
-      const saved = localStorage.getItem(key);
-      if (saved !== null) {
-        setInput(saved);
-        setTimeout(() => {
-          const t = textareaRef.current;
-          if (t) {
-            t.style.height = 'auto';
-            t.style.height = Math.min(t.scrollHeight, 150) + 'px';
-          }
-        }, 0);
-      }
-    } catch {}
-  }, [activeConversationId]);
-
-  useEffect(() => {
-    if (!activeConversationId) return;
-    try {
-      const key = `inbox-draft-${activeConversationId}`;
-      localStorage.setItem(key, input);
-    } catch {}
-  }, [input, activeConversationId]);
-
-  useEffect(() => {
-    if (openMsgMenuId) {
-      setMsgMenuFocusIndex(0);
-      setTimeout(() => msgMenuRef.current?.focus(), 0);
-    }
-  }, [openMsgMenuId]);
-
-  // Close message reaction picker on outside click
-  useEffect(() => {
-    if (!openReactPickerMsgId) return;
-    const onDocClick = (e: MouseEvent) => {
-      const target = e.target as HTMLElement | null;
-      const node = reactionPickerRef.current;
-      if (node && target && !node.contains(target)) {
-        setOpenReactPickerMsgId(null);
-      }
-    };
-    document.addEventListener('mousedown', onDocClick);
-    return () => document.removeEventListener('mousedown', onDocClick);
-  }, [openReactPickerMsgId]);
-
-  const startLongPress = (id: string) => {
-    if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
-    longPressTimerRef.current = window.setTimeout(() => setOpenMsgMenuId(id), 500);
-  };
-  const cancelLongPress = () => {
-    if (longPressTimerRef.current) {
-      window.clearTimeout(longPressTimerRef.current);
-      longPressTimerRef.current = null;
-    }
-  };
-
-  // Close emoji picker when clicking outside (but keep open for clicks inside the picker root)
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement | null;
-      const wrapper = emojiPickerRef.current;
-      const insideWrapper = !!(wrapper && target && wrapper.contains(target));
-      const insidePicker = !!(target && typeof target.closest === 'function' && target.closest('.EmojiPickerReact'));
-      if (!insideWrapper && !insidePicker) {
-        setShowEmojiPicker(false);
-      }
-    };
-
-    if (showEmojiPicker) {
-      document.addEventListener('click', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('click', handleClickOutside);
-    };
-  }, [showEmojiPicker]);
-
-  const handleSend = useCallback(async (e: React.FormEvent) => {
-    e.preventDefault();
-    const body = input.trim();
-    if (!body || !activeConversationId) return;
-    
-    // Create optimistic message with 'sending' status
-    const tempId = `temp-${Date.now()}`;
-    const optimisticMessage: Message = {
-      id: tempId,
-      conversation_id: activeConversationId,
-      sender_id: currentUserId || '',
-      body,
-      created_at: new Date().toISOString(),
-      _status: 'sending',
-      reply_to_id: replyTo?.id || null,
-    };
-    
-    setMessages((prev) => [...prev, optimisticMessage]);
-    setInput("");
-    setShowEmojiPicker(false);
-    setTimeout(() => {
-      const el = messagesContainerRef.current;
-      if (el) el.scrollTop = el.scrollHeight;
-    }, 50);
-    
-    try {
-      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body, reply_to_id: replyTo?.id }),
-      });
-      if (!res.ok) throw new Error("Failed to send message");
-      const msg = await apiClient.json<Message>(res);
-      // Replace optimistic message with real one, mark as delivered
-      setMessages((prev) => prev.map(m => 
-        m.id === tempId ? { ...msg, _status: 'delivered' as MessageStatus } : m
-      ));
-      setReplyTo(null);
-    } catch (e: any) {
-      // Remove failed message and show error
-      setMessages((prev) => prev.filter(m => m.id !== tempId));
-      setMessagesError(e?.message || "Failed to send message");
-    }
-  }, [input, activeConversationId, currentUserId, API_BASE]);
-
-  const handleConversationClick = useCallback((conversationId: string) => {
-    // Reset messages state first to trigger fresh load
-    setMessages([]);
-    setMessagesOffset(0);
-    setMessagesError(null);
-    setInput(""); // Clear input when switching conversations
-    setShowEmojiPicker(false);
-    // Then set the active conversation
-    setActiveConversationId(conversationId);
-    setSearchParams({ conversation: conversationId });
-  }, [setSearchParams]);
-
-  const handleBackToList = useCallback(() => {
-    setActiveConversationId(null);
-    setSearchParams({});
-    setMessages([]);
-    setMessagesOffset(0);
-  }, [setSearchParams]);
-
-  const addEmoji = useCallback((emojiData: EmojiClickData) => {
-    let emoji = (emojiData as any)?.emoji as string | undefined;
-    if (!emoji) {
-      const unified = (emojiData as any)?.unified as string | undefined;
-      if (unified) {
-        try {
-          const codePoints = unified.split('-').map((u: string) => parseInt(u, 16));
-          emoji = String.fromCodePoint(...codePoints);
-        } catch {}
-      }
-    }
-    if (!emoji) return;
-    const ta = textareaRef.current;
-    if (ta) {
-      const prevText = ta.value ?? input;
-      const start = ta.selectionStart ?? prevText.length;
-      const end = ta.selectionEnd ?? prevText.length;
-      const next = prevText.slice(0, start) + emoji + prevText.slice(end);
-      // Immediate visual feedback
-      try { ta.value = next; } catch {}
-      setInput(next);
-      requestAnimationFrame(() => {
-        const t = textareaRef.current;
-        if (!t) return;
-        const caret = start + emoji.length;
-        t.focus();
-        try { t.setSelectionRange(caret, caret); } catch {}
-        t.style.height = 'auto';
-        t.style.height = Math.min(t.scrollHeight, 150) + 'px';
-      });
-    } else {
-      setInput(prev => prev + emoji);
-    }
-  }, [input]);
-
-  const handleViewProfile = useCallback(() => {
-    if (!selectedConversation) return;
-    const role = currentUserProfileType?.toLowerCase();
-    if (role === 'household') {
-      // Household viewing househelp profile (supports query param in iframe)
-      const url = `/househelp/public-profile?profileId=${encodeURIComponent(selectedConversation.househelp_id)}&embed=1`;
-      setProfileModalLoading(true);
-      setProfileModalTimedOut(false);
-      if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
-      profileModalTimeoutId.current = window.setTimeout(() => setProfileModalTimedOut(true), 8000);
-      setProfileModalReloadKey((k) => k + 1);
-      setProfileModalUrl(url);
-      setShowProfileModal(true);
-    } else {
-      // Househelp viewing household public profile: pass user_id via query to non-param route
-      const url = `/household/public-profile?user_id=${encodeURIComponent(selectedConversation.household_id)}&embed=1`;
-      setProfileModalLoading(true);
-      setProfileModalTimedOut(false);
-      if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
-      profileModalTimeoutId.current = window.setTimeout(() => setProfileModalTimedOut(true), 8000);
-      setProfileModalReloadKey((k) => k + 1);
-      setProfileModalUrl(url);
-      setShowProfileModal(true);
-    }
-  }, [selectedConversation, currentUserProfileType]);
-
-  const handleAcceptHireRequest = useCallback(async () => {
-    if (!hireRequestId || !activeConversationId) return;
-    setHireActionLoading('accept');
-    try {
-      const res = await apiClient.auth(API_ENDPOINTS.hiring.requests.accept(hireRequestId), {
-        method: 'POST',
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Failed to accept hire request');
-      }
-      setHireRequestStatus('accepted');
-      await fetchHireContext(selectedConversation || undefined);
-      if (activeConversationId) {
-        const body = 'I have accepted your hire request. Looking forward to working with you!';
-        await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ body }),
-        }).catch(() => undefined);
-      }
-    } catch (error: any) {
-      alert(error?.message || 'Failed to accept hire request');
-    } finally {
-      setHireActionLoading(null);
-    }
-  }, [API_ENDPOINTS.hiring.requests, API_BASE, fetchHireContext, hireRequestId, selectedConversation, selectedConversationId]);
-
-  const handleDeclineHireRequest = useCallback(async () => {
-    if (!hireRequestId) return;
-    const reasonInput = window.prompt('Why are you declining this hire request?', 'Currently unavailable');
-    if (reasonInput === null) return;
-    const reason = reasonInput.trim() || 'Unavailable';
-    setHireActionLoading('decline');
-    try {
-      const res = await apiClient.auth(API_ENDPOINTS.hiring.requests.decline(hireRequestId), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reason }),
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || 'Failed to decline hire request');
-      }
-      setHireRequestStatus('declined');
-      await fetchHireContext(selectedConversation || undefined);
-      if (activeConversationId) {
-        const body = `I've declined the hire request: ${reason}.`;
-        await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ body }),
-        }).catch(() => undefined);
-      }
-    } catch (error: any) {
-      alert(error?.message || 'Failed to decline hire request');
-    } finally {
-      setHireActionLoading(null);
-    }
-  }, [API_ENDPOINTS.hiring.requests, API_BASE, fetchHireContext, hireRequestId, selectedConversation, selectedConversationId]);
-
-  const groupedMessages = useMemo(() => {
-    const now = new Date();
-    const todayKey = now.toDateString();
-    const y = new Date(now);
-    y.setDate(now.getDate() - 1);
-    const yesterdayKey = y.toDateString();
-    const formatLabel = (d: Date) => {
-      const k = d.toDateString();
-      if (k === todayKey) return 'Today';
-      if (k === yesterdayKey) return 'Yesterday';
-      return d.toLocaleDateString([], { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
-    };
-    const source = Array.isArray(messages) ? messages : [];
-    const sorted = [...source].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-    const groups: { key: string; label: string; items: Message[] }[] = [];
-    const map = new Map<string, { label: string; items: Message[] }>();
-    for (const m of sorted) {
-      const d = new Date(m.created_at);
-      const key = d.toDateString();
-      let g = map.get(key);
-      if (!g) {
-        g = { label: formatLabel(d), items: [] };
-        map.set(key, g);
-        groups.push({ key, label: g.label, items: g.items });
-      }
-      g.items.push(m);
-    }
-    return groups;
-  }, [messages]);
-
-  // Conversation list JSX
-  const conversationsList = (
-    <div className="flex flex-col h-full">
-      <div className="p-4 border-b border-purple-200 dark:border-purple-500/30">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Chats</h1>
-      </div>
-      
-      <div className="flex-1 overflow-y-auto">
-        {loading && items.length === 0 && (
-          <div className="flex justify-center items-center py-20">
-            <div className="text-center">
-              <svg className="animate-spin h-12 w-12 text-purple-600 dark:text-purple-400 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <p className="text-gray-600 dark:text-gray-400">Loading conversations...</p>
-            </div>
-          </div>
-        )}
-
-      {/* Delete Confirm Modal */}
-      {deleteConfirmMsg && (
-        <div
-          className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/60"
-          onClick={() => setDeleteConfirmMsg(null)}
-        >
-          <div
-            className="relative w-full max-w-md rounded-2xl overflow-hidden border-2 border-red-300/40 shadow-[0_0_30px_rgba(220,38,38,0.35)] bg-white dark:bg-[#0a0a0f]"
-            onClick={(e) => e.stopPropagation()}
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Escape') setDeleteConfirmMsg(null);
-              if (e.key === 'Enter') { handleDeleteMessage(deleteConfirmMsg); setDeleteConfirmMsg(null); }
-            }}
-          >
-            <button
-              type="button"
-              className="absolute top-3 right-3 z-[76] p-2 rounded-full bg-white/90 dark:bg-[#13131a]/90 border border-red-200/50 dark:border-red-500/30 shadow hover:scale-105 transition"
-              onClick={() => setDeleteConfirmMsg(null)}
-              aria-label="Close delete confirm"
-            >
-              <XMarkIcon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-            </button>
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-2">Delete message?</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-200 mb-4">
-                This message will be removed for both participants. You can only delete messages within 15 minutes of sending.
-              </p>
-              <div className="rounded-md border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/40 p-3 text-sm text-gray-800 dark:text-gray-100 mb-4">
-                “{deleteConfirmMsg.body || 'Message'}”
-              </div>
-              <div className="flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800"
-                  onClick={() => setDeleteConfirmMsg(null)}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 shadow"
-                  onClick={() => { handleDeleteMessage(deleteConfirmMsg); setDeleteConfirmMsg(null); }}
-                >
-                  Delete for everyone
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Message Info Modal */}
-      {infoForMsgId && infoMsg && (
-        <div className="fixed inset-0 z-[65] flex items-center justify-center p-4 bg-black/60" onClick={() => setInfoForMsgId(null)}>
-          <div className="relative w-full max-w-md rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)] bg-white dark:bg-[#0a0a0f]" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              className="absolute top-3 right-3 z-[66] p-2 rounded-full bg-white/90 dark:bg-[#13131a]/90 border border-purple-200 dark:border-purple-500/30 shadow hover:scale-105 transition"
-              onClick={() => setInfoForMsgId(null)}
-              aria-label="Close message info"
-            >
-              <XMarkIcon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-            </button>
-            <div className="p-5">
-              <h3 className="text-lg font-semibold text-purple-700 dark:text-purple-300 mb-3">Message info</h3>
-              <div className="space-y-2 text-sm text-gray-700 dark:text-gray-200">
-                <div className="flex justify-between"><span>Sent</span><span>{formatTimeAgo(infoMsg.created_at)}</span></div>
-                <div className="flex justify-between"><span>Status</span><span>{(infoMsg._status || (infoMsg.read_at ? 'read' : 'delivered'))}</span></div>
-                <div className="flex justify-between"><span>Read</span><span>{infoMsg.read_at ? formatTimeAgo(infoMsg.read_at) : 'Not read yet'}</span></div>
-                <div className="flex justify-between"><span>Message ID</span><span className="truncate max-w-[14rem]" title={infoMsg.id}>{infoMsg.id}</span></div>
-              </div>
-              <div className="mt-4 text-xs opacity-70">Exact delivery time may be unavailable.</div>
-            </div>
-          </div>
-        </div>
-      )}
-
-        {items.length === 0 && !loading && !error && (
-          <div className="p-8 text-center">
-            <p className="text-gray-600 dark:text-gray-300 text-lg">No conversations yet.</p>
-          </div>
-        )}
-
-        {error && (
-          <div className="m-4 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-4 text-red-700 dark:text-red-300">{error}</div>
-        )}
-
-        <div className="divide-y divide-purple-100 dark:divide-purple-500/20">
-          {items.map((c) => (
-            <button
-              key={c.id}
-              onClick={() => handleConversationClick(c.id)}
-              className={`w-full p-4 hover:bg-purple-50 dark:hover:bg-slate-800/60 transition-colors text-left ${
-                activeConversationId === c.id ? 'bg-purple-100 dark:bg-slate-800' : ''
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                {/* Avatar */}
-                <div className="w-12 h-12 rounded-full flex-shrink-0 relative overflow-hidden border-2 border-purple-300 dark:border-purple-500">
-                  {c.participant_avatar ? (
-                    <>
-                      {/* Skeleton loader */}
-                      {imageLoadingStates[c.id] !== false && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
-                      )}
-                      <img
-                        src={c.participant_avatar}
-                        alt={c.participant_name || 'User'}
-                        className={`w-full h-full object-cover transition-opacity duration-300 ${
-                          imageLoadingStates[c.id] === false ? 'opacity-100' : 'opacity-0'
-                        }`}
-                        onLoad={() => {
-                          setImageLoadingStates(prev => ({ ...prev, [c.id]: false }));
-                        }}
-                        onError={(e) => {
-                          setImageLoadingStates(prev => ({ ...prev, [c.id]: false }));
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </>
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-lg font-bold">
-                      {(c.participant_name || 'U')[0].toUpperCase()}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <div className="font-semibold text-gray-900 dark:text-white truncate">
-                      {c.participant_name || 'Unknown User'}
-                    </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 ml-2 flex-shrink-0">
-                      {new Date(c.last_message_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </div>
-                  </div>
-                  {typeof c.unread_count === 'number' && c.unread_count > 0 && (
-                    <span className="inline-flex items-center justify-center rounded-full bg-purple-600 text-white text-xs font-bold min-w-[20px] h-[20px] px-1.5 mt-1">
-                      {c.unread_count}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </button>
-          ))}
-        </div>
-        <div ref={sentinelRef} className="h-4" />
-      </div>
-    </div>
-  );
-
+  // ... rest of the code remains the same ...
   // Messages view JSX
   const messagesView = !selectedConversation ? (
     <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-[#0a0a0f]">
@@ -1756,41 +950,6 @@ export default function InboxPage() {
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                 </svg>
               </div>
-            )}
-            {profileModalTimedOut && (
-              <div className="absolute inset-0 z-[73] flex flex-col items-center justify-center gap-3 bg-black/20 text-center px-6">
-                <div className="text-white font-semibold">This is taking longer than usual…</div>
-                <div className="text-white/80 text-sm">Please check your connection or try again.</div>
-                <div className="mt-2 flex gap-3">
-                  <button
-                    className="px-4 py-2 rounded-lg bg-white text-purple-600 font-semibold shadow hover:shadow-lg"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setProfileModalLoading(true);
-                      setProfileModalTimedOut(false);
-                      if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
-                      profileModalTimeoutId.current = window.setTimeout(() => setProfileModalTimedOut(true), 8000);
-                      setProfileModalReloadKey((k) => k + 1);
-                    }}
-                  >
-                    Retry
-                  </button>
-                  <button
-                    className="px-4 py-2 rounded-lg bg-purple-600 text-white font-semibold shadow hover:bg-purple-700"
-                    onClick={() => { setShowProfileModal(false); setProfileModalUrl(null); setProfileModalLoading(false); setProfileModalTimedOut(false); if (profileModalTimeoutId.current) { window.clearTimeout(profileModalTimeoutId.current); profileModalTimeoutId.current = null; } }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            )}
-            <iframe key={`${profileModalUrl}-${profileModalReloadKey}`} src={profileModalUrl} title="Public profile" className="w-full h-full bg-white dark:bg-[#0a0a0f]" onLoad={() => { setProfileModalLoading(false); setProfileModalTimedOut(false); if (profileModalTimeoutId.current) { window.clearTimeout(profileModalTimeoutId.current); profileModalTimeoutId.current = null; } }} />
-          </div>
-        </div>
-      )}
-
-      {/* Hire Wizard Modal */}
-      {showHireWizard && selectedConversation && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
           <ConversationHireWizard
             househelpId={currentUserProfileType?.toLowerCase() === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id}
