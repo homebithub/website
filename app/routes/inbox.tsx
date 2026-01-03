@@ -281,7 +281,8 @@ export default function InboxPage() {
           `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${messagesOffset}&limit=${messagesLimit}`
         );
         if (!res.ok) throw new Error("Failed to load messages");
-        const data = await apiClient.json<Message[]>(res);
+        const response = await apiClient.json<{ messages?: Message[] }>(res);
+        const data = Array.isArray(response.messages) ? response.messages : [];
         if (cancelled) return;
         // Mark all loaded messages as delivered (they exist in DB)
         const messagesWithStatus = data.map(m => ({ ...m, _status: 'delivered' as MessageStatus }));
@@ -427,7 +428,8 @@ export default function InboxPage() {
           `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages?offset=0&limit=${count}`
         );
         if (!res.ok) return;
-        const data = await apiClient.json<Message[]>(res);
+        const response = await apiClient.json<{ messages?: Message[] }>(res);
+        const data = Array.isArray(response.messages) ? response.messages : [];
         if (data.length !== messages.length) {
           setMessages(data);
           if (isNearBottom()) {
@@ -591,7 +593,8 @@ export default function InboxPage() {
 
   const messageById = useMemo(() => {
     const map = new Map<string, Message>();
-    messages.forEach((m) => map.set(m.id, m));
+    const source = Array.isArray(messages) ? messages : [];
+    source.forEach((m) => map.set(m.id, m));
     return map;
   }, [messages]);
   const infoMsg = useMemo(() => (infoForMsgId ? (messageById.get(infoForMsgId) || null) : null), [infoForMsgId, messageById]);
@@ -635,7 +638,8 @@ export default function InboxPage() {
           `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages?offset=${off}&limit=${messagesLimit}`
         );
         if (!res.ok) break;
-        const data = await apiClient.json<Message[]>(res);
+        const response = await apiClient.json<{ messages?: Message[] }>(res);
+        const data = Array.isArray(response.messages) ? response.messages : [];
         if (!data || data.length === 0) break;
         const withStatus = data.map(m => ({ ...m, _status: 'delivered' as MessageStatus }));
         setMessages(prev => {
@@ -960,7 +964,8 @@ export default function InboxPage() {
       if (k === yesterdayKey) return 'Yesterday';
       return d.toLocaleDateString([], { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
     };
-    const sorted = [...messages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+    const source = Array.isArray(messages) ? messages : [];
+    const sorted = [...source].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     const groups: { key: string; label: string; items: Message[] }[] = [];
     const map = new Map<string, { label: string; items: Message[] }>();
     for (const m of sorted) {
