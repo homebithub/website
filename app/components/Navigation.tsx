@@ -359,11 +359,11 @@ export function Navigation() {
                                         <Menu.Item>
                                             {({ active }) => (
                                                 <Link
-                                                    to="/household/profile"
+                                                    to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
                                                     className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
                                                 >
                                                     <UserIcon className="mr-3 h-5 w-5" />
-                                                    My Household
+                                                    {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
                                                 </Link>
                                             )}
                                         </Menu.Item>

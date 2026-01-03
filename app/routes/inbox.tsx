@@ -340,7 +340,22 @@ export default function InboxPage() {
           househelp_id: c.househelp_id || c.househelp_user_id || c.househelpId || "",
           last_message_at: c.last_message_at ?? null,
         }));
-        setItems(data);
+
+        // Merge with existing items so we don't lose hydrated participant_name/avatar
+        setItems((prev) => {
+          if (prev.length === 0) return data;
+          const prevById = new Map(prev.map((p) => [p.id, p] as const));
+          return data.map((c) => {
+            const existing = prevById.get(c.id);
+            if (!existing) return c;
+            return {
+              ...c,
+              participant_name: existing.participant_name ?? c.participant_name,
+              participant_avatar: existing.participant_avatar ?? c.participant_avatar,
+            };
+          });
+        });
+
         setHasMore(data.length >= count);
       } catch {}
     }, 15000);
@@ -712,7 +727,7 @@ export default function InboxPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
                       <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
-                        {c.participant_name || 'Unknown User'}
+                        {c.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
                       </p>
                       {subtitle && (
                         <span className="ml-2 text-[11px] text-gray-500 dark:text-gray-400 flex-shrink-0">{subtitle}</span>
@@ -799,7 +814,7 @@ export default function InboxPage() {
             
             <div className="text-left">
               <h2 className="font-semibold text-gray-900 dark:text-white">
-                {selectedConversation.participant_name || 'Unknown User'}
+                {selectedConversation.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
               </h2>
               <p className="text-xs text-gray-500 dark:text-gray-400">View profile</p>
             </div>
