@@ -147,9 +147,55 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
     setSuccess('');
     
     try {
-      // Just mark the step as completed without uploading photos
       const token = localStorage.getItem('token');
       
+      // Photos is the last step in both flows:
+      // Household: step 10 (0-indexed: 9)
+      // Househelp: step 15 (0-indexed: 14)
+      const stepNumber = userType === 'household' ? 9 : 14;
+      
+      // Update the profile_setup_steps tracking to mark photos as completed
+      // This is what ProfileSetupGuard checks to determine if onboarding is complete
+      const stepsResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          step_id: 'photos',
+          step_number: stepNumber,
+          is_completed: true,
+          is_skipped: false
+        }),
+      });
+
+      if (!stepsResponse.ok) {
+        console.error('Failed to update step tracking');
+        throw new Error('Failed to mark photos step as complete');
+      }
+      
+      // Also update profile_setup_progress for analytics
+      const progressResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          current_step: stepNumber + 1,
+          last_completed_step: stepNumber + 1,
+          completed_steps: [],
+          step_id: 'photos',
+          time_spent_seconds: 0
+        }),
+      });
+
+      if (!progressResponse.ok) {
+        console.error('Failed to update progress tracking');
+      }
+      
+      // Also mark in the profile endpoint for backward compatibility
       if (userType === 'household') {
         const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
           method: 'PUT',
@@ -160,7 +206,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
           body: JSON.stringify({
             _step_metadata: {
               step_id: "photos",
-              step_number: 8,
+              step_number: stepNumber,
               is_completed: true
             }
           }),
@@ -181,7 +227,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
             updates: {},
             _step_metadata: {
               step_id: "photos",
-              step_number: 13,
+              step_number: stepNumber,
               is_completed: true
             }
           }),

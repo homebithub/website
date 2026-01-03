@@ -129,6 +129,25 @@ function HouseholdProfileSetupContent() {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
       setTimeSpent(0);
+    } else {
+      // Last step - trigger completion flow same as handleNext
+      setSaving(true);
+      try {
+        await saveProfileToBackend();
+        // Mark as completed
+        await saveProgressToBackend(STEPS.length - 1, timeSpent, true);
+        // Show congratulations modal
+        setShowCongratulations(true);
+        // Auto-redirect after 3 seconds
+        setTimeout(() => {
+          navigate('/household/profile');
+        }, 3000);
+      } catch (error) {
+        console.error('Failed to save profile:', error);
+        alert('Failed to save profile. Please try again.');
+      } finally {
+        setSaving(false);
+      }
     }
   };
   

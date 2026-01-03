@@ -159,6 +159,26 @@ function HousehelpProfileSetupContent() {
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
       setTimeSpent(0);
+    } else {
+      // Last step - trigger completion flow same as handleNext
+      setIsSaving(true);
+      setSaveError(null);
+      
+      try {
+        await saveProfileToBackend();
+        await saveProgressToBackend(STEPS.length - 1, timeSpent, true);
+        // Show congratulations modal
+        setShowCongratulations(true);
+        // Auto-redirect after 3 seconds
+        setTimeout(() => {
+          navigate('/househelp/profile');
+        }, 3000);
+      } catch (err: any) {
+        setSaveError(err.message || 'Failed to save profile');
+        console.error('Error saving profile:', err);
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
   
