@@ -322,7 +322,11 @@ export default function HouseholdEmployment() {
                     <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
                     <div className="flex-1">
                       <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
-                      <div className="text-gray-500 dark:text-gray-300 text-sm">Salary: {h.salary_expectation || 'N/A'} {h.salary_frequency}</div>
+                      <div className="text-gray-500 dark:text-gray-300 text-sm">
+                        Salary: {h.salary_expectation && Number(h.salary_expectation) > 0 
+                          ? `${h.salary_expectation} ${h.salary_frequency || ''}` 
+                          : 'No salary expectations specified'}
+                      </div>
                       <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
                       <div className="text-xs text-gray-900 dark:text-gray-300 flex items-center gap-2">
                         <span>Joined: {timeAgo(h.created_at)}</span>
@@ -392,7 +396,11 @@ export default function HouseholdEmployment() {
               <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
               <div className="flex-1">
                 <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
-                <div className="text-gray-500 dark:text-gray-300 text-sm">Salary: {h.salary_expectation || 'N/A'} {h.salary_frequency}</div>
+                <div className="text-gray-500 dark:text-gray-300 text-sm">
+                  Salary: {h.salary_expectation && Number(h.salary_expectation) > 0 
+                    ? `${h.salary_expectation} ${h.salary_frequency || ''}` 
+                    : 'No salary expectations specified'}
+                </div>
                 <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
               <div className="text-xs text-gray-900 dark:text-gray-300 flex items-center gap-2">
                 <span>Joined: {timeAgo(h.created_at)}</span>

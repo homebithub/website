@@ -293,15 +293,16 @@ export default function HouseholdShortlistPage() {
                       </h3>
 
                       {/* Salary */}
-                      {h && h.salary_expectation && (
+                      {h && (
                         <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center mb-3">
-                          💰 {h.salary_expectation}
-                          {h.salary_frequency && ` per ${
-                            h.salary_frequency === 'daily' ? 'day' :
-                            h.salary_frequency === 'weekly' ? 'week' :
-                            h.salary_frequency === 'monthly' ? 'month' :
-                            h.salary_frequency
-                          }`}
+                          💰 {h.salary_expectation && Number(h.salary_expectation) > 0 
+                            ? `${h.salary_expectation}${h.salary_frequency ? ` per ${
+                                h.salary_frequency === 'daily' ? 'day' :
+                                h.salary_frequency === 'weekly' ? 'week' :
+                                h.salary_frequency === 'monthly' ? 'month' :
+                                h.salary_frequency
+                              }` : ''}`
+                            : 'No salary expectations specified'}
                         </p>
                       )}
 

@@ -176,6 +176,37 @@ export default function InboxPage() {
     }
   }, []);
   
+  // Deduplicate conversations to prevent showing multiple conversations for the same participant pair
+  const deduplicatedItems = useMemo(() => {
+    const seen = new Map<string, Conversation>();
+    const currentRole = currentUserProfileType?.toLowerCase();
+    
+    for (const conv of items) {
+      // Create a unique key based on the participant pair
+      const key = currentRole === 'household' 
+        ? `household-${conv.household_id}-househelp-${conv.househelp_id}`
+        : `househelp-${conv.househelp_id}-household-${conv.household_id}`;
+      
+      const existing = seen.get(key);
+      if (!existing) {
+        seen.set(key, conv);
+      } else {
+        // Keep the conversation with the most recent activity
+        const existingTime = existing.last_message_at ? new Date(existing.last_message_at).getTime() : 0;
+        const currentTime = conv.last_message_at ? new Date(conv.last_message_at).getTime() : 0;
+        if (currentTime > existingTime) {
+          seen.set(key, conv);
+        }
+      }
+    }
+    
+    return Array.from(seen.values()).sort((a, b) => {
+      const aTime = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+      const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+      return bTime - aTime; // Most recent first
+    });
+  }, [items, currentUserProfileType]);
+  
   useEffect(() => {
     setActiveConversationId(selectedConversationId);
   }, [selectedConversationId]);
@@ -697,14 +728,14 @@ export default function InboxPage() {
       )}
 
       <div className="flex-1 overflow-y-auto">
-        {items.length === 0 && !loading && !error && (
+        {deduplicatedItems.length === 0 && !loading && !error && (
           <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
             No conversations yet.
           </div>
         )}
 
         <ul className="divide-y divide-purple-100 dark:divide-purple-500/20">
-          {items.map((c) => {
+          {deduplicatedItems.map((c) => {
             const isActive = c.id === activeConversationId;
             const lastAt = c.last_message_at ? new Date(c.last_message_at) : null;
             const subtitle = lastAt && !Number.isNaN(lastAt.getTime()) ? formatTimeAgo(lastAt.toISOString()) : '';
