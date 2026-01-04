@@ -355,6 +355,46 @@ export default function InboxPage() {
     };
   }, [offset, NOTIFICATIONS_BASE]);
 
+  // Load messages when conversation is selected
+  useEffect(() => {
+    if (!activeConversationId) {
+      setMessages([]);
+      setMessagesOffset(0);
+      setMessagesHasMore(true);
+      return;
+    }
+
+    let cancelled = false;
+    const conversationId = activeConversationId; // Capture non-null value
+    
+    async function loadMessages() {
+      try {
+        setMessagesLoading(true);
+        setMessagesError(null);
+        const res = await apiClient.auth(
+          `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${encodeURIComponent(conversationId)}/messages?offset=0&limit=${messagesLimit}`
+        );
+        if (!res.ok) throw new Error("Failed to load messages");
+        const response = await apiClient.json<{ messages: Message[] }>(res);
+        const data = response.messages || [];
+        if (cancelled) return;
+        setMessages(data);
+        setMessagesOffset(data.length);
+        setMessagesHasMore(data.length === messagesLimit);
+        // Scroll to bottom after loading messages
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+      } catch (e: any) {
+        if (!cancelled) setMessagesError(e?.message || "Failed to load messages");
+      } finally {
+        if (!cancelled) setMessagesLoading(false);
+      }
+    }
+    loadMessages();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeConversationId, NOTIFICATIONS_BASE, messagesLimit]);
+
   // Polling refresh conversations
   useEffect(() => {
     const id = setInterval(async () => {
