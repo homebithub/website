@@ -371,19 +371,25 @@ export default function InboxPage() {
       try {
         setMessagesLoading(true);
         setMessagesError(null);
+        console.log('[Inbox] Loading messages for conversation:', conversationId);
         const res = await apiClient.auth(
           `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${encodeURIComponent(conversationId)}/messages?offset=0&limit=${messagesLimit}`
         );
+        console.log('[Inbox] Messages API response status:', res.status);
         if (!res.ok) throw new Error("Failed to load messages");
         const response = await apiClient.json<{ messages: Message[] }>(res);
+        console.log('[Inbox] Messages API response:', response);
         const data = response.messages || [];
+        console.log('[Inbox] Parsed messages count:', data.length, 'Messages:', data);
         if (cancelled) return;
         setMessages(data);
         setMessagesOffset(data.length);
         setMessagesHasMore(data.length === messagesLimit);
+        console.log('[Inbox] Messages state updated with', data.length, 'messages');
         // Scroll to bottom after loading messages
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
       } catch (e: any) {
+        console.error('[Inbox] Error loading messages:', e);
         if (!cancelled) setMessagesError(e?.message || "Failed to load messages");
       } finally {
         if (!cancelled) setMessagesLoading(false);
@@ -478,13 +484,20 @@ export default function InboxPage() {
 
   // Group messages by date for rendering
   const groupedMessages = useMemo(() => {
-    if (!Array.isArray(messages) || messages.length === 0) return [] as { key: string; label: string; items: Message[] }[];
+    console.log('[Inbox] Grouping messages, total count:', messages.length, 'isArray:', Array.isArray(messages));
+    if (!Array.isArray(messages) || messages.length === 0) {
+      console.log('[Inbox] No messages to group, returning empty array');
+      return [] as { key: string; label: string; items: Message[] }[];
+    }
     const sorted = [...messages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
     const groups: { key: string; label: string; items: Message[] }[] = [];
     const map = new Map<string, { label: string; items: Message[] }>();
     for (const m of sorted) {
       const d = new Date(m.created_at);
-      if (Number.isNaN(d.getTime())) continue;
+      if (Number.isNaN(d.getTime())) {
+        console.warn('[Inbox] Skipping message with invalid date:', m);
+        continue;
+      }
       const key = d.toISOString().slice(0, 10);
       if (!map.has(key)) {
         const label = d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -494,6 +507,7 @@ export default function InboxPage() {
       }
       map.get(key)!.items.push(m);
     }
+    console.log('[Inbox] Grouped messages into', groups.length, 'groups:', groups);
     return groups;
   }, [messages]);
 
