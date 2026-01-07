@@ -1313,9 +1313,30 @@ export default function InboxPage() {
                               else if (e.key === 'Enter') { e.preventDefault(); const opt = options[msgMenuFocusIndex]; if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }
                               else if (e.key === 'Escape') { e.preventDefault(); setOpenMsgMenuId(null); }
                             }}
-                            className={`absolute top-6 ${mine ? 'right-0' : 'left-0'} z-50 w-48 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg`}
+                            className={`absolute top-6 ${mine ? 'right-0' : 'left-0'} z-50 w-48 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg overflow-hidden`}
                             onMouseLeave={() => setOpenMsgMenuId(null)}
                           >
+                            {/* Quick emoji reactions bar (mobile) */}
+                            <div className="flex items-center justify-around gap-1 px-3 py-2 border-b border-purple-100 dark:border-purple-500/20 bg-purple-50/50 dark:bg-slate-800/50">
+                              {['👍','❤️','😂','😮','😢'].map(em => (
+                                <button 
+                                  key={em} 
+                                  className="text-xl px-2 py-1 rounded-lg hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
+                                  onClick={() => { toggleReaction(m, em); setOpenMsgMenuId(null); }}
+                                  aria-label={`React with ${em}`}
+                                >
+                                  {em}
+                                </button>
+                              ))}
+                              <button 
+                                className="text-sm px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-700/80 hover:bg-white dark:hover:bg-slate-700 transition font-semibold text-purple-600 dark:text-purple-400" 
+                                onClick={() => { setOpenReactPickerMsgId(m.id); setOpenMsgMenuId(null); }}
+                                aria-label="More reactions"
+                              >
+                                +
+                              </button>
+                            </div>
+                            {/* Menu options */}
                             {options.map((opt, idx) => (
                               <button
                                 key={opt.label}
