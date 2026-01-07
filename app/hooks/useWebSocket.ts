@@ -63,22 +63,33 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
 
       ws.onmessage = (event) => {
         try {
-          const message: WSMessage = JSON.parse(event.data);
-          console.log('[WebSocket] Received message:', message.type);
+          const inboxEvent = JSON.parse(event.data);
+          console.log('[WebSocket] Received message:', inboxEvent.type);
+          console.log('[WebSocket] Full event:', inboxEvent);
 
-          if (message.type === 'pong') {
+          if (inboxEvent.type === 'pong') {
             return; // Ignore pong messages
           }
 
-          if (message.data) {
-            // Call global onMessage handler
-            onMessage?.(message.data);
+          // The backend sends InboxEvent with structure: { type, conversation_id, message, user_id, timestamp }
+          // We need to pass the entire event to handlers so they can access the message field
+          
+          // Call global onMessage handler with the entire event
+          onMessage?.(inboxEvent);
 
-            // Call type-specific handlers
-            const handlers = eventHandlersRef.current.get(message.type);
-            if (handlers) {
-              handlers.forEach(handler => handler(message.data!));
-            }
+          // Call type-specific handlers with the entire event
+          const handlers = eventHandlersRef.current.get(inboxEvent.type);
+          if (handlers) {
+            console.log('[WebSocket] Calling', handlers.size, 'handlers for type:', inboxEvent.type);
+            handlers.forEach(handler => {
+              try {
+                handler(inboxEvent);
+              } catch (err) {
+                console.error('[WebSocket] Handler error:', err);
+              }
+            });
+          } else {
+            console.log('[WebSocket] No handlers registered for type:', inboxEvent.type);
           }
         } catch (error) {
           console.error('[WebSocket] Failed to parse message:', error);
