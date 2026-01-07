@@ -220,9 +220,10 @@ export default function InboxPage() {
         try {
           if (role === "household") {
             // Household user: other participant is a househelp
-            const profileId = (conv as any).househelp_profile_id || conv.househelp_id;
-            if (!profileId) continue;
-            const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/${encodeURIComponent(profileId)}/profile_with_user`);
+            // Use househelp_id (which is the user_id) to fetch the profile
+            const househelpUserId = conv.househelp_id;
+            if (!househelpUserId) continue;
+            const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/${encodeURIComponent(househelpUserId)}`);
             if (!res.ok) continue;
             const profileData: any = await apiClient.json(res);
             const househelp = profileData?.data?.Househelp || profileData;
@@ -1049,6 +1050,10 @@ export default function InboxPage() {
               {group.items.map((m) => {
                 const mine = currentUserId && m.sender_id === currentUserId;
                 const status = m._status || (m.read_at ? 'read' : 'delivered');
+                // Debug logging
+                if (mine) {
+                  console.log('[Inbox] Message status:', { id: m.id, mine, status, read_at: m.read_at, _status: m._status, deleted_at: m.deleted_at });
+                }
                 const replyMsg = m.reply_to_id ? messageById.get(m.reply_to_id) : undefined;
                 const replyFromName = replyMsg ? (replyMsg.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')) : '';
                 return (
