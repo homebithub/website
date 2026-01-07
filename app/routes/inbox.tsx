@@ -687,23 +687,38 @@ export default function InboxPage() {
     // Listen for new_message events directly
     const offNewMessage = addEventListener('new_message', (event: WSMessageEvent) => {
       console.log('[Inbox] Received new_message event:', event);
+      console.log('[Inbox] Event type:', typeof event);
+      console.log('[Inbox] Event keys:', Object.keys(event as any));
+      
       try {
         const eventData = event as any;
-        const msg = eventData.data || eventData.payload || eventData;
+        console.log('[Inbox] eventData:', eventData);
+        console.log('[Inbox] eventData.data:', eventData.data);
+        console.log('[Inbox] eventData.payload:', eventData.payload);
+        console.log('[Inbox] eventData.message:', eventData.message);
+        
+        // Try multiple ways to extract the message
+        let msg = eventData.data || eventData.payload || eventData.message || eventData;
+        console.log('[Inbox] Extracted msg:', msg);
+        console.log('[Inbox] msg.id:', msg?.id);
         
         if (!msg || !msg.id) {
-          console.warn('[Inbox] Invalid message data:', msg);
+          console.warn('[Inbox] Invalid message data - msg:', msg);
+          console.warn('[Inbox] Full event object:', JSON.stringify(event, null, 2));
           return;
         }
         
-        console.log('[Inbox] Adding message to state:', msg);
+        console.log('[Inbox] Valid message found, adding to state:', msg);
         setMessages((prev) => {
+          console.log('[Inbox] Current messages count:', prev.length);
           if (prev.some((m) => m.id === msg.id)) {
             console.log('[Inbox] Message already exists, skipping');
             return prev;
           }
           console.log('[Inbox] Adding new message to chat');
-          return [...prev, msg];
+          const newMessages = [...prev, msg];
+          console.log('[Inbox] New messages count:', newMessages.length);
+          return newMessages;
         });
         
         // Update conversation list to show new last message
