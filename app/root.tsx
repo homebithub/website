@@ -6,6 +6,7 @@ import { AuthProvider } from "~/contexts/AuthContext";
 import { ThemeProvider } from "~/contexts/ThemeContext";
 import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
 import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
+import { WebSocketProvider } from "~/contexts/WebSocketContext";
 import { API_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
@@ -83,11 +84,13 @@ export default function App() {
             <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300" suppressHydrationWarning>
                 <ThemeProvider>
                     <AuthProvider>
-                        <ProfileSetupProvider>
-                            <ProfileSetupGuard>
-                                <Outlet/>
-                            </ProfileSetupGuard>
-                        </ProfileSetupProvider>
+                        <WebSocketProvider>
+                            <ProfileSetupProvider>
+                                <ProfileSetupGuard>
+                                    <Outlet/>
+                                </ProfileSetupGuard>
+                            </ProfileSetupProvider>
+                        </WebSocketProvider>
                     </AuthProvider>
                 </ThemeProvider>
                 <ScrollRestoration/>

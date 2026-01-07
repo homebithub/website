@@ -8,7 +8,7 @@ import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMark
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
-import { useWebSocket } from '~/hooks/useWebSocket';
+import { useWebSocketContext } from '~/contexts/WebSocketContext';
 import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved } from '~/types/websocket';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 import { formatTimeAgo } from "~/utils/timeAgo";
@@ -135,24 +135,8 @@ export default function InboxPage() {
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
   const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
   
-  // WebSocket connection
-  const token = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token');
-  }, []);
-  
-  const wsUrl = useMemo(() => {
-    if (typeof window === 'undefined') return '';
-    const base = NOTIFICATIONS_BASE.replace(/^http/, 'ws');
-    return `${base}/notifications/api/v1/inbox/ws`;
-  }, [NOTIFICATIONS_BASE]);
-  
-  const { connectionState, addEventListener } = useWebSocket({
-    url: wsUrl,
-    token,
-    reconnectInterval: 3000,
-    maxReconnectAttempts: 10,
-  });
+  // Use global WebSocket connection
+  const { connectionState, addEventListener } = useWebSocketContext();
   
   const currentUserId = useMemo(() => {
     try {
@@ -401,43 +385,9 @@ export default function InboxPage() {
     };
   }, [activeConversationId, NOTIFICATIONS_BASE, messagesLimit]);
 
-  // Polling refresh conversations
-  useEffect(() => {
-    const id = setInterval(async () => {
-      if (loading) return;
-      try {
-        const count = items.length > 0 ? items.length : limit;
-        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations?offset=0&limit=${count}`);
-        if (!res.ok) return;
-        const response = await apiClient.json<{ conversations: any[] }>(res);
-        const raw = response.conversations || [];
-        const data: Conversation[] = raw.map((c: any) => ({
-          ...c,
-          household_id: c.household_id || c.household_user_id || c.householdId || "",
-          househelp_id: c.househelp_id || c.househelp_user_id || c.househelpId || "",
-          last_message_at: c.last_message_at ?? null,
-        }));
-
-        // Merge with existing items so we don't lose hydrated participant_name/avatar
-        setItems((prev) => {
-          if (prev.length === 0) return data;
-          const prevById = new Map(prev.map((p) => [p.id, p] as const));
-          return data.map((c) => {
-            const existing = prevById.get(c.id);
-            if (!existing) return c;
-            return {
-              ...c,
-              participant_name: existing.participant_name ?? c.participant_name,
-              participant_avatar: existing.participant_avatar ?? c.participant_avatar,
-            };
-          });
-        });
-
-        setHasMore(data.length >= count);
-      } catch {}
-    }, 15000);
-    return () => clearInterval(id);
-  }, [NOTIFICATIONS_BASE, items.length, loading, limit]);
+  // Removed polling - WebSocket now handles real-time updates
+  // Polling was causing unnecessary HTTP requests every 15 seconds
+  // and could interfere with WebSocket-based real-time messaging
 
   // --- Derived helpers & handlers ---
 
