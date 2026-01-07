@@ -22,6 +22,8 @@ type Conversation = {
   household_profile_type?: string | null;
   househelp_profile_type?: string | null;
   last_message_at: string | null;
+  last_message_body?: string | null;
+  last_message_sender_id?: string | null;
   unread_count?: number;
   participant_name?: string;
   participant_avatar?: string;
@@ -370,6 +372,27 @@ export default function InboxPage() {
         setMessagesOffset(data.length);
         setMessagesHasMore(data.length === messagesLimit);
         console.log('[Inbox] Messages state updated with', data.length, 'messages');
+        
+        // Mark conversation as read
+        try {
+          const markReadRes = await apiClient.auth(
+            `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${encodeURIComponent(conversationId)}/read`,
+            {
+              method: 'POST',
+            }
+          );
+          if (markReadRes.ok) {
+            console.log('[Inbox] Conversation marked as read');
+            // Update unread count in conversation list
+            setItems((prev) => prev.map((conv) => 
+              conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
+            ));
+          }
+        } catch (err) {
+          console.error('[Inbox] Failed to mark conversation as read:', err);
+          // Don't fail the whole operation if marking as read fails
+        }
+        
         // Scroll to bottom after loading messages
         setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
       } catch (e: any) {
@@ -485,7 +508,12 @@ export default function InboxPage() {
   const startLongPress = useCallback((id: string) => {
     if (longPressTimerRef.current) window.clearTimeout(longPressTimerRef.current);
     longPressTimerRef.current = window.setTimeout(() => {
-      setSelectedIds((prev) => new Set(prev).add(id));
+      // On mobile long-press, open the action menu instead of selecting
+      if (window.innerWidth < 1024) {
+        setOpenMsgMenuId(id);
+      } else {
+        setSelectedIds((prev) => new Set(prev).add(id));
+      }
     }, 400);
   }, []);
 
@@ -625,16 +653,25 @@ export default function InboxPage() {
         body,
         created_at: new Date().toISOString(),
         _status: 'sending',
+        reply_to_id: replyTo?.id || null,
       };
       setMessages((prev) => [...prev, optimistic]);
       setInput('');
+      const replyToId = replyTo?.id;
+      setReplyTo(null);
       scrollToBottom();
+      
+      const payload: { body: string; reply_to_id?: string } = { body };
+      if (replyToId) {
+        payload.reply_to_id = replyToId;
+      }
+      
       const res = await apiClient.auth(
         `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${encodeURIComponent(activeConversationId)}/messages`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ body }),
+          body: JSON.stringify(payload),
         },
       );
       if (!res.ok) throw new Error('Failed to send message');
@@ -644,7 +681,7 @@ export default function InboxPage() {
       console.error(err);
       pushToast('Failed to send message', 'error');
     }
-  }, [activeConversationId, input, currentUserId, NOTIFICATIONS_BASE, scrollToBottom, pushToast]);
+  }, [activeConversationId, input, currentUserId, replyTo, NOTIFICATIONS_BASE, scrollToBottom, pushToast]);
 
   const handleAcceptHireRequest = useCallback(async () => {
     if (!hireRequestId) return;
@@ -720,9 +757,15 @@ export default function InboxPage() {
         setItems((prev) => {
           return prev.map((conv) => {
             if (conv.id === msg.conversation_id) {
+              // If this is the active conversation, keep unread at 0 (we're viewing it)
+              // Otherwise, increment unread count
+              const isActive = conv.id === activeConversationId;
               return {
                 ...conv,
                 last_message_at: msg.created_at,
+                last_message_body: msg.body,
+                last_message_sender_id: msg.sender_id,
+                unread_count: isActive ? 0 : (conv.unread_count || 0) + 1,
               };
             }
             return conv;
@@ -843,12 +886,28 @@ export default function InboxPage() {
                       <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
                         {c.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
                       </p>
-                      {subtitle && (
-                        <span className="ml-2 text-[11px] text-gray-500 dark:text-gray-400 flex-shrink-0">{subtitle}</span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {subtitle && (
+                          <span className="text-[11px] text-gray-500 dark:text-gray-400 flex-shrink-0">{subtitle}</span>
+                        )}
+                        {unread > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-purple-600 text-white text-[10px] font-semibold">
+                            {unread > 99 ? '99+' : unread}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400 truncate">
-                      {unread > 0 ? `${unread} unread message${unread === 1 ? '' : 's'}` : 'No new messages'}
+                      {c.last_message_body ? (
+                        <>
+                          {c.last_message_sender_id === currentUserId && (
+                            <span className="text-gray-400 dark:text-gray-500">You: </span>
+                          )}
+                          {c.last_message_body}
+                        </>
+                      ) : (
+                        <span className="italic">No messages yet</span>
+                      )}
                     </p>
                   </div>
                 </button>
@@ -1000,7 +1059,12 @@ export default function InboxPage() {
                         ? 'ring-2 ring-purple-400 rounded-xl' 
                         : ''
                     }`}
-                    onTouchStart={() => startLongPress(m.id)}
+                    onTouchStart={() => {
+                      if (selectedIds.size === 0) {
+                        // Long press to open action menu on mobile
+                        startLongPress(m.id);
+                      }
+                    }}
                     onTouchEnd={cancelLongPress}
                     ref={(el) => { messageRefs.current[m.id] = el; }}
                   >
@@ -1025,10 +1089,10 @@ export default function InboxPage() {
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' 
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100'
                     } ${status === 'sending' ? 'opacity-70' : ''} ${m.deleted_at ? 'opacity-60 italic' : ''}`}>
-                      {/* Bubble controls (desktop): 3-dots and quick reactions anchored to bubble */}
+                      {/* Bubble controls: 3-dots (always visible on mobile, hover on desktop) and quick reactions */}
                       <button
                         type="button"
-                        className={`absolute -top-2 ${mine ? '-right-2' : '-left-2'} hidden lg:inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow opacity-0 group-hover:opacity-100 transition`}
+                        className={`absolute -top-2 ${mine ? '-right-2' : '-left-2'} inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow lg:opacity-0 lg:group-hover:opacity-100 transition`}
                         onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
                         aria-label="Message options"
                       >
@@ -1165,10 +1229,16 @@ export default function InboxPage() {
                                   </svg>
                                 )}
                                 {status === 'read' && (
-                                  /* Double purple ticks - read */
-                                  <svg className="w-4 h-4 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <path d="M2 13l4 4L16 7" strokeLinecap="round" strokeLinejoin="round" />
-                                    <path d="M8 13l4 4L22 7" strokeLinecap="round" strokeLinejoin="round" />
+                                  /* Double gradient ticks - read (WhatsApp-style) */
+                                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" strokeWidth="2">
+                                    <defs>
+                                      <linearGradient id="readGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stopColor="#9333ea" />
+                                        <stop offset="100%" stopColor="#ec4899" />
+                                      </linearGradient>
+                                    </defs>
+                                    <path d="M2 13l4 4L16 7" stroke="url(#readGradient)" strokeLinecap="round" strokeLinejoin="round" />
+                                    <path d="M8 13l4 4L22 7" stroke="url(#readGradient)" strokeLinecap="round" strokeLinejoin="round" />
                                   </svg>
                                 )}
                               </span>
