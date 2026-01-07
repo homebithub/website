@@ -711,6 +711,11 @@ export default function InboxPage() {
           return [...prev, msg];
         });
         
+        // Auto-scroll to bottom when new message arrives
+        setTimeout(() => {
+          bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+        
         // Update conversation list to show new last message
         setItems((prev) => {
           return prev.map((conv) => {
