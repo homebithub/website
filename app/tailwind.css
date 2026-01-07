@@ -164,3 +164,8 @@
     @apply bg-white rounded-lg shadow-sm border border-primary-100 p-6 hover:shadow-md transition-shadow duration-200;
   }
 }
+
+/* Hide any stray text nodes that might appear */
+body > *:not(div):not(script):not(noscript) {
+  display: none !important;
+}

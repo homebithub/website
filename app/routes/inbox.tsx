@@ -682,36 +682,97 @@ export default function InboxPage() {
 
   // Basic WebSocket wiring for new incoming messages
   useEffect(() => {
-    // Subscribe to inbox events; the backend sends typed events that useWebSocket
-    // has already parsed into our WSMessageEvent type.
-    const off = addEventListener('inbox', (event: WSMessageEvent) => {
+    console.log('[Inbox] Setting up WebSocket event listeners');
+    
+    // Listen for new_message events directly
+    const offNewMessage = addEventListener('new_message', (event: WSMessageEvent) => {
+      console.log('[Inbox] Received new_message event:', event);
       try {
-        const type = (event as any)?.type as string | undefined;
-        const payload = (event as any)?.payload ?? event;
-        if (!type || !payload) return;
-
-        if (type === 'new_message') {
-          const msg = payload as Message;
-          setMessages((prev) => {
-            if (prev.some((m) => m.id === msg.id)) return prev;
-            return [...prev, msg];
-          });
-        } else if (type === 'message_edited') {
-          const msg = payload as Message;
-          setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
-        } else if (type === 'message_deleted') {
-          const msg = payload as Message;
-          setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
-        } else if (type === 'reaction_added' || type === 'reaction_removed') {
-          const msg = payload as Message;
-          setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
+        const eventData = event as any;
+        const msg = eventData.data || eventData.payload || eventData;
+        
+        if (!msg || !msg.id) {
+          console.warn('[Inbox] Invalid message data:', msg);
+          return;
         }
+        
+        console.log('[Inbox] Adding message to state:', msg);
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) {
+            console.log('[Inbox] Message already exists, skipping');
+            return prev;
+          }
+          console.log('[Inbox] Adding new message to chat');
+          return [...prev, msg];
+        });
+        
+        // Update conversation list to show new last message
+        setItems((prev) => {
+          return prev.map((conv) => {
+            if (conv.id === msg.conversation_id) {
+              return {
+                ...conv,
+                last_message_at: msg.created_at,
+              };
+            }
+            return conv;
+          });
+        });
       } catch (err) {
-        console.error('Failed to handle WS inbox event', err);
+        console.error('[Inbox] Failed to handle new_message event', err);
       }
     });
+    
+    // Listen for other message events
+    const offMessageEdited = addEventListener('message_edited', (event: WSMessageEvent) => {
+      console.log('[Inbox] Received message_edited event:', event);
+      try {
+        const eventData = event as any;
+        const msg = eventData.data || eventData.payload || eventData;
+        setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
+      } catch (err) {
+        console.error('[Inbox] Failed to handle message_edited event', err);
+      }
+    });
+    
+    const offMessageDeleted = addEventListener('message_deleted', (event: WSMessageEvent) => {
+      console.log('[Inbox] Received message_deleted event:', event);
+      try {
+        const eventData = event as any;
+        const msg = eventData.data || eventData.payload || eventData;
+        setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
+      } catch (err) {
+        console.error('[Inbox] Failed to handle message_deleted event', err);
+      }
+    });
+    
+    const offReactionAdded = addEventListener('reaction_added', (event: WSMessageEvent) => {
+      try {
+        const eventData = event as any;
+        const msg = eventData.data || eventData.payload || eventData;
+        setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
+      } catch (err) {
+        console.error('[Inbox] Failed to handle reaction_added event', err);
+      }
+    });
+    
+    const offReactionRemoved = addEventListener('reaction_removed', (event: WSMessageEvent) => {
+      try {
+        const eventData = event as any;
+        const msg = eventData.data || eventData.payload || eventData;
+        setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
+      } catch (err) {
+        console.error('[Inbox] Failed to handle reaction_removed event', err);
+      }
+    });
+    
     return () => {
-      off?.();
+      console.log('[Inbox] Cleaning up WebSocket event listeners');
+      offNewMessage?.();
+      offMessageEdited?.();
+      offMessageDeleted?.();
+      offReactionAdded?.();
+      offReactionRemoved?.();
     };
   }, [addEventListener]);
 

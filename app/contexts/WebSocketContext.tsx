@@ -19,13 +19,17 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   const token = useMemo(() => {
     if (typeof window === 'undefined') return null;
-    return localStorage.getItem('token');
+    const storedToken = localStorage.getItem('token');
+    console.log('[WebSocketContext] Token available:', !!storedToken);
+    return storedToken;
   }, []);
 
   const wsUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
     const base = ((typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL).replace(/^http/, 'ws');
-    return `${base}/notifications/api/v1/inbox/ws`;
+    const url = `${base}/notifications/api/v1/inbox/ws`;
+    console.log('[WebSocketContext] WebSocket URL:', url);
+    return url;
   }, []);
 
   const { connectionState, addEventListener } = useWebSocket({
@@ -34,6 +38,11 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     reconnectInterval: 3000,
     maxReconnectAttempts: 10,
   });
+
+  // Log connection state changes
+  React.useEffect(() => {
+    console.log('[WebSocketContext] Connection state changed:', connectionState);
+  }, [connectionState]);
 
   const incrementUnreadCount = useCallback(() => {
     setUnreadCount(prev => prev + 1);
