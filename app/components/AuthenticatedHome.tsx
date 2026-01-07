@@ -70,6 +70,39 @@ export default function AuthenticatedHome() {
   }, []);
   const currentUserId: string | undefined = currentUser?.id;
   const currentProfileType: string | undefined = currentUser?.profile_type;
+  const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
+
+  // Fetch household profile ID if current user is a household
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchHouseholdProfileId = async () => {
+      if (currentProfileType?.toLowerCase() === 'household' && currentUserId) {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) return;
+          
+          const res = await fetch(`${API_BASE_URL}/api/v1/profile/household/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (!cancelled) {
+              setCurrentHouseholdProfileId(data?.id || data?.profile_id || null);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch household profile ID:', err);
+        }
+      }
+    };
+
+    fetchHouseholdProfileId();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentProfileType, currentUserId]);
 
   // Card actions
   const handleViewProfile = (profileId: string) => {
@@ -95,6 +128,11 @@ export default function AuthenticatedHome() {
       };
       if (househelpProfileId) {
         payload.househelp_profile_id = househelpProfileId;
+      }
+      
+      // Include household_profile_id if current user is household
+      if (profileType === 'household' && currentHouseholdProfileId) {
+        payload.household_profile_id = currentHouseholdProfileId;
       }
 
       const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations`, {

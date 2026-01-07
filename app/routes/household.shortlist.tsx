@@ -53,6 +53,7 @@ export default function HouseholdShortlistPage() {
     }
   }, []);
   const currentUserId: string | undefined = currentUser?.id;
+  const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   // Load UI preferences (compact view, accessibility)
   useEffect(() => {
@@ -79,6 +80,38 @@ export default function HouseholdShortlistPage() {
       cancelled = true;
     };
   }, []);
+
+  // Fetch household profile ID
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchHouseholdProfileId = async () => {
+      if (currentUserId) {
+        try {
+          const token = localStorage.getItem("token");
+          if (!token) return;
+          
+          const res = await fetch(`${API_BASE}/api/v1/profile/household/me`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (!cancelled) {
+              setCurrentHouseholdProfileId(data?.id || data?.profile_id || null);
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch household profile ID:', err);
+        }
+      }
+    };
+
+    fetchHouseholdProfileId();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUserId, API_BASE]);
 
   // Load shortlist entries (mine)
   useEffect(() => {
@@ -164,6 +197,11 @@ export default function HouseholdShortlistPage() {
         househelp_user_id: househelpUserId,
         househelp_profile_id: profileId,
       };
+      
+      // Include household_profile_id
+      if (currentHouseholdProfileId) {
+        payload.household_profile_id = currentHouseholdProfileId;
+      }
 
       const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations`, {
         method: 'POST',
