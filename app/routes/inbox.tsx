@@ -1655,8 +1655,8 @@ export default function InboxPage() {
           <ConversationHireWizard
             househelpId={
               currentUserProfileType?.toLowerCase() === 'household'
-                ? selectedConversation!.househelp_id
-                : selectedConversation!.household_id
+                ? (selectedConversation!.househelp_profile_id || selectedConversation!.househelp_id)
+                : (selectedConversation!.household_profile_id || selectedConversation!.household_id)
             }
             househelpName={selectedConversation!.participant_name || 'User'}
             onClose={() => setShowHireWizard(false)}
