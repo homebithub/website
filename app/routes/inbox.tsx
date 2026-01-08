@@ -133,6 +133,7 @@ export default function InboxPage() {
   
   // Hire wizard state
   const [showHireWizard, setShowHireWizard] = useState(false);
+  const [househelpProfileIdForHire, setHousehelpProfileIdForHire] = useState<string | null>(null);
   const [hireRequestStatus, setHireRequestStatus] = useState<string | undefined>();
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
   const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
@@ -1026,7 +1027,31 @@ export default function InboxPage() {
                   }
                 }
               }}
-              onSendHireRequest={() => setShowHireWizard(true)}
+              onSendHireRequest={async () => {
+                if (currentUserProfileType?.toLowerCase() === 'household' && selectedConversation) {
+                  const househelpUserId = selectedConversation.househelp_id;
+                  if (selectedConversation.househelp_profile_id) {
+                    setHousehelpProfileIdForHire(selectedConversation.househelp_profile_id);
+                    setShowHireWizard(true);
+                  } else {
+                    try {
+                      const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
+                      if (res.ok) {
+                        const profileData: any = await apiClient.json(res);
+                        setHousehelpProfileIdForHire(profileData.id);
+                        setShowHireWizard(true);
+                      } else {
+                        pushToast('Failed to load profile information', 'error');
+                      }
+                    } catch (err) {
+                      console.error('Failed to fetch househelp profile:', err);
+                      pushToast('Failed to load profile information', 'error');
+                    }
+                  }
+                } else {
+                  setShowHireWizard(true);
+                }
+              }}
               onAccept={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
               onDecline={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
               actionLoading={hireActionLoading}
@@ -1655,13 +1680,17 @@ export default function InboxPage() {
           <ConversationHireWizard
             househelpId={
               currentUserProfileType?.toLowerCase() === 'household'
-                ? (selectedConversation!.househelp_profile_id || selectedConversation!.househelp_id)
+                ? (househelpProfileIdForHire || selectedConversation!.househelp_profile_id || selectedConversation!.househelp_id)
                 : (selectedConversation!.household_profile_id || selectedConversation!.household_id)
             }
             househelpName={selectedConversation!.participant_name || 'User'}
-            onClose={() => setShowHireWizard(false)}
+            onClose={() => {
+              setShowHireWizard(false);
+              setHousehelpProfileIdForHire(null);
+            }}
             onSuccess={(newHireRequestId) => {
               setShowHireWizard(false);
+              setHousehelpProfileIdForHire(null);
               setHireRequestStatus('pending');
               setHireRequestId(newHireRequestId);
               const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
