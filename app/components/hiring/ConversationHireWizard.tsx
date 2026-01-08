@@ -42,7 +42,7 @@ export default function ConversationHireWizard({
   const [jobType, setJobType] = useState<string>('live-in');
 
   // Step 2: Salary & Schedule
-  const [salaryOffered, setSalaryOffered] = useState(househelpSalaryExpectation || 0);
+  const [salaryOffered, setSalaryOffered] = useState<number | ''>(househelpSalaryExpectation || '');
   const [salaryFrequency, setSalaryFrequency] = useState(househelpSalaryFrequency || 'monthly');
   const [startDate, setStartDate] = useState('');
 
@@ -91,7 +91,7 @@ export default function ConversationHireWizard({
       return;
     }
 
-    if (salaryOffered <= 0) {
+    if (typeof salaryOffered !== 'number' || salaryOffered <= 0) {
       setError('Salary offered must be greater than zero');
       return;
     }
@@ -210,10 +210,11 @@ export default function ConversationHireWizard({
         <input
           type="number"
           value={salaryOffered}
-          onChange={(e) => setSalaryOffered(Number(e.target.value))}
+          onChange={(e) => setSalaryOffered(e.target.value === '' ? '' : Number(e.target.value))}
           min="0"
           step="100"
           required
+          placeholder="Enter salary amount"
           className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
         />
         {househelpSalaryExpectation && (
@@ -269,7 +270,7 @@ export default function ConversationHireWizard({
       <div className="space-y-2">
         {DAYS.map((day) => (
           <div key={day} className="flex items-center gap-3">
-            <span className="w-24 text-sm font-medium text-gray-700 dark:text-gray-300 capitalize">
+            <span className="w-24 text-sm font-medium text-purple-700 dark:text-purple-400 capitalize">
               {day}
             </span>
             <div className="flex gap-2">
@@ -280,8 +281,8 @@ export default function ConversationHireWizard({
                   onClick={() => toggleTimeSlot(day, slot)}
                   className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
                     workSchedule[day][slot]
-                      ? 'bg-green-600 text-white'
-                      : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'
+                      ? 'bg-purple-700 text-white'
+                      : 'bg-white dark:bg-gray-700 border border-purple-400 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                   }`}
                 >
                   {slot}
