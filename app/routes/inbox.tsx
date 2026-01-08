@@ -1282,17 +1282,6 @@ export default function InboxPage() {
                                           </button>
                                         );
                                       })}
-                                      <button
-                                        type="button"
-                                        onClick={() => {
-                                          setOpenMsgMenuId(null);
-                                          setOpenReactPickerMsgId(m.id);
-                                        }}
-                                        className={`px-2 py-0.5 text-xs rounded-full border ${mine ? 'border-white/30 text-white/90 bg-white/10 hover:bg-white/20' : 'border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-200 bg-white/20 hover:bg-white/30'} transition-colors`}
-                                        title="Add reaction"
-                                      >
-                                        ➕
-                                      </button>
                                     </div>
                                     {openReactionNames && openReactionNames.msgId === m.id && (
                                       <div className={`mt-1 flex ${mine ? 'justify-end' : 'justify-start'}`}>
@@ -1340,7 +1329,7 @@ export default function InboxPage() {
                           >
                             {/* Quick emoji reactions bar (mobile) */}
                             <div className="flex items-center justify-around gap-1 px-3 py-2 border-b border-purple-100 dark:border-purple-500/20 bg-purple-50/50 dark:bg-slate-800/50">
-                              {['👍','❤️','😂','😮','😢'].map(em => (
+                              {['👍','❤️','😂','😮'].map(em => (
                                 <button 
                                   key={em} 
                                   className="text-xl px-2 py-1 rounded-lg hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
@@ -1351,11 +1340,11 @@ export default function InboxPage() {
                                 </button>
                               ))}
                               <button 
-                                className="text-sm px-2 py-1 rounded-lg bg-white/80 dark:bg-slate-700/80 hover:bg-white dark:hover:bg-slate-700 transition font-semibold text-purple-600 dark:text-purple-400" 
-                                onClick={() => { setOpenReactPickerMsgId(m.id); setOpenMsgMenuId(null); }}
-                                aria-label="More reactions"
+                                className="text-xl px-2 py-1 rounded-lg hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
+                                onClick={() => { setOpenMsgMenuId(null); setOpenReactPickerMsgId(m.id); }}
+                                aria-label="Add more reactions"
                               >
-                                +
+                                ➕
                               </button>
                             </div>
                             {/* Menu options */}
