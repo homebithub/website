@@ -240,12 +240,13 @@ export default function InboxPage() {
             const res = await apiClient.auth(`${API_BASE}/api/v1/profile/household/${encodeURIComponent(householdUserId)}`);
             if (!res.ok) continue;
             const profileData: any = await apiClient.json(res);
-            console.log('[Inbox] Household profile data:', profileData);
-            // Extract household owner's name
-            const ownerFirstName = profileData?.owner?.first_name || profileData?.owner?.FirstName || "";
-            const ownerLastName = profileData?.owner?.last_name || profileData?.owner?.LastName || "";
-            const name = ownerFirstName.trim() ? `${ownerFirstName.trim()} ${ownerLastName.trim()}`.trim() : "Household";
-            console.log('[Inbox] Extracted household name:', { ownerFirstName, ownerLastName, name });
+            
+            // Extract household owner's name from the preloaded owner object
+            const owner = profileData?.owner;
+            const firstName = (owner?.first_name || owner?.FirstName || "").trim();
+            const lastName = (owner?.last_name || owner?.LastName || "").trim();
+            const name = firstName ? `${firstName} ${lastName}`.trim() : "Household";
+            
             const avatar = Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined;
             updates.push({ id: conv.id, participant_name: name, participant_avatar: avatar });
           }
@@ -1052,10 +1053,6 @@ export default function InboxPage() {
               {group.items.map((m) => {
                 const mine = currentUserId && m.sender_id === currentUserId;
                 const status = m._status || (m.read_at ? 'read' : 'delivered');
-                // Debug logging
-                if (mine) {
-                  console.log('[Inbox] Message status:', { id: m.id, mine, status, read_at: m.read_at, _status: m._status, deleted_at: m.deleted_at });
-                }
                 const replyMsg = m.reply_to_id ? messageById.get(m.reply_to_id) : undefined;
                 const replyFromName = replyMsg ? (replyMsg.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')) : '';
                 return (
