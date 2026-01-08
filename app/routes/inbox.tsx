@@ -1335,11 +1335,11 @@ export default function InboxPage() {
                               else if (e.key === 'Enter') { e.preventDefault(); const opt = options[msgMenuFocusIndex]; if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }
                               else if (e.key === 'Escape') { e.preventDefault(); setOpenMsgMenuId(null); }
                             }}
-                            className={`absolute top-6 ${mine ? 'right-0' : 'left-0'} z-50 w-48 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg overflow-hidden`}
+                            className={`absolute top-6 ${mine ? 'right-0' : 'left-0'} z-50 w-56 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg overflow-hidden`}
                             onMouseLeave={() => setOpenMsgMenuId(null)}
                           >
-                            {/* Quick emoji reactions bar (mobile) */}
-                            <div className="flex items-center justify-around gap-1 px-3 py-2 border-b border-purple-100 dark:border-purple-500/20 bg-purple-50/50 dark:bg-slate-800/50">
+                            {/* Quick emoji reactions bar (mobile only) */}
+                            <div className="lg:hidden flex items-center justify-around gap-1 px-3 py-2 border-b border-purple-100 dark:border-purple-500/20 bg-purple-50/50 dark:bg-slate-800/50">
                               {['👍','❤️','😂','😮'].map(em => (
                                 <button 
                                   key={em} 
