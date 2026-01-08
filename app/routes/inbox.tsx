@@ -240,10 +240,12 @@ export default function InboxPage() {
             const res = await apiClient.auth(`${API_BASE}/api/v1/profile/household/${encodeURIComponent(householdUserId)}`);
             if (!res.ok) continue;
             const profileData: any = await apiClient.json(res);
+            console.log('[Inbox] Household profile data:', profileData);
             // Extract household owner's name
             const ownerFirstName = profileData?.owner?.first_name || profileData?.owner?.FirstName || "";
             const ownerLastName = profileData?.owner?.last_name || profileData?.owner?.LastName || "";
             const name = ownerFirstName.trim() ? `${ownerFirstName.trim()} ${ownerLastName.trim()}`.trim() : "Household";
+            console.log('[Inbox] Extracted household name:', { ownerFirstName, ownerLastName, name });
             const avatar = Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined;
             updates.push({ id: conv.id, participant_name: name, participant_avatar: avatar });
           }
