@@ -226,12 +226,15 @@ export default function InboxPage() {
             const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/${encodeURIComponent(househelpUserId)}`);
             if (!res.ok) continue;
             const profileData: any = await apiClient.json(res);
+            console.log('[Inbox] Househelp profile data:', profileData);
             
             // Extract househelp name from the preloaded user object
             const user = profileData?.user;
+            console.log('[Inbox] Househelp user object:', user);
             const firstName = (user?.first_name || user?.FirstName || "").trim();
             const lastName = (user?.last_name || user?.LastName || "").trim();
             const fullName = firstName ? `${firstName} ${lastName}`.trim() : "Househelp";
+            console.log('[Inbox] Extracted househelp name:', { firstName, lastName, fullName });
             
             const avatar = profileData?.avatar_url || (Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined);
             updates.push({ id: conv.id, participant_name: fullName, participant_avatar: avatar });
@@ -1279,6 +1282,17 @@ export default function InboxPage() {
                                           </button>
                                         );
                                       })}
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenMsgMenuId(null);
+                                          setOpenReactPickerMsgId(m.id);
+                                        }}
+                                        className={`px-2 py-0.5 text-xs rounded-full border ${mine ? 'border-white/30 text-white/90 bg-white/10 hover:bg-white/20' : 'border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-200 bg-white/20 hover:bg-white/30'} transition-colors`}
+                                        title="Add reaction"
+                                      >
+                                        ➕
+                                      </button>
                                     </div>
                                     {openReactionNames && openReactionNames.msgId === m.id && (
                                       <div className={`mt-1 flex ${mine ? 'justify-end' : 'justify-start'}`}>
