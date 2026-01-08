@@ -226,12 +226,14 @@ export default function InboxPage() {
             const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/${encodeURIComponent(househelpUserId)}`);
             if (!res.ok) continue;
             const profileData: any = await apiClient.json(res);
-            const househelp = profileData?.data?.Househelp || profileData;
-            const user = profileData?.data?.User || profileData?.user;
-            const firstName = (user?.first_name || househelp?.first_name || "").trim();
-            const lastName = (user?.last_name || househelp?.last_name || "").trim();
-            const fullName = `${firstName} ${lastName}`.trim() || "Househelp";
-            const avatar = househelp?.avatar_url || (Array.isArray(househelp?.photos) && househelp.photos.length > 0 ? househelp.photos[0] : undefined);
+            
+            // Extract househelp name from the preloaded user object
+            const user = profileData?.user;
+            const firstName = (user?.first_name || user?.FirstName || "").trim();
+            const lastName = (user?.last_name || user?.LastName || "").trim();
+            const fullName = firstName ? `${firstName} ${lastName}`.trim() : "Househelp";
+            
+            const avatar = profileData?.avatar_url || (Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined);
             updates.push({ id: conv.id, participant_name: fullName, participant_avatar: avatar });
           } else if (role === "househelp") {
             // Househelp user: other participant is a household
