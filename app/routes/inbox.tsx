@@ -223,8 +223,11 @@ export default function InboxPage() {
             // Use househelp_id (which is the user_id) to fetch the profile
             const househelpUserId = conv.househelp_id;
             if (!househelpUserId) continue;
-            const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/${encodeURIComponent(househelpUserId)}`);
-            if (!res.ok) continue;
+            const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
+            if (!res.ok) {
+              console.error('[Inbox] Failed to fetch househelp profile:', res.status);
+              continue;
+            }
             const profileData: any = await apiClient.json(res);
             console.log('[Inbox] Househelp profile data:', profileData);
             
