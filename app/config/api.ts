@@ -46,9 +46,30 @@ const getNotificationsApiBaseUrl = (): string => {
   return 'https://homebit.co.ke';
 };
 
+// Get payments service base URL from environment or use default
+const getPaymentsApiBaseUrl = (): string => {
+  // Check if running in browser
+  if (typeof window !== 'undefined') {
+    const envUrl = (window as any).ENV?.PAYMENTS_API_BASE_URL;
+    console.log('[API Config] Browser - window.ENV.PAYMENTS_API_BASE_URL:', envUrl);
+    if (envUrl) return envUrl;
+  }
+
+  // Check environment variable
+  if (typeof process !== 'undefined' && process.env.PAYMENTS_API_BASE_URL) {
+    console.log('[API Config] Server - process.env.PAYMENTS_API_BASE_URL:', process.env.PAYMENTS_API_BASE_URL);
+    return process.env.PAYMENTS_API_BASE_URL;
+  }
+
+  // Default to localhost for development
+  console.warn('[API Config] No PAYMENTS_API_BASE_URL environment variable found, using localhost');
+  return 'http://localhost:8083';
+};
+
 // Base URLs for each service
 export const AUTH_API_BASE_URL = getAuthApiBaseUrl();
 export const NOTIFICATIONS_API_BASE_URL = getNotificationsApiBaseUrl();
+export const PAYMENTS_API_BASE_URL = getPaymentsApiBaseUrl();
 
 // Legacy API_BASE_URL for backward compatibility (points to auth service)
 export const API_BASE_URL = AUTH_API_BASE_URL;
@@ -148,6 +169,25 @@ export const API_ENDPOINTS = {
     accept: (id: string) => `${AUTH_API_BASE_URL}/auth/api/v1/interests/${id}/accept`,
     decline: (id: string) => `${AUTH_API_BASE_URL}/auth/api/v1/interests/${id}/decline`,
   },
+  
+  // Payments & Subscriptions endpoints
+  payments: {
+    plans: `${PAYMENTS_API_BASE_URL}/api/v1/plans`,
+    planById: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/plans/${id}`,
+    subscriptions: {
+      create: `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions`,
+      mine: `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions/mine`,
+      list: `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions/list`,
+      byId: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions/${id}`,
+      cancel: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions/${id}/cancel`,
+    },
+    transactions: {
+      initiate: `${PAYMENTS_API_BASE_URL}/api/v1/payments`,
+      list: `${PAYMENTS_API_BASE_URL}/api/v1/payments`,
+      byId: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/payments/${id}`,
+      status: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/payments/${id}/status`,
+    },
+  },
 } as const;
 
 /**
@@ -203,6 +243,7 @@ export const apiFetch = async (
 export default {
   AUTH_BASE_URL: AUTH_API_BASE_URL,
   NOTIFICATIONS_BASE_URL: NOTIFICATIONS_API_BASE_URL,
+  PAYMENTS_BASE_URL: PAYMENTS_API_BASE_URL,
   BASE_URL: API_BASE_URL, // Legacy - points to auth service
   ENDPOINTS: API_ENDPOINTS,
   buildUrl: buildApiUrl,

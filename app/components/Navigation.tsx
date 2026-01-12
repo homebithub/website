@@ -4,6 +4,7 @@ import { Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
 import { Waitlist } from "~/components/features/Waitlist";
+import { SubscriptionWallet } from "~/components/SubscriptionWallet";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
@@ -300,6 +301,13 @@ export function Navigation() {
                 <div className="flex items-center space-x-4 ml-6 relative">
   {/* Floating sparkle icon */}
   <svg className="absolute -top-6 right-0 w-8 h-8 opacity-40 animate-float delay-1000 z-0" viewBox="0 0 32 32"><path d="M16 2 L20 12 L30 16 L20 20 L16 30 L12 20 L2 16 L12 12 Z" fill="#a855f7" /></svg>
+
+                    {/* Subscription Wallet - Only for authenticated users */}
+                    {user && (
+                        <div className="hidden lg:block">
+                            <SubscriptionWallet />
+                        </div>
+                    )}
 
                     {/* Theme Toggle - Always visible on desktop */}
                     <div className="hidden lg:block">
