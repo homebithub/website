@@ -63,7 +63,7 @@ const getPaymentsApiBaseUrl = (): string => {
 
   // Default to localhost for development
   console.warn('[API Config] No PAYMENTS_API_BASE_URL environment variable found, using localhost');
-  return 'http://localhost:8083';
+  return 'http://localhost:3002';
 };
 
 // Base URLs for each service
