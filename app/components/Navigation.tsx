@@ -1,10 +1,9 @@
 import { Link, useNavigate, useLocation } from "react-router";
 import React, { useEffect, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon } from "@heroicons/react/20/solid";
+import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
 import { Waitlist } from "~/components/features/Waitlist";
-import { SubscriptionWallet } from "~/components/SubscriptionWallet";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
@@ -94,7 +93,8 @@ export function Navigation() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations?limit=100`, {
+            // Notifications service exposes inbox routes under /api/v1/inbox
+            const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 
@@ -302,13 +302,6 @@ export function Navigation() {
   {/* Floating sparkle icon */}
   <svg className="absolute -top-6 right-0 w-8 h-8 opacity-40 animate-float delay-1000 z-0" viewBox="0 0 32 32"><path d="M16 2 L20 12 L30 16 L20 20 L16 30 L12 20 L2 16 L12 12 Z" fill="#a855f7" /></svg>
 
-                    {/* Subscription Wallet - Only for authenticated users */}
-                    {user && (
-                        <div className="hidden lg:block">
-                            <SubscriptionWallet />
-                        </div>
-                    )}
-
                     {/* Theme Toggle - Always visible on desktop */}
                     <div className="hidden lg:block">
                         <ThemeToggle size="md" />
@@ -383,6 +376,17 @@ export function Navigation() {
                                                 >
                                                     <CogIcon className="mr-3 h-5 w-5" />
                                                     Settings
+                                                </Link>
+                                            )}
+                                        </Menu.Item>
+                                        <Menu.Item>
+                                            {({ active }) => (
+                                                <Link
+                                                    to="/subscriptions"
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                >
+                                                    <CreditCardIcon className="mr-3 h-5 w-5" />
+                                                    Subscriptions
                                                 </Link>
                                             )}
                                         </Menu.Item>
@@ -541,6 +545,19 @@ export function Navigation() {
                                                     >
                                                         <CogIcon className="mr-3 h-5 w-5" />
                                                         Settings
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link
+                                                        to="/subscriptions"
+                                                        className={`${
+                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                                                        } flex items-center px-4 py-2 text-sm`}
+                                                    >
+                                                        <CreditCardIcon className="mr-3 h-5 w-5" />
+                                                        Subscriptions
                                                     </Link>
                                                 )}
                                             </Menu.Item>

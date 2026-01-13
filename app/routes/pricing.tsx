@@ -1,9 +1,11 @@
 import React from "react";
+import { useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { CheckIcon } from '@heroicons/react/24/outline';
+import { useAuth } from "~/contexts/useAuth";
 
 const tiers = [
   {
@@ -46,13 +48,25 @@ const tiers = [
 ];
 
 export default function Pricing() {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  const handleSelectPlan = React.useCallback(() => {
+    if (user) {
+      navigate('/checkout');
+    } else {
+      const redirect = encodeURIComponent('/checkout');
+      navigate(`/login?redirect=${redirect}`);
+    }
+  }, [user, navigate]);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium" className="flex-1">
       <main className="flex-1 container mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
         <div className="mx-auto max-w-4xl text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-4">Pricing</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-4">Plans and Pricing</h1>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600 dark:text-gray-300">
           Choose an affordable plan that's packed with the best features for engaging your audience, creating customer loyalty, and driving sales.
@@ -80,13 +94,14 @@ export default function Pricing() {
                   ))}
                 </ul>
               </div>
-              <a
-                href={tier.href}
+              <button
+                type="button"
+                onClick={handleSelectPlan}
                 aria-describedby={tier.id}
-                className="mt-8 block rounded-md bg-gradient-to-r from-purple-600 to-pink-600 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
+                className="mt-8 block w-full rounded-md bg-gradient-to-r from-purple-600 to-pink-600 px-3.5 py-2.5 text-center text-sm font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600"
               >
-                Get started
-              </a>
+                Select Plan
+              </button>
             </div>
           ))}
         </div>

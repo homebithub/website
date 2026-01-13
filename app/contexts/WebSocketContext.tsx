@@ -27,7 +27,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const wsUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
     const base = ((typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL).replace(/^http/, 'ws');
-    const url = `${base}/notifications/api/v1/inbox/ws`;
+    const url = `${base}/api/v1/inbox/ws`;
     console.log('[WebSocketContext] WebSocket URL:', url);
     return url;
   }, []);

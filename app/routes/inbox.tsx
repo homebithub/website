@@ -324,7 +324,7 @@ export default function InboxPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations?offset=${offset}&limit=${limit}`);
+        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=${offset}&limit=${limit}`);
         if (!res.ok) throw new Error("Failed to load conversations");
         const response = await apiClient.json<{ conversations: any[] }>(res);
         const raw = response.conversations || [];
@@ -374,7 +374,7 @@ export default function InboxPage() {
         setMessagesError(null);
         console.log('[Inbox] Loading messages for conversation:', conversationId);
         const res = await apiClient.auth(
-          `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${encodeURIComponent(conversationId)}/messages?offset=0&limit=${messagesLimit}`
+          `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${encodeURIComponent(conversationId)}/messages?offset=0&limit=${messagesLimit}`
         );
         console.log('[Inbox] Messages API response status:', res.status);
         if (!res.ok) throw new Error("Failed to load messages");
@@ -391,7 +391,7 @@ export default function InboxPage() {
         // Mark conversation as read
         try {
           const markReadRes = await apiClient.auth(
-            `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${encodeURIComponent(conversationId)}/read`,
+            `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${encodeURIComponent(conversationId)}/read`,
             {
               method: 'POST',
             }
@@ -601,7 +601,7 @@ export default function InboxPage() {
     try {
       setEditingSaving(true);
       const res = await apiClient.auth(
-        `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/messages/${encodeURIComponent(msg.id)}`,
+        `${NOTIFICATIONS_BASE}/api/v1/inbox/messages/${encodeURIComponent(msg.id)}`,
         {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -623,7 +623,7 @@ export default function InboxPage() {
   const toggleReaction = useCallback(async (m: Message, emoji: string) => {
     try {
       const res = await apiClient.auth(
-        `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/messages/${encodeURIComponent(m.id)}/reactions`,
+        `${NOTIFICATIONS_BASE}/api/v1/inbox/messages/${encodeURIComponent(m.id)}/reactions`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -682,7 +682,7 @@ export default function InboxPage() {
       }
       
       const res = await apiClient.auth(
-        `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${encodeURIComponent(activeConversationId)}/messages`,
+        `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${encodeURIComponent(activeConversationId)}/messages`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -1696,7 +1696,7 @@ export default function InboxPage() {
               const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
               apiClient
                 .auth(
-                  `${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations/${activeConversationId}/messages`,
+                  `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`,
                   {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
