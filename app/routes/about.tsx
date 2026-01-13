@@ -68,7 +68,7 @@ export default function About() {
     return (
         <div className="min-h-screen flex flex-col">
             <Navigation />
-            <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
+            <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium" className="flex-1">
             <main className="flex-1">
                 {/* Page header */}
                 <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-10">
