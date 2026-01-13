@@ -79,6 +79,14 @@ export default function App() {
                 <link rel="icon" href="/logo_512x512.png" type="image/png" sizes="32x32" />
                 <link rel="icon" href="/logo_512x512.png" type="image/png" sizes="16x16" />
                 <link rel="apple-touch-icon" href="/logo_512x512.png" sizes="180x180" />
+
+                {/* Global font: Plus Jakarta Sans (thinner, modern sans) */}
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                <link
+                  href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
+                  rel="stylesheet"
+                />
                 <title>Homebit</title>
             </head>
             <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300" suppressHydrationWarning>
