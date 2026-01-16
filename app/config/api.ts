@@ -63,9 +63,9 @@ const getPaymentsApiBaseUrl = (): string => {
     return process.env.PAYMENTS_API_BASE_URL;
   }
 
-  // Default to localhost payments microservice path
-  console.warn('[API Config] No PAYMENTS_API_BASE_URL environment variable found, using localhost /payments URL');
-  return 'http://localhost:3002/payments';
+  // Default to production payments microservice path (matches /payments ingress prefix)
+  console.warn('[API Config] No PAYMENTS_API_BASE_URL environment variable found, using production /payments URL');
+  return 'https://homebit.co.ke/payments';
 };
 
 // Base URLs for each service
