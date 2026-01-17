@@ -26,6 +26,15 @@ const getAuthApiBaseUrl = (): string => {
   return 'https://homebit.co.ke/auth';
 };
 
+const normalizeNotificationsBaseUrl = (url?: string): string | undefined => {
+  if (!url) return undefined;
+  const trimmed = url.replace(/\/+$/, '');
+  if (trimmed.includes('homebit.co.ke') && !trimmed.endsWith('/notifications')) {
+    return `${trimmed}/notifications`;
+  }
+  return trimmed;
+};
+
 // Get notifications service base URL from environment or use default.
 // This base URL should already include the /notifications prefix so that
 // calling `${NOTIFICATIONS_API_BASE_URL}/api/v1/...` yields /notifications/api/v1/...
@@ -34,13 +43,15 @@ const getNotificationsApiBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const envUrl = (window as any).ENV?.NOTIFICATIONS_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.NOTIFICATIONS_API_BASE_URL:', envUrl);
-    if (envUrl) return envUrl;
+    const normalizedBrowserUrl = normalizeNotificationsBaseUrl(envUrl);
+    if (normalizedBrowserUrl) return normalizedBrowserUrl;
   }
 
   // Check environment variable
   if (typeof process !== 'undefined' && process.env.NOTIFICATIONS_API_BASE_URL) {
     console.log('[API Config] Server - process.env.NOTIFICATIONS_API_BASE_URL:', process.env.NOTIFICATIONS_API_BASE_URL);
-    return process.env.NOTIFICATIONS_API_BASE_URL;
+    const normalizedServerUrl = normalizeNotificationsBaseUrl(process.env.NOTIFICATIONS_API_BASE_URL);
+    if (normalizedServerUrl) return normalizedServerUrl;
   }
 
   // Default to production notifications microservice path
