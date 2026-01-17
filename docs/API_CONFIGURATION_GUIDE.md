@@ -4,6 +4,39 @@
 
 All API endpoints are now centralized in `app/config/api.ts`. This makes it easy to switch between development (localhost) and production (api.homexpert.co.ke) environments.
 
+## Microservice URL & Ingress Convention
+
+To keep all backend services consistent (auth, notifications, payments, and future microservices), we follow this pattern:
+
+- **External path prefix per service**
+  - Auth: `/auth`
+  - Notifications: `/notifications`
+  - Payments: `/payments`
+- **Canonical API paths inside services**
+  - Each service exposes its REST API at `/api/v1/*` (no service prefix in the code/router).
+- **Ingress rewrite behavior**
+  - The shared ingress (`infra/yaml/ingress-backend.yaml`) has rules like:
+    - `/auth(/|$)(.*)` → `auth-srv`
+    - `/notifications(/|$)(.*)` → `notifications-srv`
+    - `/payments(/|$)(.*)` → `payments-srv`
+  - With the annotation `nginx.ingress.kubernetes.io/rewrite-target: /$2`, requests to:
+    - `https://homebit.co.ke/auth/api/v1/...`
+    - `https://homebit.co.ke/notifications/api/v1/...`
+    - `https://homebit.co.ke/payments/api/v1/...`
+    are rewritten so the services see `/api/v1/...`.
+- **Website base URLs**
+  - `AUTH_API_BASE_URL`   → defaults to `https://homebit.co.ke/auth`
+  - `NOTIFICATIONS_API_BASE_URL` → defaults to `https://homebit.co.ke/notifications`
+  - `PAYMENTS_API_BASE_URL` → defaults to `https://homebit.co.ke/payments`
+  - Frontend code always appends `/api/v1/...` to these base URLs.
+- **Adding a new microservice**
+  - Choose a prefix (e.g. `/profiles`).
+  - Make the service expose `/api/v1/*`.
+  - Add an ingress rule `/profiles(/|$)(.*)` with the same rewrite annotation.
+  - Add `PROFILES_API_BASE_URL` in `app/config/api.ts` defaulting to `https://homebit.co.ke/profiles`.
+
+This convention keeps URLs predictable and lets the website, ingress, and each microservice stay in sync.
+
 ## Quick Start
 
 ### 1. Set Environment Variable

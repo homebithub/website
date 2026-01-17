@@ -77,7 +77,7 @@ export default function Contact() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
+      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium" className="flex-1">
       <main className="flex-1 container mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
         <div className="max-w-4xl mx-auto bg-white/90 dark:bg-[#13131a]/95 p-8 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg backdrop-blur-lg transition-all duration-500 hover:scale-105 hover:shadow-light-glow-lg dark:hover:shadow-glow-lg fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/30">
           <div className="mb-8 text-center">

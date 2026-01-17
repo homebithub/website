@@ -200,7 +200,7 @@ export default function HousehelpHome() {
         payload.household_profile_id = currentHouseholdProfileId;
       }
 
-      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations`, {
+      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -217,7 +217,7 @@ export default function HousehelpHome() {
 
       if (!convId || !UUID_REGEX.test(convId)) {
         try {
-          const convRes = await apiClient.auth(`${NOTIFICATIONS_BASE}/notifications/api/v1/inbox/conversations?offset=0&limit=50`);
+          const convRes = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=0&limit=50`);
           if (convRes.ok) {
             const response = await apiClient.json<{
               conversations: Array<{ id?: string; ID?: string; household_id?: string; househelp_id?: string }>;

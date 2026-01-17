@@ -68,8 +68,15 @@ export default function About() {
     return (
         <div className="min-h-screen flex flex-col">
             <Navigation />
-            <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium">
+            <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium" className="flex-1">
             <main className="flex-1">
+                {/* Page header */}
+                <div className="max-w-7xl mx-auto px-6 lg:px-8 pt-10">
+                    <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+                        About Us and Mission
+                    </h1>
+                </div>
+
                 {/* About Us and Mission Section */}
                 <div className="relative isolate overflow-hidden bg-white/90 dark:bg-[#13131a]/95 backdrop-blur-lg py-16 sm:py-24 rounded-3xl shadow-light-glow-md dark:shadow-glow-md mx-3 sm:mx-8 mt-10 fade-in-scroll transition-colors duration-300 border-2 border-purple-200/40 dark:border-purple-500/20">
   {/* Floating SVG shapes for playful effect */}
@@ -81,7 +88,7 @@ export default function About() {
                                 <div className="lg:max-w-lg">
                                     <h2 className="inline-block rounded-full bg-gray-100 px-4 py-2 text-primary-600 font-bold text-lg">About Us</h2>
                                     <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">A Better Way to Manage Your Home</p>
-                                    <p className="mt-6 text-lg leading-8 text-gray-600">
+                                    <p className="mt-6 text-lg leading-8 text-gray-700 dark:text-gray-100">
                                         Homebit bridges the gap between households seeking trustworthy househelps and nannies, and professionals seeking reliable jobs. We prioritize security, transparency, and a rigorous vetting process to ensure peace of mind for every family and worker.
                                     </p>
                                 </div>
@@ -90,7 +97,7 @@ export default function About() {
                                 <div className="lg:max-w-lg">
                                     <h2 className="inline-block rounded-full bg-gray-100 px-4 py-2 text-primary-600 font-bold text-lg">Our Mission</h2>
                                     <p className="mt-2 text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">Connecting Families and Professionals</p>
-                                    <p className="mt-6 text-lg leading-8 text-gray-600">
+                                    <p className="mt-6 text-lg leading-8 text-gray-700 dark:text-gray-100">
                                         At Homebit, our mission is to connect families with trustworthy, vetted househelps and nannies, making home management simpler, safer, and more reliable for everyone.
                                     </p>
                                 </div>
@@ -100,20 +107,20 @@ export default function About() {
                 </div>
 
                 {/* Values section */}
-                <div className="mx-auto mt-32 max-w-7xl px-6 sm:mt-40 lg:px-8 mb-20">
+                <div className="mx-auto mt-16 max-w-7xl px-6 sm:mt-20 lg:px-8 mb-20">
                     <div className="mx-auto max-w-2xl lg:mx-0">
-                        <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                        <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-4xl">
                             Our Values
                         </h2>
-                        <p className="mt-6 text-lg leading-8 text-gray-600">
+                        <p className="mt-6 text-lg leading-8 text-gray-600 dark:text-gray-300">
                             Our commitment to excellence is guided by these core principles.
                         </p>
                     </div>
                     <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 text-base leading-7 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:grid-cols-4 lg:gap-8">
                         {values.map((value) => (
                             <div key={value.name} className="relative flex flex-col rounded-2xl border-2 border-primary-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 shadow-light-glow-sm dark:shadow-glow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-light-glow-md dark:hover:shadow-glow-md">
-                                <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-gray-100 dark:bg-purple-900/30 mb-6">
-                                    <value.icon className="h-6 w-6 text-slate-900 dark:text-purple-400" aria-hidden="true" />
+                                <div className="flex items-center justify-center h-12 w-12 rounded-lg bg-gradient-to-br from-purple-100 via-pink-100 to-purple-200 dark:bg-purple-900/30 mb-6">
+                                    <value.icon className="h-6 w-6 text-purple-600 dark:text-purple-400" aria-hidden="true" />
                                 </div>
                                 <dt className="text-lg font-semibold text-gray-900 dark:text-white">{value.name}</dt>
                                 <dd className="mt-2 text-base leading-7 text-gray-600 dark:text-gray-300">{value.description}</dd>

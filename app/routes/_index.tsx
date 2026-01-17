@@ -191,13 +191,13 @@ export default function Index() {
       <div className="mt-12 sm:mt-16 md:mt-20 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 fade-in-scroll">
         <div className="grid grid-cols-2 gap-4 sm:gap-6 md:flex md:justify-center md:gap-8">
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/assets/kufua.png" alt="Laundry Service" className="w-full h-full object-cover rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/kufua.png';}}} />
+            <img src="/assets/mtoi.svg" alt="Laundry Service" className="w-full h-full object-contain rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/mtoi.svg';}}} />
           </div>
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/assets/lady laundry.jpg" alt="Woman doing laundry" className="w-full h-full object-cover rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/lady laundry.jpg';}}} />
+            <img src="/assets/shopping.svg" alt="Shopping" className="w-full h-full object-contain rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/shopping.svg';}}} />
           </div>
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
-            <img src="/assets/man dishes.png" alt="Man washing dishes" className="w-full h-full object-cover rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/man dishes.png';}}} />
+            <img src="/assets/man-trash.svg" alt="Man taking out trash" className="w-full h-full object-contain rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/man-trash.svg';}}} />
           </div>
           <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
             <img src="/assets/babysitter.webp" alt="Babysitter with child" className="w-full h-full object-cover rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/babysitter.webp';}}} />
@@ -270,8 +270,7 @@ export default function Index() {
       <div className="flex flex-col lg:flex-row gap-8 sm:gap-12 lg:gap-16 items-center">
         {/* Text Content - Left Column */}
         <div className="lg:w-1/2 mx-auto text-center fade-in-scroll">
-          <h2 className="text-3xl font-extrabold tracking-tight text-primary-700 dark:text-purple-400 animate-fadeIn">Homebit</h2>
-          <p className="mt-4 font-bold text-2xl sm:text-3xl md:text-4xl leading-tight text-gray-900 dark:text-white animate-fadeIn">Where Quality help meets Opportunity</p>
+          <p className="font-bold text-2xl sm:text-3xl md:text-4xl leading-tight text-gray-900 dark:text-white animate-fadeIn">Where Quality help meets Opportunity</p>
           <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 animate-fadeIn">At Homebit, we bring skilled, reliable househelps together with households that value trust and professionalism. Whether you're seeking work or looking to hire, we make the connection simple, secure, and stress-free.</p>
           <div className="mt-8 sm:mt-10 md:mt-12 flex items-center justify-center fade-in-scroll">
             <Link
@@ -312,9 +311,15 @@ export default function Index() {
       <div className="mt-12 sm:mt-16 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-3">
           {features.map((feature, idx) => (
-            <div key={feature.name} className="relative flex flex-col items-center text-center rounded-xl sm:rounded-2xl border-2 border-primary-200 dark:border-purple-500/30 bg-white/90 dark:bg-[#13131a]/95 p-6 sm:p-8 shadow-light-glow-sm dark:shadow-glow-sm transition-transform duration-300 hover:-translate-y-2 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll animate-fadeIn" style={{ animationDelay: `${0.1 * idx}s` }}>
-              <div className="inline-flex items-center justify-center rounded-full bg-gradient-to-br from-primary-500 to-indigo-500 p-4 animate-float">
-                <feature.icon className="h-10 w-10 text-white" />
+            <div
+              key={feature.name}
+              className="relative flex flex-col items-center text-center rounded-xl sm:rounded-2xl border-2 border-primary-200 dark:border-purple-500/30 bg-white/90 dark:bg-[#13131a]/95 p-6 sm:p-8 shadow-light-glow-sm dark:shadow-glow-sm transition-transform duration-300 hover:-translate-y-2 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll animate-fadeIn"
+              style={{ animationDelay: `${0.1 * idx}s` }}
+            >
+              <div className="relative inline-flex items-center justify-center p-[2px] rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-500 shadow-lg shadow-purple-500/40 animate-float">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-white dark:bg-[#050510]">
+                  <feature.icon className="h-8 w-8 text-purple-600 dark:text-purple-200" />
+                </div>
               </div>
               <h3 className="mt-4 text-lg sm:text-xl font-bold leading-6 sm:leading-7 tracking-tight text-primary-700 dark:text-purple-400">{feature.name}</h3>
               <p className="mt-3 text-base sm:text-lg leading-6 sm:leading-7 text-gray-600 dark:text-gray-300">{feature.description}</p>

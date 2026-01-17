@@ -432,9 +432,9 @@ export default function HousehelpHiringHistory() {
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
+                      <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
                         <button onClick={() => navigate(`/household/public-profile?user_id=${request.household?.user_id}`, { state: { profileId: request.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
-                          View Details
+                          View Profile
                         </button>
                         {request.status === 'pending' && (
                           <>
@@ -501,9 +501,9 @@ export default function HousehelpHiringHistory() {
                           )}
                         </div>
                       </div>
-                      <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
+                      <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
                         <button onClick={() => navigate(`/household/public-profile?user_id=${contract.household?.user_id}`, { state: { profileId: contract.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
-                          View Details
+                          View Profile
                         </button>
                       </div>
                     </div>

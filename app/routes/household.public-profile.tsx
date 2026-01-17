@@ -276,7 +276,7 @@ export default function HouseholdPublicProfile() {
         payload.household_profile_id = profile.id;
       }
 
-      const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/notifications/api/v1/inbox/conversations`, {
+      const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

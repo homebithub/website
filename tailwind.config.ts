@@ -49,7 +49,7 @@ export default {
       textColor: colors,
       borderColor: colors,
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui'],
+        sans: ['"Plus Jakarta Sans"', 'Inter', 'ui-sans-serif', 'system-ui'],
       },
       boxShadow: {
         card: '0 4px 24px 0 rgba(124, 58, 237, 0.08)',
