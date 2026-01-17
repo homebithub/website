@@ -7,7 +7,7 @@ import { ThemeProvider } from "~/contexts/ThemeContext";
 import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
 import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
 import { WebSocketProvider } from "~/contexts/WebSocketContext";
-import { API_BASE_URL } from '~/config/api';
+import { AUTH_API_BASE_URL, NOTIFICATIONS_API_BASE_URL, PAYMENTS_API_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
 export const links: Route.LinksFunction = () => [];
@@ -17,19 +17,17 @@ export const headers: Route.HeadersFunction = () => ({
 });
 
 export function loader() {
-    // Get API base URLs from environment (server-side)
-    const authApiBaseUrl = process.env.AUTH_API_BASE_URL || "http://localhost:3000";
-    const notificationsApiBaseUrl = process.env.NOTIFICATIONS_API_BASE_URL || "http://localhost:3001";
-    
-    return {
-        ENV: {
-            GOOGLE_CLIENT_ID:
-                process.env.GOOGLE_CLIENT_ID ||
-                "180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",
-            AUTH_API_BASE_URL: authApiBaseUrl,
-            NOTIFICATIONS_API_BASE_URL: notificationsApiBaseUrl,
-        },
-    };
+	return {
+		ENV: {
+			GOOGLE_CLIENT_ID:
+				process.env.GOOGLE_CLIENT_ID ||
+				"180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",
+			// Use canonical API base URLs from config so they are consistently normalized
+			AUTH_API_BASE_URL: AUTH_API_BASE_URL,
+			NOTIFICATIONS_API_BASE_URL: NOTIFICATIONS_API_BASE_URL,
+			PAYMENTS_API_BASE_URL: PAYMENTS_API_BASE_URL,
+		},
+	};
 }
 
 export default function App() {
