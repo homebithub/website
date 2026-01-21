@@ -7,23 +7,36 @@
 
 // Get auth service base URL from environment or use default
 const getAuthApiBaseUrl = (): string => {
+  const normalizeGatewayBaseUrl = (url: string): string => {
+    return url.replace(/\/+$/, '').replace(/\/(auth|payments|notifications)$/, '');
+  };
+
   // Check if running in browser
   if (typeof window !== 'undefined') {
+    const gatewayUrl = (window as any).ENV?.GATEWAY_API_BASE_URL;
+    console.log('[API Config] Browser - window.ENV.GATEWAY_API_BASE_URL:', gatewayUrl);
+    if (gatewayUrl) return normalizeGatewayBaseUrl(gatewayUrl);
+
     // Try to get from window.ENV (set in root.tsx)
     const envUrl = (window as any).ENV?.AUTH_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.AUTH_API_BASE_URL:', envUrl);
-    if (envUrl) return envUrl;
+    if (envUrl) return normalizeGatewayBaseUrl(envUrl);
   }
   
   // Check environment variable
   if (typeof process !== 'undefined' && process.env.AUTH_API_BASE_URL) {
     console.log('[API Config] Server - process.env.AUTH_API_BASE_URL:', process.env.AUTH_API_BASE_URL);
-    return process.env.AUTH_API_BASE_URL;
+    return normalizeGatewayBaseUrl(process.env.AUTH_API_BASE_URL);
+  }
+
+  if (typeof process !== 'undefined' && process.env.GATEWAY_API_BASE_URL) {
+    console.log('[API Config] Server - process.env.GATEWAY_API_BASE_URL:', process.env.GATEWAY_API_BASE_URL);
+    return normalizeGatewayBaseUrl(process.env.GATEWAY_API_BASE_URL);
   }
   
   // Default to production
   console.warn('[API Config] No AUTH_API_BASE_URL environment variable found, using production URL');
-  return 'https://homebit.co.ke/auth';
+  return 'https://api.homebit.co.ke';
 };
 
 const normalizeNotificationsBaseUrl = (url?: string): string | undefined => {
@@ -39,50 +52,96 @@ const normalizeNotificationsBaseUrl = (url?: string): string | undefined => {
 // This base URL should already include the /notifications prefix so that
 // calling `${NOTIFICATIONS_API_BASE_URL}/api/v1/...` yields /notifications/api/v1/...
 const getNotificationsApiBaseUrl = (): string => {
+  const normalizeGatewayBaseUrl = (url: string): string => {
+    return url.replace(/\/+$/, '').replace(/\/(auth|payments|notifications)$/, '');
+  };
+
   // Check if running in browser
   if (typeof window !== 'undefined') {
+    const gatewayUrl = (window as any).ENV?.GATEWAY_API_BASE_URL;
+    console.log('[API Config] Browser - window.ENV.GATEWAY_API_BASE_URL:', gatewayUrl);
+    if (gatewayUrl) return normalizeGatewayBaseUrl(gatewayUrl);
+
     const envUrl = (window as any).ENV?.NOTIFICATIONS_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.NOTIFICATIONS_API_BASE_URL:', envUrl);
-    const normalizedBrowserUrl = normalizeNotificationsBaseUrl(envUrl);
-    if (normalizedBrowserUrl) return normalizedBrowserUrl;
+    if (envUrl) return normalizeGatewayBaseUrl(envUrl);
   }
 
   // Check environment variable
   if (typeof process !== 'undefined' && process.env.NOTIFICATIONS_API_BASE_URL) {
     console.log('[API Config] Server - process.env.NOTIFICATIONS_API_BASE_URL:', process.env.NOTIFICATIONS_API_BASE_URL);
-    const normalizedServerUrl = normalizeNotificationsBaseUrl(process.env.NOTIFICATIONS_API_BASE_URL);
-    if (normalizedServerUrl) return normalizedServerUrl;
+    return normalizeGatewayBaseUrl(process.env.NOTIFICATIONS_API_BASE_URL);
+  }
+
+  if (typeof process !== 'undefined' && process.env.GATEWAY_API_BASE_URL) {
+    console.log('[API Config] Server - process.env.GATEWAY_API_BASE_URL:', process.env.GATEWAY_API_BASE_URL);
+    return normalizeGatewayBaseUrl(process.env.GATEWAY_API_BASE_URL);
   }
 
   // Default to production notifications microservice path
   console.warn('[API Config] No NOTIFICATIONS_API_BASE_URL environment variable found, using production /notifications URL');
+  return 'https://api.homebit.co.ke';
+};
+
+const getNotificationsWsBaseUrl = (): string => {
+  // Check if running in browser
+  if (typeof window !== 'undefined') {
+    const envUrl = (window as any).ENV?.NOTIFICATIONS_WS_BASE_URL;
+    console.log('[API Config] Browser - window.ENV.NOTIFICATIONS_WS_BASE_URL:', envUrl);
+    const normalizedBrowserUrl = normalizeNotificationsBaseUrl(envUrl);
+    if (normalizedBrowserUrl) return normalizedBrowserUrl;
+  }
+
+  // Check environment variable
+  if (typeof process !== 'undefined' && process.env.NOTIFICATIONS_WS_BASE_URL) {
+    console.log('[API Config] Server - process.env.NOTIFICATIONS_WS_BASE_URL:', process.env.NOTIFICATIONS_WS_BASE_URL);
+    const normalizedServerUrl = normalizeNotificationsBaseUrl(process.env.NOTIFICATIONS_WS_BASE_URL);
+    if (normalizedServerUrl) return normalizedServerUrl;
+  }
+
+  // Default to production notifications microservice path
+  console.warn('[API Config] No NOTIFICATIONS_WS_BASE_URL environment variable found, using production /notifications URL');
   return 'https://homebit.co.ke/notifications';
 };
 
 // Get payments service base URL from environment or use default
 const getPaymentsApiBaseUrl = (): string => {
+  const normalizeGatewayBaseUrl = (url: string): string => {
+    return url.replace(/\/+$/, '').replace(/\/(auth|payments|notifications)$/, '');
+  };
+
   // Check if running in browser
   if (typeof window !== 'undefined') {
+    const gatewayUrl = (window as any).ENV?.GATEWAY_API_BASE_URL;
+    console.log('[API Config] Browser - window.ENV.GATEWAY_API_BASE_URL:', gatewayUrl);
+    if (gatewayUrl) return normalizeGatewayBaseUrl(gatewayUrl);
+
     const envUrl = (window as any).ENV?.PAYMENTS_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.PAYMENTS_API_BASE_URL:', envUrl);
-    if (envUrl) return envUrl;
+    if (envUrl) return normalizeGatewayBaseUrl(envUrl);
   }
 
   // Check environment variable
   if (typeof process !== 'undefined' && process.env.PAYMENTS_API_BASE_URL) {
     console.log('[API Config] Server - process.env.PAYMENTS_API_BASE_URL:', process.env.PAYMENTS_API_BASE_URL);
-    return process.env.PAYMENTS_API_BASE_URL;
+    return normalizeGatewayBaseUrl(process.env.PAYMENTS_API_BASE_URL);
+  }
+
+  if (typeof process !== 'undefined' && process.env.GATEWAY_API_BASE_URL) {
+    console.log('[API Config] Server - process.env.GATEWAY_API_BASE_URL:', process.env.GATEWAY_API_BASE_URL);
+    return normalizeGatewayBaseUrl(process.env.GATEWAY_API_BASE_URL);
   }
 
   // Default to production payments microservice path (matches /payments ingress prefix)
   console.warn('[API Config] No PAYMENTS_API_BASE_URL environment variable found, using production /payments URL');
-  return 'https://homebit.co.ke/payments';
+  return 'https://api.homebit.co.ke';
 };
 
 // Base URLs for each service
 export const AUTH_API_BASE_URL = getAuthApiBaseUrl();
 export const NOTIFICATIONS_API_BASE_URL = getNotificationsApiBaseUrl();
 export const PAYMENTS_API_BASE_URL = getPaymentsApiBaseUrl();
+export const NOTIFICATIONS_WS_BASE_URL = getNotificationsWsBaseUrl();
 
 // Legacy API_BASE_URL for backward compatibility (points to auth service)
 export const API_BASE_URL = AUTH_API_BASE_URL;
