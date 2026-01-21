@@ -74,10 +74,10 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
         ...formData,
         phone: normalizeKenyanPhone(formData.phone),
       };
-      const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL)
-        ? (window as any).ENV.AUTH_API_BASE_URL
+      const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.GATEWAY_API_BASE_URL)
+        ? (window as any).ENV.GATEWAY_API_BASE_URL
         : API_BASE_URL;
-      const response = await fetch(`${API_BASE_URL}/api/v1/waitlist`, {
+      const response = await fetch(`${baseUrl}/api/v1/waitlist`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -227,8 +227,8 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
   // Start OAuth-based Google flow using backend URL to ensure server-verified identity
   const startOAuthWaitlist = async () => {
     try {
-      const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL)
-        ? (window as any).ENV.AUTH_API_BASE_URL
+      const baseUrl = (typeof window !== 'undefined' && (window as any).ENV?.GATEWAY_API_BASE_URL)
+        ? (window as any).ENV.GATEWAY_API_BASE_URL
         : API_BASE_URL;
       // Include phone/message in state so callback can auto-create waitlist if possible
       const normalizeKenyanPhone = (phone: string) => {
@@ -244,7 +244,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
         message: formData.message || undefined,
       };
       const state = encodeURIComponent(JSON.stringify(statePayload));
-      const resp = await fetch(`${API_BASE_URL}/api/v1/auth/google/url?flow=waitlist&state=${state}`);
+      const resp = await fetch(`${baseUrl}/api/v1/auth/google/url?flow=waitlist&state=${state}`);
       const data = await resp.json();
       if (data?.url) {
         window.location.href = data.url as string;

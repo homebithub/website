@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { CloudArrowUpIcon, XMarkIcon, DocumentIcon, PhotoIcon } from '@heroicons/react/24/outline';
-import { API_ENDPOINTS } from '~/config/api';
+import { API_BASE_URL } from '~/config/api';
 
 export interface UploadedFile {
   id: string;
@@ -162,7 +162,7 @@ export default function FileUpload({
         onUploadError?.('Upload failed');
       });
 
-      xhr.open('POST', `${API_ENDPOINTS.BASE_URL}/api/v1/documents/upload`);
+      xhr.open('POST', `${API_BASE_URL}/api/v1/documents/upload`);
       xhr.setRequestHeader('Authorization', `Bearer ${token}`);
       xhr.send(formData);
       

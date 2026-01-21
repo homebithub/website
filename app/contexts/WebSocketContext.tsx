@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useMemo, useCallback, useState, useEffect } from 'react';
 import { useWebSocket } from '~/hooks/useWebSocket';
-import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
+import { NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 
 type WebSocketContextType = {
@@ -26,7 +26,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   const wsUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
-    const base = ((typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL).replace(/^http/, 'ws');
+    const base = ((typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_WS_BASE_URL) || NOTIFICATIONS_WS_BASE_URL).replace(/^http/, 'ws');
     const url = `${base}/api/v1/inbox/ws`;
     console.log('[WebSocketContext] WebSocket URL:', url);
     return url;

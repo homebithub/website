@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
-import { API_ENDPOINTS, getAuthHeaders } from '~/config/api';
+import { API_BASE_URL, getAuthHeaders } from '~/config/api';
 
 export interface ImageDocument {
   id: string;
@@ -47,7 +47,7 @@ export default function ImageGallery({
         throw new Error('Not authenticated');
       }
 
-      const url = `${API_ENDPOINTS.BASE_URL}/api/v1/documents?document_type=${documentType}`;
+      const url = `${API_BASE_URL}/api/v1/documents?document_type=${documentType}`;
       const response = await fetch(url, {
         headers: getAuthHeaders(token),
       });
@@ -82,7 +82,7 @@ export default function ImageGallery({
       if (!token) return;
 
       const response = await fetch(
-        `${API_ENDPOINTS.BASE_URL}/api/v1/documents/${imageId}`,
+        `${API_BASE_URL}/api/v1/documents/${imageId}`,
         {
           method: 'DELETE',
           headers: getAuthHeaders(token),
