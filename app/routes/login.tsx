@@ -6,6 +6,7 @@ import { Loading } from "~/components/Loading";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { FcGoogle } from 'react-icons/fc';
+import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { loginSchema, validateForm, validateField } from '~/utils/validation';
 import { handleApiError } from '~/utils/errorMessages';
 import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
@@ -47,6 +48,7 @@ export default function LoginPage() {
   const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
   const [loginError, setLoginError] = useState<string | null>(null);
   const [processingGoogleLogin, setProcessingGoogleLogin] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Get redirect URL from query params
   const searchParams = new URLSearchParams(location.search);
@@ -289,23 +291,37 @@ export default function LoginPage() {
             
             <div>
               <label htmlFor="password" className="block text-sm font-semibold text-purple-700 mb-2">Password</label>
-              <input
-                type="password"
-                id="password"
-                name="password"
-                required
-                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
-                    getFieldError('password') 
-                        ? 'border-red-300' 
-                        : isFieldValid('password')
-                        ? 'border-green-300'
-                        : 'border-purple-200'
-                }`}
-                value={formData.password}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  name="password"
+                  required
+                  className={`w-full h-12 text-base px-4 py-3 pr-12 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                      getFieldError('password') 
+                          ? 'border-red-300' 
+                          : isFieldValid('password')
+                          ? 'border-green-300'
+                          : 'border-purple-200'
+                  }`}
+                  value={formData.password}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors focus:outline-none"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
               {getFieldError('password') && (
                 <p className="text-red-600 text-sm mt-1">{getFieldError('password')}</p>
               )}

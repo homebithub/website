@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { useAuth } from '~/contexts/useAuth';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -41,10 +42,21 @@ function HouseholdProfileSetupContent() {
   const [showCongratulations, setShowCongratulations] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, loading: authLoading } = useAuth();
   const { saveProfileToBackend, loadProfileFromBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
   
   // Check if user is editing from profile page using location state (secure, can't be manipulated)
   const isEditMode = location.state?.fromProfile === true;
+  
+  // Authentication check - redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
+      }
+    }
+  }, [authLoading, user, navigate]);
   
   // Clean up URL on mount - remove any query parameters or hash
   useEffect(() => {

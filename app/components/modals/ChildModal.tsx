@@ -4,7 +4,7 @@ import { handleApiError } from '../../utils/errorMessages';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 
 const TRAITS = [
-  'Allergies', 'Special Needs', 'Disabled', 'Asthma', 'ADHD',
+  'None', 'Allergies', 'Special Needs', 'Disabled', 'Asthma', 'ADHD',
   'Autism', 'Diabetes', 'Epilepsy', 'Other'
 ];
 
@@ -56,23 +56,33 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
   };
 
   const handleTraitChange = (trait: string) => {
-    if (trait === 'Other') {
+    if (trait === 'None') {
+      // "None" is exclusive - if selected, clear all other traits
+      if (traits.includes('None')) {
+        setTraits([]);
+      } else {
+        setTraits(['None']);
+        setOtherTrait(''); // Clear other trait input if any
+      }
+    } else if (trait === 'Other') {
       // Handle "Other" trait selection
       if (traits.includes('Other')) {
         // Remove "Other" and clear the custom input
         setTraits(prev => prev.filter(t => t !== 'Other'));
         setOtherTrait('');
-      } else if (traits.length < 3) {
-        // Add "Other" trait
+      } else if (traits.length < 3 && !traits.includes('None')) {
+        // Add "Other" trait (but not if "None" is selected)
         setTraits(prev => [...prev, 'Other']);
       }
     } else {
       // Handle regular traits
-      setTraits(prev => 
-        prev.includes(trait)
-          ? prev.filter(t => t !== trait)
-          : prev.length < 3 ? [...prev, trait] : prev
-      );
+      // Remove "None" if it's selected and user picks another trait
+      setTraits(prev => {
+        const filtered = prev.filter(t => t !== 'None');
+        return filtered.includes(trait)
+          ? filtered.filter(t => t !== trait)
+          : filtered.length < 3 ? [...filtered, trait] : filtered;
+      });
     }
   };
 
@@ -218,8 +228,8 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
                 key={trait}
                 type="button"
                 onClick={() => handleTraitChange(trait)}
-                disabled={traits.length === 3 && !traits.includes(trait)}
-                className={`px-4 py-2 rounded-xl border-2 text-base font-medium transition-all ${traits.includes(trait) ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100' : 'bg-gray-50 dark:bg-gray-800 border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/10'} ${traits.length === 3 && !traits.includes(trait) ? 'opacity-40 cursor-not-allowed' : ''}`}
+                disabled={(traits.length === 3 && !traits.includes(trait)) || (traits.includes('None') && trait !== 'None') || (trait === 'None' && traits.length > 0 && !traits.includes('None'))}
+                className={`px-4 py-2 rounded-xl border-2 text-base font-medium transition-all ${traits.includes(trait) ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100' : 'bg-gray-50 dark:bg-gray-800 border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/10'} ${((traits.length === 3 && !traits.includes(trait)) || (traits.includes('None') && trait !== 'None') || (trait === 'None' && traits.length > 0 && !traits.includes('None'))) ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
                 {trait}
               </button>

@@ -53,7 +53,10 @@ export default function JoinHouseholdPage() {
 
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("Not authenticated");
+      if (!token) {
+        navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
+        return;
+      }
 
       const res = await fetch(`${API_BASE_URL}/api/v1/households/join`, {
         method: "POST",
