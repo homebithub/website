@@ -246,6 +246,7 @@ export const API_ENDPOINTS = {
   payments: {
     plans: `${PAYMENTS_API_BASE_URL}/api/v1/plans`,
     planById: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/plans/${id}`,
+    checkout: `${PAYMENTS_API_BASE_URL}/api/v1/payments/checkout`,
     subscriptions: {
       create: `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions`,
       mine: `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions/mine`,
