@@ -235,7 +235,7 @@ if (process.env.NODE_ENV === 'production') {
 - [ ] Analyze bundle size
 
 ### Medium-term (2-4 hours)
-- [ ] Integrate analytics service (Google Analytics, Vercel Analytics)
+- [ ] Integrate analytics service (Google Analytics, custom analytics)
 - [ ] Integrate error tracking (Sentry)
 - [ ] Optimize bundle size
 
