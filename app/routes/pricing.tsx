@@ -36,9 +36,6 @@ export default function Pricing() {
   const location = useLocation();
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
-  const [phoneNumber, setPhoneNumber] = useState('');
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
@@ -47,12 +44,7 @@ export default function Pricing() {
     fetchPlans();
   }, []); // Fetch plans immediately on page load - no authentication required
 
-  useEffect(() => {
-    if (user && user.phone) {
-      setPhoneNumber(user.phone);
-    }
-  }, [user]);
-
+  
   const fetchPlans = async () => {
     try {
       console.log('[Pricing] Fetching plans from:', API_ENDPOINTS.payments.plans);
@@ -85,14 +77,35 @@ export default function Pricing() {
       navigate(`/signup?redirect=${redirect}&plan=${plan.id}`);
       return;
     }
-    setSelectedPlan(plan);
-    setShowCheckoutModal(true);
-    setPaymentStatus('idle');
-    setErrorMessage('');
+    
+    // Go directly to checkout
+    initiateCheckout(plan);
   };
 
-  const handleCheckout = async () => {
-    if (!selectedPlan || !phoneNumber || !user) return;
+  const initiateCheckout = async (plan: SubscriptionPlan) => {
+    // Check if user has phone number, otherwise prompt for it
+    let phoneNumber = user?.phone;
+    
+    if (!phoneNumber) {
+      const promptResult = prompt('Enter your M-Pesa phone number (e.g., +254 7XX XXX XXX):');
+      phoneNumber = promptResult || '';
+      if (!phoneNumber || !phoneNumber.trim()) {
+        setErrorMessage('Phone number is required for payment');
+        setProcessingPayment(false);
+        setPaymentStatus('idle');
+        return;
+      }
+      // Format phone number
+      if (!phoneNumber.startsWith('+254')) {
+        if (phoneNumber.startsWith('254')) {
+          phoneNumber = `+${phoneNumber}`;
+        } else if (phoneNumber.startsWith('0')) {
+          phoneNumber = `+254${phoneNumber.slice(1)}`;
+        } else {
+          phoneNumber = `+254${phoneNumber}`;
+        }
+      }
+    }
 
     setProcessingPayment(true);
     setPaymentStatus('processing');
@@ -108,7 +121,7 @@ export default function Pricing() {
         method: 'POST',
         headers: getAuthHeaders(token),
         body: JSON.stringify({
-          plan_id: selectedPlan.id,
+          plan_id: plan.id,
           phone_number: phoneNumber,
         }),
       });
@@ -116,26 +129,27 @@ export default function Pricing() {
       if (response.ok) {
         const data = await response.json();
         setPaymentStatus('success');
-        
-        // Wait a moment then redirect to subscriptions page
-        setTimeout(() => {
-          setShowCheckoutModal(false);
-          navigate('/subscriptions');
-        }, 3000);
+        // Redirect to payment URL or handle success
+        if (data.payment_url) {
+          window.location.href = data.payment_url;
+        } else {
+          // Show success message or redirect to subscriptions
+          navigate('/subscriptions?success=true');
+        }
       } else {
         const errorData = await response.json();
-        setErrorMessage(errorData.message || 'Payment initiation failed');
-        setPaymentStatus('error');
+        throw new Error(errorData.error?.message || 'Checkout failed');
       }
-    } catch (error: any) {
-      console.error('Checkout failed:', error);
-      setErrorMessage(error.message || 'An error occurred');
+    } catch (error) {
+      console.error('[Pricing] Checkout error:', error);
       setPaymentStatus('error');
+      setErrorMessage(error instanceof Error ? error.message : 'An error occurred during checkout');
     } finally {
       setProcessingPayment(false);
     }
   };
 
+  
   const formatCurrency = (amount: number) => {
     return `KES ${(amount / 100).toLocaleString('en-KE', { minimumFractionDigits: 2 })}`;
   };
@@ -232,9 +246,17 @@ export default function Pricing() {
                       </div>
                       <button
                         onClick={() => handleSelectPlan(plan)}
-                        className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
+                        disabled={processingPayment}
+                        className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                       >
-                        Select Plan
+                        {processingPayment ? (
+                          <>
+                            <ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          'Select Plan'
+                        )}
                       </button>
                     </div>
                   </div>
@@ -246,164 +268,37 @@ export default function Pricing() {
       </PurpleThemeWrapper>
       <Footer />
 
-      {/* Checkout Modal */}
-      <Transition appear show={showCheckoutModal} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={() => !processingPayment && setShowCheckoutModal(false)}>
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" />
-          </Transition.Child>
-
-          <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
-              <Transition.Child
-                as={Fragment}
-                enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
-                leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
-              >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all">
-                  <div className="flex items-center justify-between mb-4">
-                    <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
-                      Confirm Payment
-                    </Dialog.Title>
-                    {!processingPayment && (
-                      <button
-                        onClick={() => setShowCheckoutModal(false)}
-                        className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                      >
-                        <XMarkIcon className="w-6 h-6" />
-                      </button>
-                    )}
-                  </div>
-
-                  {paymentStatus === 'processing' ? (
-                    <div className="text-center py-8">
-                      <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
-                      <p className="text-gray-700 dark:text-gray-300 font-medium mb-2">
-                        Check your phone for M-Pesa prompt
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Enter your M-Pesa PIN to complete payment
-                      </p>
-                    </div>
-                  ) : paymentStatus === 'success' ? (
-                    <div className="text-center py-8">
-                      <CheckCircleIcon className="w-16 h-16 mx-auto mb-4 text-green-500" />
-                      <p className="text-gray-700 dark:text-gray-300 font-medium mb-2">
-                        Payment Initiated Successfully!
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Redirecting to subscriptions...
-                      </p>
-                    </div>
-                  ) : paymentStatus === 'error' ? (
-                    <div className="text-center py-8">
-                      <XCircleIcon className="w-16 h-16 mx-auto mb-4 text-red-500" />
-                      <p className="text-gray-700 dark:text-gray-300 font-medium mb-2">
-                        Payment Failed
-                      </p>
-                      <p className="text-sm text-red-500 dark:text-red-400">
-                        {errorMessage}
-                      </p>
-                      <button
-                        onClick={() => {
-                          setPaymentStatus('idle');
-                          setErrorMessage('');
-                        }}
-                        className="mt-4 px-4 py-2 bg-gray-200 dark:bg-gray-700 rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                      >
-                        Try Again
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {selectedPlan && (
-                        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
-                          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
-                            {selectedPlan.name}
-                          </h4>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-gray-600 dark:text-gray-300">Plan Amount:</span>
-                            <span className="font-bold text-gray-900 dark:text-white">
-                              {formatCurrency(selectedPlan.price_amount)}
-                            </span>
-                          </div>
-                          <div className="mt-2 pt-2 border-t border-purple-200 dark:border-purple-700">
-                            <div className="flex items-center justify-between">
-                              <span className="text-sm text-gray-600 dark:text-gray-300">Test Charge:</span>
-                              <span className="text-lg font-bold text-green-600 dark:text-green-400">
-                                KES 1.00
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          M-Pesa Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          placeholder="+254712345678"
-                          className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                        />
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          Confirm or update your phone number for payment
-                        </p>
-                      </div>
-
-                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-                        <div className="flex gap-2">
-                          <ClockIcon className="w-5 h-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
-                          <div className="text-sm text-blue-700 dark:text-blue-300">
-                            <p className="font-medium mb-1">What happens next?</p>
-                            <ul className="list-disc list-inside space-y-1 text-xs">
-                              <li>You'll receive an M-Pesa prompt on your phone</li>
-                              <li>Enter your M-Pesa PIN to confirm</li>
-                              <li>Your subscription will be activated immediately</li>
-                            </ul>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-3 mt-6">
-                        <button
-                          onClick={() => setShowCheckoutModal(false)}
-                          disabled={processingPayment}
-                          className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 font-medium"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={handleCheckout}
-                          disabled={!phoneNumber || processingPayment}
-                          className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
-                        >
-                          {processingPayment ? 'Processing...' : 'Pay KES 1.00'}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </Dialog.Panel>
-              </Transition.Child>
-            </div>
+      {/* Payment Processing Overlay */}
+      {processingPayment && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-8 max-w-sm mx-4 text-center">
+            <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              Processing Payment
+            </h3>
+            <p className="text-gray-600 dark:text-gray-400">
+              Initiating your subscription...
+            </p>
           </div>
-        </Dialog>
-      </Transition>
+        </div>
+      )}
+
+      {/* Error Display */}
+      {paymentStatus === 'error' && errorMessage && (
+        <div className="fixed bottom-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-sm">
+          <p className="font-medium">Payment Error</p>
+          <p className="text-sm">{errorMessage}</p>
+          <button
+            onClick={() => {
+              setPaymentStatus('idle');
+              setErrorMessage('');
+            }}
+            className="mt-2 text-xs underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
     </div>
   );
 }
