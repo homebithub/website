@@ -333,7 +333,7 @@ export default function LoginPage() {
           <button
             type="submit"
             className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-            disabled={loading}
+            disabled={loading || !formData.phone.trim() || !formData.password.trim()}
           >
             {loading ? "✨ Logging in..." : "🚀 Login"}
           </button>

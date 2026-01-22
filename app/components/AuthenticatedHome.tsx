@@ -807,7 +807,7 @@ export default function AuthenticatedHome() {
             {showMoreFilters && (
               <div className="fixed inset-0 z-50">
                 <div className="absolute inset-0 bg-black/40" onClick={() => setShowMoreFilters(false)} />
-                <div className="absolute right-0 top-24 sm:top-28 bottom-20 sm:bottom-24 w-full max-w-md bg-white dark:bg-[#13131a] shadow-xl rounded-l-3xl p-6 overflow-y-auto">
+                <div className="absolute right-0 top-24 sm:top-28 bottom-20 sm:bottom-24 w-full max-w-md bg-white dark:bg-gradient-to-br dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] shadow-xl rounded-l-3xl p-6 overflow-y-auto border-2 border-gray-200 dark:border-purple-500/30">
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">More Filters</h2>
                     <button onClick={() => setShowMoreFilters(false)} className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">✕</button>
