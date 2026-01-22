@@ -10,7 +10,7 @@ export default function BureauHomeDashboard() {
     { label: "Completed Placements", value: 35 },
     { label: "Pending Applications", value: 5 },
     { label: "Commercial Partners", value: 3 },
-    { label: "Revenue (This Month)", value: "$2,500" },
+    { label: "Revenue (This Month)", value: "KES 2,500" },
     { label: "Avg. Placement Time", value: "5 days" },
   ];
 
