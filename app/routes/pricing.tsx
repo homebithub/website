@@ -45,7 +45,7 @@ export default function Pricing() {
 
   useEffect(() => {
     fetchPlans();
-  }, [user]); // Fetch plans when user changes (for authentication)
+  }, []); // Fetch plans immediately on page load - no authentication required
 
   useEffect(() => {
     if (user && user.phone) {
@@ -57,11 +57,10 @@ export default function Pricing() {
     try {
       console.log('[Pricing] Fetching plans from:', API_ENDPOINTS.payments.plans);
       
-      // Try to get token for authenticated request (like subscriptions page does)
-      const token = localStorage.getItem('token');
-      const headers = token ? getAuthHeaders(token) : { 'Content-Type': 'application/json' };
-      
-      const response = await fetch(API_ENDPOINTS.payments.plans, { headers });
+      // Public pricing page - no authentication required
+      const response = await fetch(API_ENDPOINTS.payments.plans, {
+        headers: { 'Content-Type': 'application/json' }
+      });
       console.log('[Pricing] Response status:', response.status);
       
       if (response.ok) {
@@ -81,8 +80,9 @@ export default function Pricing() {
 
   const handleSelectPlan = (plan: SubscriptionPlan) => {
     if (!user) {
+      // Redirect to signup with plan information for post-signup flow
       const redirect = encodeURIComponent(location.pathname);
-      navigate(`/login?redirect=${redirect}`);
+      navigate(`/signup?redirect=${redirect}&plan=${plan.id}`);
       return;
     }
     setSelectedPlan(plan);
@@ -178,9 +178,9 @@ export default function Pricing() {
                 {plans.filter(p => p.is_active).map((plan) => (
                   <div
                     key={plan.id}
-                    className="relative bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border-2 border-purple-100 dark:border-purple-500/30 p-8 hover:border-purple-300 dark:hover:border-purple-400 transition-all hover:scale-105"
+                    className="relative bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border-2 border-purple-100 dark:border-purple-500/30 p-8 hover:border-purple-300 dark:hover:border-purple-400 transition-all hover:scale-105 flex flex-col h-full"
                   >
-                    <div className="text-center">
+                    <div className="text-center flex-1 flex flex-col">
                       <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                         {plan.name}
                       </h3>
@@ -193,7 +193,7 @@ export default function Pricing() {
                         </span>
                         <span className="text-gray-600 dark:text-gray-300 ml-2">/ {plan.billing_cycle}</span>
                       </div>
-                      <div className="mb-6 space-y-3 text-left">
+                      <div className="mb-6 space-y-3 text-left flex-grow">
                         {plan.max_profiles && (
                           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
                             <CheckIcon className="w-5 h-5 text-green-500" />
@@ -211,6 +211,23 @@ export default function Pricing() {
                             <CheckIcon className="w-5 h-5 text-green-500" />
                             <span>Up to {plan.max_hires} hires</span>
                           </div>
+                        )}
+                        {/* Default features if specific limits aren't set */}
+                        {!plan.max_profiles && !plan.max_applications && !plan.max_hires && (
+                          <>
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                              <CheckIcon className="w-5 h-5 text-green-500" />
+                              <span>Full access to all features</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                              <CheckIcon className="w-5 h-5 text-green-500" />
+                              <span>Priority support</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+                              <CheckIcon className="w-5 h-5 text-green-500" />
+                              <span>Advanced search filters</span>
+                            </div>
+                          </>
                         )}
                       </div>
                       <button
