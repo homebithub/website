@@ -1,0 +1,401 @@
+[
+  {
+    "id": "TC001",
+    "title": "User Login with Valid Credentials",
+    "description": "Verify that a user can log in successfully using valid email and password credentials and that the authentication token is stored in localStorage with protected routes accessible post-login.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Input valid email and password."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login is successful, authentication token is stored in localStorage, and the user is redirected to a protected dashboard."
+      }
+    ]
+  },
+  {
+    "id": "TC002",
+    "title": "User Login with Invalid Credentials",
+    "description": "Verify that login fails gracefully when incorrect email or password is entered and appropriate error message is shown without storing auth tokens.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to the login page."
+      },
+      {
+        "type": "action",
+        "description": "Input invalid email or password."
+      },
+      {
+        "type": "action",
+        "description": "Click the login button."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify login failure with error message displayed and no tokens saved."
+      }
+    ]
+  },
+  {
+    "id": "TC003",
+    "title": "Authentication Token Session Persistence",
+    "description": "Ensure that after logging in the authentication token and user object persist across page reloads and enable continuous access to protected routes without re-login.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in with valid credentials."
+      },
+      {
+        "type": "action",
+        "description": "Reload the page."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user remains logged in, token and user object exist in localStorage, and protected components stay accessible."
+      }
+    ]
+  },
+  {
+    "id": "TC004",
+    "title": "Profile Setup Gating for Incomplete Profiles",
+    "description": "Verify that authenticated users with incomplete household or househelp profiles are redirected into profile setup flows before accessing core application features.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in with a user whose profile is incomplete."
+      },
+      {
+        "type": "action",
+        "description": "Attempt to navigate to the dashboard or other core app pages."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is redirected to the appropriate profile setup page (household or househelp) and cannot access the core features until completion."
+      }
+    ]
+  },
+  {
+    "id": "TC005",
+    "title": "Profile Setup Completion Unlocks Access",
+    "description": "Ensure that upon completing all required profile setup steps, the user gains access to their designated dashboard and core app features.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Complete all required fields in the profile setup workflow for household or househelp."
+      },
+      {
+        "type": "action",
+        "description": "Submit the profile setup form."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is redirected to their dashboard and can access all role-specific features."
+      }
+    ]
+  },
+  {
+    "id": "TC006",
+    "title": "Dark and Light Theme Toggle with Persistence",
+    "description": "Verify that users can toggle between dark and light themes, with the selected preference persisting across sessions via localStorage and syncing to backend for authenticated users.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in or access the app."
+      },
+      {
+        "type": "action",
+        "description": "Toggle theme between dark and light using UI controls."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the theme changes immediately and persists after page reload."
+      },
+      {
+        "type": "action",
+        "description": "For authenticated users, verify the theme preference sync with backend upon toggling."
+      }
+    ]
+  },
+  {
+    "id": "TC007",
+    "title": "Role-Based Navigation and UI Rendering",
+    "description": "Ensure navigation menus and UI elements render conditionally based on user authentication state, user role (household or househelp), and display real-time counts such as shortlist, inbox, and hiring notifications.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as household user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify household-specific navigation links and counts are displayed."
+      },
+      {
+        "type": "action",
+        "description": "Log out and log in as househelp user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify househelp-specific navigation is rendered appropriately with relevant counts."
+      },
+      {
+        "type": "action",
+        "description": "Access the app as unauthenticated user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify navigation only shows public marketing pages and sign-in prompts."
+      }
+    ]
+  },
+  {
+    "id": "TC008",
+    "title": "Hiring Request Creation and Workflow",
+    "description": "Validate end-to-end hiring workflow for households to create requests, send contracts, and engage in negotiation with househelp, including status updates and role-specific views.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as a household user."
+      },
+      {
+        "type": "action",
+        "description": "Navigate to hiring request creation page."
+      },
+      {
+        "type": "action",
+        "description": "Fill out and submit a hiring request."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify request is created and visible in household's hiring dashboard."
+      },
+      {
+        "type": "action",
+        "description": "Log in as househelp user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the new hiring request appears in househelp's hiring dashboard."
+      },
+      {
+        "type": "action",
+        "description": "Househelp initiate negotiation or contract acceptance/rejection."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify negotiation updates are reflected in both parties' hiring dashboards in real-time."
+      }
+    ]
+  },
+  {
+    "id": "TC009",
+    "title": "Inbox Messaging and Real-Time Notifications",
+    "description": "Verify that users can send and receive messages within the inbox, and that real-time notifications of new messages are received with updated unread counts via WebSocket without noticeable delay.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Log in as household user."
+      },
+      {
+        "type": "action",
+        "description": "Send a message to a househelp user via the inbox."
+      },
+      {
+        "type": "action",
+        "description": "Log in as that househelp user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the househelp receives the new message notification in real-time and the unread count increments."
+      },
+      {
+        "type": "action",
+        "description": "Open the message and mark it as read."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the unread count decrements accordingly."
+      }
+    ]
+  },
+  {
+    "id": "TC010",
+    "title": "Subscription Plan Browsing and Checkout Workflow",
+    "description": "Validate that users can browse subscription plans, initiate checkout, complete payment successfully, and view updated subscription status with error handling for payment failure scenarios.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Access the subscription plans page."
+      },
+      {
+        "type": "action",
+        "description": "Browse and select a subscription plan."
+      },
+      {
+        "type": "action",
+        "description": "Initiate the checkout and payment process."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify checkout completes successfully and subscription status updates reflect the purchase."
+      },
+      {
+        "type": "action",
+        "description": "Simulate a payment failure (e.g., declined card)."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify error is shown and subscription status remains unchanged."
+      }
+    ]
+  },
+  {
+    "id": "TC011",
+    "title": "Public Marketing Pages Accessibility",
+    "description": "Verify that all public marketing pages (home, about, services, contact, terms, privacy, cookies, pricing) load correctly, display accurate content, and are accessible without authentication.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to each public marketing page URL as an unauthenticated user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify pages load successfully with expected content and navigation elements."
+      }
+    ]
+  },
+  {
+    "id": "TC012",
+    "title": "Performance Instrumentation and Web Vitals Logging",
+    "description": "Ensure web-vitals metrics are collected and logged from the client without impacting user experience or causing UI delays.",
+    "category": "functional",
+    "priority": "Medium",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Load the application and interact lightly with it."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify web-vitals metrics are recorded in logs in the expected format asynchronously."
+      }
+    ]
+  },
+  {
+    "id": "TC013",
+    "title": "SSR Express Server Route and Asset Serving",
+    "description": "Confirm the Express-based SSR server correctly serves server-side rendered pages for routes, delivers static assets, and proxies API requests to backend services.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Send requests to various app routes expecting SSR responses."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify server returns rendered HTML content matching requested pages."
+      },
+      {
+        "type": "action",
+        "description": "Request static assets like CSS and JS files."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify assets are served with correct content-type and caching headers."
+      },
+      {
+        "type": "action",
+        "description": "Send API requests through the server proxy endpoint."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify API requests are forwarded, responded to correctly, and CORS or auth headers are properly handled."
+      }
+    ]
+  },
+  {
+    "id": "TC014",
+    "title": "Routing Enforcement Using React Router Protected Routes",
+    "description": "Validate that protected routes are only accessible to authenticated users and unauthenticated users are redirected appropriately.",
+    "category": "functional",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Attempt to access a protected route as an unauthenticated user."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the user is redirected to the login or signup page."
+      },
+      {
+        "type": "action",
+        "description": "Login as a valid user."
+      },
+      {
+        "type": "action",
+        "description": "Access the protected route again."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the protected content loads successfully."
+      }
+    ]
+  },
+  {
+    "id": "TC015",
+    "title": "Centralized API Fetch Wrapper Error Handling",
+    "description": "Check that the centralized API fetch wrapper correctly handles network errors, authentication errors (e.g., 401), and returns consistent error objects to the caller.",
+    "category": "error handling",
+    "priority": "High",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Make API requests with invalid or expired tokens."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify 401 responses are detected, session is invalidated, and user is logged out or redirected."
+      },
+      {
+        "type": "action",
+        "description": "Simulate network errors and server errors (5xx)."
+      },
+      {
+        "type": "assertion",
+        "description": "Verify errors propagate to UI with user friendly error messages and retries where applicable."
+      }
+    ]
+  }
+]

@@ -1,0 +1,193 @@
+{
+  "tech_stack": [
+    "TypeScript",
+    "React 18",
+    "React Router v7 (framework mode)",
+    "Vite",
+    "Node.js",
+    "Express SSR (@react-router/express)",
+    "TailwindCSS + PostCSS",
+    "Headless UI",
+    "Heroicons + Lucide",
+    "Chart.js + react-chartjs-2",
+    "TinyMCE (@tinymce/tinymce-react)",
+    "Web Vitals"
+  ],
+  "features": [
+    {
+      "name": "App shell + SSR entry",
+      "description": "React Router SSR entry points and root document wrapper; provides ENV injection, theme pre-hydration script, and global providers (Auth/Theme/ProfileSetup/WebSocket).",
+      "files": [
+        "app/root.tsx",
+        "app/entry.client.tsx",
+        "app/entry.server.tsx",
+        "react-router.config.ts",
+        "server.mjs"
+      ]
+    },
+    {
+      "name": "File-based routing (flat routes)",
+      "description": "Routes are discovered from app/routes using @react-router/fs-routes flatRoutes convention.",
+      "files": [
+        "app/routes.ts",
+        "app/routes/*"
+      ]
+    },
+    {
+      "name": "Authentication + session persistence",
+      "description": "Client-side auth provider manages login/signup/logout and verifies session against auth API; stores token and user_object in localStorage and protects routes.",
+      "files": [
+        "app/contexts/AuthContext.tsx",
+        "app/contexts/AuthContextCore.ts",
+        "app/contexts/useAuth.ts",
+        "app/components/ProtectedRoute.tsx",
+        "app/utils/auth.ts",
+        "app/utils/apiClient.ts"
+      ]
+    },
+    {
+      "name": "Profile setup gating",
+      "description": "Guards authenticated flows to ensure househelp/household profiles complete required setup steps; redirects into setup flows.",
+      "files": [
+        "app/components/ProfileSetupGuard.tsx",
+        "app/contexts/ProfileSetupContext.tsx",
+        "app/routes/profile-setup.household.tsx",
+        "app/routes/profile-setup.househelp.tsx"
+      ]
+    },
+    {
+      "name": "Theme system (dark/light) + preferences sync",
+      "description": "ThemeProvider applies theme to document root, persists to localStorage, and optionally syncs to backend preferences for authenticated routes.",
+      "files": [
+        "app/contexts/ThemeContext.tsx",
+        "app/utils/preferencesApi.ts",
+        "app/utils/userTracking.ts",
+        "app/root.tsx"
+      ]
+    },
+    {
+      "name": "API configuration + endpoint catalog",
+      "description": "Centralized service base URLs (auth/notifications/payments) and endpoints; provides helper for auth headers and fetch wrapper.",
+      "files": [
+        "app/config/api.ts",
+        "app/config.ts",
+        ".env.example"
+      ]
+    },
+    {
+      "name": "Navigation + role-aware UI",
+      "description": "Responsive navigation with conditional rendering for app subdomain, auth state, profile type, shortlist/inbox/hiring counts, and theme toggle.",
+      "files": [
+        "app/components/Navigation.tsx",
+        "app/config/features.ts"
+      ]
+    },
+    {
+      "name": "Waitlist + Google OAuth callback flows",
+      "description": "Waitlist modal with form submission and Google sign-in flows (GSI + server-verified redirect OAuth) and callback routes.",
+      "files": [
+        "app/components/Waitlist.tsx",
+        "app/components/features/Waitlist.tsx",
+        "app/routes/google.waitlist.callback.tsx",
+        "app/routes/google.auth.callback.tsx",
+        "app/root.tsx"
+      ]
+    },
+    {
+      "name": "Marketing site pages",
+      "description": "Public marketing pages and content routes (home, about, services, contact, terms, privacy, cookies, pricing).",
+      "files": [
+        "app/routes/_index.tsx",
+        "app/routes/about.tsx",
+        "app/routes/services.tsx",
+        "app/routes/contact.tsx",
+        "app/routes/pricing.tsx",
+        "app/routes/terms.tsx",
+        "app/routes/privacy.tsx",
+        "app/routes/cookies.tsx"
+      ]
+    },
+    {
+      "name": "Household and househelp dashboards/profiles",
+      "description": "Authenticated dashboards and profile management pages for household and househelp roles; includes public profile views.",
+      "files": [
+        "app/components/AuthenticatedHome.tsx",
+        "app/components/HousehelpHome.tsx",
+        "app/routes/household.profile.tsx",
+        "app/routes/househelp.profile.tsx",
+        "app/routes/household.public-profile.tsx",
+        "app/routes/househelp.public-profile.tsx",
+        "app/routes/household.public-profile.$user_id.tsx"
+      ]
+    },
+    {
+      "name": "Hiring workflows",
+      "description": "Hiring requests/contracts/negotiations flows; household and househelp views.",
+      "files": [
+        "app/routes/hiring.tsx",
+        "app/routes/household.hiring.tsx",
+        "app/routes/househelp.hiring.tsx",
+        "app/components/hiring/*",
+        "app/utils/householdApi.ts",
+        "app/config/api.ts"
+      ]
+    },
+    {
+      "name": "Inbox + realtime notifications",
+      "description": "Inbox UI and WebSocket integration to notifications service; tracks unread counts and listens for message events.",
+      "files": [
+        "app/routes/inbox.tsx",
+        "app/contexts/WebSocketContext.tsx",
+        "app/hooks/useWebSocket.ts",
+        "app/config/api.ts"
+      ]
+    },
+    {
+      "name": "Payments and subscriptions",
+      "description": "Subscription plan browsing, subscription management and payment initiation/status flows (payments service).",
+      "files": [
+        "app/routes/subscriptions.tsx",
+        "app/routes/checkout.tsx",
+        "app/components/SubscriptionWallet.tsx",
+        "app/config/api.ts"
+      ]
+    },
+    {
+      "name": "Image upload and media handling",
+      "description": "Client utilities and endpoints for image upload/user images management; includes optimized image component.",
+      "files": [
+        "app/components/OptimizedImage.tsx",
+        "app/components/upload/*",
+        "app/config/api.ts"
+      ]
+    },
+    {
+      "name": "Client-side UX helpers",
+      "description": "Scroll-triggered animations, lazy loading helpers, formatting and validation utilities.",
+      "files": [
+        "app/hooks/useScrollFadeIn.ts",
+        "app/utils/lazyLoad.tsx",
+        "app/utils/format.ts",
+        "app/utils/timeAgo.ts",
+        "app/utils/validation.ts",
+        "app/utils/errorMessages.ts"
+      ]
+    },
+    {
+      "name": "Performance instrumentation",
+      "description": "Collects and logs web-vitals metrics from client entry.",
+      "files": [
+        "app/utils/webVitals.ts",
+        "app/entry.client.tsx"
+      ]
+    },
+    {
+      "name": "SSR Express server + API proxy",
+      "description": "Express server for production SSR, health endpoints, static asset serving, and /api proxy middleware.",
+      "files": [
+        "server.mjs",
+        "Dockerfile"
+      ]
+    }
+  ]
+}

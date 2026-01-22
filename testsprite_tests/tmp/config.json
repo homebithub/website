@@ -1,0 +1,16 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:5173",
+  "executionArgs": {
+    "projectName": "website",
+    "projectPath": "c:\\Users\\X 1 YOGA\\Desktop\\HOMEBIT\\website\\website",
+    "testIds": [],
+    "additionalInstruction": "Focus on public/unauthenticated user flows (home, navigation, about/services/contact/pricing/terms/privacy/cookies), waitlist modal open/submit validation, and basic accessibility checks. Avoid tests that require backend auth service unless stubbed by UI. Capture console errors/warnings and network failures.",
+    "envs": {
+      "API_KEY": "sk-user-GDQvPd6-Ljr7s4HYWQbImcm40_KXyvePDT-kMEXwHS-mBBHhEExYLKE1m5rDZedG7lsYlPlft52mdoNhFSK3QfARny9NSTEFKXLeLpcLJ9uR5URijRDHa1z6yfAs2C4xIgk"
+    }
+  },
+  "proxy": "http://b53644ae-380d-4fca-8128-91764253dab4:sso3A0rAw8jF0AOgMF6UVZ49CbKseBOg@tun.testsprite.com:8080"
+}

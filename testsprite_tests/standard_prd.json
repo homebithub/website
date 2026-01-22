@@ -1,0 +1,252 @@
+{
+  "meta": {
+    "project": "Homebit",
+    "date": "2026-01-21",
+    "prepared_by": "Software Development Manager"
+  },
+  "product_overview": "Homebit is a modern web platform designed to seamlessly connect households, househelp, and agencies for home service management. It provides authentication, profile setup, booking, communication, and payment features optimized for a smooth user experience with server-side rendering, real-time notifications, and role-based access.",
+  "core_goals": [
+    "Provide a unified platform for households and househelp to manage profiles and services.",
+    "Offer secure authentication with session persistence and Google OAuth integration.",
+    "Enable profile setup gating to ensure complete user information before accessing core features.",
+    "Facilitate hiring workflows including requests, contracts, and negotiations between households and househelp.",
+    "Support real-time communication through inbox and notifications with WebSocket integration.",
+    "Implement subscription and payment management for service plans.",
+    "Deliver a responsive, role-aware user interface with theme preferences and customization.",
+    "Ensure high performance with SSR, client-side optimizations, and web vitals monitoring."
+  ],
+  "key_features": [
+    "React Router-based SSR app shell with environment injection and global providers.",
+    "File-based routing with flat route conventions for scalable navigation.",
+    "Client-side authentication with localStorage token management and protected routes.",
+    "Profile setup gating to enforce profile completeness for authenticated flows.",
+    "Dark and light theme support with localStorage persistence and backend sync.",
+    "Centralized API configuration with endpoint catalog and secure fetch wrappers.",
+    "Responsive and role-aware navigation showing user-specific counts and theme toggle.",
+    "Waitlist modal supporting both Google Identity Services and server-verified OAuth flows.",
+    "Public marketing pages including home, about, services, contact, terms, privacy, cookies, and pricing.",
+    "Household and househelp dashboards and profile management with public profile views.",
+    "Comprehensive hiring workflows for requests, contracts, and negotiations.",
+    "Inbox with real-time notifications via WebSocket and unread count tracking.",
+    "Subscription plan browsing, checkout, and subscription management workflows.",
+    "Optimized image upload and media handling components.",
+    "Client-side UX helpers for animations, lazy loading, formatting, and validation.",
+    "Performance instrumentation logging web vitals metrics.",
+    "Express-based production SSR server with static asset serving and API proxy middleware."
+  ],
+  "user_flow_summary": [
+    "User visits marketing site pages for information and sign-up prompts.",
+    "User initiates authentication via email/password or Google OAuth flows, including waitlist sign-up.",
+    "Authenticated users complete profile setup workflows (household or househelp) before accessing application.",
+    "Users access role-based dashboards to manage profiles, bookings, and view public profiles.",
+    "Households and househelp engage in hiring workflows involving requests, contracts, and message-based negotiations.",
+    "Users send and receive messages via inbox with real-time notifications enabled by WebSocket.",
+    "Users browse subscription plans, manage their subscriptions, and complete payments via integrated payment workflows.",
+    "Theme preferences can be toggled and persisted between sessions and synced with backend for authenticated users."
+  ],
+  "validation_criteria": [
+    "Authentication flows must securely store tokens and enforce route protection.",
+    "Profile setup gating correctly restricts access until profiles are complete.",
+    "Google OAuth integrations via both client and server flows function smoothly and prefill user data as expected.",
+    "Hiring workflows enable end-to-end request, contract, and negotiation functionality.",
+    "Real-time notifications and inbox update with minimal latency using WebSocket connections.",
+    "Subscription and payment flows complete with accurate status updates and error handling.",
+    "Responsive UI reflects user roles, states, and preferences dynamically.",
+    "Uploaded images are handled optimally with components supporting media management.",
+    "Performance metrics are collected and logged for web vitals without impacting user experience.",
+    "SSR server properly serves routes, static assets, and proxies API requests in production environment."
+  ],
+  "code_summary": {
+    "tech_stack": [
+      "TypeScript",
+      "React 18",
+      "React Router v7 (framework mode)",
+      "Vite",
+      "Node.js",
+      "Express SSR (@react-router/express)",
+      "TailwindCSS + PostCSS",
+      "Headless UI",
+      "Heroicons + Lucide",
+      "Chart.js + react-chartjs-2",
+      "TinyMCE (@tinymce/tinymce-react)",
+      "Web Vitals"
+    ],
+    "features": [
+      {
+        "name": "App shell + SSR entry",
+        "description": "React Router SSR entry points and root document wrapper; provides ENV injection, theme pre-hydration script, and global providers (Auth/Theme/ProfileSetup/WebSocket).",
+        "files": [
+          "app/root.tsx",
+          "app/entry.client.tsx",
+          "app/entry.server.tsx",
+          "react-router.config.ts",
+          "server.mjs"
+        ]
+      },
+      {
+        "name": "File-based routing (flat routes)",
+        "description": "Routes are discovered from app/routes using @react-router/fs-routes flatRoutes convention.",
+        "files": [
+          "app/routes.ts",
+          "app/routes/*"
+        ]
+      },
+      {
+        "name": "Authentication + session persistence",
+        "description": "Client-side auth provider manages login/signup/logout and verifies session against auth API; stores token and user_object in localStorage and protects routes.",
+        "files": [
+          "app/contexts/AuthContext.tsx",
+          "app/contexts/AuthContextCore.ts",
+          "app/contexts/useAuth.ts",
+          "app/components/ProtectedRoute.tsx",
+          "app/utils/auth.ts",
+          "app/utils/apiClient.ts"
+        ]
+      },
+      {
+        "name": "Profile setup gating",
+        "description": "Guards authenticated flows to ensure househelp/household profiles complete required setup steps; redirects into setup flows.",
+        "files": [
+          "app/components/ProfileSetupGuard.tsx",
+          "app/contexts/ProfileSetupContext.tsx",
+          "app/routes/profile-setup.household.tsx",
+          "app/routes/profile-setup.househelp.tsx"
+        ]
+      },
+      {
+        "name": "Theme system (dark/light) + preferences sync",
+        "description": "ThemeProvider applies theme to document root, persists to localStorage, and optionally syncs to backend preferences for authenticated routes.",
+        "files": [
+          "app/contexts/ThemeContext.tsx",
+          "app/utils/preferencesApi.ts",
+          "app/utils/userTracking.ts",
+          "app/root.tsx"
+        ]
+      },
+      {
+        "name": "API configuration + endpoint catalog",
+        "description": "Centralized service base URLs (auth/notifications/payments) and endpoints; provides helper for auth headers and fetch wrapper.",
+        "files": [
+          "app/config/api.ts",
+          "app/config.ts",
+          ".env.example"
+        ]
+      },
+      {
+        "name": "Navigation + role-aware UI",
+        "description": "Responsive navigation with conditional rendering for app subdomain, auth state, profile type, shortlist/inbox/hiring counts, and theme toggle.",
+        "files": [
+          "app/components/Navigation.tsx",
+          "app/config/features.ts"
+        ]
+      },
+      {
+        "name": "Waitlist + Google OAuth callback flows",
+        "description": "Waitlist modal with form submission and Google sign-in flows (GSI + server-verified redirect OAuth) and callback routes.",
+        "files": [
+          "app/components/Waitlist.tsx",
+          "app/components/features/Waitlist.tsx",
+          "app/routes/google.waitlist.callback.tsx",
+          "app/routes/google.auth.callback.tsx",
+          "app/root.tsx"
+        ]
+      },
+      {
+        "name": "Marketing site pages",
+        "description": "Public marketing pages and content routes (home, about, services, contact, terms, privacy, cookies, pricing).",
+        "files": [
+          "app/routes/_index.tsx",
+          "app/routes/about.tsx",
+          "app/routes/services.tsx",
+          "app/routes/contact.tsx",
+          "app/routes/pricing.tsx",
+          "app/routes/terms.tsx",
+          "app/routes/privacy.tsx",
+          "app/routes/cookies.tsx"
+        ]
+      },
+      {
+        "name": "Household and househelp dashboards/profiles",
+        "description": "Authenticated dashboards and profile management pages for household and househelp roles; includes public profile views.",
+        "files": [
+          "app/components/AuthenticatedHome.tsx",
+          "app/components/HousehelpHome.tsx",
+          "app/routes/household.profile.tsx",
+          "app/routes/househelp.profile.tsx",
+          "app/routes/household.public-profile.tsx",
+          "app/routes/househelp.public-profile.tsx",
+          "app/routes/household.public-profile.$user_id.tsx"
+        ]
+      },
+      {
+        "name": "Hiring workflows",
+        "description": "Hiring requests/contracts/negotiations flows; household and househelp views.",
+        "files": [
+          "app/routes/hiring.tsx",
+          "app/routes/household.hiring.tsx",
+          "app/routes/househelp.hiring.tsx",
+          "app/components/hiring/*",
+          "app/utils/householdApi.ts",
+          "app/config/api.ts"
+        ]
+      },
+      {
+        "name": "Inbox + realtime notifications",
+        "description": "Inbox UI and WebSocket integration to notifications service; tracks unread counts and listens for message events.",
+        "files": [
+          "app/routes/inbox.tsx",
+          "app/contexts/WebSocketContext.tsx",
+          "app/hooks/useWebSocket.ts",
+          "app/config/api.ts"
+        ]
+      },
+      {
+        "name": "Payments and subscriptions",
+        "description": "Subscription plan browsing, subscription management and payment initiation/status flows (payments service).",
+        "files": [
+          "app/routes/subscriptions.tsx",
+          "app/routes/checkout.tsx",
+          "app/components/SubscriptionWallet.tsx",
+          "app/config/api.ts"
+        ]
+      },
+      {
+        "name": "Image upload and media handling",
+        "description": "Client utilities and endpoints for image upload/user images management; includes optimized image component.",
+        "files": [
+          "app/components/OptimizedImage.tsx",
+          "app/components/upload/*",
+          "app/config/api.ts"
+        ]
+      },
+      {
+        "name": "Client-side UX helpers",
+        "description": "Scroll-triggered animations, lazy loading helpers, formatting and validation utilities.",
+        "files": [
+          "app/hooks/useScrollFadeIn.ts",
+          "app/utils/lazyLoad.tsx",
+          "app/utils/format.ts",
+          "app/utils/timeAgo.ts",
+          "app/utils/validation.ts",
+          "app/utils/errorMessages.ts"
+        ]
+      },
+      {
+        "name": "Performance instrumentation",
+        "description": "Collects and logs web-vitals metrics from client entry.",
+        "files": [
+          "app/utils/webVitals.ts",
+          "app/entry.client.tsx"
+        ]
+      },
+      {
+        "name": "SSR Express server + API proxy",
+        "description": "Express server for production SSR, health endpoints, static asset serving, and /api proxy middleware.",
+        "files": [
+          "server.mjs",
+          "Dockerfile"
+        ]
+      }
+    ]
+  }
+}
