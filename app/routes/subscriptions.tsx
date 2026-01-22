@@ -292,7 +292,48 @@ export default function SubscriptionsPage() {
                 <ArrowPathIcon className="w-8 h-8 animate-spin text-purple-500" />
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className="space-y-8">
+                {/* Available Plans Section */}
+                {!subscription && plans.length > 0 && (
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                      Choose Your Plan
+                    </h2>
+                    <p className="text-gray-600 dark:text-gray-300 mb-6">
+                      Select a subscription plan to access premium features
+                    </p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {plans.filter(p => p.is_active).map((plan) => (
+                        <div
+                          key={plan.id}
+                          className="relative bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6 hover:border-purple-300 dark:hover:border-purple-400 transition-all hover:scale-105"
+                        >
+                          <div className="text-center">
+                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                              {plan.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                              {plan.description}
+                            </p>
+                            <div className="mb-4">
+                              <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                                {formatCurrency(plan.price_amount)}
+                              </span>
+                              <span className="text-gray-600 dark:text-gray-300 ml-2">/ {plan.billing_cycle}</span>
+                            </div>
+                            <button
+                              onClick={() => navigate(`/pricing?plan=${plan.id}`)}
+                              className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
+                            >
+                              Select Plan
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {subscription ? (
                   <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-700">
                     <div className="flex items-start justify-between mb-4">
