@@ -45,7 +45,7 @@ export default function Pricing() {
 
   useEffect(() => {
     fetchPlans();
-  }, []);
+  }, [user]); // Fetch plans when user changes (for authentication)
 
   useEffect(() => {
     if (user && user.phone) {
@@ -56,7 +56,12 @@ export default function Pricing() {
   const fetchPlans = async () => {
     try {
       console.log('[Pricing] Fetching plans from:', API_ENDPOINTS.payments.plans);
-      const response = await fetch(API_ENDPOINTS.payments.plans);
+      
+      // Try to get token for authenticated request (like subscriptions page does)
+      const token = localStorage.getItem('token');
+      const headers = token ? getAuthHeaders(token) : { 'Content-Type': 'application/json' };
+      
+      const response = await fetch(API_ENDPOINTS.payments.plans, { headers });
       console.log('[Pricing] Response status:', response.status);
       
       if (response.ok) {
