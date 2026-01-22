@@ -55,13 +55,20 @@ export default function Pricing() {
 
   const fetchPlans = async () => {
     try {
+      console.log('[Pricing] Fetching plans from:', API_ENDPOINTS.payments.plans);
       const response = await fetch(API_ENDPOINTS.payments.plans);
+      console.log('[Pricing] Response status:', response.status);
+      
       if (response.ok) {
         const data = await response.json();
+        console.log('[Pricing] Plans data:', data);
         setPlans(data.plans || []);
+      } else {
+        const errorText = await response.text();
+        console.error('[Pricing] Failed to fetch plans:', response.status, errorText);
       }
     } catch (error) {
-      console.error('Failed to fetch plans:', error);
+      console.error('[Pricing] Failed to fetch plans:', error);
     } finally {
       setLoading(false);
     }
@@ -148,10 +155,6 @@ export default function Pricing() {
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium" className="flex-1">
         <main className="flex-1 container mx-auto px-4 py-8 min-h-[calc(100vh-200px)] flex flex-col items-center justify-center">
           <div className="mx-auto max-w-6xl text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-purple-100 dark:bg-purple-900/30 rounded-full mb-4">
-              <SparklesIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              <span className="text-sm font-semibold text-purple-600 dark:text-purple-400">Test Mode: Only KES 1.00 charged</span>
-            </div>
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-4">
               Choose Your Plan
             </h1>
