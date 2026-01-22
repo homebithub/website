@@ -99,7 +99,7 @@ const getNotificationsWsBaseUrl = (): string => {
     if (normalizedServerUrl) return normalizedServerUrl;
   }
 
-  // Default to direct WebSocket path for real-time chat
+  // Default to direct WebSocket path for real-time chat (bypasses gateway)
   console.warn('[API Config] No NOTIFICATIONS_WS_BASE_URL environment variable found, using direct WebSocket URL');
   return 'https://homebit.co.ke/ws';
 };
