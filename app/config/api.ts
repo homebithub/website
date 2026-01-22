@@ -99,9 +99,9 @@ const getNotificationsWsBaseUrl = (): string => {
     if (normalizedServerUrl) return normalizedServerUrl;
   }
 
-  // Default to production notifications microservice path
-  console.warn('[API Config] No NOTIFICATIONS_WS_BASE_URL environment variable found, using production /notifications URL');
-  return 'https://homebit.co.ke/notifications';
+  // Default to direct WebSocket path for real-time chat
+  console.warn('[API Config] No NOTIFICATIONS_WS_BASE_URL environment variable found, using direct WebSocket URL');
+  return 'https://homebit.co.ke/ws';
 };
 
 // Get payments service base URL from environment or use default
