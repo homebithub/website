@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router';
 import { fetchPreferences, updatePreferences, migratePreferences } from '~/utils/preferencesApi';
-import { getOrCreateUserId } from '~/utils/userTracking';
+import { getOrCreateUserId, isAuthenticated } from '~/utils/userTracking';
 
 type Theme = 'light' | 'dark';
 
@@ -39,8 +39,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       // Initialize user tracking (generates fingerprint if needed)
       await getOrCreateUserId();
 
-      // Skip backend preferences on public routes
-      if (isPublicRoute()) {
+      // Skip backend preferences on public routes or if not authenticated
+      if (isPublicRoute() || !isAuthenticated()) {
         // Use localStorage or system preference only
         const savedTheme = localStorage.getItem('theme') as Theme | null;
         
@@ -57,7 +57,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         return;
       }
 
-      // Try to load preferences from backend (for authenticated routes)
+      // Try to load preferences from backend (only for authenticated users)
       const preferences = await fetchPreferences();
 
       if (preferences?.settings?.theme) {
@@ -108,8 +108,8 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     localStorage.setItem('theme', newTheme);
     applyTheme(newTheme);
 
-    // Sync to backend (fire and forget) - skip on public routes
-    if (isInitialized && !isPublicRoute()) {
+    // Sync to backend (fire and forget) - only if authenticated
+    if (isInitialized && !isPublicRoute() && isAuthenticated()) {
       updatePreferences({ theme: newTheme }).catch(console.error);
     }
   }, [isInitialized, location.pathname]);

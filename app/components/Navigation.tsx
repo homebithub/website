@@ -93,8 +93,8 @@ export function Navigation() {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            // Notifications service exposes inbox routes under /api/v1/inbox
-            const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations?limit=100`, {
+            // Route inbox calls through gateway
+            const res = await fetch(`${API_BASE_URL}/api/v1/inbox/conversations?limit=100`, {
                 headers: { Authorization: `Bearer ${token}` },
             });
 

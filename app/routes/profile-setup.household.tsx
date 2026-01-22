@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
+import { useAuth } from '~/contexts/useAuth';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -41,10 +42,21 @@ function HouseholdProfileSetupContent() {
   const [showCongratulations, setShowCongratulations] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, loading: authLoading } = useAuth();
   const { saveProfileToBackend, loadProfileFromBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
   
   // Check if user is editing from profile page using location state (secure, can't be manipulated)
   const isEditMode = location.state?.fromProfile === true;
+  
+  // Authentication check - redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
+      }
+    }
+  }, [authLoading, user, navigate]);
   
   // Clean up URL on mount - remove any query parameters or hash
   useEffect(() => {
@@ -105,8 +117,8 @@ function HouseholdProfileSetupContent() {
       setSaving(true);
       try {
         await saveProfileToBackend();
-        // Mark as completed
-        await saveProgressToBackend(STEPS.length - 1, timeSpent, true);
+        // Mark ALL steps as completed (not just the last one)
+        await markAllStepsComplete();
         // Show congratulations modal
         setShowCongratulations(true);
         // Auto-redirect after 3 seconds
@@ -134,8 +146,8 @@ function HouseholdProfileSetupContent() {
       setSaving(true);
       try {
         await saveProfileToBackend();
-        // Mark as completed
-        await saveProgressToBackend(STEPS.length - 1, timeSpent, true);
+        // Mark ALL steps as completed (not just the last one)
+        await markAllStepsComplete();
         // Show congratulations modal
         setShowCongratulations(true);
         // Auto-redirect after 3 seconds
@@ -163,6 +175,49 @@ function HouseholdProfileSetupContent() {
     return () => clearInterval(autoSaveInterval);
   }, [currentStep, timeSpent]);
   
+  const markAllStepsComplete = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      // Mark ALL steps as completed in profile-setup-steps
+      for (let i = 0; i < STEPS.length; i++) {
+        await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            step_id: STEPS[i].id,
+            step_number: i,
+            is_completed: true,
+            is_skipped: false,
+            data: {}
+          })
+        });
+      }
+      
+      // Also update progress tracking to mark as complete
+      await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          current_step: STEPS.length,
+          last_completed_step: STEPS.length,
+          completed_steps: STEPS.map(s => s.id),
+          step_id: 'completed',
+          time_spent_seconds: 0
+        })
+      });
+    } catch (error) {
+      console.error('Failed to mark steps as complete:', error);
+    }
+  };
+  
   const saveProgressToBackend = async (
     step: number, 
     timeOnStep: number, 
@@ -179,6 +234,7 @@ function HouseholdProfileSetupContent() {
       // Backend expects step IDs (strings), not step numbers
       const completedSteps = Array.from({ length: actualStep + 1 }, (_, i) => STEPS[i].id);
       
+      // Save progress tracking
       await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
         method: 'POST',
         headers: {
@@ -193,6 +249,24 @@ function HouseholdProfileSetupContent() {
           time_spent_seconds: timeOnStep
         })
       });
+      
+      // Mark step as completed in profile-setup-steps (required for is_complete check)
+      if (isComplete || !isAutoSave) {
+        await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            step_id: STEPS[actualStep]?.id || 'completed',
+            step_number: actualStep,
+            is_completed: isComplete || !skipped,
+            is_skipped: skipped,
+            data: {}
+          })
+        });
+      }
     } catch (error) {
       console.error('Failed to save progress:', error);
     }

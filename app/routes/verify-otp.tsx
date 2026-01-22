@@ -202,6 +202,15 @@ export default function VerifyOtpPage() {
         // Remove token from user object before storing
         const { token, ...userObj } = userData;
         localStorage.setItem('user_object', JSON.stringify(userObj));
+
+			// Persist profile metadata consistently with login flow
+			try {
+				const profileType = userObj.profile_type || localStorage.getItem('profile_type') || '';
+				if (profileType) {
+					localStorage.setItem('profile_type', profileType);
+					localStorage.setItem('userType', profileType);
+				}
+			} catch {}
       }
       setSuccess(true);
       setLocalFailedAttempts(0); // reset on success
@@ -216,6 +225,15 @@ export default function VerifyOtpPage() {
           const parsed = JSON.parse(userObj);
           console.log('User object after OTP verification:', parsed);
           console.log('Profile type:', parsed.profile_type);
+
+			  // Ensure profile_type is persisted for guards
+			  try {
+				  const pt = parsed.profile_type || localStorage.getItem('profile_type') || '';
+				  if (pt) {
+					  localStorage.setItem('profile_type', pt);
+					  localStorage.setItem('userType', pt);
+				  }
+			  } catch {}
           
           // Bureau users should not verify through regular flow
           if (parsed.profile_type === 'bureau') {
@@ -223,37 +241,53 @@ export default function VerifyOtpPage() {
             navigate('/');
             return;
           }
-          
-          // Handle both 'household' and 'household' profile types
-          if (parsed.profile_type === 'household' || parsed.profile_type === 'household') {
-            // If this is after email verification, go to household setup
-            if (afterEmailVerification) {
-              path = '/household/setup';
-            } else {
-              // Otherwise, redirect to email verification first
-              navigate('/verify-email', { 
-                state: { 
-                  user_id: parsed.user_id || parsed.id,
-                  from: 'phone-verification'
-                } 
-              });
-              return;
-            }
-          } else if (parsed.profile_type === 'househelp') {
-            // If this is after email verification, go to househelp profile setup
-            if (afterEmailVerification) {
-              path = '/profile-setup/househelp';
-            } else {
-              // Otherwise, redirect to email verification first
-              navigate('/verify-email', { 
-                state: { 
-                  user_id: parsed.user_id || parsed.id,
-                  from: 'phone-verification'
-                } 
-              });
-              return;
-            }
-          }
+
+			  const profileType = parsed.profile_type;
+			  // If email verification is still required by your flow, keep routing there.
+			  if (!afterEmailVerification) {
+				  if (profileType === 'household' || profileType === 'househelp') {
+					  navigate('/verify-email', {
+						  state: {
+							  user_id: parsed.user_id || parsed.id,
+							  from: 'phone-verification',
+						  },
+					  });
+					  return;
+				  }
+			  }
+
+			  // After verification, send household/househelp to profile setup flow.
+			  if (profileType === 'household' || profileType === 'househelp') {
+				  try {
+					  const token = localStorage.getItem('token');
+					  if (token) {
+						  const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+							  headers: {
+								  Authorization: `Bearer ${token}`,
+							  },
+						  });
+
+						  if (setupResponse.ok) {
+							  const setupData = await setupResponse.json();
+							  const isComplete = setupData.is_complete || false;
+							  const lastStep = setupData.last_completed_step || 0;
+
+							  if (!isComplete) {
+								  const setupRoute = profileType === 'household'
+									  ? `/profile-setup/household?step=${lastStep + 1}`
+									  : `/profile-setup/househelp?step=${lastStep + 1}`;
+								  navigate(setupRoute);
+								  return;
+							  }
+						  }
+					  }
+				  } catch (err) {
+					  console.error('Failed to check profile setup status after OTP verification:', err);
+				  }
+
+				  // Fallback: start setup from step 1
+				  path = profileType === 'household' ? '/profile-setup/household?step=1' : '/profile-setup/househelp?step=1';
+			  }
         }
         console.log('Redirecting to:', path);
         navigate(path);

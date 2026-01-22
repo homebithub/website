@@ -36,7 +36,10 @@ export default function HouseholdRequestsPage() {
 
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("Not authenticated");
+      if (!token) {
+        navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
+        return;
+      }
 
       // Get household ID first
       const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
@@ -69,7 +72,10 @@ export default function HouseholdRequestsPage() {
     setActionLoading(requestId);
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("Not authenticated");
+      if (!token) {
+        navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
+        return;
+      }
 
       const res = await fetch(
         `${API_BASE_URL}/api/v1/households/${householdId}/requests/${requestId}/approve`,
@@ -103,7 +109,10 @@ export default function HouseholdRequestsPage() {
     setActionLoading(requestId);
     try {
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("Not authenticated");
+      if (!token) {
+        navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
+        return;
+      }
 
       const res = await fetch(
         `${API_BASE_URL}/api/v1/households/${householdId}/requests/${requestId}/reject`,

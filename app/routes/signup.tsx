@@ -103,6 +103,7 @@ export default function SignupPage() {
     // Validation state
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
     const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
+    const [showPassword, setShowPassword] = useState(false);
     
     // Modal state - check if profile_type is in URL params from Google callback
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(!googleProfileType);
@@ -643,21 +644,35 @@ export default function SignupPage() {
                         {!googleData && (
                             <div>
                                 <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">Password</label>
-                                <input
-                                    type="password"
-                                    name="password"
-                                    value={form.password}
-                                    onChange={handleChange}
-                                    onBlur={handleBlur}
-                                    required
-                                    className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
-                                        getFieldError('password') 
-                                            ? 'border-red-300' 
-                                            : isFieldValid('password')
-                                            ? 'border-green-300'
-                                            : 'border-purple-200'
-                                    }`}
-                                />
+                                <div className="relative">
+                                    <input
+                                        type={showPassword ? "text" : "password"}
+                                        name="password"
+                                        value={form.password}
+                                        onChange={handleChange}
+                                        onBlur={handleBlur}
+                                        required
+                                        className={`w-full h-12 text-base px-4 py-3 pr-12 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                                            getFieldError('password') 
+                                                ? 'border-red-300' 
+                                                : isFieldValid('password')
+                                                ? 'border-green-300'
+                                                : 'border-purple-200'
+                                        }`}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors focus:outline-none"
+                                        tabIndex={-1}
+                                    >
+                                        {showPassword ? (
+                                            <EyeSlashIcon className="h-5 w-5" />
+                                        ) : (
+                                            <EyeIcon className="h-5 w-5" />
+                                        )}
+                                    </button>
+                                </div>
                                 {getFieldError('password') && (
                                     <p className="text-red-600 text-sm mt-1">{getFieldError('password')}</p>
                                 )}
@@ -691,14 +706,14 @@ export default function SignupPage() {
     className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
     disabled={
         formLoading ||
-        !form.profile_type ||
+        !form.profile_type.trim() ||
         Object.keys(fieldErrors).some(key => fieldErrors[key]) ||
-        !form.first_name ||
-        !form.last_name ||
+        !form.first_name.trim() ||
+        !form.last_name.trim() ||
         // For Google signups, password is handled by Google so we
         // don't require a local password field.
-        (!googleData && !form.password) ||
-        !form.phone
+        (!googleData && !form.password.trim()) ||
+        !form.phone.trim()
     }
 >
     {formLoading ? '✨ Signing up...' : '🚀 Sign Up'}

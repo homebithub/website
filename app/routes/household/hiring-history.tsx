@@ -354,9 +354,9 @@ export default function HiringHistory() {
         console.error('Failed to mark interest as viewed:', err);
       }
     }
-    // Navigate to househelp profile
-    const userId = interest.househelp?.user_id || interest.househelp_id;
-    navigate(`/househelp/public-profile?user_id=${userId}`, {
+    // Navigate to househelp profile using profileId
+    const profileId = interest.househelp_id;
+    navigate(`/househelp/public-profile?profileId=${profileId}`, {
       state: { backTo: backToPath, backLabel: 'Back to Hiring' },
     });
   };

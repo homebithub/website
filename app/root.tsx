@@ -7,7 +7,7 @@ import { ThemeProvider } from "~/contexts/ThemeContext";
 import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
 import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
 import { WebSocketProvider } from "~/contexts/WebSocketContext";
-import { AUTH_API_BASE_URL, NOTIFICATIONS_API_BASE_URL, PAYMENTS_API_BASE_URL } from '~/config/api';
+import { AUTH_API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL, PAYMENTS_API_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
 export const links: Route.LinksFunction = () => [];
@@ -23,8 +23,10 @@ export function loader() {
 				process.env.GOOGLE_CLIENT_ID ||
 				"180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",
 			// Use canonical API base URLs from config so they are consistently normalized
+			GATEWAY_API_BASE_URL: process.env.GATEWAY_API_BASE_URL || AUTH_API_BASE_URL,
 			AUTH_API_BASE_URL: AUTH_API_BASE_URL,
 			NOTIFICATIONS_API_BASE_URL: NOTIFICATIONS_API_BASE_URL,
+			NOTIFICATIONS_WS_BASE_URL: process.env.NOTIFICATIONS_WS_BASE_URL || NOTIFICATIONS_WS_BASE_URL,
 			PAYMENTS_API_BASE_URL: PAYMENTS_API_BASE_URL,
 		},
 	};

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router";
+import { useAuth } from "~/contexts/useAuth";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
@@ -60,6 +61,7 @@ type HireRequestSummary = {
 };
 
 export default function InboxPage() {
+  const { user, loading: authLoading } = useAuth();
   const API_BASE = React.useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
   const NOTIFICATIONS_BASE = React.useMemo(
     () => (typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL,
@@ -67,6 +69,16 @@ export default function InboxPage() {
   );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  
+  // Authentication check - redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
+      }
+    }
+  }, [authLoading, user, navigate]);
   const selectedConversationId = searchParams.get('conversation');
   const [activeConversationId, setActiveConversationId] = useState<string | null>(selectedConversationId);
   
@@ -205,6 +217,9 @@ export default function InboxPage() {
 
   // Hydrate conversations with participant profile information from the auth service
   useEffect(() => {
+    // Don't hydrate until auth is ready
+    if (authLoading || !user) return;
+    
     const role = currentUserProfileType?.toLowerCase();
     if (!role) return;
 
@@ -281,7 +296,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [items, currentUserProfileType, API_BASE]);
+  }, [items, currentUserProfileType, API_BASE, authLoading, user]);
 
   const fetchHireContext = useCallback(async (conversation?: Conversation) => {
     if (!conversation) {
@@ -319,6 +334,9 @@ export default function InboxPage() {
 
   // Load conversations list
   useEffect(() => {
+    // Don't load conversations until auth is ready
+    if (authLoading || !user) return;
+    
     let cancelled = false;
     async function load() {
       try {
@@ -354,7 +372,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [offset, NOTIFICATIONS_BASE]);
+  }, [offset, NOTIFICATIONS_BASE, authLoading, user]);
 
   // Load messages when conversation is selected
   useEffect(() => {
@@ -364,6 +382,9 @@ export default function InboxPage() {
       setMessagesHasMore(true);
       return;
     }
+    
+    // Don't load messages until auth is ready
+    if (authLoading || !user) return;
 
     let cancelled = false;
     const conversationId = activeConversationId; // Capture non-null value
@@ -421,7 +442,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeConversationId, NOTIFICATIONS_BASE, messagesLimit]);
+  }, [activeConversationId, NOTIFICATIONS_BASE, messagesLimit, authLoading, user]);
 
   // Removed polling - WebSocket now handles real-time updates
   // Polling was causing unnecessary HTTP requests every 15 seconds
@@ -435,12 +456,34 @@ export default function InboxPage() {
     setSearchParams({}, { replace: true });
   }, [setSearchParams]);
 
-  const handleViewProfile = useCallback(() => {
+  const handleViewProfile = useCallback(async () => {
     if (!selectedConversation) return;
     const role = currentUserProfileType?.toLowerCase();
     if (role === 'household') {
-      // Household viewing househelp profile: prefer profile ID when available
-      const househelpProfileId = (selectedConversation as any).househelp_profile_id || selectedConversation.househelp_id;
+      // Household viewing househelp profile: use profile ID
+      let househelpProfileId = selectedConversation.househelp_profile_id;
+      
+      // If profile ID is not available, fetch it from the API using user ID
+      if (!househelpProfileId) {
+        const househelpUserId = selectedConversation.househelp_id;
+        if (!househelpUserId) return;
+        
+        try {
+          const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
+          if (res.ok) {
+            const profileData: any = await apiClient.json(res);
+            househelpProfileId = profileData.id || profileData.profile_id;
+          } else {
+            pushToast('Failed to load profile information', 'error');
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to fetch househelp profile:', err);
+          pushToast('Failed to load profile information', 'error');
+          return;
+        }
+      }
+      
       if (!househelpProfileId) return;
       const url = `/househelp/public-profile?profileId=${encodeURIComponent(househelpProfileId)}&embed=1`;
       setProfileModalLoading(true);
@@ -1536,6 +1579,23 @@ export default function InboxPage() {
         </div>
       </div>
   );
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden">
+        <Navigation />
+        <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <main className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+              <p className="mt-4 text-gray-600 dark:text-gray-400">Loading inbox...</p>
+            </div>
+          </main>
+        </PurpleThemeWrapper>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">
