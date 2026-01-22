@@ -56,7 +56,6 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
   );
   const [salaryFrequency, setSalaryFrequency] = useState(househelpSalaryFrequency || 'monthly');
   const [specialRequirements, setSpecialRequirements] = useState('');
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const [workSchedule, setWorkSchedule] = useState<WorkSchedule>({
     monday: { morning: true, afternoon: true, evening: false },
     tuesday: { morning: true, afternoon: true, evening: false },
@@ -79,7 +78,6 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
       setSalaryOffered(househelpSalaryExpectation ? String(househelpSalaryExpectation) : '');
       setSalaryFrequency(househelpSalaryFrequency || 'monthly');
       setSpecialRequirements('');
-      setTermsAccepted(false);
       setError('');
       setSuccess(false);
     }
@@ -125,11 +123,6 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
     setError('');
 
     // Validation
-    if (!termsAccepted) {
-      setError('You must accept the terms and conditions');
-      return;
-    }
-
     const salaryValue = parseFloat(salaryOffered);
     if (Number.isNaN(salaryValue) || salaryValue <= 0) {
       setError('Salary offered must be greater than zero');
@@ -150,7 +143,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
           salary_frequency: salaryFrequency,
           work_schedule: workSchedule,
           special_requirements: specialRequirements,
-          terms_accepted: termsAccepted,
+          terms_accepted: true,
         }),
       });
 
@@ -305,30 +298,6 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
               />
             </div>
 
-            {/* Terms & Conditions */}
-            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-1 w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  I accept the{' '}
-                  <a
-                    href="/terms/hiring"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-purple-600 dark:text-purple-400 hover:underline"
-                  >
-                    terms and conditions of hiring
-                  </a>
-                  {' '}and understand that this is a formal hire request.
-                </span>
-              </label>
-            </div>
-
             {/* Actions */}
             <div className="flex gap-3 pt-4">
               <button
@@ -341,7 +310,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={loading || !termsAccepted}
+                disabled={loading}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Sending...' : 'Send Hire Request'}

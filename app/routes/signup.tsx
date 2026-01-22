@@ -104,6 +104,7 @@ export default function SignupPage() {
     const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
     const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
     const [showPassword, setShowPassword] = useState(false);
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
     
     // Modal state - check if profile_type is in URL params from Google callback
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(!googleProfileType);
@@ -187,7 +188,7 @@ export default function SignupPage() {
 
     const handleProfileTypeSelect = (value: string) => {
         setForm({...form, profile_type: value});
-        setIsProfileModalOpen(false);
+        // Don't auto-close modal - user must click Continue button after accepting terms
         
         // Clear field error when user selects an option
         if (fieldErrors.profile_type) {
@@ -493,16 +494,37 @@ export default function SignupPage() {
                         ))}
                     </div>
                     
-                    <div className="mt-8 flex flex-col gap-3">
-                        {form.profile_type && (
-                            <button
-                                type="button"
-                                onClick={() => setIsProfileModalOpen(false)}
-                                className="glow-button px-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            >
-                                Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label}
-                            </button>
-                        )}
+                    {/* Terms Acceptance Checkbox */}
+                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-500/30">
+                        <label className="flex items-start gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                checked={acceptedTerms}
+                                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                                className="mt-1 w-5 h-5 rounded border-gray-300 dark:border-gray-600 text-purple-600 focus:ring-purple-500 cursor-pointer"
+                            />
+                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                                I agree to the{' '}
+                                <Link to="/terms" target="_blank" className="text-purple-600 dark:text-purple-400 hover:underline font-semibold">
+                                    Terms and Conditions
+                                </Link>
+                                {' '}and{' '}
+                                <Link to="/privacy" target="_blank" className="text-purple-600 dark:text-purple-400 hover:underline font-semibold">
+                                    Privacy Policy
+                                </Link>
+                            </span>
+                        </label>
+                    </div>
+                    
+                    <div className="mt-6 flex flex-col gap-3">
+                        <button
+                            type="button"
+                            onClick={() => setIsProfileModalOpen(false)}
+                            disabled={!form.profile_type || !acceptedTerms}
+                            className="glow-button px-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                        >
+                            Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label || 'User'}
+                        </button>
                         <button
                             type="button"
                             onClick={() => {

@@ -27,7 +27,6 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Reset form when modal opens
   useEffect(() => {
@@ -39,18 +38,12 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
       setComments('');
       setError('');
       setSuccess(false);
-      setTermsAccepted(false);
     }
   }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (!termsAccepted) {
-      setError('You must accept the terms and conditions');
-      return;
-    }
 
     const salaryValue = parseFloat(salaryExpectation);
     if (Number.isNaN(salaryValue) || salaryValue <= 0) {
@@ -234,30 +227,6 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
               </p>
             </div>
 
-            {/* Terms & Conditions */}
-            <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={termsAccepted}
-                  onChange={(e) => setTermsAccepted(e.target.checked)}
-                  className="mt-1 w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                />
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  I accept the{' '}
-                  <a
-                    href="/terms/hiring"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-purple-600 dark:text-purple-400 hover:underline"
-                  >
-                    terms and conditions
-                  </a>
-                  {' '}and understand that this is a formal expression of interest.
-                </span>
-              </label>
-            </div>
-
             {/* Actions */}
             <div className="flex gap-3 pt-4">
               <button
@@ -270,7 +239,7 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={loading || success || !termsAccepted}
+                disabled={loading || success}
                 className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Sending...' : 'Send Interest'}
