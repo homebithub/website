@@ -88,18 +88,20 @@ const getNotificationsWsBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
     const envUrl = (window as any).ENV?.NOTIFICATIONS_WS_BASE_URL;
     console.log('[API Config] Browser - window.ENV.NOTIFICATIONS_WS_BASE_URL:', envUrl);
-    if (envUrl) return envUrl;
+    const normalizedBrowserUrl = normalizeNotificationsBaseUrl(envUrl);
+    if (normalizedBrowserUrl) return normalizedBrowserUrl;
   }
 
   // Check environment variable
   if (typeof process !== 'undefined' && process.env.NOTIFICATIONS_WS_BASE_URL) {
     console.log('[API Config] Server - process.env.NOTIFICATIONS_WS_BASE_URL:', process.env.NOTIFICATIONS_WS_BASE_URL);
-    return process.env.NOTIFICATIONS_WS_BASE_URL;
+    const normalizedServerUrl = normalizeNotificationsBaseUrl(process.env.NOTIFICATIONS_WS_BASE_URL);
+    if (normalizedServerUrl) return normalizedServerUrl;
   }
 
-  // Default to direct WebSocket connection (bypassing gateway)
-  console.warn('[API Config] No NOTIFICATIONS_WS_BASE_URL environment variable found, using direct WebSocket URL');
-  return 'https://homebit.co.ke/ws';
+  // Default to production notifications microservice path
+  console.warn('[API Config] No NOTIFICATIONS_WS_BASE_URL environment variable found, using production /notifications URL');
+  return 'https://homebit.co.ke/notifications';
 };
 
 // Get payments service base URL from environment or use default

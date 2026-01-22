@@ -31,15 +31,6 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
-          env:
-            - name: NOTIFICATIONS_WS_BASE_URL
-              value: "https://homebit.co.ke/ws"
-            - name: AUTH_API_BASE_URL
-              value: "https://api.homebit.co.ke"
-            - name: NOTIFICATIONS_API_BASE_URL
-              value: "https://api.homebit.co.ke"
-            - name: PAYMENTS_API_BASE_URL
-              value: "https://api.homebit.co.ke"
           livenessProbe:
             httpGet:
               path: /health
