@@ -59,7 +59,7 @@ export default function SubscriptionsPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
@@ -130,6 +130,7 @@ export default function SubscriptionsPage() {
     if (user) {
       console.log('[Subscriptions] User authenticated, fetching data');
       fetchSubscriptionData();
+      setPhoneNumber(user.phone || '');
     }
   }, [user, fetchSubscriptionData]);
 
@@ -378,6 +379,7 @@ export default function SubscriptionsPage() {
                     <button
                       onClick={() => {
                         setPaymentAmount(subscription.plan?.price_amount || 0);
+                        setPhoneNumber(user?.phone || '');
                         setShowPaymentModal(true);
                       }}
                       className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
