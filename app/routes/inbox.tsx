@@ -430,7 +430,18 @@ export default function InboxPage() {
         }
         
         // Scroll to bottom after loading messages
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+        setTimeout(() => {
+          if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: 'auto' });
+          }
+        }, 100);
+        
+        // Also scroll to bottom when component mounts or conversation changes
+        setTimeout(() => {
+          if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 200);
       } catch (e: any) {
         console.error('[Inbox] Error loading messages:', e);
         if (!cancelled) setMessagesError(e?.message || "Failed to load messages");
@@ -443,6 +454,18 @@ export default function InboxPage() {
       cancelled = true;
     };
   }, [activeConversationId, NOTIFICATIONS_BASE, messagesLimit, authLoading, user]);
+
+  // Auto-scroll to bottom when conversation changes or on page reload
+  useEffect(() => {
+    if (messages.length > 0 && activeConversationId) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        if (bottomRef.current) {
+          bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 150);
+    }
+  }, [activeConversationId, messages.length]);
 
   // Removed polling - WebSocket now handles real-time updates
   // Polling was causing unnecessary HTTP requests every 15 seconds
@@ -551,7 +574,11 @@ export default function InboxPage() {
   }, [messages]);
 
   const scrollToBottom = useCallback(() => {
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 10);
+    setTimeout(() => {
+      if (bottomRef.current) {
+        bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 10);
   }, []);
 
   const ensureMessageVisibleAndScroll = useCallback((id: string) => {
@@ -808,7 +835,9 @@ export default function InboxPage() {
         
         // Auto-scroll to bottom when new message arrives
         setTimeout(() => {
-          bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+          if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+          }
         }, 100);
         
         // Update conversation list to show new last message
@@ -1277,7 +1306,7 @@ export default function InboxPage() {
                         </div>
                       ) : (
                         <>
-                          <div className="whitespace-pre-wrap break-words">
+                          <div className="whitespace-pre-wrap break-words text-sm">
                             {m.deleted_at ? (
                               <span className="text-xs">
                                 Message deleted

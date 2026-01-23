@@ -44,6 +44,16 @@ export default function Pricing() {
     fetchPlans();
   }, []); // Fetch plans immediately on page load - no authentication required
 
+  // Debug user authentication state
+  useEffect(() => {
+    console.log('[Pricing] Auth state:', {
+      user: user,
+      loading: authLoading,
+      hasPhone: !!user?.phone,
+      phone: user?.phone
+    });
+  }, [user, authLoading]);
+
   
   const fetchPlans = async () => {
     try {
@@ -86,27 +96,95 @@ export default function Pricing() {
     // Check if user has phone number, otherwise prompt for it
     let phoneNumber = user?.phone;
     
-    if (!phoneNumber) {
-      const promptResult = prompt('Enter your M-Pesa phone number (e.g., +254 7XX XXX XXX):');
-      phoneNumber = promptResult || '';
-      if (!phoneNumber || !phoneNumber.trim()) {
-        setErrorMessage('Phone number is required for payment');
-        setProcessingPayment(false);
-        setPaymentStatus('idle');
-        return;
-      }
-      // Format phone number
-      if (!phoneNumber.startsWith('+254')) {
-        if (phoneNumber.startsWith('254')) {
-          phoneNumber = `+${phoneNumber}`;
-        } else if (phoneNumber.startsWith('0')) {
-          phoneNumber = `+254${phoneNumber.slice(1)}`;
-        } else {
-          phoneNumber = `+254${phoneNumber}`;
-        }
-      }
+    console.log('[Pricing] User phone from profile:', phoneNumber);
+    console.log('[Pricing] User object:', user);
+    
+    if (!phoneNumber || phoneNumber.trim() === '') {
+      // Create a better phone input experience
+      const phoneInput = document.createElement('div');
+      phoneInput.innerHTML = `
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); 
+                    background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    z-index: 10000; max-width: 400px;">
+          <h3 style="margin: 0 0 15px 0; color: #333;">Phone Number Required</h3>
+          <p style="margin: 0 0 15px 0; color: #666; font-size: 14px;">
+            Enter your M-Pesa phone number for payment:
+          </p>
+          <input type="tel" id="phoneInput" placeholder="+254 7XX XXX XXX" 
+                 style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 15px;"
+                 value="${user?.phone || ''}">
+          <div style="display: flex; gap: 10px; justify-content: flex-end;">
+            <button id="cancelPhone" style="padding: 8px 16px; border: 1px solid #ddd; background: #f5f5f5; border-radius: 4px; cursor: pointer;">
+              Cancel
+            </button>
+            <button id="confirmPhone" style="padding: 8px 16px; background: #6366f1; color: white; border: none; border-radius: 4px; cursor: pointer;">
+              Continue
+            </button>
+          </div>
+        </div>
+        <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999;"></div>
+      `;
+      document.body.appendChild(phoneInput);
+      
+      const input = document.getElementById('phoneInput') as HTMLInputElement;
+      const confirmBtn = document.getElementById('confirmPhone');
+      const cancelBtn = document.getElementById('cancelPhone');
+      
+      return new Promise<void>((resolve) => {
+        const cleanup = () => {
+          document.body.removeChild(phoneInput);
+        };
+        
+        const handleConfirm = () => {
+          phoneNumber = input.value.trim();
+          cleanup();
+          
+          if (!phoneNumber) {
+            setErrorMessage('Phone number is required for payment');
+            setProcessingPayment(false);
+            setPaymentStatus('idle');
+            resolve();
+            return;
+          }
+          
+          // Format phone number
+          if (!phoneNumber.startsWith('+254')) {
+            if (phoneNumber.startsWith('254')) {
+              phoneNumber = `+${phoneNumber}`;
+            } else if (phoneNumber.startsWith('0')) {
+              phoneNumber = `+254${phoneNumber.slice(1)}`;
+            } else {
+              phoneNumber = `+254${phoneNumber}`;
+            }
+          }
+          
+          console.log('[Pricing] Formatted phone number:', phoneNumber);
+          
+          // Continue with payment processing
+          processPayment(plan, phoneNumber);
+          resolve();
+        };
+        
+        const handleCancel = () => {
+          cleanup();
+          setProcessingPayment(false);
+          setPaymentStatus('idle');
+          resolve();
+        };
+        
+        confirmBtn?.addEventListener('click', handleConfirm);
+        cancelBtn?.addEventListener('click', handleCancel);
+        input?.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') handleConfirm();
+        });
+      });
     }
-
+    
+    // If we have a phone number, proceed directly
+    processPayment(plan, phoneNumber);
+  };
+  
+  const processPayment = async (plan: SubscriptionPlan, phoneNumber: string) => {
     setProcessingPayment(true);
     setPaymentStatus('processing');
     setErrorMessage('');
@@ -114,8 +192,14 @@ export default function Pricing() {
     try {
       const token = localStorage.getItem('token');
       if (!token) {
-        throw new Error('Not authenticated');
+        throw new Error('Not authenticated - please login again');
       }
+
+      console.log('[Pricing] Checkout request:', {
+        plan_id: plan.id,
+        phone_number: phoneNumber,
+        token: token ? 'present' : 'missing'
+      });
 
       const response = await fetch(API_ENDPOINTS.payments.checkout, {
         method: 'POST',
@@ -125,6 +209,8 @@ export default function Pricing() {
           phone_number: phoneNumber,
         }),
       });
+
+      console.log('[Pricing] Checkout response status:', response.status);
 
       if (response.ok) {
         const data = await response.json();
