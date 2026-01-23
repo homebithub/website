@@ -60,6 +60,12 @@ export default function SubscriptionsPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
+  console.log('[Subscriptions] Initial phone number state:', user?.phone || 'No user phone');
+  
+  // Add console log to track phone number changes
+  useEffect(() => {
+    console.log('[Subscriptions] Phone number state changed to:', phoneNumber);
+  }, [phoneNumber]);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
@@ -131,6 +137,7 @@ export default function SubscriptionsPage() {
       console.log('[Subscriptions] User authenticated, fetching data');
       fetchSubscriptionData();
       setPhoneNumber(user.phone || '');
+      console.log('[Subscriptions] Setting phone number from user:', user.phone);
     }
   }, [user, fetchSubscriptionData]);
 
@@ -378,8 +385,10 @@ export default function SubscriptionsPage() {
 
                     <button
                       onClick={() => {
+                        console.log('[Subscriptions] Make Payment clicked - user phone:', user?.phone);
                         setPaymentAmount(subscription.plan?.price_amount || 0);
                         setPhoneNumber(user?.phone || '');
+                        console.log('[Subscriptions] Phone number set to:', user?.phone || '');
                         setShowPaymentModal(true);
                       }}
                       className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
