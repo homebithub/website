@@ -9,7 +9,8 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ArrowPathIcon,
-  BanknotesIcon
+  BanknotesIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -68,8 +69,10 @@ export default function SubscriptionsPage() {
   }, [phoneNumber]);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [processingPayment, setProcessingPayment] = useState(false);
-  const [paymentStatus, setPaymentStatus] = useState<string | null>(null);
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'initiating' | 'processing' | 'success' | 'failed' | 'timeout'>('idle');
   const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
 
   const fetchSubscriptionData = React.useCallback(async () => {
     setDataLoading(true);
@@ -125,6 +128,15 @@ export default function SubscriptionsPage() {
   }, []);
 
   useEffect(() => {
+    // Cleanup polling on unmount
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
+
+  useEffect(() => {
     if (!loading && !user) {
       console.log('[Subscriptions] No user, redirecting to login');
       const returnUrl = encodeURIComponent(location.pathname);
@@ -142,50 +154,61 @@ export default function SubscriptionsPage() {
   }, [user, fetchSubscriptionData]);
 
   const initiatePayment = async () => {
-    if (!subscription || !phoneNumber) return;
+    if (!subscription || !phoneNumber) {
+      setErrorMessage('Please enter your phone number');
+      return;
+    }
+
+    // Validate phone number
+    const formattedPhone = formatPhoneNumber(phoneNumber);
+    if (!isValidPhoneNumber(formattedPhone)) {
+      setErrorMessage('Please enter a valid Kenyan phone number (e.g., +254712345678)');
+      return;
+    }
 
     setProcessingPayment(true);
     setPaymentStatus('initiating');
+    setErrorMessage('');
 
     try {
       const token = localStorage.getItem('token');
-      if (!token) return;
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
 
       const response = await fetch(API_ENDPOINTS.payments.transactions.initiate, {
         method: 'POST',
         headers: getAuthHeaders(token),
         body: JSON.stringify({
           subscription_id: subscription.id,
-          phone_number: phoneNumber,
+          phone_number: formattedPhone,
           amount: paymentAmount || subscription.plan?.price_amount || 0,
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         setCurrentPaymentId(data.payment_id);
         setPaymentStatus('processing');
-        
-        pollPaymentStatus(data.payment_id);
+        startPollingPaymentStatus(data.payment_id);
       } else {
-        setPaymentStatus('failed');
-        setTimeout(() => setPaymentStatus(null), 3000);
+        throw new Error(data.message || data.error || 'Failed to initiate payment');
       }
     } catch (error) {
       console.error('Payment initiation failed:', error);
       setPaymentStatus('failed');
-      setTimeout(() => setPaymentStatus(null), 3000);
-    } finally {
+      setErrorMessage(error instanceof Error ? error.message : 'Failed to initiate payment. Please try again.');
       setProcessingPayment(false);
     }
   };
 
-  const pollPaymentStatus = async (paymentId: string) => {
+  const startPollingPaymentStatus = (paymentId: string) => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const maxAttempts = 20;
     let attempts = 0;
+    const maxAttempts = 60; // Poll for up to 3 minutes
 
     const interval = setInterval(async () => {
       attempts++;
@@ -199,21 +222,26 @@ export default function SubscriptionsPage() {
           const data = await response.json();
           
           if (data.status === 'completed') {
-            setPaymentStatus('completed');
+            setPaymentStatus('success');
             clearInterval(interval);
-            setShowPaymentModal(false);
+            setPollingInterval(null);
+            setProcessingPayment(false);
+            
+            // Refresh subscription data
             fetchSubscriptionData();
+            
+            // Close modal after 2 seconds
             setTimeout(() => {
-              setPaymentStatus(null);
+              setShowPaymentModal(false);
+              setPaymentStatus('idle');
               setCurrentPaymentId(null);
-            }, 3000);
+            }, 2000);
           } else if (data.status === 'failed') {
             setPaymentStatus('failed');
+            setErrorMessage(data.failure_reason || 'Payment failed. Please try again.');
             clearInterval(interval);
-            setTimeout(() => {
-              setPaymentStatus(null);
-              setCurrentPaymentId(null);
-            }, 3000);
+            setPollingInterval(null);
+            setProcessingPayment(false);
           }
         }
       } catch (error) {
@@ -222,13 +250,54 @@ export default function SubscriptionsPage() {
 
       if (attempts >= maxAttempts) {
         clearInterval(interval);
+        setPollingInterval(null);
         setPaymentStatus('timeout');
-        setTimeout(() => {
-          setPaymentStatus(null);
-          setCurrentPaymentId(null);
-        }, 3000);
+        setErrorMessage('Payment is taking longer than expected. Please check your payment history.');
+        setProcessingPayment(false);
       }
     }, 3000);
+
+    setPollingInterval(interval);
+  };
+
+  const handleRetry = () => {
+    setPaymentStatus('idle');
+    setErrorMessage('');
+    setCurrentPaymentId(null);
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+  };
+
+  const handleCloseModal = () => {
+    if (processingPayment) return;
+    
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+      setPollingInterval(null);
+    }
+    
+    setShowPaymentModal(false);
+    setPaymentStatus('idle');
+    setErrorMessage('');
+    setCurrentPaymentId(null);
+  };
+
+  const formatPhoneNumber = (phone: string) => {
+    if (!phone) return '';
+    phone = phone.replace(/\s/g, '');
+    
+    if (phone.startsWith('+254')) return phone;
+    if (phone.startsWith('254')) return `+${phone}`;
+    if (phone.startsWith('0')) return `+254${phone.slice(1)}`;
+    if (phone.startsWith('7') || phone.startsWith('1')) return `+254${phone}`;
+    return phone;
+  };
+
+  const isValidPhoneNumber = (phone: string) => {
+    const regex = /^\+254[71]\d{8}$/;
+    return regex.test(phone);
   };
 
   const formatCurrency = (amount: number) => {
@@ -463,7 +532,7 @@ export default function SubscriptionsPage() {
       <Footer />
 
       <Transition appear show={showPaymentModal} as={Fragment}>
-        <Dialog as="div" className="relative z-50" onClose={() => !processingPayment && setShowPaymentModal(false)}>
+        <Dialog as="div" className="relative z-50" onClose={handleCloseModal}>
           <Transition.Child
             as={Fragment}
             enter="ease-out duration-300"
@@ -488,103 +557,144 @@ export default function SubscriptionsPage() {
                 leaveTo="opacity-0 scale-95"
               >
                 <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all">
-                  <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-4">
-                    Make Payment
-                  </Dialog.Title>
+                  {paymentStatus === 'idle' && (
+                    <>
+                      <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                        Make Payment
+                      </Dialog.Title>
 
-                  {paymentStatus ? (
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            Amount
+                          </label>
+                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                            {formatCurrency(paymentAmount)}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            M-Pesa Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={phoneNumber}
+                            onChange={(e) => setPhoneNumber(e.target.value)}
+                            placeholder="+254712345678"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                          />
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Enter number in format: +254XXXXXXXXX
+                          </p>
+                        </div>
+
+                        {errorMessage && (
+                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                            <p className="text-sm text-red-800 dark:text-red-300">{errorMessage}</p>
+                          </div>
+                        )}
+
+                        <div className="flex gap-3 mt-6">
+                          <button
+                            onClick={handleCloseModal}
+                            disabled={processingPayment}
+                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={initiatePayment}
+                            disabled={!phoneNumber || processingPayment}
+                            className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                          >
+                            Pay Now
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {paymentStatus === 'initiating' && (
                     <div className="text-center py-8">
-                      {paymentStatus === 'initiating' && (
-                        <div>
-                          <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
-                          <p className="text-gray-700 dark:text-gray-300">Initiating payment...</p>
-                        </div>
-                      )}
-                      {paymentStatus === 'processing' && (
-                        <div>
-                          <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
-                          <p className="text-gray-700 dark:text-gray-300 font-medium mb-2">
-                            Check your phone for M-Pesa prompt
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            Enter your M-Pesa PIN to complete payment
-                          </p>
-                        </div>
-                      )}
-                      {paymentStatus === 'completed' && (
-                        <div>
-                          <CheckCircleIcon className="w-16 h-16 mx-auto mb-4 text-green-500" />
-                          <p className="text-gray-700 dark:text-gray-300 font-medium">
-                            Payment Successful!
-                          </p>
-                        </div>
-                      )}
-                      {paymentStatus === 'failed' && (
-                        <div>
-                          <XCircleIcon className="w-16 h-16 mx-auto mb-4 text-red-500" />
-                          <p className="text-gray-700 dark:text-gray-300 font-medium">
-                            Payment Failed
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                            Please try again
-                          </p>
-                        </div>
-                      )}
-                      {paymentStatus === 'timeout' && (
-                        <div>
-                          <ClockIcon className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
-                          <p className="text-gray-700 dark:text-gray-300 font-medium">
-                            Payment Pending
-                          </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                            Check payment history for status
-                          </p>
-                        </div>
-                      )}
+                      <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-purple-600 animate-spin" />
+                      <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                        Initiating Payment...
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Please wait
+                      </p>
                     </div>
-                  ) : (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Amount
-                        </label>
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                          {formatCurrency(paymentAmount)}
+                  )}
+
+                  {paymentStatus === 'processing' && (
+                    <div className="text-center py-8">
+                      <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
+                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        Check Your Phone
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        Enter your M-Pesa PIN to complete payment
+                      </p>
+                      <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                        <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                        <span>Waiting for confirmation...</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {paymentStatus === 'success' && (
+                    <div className="text-center py-8">
+                      <CheckCircleIcon className="w-16 h-16 mx-auto mb-4 text-green-500" />
+                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        Payment Successful!
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        Your payment has been processed
+                      </p>
+                    </div>
+                  )}
+
+                  {paymentStatus === 'failed' && (
+                    <div className="text-center py-8">
+                      <XCircleIcon className="w-16 h-16 mx-auto mb-4 text-red-500" />
+                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        Payment Failed
+                      </p>
+                      {errorMessage && (
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                          <p className="text-sm text-red-800 dark:text-red-300 font-medium mb-1">
+                            Reason:
+                          </p>
+                          <p className="text-sm text-red-700 dark:text-red-400">
+                            {errorMessage}
+                          </p>
                         </div>
-                      </div>
+                      )}
+                      <button
+                        onClick={handleRetry}
+                        className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  )}
 
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          M-Pesa Phone Number
-                        </label>
-                        <input
-                          type="tel"
-                          value={phoneNumber}
-                          onChange={(e) => setPhoneNumber(e.target.value)}
-                          placeholder="+254712345678"
-                          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
-                        />
-                        <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          Enter number in format: +254XXXXXXXXX
-                        </p>
-                      </div>
-
-                      <div className="flex gap-3 mt-6">
-                        <button
-                          onClick={() => setShowPaymentModal(false)}
-                          disabled={processingPayment}
-                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={initiatePayment}
-                          disabled={!phoneNumber || processingPayment}
-                          className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                        >
-                          Pay Now
-                        </button>
-                      </div>
+                  {paymentStatus === 'timeout' && (
+                    <div className="text-center py-8">
+                      <ClockIcon className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
+                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                        Payment Pending
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                        Check payment history for status
+                      </p>
+                      <button
+                        onClick={handleRetry}
+                        className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium"
+                      >
+                        Try Again
+                      </button>
                     </div>
                   )}
                 </Dialog.Panel>
