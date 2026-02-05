@@ -412,60 +412,110 @@ export default function SubscriptionsPage() {
                 )}
 
                 {subscription ? (
-                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-700">
-                    <div className="flex items-start justify-between mb-4">
-                      <div>
-                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
-                          {subscription.plan?.name || 'Current Plan'}
-                        </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
-                          {subscription.plan?.description}
-                        </p>
+                  <>
+                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-700">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                            {subscription.plan?.name || 'Current Plan'}
+                          </h4>
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            {subscription.plan?.description}
+                          </p>
+                        </div>
+                        {getStatusBadge(subscription.status)}
                       </div>
-                      {getStatusBadge(subscription.status)}
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4 mt-4">
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Amount</p>
-                        <p className="text-lg font-bold text-gray-900 dark:text-white">
-                          {formatCurrency(subscription.plan?.price_amount || 0)}
-                        </p>
+                      
+                      <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Amount</p>
+                          <p className="text-lg font-bold text-gray-900 dark:text-white">
+                            {formatCurrency(subscription.plan?.price_amount || 0)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Billing Cycle</p>
+                          <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                            {subscription.plan?.billing_cycle}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period Start</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {formatDate(subscription.current_period_start)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period End</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                            {formatDate(subscription.current_period_end)}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Billing Cycle</p>
-                        <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
-                          {subscription.plan?.billing_cycle}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period Start</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {formatDate(subscription.current_period_start)}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period End</p>
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">
-                          {formatDate(subscription.current_period_end)}
-                        </p>
-                      </div>
+
+                      <button
+                        onClick={() => {
+                          console.log('[Subscriptions] Make Payment clicked - user phone:', user?.phone);
+                          setPaymentAmount(subscription.plan?.price_amount || 0);
+                          setPhoneNumber(user?.phone || '');
+                          console.log('[Subscriptions] Phone number set to:', user?.phone || '');
+                          setShowPaymentModal(true);
+                        }}
+                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                      >
+                        <CreditCardIcon className="w-5 h-5" />
+                        Make Payment Now
+                      </button>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        console.log('[Subscriptions] Make Payment clicked - user phone:', user?.phone);
-                        setPaymentAmount(subscription.plan?.price_amount || 0);
-                        setPhoneNumber(user?.phone || '');
-                        console.log('[Subscriptions] Phone number set to:', user?.phone || '');
-                        setShowPaymentModal(true);
-                      }}
-                      className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
-                    >
-                      <CreditCardIcon className="w-5 h-5" />
-                      Make Payment Now
-                    </button>
-                  </div>
+                    {/* Change Plan Section */}
+                    {plans.length > 0 && (
+                      <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6">
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                          Change Your Plan
+                        </h4>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                          Switch to a different billing cycle. Your new plan will take effect after your current subscription expires on <strong>{formatDate(subscription.current_period_end)}</strong>.
+                        </p>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {plans.filter(p => p.is_active && p.id !== subscription.plan_id).map((plan) => (
+                            <div
+                              key={plan.id}
+                              className="relative bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-500 transition-all"
+                            >
+                              <div className="text-center">
+                                <h5 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                                  {plan.name}
+                                </h5>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                                  {plan.description}
+                                </p>
+                                <div className="mb-3">
+                                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                                    {formatCurrency(plan.price_amount)}
+                                  </span>
+                                  <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">/ {plan.billing_cycle}</span>
+                                </div>
+                                <button
+                                  onClick={() => navigate(`/pricing?plan=${plan.id}`)}
+                                  className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+                                >
+                                  Switch to This Plan
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                        
+                        <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                          <p className="text-xs text-blue-800 dark:text-blue-300">
+                            <strong>Note:</strong> If you pay for a new plan now, it will be queued and become active after your current subscription expires. You won't lose any remaining time on your current plan.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 ) : (
                   <div className="text-center py-8 bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6">
                     <p className="text-gray-500 dark:text-gray-400 mb-4">No active subscription</p>
@@ -632,6 +682,9 @@ export default function SubscriptionsPage() {
                       <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
                       <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                         Check Your Phone
+                      </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        You'll receive a prompt from <strong>Fingo Payment Services</strong>
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                         Enter your M-Pesa PIN to complete payment
