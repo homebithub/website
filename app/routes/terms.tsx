@@ -15,86 +15,142 @@ export default function Terms() {
         <div className="max-w-3xl mx-auto">
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
-              Terms of Service
+              Terms and Conditions
             </h1>
             <p className="mt-2 text-slate-600 dark:text-slate-400">
-              Last updated: {new Date().toLocaleDateString()}
+              Effective Date: 1 January 2026
+            </p>
+            <p className="text-slate-600 dark:text-slate-400">
+              Last Updated: {new Date().toLocaleDateString()}
+            </p>
+            <p className="mt-4 text-slate-700 dark:text-slate-300">
+              Welcome to Homebit ("Platform"), owned and operated by Homebit Hub Limited ("Homebit", "we", "us", or "our"), 
+              a private limited company registered under the laws of Kenya. By accessing or using our website located at 
+              https://homebit.co.ke, you agree to be bound by these Terms and Conditions ("Terms"). Please read them carefully.
             </p>
           </div>
 
           <div className="prose dark:prose-invert max-w-none">
-            <h2>1. Acceptance of Terms</h2>
+            <h2>1. Definitions</h2>
+            <ul>
+              <li>"User" refers to any individual or entity that accesses the Platform.</li>
+              <li>"Household" refers to a User seeking to hire a domestic worker (househelp).</li>
+              <li>"Househelp" refers to a domestic worker offering services to households.</li>
+              <li>"Agency" refers to a third-party entity authorized to list househelps on behalf of candidates.</li>
+              <li>"Services" means all services provided via the Platform, including listing, profile viewing, and communication tools.</li>
+            </ul>
+
+            <h2>2. Eligibility</h2>
             <p>
-              By accessing and using this website, you accept and agree to be bound by the terms and
-              provision of this agreement.
+              To use the Platform, you must be at least 18 years of age and have the legal capacity to enter into a binding 
+              agreement under Kenyan law.
             </p>
 
-            <h2>2. Use License</h2>
+            <h2>3. Scope of Services</h2>
             <p>
-              Permission is granted to temporarily download one copy of the materials (information or
-              software) on Homebit's website for personal, non-commercial transitory viewing only.
+              Homebit operates as an online marketplace connecting Households with Househelps. We do not employ househelps, 
+              nor do we act as an agent or representative of either party. Homebit does not guarantee the quality, safety, 
+              legality, or suitability of any Househelp or Household.
             </p>
 
-            <h2>3. User Account</h2>
+            <h2>4. User Accounts</h2>
             <p>
-              To access certain features of the website, you may be required to create an account. You
-              are responsible for maintaining the confidentiality of your account and password.
+              Users must register and maintain an active account to use the Platform. You agree to provide accurate, complete, 
+              and current information at registration and keep it updated. You are solely responsible for all activities under 
+              your account.
             </p>
 
-            <h2>4. Job Postings and Applications</h2>
+            <h2>5. Payments and Fees</h2>
+            <ul>
+              <li>Househelps pay a listing fee upon profile submission.</li>
+              <li>Households may view limited profile information for free. To access full profiles and contact information, 
+              they must either purchase unlock credits or subscribe.</li>
+              <li>All payments are processed through integrated third-party providers (e.g., M-Pesa, bank transfer).</li>
+              <li>No commissions are charged on job placements.</li>
+            </ul>
+
+            <h2>6. Limited Background Checks</h2>
             <p>
-              Users may post job listings and submit applications through our platform. All content
-              must be accurate and comply with applicable laws and regulations.
+              We perform limited ID verification and basic onboarding questionnaires for Househelps. We do not conduct in-depth 
+              background or criminal checks and make no warranties regarding identity or qualifications.
             </p>
 
-            <h2>5. Privacy Policy</h2>
+            <h2>7. Agencies</h2>
             <p>
-              Your use of this website is also governed by our Privacy Policy. Please review our
-              Privacy Policy, which also governs the site and informs users of our data collection
-              practices.
+              Homebit may allow verified agencies to upload and manage Househelp profiles. Agencies are solely responsible for 
+              the accuracy and compliance of the profiles they manage.
             </p>
 
-            <h2>6. Disclaimer</h2>
+            <h2>8. Content and Data Use</h2>
             <p>
-              The materials on Homebit's website are provided on an 'as is' basis. Homebit makes
-              no warranties, expressed or implied, and hereby disclaims and negates all other
-              warranties including, without limitation, implied warranties or conditions of
-              merchantability, fitness for a particular purpose, or non-infringement of intellectual
-              property or other violation of rights.
+              By uploading content (e.g., photos, CVs, descriptions), you grant Homebit a non-exclusive, worldwide, royalty-free 
+              license to use, display, and distribute such content in connection with the Platform.
             </p>
 
-            <h2>7. Limitations</h2>
+            <h2>9. Privacy</h2>
             <p>
-              In no event shall Homebit or its suppliers be liable for any damages (including,
-              without limitation, damages for loss of data or profit, or due to business interruption)
-              arising out of the use or inability to use the materials on Homebit's website.
+              Your use of the Platform is also governed by our Privacy Policy, which describes how we collect, store, and process 
+              your personal data. This includes ID uploads and background documents which may be stored on third-party cloud 
+              storage (e.g., AWS).
             </p>
 
-            <h2>8. Revisions and Errata</h2>
+            <h2>10. Refund Policy</h2>
             <p>
-              The materials appearing on Homebit's website could include technical, typographical,
-              or photographic errors. Homebit does not warrant that any of the materials on its
-              website are accurate, complete, or current.
+              Refunds are not guaranteed and may be granted at Homebit's sole discretion. If you believe you are entitled to a 
+              refund, please contact us at info@homebit.co.ke.
             </p>
 
-            <h2>9. Links</h2>
+            <h2>11. Prohibited Conduct</h2>
+            <p>You agree not to:</p>
+            <ul>
+              <li>Provide false or misleading information;</li>
+              <li>Use the Platform for illegal or unauthorized purposes;</li>
+              <li>Harass, exploit, or abuse other Users;</li>
+              <li>Upload harmful code or content;</li>
+              <li>Circumvent any Platform limitations or access controls.</li>
+            </ul>
+
+            <h2>12. Disclaimer and Limitation of Liability</h2>
             <p>
-              Homebit has not reviewed all of the sites linked to its website and is not
-              responsible for the contents of any such linked site. The inclusion of any link does not
-              imply endorsement by Homebit of the site.
+              The Platform is provided "as is" and "as available." Homebit disclaims all warranties, express or implied. 
+              Homebit shall not be liable for any indirect, incidental, or consequential damages arising from your use of 
+              the Platform or services.
             </p>
 
-            <h2>10. Modifications</h2>
+            <h2>13. Dispute Resolution</h2>
             <p>
-              Homebit may revise these terms of service for its website at any time without notice.
-              By using this website, you are agreeing to be bound by the then current version of these
-              terms of service.
+              Homebit does not mediate or resolve disputes between Households and Househelps. Users are encouraged to resolve 
+              issues independently.
             </p>
 
-            <h2>11. Governing Law</h2>
+            <h2>14. Termination</h2>
             <p>
-              These terms and conditions are governed by and construed in accordance with the laws
-              and you irrevocably submit to the exclusive jurisdiction of the courts in that location.
+              We reserve the right to suspend or terminate your access to the Platform at any time, without notice, for 
+              violation of these Terms.
+            </p>
+
+            <h2>15. Intellectual Property</h2>
+            <p>
+              All content, trademarks, and software on the Platform are the property of Homebit or its licensors. Users may 
+              not copy, modify, or distribute any part of the Platform without express written permission.
+            </p>
+
+            <h2>16. Changes to Terms</h2>
+            <p>
+              We may update these Terms from time to time. Continued use of the Platform constitutes your acceptance of the 
+              revised Terms.
+            </p>
+
+            <h2>17. Governing Law</h2>
+            <p>
+              These Terms are governed by and construed in accordance with the laws of Kenya. Any disputes shall be subject 
+              to the exclusive jurisdiction of the courts of Kenya.
+            </p>
+
+            <h2>18. Contact Information</h2>
+            <p>
+              For questions or support, contact us at:<br />
+              Email: <a href="mailto:info@homebit.co.ke" className="text-purple-600 dark:text-purple-400 hover:underline">info@homebit.co.ke</a>
             </p>
           </div>
 
