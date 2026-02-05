@@ -1,6 +1,6 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { Dialog, Transition } from '@headlessui/react';
+import { Dialog, Transition, Tab } from '@headlessui/react';
 import { 
   CheckIcon, 
   XMarkIcon,
@@ -9,7 +9,8 @@ import {
   XCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-  PhoneIcon
+  PhoneIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -24,6 +25,8 @@ interface SubscriptionPlan {
   description: string;
   price_amount: number;
   billing_cycle: string;
+  profile_type?: string;
+  trial_days?: number;
   features: any;
   max_profiles?: number;
   max_applications?: number;
@@ -54,6 +57,7 @@ export default function Pricing() {
   const [errorMessage, setErrorMessage] = useState('');
   const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [selectedTab, setSelectedTab] = useState(0);
 
   useEffect(() => {
     fetchPlans();
@@ -252,6 +256,37 @@ export default function Pricing() {
     return `KES ${(amount / 100).toLocaleString('en-KE', { minimumFractionDigits: 2 })}`;
   };
 
+  const getBillingCycleLabel = (cycle: string) => {
+    const labels: Record<string, string> = {
+      'monthly': 'month',
+      'semi-annual': '6 months',
+      'yearly': 'year'
+    };
+    return labels[cycle] || cycle;
+  };
+
+  const getFeaturesList = (features: any) => {
+    const featureList = [];
+    
+    if (features.messaging) featureList.push('Unlimited messaging');
+    if (features.profile_views) featureList.push(`${features.profile_views === 'unlimited' ? 'Unlimited' : features.profile_views} profile views`);
+    if (features.search_filters) featureList.push(`${features.search_filters} search filters`);
+    if (features.priority_support) featureList.push('Priority support');
+    if (features.background_checks) featureList.push('Background checks');
+    if (features.verified_profiles) featureList.push('Verified profiles access');
+    if (features.direct_messaging) featureList.push('Direct messaging');
+    if (features.profile_verification) featureList.push('Profile verification');
+    if (features.job_applications) featureList.push(`${features.job_applications === 'unlimited' ? 'Unlimited' : features.job_applications} job applications`);
+    if (features.profile_visibility) featureList.push('Enhanced profile visibility');
+    if (features.job_alerts) featureList.push('Job alerts');
+    if (features.application_tracking) featureList.push('Application tracking');
+    
+    return featureList;
+  };
+
+  const householdPlans = plans.filter(p => p.is_active && p.profile_type === 'household');
+  const househelpPlans = plans.filter(p => p.is_active && p.profile_type === 'househelp');
+
   if (authLoading || loading) {
     return <Loading text="Loading plans..." />;
   }
@@ -271,61 +306,206 @@ export default function Pricing() {
           </div>
 
           <div className="mt-12 w-full max-w-6xl">
-            {plans.length === 0 ? (
-              <div className="text-center py-12 bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
-                <p className="text-gray-600 dark:text-gray-300">No plans available at the moment</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {plans.filter(p => p.is_active).map((plan) => (
-                  <div
-                    key={plan.id}
-                    className="relative bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border-2 border-purple-100 dark:border-purple-500/30 p-8 hover:border-purple-300 dark:hover:border-purple-400 transition-all hover:scale-105 flex flex-col h-full"
-                  >
-                    <div className="text-center flex-1 flex flex-col">
-                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-                        {plan.name}
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
-                        {plan.description}
-                      </p>
-                      <div className="mb-6">
-                        <span className="text-4xl font-bold text-gray-900 dark:text-white">
-                          {formatCurrency(plan.price_amount)}
-                        </span>
-                        <span className="text-gray-600 dark:text-gray-300 ml-2">/ {plan.billing_cycle}</span>
-                      </div>
-                      <div className="mb-6 space-y-3 text-left flex-grow">
-                        {plan.max_profiles && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                            <CheckIcon className="w-5 h-5 text-green-500" />
-                            <span>Up to {plan.max_profiles} profiles</span>
-                          </div>
-                        )}
-                        {plan.max_applications && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                            <CheckIcon className="w-5 h-5 text-green-500" />
-                            <span>Up to {plan.max_applications} applications</span>
-                          </div>
-                        )}
-                        {plan.max_hires && (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-                            <CheckIcon className="w-5 h-5 text-green-500" />
-                            <span>Up to {plan.max_hires} hires</span>
-                          </div>
-                        )}
-                      </div>
-                      <button
-                        onClick={() => handleSelectPlan(plan)}
-                        className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
-                      >
-                        Select Plan
-                      </button>
+            <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
+              <Tab.List className="flex space-x-1 rounded-xl bg-white/90 dark:bg-[#13131a]/95 p-1 shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30 max-w-md mx-auto mb-8">
+                <Tab
+                  className={({ selected }) =>
+                    `w-full rounded-lg py-3 text-sm font-medium leading-5 transition-all
+                    ${
+                      selected
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                    }`
+                  }
+                >
+                  Households
+                </Tab>
+                <Tab
+                  className={({ selected }) =>
+                    `w-full rounded-lg py-3 text-sm font-medium leading-5 transition-all
+                    ${
+                      selected
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                    }`
+                  }
+                >
+                  Househelps
+                </Tab>
+              </Tab.List>
+              
+              <Tab.Panels>
+                {/* Household Plans */}
+                <Tab.Panel>
+                  {householdPlans.length === 0 ? (
+                    <div className="text-center py-12 bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
+                      <p className="text-gray-600 dark:text-gray-300">No household plans available at the moment</p>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ) : (
+                    <>
+                      <div className="text-center mb-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-500/30">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <SparklesIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                            30-Day Free Trial
+                          </h3>
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-300">
+                          Try all features risk-free for 30 days. Cancel anytime during the trial period.
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {householdPlans.map((plan, index) => {
+                          const features = getFeaturesList(plan.features);
+                          const savings = plan.features?.savings;
+                          
+                          return (
+                            <div
+                              key={plan.id}
+                              className={`relative bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border-2 p-8 hover:scale-105 transition-all flex flex-col h-full ${
+                                index === 2 
+                                  ? 'border-purple-400 dark:border-purple-400 ring-2 ring-purple-300 dark:ring-purple-500' 
+                                  : 'border-purple-100 dark:border-purple-500/30 hover:border-purple-300 dark:hover:border-purple-400'
+                              }`}
+                            >
+                              {index === 2 && (
+                                <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                                    Best Value
+                                  </span>
+                                </div>
+                              )}
+                              
+                              <div className="text-center flex-1 flex flex-col">
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                                  {plan.name}
+                                </h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                                  {plan.description}
+                                </p>
+                                
+                                {savings && (
+                                  <div className="mb-4 bg-green-50 dark:bg-green-900/20 rounded-lg p-2">
+                                    <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                                      {savings}
+                                    </p>
+                                  </div>
+                                )}
+                                
+                                <div className="mb-6">
+                                  <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                                    {formatCurrency(plan.price_amount)}
+                                  </span>
+                                  <span className="text-gray-600 dark:text-gray-300 ml-2">
+                                    / {getBillingCycleLabel(plan.billing_cycle)}
+                                  </span>
+                                </div>
+                                
+                                <div className="mb-6 space-y-3 text-left flex-grow">
+                                  {features.map((feature, idx) => (
+                                    <div key={idx} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                      <CheckIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                                      <span>{feature}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                                
+                                <button
+                                  onClick={() => handleSelectPlan(plan)}
+                                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
+                                >
+                                  Start Free Trial
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </Tab.Panel>
+
+                {/* Househelp Plans */}
+                <Tab.Panel>
+                  {househelpPlans.length === 0 ? (
+                    <div className="text-center py-12 bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
+                      <p className="text-gray-600 dark:text-gray-300">No househelp plans available at the moment</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-center mb-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-500/30">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <SparklesIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                            30-Day Free Trial
+                          </h3>
+                        </div>
+                        <p className="text-gray-600 dark:text-gray-300">
+                          Try all features risk-free for 30 days. One-time annual payment after trial.
+                        </p>
+                      </div>
+                      
+                      <div className="max-w-md mx-auto">
+                        {househelpPlans.map((plan) => {
+                          const features = getFeaturesList(plan.features);
+                          
+                          return (
+                            <div
+                              key={plan.id}
+                              className="relative bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border-2 border-purple-400 dark:border-purple-400 ring-2 ring-purple-300 dark:ring-purple-500 p-8 flex flex-col"
+                            >
+                              <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                                <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                                  Recommended
+                                </span>
+                              </div>
+                              
+                              <div className="text-center flex-1 flex flex-col">
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                                  {plan.name}
+                                </h3>
+                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+                                  {plan.description}
+                                </p>
+                                
+                                <div className="mb-6">
+                                  <span className="text-5xl font-bold text-gray-900 dark:text-white">
+                                    {formatCurrency(plan.price_amount)}
+                                  </span>
+                                  <span className="text-gray-600 dark:text-gray-300 ml-2 block mt-2">
+                                    per year
+                                  </span>
+                                  <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mt-2">
+                                    Just KES 83/month
+                                  </p>
+                                </div>
+                                
+                                <div className="mb-6 space-y-3 text-left flex-grow">
+                                  {features.map((feature, idx) => (
+                                    <div key={idx} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                      <CheckIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                                      <span>{feature}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                                
+                                <button
+                                  onClick={() => handleSelectPlan(plan)}
+                                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
+                                >
+                                  Start Free Trial
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </Tab.Panel>
+              </Tab.Panels>
+            </Tab.Group>
           </div>
         </main>
       </PurpleThemeWrapper>
