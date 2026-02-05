@@ -456,6 +456,9 @@ export default function Pricing() {
                       <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                         Check Your Phone
                       </p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                        You'll receive a prompt from <strong>Fingo Payment Services</strong>
+                      </p>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                         Enter your M-Pesa PIN to complete payment
                       </p>
