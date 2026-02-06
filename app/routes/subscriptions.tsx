@@ -49,6 +49,8 @@ interface Payment {
   mpesa_receipt_number?: string;
   paid_at?: string;
   created_at: string;
+  subscription_id?: string;
+  failure_reason?: string;
 }
 
 export default function SubscriptionsPage() {
@@ -73,6 +75,12 @@ export default function SubscriptionsPage() {
   const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
+  const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
+  const [showTransactionModal, setShowTransactionModal] = useState(false);
+  const [receiptEmail, setReceiptEmail] = useState('');
+  const [sendingReceipt, setSendingReceipt] = useState(false);
+  const [downloadingReceipt, setDownloadingReceipt] = useState(false);
+  const [receiptMessage, setReceiptMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const fetchSubscriptionData = React.useCallback(async () => {
     setDataLoading(true);
@@ -149,6 +157,7 @@ export default function SubscriptionsPage() {
       console.log('[Subscriptions] User authenticated, fetching data');
       fetchSubscriptionData();
       setPhoneNumber(user.phone || '');
+      setReceiptEmail(user.email || '');
       console.log('[Subscriptions] Setting phone number from user:', user.phone);
     }
   }, [user, fetchSubscriptionData]);
@@ -282,6 +291,108 @@ export default function SubscriptionsPage() {
     setPaymentStatus('idle');
     setErrorMessage('');
     setCurrentPaymentId(null);
+  };
+
+  const handleViewTransaction = (payment: Payment) => {
+    setSelectedPayment(payment);
+    setReceiptEmail(user?.email || '');
+    setReceiptMessage(null);
+    setShowTransactionModal(true);
+  };
+
+  const handleCloseTransactionModal = () => {
+    setShowTransactionModal(false);
+    setSelectedPayment(null);
+    setReceiptMessage(null);
+  };
+
+  const handleDownloadReceipt = async () => {
+    if (!selectedPayment || selectedPayment.status !== 'completed') return;
+    
+    setDownloadingReceipt(true);
+    setReceiptMessage(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch(
+        `${API_ENDPOINTS.payments.transactions.byId(selectedPayment.id)}/receipt`,
+        {
+          headers: getAuthHeaders(token),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to download receipt');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `receipt-${selectedPayment.mpesa_receipt_number || selectedPayment.id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      setReceiptMessage({ type: 'success', text: 'Receipt downloaded successfully!' });
+    } catch (error) {
+      console.error('Failed to download receipt:', error);
+      setReceiptMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Failed to download receipt' 
+      });
+    } finally {
+      setDownloadingReceipt(false);
+    }
+  };
+
+  const handleEmailReceipt = async () => {
+    if (!selectedPayment || selectedPayment.status !== 'completed' || !receiptEmail) return;
+    
+    // Validate email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(receiptEmail)) {
+      setReceiptMessage({ type: 'error', text: 'Please enter a valid email address' });
+      return;
+    }
+
+    setSendingReceipt(true);
+    setReceiptMessage(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) throw new Error('Not authenticated');
+
+      const response = await fetch(
+        `${API_ENDPOINTS.payments.transactions.byId(selectedPayment.id)}/receipt/email`,
+        {
+          method: 'POST',
+          headers: getAuthHeaders(token),
+          body: JSON.stringify({ email: receiptEmail }),
+        }
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to send receipt');
+      }
+
+      setReceiptMessage({ 
+        type: 'success', 
+        text: `Receipt sent successfully to ${receiptEmail}!` 
+      });
+    } catch (error) {
+      console.error('Failed to send receipt:', error);
+      setReceiptMessage({ 
+        type: 'error', 
+        text: error instanceof Error ? error.message : 'Failed to send receipt' 
+      });
+    } finally {
+      setSendingReceipt(false);
+    }
   };
 
   const formatPhoneNumber = (phone: string) => {
@@ -537,9 +648,10 @@ export default function SubscriptionsPage() {
                   {payments.length > 0 ? (
                     <div className="space-y-3 max-h-96 overflow-y-auto">
                       {payments.map((payment) => (
-                        <div
+                        <button
                           key={payment.id}
-                          className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                          onClick={() => handleViewTransaction(payment)}
+                          className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer text-left"
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
@@ -565,7 +677,7 @@ export default function SubscriptionsPage() {
                               </p>
                             )}
                           </div>
-                        </div>
+                        </button>
                       ))}
                     </div>
                   ) : (
@@ -748,6 +860,220 @@ export default function SubscriptionsPage() {
                       >
                         Try Again
                       </button>
+                    </div>
+                  )}
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
+
+      {/* Transaction Details Modal */}
+      <Transition appear show={showTransactionModal} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={handleCloseTransactionModal}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25 backdrop-blur-sm" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all">
+                  <div className="flex items-start justify-between mb-4">
+                    <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
+                      Transaction Details
+                    </Dialog.Title>
+                    <button
+                      onClick={handleCloseTransactionModal}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    >
+                      <XMarkIcon className="w-6 h-6" />
+                    </button>
+                  </div>
+
+                  {selectedPayment && (
+                    <div className="space-y-4">
+                      {/* Status Badge */}
+                      <div className="flex justify-center">
+                        {getStatusBadge(selectedPayment.status)}
+                      </div>
+
+                      {/* Amount */}
+                      <div className="text-center py-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Amount Paid</p>
+                        <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                          {formatCurrency(selectedPayment.amount)}
+                        </p>
+                      </div>
+
+                      {/* Transaction Details */}
+                      <div className="space-y-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Transaction ID</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white font-mono">
+                            {selectedPayment.id.slice(0, 8)}...
+                          </span>
+                        </div>
+
+                        {selectedPayment.mpesa_receipt_number && (
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">M-Pesa Receipt</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {selectedPayment.mpesa_receipt_number}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Payment Method</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                            {selectedPayment.payment_method}
+                          </span>
+                        </div>
+
+                        {selectedPayment.phone_number && (
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Phone Number</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {selectedPayment.phone_number}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600 dark:text-gray-400">Date</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            {formatDate(selectedPayment.created_at)}
+                          </span>
+                        </div>
+
+                        {selectedPayment.paid_at && (
+                          <div className="flex justify-between">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Paid At</span>
+                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                              {new Date(selectedPayment.paid_at).toLocaleString('en-KE')}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedPayment.failure_reason && (
+                          <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Failure Reason</p>
+                            <p className="text-sm text-red-600 dark:text-red-400">
+                              {selectedPayment.failure_reason}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Receipt Actions - Only for completed transactions */}
+                      {selectedPayment.status === 'completed' && (
+                        <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                            Receipt Options
+                          </h4>
+
+                          {/* Download Receipt */}
+                          <button
+                            onClick={handleDownloadReceipt}
+                            disabled={downloadingReceipt}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            {downloadingReceipt ? (
+                              <>
+                                <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                                Downloading...
+                              </>
+                            ) : (
+                              <>
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                Download Receipt (PDF)
+                              </>
+                            )}
+                          </button>
+
+                          {/* Email Receipt */}
+                          <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                              Email Receipt To
+                            </label>
+                            <input
+                              type="email"
+                              value={receiptEmail}
+                              onChange={(e) => setReceiptEmail(e.target.value)}
+                              placeholder="your@email.com"
+                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                            />
+                            <button
+                              onClick={handleEmailReceipt}
+                              disabled={sendingReceipt || !receiptEmail}
+                              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 border-2 border-purple-600 dark:border-purple-500 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {sendingReceipt ? (
+                                <>
+                                  <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                                  Sending...
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                  </svg>
+                                  Send via Email
+                                </>
+                              )}
+                            </button>
+                          </div>
+
+                          {/* Success/Error Message */}
+                          {receiptMessage && (
+                            <div className={`rounded-lg p-3 ${
+                              receiptMessage.type === 'success' 
+                                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' 
+                                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+                            }`}>
+                              <p className={`text-sm ${
+                                receiptMessage.type === 'success'
+                                  ? 'text-green-800 dark:text-green-300'
+                                  : 'text-red-800 dark:text-red-300'
+                              }`}>
+                                {receiptMessage.text}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Disabled state message for non-completed transactions */}
+                      {selectedPayment.status !== 'completed' && (
+                        <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+                          <div className="flex items-start gap-2">
+                            <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                              Receipt download and email options are only available for completed transactions.
+                            </p>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </Dialog.Panel>

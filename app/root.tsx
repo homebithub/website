@@ -32,6 +32,12 @@ export function loader() {
 	};
 }
 
+// Add action handler to prevent "no action" errors from external POST requests
+export async function action() {
+	// Return 405 Method Not Allowed for unsupported actions
+	return new Response("Method Not Allowed", { status: 405 });
+}
+
 export default function App() {
     const { ENV } = useLoaderData<typeof loader>() || { ENV: { GOOGLE_CLIENT_ID: "", AUTH_API_BASE_URL: "" } };
     return (
