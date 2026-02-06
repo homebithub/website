@@ -59,7 +59,6 @@ export default function ConversationHireWizard({
 
   // Step 4: Requirements & Review
   const [specialRequirements, setSpecialRequirements] = useState('');
-  const [termsAccepted, setTermsAccepted] = useState(false);
 
   const totalSteps = 4;
 
@@ -86,11 +85,6 @@ export default function ConversationHireWizard({
   };
 
   const handleSubmit = async () => {
-    if (!termsAccepted) {
-      setError('You must accept the terms and conditions');
-      return;
-    }
-
     if (typeof salaryOffered !== 'number' || salaryOffered <= 0) {
       setError('Salary offered must be greater than zero');
       return;
@@ -111,7 +105,7 @@ export default function ConversationHireWizard({
           salary_frequency: salaryFrequency,
           work_schedule: workSchedule,
           special_requirements: specialRequirements,
-          terms_accepted: termsAccepted,
+          terms_accepted: true,
         }),
       });
 
@@ -346,25 +340,17 @@ export default function ConversationHireWizard({
 
       {/* Terms */}
       <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
-        <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            checked={termsAccepted}
-            onChange={(e) => setTermsAccepted(e.target.checked)}
-            className="mt-1 w-5 h-5 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-          />
-          <span className="text-sm text-gray-700 dark:text-gray-300">
-            I accept the{' '}
-            <a
-              href="/terms/hiring"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-purple-600 dark:text-purple-400 hover:underline"
-            >
-              terms and conditions of hiring
-            </a>
-          </span>
-        </label>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          By sending this hire request, you agree to our{' '}
+          <a
+            href="/terms/hiring"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-purple-600 dark:text-purple-400 hover:underline"
+          >
+            hiring terms and conditions
+          </a>.
+        </p>
       </div>
     </div>
   );
@@ -423,7 +409,7 @@ export default function ConversationHireWizard({
         ) : (
           <button
             onClick={handleSubmit}
-            disabled={loading || !termsAccepted}
+            disabled={loading}
             className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? 'Sending...' : 'Send Hire Request'}

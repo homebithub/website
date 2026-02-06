@@ -29,7 +29,7 @@ function sendToAnalytics(metric: Metric) {
   }
 
   // In production, send to your analytics service
-  // Example: Google Analytics, Vercel Analytics, etc.
+  // Example: Google Analytics, custom analytics endpoint, etc.
   if (process.env.NODE_ENV === 'production') {
     // TODO: Send to analytics service
     // Example with Google Analytics:

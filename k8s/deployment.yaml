@@ -27,10 +27,13 @@ spec:
               weight: 100
       containers:
         - name: website
-          image: ghcr.io/homebithub/website:20260117170755
+          image: ghcr.io/homebithub/website:20260206142349
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
+          env:
+            - name: NOTIFICATIONS_WS_BASE_URL
+              value: "https://homebit.co.ke/ws"
           livenessProbe:
             httpGet:
               path: /health

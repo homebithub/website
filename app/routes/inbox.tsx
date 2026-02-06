@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router";
+import { useAuth } from "~/contexts/useAuth";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
@@ -60,6 +61,7 @@ type HireRequestSummary = {
 };
 
 export default function InboxPage() {
+  const { user, loading: authLoading } = useAuth();
   const API_BASE = React.useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
   const NOTIFICATIONS_BASE = React.useMemo(
     () => (typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL,
@@ -67,6 +69,16 @@ export default function InboxPage() {
   );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  
+  // Authentication check - redirect to login if not authenticated
+  useEffect(() => {
+    if (!authLoading && !user) {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
+      }
+    }
+  }, [authLoading, user, navigate]);
   const selectedConversationId = searchParams.get('conversation');
   const [activeConversationId, setActiveConversationId] = useState<string | null>(selectedConversationId);
   
@@ -94,6 +106,8 @@ export default function InboxPage() {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const messagesContainerRef = useRef<HTMLDivElement | null>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [newMessageCount, setNewMessageCount] = useState(0);
+  const [isAtBottom, setIsAtBottom] = useState(true);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileModalUrl, setProfileModalUrl] = useState<string | null>(null);
   const [profileModalLoading, setProfileModalLoading] = useState(false);
@@ -205,6 +219,9 @@ export default function InboxPage() {
 
   // Hydrate conversations with participant profile information from the auth service
   useEffect(() => {
+    // Don't hydrate until auth is ready
+    if (authLoading || !user) return;
+    
     const role = currentUserProfileType?.toLowerCase();
     if (!role) return;
 
@@ -281,7 +298,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [items, currentUserProfileType, API_BASE]);
+  }, [items, currentUserProfileType, API_BASE, authLoading, user]);
 
   const fetchHireContext = useCallback(async (conversation?: Conversation) => {
     if (!conversation) {
@@ -319,6 +336,9 @@ export default function InboxPage() {
 
   // Load conversations list
   useEffect(() => {
+    // Don't load conversations until auth is ready
+    if (authLoading || !user) return;
+    
     let cancelled = false;
     async function load() {
       try {
@@ -354,7 +374,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [offset, NOTIFICATIONS_BASE]);
+  }, [offset, NOTIFICATIONS_BASE, authLoading, user]);
 
   // Load messages when conversation is selected
   useEffect(() => {
@@ -364,6 +384,9 @@ export default function InboxPage() {
       setMessagesHasMore(true);
       return;
     }
+    
+    // Don't load messages until auth is ready
+    if (authLoading || !user) return;
 
     let cancelled = false;
     const conversationId = activeConversationId; // Capture non-null value
@@ -409,7 +432,13 @@ export default function InboxPage() {
         }
         
         // Scroll to bottom after loading messages
-        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'auto' }), 100);
+        setTimeout(() => {
+          if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: 'auto' });
+            setIsAtBottom(true);
+            setNewMessageCount(0);
+          }
+        }, 100);
       } catch (e: any) {
         console.error('[Inbox] Error loading messages:', e);
         if (!cancelled) setMessagesError(e?.message || "Failed to load messages");
@@ -421,7 +450,36 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeConversationId, NOTIFICATIONS_BASE, messagesLimit]);
+  }, [activeConversationId, NOTIFICATIONS_BASE, messagesLimit, authLoading, user]);
+
+  // Auto-scroll to bottom when conversation changes or on page reload
+  useEffect(() => {
+    if (messages.length > 0 && activeConversationId) {
+      // Reset new message count when switching conversations
+      setNewMessageCount(0);
+      
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        if (bottomRef.current) {
+          bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+          setIsAtBottom(true);
+        }
+      }, 150);
+    }
+  }, [activeConversationId, messages.length]);
+
+  // Initial scroll to bottom on component mount
+  useEffect(() => {
+    if (messages.length > 0 && activeConversationId) {
+      setTimeout(() => {
+        if (bottomRef.current) {
+          bottomRef.current.scrollIntoView({ behavior: 'auto' });
+          setIsAtBottom(true);
+          setNewMessageCount(0);
+        }
+      }, 300);
+    }
+  }, [messages.length, activeConversationId]);
 
   // Removed polling - WebSocket now handles real-time updates
   // Polling was causing unnecessary HTTP requests every 15 seconds
@@ -435,12 +493,34 @@ export default function InboxPage() {
     setSearchParams({}, { replace: true });
   }, [setSearchParams]);
 
-  const handleViewProfile = useCallback(() => {
+  const handleViewProfile = useCallback(async () => {
     if (!selectedConversation) return;
     const role = currentUserProfileType?.toLowerCase();
     if (role === 'household') {
-      // Household viewing househelp profile: prefer profile ID when available
-      const househelpProfileId = (selectedConversation as any).househelp_profile_id || selectedConversation.househelp_id;
+      // Household viewing househelp profile: use profile ID
+      let househelpProfileId = selectedConversation.househelp_profile_id;
+      
+      // If profile ID is not available, fetch it from the API using user ID
+      if (!househelpProfileId) {
+        const househelpUserId = selectedConversation.househelp_id;
+        if (!househelpUserId) return;
+        
+        try {
+          const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
+          if (res.ok) {
+            const profileData: any = await apiClient.json(res);
+            househelpProfileId = profileData.id || profileData.profile_id;
+          } else {
+            pushToast('Failed to load profile information', 'error');
+            return;
+          }
+        } catch (err) {
+          console.error('Failed to fetch househelp profile:', err);
+          pushToast('Failed to load profile information', 'error');
+          return;
+        }
+      }
+      
       if (!househelpProfileId) return;
       const url = `/househelp/public-profile?profileId=${encodeURIComponent(househelpProfileId)}&embed=1`;
       setProfileModalLoading(true);
@@ -466,8 +546,19 @@ export default function InboxPage() {
   const handleMessagesScroll = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const nearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
-    setShowScrollToBottom(!nearBottom);
+    
+    // Check if user is at bottom (with 50px threshold)
+    const threshold = 50;
+    const atBottom = container.scrollHeight - container.scrollTop - container.clientHeight <= threshold;
+    setIsAtBottom(atBottom);
+    
+    // Show/hide scroll to bottom button
+    setShowScrollToBottom(!atBottom);
+    
+    // Reset new message count when user scrolls to bottom
+    if (atBottom) {
+      setNewMessageCount(0);
+    }
   }, []);
 
   // Group messages by date for rendering
@@ -508,7 +599,15 @@ export default function InboxPage() {
   }, [messages]);
 
   const scrollToBottom = useCallback(() => {
-    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 10);
+    // Reset new message count
+    setNewMessageCount(0);
+    setIsAtBottom(true);
+    
+    setTimeout(() => {
+      if (bottomRef.current) {
+        bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 10);
   }, []);
 
   const ensureMessageVisibleAndScroll = useCallback((id: string) => {
@@ -763,10 +862,17 @@ export default function InboxPage() {
           return [...prev, msg];
         });
         
-        // Auto-scroll to bottom when new message arrives
-        setTimeout(() => {
-          bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-        }, 100);
+        // Auto-scroll to bottom when new message arrives (only if user is already at bottom)
+        if (isAtBottom) {
+          setTimeout(() => {
+            if (bottomRef.current) {
+              bottomRef.current.scrollIntoView({ behavior: 'smooth' });
+            }
+          }, 100);
+        } else {
+          // Increment new message counter if user is not at bottom
+          setNewMessageCount(prev => prev + 1);
+        }
         
         // Update conversation list to show new last message
         setItems((prev) => {
@@ -850,7 +956,7 @@ export default function InboxPage() {
       offReactionAdded?.();
       offReactionRemoved?.();
     };
-  }, [addEventListener]);
+  }, [addEventListener, isAtBottom]);
 
   // Conversations list JSX (left sidebar)
   const conversationsList = (
@@ -1234,7 +1340,7 @@ export default function InboxPage() {
                         </div>
                       ) : (
                         <>
-                          <div className="whitespace-pre-wrap break-words">
+                          <div className="whitespace-pre-wrap break-words text-sm">
                             {m.deleted_at ? (
                               <span className="text-xs">
                                 Message deleted
@@ -1433,10 +1539,15 @@ export default function InboxPage() {
           <button
             type="button"
             onClick={scrollToBottom}
-            className="fixed right-6 bottom-28 z-[60] p-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xl hover:from-purple-700 hover:to-pink-700 focus:outline-none"
+            className="fixed right-6 bottom-28 z-[60] p-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xl hover:from-purple-700 hover:to-pink-700 focus:outline-none relative"
             aria-label="Scroll to bottom"
           >
             <ChevronDownIcon className="w-6 h-6" />
+            {newMessageCount > 0 && (
+              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold border-2 border-white dark:border-[#13131a]">
+                {newMessageCount > 99 ? '99+' : newMessageCount}
+              </span>
+            )}
           </button>
         )}
 
@@ -1536,6 +1647,23 @@ export default function InboxPage() {
         </div>
       </div>
   );
+
+  // Show loading state while checking authentication
+  if (authLoading) {
+    return (
+      <div className="h-screen flex flex-col overflow-hidden">
+        <Navigation />
+        <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <main className="flex-1 flex items-center justify-center">
+            <div className="text-center">
+              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+              <p className="mt-4 text-gray-600 dark:text-gray-400">Loading inbox...</p>
+            </div>
+          </main>
+        </PurpleThemeWrapper>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen flex flex-col overflow-hidden">

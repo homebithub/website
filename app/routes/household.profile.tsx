@@ -80,7 +80,10 @@ export default function HouseholdProfile() {
       setError(null);
       try {
         const token = localStorage.getItem("token");
-        if (!token) throw new Error("Not authenticated");
+        if (!token) {
+          navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
+          return;
+        }
         
         const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -470,13 +473,13 @@ export default function HouseholdProfile() {
           <div className="flex gap-3">
             <button
               onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               Reload Page
             </button>
             <button
               onClick={() => navigate('/profile-setup/household')}
-              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               Complete Profile Setup
             </button>

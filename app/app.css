@@ -660,15 +660,14 @@ i {
 /* --- Dark mode overrides for theme --- */
 /* Removed light mode media query: always dark mode */
   body {
+    background-color: #000 !important;
+    color: #fff !important;
   }
   .link {
     color: #8a5fa6 !important;
   }
   .link:hover {
     color: #b194d6 !important;
-  }
-    background-color: #000 !important;
-    color: #fff !important;
   }
   .card, .btn-primary, .input, .container, .sidebar, .responsive-button {
     border: 2px solid #a020f0 !important; /* purple */

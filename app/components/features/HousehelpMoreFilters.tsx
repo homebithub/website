@@ -60,7 +60,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
   }, []);
 
   const inputCls =
-    "w-full px-4 py-3 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md";
+    "w-full px-4 py-3 rounded-xl text-base bg-white dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 border-2 border-transparent focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md";
 
   // Derive single select for type of househelp from two boolean-like flags
   const typeValue = useMemo(() => {
@@ -93,7 +93,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
           <div className="relative">
             <div
               onClick={() => setShowKidsDropdown(!showKidsDropdown)}
-              className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
+              className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
             >
               <span className={fields.can_work_with_kids ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
                 {fields.can_work_with_kids === 'true' ? 'Yes' : fields.can_work_with_kids === 'false' ? 'No' : 'Any'}
@@ -103,7 +103,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
               </svg>
             </div>
             {showKidsDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
                 {[{ value: '', label: 'Any' }, { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }].map((option) => (
                   <div
                     key={option.value}
@@ -126,7 +126,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
           <div className="relative">
             <div
               onClick={() => setShowPetsDropdown(!showPetsDropdown)}
-              className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
+              className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
             >
               <span className={fields.can_work_with_pets ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
                 {fields.can_work_with_pets === 'true' ? 'Yes' : fields.can_work_with_pets === 'false' ? 'No' : 'Any'}
@@ -136,7 +136,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
               </svg>
             </div>
             {showPetsDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
                 {[{ value: '', label: 'Any' }, { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }].map((option) => (
                   <div
                     key={option.value}
@@ -162,7 +162,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
           <div className="relative">
             <div
               onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-              className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
+              className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
             >
               <span className={typeValue ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
                 {typeValue === 'live_in' ? 'Live-in' : typeValue === 'day_worker' ? 'Day worker' : 'Any'}
@@ -172,7 +172,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
               </svg>
             </div>
             {showTypeDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
                 {[{ value: '', label: 'Any' }, { value: 'live_in', label: 'Live-in' }, { value: 'day_worker', label: 'Day worker' }].map((option) => (
                   <div
                     key={option.value}
@@ -208,7 +208,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
           <div className="relative">
             <div
               onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-              className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
+              className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
             >
               <span className={fields.language ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
                 {fields.language || 'Any'}
@@ -218,7 +218,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
               </svg>
             </div>
             {showLanguageDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg max-h-60 overflow-y-auto">
                 <div
                   onClick={() => {
                     onChange('language', '');
@@ -263,7 +263,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
           <div className="relative">
             <div
               onClick={() => setShowExperienceDropdown(!showExperienceDropdown)}
-              className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
+              className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-gray-800/50 text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
             >
               <span className={fields.experience ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
                 {fields.experience ? EXPERIENCE_LEVELS.find(l => l.value === fields.experience)?.label : 'Any'}
@@ -273,7 +273,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
               </svg>
             </div>
             {showExperienceDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg max-h-60 overflow-y-auto">
                 <div
                   onClick={() => {
                     onChange('experience', '');

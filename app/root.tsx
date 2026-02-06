@@ -32,6 +32,12 @@ export function loader() {
 	};
 }
 
+// Add action handler to prevent "no action" errors from external POST requests
+export async function action() {
+	// Return 405 Method Not Allowed for unsupported actions
+	return new Response("Method Not Allowed", { status: 405 });
+}
+
 export default function App() {
     const { ENV } = useLoaderData<typeof loader>() || { ENV: { GOOGLE_CLIENT_ID: "", AUTH_API_BASE_URL: "" } };
     return (
@@ -75,9 +81,10 @@ export default function App() {
                 />
                 {/* Google Identity Services */}
                 <script src="https://accounts.google.com/gsi/client" async defer></script>
-                <link rel="icon" href="/favicon.ico" />
-                <link rel="icon" href="/logo_512x512.png" type="image/png" sizes="32x32" />
-                <link rel="icon" href="/logo_512x512.png" type="image/png" sizes="16x16" />
+                <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+                <link rel="icon" href="/logos/logo-dark.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" />
+                <link rel="icon" href="/logos/logo-light.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" />
+                <link rel="apple-touch-icon" href="/logos/logo-dark.png" />
                 <link rel="apple-touch-icon" href="/logo_512x512.png" sizes="180x180" />
 
                 {/* Global font: Plus Jakarta Sans (thinner, modern sans) */}

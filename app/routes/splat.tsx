@@ -85,5 +85,11 @@ export default function NotFound() {
   );
 }
 
+// Add action handler to prevent "no action" errors from external requests
+export async function action() {
+  // Return 405 Method Not Allowed for unsupported actions
+  return new Response("Method Not Allowed", { status: 405 });
+}
+
 // Error boundary for better error handling
 export { ErrorBoundary } from "~/components/ErrorBoundary";

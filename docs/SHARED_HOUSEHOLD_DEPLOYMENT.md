@@ -140,13 +140,15 @@ Test these URLs work:
 #### 2.3 Deploy
 
 ```bash
-# Deploy to your hosting (adjust for your setup)
-# Example for Vercel:
-vercel --prod
-
-# Example for custom server:
+# Build and deploy to your hosting
 npm run build
+
+# Deploy to your server
 rsync -avz build/ user@server:/var/www/homexpert/
+
+# Or use Docker
+docker build -t homebit-website .
+docker push your-registry/homebit-website:latest
 ```
 
 ---
@@ -246,10 +248,12 @@ systemctl start auth-service
 # Deploy previous version
 git checkout previous-version
 npm run build
-# Deploy build/
 
-# Or use hosting platform rollback:
-vercel rollback
+# Deploy to your server
+rsync -avz build/ user@server:/var/www/homexpert/
+
+# Or rollback Docker image
+kubectl set image deployment/website website=your-registry/homebit-website:previous-tag
 ```
 
 ---
