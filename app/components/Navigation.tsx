@@ -252,7 +252,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110"
+                                className="link text-lg sm:text-xl font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110"
                             >
                                 {item.name}
                             </Link>
@@ -268,7 +268,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg font-bold transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
+                                className="link text-lg font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
                                 id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
@@ -424,7 +424,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to={item.href}
-                                                    className={`font-bold ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} block px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
+                                                    className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} block px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
                                                 >
                                                     {item.name}
                                                 </Link>
