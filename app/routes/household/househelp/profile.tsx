@@ -147,7 +147,7 @@ export default function HousehelpProfile() {
   return (
     <div className="w-full flex justify-center bg-transparent mt-4 sm:mt-2">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 sm:p-12 px-8 sm:px-16 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-5xl">
-        {error && <div className="bg-red-100 text-red-700 px-4 py-2 rounded mt-6 text-center">{error}</div>}
+        {error && <div className="bg-red-100 text-red-700 px-4 py-1 rounded mt-6 text-center">{error}</div>}
 
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-4">
@@ -159,7 +159,7 @@ export default function HousehelpProfile() {
           {shortlisted ? (
             <>
               <button
-                className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow transition bg-red-600 hover:bg-red-700 text-white dark:bg-red-500 dark:hover:bg-red-400 ${shortlistLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
+                className={`flex items-center gap-2 px-4 py-1 rounded-full font-semibold shadow transition bg-red-600 hover:bg-red-700 text-white dark:bg-red-500 dark:hover:bg-red-400 ${shortlistLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
                 aria-label="Reject"
                 onClick={async () => {
                   setShortlistLoading(true);
@@ -206,14 +206,14 @@ export default function HousehelpProfile() {
                 <TrashIcon className="w-6 h-6" />
               </button>
               {shortlistDisabled && shortlistDisabledReason && (
-                <div className="absolute left-1/2 -translate-x-1/2 -top-12 w-56 bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900 text-xs rounded px-3 py-2 shadow-lg z-10 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
+                <div className="absolute left-1/2 -translate-x-1/2 -top-12 w-56 bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900 text-xs rounded px-3 py-1 shadow-lg z-10 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
                   {shortlistDisabledReason}
                 </div>
               )}
             </>
           ) : (
             <button
-              className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow transition
+              className={`flex items-center gap-2 px-4 py-1 rounded-full font-semibold shadow transition
                 ${shortlistDisabled ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-400'}
                 ${shortlistLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
               aria-label="Shortlist"

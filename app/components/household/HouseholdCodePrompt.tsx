@@ -109,7 +109,7 @@ export function HouseholdCodePrompt({
               </p>
             )}
             {validationResult && (
-              <div className="mt-3 p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-500/30 rounded-lg">
+              <div className="mt-3 p-4 bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-500/30 rounded-xl">
                 <p className="text-green-800 dark:text-green-300 font-semibold flex items-center">
                   <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -132,7 +132,7 @@ export function HouseholdCodePrompt({
                 type="button"
                 onClick={handleValidateCode}
                 disabled={!inviteCode || validating || loading}
-                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="flex-1 px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {validating ? (
                   <span className="flex items-center justify-center">
@@ -151,7 +151,7 @@ export function HouseholdCodePrompt({
                 type="button"
                 onClick={handleJoin}
                 disabled={loading}
-                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? '⏳ Joining...' : '✅ Join This Household'}
               </button>
@@ -187,7 +187,7 @@ export function HouseholdCodePrompt({
           type="button"
           onClick={onCreateNew}
           disabled={loading}
-          className="w-full px-6 py-3 rounded-xl bg-white dark:bg-[#13131a] text-purple-600 dark:text-purple-400 font-bold text-lg border-2 border-purple-300 dark:border-purple-500/50 shadow-md hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full px-6 py-1.5 rounded-xl bg-white dark:bg-[#13131a] text-purple-600 dark:text-purple-400 font-bold text-lg border-2 border-purple-300 dark:border-purple-500/50 shadow-md hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           🏠 Create New Household
         </button>

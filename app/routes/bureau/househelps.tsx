@@ -152,7 +152,7 @@ export default function BureauHousehelps() {
                 />
                 {!househelpInfo && (
                   <button
-                    className="btn-primary w-full py-3 text-lg mb-2"
+                    className="btn-primary w-full py-1.5 text-lg mb-2"
                     onClick={handleSearchPhone}
                     disabled={searching || !phone}
                   >
@@ -169,7 +169,7 @@ export default function BureauHousehelps() {
                 )}
                 {househelpInfo && (
                   <button
-                    className="btn-secondary w-full py-3 text-lg"
+                    className="btn-secondary w-full py-1.5 text-lg"
                     onClick={handleSendOtp}
                     disabled={sendingOtp}
                   >

@@ -40,6 +40,8 @@ function HouseholdProfileSetupContent() {
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [timeSpent, setTimeSpent] = useState(0);
   const [showCongratulations, setShowCongratulations] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [disclaimerChecked, setDisclaimerChecked] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
@@ -113,24 +115,9 @@ function HouseholdProfileSetupContent() {
       setCurrentStep(currentStep + 1);
       setTimeSpent(0); // Reset timer for new step
     } else {
-      // Profile setup complete - save all data to backend
-      setSaving(true);
-      try {
-        await saveProfileToBackend();
-        // Mark ALL steps as completed (not just the last one)
-        await markAllStepsComplete();
-        // Show congratulations modal
-        setShowCongratulations(true);
-        // Auto-redirect after 3 seconds
-        setTimeout(() => {
-          navigate('/household/profile');
-        }, 3000);
-      } catch (error) {
-        console.error('Failed to save profile:', error);
-        alert('Failed to save profile. Please try again.');
-      } finally {
-        setSaving(false);
-      }
+      // Last step - show disclaimer before completing
+      setDisclaimerChecked(false);
+      setShowDisclaimer(true);
     }
   };
   
@@ -142,24 +129,9 @@ function HouseholdProfileSetupContent() {
       setCurrentStep(currentStep + 1);
       setTimeSpent(0);
     } else {
-      // Last step - trigger completion flow same as handleNext
-      setSaving(true);
-      try {
-        await saveProfileToBackend();
-        // Mark ALL steps as completed (not just the last one)
-        await markAllStepsComplete();
-        // Show congratulations modal
-        setShowCongratulations(true);
-        // Auto-redirect after 3 seconds
-        setTimeout(() => {
-          navigate('/household/profile');
-        }, 3000);
-      } catch (error) {
-        console.error('Failed to save profile:', error);
-        alert('Failed to save profile. Please try again.');
-      } finally {
-        setSaving(false);
-      }
+      // Last step - show disclaimer before completing
+      setDisclaimerChecked(false);
+      setShowDisclaimer(true);
     }
   };
   
@@ -175,6 +147,24 @@ function HouseholdProfileSetupContent() {
     return () => clearInterval(autoSaveInterval);
   }, [currentStep, timeSpent]);
   
+  const finishSetup = async () => {
+    setSaving(true);
+    try {
+      await saveProfileToBackend();
+      await markAllStepsComplete();
+      setShowDisclaimer(false);
+      setShowCongratulations(true);
+      setTimeout(() => {
+        navigate('/household/profile');
+      }, 3000);
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+      alert('Failed to save profile. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const markAllStepsComplete = async () => {
     try {
       const token = localStorage.getItem('token');
@@ -361,14 +351,9 @@ function HouseholdProfileSetupContent() {
                 ) : STEPS[currentStep].id === 'photos' ? (
                   <CurrentComponent userType="household" onComplete={async () => {
                     console.log('Photos onComplete callback triggered!');
-                    // Show congratulations modal when photos are skipped/uploaded
-                    // Note: Photos component already saved the step, so we just show the modal
-                    console.log('Setting showCongratulations to true');
-                    setShowCongratulations(true);
-                    setTimeout(() => {
-                      console.log('Navigating to profile');
-                      navigate('/household/profile');
-                    }, 3000);
+                    // Show disclaimer modal before completing
+                    setDisclaimerChecked(false);
+                    setShowDisclaimer(true);
                   }} />
                 ) : STEPS[currentStep].id === 'nannytype' ? (
                   <CurrentComponent userType="household" />
@@ -402,7 +387,7 @@ function HouseholdProfileSetupContent() {
                   <button
                     onClick={handleBack}
                     disabled={currentStep === 0}
-                    className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    className={`flex items-center px-4 py-1 rounded-xl text-sm font-medium transition-colors ${
                       currentStep === 0
                         ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
                         : 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
@@ -414,7 +399,7 @@ function HouseholdProfileSetupContent() {
 
                   <button
                     onClick={handleNext}
-                    className="flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
+                    className="flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
                   >
                     {currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →'}
                     {currentStep !== STEPS.length - 1 && (
@@ -429,7 +414,7 @@ function HouseholdProfileSetupContent() {
                 <button
                   onClick={handleBack}
                   disabled={currentStep === 0}
-                  className={`flex items-center px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  className={`flex items-center px-4 py-1 rounded-xl text-sm font-medium transition-colors ${
                     currentStep === 0
                       ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
                       : 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
@@ -453,7 +438,7 @@ function HouseholdProfileSetupContent() {
                 <button
                   onClick={handleNext}
                   disabled={saving}
-                  className="flex items-center px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                  className="flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
                 >
                   {saving ? '✨ Saving...' : (currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →')}
                   {currentStep !== STEPS.length - 1 && !saving && (
@@ -467,6 +452,76 @@ function HouseholdProfileSetupContent() {
         </div>
       </main>
       
+      {/* Disclaimer Modal */}
+      {showDisclaimer && (
+        <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="disclaimer-title" role="dialog" aria-modal="true">
+          <div className="flex min-h-screen items-center justify-center p-4">
+            <div className="fixed inset-0 bg-black bg-opacity-75 backdrop-blur-sm transition-opacity" onClick={() => { setShowDisclaimer(false); setDisclaimerChecked(false); }}></div>
+
+            <div className="relative transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border-2 border-purple-500/50">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-5">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+                    <svg className="h-6 w-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-white" id="disclaimer-title">
+                    Almost There!
+                  </h3>
+                </div>
+              </div>
+
+              <div className="px-6 py-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                  Before we finalize your profile, please confirm the following:
+                </p>
+
+                <label className="flex items-start gap-3 cursor-pointer group">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <input
+                      type="checkbox"
+                      checked={disclaimerChecked}
+                      onChange={(e) => setDisclaimerChecked(e.target.checked)}
+                      className="h-5 w-5 rounded border-2 border-purple-300 dark:border-purple-500 text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
+                    />
+                  </div>
+                  <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                    I confirm that all the information I have provided is accurate and truthful to the best of my knowledge. I understand that providing false or misleading information may result in account suspension.
+                  </span>
+                </label>
+              </div>
+
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800/50 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 sm:justify-end">
+                <button
+                  onClick={() => { setShowDisclaimer(false); setDisclaimerChecked(false); }}
+                  className="px-6 py-1.5 rounded-xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-sm"
+                >
+                  Go Back
+                </button>
+                <button
+                  onClick={finishSetup}
+                  disabled={!disclaimerChecked || saving}
+                  className="px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm flex items-center justify-center gap-2"
+                >
+                  {saving ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Finishing...
+                    </>
+                  ) : (
+                    'Finish'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Congratulations Modal */}
       {showCongratulations && (
         <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">

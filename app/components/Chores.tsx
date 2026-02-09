@@ -195,7 +195,7 @@ const Chores: React.FC = () => {
               type="button"
               onClick={handleOtherChoreAdd}
               disabled={!otherChore.trim()}
-              className="px-6 py-3 rounded-xl bg-purple-600 text-white font-bold text-base shadow-md hover:bg-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-1.5 rounded-xl bg-purple-600 text-white font-bold text-base shadow-md hover:bg-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add
             </button>
@@ -229,7 +229,7 @@ const Chores: React.FC = () => {
       )}
       <button
         type="button"
-        className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+        className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
         onClick={saveChores}
         disabled={isLoading || selectedChores.length === 0}
       >

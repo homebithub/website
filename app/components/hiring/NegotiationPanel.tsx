@@ -148,7 +148,7 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
         )}
 
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
             <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
           </div>
         )}
@@ -212,7 +212,7 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
             placeholder="Type your message..."
             rows={2}
             disabled={sending}
-            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white resize-none disabled:opacity-50"
+            className="flex-1 px-4 py-1 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white resize-none disabled:opacity-50"
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -223,7 +223,7 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
           <button
             type="submit"
             disabled={!message.trim() || sending}
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="px-6 py-1 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             <Send className="w-4 h-4" />
             {sending ? 'Sending...' : 'Send'}

@@ -170,7 +170,7 @@ const References: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => removeReference(index)}
-                  className="px-3 py-1 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all text-sm font-semibold"
+                  className="px-3 py-1 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all text-sm font-semibold"
                 >
                   Remove
                 </button>
@@ -256,7 +256,7 @@ const References: React.FC = () => {
           <button
             type="button"
             onClick={addReference}
-            className="w-full py-3 rounded-xl border-2 border-dashed border-purple-300 dark:border-purple-500/50 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all font-semibold"
+            className="w-full py-1.5 rounded-xl border-2 border-dashed border-purple-300 dark:border-purple-500/50 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all font-semibold"
           >
             + Add Another Reference
           </button>
@@ -278,7 +278,7 @@ const References: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+            className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>

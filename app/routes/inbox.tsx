@@ -969,7 +969,7 @@ export default function InboxPage() {
       </div>
 
       {error && (
-        <div className="m-3 rounded-md border border-red-300 bg-red-50 dark:bg-red-900/20 p-2 text-xs text-red-700 dark:text-red-300">
+        <div className="m-3 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-2 text-xs text-red-700 dark:text-red-300">
           {error}
         </div>
       )}
@@ -995,7 +995,7 @@ export default function InboxPage() {
                     setActiveConversationId(c.id);
                     setSearchParams({ conversation: c.id }, { replace: true });
                   }}
-                  className={`w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-purple-50 dark:hover:bg-slate-800/70 transition ${
+                  className={`w-full px-4 py-1.5 flex items-center gap-3 text-left hover:bg-purple-50 dark:hover:bg-slate-800/70 transition ${
                     isActive ? 'bg-purple-50/70 dark:bg-slate-800/80' : ''
                   }`}
                 >
@@ -1075,7 +1075,7 @@ export default function InboxPage() {
           {/* Clickable profile header */}
           <button
             onClick={handleViewProfile}
-            className="flex items-center gap-3 flex-1 hover:bg-purple-50 dark:hover:bg-slate-800/60 rounded-lg p-2 -m-2 transition-colors"
+            className="flex items-center gap-3 flex-1 hover:bg-purple-50 dark:hover:bg-slate-800/60 rounded-xl p-2 -m-2 transition-colors"
           >
             <div className="w-10 h-10 rounded-full relative overflow-hidden border-2 border-purple-300 dark:border-purple-500 flex-shrink-0">
               {selectedConversation.participant_avatar ? (
@@ -1179,7 +1179,7 @@ export default function InboxPage() {
           )}
 
           {messagesError && (
-            <div className="mb-3 rounded-md border border-red-300 bg-red-50 dark:bg-red-900/20 p-3 text-red-700 dark:text-red-300">{messagesError}</div>
+            <div className="mb-3 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-3 text-red-700 dark:text-red-300">{messagesError}</div>
           )}
 
           {groupedMessages.map(group => (
@@ -1289,7 +1289,7 @@ export default function InboxPage() {
                         <button
                           type="button"
                           onClick={() => ensureMessageVisibleAndScroll(m.reply_to_id!)}
-                          className={`mb-2 w-full text-left text-xs rounded-lg border ${mine ? 'border-white/30 bg-white/10 text-white/90' : 'border-purple-200 dark:border-purple-500/30 bg-white/60 dark:bg-slate-900/40 text-gray-700 dark:text-gray-200'} px-3 py-2 hover:opacity-90`}
+                          className={`mb-2 w-full text-left text-xs rounded-lg border ${mine ? 'border-white/30 bg-white/10 text-white/90' : 'border-purple-200 dark:border-purple-500/30 bg-white/60 dark:bg-slate-900/40 text-gray-700 dark:text-gray-200'} px-3 py-1 hover:opacity-90`}
                           aria-label="Go to replied message"
                         >
                           <div className="flex gap-2 items-start">
@@ -1326,13 +1326,13 @@ export default function InboxPage() {
                           <div className="mt-2 flex items-center gap-2 justify-end text-xs">
                             <button
                               type="button"
-                              className={`px-3 py-1 rounded-lg border ${mine ? 'border-white/40 text-white/90 hover:bg-white/10' : 'border-purple-300 text-purple-700 hover:bg-purple-50 dark:text-purple-200 dark:border-purple-500/40 dark:hover:bg-slate-800'}`}
+                              className={`px-3 py-1 rounded-xl border ${mine ? 'border-white/40 text-white/90 hover:bg-white/10' : 'border-purple-300 text-purple-700 hover:bg-purple-50 dark:text-purple-200 dark:border-purple-500/40 dark:hover:bg-slate-800'}`}
                               onClick={cancelEditMessage}
                               disabled={editingSaving}
                             >Cancel</button>
                             <button
                               type="button"
-                              className={`px-3 py-1 rounded-lg ${mine ? 'bg-white text-purple-700' : 'bg-purple-600 text-white'} hover:opacity-90 disabled:opacity-60`}
+                              className={`px-3 py-1 rounded-xl ${mine ? 'bg-white text-purple-700' : 'bg-purple-600 text-white'} hover:opacity-90 disabled:opacity-60`}
                               onClick={saveEditMessage}
                               disabled={editingSaving || editingDraft.trim().length === 0}
                             >{editingSaving ? 'Saving…' : 'Save'}</button>
@@ -1469,15 +1469,15 @@ export default function InboxPage() {
                               else if (e.key === 'Enter') { e.preventDefault(); const opt = options[msgMenuFocusIndex]; if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }
                               else if (e.key === 'Escape') { e.preventDefault(); setOpenMsgMenuId(null); }
                             }}
-                            className={`absolute top-6 ${mine ? 'right-0' : 'left-0'} z-50 w-56 rounded-lg border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg overflow-hidden`}
+                            className={`absolute top-6 ${mine ? 'right-0' : 'left-0'} z-50 w-56 rounded-xl border border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0f16] shadow-lg overflow-hidden`}
                             onMouseLeave={() => setOpenMsgMenuId(null)}
                           >
                             {/* Quick emoji reactions bar (mobile only) */}
-                            <div className="lg:hidden flex items-center justify-around gap-1 px-3 py-2 border-b border-purple-100 dark:border-purple-500/20 bg-purple-50/50 dark:bg-slate-800/50">
+                            <div className="lg:hidden flex items-center justify-around gap-1 px-3 py-1 border-b border-purple-100 dark:border-purple-500/20 bg-purple-50/50 dark:bg-slate-800/50">
                               {['👍','❤️','😂','😮'].map(em => (
                                 <button 
                                   key={em} 
-                                  className="text-xl px-2 py-1 rounded-lg hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
+                                  className="text-xl px-2 py-1 rounded-xl hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
                                   onClick={() => { toggleReaction(m, em); setOpenMsgMenuId(null); }}
                                   aria-label={`React with ${em}`}
                                 >
@@ -1485,7 +1485,7 @@ export default function InboxPage() {
                                 </button>
                               ))}
                               <button 
-                                className="text-xl px-2 py-1 rounded-lg hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
+                                className="text-xl px-2 py-1 rounded-xl hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
                                 onClick={() => { setOpenMsgMenuId(null); setOpenReactPickerMsgId(m.id); }}
                                 aria-label="Add more reactions"
                               >
@@ -1496,7 +1496,7 @@ export default function InboxPage() {
                             {options.map((opt, idx) => (
                               <button
                                 key={opt.label}
-                                className={`w-full text-left px-3 py-2 text-sm ${opt.danger ? 'text-red-600' : 'text-gray-700 dark:text-gray-200'} ${opt.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50 dark:hover:bg-slate-800'} ${msgMenuFocusIndex === idx ? 'bg-purple-50 dark:bg-slate-800' : ''}`}
+                                className={`w-full text-left px-3 py-1 text-sm ${opt.danger ? 'text-red-600' : 'text-gray-700 dark:text-gray-200'} ${opt.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50 dark:hover:bg-slate-800'} ${msgMenuFocusIndex === idx ? 'bg-purple-50 dark:bg-slate-800' : ''}`}
                                 disabled={opt.disabled}
                                 onClick={() => { if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }}
                                 onMouseEnter={() => setMsgMenuFocusIndex(idx)}
@@ -1554,12 +1554,12 @@ export default function InboxPage() {
         {/* Input - At bottom (grid row) */}
         <div className="p-4 border-t border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a]">
           {selectedIds.size > 0 && (
-            <div className="mb-2 flex items-center justify-between rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50/60 dark:bg-slate-800/60 px-3 py-2">
+            <div className="mb-2 flex items-center justify-between rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50/60 dark:bg-slate-800/60 px-3 py-1">
               <div className="text-xs font-semibold">{selectedIds.size} selected</div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  className="px-2 py-1 rounded-lg border border-purple-300 text-purple-700 hover:bg-purple-50 dark:text-purple-200 dark:border-purple-500/40 dark:hover:bg-slate-800 text-xs"
+                  className="px-2 py-1 rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:text-purple-200 dark:border-purple-500/40 dark:hover:bg-slate-800 text-xs"
                   onClick={async () => {
                     const ids = Array.from(selectedIds);
                     const sel = messages.filter(m => ids.includes(m.id) && !m.deleted_at && m.body).sort((a,b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -1569,14 +1569,14 @@ export default function InboxPage() {
                 >Copy</button>
                 <button
                   type="button"
-                  className="px-2 py-1 rounded-lg border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 text-xs"
+                  className="px-2 py-1 rounded-xl border border-gray-300 dark:border-slate-700 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 text-xs"
                   onClick={() => setSelectedIds(new Set())}
                 >Cancel</button>
               </div>
             </div>
           )}
           {replyTo && (
-            <div className="mb-2 flex items-start justify-between rounded-lg border border-purple-200 dark:border-purple-500/30 bg-purple-50/60 dark:bg-slate-800/60 px-3 py-2">
+            <div className="mb-2 flex items-start justify-between rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50/60 dark:bg-slate-800/60 px-3 py-1">
               <div className="text-xs">
                 <div className="font-semibold text-purple-700 dark:text-purple-300">
                   Replying to {replyTo.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')}

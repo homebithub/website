@@ -155,7 +155,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
                     }
                   });
                 }}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200"
               >
                 Weekdays
               </button>
@@ -171,7 +171,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
                     }
                   });
                 }}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200"
               >
                 Every Day
               </button>
@@ -186,7 +186,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
                     }
                   });
                 }}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200"
               >
                 Clear All
               </button>
@@ -196,7 +196,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
 
         {/* Sleep-in Information */}
         {isSleepIn && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
@@ -217,7 +217,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
 
         {/* Summary */}
         {startDate && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -247,7 +247,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
         <button
           onClick={handleNext}
           disabled={!startDate || (isDayburg && selectedDays.length === 0)}
-          className="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-1 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Next
         </button>

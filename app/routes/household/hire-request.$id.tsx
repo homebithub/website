@@ -240,7 +240,7 @@ export default function HireRequestDetail() {
           <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Hire request not found'}</p>
           <button
             onClick={() => navigate('/household/hiring')}
-            className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            className="w-full px-4 py-1 bg-purple-600 text-white rounded-xl hover:bg-purple-700"
           >
             Back to Hiring
           </button>
@@ -264,7 +264,7 @@ export default function HireRequestDetail() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
               Hire Request Details
             </h1>
-            <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(hireRequest.status)}`}>
+            <span className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-sm font-medium ${getStatusColor(hireRequest.status)}`}>
               {getStatusIcon(hireRequest.status)}
               {hireRequest.status.charAt(0).toUpperCase() + hireRequest.status.slice(1)}
             </span>
@@ -389,7 +389,7 @@ export default function HireRequestDetail() {
 
             {/* Decline Reason */}
             {hireRequest.decline_reason && (
-              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+              <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
                 <h2 className="text-xl font-semibold text-red-800 dark:text-red-200 mb-4">
                   Decline Reason
                 </h2>
@@ -420,7 +420,7 @@ export default function HireRequestDetail() {
                 <button
                   onClick={handleCancelRequest}
                   disabled={actionLoading}
-                  className="w-full px-4 py-3 border-2 border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
+                  className="w-full px-4 py-1.5 border-2 border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
                 >
                   {actionLoading ? 'Cancelling...' : 'Cancel Request'}
                 </button>
@@ -429,7 +429,7 @@ export default function HireRequestDetail() {
               {hireRequest.status === 'accepted' && (
                 <button
                   onClick={() => setShowContractModal(true)}
-                  className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors mb-3"
+                  className="w-full px-4 py-1.5 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium transition-colors mb-3"
                 >
                   Create Contract
                 </button>
@@ -439,7 +439,7 @@ export default function HireRequestDetail() {
                 onClick={() => navigate(`/househelp/public-profile`, {
                   state: { profileId: hireRequest.househelp_id }
                 })}
-                className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-medium transition-colors"
+                className="w-full px-4 py-1.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-medium transition-colors"
               >
                 View Househelp Profile
               </button>
@@ -501,7 +501,7 @@ export default function HireRequestDetail() {
           onClick={() => setShowContractModal(false)}
           disabled={actionLoading}
           className="
-            flex-1 px-4 py-3 sm:py-2 text-sm
+            flex-1 px-4 py-1 text-sm
             border border-gray-300 dark:border-gray-600 
             rounded-lg 
             hover:bg-gray-50 dark:hover:bg-gray-700 
@@ -515,9 +515,9 @@ export default function HireRequestDetail() {
           onClick={handleCreateContract}
           disabled={actionLoading}
           className="
-            flex-1 px-4 py-3 sm:py-2 text-sm
+            flex-1 px-4 py-1 text-sm
             bg-green-600 text-white 
-            rounded-lg 
+            rounded-xl 
             hover:bg-green-700 
             disabled:opacity-50 disabled:cursor-not-allowed
           "

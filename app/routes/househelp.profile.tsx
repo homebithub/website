@@ -293,13 +293,13 @@ export default function HousehelpProfile() {
           <div className="flex gap-3">
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="px-6 py-1.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               Reload Page
             </button>
             <button
               onClick={() => navigate('/profile-setup/househelp')}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
+              className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
             >
               Complete Profile Setup
             </button>
@@ -320,7 +320,7 @@ export default function HousehelpProfile() {
           <p className="text-gray-700 dark:text-gray-300 mb-4">You haven't completed your househelp profile yet.</p>
           <button
             onClick={() => navigate('/profile-setup/househelp')}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 transition-all"
+            className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 transition-all"
           >
             Complete Profile Setup
           </button>
@@ -344,7 +344,7 @@ export default function HousehelpProfile() {
           </div>
           <button
             onClick={() => navigate('/househelp/public-profile')}
-            className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
+            className="px-4 sm:px-6 py-1 sm:py-1.5 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
           >
             👁️ View Public Profile
           </button>
@@ -364,14 +364,14 @@ export default function HousehelpProfile() {
 
         {/* Error/Success Messages */}
         {uploadError && (
-          <div className="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30">
+          <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30">
             <p className="text-sm text-red-600 dark:text-red-400">⚠️ {uploadError}</p>
           </div>
         )}
 
         {/* Upload Progress Bar */}
         {uploading && uploadProgress > 0 && (
-          <div className="mb-4 p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30">
+          <div className="mb-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-semibold text-blue-800 dark:text-blue-400">
                 Uploading photo...
@@ -417,7 +417,7 @@ export default function HousehelpProfile() {
             <button
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="flex items-center gap-2 px-4 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             >
               {uploading ? (
                 <>
@@ -453,14 +453,14 @@ export default function HousehelpProfile() {
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center gap-2">
                   <button
                     onClick={() => setSelectedImage(photo)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-lg text-sm font-semibold hover:bg-purple-50"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-xl text-sm font-semibold hover:bg-purple-50"
                   >
                     View Full
                   </button>
                   <button
                     onClick={() => confirmDeletePhoto(photo)}
                     disabled={deleteLoading === photo}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50"
                     title="Delete photo"
                   >
                     {deleteLoading === photo ? (
@@ -490,7 +490,7 @@ export default function HousehelpProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👤 Personal Information</h2>
           <button
             onClick={() => handleEditSection('gender')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -523,7 +523,7 @@ export default function HousehelpProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">💼 Experience & Skills</h2>
           <button
             onClick={() => handleEditSection('experience')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -568,20 +568,20 @@ export default function HousehelpProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">⚙️ Work Preferences</h2>
           <button
             onClick={() => handleEditSection('nannytype')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
         </div>
         <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
               <p className="font-semibold text-purple-900 dark:text-purple-100">👶 Work with Kids</p>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 {profile.work_with_kids ? 'Yes' : 'No'}
               </p>
             </div>
-            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
               <p className="font-semibold text-purple-900 dark:text-purple-100">🐾 Work with Pets</p>
               <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                 {profile.work_with_pets ? 'Yes' : 'No'}
@@ -590,12 +590,12 @@ export default function HousehelpProfile() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {profile.live_in && (
-              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                 <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 Live-in Available</p>
               </div>
             )}
             {profile.day_worker && (
-              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                 <p className="font-semibold text-purple-900 dark:text-purple-100">☀️ Day Worker Available</p>
               </div>
             )}
@@ -617,7 +617,7 @@ export default function HousehelpProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">💰 Salary Expectations</h2>
           <button
             onClick={() => handleEditSection('salary')}
-            className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -647,7 +647,7 @@ export default function HousehelpProfile() {
             <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">📝 About Me</h2>
             <button
               onClick={() => handleEditSection('bio')}
-              className="px-4 py-2 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+              className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
               ✏️ Edit
             </button>

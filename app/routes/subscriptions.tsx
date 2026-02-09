@@ -511,7 +511,7 @@ export default function SubscriptionsPage() {
                             </div>
                             <button
                               onClick={() => navigate(`/pricing?plan=${plan.id}`)}
-                              className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
+                              className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
                             >
                               Select Plan
                             </button>
@@ -572,7 +572,7 @@ export default function SubscriptionsPage() {
                           console.log('[Subscriptions] Phone number set to:', user?.phone || '');
                           setShowPaymentModal(true);
                         }}
-                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
                       >
                         <CreditCardIcon className="w-5 h-5" />
                         Make Payment Now
@@ -610,7 +610,7 @@ export default function SubscriptionsPage() {
                                 </div>
                                 <button
                                   onClick={() => navigate(`/pricing?plan=${plan.id}`)}
-                                  className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm rounded-lg font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+                                  className="w-full px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
                                 >
                                   Switch to This Plan
                                 </button>
@@ -619,7 +619,7 @@ export default function SubscriptionsPage() {
                           ))}
                         </div>
                         
-                        <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                        <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
                           <p className="text-xs text-blue-800 dark:text-blue-300">
                             <strong>Note:</strong> If you pay for a new plan now, it will be queued and become active after your current subscription expires. You won't lose any remaining time on your current plan.
                           </p>
@@ -632,7 +632,7 @@ export default function SubscriptionsPage() {
                     <p className="text-gray-500 dark:text-gray-400 mb-4">No active subscription</p>
                     <button
                       onClick={() => navigate('/pricing')}
-                      className="inline-flex items-center justify-center px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all duration-200"
+                      className="inline-flex items-center justify-center px-6 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all duration-200"
                     >
                       View Plans
                     </button>
@@ -651,7 +651,7 @@ export default function SubscriptionsPage() {
                         <button
                           key={payment.id}
                           onClick={() => handleViewTransaction(payment)}
-                          className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer text-left"
+                          className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer text-left"
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
@@ -752,7 +752,7 @@ export default function SubscriptionsPage() {
                         </div>
 
                         {errorMessage && (
-                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
+                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
                             <p className="text-sm text-red-800 dark:text-red-300">{errorMessage}</p>
                           </div>
                         )}
@@ -761,14 +761,14 @@ export default function SubscriptionsPage() {
                           <button
                             onClick={handleCloseModal}
                             disabled={processingPayment}
-                            className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                            className="flex-1 px-4 py-1 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={initiatePayment}
                             disabled={!phoneNumber || processingPayment}
-                            className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                            className="flex-1 px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                           >
                             Pay Now
                           </button>
@@ -827,7 +827,7 @@ export default function SubscriptionsPage() {
                         Payment Failed
                       </p>
                       {errorMessage && (
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-4">
                           <p className="text-sm text-red-800 dark:text-red-300 font-medium mb-1">
                             Reason:
                           </p>
@@ -838,7 +838,7 @@ export default function SubscriptionsPage() {
                       )}
                       <button
                         onClick={handleRetry}
-                        className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg"
+                        className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg"
                       >
                         Try Again
                       </button>
@@ -856,7 +856,7 @@ export default function SubscriptionsPage() {
                       </p>
                       <button
                         onClick={handleRetry}
-                        className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium"
+                        className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium"
                       >
                         Try Again
                       </button>
@@ -916,7 +916,7 @@ export default function SubscriptionsPage() {
                       </div>
 
                       {/* Amount */}
-                      <div className="text-center py-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
+                      <div className="text-center py-1 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Amount Paid</p>
                         <p className="text-3xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(selectedPayment.amount)}
@@ -994,7 +994,7 @@ export default function SubscriptionsPage() {
                           <button
                             onClick={handleDownloadReceipt}
                             disabled={downloadingReceipt}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {downloadingReceipt ? (
                               <>
@@ -1026,7 +1026,7 @@ export default function SubscriptionsPage() {
                             <button
                               onClick={handleEmailReceipt}
                               disabled={sendingReceipt || !receiptEmail}
-                              className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 border-2 border-purple-600 dark:border-purple-500 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full flex items-center justify-center gap-2 px-4 py-1.5 bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 border-2 border-purple-600 dark:border-purple-500 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {sendingReceipt ? (
                                 <>

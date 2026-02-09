@@ -131,7 +131,7 @@ const SalaryExpectations: React.FC = () => {
         </div>
 
         {error && (
-          <div className="p-4 bg-red-50 text-red-700 rounded-md text-sm">
+          <div className="p-4 bg-red-50 text-red-700 rounded-xl text-sm">
             {error}
           </div>
         )}
@@ -140,7 +140,7 @@ const SalaryExpectations: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary-600 text-white px-6 py-1.5 rounded-xl font-semibold hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center">

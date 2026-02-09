@@ -41,7 +41,7 @@ export default function NotFound() {
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
                 to="/"
-                className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
+                className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105"
               >
                 <HomeIcon className="h-5 w-5 mr-2" />
                 Go Home
@@ -49,7 +49,7 @@ export default function NotFound() {
               
               <button
                 onClick={() => window.history.back()}
-                className="inline-flex items-center px-6 py-3 bg-white dark:bg-[#13131a] text-purple-600 dark:text-purple-400 font-semibold rounded-lg border-2 border-purple-600 dark:border-purple-500/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 shadow-md dark:shadow-glow-sm hover:shadow-lg dark:hover:shadow-glow-md hover:scale-105"
+                className="inline-flex items-center px-6 py-1.5 bg-white dark:bg-[#13131a] text-purple-600 dark:text-purple-400 font-semibold rounded-xl border-2 border-purple-600 dark:border-purple-500/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 shadow-md dark:shadow-glow-sm hover:shadow-lg dark:hover:shadow-glow-md hover:scale-105"
               >
                 <ArrowLeftIcon className="h-5 w-5 mr-2" />
                 Go Back

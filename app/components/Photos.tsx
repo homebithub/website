@@ -535,7 +535,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="mt-4 px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             disabled={images.length >= MAX_FILES}
           >
             📁 Choose Files
@@ -584,7 +584,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
             type="button"
             onClick={handleSkip}
             disabled={isSubmitting || isSkipping}
-            className="flex-1 px-8 py-4 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-400 font-bold text-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 px-8 py-1 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-400 font-bold text-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSkipping ? (
               <>
@@ -604,7 +604,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
           <button
             type="submit"
             disabled={isSubmitting || isSkipping || images.length === 0}
-            className="flex-1 px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+            className="flex-1 px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -641,7 +641,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
                   <div className="absolute right-0 top-0 pr-4 pt-4">
                     <button
                       type="button"
-                      className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                      className="rounded-xl bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                       onClick={closeImageModal}
                     >
                       <span className="sr-only">Close</span>
@@ -711,7 +711,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
                       <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-4">
                         <button
                           type="button"
-                          className="px-4 py-2 bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 flex items-center space-x-2"
+                          className="px-4 py-1 bg-white text-gray-700 rounded-xl border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 flex items-center space-x-2"
                           onClick={closeImageModal}
                         >
                           <XMarkIcon className="h-5 w-5" />
@@ -719,7 +719,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
                         </button>
                         <button
                           type="button"
-                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center space-x-2"
+                          className="px-4 py-1 bg-red-600 text-white rounded-xl hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center space-x-2"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (images[selectedImageIndex]) {

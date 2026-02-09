@@ -133,7 +133,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
             setEditingChild(null);
             setShowChildModal(true);
           }}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="flex items-center gap-2 px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           <PlusIcon className="h-5 w-5" />
           Add Child
@@ -141,7 +141,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
         <button
           type="button"
           onClick={() => setShowExpectingModal(true)}
-          className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+          className="flex items-center gap-2 px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
         >
           <PlusIcon className="h-5 w-5" />
           Expecting a Child
@@ -153,10 +153,10 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
           <table className="min-w-full bg-white dark:bg-gray-900">
             <thead className="bg-purple-50 dark:bg-purple-900/20">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Gender</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Date of Birth</th>
-                <th className="px-6 py-3 text-left text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Traits</th>
-                <th className="px-6 py-3 text-right text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-1.5 text-left text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Gender</th>
+                <th className="px-6 py-1.5 text-left text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Date of Birth</th>
+                <th className="px-6 py-1.5 text-left text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Traits</th>
+                <th className="px-6 py-1.5 text-right text-xs font-bold text-purple-700 dark:text-purple-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-gray-900 divide-y divide-purple-100 dark:divide-purple-500/20">
@@ -166,7 +166,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
                 
                 return (
                   <tr key={child.id || index} className="hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white capitalize">
+                    <td className="px-6 py-1 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white capitalize">
                       {child.gender || 'Not specified'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
@@ -195,7 +195,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-1 whitespace-nowrap text-right text-sm font-medium">
                       <button
                         type="button"
                         onClick={() => handleEditChild(index)}

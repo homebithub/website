@@ -180,13 +180,13 @@ const Languages = () => {
             <h1 className="text-2xl font-bold text-gray-900 mb-6">Languages You Speak</h1>
             
             {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-md text-sm">
+                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm">
                     {error}
                 </div>
             )}
             
             {success && (
-                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-md text-sm">
+                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-sm">
                     {success}
                 </div>
             )}
@@ -196,7 +196,7 @@ const Languages = () => {
                     <h2 className="text-lg font-medium text-gray-900">Select languages you're comfortable with</h2>
                     
                     {/* English */}
-                    <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+                    <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                         selectedLanguages.includes('English')
                             ? 'border-primary-500 bg-primary-50 text-primary-900'
                             : 'border-gray-200 bg-white hover:bg-gray-50'
@@ -211,7 +211,7 @@ const Languages = () => {
                     </label>
                     
                     {/* Swahili */}
-                    <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+                    <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                         selectedLanguages.includes('Swahili')
                             ? 'border-primary-500 bg-primary-50 text-primary-900'
                             : 'border-gray-200 bg-white hover:bg-gray-50'
@@ -228,7 +228,7 @@ const Languages = () => {
                     {/* Other Languages */}
                     <div className="relative" ref={dropdownRef}>
                         <div 
-                            className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+                            className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                                 selectedLanguages.some(lang => !['English', 'Swahili'].includes(lang))
                                     ? 'border-primary-500 bg-primary-50 text-primary-900'
                                     : 'border-gray-200 bg-white hover:bg-gray-50'
@@ -251,7 +251,7 @@ const Languages = () => {
                         </div>
                         
                         {showOtherLanguages && (
-                            <div className="mt-2 w-full bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden z-10">
+                            <div className="mt-2 w-full bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden z-10">
                                 {/* Search input */}
                                 <div className="p-3 border-b border-gray-200">
                                     <div className="relative">
@@ -277,7 +277,7 @@ const Languages = () => {
                                         <div className="py-1">
                                             {filteredLanguages.length > 0 ? (
                                                 filteredLanguages.map((language) => (
-                                                    <div key={language} className="px-4 py-2 hover:bg-gray-50">
+                                                    <div key={language} className="px-4 py-1 hover:bg-gray-50">
                                                         <label className={`flex items-center space-x-3 cursor-pointer w-full p-2 rounded ${
                                                             selectedLanguages.includes(language)
                                                                 ? 'bg-primary-50'
@@ -316,12 +316,12 @@ const Languages = () => {
                                                 
                                                 return (
                                                     <div key={group} className="py-1">
-                                                        <div className="px-4 py-2 text-sm font-medium text-gray-500 bg-gray-50 sticky top-0 z-10">
+                                                        <div className="px-4 py-1 text-sm font-medium text-gray-500 bg-gray-50 sticky top-0 z-10">
                                                             {groupName}
                                                         </div>
                                                         <div className="divide-y divide-gray-100">
                                                             {filtered.map((language) => (
-                                                                <div key={language} className="px-4 py-2 hover:bg-gray-50">
+                                                                <div key={language} className="px-4 py-1 hover:bg-gray-50">
                                                                     <label className={`flex items-center space-x-3 cursor-pointer w-full p-2 rounded ${
                                                                         selectedLanguages.includes(language)
                                                                             ? 'bg-primary-50'
@@ -382,7 +382,7 @@ const Languages = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${
+                        className={`w-full flex justify-center py-1.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${
                             loading ? 'opacity-70 cursor-not-allowed' : ''
                         }`}
                     >

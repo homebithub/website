@@ -354,7 +354,7 @@ export default function HousehelpHiringHistory() {
               <button
                 key={tab.key}
                 onClick={() => { setActiveTab(tab.key); setOffset(0); }}
-                className={`relative flex items-center gap-2 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
+                className={`relative flex items-center gap-2 py-1.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
                   activeTab === tab.key
                     ? 'border-purple-500 text-gray-900 dark:text-white'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -376,7 +376,7 @@ export default function HousehelpHiringHistory() {
 
         {/* Error State */}
         {error && (
-          <div className="mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div className="mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
             <p className="text-red-800 dark:text-red-200">{error}</p>
           </div>
         )}
@@ -396,7 +396,7 @@ export default function HousehelpHiringHistory() {
                 <MessageCircle className="w-16 h-16 text-purple-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No hire requests yet</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">When households send you hire requests, they'll appear here</p>
-                <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
+                <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
                   Browse Households
                 </button>
               </div>
@@ -433,15 +433,15 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
-                        <button onClick={() => navigate(`/household/public-profile?user_id=${request.household?.user_id}`, { state: { profileId: request.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => navigate(`/household/public-profile?user_id=${request.household?.user_id}`, { state: { profileId: request.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Profile
                         </button>
                         {request.status === 'pending' && (
                           <>
-                            <button onClick={() => openAcceptConfirm(request.id)} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50">
+                            <button onClick={() => openAcceptConfirm(request.id)} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50">
                               <CheckCircle className="w-4 h-4" /> Accept
                             </button>
-                            <button onClick={() => { setSelectedRequest(request.id); setShowDeclineModal(true); }} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
+                            <button onClick={() => { setSelectedRequest(request.id); setShowDeclineModal(true); }} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
                               <XCircle className="w-4 h-4" /> Decline
                             </button>
                           </>
@@ -463,7 +463,7 @@ export default function HousehelpHiringHistory() {
                 <Briefcase className="w-16 h-16 text-purple-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No work history yet</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">Your completed and ongoing work contracts will appear here</p>
-                <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
+                <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
                   Find Work
                 </button>
               </div>
@@ -502,7 +502,7 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
-                        <button onClick={() => navigate(`/household/public-profile?user_id=${contract.household?.user_id}`, { state: { profileId: contract.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => navigate(`/household/public-profile?user_id=${contract.household?.user_id}`, { state: { profileId: contract.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Profile
                         </button>
                       </div>
@@ -522,7 +522,7 @@ export default function HousehelpHiringHistory() {
                 <HandHeart className="w-16 h-16 text-purple-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No interests sent yet</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">When you express interest in working for a household, it will appear here</p>
-                <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
+                <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
                   Browse Households
                 </button>
               </div>
@@ -569,11 +569,11 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
-                        <button onClick={() => { setSelectedInterest(interest); setShowInterestModal(true); }} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => { setSelectedInterest(interest); setShowInterestModal(true); }} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Details
                         </button>
                         {interest.status === 'pending' && (
-                          <button onClick={() => openWithdrawConfirm(interest.id)} disabled={actionLoading === interest.id} className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
+                          <button onClick={() => openWithdrawConfirm(interest.id)} disabled={actionLoading === interest.id} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
                             <XCircle className="w-4 h-4" /> Withdraw
                           </button>
                         )}
@@ -593,10 +593,10 @@ export default function HousehelpHiringHistory() {
           (activeTab === 'interests' && interestsTotal > limit)
         ) && (
           <div className="p-6 border-t border-gray-200 dark:border-purple-800/40 flex justify-center gap-2">
-            <button onClick={() => setOffset(Math.max(0, offset - limit))} disabled={offset === 0} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-lg hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={() => setOffset(Math.max(0, offset - limit))} disabled={offset === 0} className="px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
               Previous
             </button>
-            <button onClick={() => setOffset(offset + limit)} disabled={(activeTab === 'requests' && offset + limit >= requestsTotal) || (activeTab === 'work-history' && offset + limit >= contractsTotal) || (activeTab === 'interests' && offset + limit >= interestsTotal)} className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-lg hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={() => setOffset(offset + limit)} disabled={(activeTab === 'requests' && offset + limit >= requestsTotal) || (activeTab === 'work-history' && offset + limit >= contractsTotal) || (activeTab === 'interests' && offset + limit >= interestsTotal)} className="px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
               Next
             </button>
           </div>
@@ -613,10 +613,10 @@ export default function HousehelpHiringHistory() {
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Please provide a reason for declining this hire request.</p>
               <textarea value={declineReason} onChange={(e) => setDeclineReason(e.target.value)} rows={4} placeholder="Enter your reason..." className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none" />
               <div className="flex gap-3 mt-4">
-                <button onClick={() => { setShowDeclineModal(false); setSelectedRequest(null); setDeclineReason(''); }} className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
+                <button onClick={() => { setShowDeclineModal(false); setSelectedRequest(null); setDeclineReason(''); }} className="flex-1 px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
                   Cancel
                 </button>
-                <button onClick={handleDeclineRequest} disabled={!declineReason.trim() || actionLoading !== null} className="flex-1 px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50">
+                <button onClick={handleDeclineRequest} disabled={!declineReason.trim() || actionLoading !== null} className="flex-1 px-4 py-1 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50">
                   {actionLoading ? 'Declining...' : 'Decline Request'}
                 </button>
               </div>
@@ -722,7 +722,7 @@ export default function HousehelpHiringHistory() {
                 <div className="flex gap-3 pt-2">
                   <button 
                     onClick={() => navigate(`/household/public-profile?user_id=${selectedInterest.household?.user_id}`, { state: { profileId: selectedInterest.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all"
                   >
                     <User className="w-4 h-4" /> View Household Profile
                   </button>
@@ -730,7 +730,7 @@ export default function HousehelpHiringHistory() {
                     <button 
                       onClick={() => openWithdrawConfirm(selectedInterest.id)}
                       disabled={actionLoading === selectedInterest.id}
-                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
                     >
                       <XCircle className="w-4 h-4" /> Withdraw
                     </button>

@@ -83,13 +83,13 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+              className="flex-1 px-6 py-1.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
+              className="flex-1 px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
             >
               Save
             </button>

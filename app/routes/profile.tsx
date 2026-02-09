@@ -269,7 +269,7 @@ export default function ProfilePage() {
                 {!editMode && (
                   <button
                     type="button"
-                    className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
+                    className="px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
                     onClick={handleEdit}
                   >
                     ✏️ Edit Profile
@@ -279,7 +279,7 @@ export default function ProfilePage() {
                   <>
                     <button
                       type="button"
-                      className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                      className="px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
                       onClick={handleSave}
                       disabled={saving}
                     >
@@ -287,7 +287,7 @@ export default function ProfilePage() {
                     </button>
                     <button
                       type="button"
-                      className="px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-transparent text-purple-600 dark:text-purple-300 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-400 transition-all"
+                      className="px-6 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-transparent text-purple-600 dark:text-purple-300 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-400 transition-all"
                       onClick={handleCancel}
                       disabled={saving}
                     >

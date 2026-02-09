@@ -65,10 +65,10 @@ export default function Home() {
           </div>
 
           <div className="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mt-6 sm:mt-8">
-            <button className="bg-primary-600 text-white px-4 py-2 sm:px-6 rounded-md hover:bg-primary-700 transition-colors duration-200 text-base sm:text-lg">
+            <button className="bg-primary-600 text-white px-4 py-1 sm:px-6 rounded-xl hover:bg-primary-700 transition-colors duration-200 text-base sm:text-lg">
               Our Services
             </button>
-            <button className="text-primary-600 px-4 py-2 sm:px-6 rounded-md border border-primary-600 hover:bg-primary-50 transition-colors duration-200 text-base sm:text-lg">
+            <button className="text-primary-600 px-4 py-1 sm:px-6 rounded-xl border border-primary-600 hover:bg-primary-50 transition-colors duration-200 text-base sm:text-lg">
               Contact Us
             </button>
           </div>
@@ -87,7 +87,7 @@ export default function Home() {
           <HousehelpsTable />
 
           <div className="text-center mt-8 sm:mt-12">
-            <button className="bg-primary-700 text-white px-4 py-2 sm:px-6 sm:py-3 rounded-md hover:bg-primary-800 transition-colors duration-300 font-medium dark:bg-primary-600 dark:hover:bg-primary-700 text-base sm:text-lg">
+            <button className="bg-primary-700 text-white px-4 py-1 sm:px-6 sm:py-1.5 rounded-xl hover:bg-primary-800 transition-colors duration-300 font-medium dark:bg-primary-600 dark:hover:bg-primary-700 text-base sm:text-lg">
               View All Profiles
             </button>
           </div>

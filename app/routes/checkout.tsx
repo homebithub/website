@@ -48,7 +48,7 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl border border-purple-200/70 dark:border-purple-500/60 text-sm font-semibold text-purple-700 dark:text-purple-100 bg-white/80 dark:bg-black/40 hover:bg-purple-50 dark:hover:bg-purple-900/40 shadow-sm transition-colors"
+                  className="inline-flex items-center justify-center px-6 py-1 rounded-xl border border-purple-200/70 dark:border-purple-500/60 text-sm font-semibold text-purple-700 dark:text-purple-100 bg-white/80 dark:bg-black/40 hover:bg-purple-50 dark:hover:bg-purple-900/40 shadow-sm transition-colors"
                 >
                   Go Back
                 </button>
@@ -56,7 +56,7 @@ export default function CheckoutPage() {
                 <Link
                   to="/"
                   prefetch="intent"
-                  className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-sm font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
+                  className="inline-flex items-center justify-center px-6 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-sm font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
                 >
                   Back to Home
                 </Link>

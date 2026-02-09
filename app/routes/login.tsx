@@ -332,7 +332,7 @@ export default function LoginPage() {
           
           <button
             type="submit"
-            className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             disabled={loading || !formData.phone.trim() || !formData.password.trim()}
           >
             {loading ? "✨ Logging in..." : "🚀 Login"}
@@ -352,7 +352,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full inline-flex justify-center items-center px-6 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-md dark:shadow-glow-sm bg-white dark:bg-[#13131a] text-base font-semibold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full inline-flex justify-center items-center px-6 py-1.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-md dark:shadow-glow-sm bg-white dark:bg-[#13131a] text-base font-semibold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <FcGoogle className="h-5 w-5 mr-2" />
                 Google

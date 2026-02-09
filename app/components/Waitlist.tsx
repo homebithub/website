@@ -297,7 +297,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   </Dialog.Title>
                   <button
                     type="button"
-                    className="rounded-md text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="rounded-xl text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500"
                     onClick={handleClose}
                     disabled={isSubmitting}
                   >
@@ -306,7 +306,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                 </div>
 
                 {showSuccess && (
-                  <div className="mb-4 rounded-md bg-green-50 p-4">
+                  <div className="mb-4 rounded-xl bg-green-50 p-4">
                     <div className="flex">
                       <div className="ml-3">
                         <p className="text-sm font-medium text-green-800">
@@ -321,7 +321,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                 )}
 
                 {error && (
-                  <div className="mb-4 rounded-md bg-red-50 p-4">
+                  <div className="mb-4 rounded-xl bg-red-50 p-4">
                     <div className="flex">
                       <div className="ml-3">
                         <p className="text-sm font-medium text-red-800">
@@ -340,7 +340,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                       <button
                         type="button"
                         onClick={startOAuthWaitlist}
-                        className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                        className="inline-flex items-center justify-center rounded-xl border border-gray-300 bg-white px-4 py-1 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       >
                         <FcGoogle className="h-5 w-5 mr-2" />
                         Sign in with Google
@@ -377,7 +377,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                       />
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+                    <div className="flex items-center justify-between rounded-xl border border-green-200 bg-green-50 px-4 py-1.5">
                       <div>
                         <p className="text-sm text-green-800">
                           Signed in with Google as <span className="font-semibold">{formData.first_name}</span>
@@ -447,7 +447,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                      className="inline-flex justify-center rounded-xl border border-gray-300 bg-white px-4 py-1 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       onClick={handleClose}
                       disabled={isSubmitting}
                     >
@@ -455,7 +455,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                     </button>
                     <button
                       type="submit"
-                      className="inline-flex justify-center rounded-md border border-transparent bg-purple-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex justify-center rounded-xl border border-transparent bg-purple-600 px-4 py-1 text-sm font-medium text-white shadow-sm hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? 'Joining...' : 'Join Waitlist'}

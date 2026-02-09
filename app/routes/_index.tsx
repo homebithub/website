@@ -190,16 +190,16 @@ export default function Index() {
       {/* Image Cards Section */}
       <div className="mt-12 sm:mt-16 md:mt-20 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 fade-in-scroll">
         <div className="grid grid-cols-2 gap-4 sm:gap-6 md:flex md:justify-center md:gap-8">
-          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
+          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
             <img src="/assets/mtoi.svg" alt="Laundry Service" className="w-full h-full object-contain rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/mtoi.svg';}}} />
           </div>
-          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
+          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
             <img src="/assets/shopping.svg" alt="Shopping" className="w-full h-full object-contain rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/shopping.svg';}}} />
           </div>
-          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
+          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
             <img src="/assets/man-trash.svg" alt="Man taking out trash" className="w-full h-full object-contain rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/man-trash.svg';}}} />
           </div>
-          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-lg shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
+          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
             <img src="/assets/babysitter.webp" alt="Babysitter with child" className="w-full h-full object-cover rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/babysitter.webp';}}} />
           </div>
         </div>
@@ -208,7 +208,7 @@ export default function Index() {
       <div className="mt-8 sm:mt-10 md:mt-12 flex items-center justify-center gap-x-2 px-4 sm:px-0 fade-in-scroll">
         <Link
           to="/signup"
-          className="glow-button rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 sm:px-8 py-3 sm:py-4 text-lg sm:text-2xl font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 transform hover:scale-110 transition-all duration-300 animate-fadeIn"
+          className="glow-button rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 sm:px-8 py-1.5 text-lg sm:text-2xl font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 transform hover:scale-110 transition-all duration-300 animate-fadeIn"
         >
           Get Started
         </Link>
@@ -275,7 +275,7 @@ export default function Index() {
           <div className="mt-8 sm:mt-10 md:mt-12 flex items-center justify-center fade-in-scroll">
             <Link
               to="/signup"
-              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-8 sm:px-10 py-3 sm:py-4 text-lg sm:text-2xl font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 transform hover:scale-110 transition-all duration-300 animate-fadeIn"
+              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-8 sm:px-10 py-1.5 sm:py-1 text-lg sm:text-2xl font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 transform hover:scale-110 transition-all duration-300 animate-fadeIn"
             >
               Join Homebit Today
             </Link>

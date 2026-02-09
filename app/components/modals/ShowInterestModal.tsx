@@ -111,7 +111,7 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
 
           {/* Success Message */}
           {success && (
-            <div className="mx-6 mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            <div className="mx-6 mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
               <p className="text-green-800 dark:text-green-200 font-medium">
                 ✅ Your interest has been sent to {householdName}! They will be notified and can view your profile.
               </p>
@@ -120,7 +120,7 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
 
           {/* Error Message */}
           {error && (
-            <div className="mx-6 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+            <div className="mx-6 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
               <p className="text-red-800 dark:text-red-200">{error}</p>
             </div>
           )}
@@ -128,7 +128,7 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Household Info */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg">
+            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl">
               <p className="text-sm text-gray-600 dark:text-gray-400">Expressing interest to work for</p>
               <p className="text-lg font-semibold text-gray-900 dark:text-white">{householdName}</p>
             </div>
@@ -144,7 +144,7 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
                     key={type}
                     type="button"
                     onClick={() => setJobType(type)}
-                    className={`px-4 py-3 rounded-lg border-2 font-semibold capitalize transition-all ${
+                    className={`px-4 py-1.5 rounded-xl border-2 font-semibold capitalize transition-all ${
                       jobType === type
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent shadow-lg'
                         : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-purple-400'
@@ -220,7 +220,7 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
             </div>
 
             {/* Info Box */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-lg border border-purple-200 dark:border-purple-500/30">
+            <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-200 dark:border-purple-500/30">
               <p className="text-sm text-purple-800 dark:text-purple-200">
                 <strong>What happens next?</strong> The household will receive a notification about your interest. 
                 They can view your profile and contact you if they're interested in hiring you.
@@ -233,14 +233,14 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
                 type="button"
                 onClick={onClose}
                 disabled={loading}
-                className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-50"
+                className="flex-1 px-6 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={loading || success}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Sending...' : 'Send Interest'}
               </button>

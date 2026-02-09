@@ -186,7 +186,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                                     key={s.mapbox_id}
                                     onClick={() => handleSuggestionClick(s)}
                                     onMouseEnter={() => setSelectedIndex(idx)}
-                                    className={`px-4 py-3 cursor-pointer font-medium border-b last:border-b-0 ${idx === selectedIndex ? 'bg-primary-50' : 'bg-white'} text-gray-900 hover:bg-primary-100`}
+                                    className={`px-4 py-1.5 cursor-pointer font-medium border-b last:border-b-0 ${idx === selectedIndex ? 'bg-primary-50' : 'bg-white'} text-gray-900 hover:bg-primary-100`}
                                 >
                                     {s.name}
                                 </div>
@@ -195,14 +195,14 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                     )}
                 </div>
                 {submitStatus && (
-                    <div className={`p-3 rounded-lg text-sm font-medium ${submitStatus.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                    <div className={`p-3 rounded-xl text-sm font-medium ${submitStatus.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
                         {submitStatus.message}
                     </div>
                 )}
                 <button
                     type="submit"
                     disabled={submitting}
-                    className={`w-full ${submitting ? 'bg-primary-500' : 'bg-primary-700 hover:bg-primary-800'} text-white py-3 rounded-lg transition-colors duration-200 font-semibold text-lg disabled:opacity-60 flex items-center justify-center`}
+                    className={`w-full ${submitting ? 'bg-primary-500' : 'bg-primary-700 hover:bg-primary-800'} text-white py-1.5 rounded-xl transition-colors duration-200 font-semibold text-lg disabled:opacity-60 flex items-center justify-center`}
                 >
                     {submitting ? (
                         <>

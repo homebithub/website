@@ -350,7 +350,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                       <button
                         type="button"
                         onClick={startOAuthWaitlist}
-                        className="inline-flex items-center justify-center rounded-xl border-2 border-purple-200 dark:border-purple-500/50 bg-white dark:bg-[#13131a] px-6 py-3 text-base font-semibold text-gray-700 dark:text-gray-200 shadow-md dark:shadow-glow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                        className="inline-flex items-center justify-center rounded-xl border-2 border-purple-200 dark:border-purple-500/50 bg-white dark:bg-[#13131a] px-6 py-1.5 text-base font-semibold text-gray-700 dark:text-gray-200 shadow-md dark:shadow-glow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       >
                         <FcGoogle className="h-6 w-6 mr-3" />
                         Sign in with Google
@@ -387,7 +387,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                       />
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between rounded-lg border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 px-4 py-3">
+                    <div className="flex items-center justify-between rounded-xl border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 px-4 py-1.5">
                       <div>
                         <p className="text-sm text-green-800 dark:text-green-300">
                           Signed in with Google as <span className="font-semibold">{formData.first_name}</span>
@@ -457,7 +457,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6">
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-xl border-2 border-purple-200 dark:border-purple-500/50 bg-white dark:bg-[#13131a] px-6 py-3 text-base font-semibold text-purple-600 dark:text-purple-400 shadow-md dark:shadow-glow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                      className="inline-flex justify-center rounded-xl border-2 border-purple-200 dark:border-purple-500/50 bg-white dark:bg-[#13131a] px-6 py-1.5 text-base font-semibold text-purple-600 dark:text-purple-400 shadow-md dark:shadow-glow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       onClick={handleClose}
                       disabled={isSubmitting}
                     >
@@ -465,7 +465,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                     </button>
                     <button
                       type="submit"
-                      className="glow-button inline-flex justify-center rounded-xl border-2 border-transparent bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-3 text-base font-bold text-white shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="glow-button inline-flex justify-center rounded-xl border-2 border-transparent bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-1.5 text-base font-bold text-white shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? '✨ Joining...' : '🚀 Join Waitlist'}

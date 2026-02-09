@@ -131,11 +131,11 @@ const HousehelpsTable = () => {
         <table className="min-w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
           <thead>
             <tr className="bg-gray-100 dark:bg-slate-700">
-              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Name</th>
-              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Phone</th>
-              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Location</th>
-              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Experience</th>
-              <th className="py-3 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Availability</th>
+              <th className="py-1.5 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Name</th>
+              <th className="py-1.5 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Phone</th>
+              <th className="py-1.5 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Location</th>
+              <th className="py-1.5 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Experience</th>
+              <th className="py-1.5 px-4 text-left text-sm font-semibold text-gray-600 dark:text-gray-300">Availability</th>
             </tr>
           </thead>
           <tbody>

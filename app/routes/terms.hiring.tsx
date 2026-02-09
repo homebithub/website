@@ -281,7 +281,7 @@ export default function HiringTermsAndConditions() {
             </section>
 
             {/* Acceptance Notice */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg p-6 mt-8">
+            <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-6 mt-8">
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-6 h-6 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
                 <div>

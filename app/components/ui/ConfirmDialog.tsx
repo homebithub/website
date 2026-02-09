@@ -84,14 +84,14 @@ export function ConfirmDialog({
             <button
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1 px-4 py-2.5 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+              className="flex-1 px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
             >
               {cancelText}
             </button>
             <button
               onClick={onConfirm}
               disabled={isLoading}
-              className={`flex-1 px-4 py-2.5 text-sm font-medium rounded-xl transition-all disabled:opacity-50 ${styles.button}`}
+              className={`flex-1 px-4 py-1 text-sm font-medium rounded-xl transition-all disabled:opacity-50 ${styles.button}`}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center gap-2">

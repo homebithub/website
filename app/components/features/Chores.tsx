@@ -70,7 +70,7 @@ const Chores: React.FC = () => {
       <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Select chores</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {CHORES.map(chore => (
-          <label key={chore} className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer shadow-sm text-lg font-medium transition
+          <label key={chore} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-lg font-medium transition
             ${selectedChores.includes(chore) ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}
           `}>
             <span className="relative">
@@ -105,7 +105,7 @@ const Chores: React.FC = () => {
         </div>
       </div>
       {message && (
-        <div className={`mt-4 p-3 rounded-lg text-center font-medium ${
+        <div className={`mt-4 p-3 rounded-xl text-center font-medium ${
           message.includes('successfully') 
             ? 'bg-green-100 text-green-800 border border-green-200' 
             : 'bg-red-100 text-red-800 border border-red-200'
@@ -115,7 +115,7 @@ const Chores: React.FC = () => {
       )}
       <button
         type="button"
-        className="mt-8 w-full bg-primary-700 hover:bg-primary-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-lg shadow-sm transition"
+        className="mt-8 w-full bg-primary-700 hover:bg-primary-800 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-1.5 rounded-xl shadow-sm transition"
         onClick={saveChores}
         disabled={isLoading || selectedChores.length === 0}
       >

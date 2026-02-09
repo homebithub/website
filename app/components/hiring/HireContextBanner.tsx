@@ -25,7 +25,7 @@ export default function HireContextBanner({
   if (!hireRequestStatus && userRole === 'household') {
     // No hire request yet - show option to send one
     return (
-      <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg p-4 mb-4">
+      <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl p-4 mb-4">
         <div className="flex items-start gap-3">
           <Briefcase className="w-5 h-5 text-purple-600 dark:text-purple-400 mt-0.5" />
           <div className="flex-1">
@@ -37,7 +37,7 @@ export default function HireContextBanner({
             </p>
             <button
               onClick={onSendHireRequest}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl text-sm"
+              className="px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl text-sm"
             >
               Send Hire Request
             </button>
@@ -121,7 +121,7 @@ export default function HireContextBanner({
           {onViewDetails && (
             <button
               onClick={onViewDetails}
-              className="px-4 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors text-sm"
+              className="px-4 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors text-sm"
             >
               View Details
             </button>
@@ -133,7 +133,7 @@ export default function HireContextBanner({
                 <button
                   onClick={onAccept}
                   disabled={actionLoading === 'accept'}
-                  className="px-4 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                  className="px-4 py-1 rounded-xl bg-green-600 text-white font-semibold hover:bg-green-700 disabled:opacity-60 disabled:cursor-not-allowed transition"
                 >
                   {actionLoading === 'accept' ? 'Accepting...' : 'Accept Request'}
                 </button>
@@ -142,7 +142,7 @@ export default function HireContextBanner({
                 <button
                   onClick={onDecline}
                   disabled={actionLoading === 'decline'}
-                  className="px-4 py-2 rounded-lg border border-red-400 text-red-600 font-semibold hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed transition"
+                  className="px-4 py-1 rounded-xl border border-red-400 text-red-600 font-semibold hover:bg-red-50 disabled:opacity-60 disabled:cursor-not-allowed transition"
                 >
                   {actionLoading === 'decline' ? 'Declining...' : 'Decline'}
                 </button>

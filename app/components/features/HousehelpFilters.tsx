@@ -52,13 +52,13 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
           {onClear && (
             <button
               onClick={onClear}
-              className="hidden sm:inline-block text-xs px-3 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="hidden sm:inline-block text-xs px-3 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               Clear
             </button>
           )}
           {onClose && (
-            <button onClick={onClose} className="sm:hidden text-sm px-3 py-1 rounded-lg bg-purple-100 text-purple-700">Close</button>
+            <button onClick={onClose} className="sm:hidden text-sm px-3 py-1 rounded-xl bg-purple-100 text-purple-700">Close</button>
           )}
         </div>
       </div>
@@ -251,7 +251,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
         {onClear && (
           <button
             onClick={onClear}
-            className="flex-1 px-4 py-3 rounded-xl border-2 border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition"
+            className="flex-1 px-4 py-1.5 rounded-xl border-2 border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100 transition"
             aria-label="Clear filters"
           >
             Clear
@@ -259,7 +259,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
         )}
         <button
           onClick={onSearch}
-          className="flex-[2] px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-[1.02] transition-all"
+          className="flex-[2] px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-[1.02] transition-all"
         >
           🔍 Show results
         </button>

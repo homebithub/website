@@ -495,7 +495,7 @@ export default function SignupPage() {
                     </div>
                     
                     {/* Terms Acceptance Checkbox */}
-                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-500/30">
+                    <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-500/30">
                         <label className="flex items-start gap-3 cursor-pointer">
                             <input
                                 type="checkbox"
@@ -521,7 +521,7 @@ export default function SignupPage() {
                             type="button"
                             onClick={() => setIsProfileModalOpen(false)}
                             disabled={!form.profile_type || !acceptedTerms}
-                            className="glow-button px-8 py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                            className="glow-button px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
                             Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label || 'User'}
                         </button>
@@ -531,7 +531,7 @@ export default function SignupPage() {
                                 setIsProfileModalOpen(false);
                                 navigate('/');
                             }}
-                            className="px-8 py-3.5 bg-gray-700/80 dark:bg-gray-800/80 text-gray-200 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-600 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-600 dark:border-gray-700"
+                            className="px-8 py-1.5 bg-gray-700/80 dark:bg-gray-800/80 text-gray-200 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-600 dark:hover:bg-gray-700 transition-all duration-200 border border-gray-600 dark:border-gray-700"
                         >
                             Cancel
                         </button>
@@ -576,7 +576,7 @@ export default function SignupPage() {
             <button
                 type="button"
                 onClick={() => startGoogle('auth')}
-                className="w-full inline-flex justify-center items-center px-6 py-4 border-2 border-purple-300 dark:border-purple-500/50 rounded-xl shadow-lg dark:shadow-glow bg-white dark:bg-[#13131a] text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:border-purple-400 dark:hover:border-purple-500/70 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full inline-flex justify-center items-center px-6 py-1 border-2 border-purple-300 dark:border-purple-500/50 rounded-xl shadow-lg dark:shadow-glow bg-white dark:bg-[#13131a] text-base font-bold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/30 hover:border-purple-400 dark:hover:border-purple-500/70 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
                 <FcGoogle className="h-6 w-6 mr-3" />
                 Continue with Google
@@ -725,7 +725,7 @@ export default function SignupPage() {
 
 <button
     type="submit"
-    className="w-full px-8 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+    className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
     disabled={
         formLoading ||
         !form.profile_type.trim() ||

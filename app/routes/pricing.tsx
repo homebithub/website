@@ -310,7 +310,7 @@ export default function Pricing() {
               <Tab.List className="flex space-x-1 rounded-xl bg-white/90 dark:bg-[#13131a]/95 p-1 shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30 max-w-md mx-auto mb-8">
                 <Tab
                   className={({ selected }) =>
-                    `w-full rounded-lg py-3 text-sm font-medium leading-5 transition-all
+                    `w-full rounded-xl py-1.5 text-sm font-medium leading-5 transition-all
                     ${
                       selected
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
@@ -322,7 +322,7 @@ export default function Pricing() {
                 </Tab>
                 <Tab
                   className={({ selected }) =>
-                    `w-full rounded-lg py-3 text-sm font-medium leading-5 transition-all
+                    `w-full rounded-xl py-1.5 text-sm font-medium leading-5 transition-all
                     ${
                       selected
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
@@ -386,7 +386,7 @@ export default function Pricing() {
                                 </p>
                                 
                                 {savings && (
-                                  <div className="mb-4 bg-green-50 dark:bg-green-900/20 rounded-lg p-2">
+                                  <div className="mb-4 bg-green-50 dark:bg-green-900/20 rounded-xl p-2">
                                     <p className="text-sm font-semibold text-green-700 dark:text-green-400">
                                       {savings}
                                     </p>
@@ -413,7 +413,7 @@ export default function Pricing() {
                                 
                                 <button
                                   onClick={() => handleSelectPlan(plan)}
-                                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
+                                  className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
                                 >
                                   Start Free Trial
                                 </button>
@@ -492,7 +492,7 @@ export default function Pricing() {
                                 
                                 <button
                                   onClick={() => handleSelectPlan(plan)}
-                                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
+                                  className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
                                 >
                                   Start Free Trial
                                 </button>
@@ -546,7 +546,7 @@ export default function Pricing() {
                       </Dialog.Title>
 
                       <div className="space-y-4">
-                        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                        <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
                           <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Plan</p>
                           <p className="text-lg font-bold text-gray-900 dark:text-white">
                             {selectedPlan?.name}
@@ -572,7 +572,7 @@ export default function Pricing() {
                           </p>
                         </div>
 
-                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                        <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
                           <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-2">
                             What happens next?
                           </p>
@@ -585,7 +585,7 @@ export default function Pricing() {
                         </div>
 
                         {errorMessage && (
-                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
                             <div className="flex items-start gap-2">
                               <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                               <p className="text-sm text-red-800 dark:text-red-300">{errorMessage}</p>
@@ -597,14 +597,14 @@ export default function Pricing() {
                           <button
                             onClick={handleCloseModal}
                             disabled={processingPayment}
-                            className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 font-medium"
+                            className="flex-1 px-4 py-1.5 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 font-medium"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={initiatePayment}
                             disabled={!phoneNumber || processingPayment}
-                            className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
+                            className="flex-1 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
                           >
                             Pay Now
                           </button>
@@ -642,7 +642,7 @@ export default function Pricing() {
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                         Enter your M-Pesa PIN to complete payment
                       </p>
-                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 text-left">
+                      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-left">
                         <p className="text-xs text-blue-800 dark:text-blue-300 mb-2">
                           <strong>Didn't receive the prompt?</strong>
                         </p>
@@ -668,7 +668,7 @@ export default function Pricing() {
                       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
                         Your subscription has been activated
                       </p>
-                      <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                      <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4">
                         <p className="text-sm text-green-800 dark:text-green-300">
                           You'll receive an M-Pesa confirmation SMS shortly
                         </p>
@@ -686,7 +686,7 @@ export default function Pricing() {
                         Payment Failed
                       </p>
                       {errorMessage && (
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 mb-4">
+                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-4">
                           <p className="text-sm text-red-800 dark:text-red-300 font-medium mb-2">
                             Reason:
                           </p>
@@ -708,7 +708,7 @@ export default function Pricing() {
                       </div>
                       <button
                         onClick={handleRetry}
-                        className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg"
+                        className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg"
                       >
                         Try Again
                       </button>
@@ -732,13 +732,13 @@ export default function Pricing() {
                       <div className="flex gap-3">
                         <button
                           onClick={() => navigate('/subscriptions')}
-                          className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
+                          className="flex-1 px-4 py-1.5 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors font-medium"
                         >
                           View History
                         </button>
                         <button
                           onClick={handleRetry}
-                          className="flex-1 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium"
+                          className="flex-1 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium"
                         >
                           Try Again
                         </button>

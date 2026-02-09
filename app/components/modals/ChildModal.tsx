@@ -229,7 +229,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
                 type="button"
                 onClick={() => handleTraitChange(trait)}
                 disabled={(traits.length === 3 && !traits.includes(trait)) || (traits.includes('None') && trait !== 'None') || (trait === 'None' && traits.length > 0 && !traits.includes('None'))}
-                className={`px-4 py-2 rounded-xl border-2 text-base font-medium transition-all ${traits.includes(trait) ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100' : 'bg-gray-50 dark:bg-gray-800 border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/10'} ${((traits.length === 3 && !traits.includes(trait)) || (traits.includes('None') && trait !== 'None') || (trait === 'None' && traits.length > 0 && !traits.includes('None'))) ? 'opacity-40 cursor-not-allowed' : ''}`}
+                className={`px-4 py-1 rounded-xl border-2 text-base font-medium transition-all ${traits.includes(trait) ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100' : 'bg-gray-50 dark:bg-gray-800 border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/10'} ${((traits.length === 3 && !traits.includes(trait)) || (traits.includes('None') && trait !== 'None') || (trait === 'None' && traits.length > 0 && !traits.includes('None'))) ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
                 {trait}
               </button>
@@ -261,13 +261,13 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
             type="button"
             onClick={onClose}
             disabled={loading}
-            className="flex-1 px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-6 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button 
             type="submit" 
-            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-3 rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all flex justify-center items-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-1.5 rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all flex justify-center items-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             disabled={loading || !gender || !dateOfBirth || traits.length === 0 || (traits.includes('Other') && !otherTrait.trim())}
           >
             {loading ? (

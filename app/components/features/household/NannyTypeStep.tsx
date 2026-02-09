@@ -121,7 +121,7 @@ export function NannyTypeStep({ data, onUpdate, onNext }: NannyTypeStepProps) {
         </div>
 
         {/* Additional Information */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
           <div className="flex items-start">
             <div className="flex-shrink-0">
               <svg className="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
@@ -144,7 +144,7 @@ export function NannyTypeStep({ data, onUpdate, onNext }: NannyTypeStepProps) {
         <button
           onClick={handleNext}
           disabled={!nannyType}
-          className="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-6 py-1 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Next
         </button>

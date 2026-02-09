@@ -183,7 +183,7 @@ export default function Contact() {
               <button
                 type="submit"
                 disabled={!isFormValid}
-                className={`w-full px-8 py-3 rounded-xl font-bold text-lg shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                className={`w-full px-8 py-1.5 rounded-xl font-bold text-lg shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                   isFormValid
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                     : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
