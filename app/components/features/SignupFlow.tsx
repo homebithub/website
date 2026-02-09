@@ -75,7 +75,7 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
                       <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
                         <UserGroupIcon className="h-8 w-8 text-white" />
                       </div>
-                      <h3 className="text-3xl font-bold text-gray-900 mb-3">Join HomeXpert</h3>
+                      <h3 className="text-xl font-bold text-gray-900 mb-3">Join HomeXpert</h3>
                       <p className="text-lg text-gray-600 leading-relaxed">Select your account type to get started on your journey</p>
                     </div>
 

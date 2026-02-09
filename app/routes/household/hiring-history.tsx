@@ -389,7 +389,7 @@ export default function HiringHistory() {
           <p className="text-sm uppercase tracking-widest text-gray-500 font-semibold mb-2 dark:text-purple-300">
             Household • Hiring
           </p>
-          <h1 className="text-3xl font-extrabold text-gray-900 mb-2 dark:text-white">
+          <h1 className="text-xl font-extrabold text-gray-900 mb-2 dark:text-white">
             Hiring
           </h1>
           <p className="text-gray-600 dark:text-purple-200">
@@ -779,7 +779,7 @@ export default function HiringHistory() {
           <p className="text-xs uppercase tracking-widest text-purple-500 dark:text-purple-300 font-semibold">
             Hire Request
           </p>
-          <h3 className="text-lg sm:text-3xl font-extrabold text-gray-900 dark:text-white leading-tight">
+          <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white leading-tight">
             {getHousehelpName(selectedRequest.househelp)}
           </h3>
           <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex flex-col sm:flex-row sm:items-center sm:gap-2">

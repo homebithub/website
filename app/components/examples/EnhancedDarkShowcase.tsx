@@ -15,7 +15,7 @@ export function EnhancedDarkShowcase() {
         
         {/* Gradient Text Example */}
         <section className="text-center space-y-4">
-          <h1 className="gradient-text text-5xl sm:text-6xl font-bold">
+          <h1 className="gradient-text text-2xl sm:text-3xl font-bold">
             Enhanced Dark Theme
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300">
@@ -25,7 +25,7 @@ export function EnhancedDarkShowcase() {
 
         {/* Glowing Buttons */}
         <section className="space-y-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Glowing Buttons
           </h2>
           <div className="flex flex-wrap gap-4">
@@ -65,7 +65,7 @@ export function EnhancedDarkShowcase() {
 
         {/* Dark Cards */}
         <section className="space-y-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Enhanced Cards
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -103,7 +103,7 @@ export function EnhancedDarkShowcase() {
 
         {/* Feature Grid with Glow */}
         <section className="space-y-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Feature Grid
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -140,11 +140,11 @@ export function EnhancedDarkShowcase() {
 
         {/* Gradient Text Examples */}
         <section className="space-y-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Gradient Text
           </h2>
           <div className="space-y-4">
-            <h3 className="gradient-text text-4xl font-bold">
+            <h3 className="gradient-text text-2xl font-bold">
               Large Gradient Heading
             </h3>
             <p className="gradient-text text-2xl font-semibold">
@@ -158,7 +158,7 @@ export function EnhancedDarkShowcase() {
 
         {/* Glassmorphic Panel */}
         <section className="space-y-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Glassmorphic Panel
           </h2>
           <div className="glass-card neon-border p-8 space-y-4">
@@ -193,7 +193,7 @@ export function EnhancedDarkShowcase() {
 
         {/* Animated Elements */}
         <section className="space-y-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Animated Elements
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -229,7 +229,7 @@ export function EnhancedDarkShowcase() {
 
         {/* Color Palette Display */}
         <section className="space-y-6">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
             Color Palette
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

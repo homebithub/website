@@ -403,7 +403,7 @@ export default function HousehelpPublicProfile() {
                       </button>
                     )}
                     <div>
-                      <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                      <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-3">
                         {((profile.user?.first_name || profile.first_name) || (profile.user?.last_name || profile.last_name))
                           ? `${profile.user?.first_name || profile.first_name || ''} ${profile.user?.last_name || profile.last_name || ''}`.trim()
                           : 'Househelp Profile'}

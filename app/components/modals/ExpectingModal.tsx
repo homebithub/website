@@ -44,7 +44,7 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
         </button>
 
         <div className="flex items-center gap-2 mb-6">
-          <span className="text-3xl">🤰🏿</span>
+          <span className="text-xl">🤰🏿</span>
           <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Expecting a Child</h3>
         </div>
 

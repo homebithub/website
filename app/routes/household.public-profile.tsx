@@ -352,7 +352,7 @@ export default function HouseholdPublicProfile() {
                         </button>
                       )}
                       <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-3">
                           🏠 Household Profile
                         </h1>
                       </div>

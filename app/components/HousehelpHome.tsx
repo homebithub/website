@@ -401,7 +401,7 @@ export default function HousehelpHome() {
             {showTips && <OnboardingTipsBanner role="househelp" onDismiss={handleDismissTips} />}
             <div className={`bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg`}>
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">Find Households</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-white">Find Households</h1>
                 <button
                   onClick={() => setShowMoreFilters(true)}
                   className="px-4 py-1 bg-white/15 text-white font-semibold rounded-xl border border-white/20 hover:bg-white/25 transition"
@@ -587,7 +587,7 @@ export default function HousehelpHome() {
 
                       {/* Avatar */}
                       <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden">
                           {r.avatar_url ? (
                             <img src={r.avatar_url} alt={(r.first_name || 'H') + ' ' + (r.last_name || 'H')} className="w-full h-full object-cover" />
                           ) : (

@@ -291,7 +291,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   <div className="flex items-center justify-between mb-3">
                     <Dialog.Title
                       as="h3"
-                      className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+                      className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
                     >
                       Join Our Waitlist 🎉
                     </Dialog.Title>
@@ -313,7 +313,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-700 p-5 shadow-md dark:shadow-glow-sm">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <span className="text-3xl">🎉</span>
+                        <span className="text-xl">🎉</span>
                       </div>
                       <div className="ml-4">
                         <p className="text-base font-bold text-green-800 dark:text-green-300">
@@ -331,7 +331,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-2 border-red-200 dark:border-red-700 p-5 shadow-md dark:shadow-glow-sm">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <span className="text-3xl">⚠️</span>
+                        <span className="text-xl">⚠️</span>
                       </div>
                       <div className="ml-4">
                         <p className="text-base font-semibold text-red-800 dark:text-red-300">

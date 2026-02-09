@@ -69,7 +69,7 @@ export function HouseholdCodePrompt({
   return (
     <div className="w-full max-w-2xl mx-auto p-8 bg-white dark:bg-[#13131a] rounded-2xl shadow-xl dark:shadow-glow border-2 border-purple-200 dark:border-purple-500/30">
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
+        <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-3">
           Join or Create Household
         </h2>
         <p className="text-gray-600 dark:text-gray-300 text-lg">

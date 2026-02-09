@@ -27,7 +27,7 @@ export function ErrorBoundary() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] px-4 transition-colors duration-300">
         <div className="max-w-md w-full bg-white dark:bg-[#13131a] shadow-xl dark:shadow-glow-lg rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 p-8 transition-colors duration-300">
           <div className="text-center">
-            <div className="text-7xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            <div className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
               {error.status}
             </div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -61,7 +61,7 @@ export function ErrorBoundary() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] px-4 transition-colors duration-300">
       <div className="max-w-md w-full bg-white dark:bg-[#13131a] shadow-xl dark:shadow-glow-lg rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 p-8 transition-colors duration-300">
         <div className="text-center">
-          <div className="text-6xl mb-4">😕</div>
+          <div className="text-4xl mb-4">😕</div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
             Oops! Something went wrong
           </h1>

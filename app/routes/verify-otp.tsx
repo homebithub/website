@@ -421,7 +421,7 @@ export default function VerifyOtpPage() {
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
         <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
-          <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 text-center">Verify Account 🔒</h2>
+          <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 text-center">Verify Account 🔒</h2>
           {/* Hide all OTP UI if showChangePhone is true */}
           {!showChangePhone && (
             <>

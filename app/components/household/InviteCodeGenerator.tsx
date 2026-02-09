@@ -222,7 +222,7 @@ export function InviteCodeGenerator({
             /* Success View */
             <div className="space-y-6">
               <div className="text-center p-6 bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-500/30 rounded-xl">
-                <div className="text-5xl mb-3">🎉</div>
+                <div className="text-3xl mb-3">🎉</div>
                 <h3 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">
                   Invite Code Generated!
                 </h3>
@@ -238,7 +238,7 @@ export function InviteCodeGenerator({
                 </label>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 text-center">
-                    <div className="text-4xl font-mono font-bold text-purple-600 dark:text-purple-400 tracking-wider">
+                    <div className="text-2xl font-mono font-bold text-purple-600 dark:text-purple-400 tracking-wider">
                       {invitation.invite_code}
                     </div>
                   </div>

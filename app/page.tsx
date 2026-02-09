@@ -9,7 +9,7 @@ export default function Home() {
       <Navigation />
       <section className="container mx-auto px-2 sm:px-4 py-10 sm:py-16">
         <div className="text-center mb-12">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-primary-800 mb-4 sm:mb-6 dark:text-primary-400">
+          <h1 className="text-xl sm:text-2xl md:text-2xl font-bold text-primary-800 mb-4 sm:mb-6 dark:text-primary-400">
             Everything you need for your home
           </h1>
           <p className="text-primary-700 max-w-2xl mx-auto text-base sm:text-lg dark:text-primary-200">
@@ -78,7 +78,7 @@ export default function Home() {
       <section className="bg-gray-50 py-10 sm:py-16 dark:bg-slate-800">
         <div className="container mx-auto px-2 sm:px-4">
           <div className="text-center mb-12">
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3 sm:mb-4 dark:text-primary-400">Available Professionals</h2>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 dark:text-primary-400">Available Professionals</h2>
             <p className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base dark:text-gray-300">
               Browse through our verified and skilled home assistants. Each profile has been thoroughly vetted to ensure quality and reliability.
             </p>

@@ -466,7 +466,7 @@ export default function SubscriptionsPage() {
                 <WalletIcon className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   Subscriptions & Wallet
                 </h1>
                 <p className="text-lg text-gray-600 dark:text-gray-300">
@@ -504,7 +504,7 @@ export default function SubscriptionsPage() {
                               {plan.description}
                             </p>
                             <div className="mb-4">
-                              <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                              <span className="text-xl font-bold text-gray-900 dark:text-white">
                                 {formatCurrency(plan.price_amount)}
                               </span>
                               <span className="text-gray-600 dark:text-gray-300 ml-2">/ {plan.billing_cycle}</span>
@@ -918,7 +918,7 @@ export default function SubscriptionsPage() {
                       {/* Amount */}
                       <div className="text-center py-1 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Amount Paid</p>
-                        <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(selectedPayment.amount)}
                         </p>
                       </div>

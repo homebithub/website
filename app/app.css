@@ -559,6 +559,35 @@ i {
     transform: scale(1.05);
 }
 
+/* Logo shimmer - left to right light brush */
+.logo-shimmer {
+    position: relative;
+    display: inline-block;
+}
+.logo-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.4) 40%,
+        rgba(255, 255, 255, 0.6) 50%,
+        rgba(255, 255, 255, 0.4) 60%,
+        transparent 100%
+    );
+    animation: logo-brush 3s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes logo-brush {
+    0% { left: -100%; }
+    50% { left: 150%; }
+    100% { left: 150%; }
+}
+
 /* Glow effect */
 .glow-purple {
     box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);

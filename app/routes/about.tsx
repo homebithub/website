@@ -110,7 +110,7 @@ export default function About() {
                                     Who We Are
                                 </span>
                             </div>
-                            <h1 className="text-2xl sm:text-xl md:text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
+                            <h1 className="text-xl sm:text-2xl md:text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
                                 About HomeBit
                             </h1>
                             <p className="mt-4 text-sm sm:text-base text-gray-600 dark:text-purple-200 leading-relaxed max-w-2xl mx-auto">
