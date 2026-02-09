@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Fragment } from "react";
+import React, { useState, useEffect, useRef, Fragment } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { Dialog, Transition, Tab } from '@headlessui/react';
 import { 
@@ -18,6 +18,37 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { API_ENDPOINTS, getAuthHeaders } from '~/config/api';
+
+function SlideUp({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setTimeout(() => setVisible(true), delay);
+          observer.unobserve(entry.target);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [delay]);
+
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-600 ease-out ${
+        visible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-12 scale-[0.97]"
+      } ${className}`}
+      style={{ transitionDuration: "600ms" }}
+    >
+      {children}
+    </div>
+  );
+}
 
 interface SubscriptionPlan {
   id: string;
@@ -296,15 +327,24 @@ export default function Pricing() {
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="medium" className="flex-1">
         <main className="flex-1 container mx-auto px-4 py-8 min-h-[calc(100vh-200px)] flex flex-col items-center justify-center">
-          <div className="mx-auto max-w-6xl text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-5xl mb-4">
-              Choose Your Plan
-            </h1>
-            <p className="mt-4 text-lg leading-8 text-gray-600 dark:text-gray-300">
-              Select a subscription plan to access premium features
-            </p>
-          </div>
+          <SlideUp>
+            <div className="mx-auto max-w-6xl text-center">
+              <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 dark:bg-purple-900/30 px-3 py-1 mb-5">
+                <SparklesIcon className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
+                <span className="text-xs font-semibold text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                  Pricing
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl mb-4">
+                Choose Your Plan
+              </h1>
+              <p className="mt-4 text-lg leading-8 text-gray-600 dark:text-gray-300">
+                Select a subscription plan to access premium features
+              </p>
+            </div>
+          </SlideUp>
 
+          <SlideUp delay={150}>
           <div className="mt-12 w-full max-w-6xl">
             <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
               <Tab.List className="flex space-x-1 rounded-xl bg-white dark:bg-[#13131a] p-1 shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30 max-w-md mx-auto mb-8">
@@ -394,7 +434,7 @@ export default function Pricing() {
                                 )}
                                 
                                 <div className="mb-6">
-                                  <span className="text-4xl font-bold text-gray-900 dark:text-white">
+                                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
                                     {formatCurrency(plan.price_amount)}
                                   </span>
                                   <span className="text-gray-600 dark:text-gray-300 ml-2">
@@ -470,7 +510,7 @@ export default function Pricing() {
                                 </p>
                                 
                                 <div className="mb-6">
-                                  <span className="text-5xl font-bold text-gray-900 dark:text-white">
+                                  <span className="text-3xl font-bold text-gray-900 dark:text-white">
                                     {formatCurrency(plan.price_amount)}
                                   </span>
                                   <span className="text-gray-600 dark:text-gray-300 ml-2 block mt-2">
@@ -507,6 +547,7 @@ export default function Pricing() {
               </Tab.Panels>
             </Tab.Group>
           </div>
+          </SlideUp>
         </main>
       </PurpleThemeWrapper>
       <Footer />
