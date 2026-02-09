@@ -2,6 +2,7 @@ import React from "react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { Link } from "react-router";
+import useScrollFadeIn from "~/hooks/useScrollFadeIn";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import {
@@ -65,13 +66,15 @@ const team: TeamMember[] = [
 ];
 
 export default function About() {
+    useScrollFadeIn();
+
     return (
         <div className="min-h-screen flex flex-col">
             <Navigation />
             <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="medium" className="flex-1">
             <main className="flex-1">
                 {/* Hero Section */}
-                <div className="relative bg-transparent dark:from-[#050508] dark:via-[#0a0a0f] dark:to-purple-950 overflow-hidden transition-colors duration-500">
+                <div className="relative bg-transparent dark:from-[#050508] dark:via-[#0a0a0f] dark:to-purple-950 overflow-hidden fade-in-scroll transition-colors duration-500">
                     <div className="flex flex-col items-center justify-center w-full px-4 sm:px-6 pt-10 sm:pt-14 pb-12 sm:pb-16 lg:px-8 lg:pt-16 lg:pb-20 relative z-10">
                         <div className="mx-auto max-w-4xl text-center px-2 sm:px-0">
                             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-6 sm:mb-8 font-sans drop-shadow-lg">
@@ -85,7 +88,7 @@ export default function About() {
                 </div>
 
                 {/* About Us Section */}
-                <div className="relative bg-gradient-to-br from-purple-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-24 rounded-2xl sm:rounded-3xl mx-4 sm:mx-7 md:mx-14 lg:mx-28 overflow-hidden transition-colors duration-300">
+                <div className="relative bg-gradient-to-br from-purple-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-24 rounded-2xl sm:rounded-3xl mx-4 sm:mx-7 md:mx-14 lg:mx-28 overflow-hidden fade-in-scroll transition-colors duration-300">
                     <div className="mx-auto max-w-7xl px-6 lg:px-8">
                         <div className="mx-auto max-w-6xl rounded-2xl sm:rounded-3xl bg-white dark:bg-[#13131a] p-6 sm:p-8 md:p-12 lg:p-16 shadow-light-glow-lg dark:shadow-glow-lg transition-colors duration-300 border-2 border-purple-200/50 dark:border-purple-500/20">
                             <div className="grid grid-cols-1 gap-x-8 gap-y-12 lg:grid-cols-2">
@@ -109,7 +112,7 @@ export default function About() {
                 </div>
 
                 {/* Values Section */}
-                <div className="relative bg-gradient-to-br from-purple-200 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-20 overflow-hidden transition-colors duration-300">
+                <div className="relative bg-gradient-to-br from-purple-200 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-20 overflow-hidden fade-in-scroll transition-colors duration-300">
                     <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                         <div className="mx-auto max-w-[1100px] rounded-2xl sm:rounded-3xl bg-white dark:bg-[#13131a] shadow-light-glow-md dark:shadow-glow-md p-6 sm:p-10 md:p-16 lg:p-20 mb-6 sm:mb-8 border-2 border-purple-200/40 dark:border-purple-500/20">
                             <div className="text-center max-w-5xl mx-auto">
@@ -137,7 +140,7 @@ export default function About() {
                 </div>
 
                 {/* CTA Section */}
-                <div className="relative bg-gradient-to-br from-purple-100/60 via-purple-200/40 to-pink-100/60 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-24 overflow-hidden transition-colors duration-300">
+                <div className="relative bg-gradient-to-br from-purple-100/60 via-purple-200/40 to-pink-100/60 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-24 overflow-hidden fade-in-scroll transition-colors duration-300">
                     <div className="mx-auto max-w-4xl text-center px-6">
                         <h2 className="font-bold text-2xl sm:text-3xl md:text-4xl leading-tight text-gray-900 dark:text-white">Ready to get started?</h2>
                         <p className="mt-4 text-base leading-7 text-gray-700 dark:text-gray-300">Join thousands of families and professionals who trust HomeBit for their home management needs.</p>
