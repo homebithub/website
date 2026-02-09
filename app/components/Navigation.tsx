@@ -416,7 +416,7 @@ export function Navigation() {
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                         >
-                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white dark:bg-[#13131a] border-2 border-primary-200 dark:border-purple-500/30 shadow-xl shadow-purple-200/50 dark:shadow-glow-sm focus:outline-none">
+                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 shadow-2xl shadow-purple-300/60 dark:shadow-glow-md focus:outline-none">
                                 <div className="py-2">
                                     {/* Navigation links in mobile menu (non-app host) */}
                                     {!isAppHost && (user ? authLinks : navigation).map((item) => (
@@ -483,7 +483,7 @@ export function Navigation() {
                                     {/* User Menu Items */}
                                     {user && (
                                         <>
-                                            <div className="border-t border-gray-200 my-1"></div>
+                                            <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                                             {/* User Greeting in Mobile Menu */}
                                             <div className="px-5 py-1 text-lg font-bold rounded-xl text-primary-700 dark:text-purple-400 border-b border-primary-100 dark:border-gray-700">
   <div className="font-semibold text-base">Hello, {userName}</div>
@@ -496,7 +496,7 @@ export function Navigation() {
                                                 <>
                                                     {authLinks.map((item) => (
                                                         <Menu.Item key={item.name}>{({ active }) => (
-                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-1 text-sm relative`}>
+                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-1 text-sm relative`}>
                                                                 <span>{item.name}</span>
                                                                 {item.name === 'Shortlist' && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md shadow-purple-500/40" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
@@ -520,7 +520,7 @@ export function Navigation() {
                                                     <Link
                                                         to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
                                                         className={`${
-                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                                                            active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
                                                         } flex items-center px-4 py-1 text-sm`}
                                                     >
                                                         <UserIcon className="mr-3 h-5 w-5" />
@@ -533,7 +533,7 @@ export function Navigation() {
                                                     <Link
                                                         to="/settings"
                                                         className={`${
-                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                                                            active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
                                                         } flex items-center px-4 py-1 text-sm`}
                                                     >
                                                         <CogIcon className="mr-3 h-5 w-5" />
@@ -546,7 +546,7 @@ export function Navigation() {
                                                     <Link
                                                         to="/subscriptions"
                                                         className={`${
-                                                            active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
+                                                            active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
                                                         } flex items-center px-4 py-1 text-sm`}
                                                     >
                                                         <CreditCardIcon className="mr-3 h-5 w-5" />
@@ -559,7 +559,7 @@ export function Navigation() {
                                                     <button
                                                         onClick={handleLogout}
                                                         className={`${
-                                                            active ? 'bg-red-100 text-red-700' : 'text-gray-700'
+                                                            active ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'
                                                         } flex items-center w-full px-4 py-1 text-sm`}
                                                     >
                                                         <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
