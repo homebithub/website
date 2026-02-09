@@ -13,6 +13,13 @@ import { Modal } from '~/components/features/Modal';
 import { API_BASE_URL } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+
+export const meta = () => [
+    { title: "Sign Up — Homebit" },
+    { name: "description", content: "Create your free Homebit account. Join as a household looking for help or as a househelp offering your services across Kenya." },
+    { property: "og:title", content: "Sign Up — Homebit" },
+    { property: "og:url", content: "https://homebit.co.ke/signup" },
+];
 import type { LoginResponse as AuthLoginResponse } from "~/types/users";
 
 // Types for request and response

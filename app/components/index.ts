@@ -5,7 +5,7 @@ export { Modal } from './Modal';
 export { ProtectedRoute } from './ProtectedRoute';
 
 // Layout Components
-export { default as Navigation } from './Navigation';
+export { Navigation } from './Navigation';
 export { default as Footer } from './layout/Footer';
 
 // Dashboard Components
@@ -16,7 +16,7 @@ export { default as HouseholdSidebar } from './features/HouseholdSidebar';
 export { default as Bio } from './features/Bio';
 export { default as Budget } from './features/Budget';
 export { default as Photos } from './features/Photos';
-export { default as Waitlist } from './Waitlist';
+export { Waitlist } from './Waitlist';
 export { default as HousehelpSignupFlow } from './HousehelpSignupFlow';
 export { default as ShortlistPlaceholderIcon } from './features/ShortlistPlaceholderIcon';
 
@@ -28,7 +28,7 @@ export { default as EmergencyContact } from './EmergencyContact';
 export { default as ExpectingModal } from './ExpectingModal';
 export { default as Gender } from './modals/Gender';
 export { default as HouseSize } from './modals/HouseSize';
-export { default as HouseholdProfileModal } from './modals/HouseholdProfileModal';
+export { HouseholdProfileModal } from './modals/HouseholdProfileModal';
 export { default as Kids } from './Kids';
 export { default as Languages } from './modals/Languages';
 export { default as Location } from './Location';

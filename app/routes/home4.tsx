@@ -3,6 +3,14 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { Link } from "react-router";
 import React, { useEffect, useRef, useState } from "react";
+
+export const meta = () => [
+    { title: "Homebit — Trusted Home Services in Kenya" },
+    { name: "description", content: "Find vetted housekeepers, nannies, and home-service professionals in Kenya. Browse profiles, read reviews, and hire with confidence on Homebit." },
+    { property: "og:title", content: "Homebit — Trusted Home Services in Kenya" },
+    { property: "og:description", content: "Find vetted housekeepers, nannies, and home-service professionals in Kenya." },
+    { property: "og:url", content: "https://homebit.co.ke" },
+];
 import {
   HomeIcon,
   UserGroupIcon,

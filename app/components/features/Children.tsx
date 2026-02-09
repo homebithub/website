@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { handleApiError } from '../utils/errorMessages';
+import { handleApiError } from '../../utils/errorMessages';
 import { UserGroupIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import Kids from "./Kids";
 import { API_BASE_URL } from '~/config/api';
@@ -148,11 +148,7 @@ const Children: React.FC = () => {
           ))}
 
           {selected === "have_or_expecting" && (
-            <Kids 
-              onChildrenUpdate={handleChildrenUpdate} 
-              initialChildren={childrenList}
-              className="mt-4"
-            />
+            <Kids />
           )}
         </div>
 

@@ -9,6 +9,8 @@ import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 interface HouseholdData {
+  id?: string;
+  user_id?: string;
   house_size?: string;
   household_notes?: string;
   needs_live_in?: boolean;

@@ -5,6 +5,13 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 
+export const meta = () => [
+    { title: "Terms of Service — Homebit" },
+    { name: "description", content: "Read Homebit's terms of service. Understand the rules and guidelines for using our home-services platform in Kenya." },
+    { property: "og:title", content: "Terms of Service — Homebit" },
+    { property: "og:url", content: "https://homebit.co.ke/terms" },
+];
+
 export default function Terms() {
   return (
     <div className="min-h-screen flex flex-col">

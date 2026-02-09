@@ -10,7 +10,7 @@ export default function Unauthorized() {
           title="Access Denied"
           message="You don't have permission to access this page. Please contact your administrator if you believe this is a mistake."
           action={{
-            text: "Go back home",
+            label: "Go back home",
             to: "/",
           }}
         />

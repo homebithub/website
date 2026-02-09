@@ -1,7 +1,7 @@
 import React from 'react';
 import { Footer } from './components/Footer';
 import { Navigation } from './components/Navigation';
-import HousehelpsTable from './components/HousehelpsTable';
+import HousehelpsTable from './components/ui/HousehelpsTable';
 
 export default function Home() {
   return (

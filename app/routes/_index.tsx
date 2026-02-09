@@ -1,53 +1,17 @@
-import { Navigation } from "~/components/Navigation";
-import { Footer } from "~/components/Footer";
 import useScrollFadeIn from "~/hooks/useScrollFadeIn";
-import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { PurpleCard } from '~/components/ui/PurpleCard';
-import { Link, useNavigate } from "react-router";
-import React, { useEffect, useState } from "react";
-import SignupFlow from "~/components/features/SignupFlow";
-import HousehelpSignupFlow from "~/components/features/HousehelpSignupFlow";
-import AuthenticatedHome from "~/components/AuthenticatedHome";
-import HousehelpHome from "~/components/HousehelpHome";
-import Home4 from "~/routes/home4";
-import {
-  HomeIcon,
-  UserGroupIcon,
-  ShieldCheckIcon,
-  PhoneArrowUpRightIcon,
-  UserPlusIcon,
-  CalendarDaysIcon,
-} from "@heroicons/react/24/solid";
+import { useEffect, useState } from "react";
+import { lazyLoad } from "~/utils/lazyLoad";
 
-
-const features = [
-  {
-    name: "Home Services",
-    description: "Reliable and professional home services.",
-    icon: HomeIcon,
-  },
-  {
-    name: "Skilled Personnel",
-    description:
-      "We've got you covered by offering experienced, vetted and rated professionals.",
-    icon: UserGroupIcon,
-  },
-  {
-    name: "Transparent Payments",
-    description: "Fixed prices with no hidden fees and secure payment.",
-    icon: ShieldCheckIcon,
-  },
-];
+const AuthenticatedHome = lazyLoad(() => import("~/components/AuthenticatedHome"));
+const HousehelpHome = lazyLoad(() => import("~/components/HousehelpHome"));
+const Home4 = lazyLoad(() => import("~/routes/home4"));
 
 export default function Index() {
   useScrollFadeIn();
 
-  const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [userType, setUserType] = useState<'househelp' | 'household' | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const navigate = useNavigate();
 
   // Check authentication status on mount
   useEffect(() => {
@@ -92,32 +56,11 @@ export default function Index() {
         setIsAuthenticated(false);
       }
 
-      // Simulate a brief loading time for smooth transition
-      setTimeout(() => {
-        setIsLoading(false);
-      }, 500);
+      setIsLoading(false);
     };
 
     checkAuth();
   }, []);
-
-  // No redirect: both authenticated roles stay on '/'
-
-  const openSignupModal = (type: 'househelp' | 'household') => {
-    setUserType(type);
-    setIsSignupModalOpen(true);
-  };
-
-  const handleUserTypeSelected = (type: 'househelp' | 'household') => {
-    setUserType(type);
-    setIsProfileModalOpen(true);
-  };
-
-  const handleProfileComplete = () => {
-    setIsProfileModalOpen(false);
-    setUserType(null);
-    // User will be redirected to dashboard from within the HousehelpSignupFlow component
-  };
 
   // Loading screen
   if (isLoading) {

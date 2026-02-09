@@ -148,11 +148,7 @@ const Children: React.FC = () => {
           ))}
 
           {selected === "have_or_expecting" && (
-            <Kids 
-              onChildrenUpdate={handleChildrenUpdate} 
-              initialChildren={childrenList}
-              className="mt-4"
-            />
+            <Kids />
           )}
         </div>
 

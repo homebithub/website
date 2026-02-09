@@ -478,13 +478,20 @@ function HouseholdProfileSetupContent() {
                 </p>
 
                 <label className="flex items-start gap-3 cursor-pointer group">
-                  <div className="flex-shrink-0 mt-0.5">
+                  <div className="relative flex-shrink-0 mt-0.5">
                     <input
                       type="checkbox"
                       checked={disclaimerChecked}
                       onChange={(e) => setDisclaimerChecked(e.target.checked)}
-                      className="h-5 w-5 rounded border-2 border-purple-300 dark:border-purple-500 text-purple-600 focus:ring-purple-500 focus:ring-offset-0 cursor-pointer"
+                      className="sr-only peer"
                     />
+                    <div className="h-5 w-5 rounded border-2 border-purple-400 dark:border-purple-500 bg-white dark:bg-gray-800 peer-checked:bg-purple-600 peer-checked:border-purple-600 transition-colors flex items-center justify-center">
+                      {disclaimerChecked && (
+                        <svg className="h-3.5 w-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
                   </div>
                   <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
                     I confirm that all the information I have provided is accurate and truthful to the best of my knowledge. I understand that providing false or misleading information may result in account suspension.
@@ -492,17 +499,17 @@ function HouseholdProfileSetupContent() {
                 </label>
               </div>
 
-              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 sm:justify-end">
+              <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
                 <button
                   onClick={() => { setShowDisclaimer(false); setDisclaimerChecked(false); }}
-                  className="px-6 py-1.5 rounded-xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-sm"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-sm"
                 >
                   Go Back
                 </button>
                 <button
                   onClick={finishSetup}
                   disabled={!disclaimerChecked || saving}
-                  className="px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 text-sm flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-primary-700 text-white font-bold shadow-lg hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
                 >
                   {saving ? (
                     <>

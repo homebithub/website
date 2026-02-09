@@ -19,6 +19,13 @@ import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { API_ENDPOINTS, getAuthHeaders } from '~/config/api';
 
+export const meta = () => [
+    { title: "Pricing & Plans — Homebit Kenya" },
+    { name: "description", content: "View Homebit's transparent pricing plans for hiring housekeepers, nannies, and home-service professionals in Kenya. No hidden fees." },
+    { property: "og:title", content: "Pricing & Plans — Homebit Kenya" },
+    { property: "og:url", content: "https://homebit.co.ke/pricing" },
+];
+
 function SlideUp({ children, delay = 0, className = "" }: { children: React.ReactNode; delay?: number; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);

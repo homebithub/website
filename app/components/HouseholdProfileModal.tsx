@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Modal } from './Modal';
-import { LocationStep } from './household/LocationStep';
-import { ChildrenStep } from './household/ChildrenStep';
-import { NannyTypeStep } from './household/NannyTypeStep';
-import { ScheduleStep } from './household/ScheduleStep';
-import { ChoresStep } from './household/ChoresStep';
-import { RequirementsStep } from './household/RequirementsStep';
-import { BudgetStep } from './household/BudgetStep';
-import { HouseholdProfileData } from '../types/household-profile';
+import { LocationStep } from './features/household/LocationStep';
+import { ChildrenStep } from './features/household/ChildrenStep';
+import { NannyTypeStep } from './features/household/NannyTypeStep';
+import { ScheduleStep } from './features/household/ScheduleStep';
+import { ChoresStep } from './features/household/ChoresStep';
+import { RequirementsStep } from './features/household/RequirementsStep';
+import { BudgetStep } from './features/household/BudgetStep';
+import type { HouseholdProfileData } from '../types/household-profile';
 
 interface HouseholdProfileModalProps {
   isOpen: boolean;

@@ -1,5 +1,5 @@
 import React, {useState, useRef, useEffect} from "react";
-import { handleApiError } from '../utils/errorMessages';
+import { handleApiError } from '../../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 
 interface LocationSuggestion {

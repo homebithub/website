@@ -3,6 +3,13 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { Link } from "react-router";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+
+export const meta = () => [
+    { title: "About Homebit — Our Mission & Story" },
+    { name: "description", content: "Learn about Homebit's mission to connect Kenyan households with trusted, vetted home-service professionals. Our story, values, and commitment to quality." },
+    { property: "og:title", content: "About Homebit — Our Mission & Story" },
+    { property: "og:url", content: "https://homebit.co.ke/about" },
+];
 import {
   CheckBadgeIcon,
   HeartIcon,

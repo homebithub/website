@@ -169,10 +169,12 @@ export const API_ENDPOINTS = {
   profile: {
     househelp: {
       me: `${AUTH_API_BASE_URL}/api/v1/profile/househelp/me`,
+      update: `${AUTH_API_BASE_URL}/api/v1/househelps/me/fields`,
       byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/househelps/${id}/profile_with_user`,
     },
     household: {
       me: `${AUTH_API_BASE_URL}/api/v1/profile/household/me`,
+      update: `${AUTH_API_BASE_URL}/api/v1/household/profile`,
     },
   },
   
