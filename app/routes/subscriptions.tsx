@@ -458,7 +458,7 @@ export default function SubscriptionsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
         <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
           <div className="w-full max-w-5xl bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 p-8 transition-colors duration-300">
             <div className="flex items-center gap-3 mb-6">
@@ -466,7 +466,7 @@ export default function SubscriptionsPage() {
                 <WalletIcon className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                   Subscriptions & Wallet
                 </h1>
                 <p className="text-lg text-gray-600 dark:text-gray-300">
@@ -504,7 +504,7 @@ export default function SubscriptionsPage() {
                               {plan.description}
                             </p>
                             <div className="mb-4">
-                              <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                              <span className="text-xl font-bold text-gray-900 dark:text-white">
                                 {formatCurrency(plan.price_amount)}
                               </span>
                               <span className="text-gray-600 dark:text-gray-300 ml-2">/ {plan.billing_cycle}</span>
@@ -918,7 +918,7 @@ export default function SubscriptionsPage() {
                       {/* Amount */}
                       <div className="text-center py-1 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Amount Paid</p>
-                        <p className="text-3xl font-bold text-gray-900 dark:text-white">
+                        <p className="text-xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(selectedPayment.amount)}
                         </p>
                       </div>

@@ -623,14 +623,14 @@ export default function AuthenticatedHome() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className={`flex-1 py-8 ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {showTips && <OnboardingTipsBanner role="household" onDismiss={handleDismissTips} />}
             {/* Compact Filters Section */}
             <div className={`bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-gray-700/50`}>
               <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Find Househelps</h1>
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Find Househelps</h1>
                 <button
                   onClick={() => setShowMoreFilters(true)}
                   className="px-4 py-1 bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold rounded-xl border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition"
@@ -910,7 +910,7 @@ export default function AuthenticatedHome() {
                       </div>
                       {/* Profile Picture */}
                       <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden relative">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden relative">
                           {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) ? (
                             <>
                               {/* Skeleton loader - shows while image is loading */}

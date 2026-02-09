@@ -144,6 +144,26 @@ export default function InboxPage() {
   const deleteTimersRef = useRef<Record<string, number>>({});
   const deletedBackupRef = useRef<Record<string, { body: string }>>({});
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
+
+  // Chat terms acceptance state
+  const [chatTermsAccepted, setChatTermsAccepted] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return localStorage.getItem('homebit_chat_terms_accepted') === 'true';
+  });
+  const [showChatTerms, setShowChatTerms] = useState(false);
+
+  const handleAcceptChatTerms = useCallback(() => {
+    setChatTermsAccepted(true);
+    setShowChatTerms(false);
+    localStorage.setItem('homebit_chat_terms_accepted', 'true');
+  }, []);
+
+  // Show chat terms when a conversation is selected and terms not yet accepted
+  useEffect(() => {
+    if (activeConversationId && !chatTermsAccepted) {
+      setShowChatTerms(true);
+    }
+  }, [activeConversationId, chatTermsAccepted]);
   
   // Hire wizard state
   const [showHireWizard, setShowHireWizard] = useState(false);
@@ -1596,6 +1616,17 @@ export default function InboxPage() {
             </div>
           )}
           
+          {!chatTermsAccepted ? (
+            <div className="text-center py-3">
+              <button
+                type="button"
+                onClick={() => setShowChatTerms(true)}
+                className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline underline-offset-4 transition-colors"
+              >
+                Accept terms of use to start messaging
+              </button>
+            </div>
+          ) : (
           <form onSubmit={handleSend} className="flex items-center gap-2">
             <button
               type="button"
@@ -1644,6 +1675,7 @@ export default function InboxPage() {
               <PaperAirplaneIcon className="w-6 h-6" />
             </button>
           </form>
+          )}
         </div>
       </div>
   );
@@ -1653,7 +1685,7 @@ export default function InboxPage() {
     return (
       <div className="h-screen flex flex-col overflow-hidden">
         <Navigation />
-        <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
           <main className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -1668,7 +1700,7 @@ export default function InboxPage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
         <main className="flex-1 flex flex-col relative pt-6 pb-4 overflow-hidden min-h-0">
           {/* Desktop: Split view */}
           <div className="hidden lg:flex flex-1 max-w-7xl mx-auto w-full mt-2 overflow-hidden min-h-0">
@@ -1720,6 +1752,73 @@ export default function InboxPage() {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Chat Terms of Use Modal */}
+      {showChatTerms && !chatTermsAccepted && (
+        <div className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/60" onClick={() => setShowChatTerms(false)}>
+          <div
+            className="relative w-full max-w-md bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1 text-center">
+              Terms of Use
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-5 text-center">
+              Please review and accept before messaging
+            </p>
+
+            <div className="space-y-3 mb-6">
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
+                <span className="text-lg mt-0.5">🤝</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Be respectful</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Treat everyone with courtesy and professionalism. Harassment or abusive language will not be tolerated.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
+                <span className="text-lg mt-0.5">💰</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Negotiate your price</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Salary and compensation are agreed upon between you and the other party. Homebit does not set or guarantee pay rates.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
+                <span className="text-lg mt-0.5">📅</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Agree on your schedule</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Working hours, days off, and start dates should be discussed and mutually agreed upon before hiring.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
+                <span className="text-lg mt-0.5">🔒</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Protect your privacy</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Do not share sensitive personal information like ID numbers or bank details in chat.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
+                <span className="text-lg mt-0.5">⚖️</span>
+                <div>
+                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Homebit is a platform</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">We connect households and househelps but are not a party to any employment agreement. All arrangements are between you and the other party.</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAcceptChatTerms}
+              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-[1.02] transition-all duration-300"
+            >
+              I Accept — Start Messaging
+            </button>
+          </div>
         </div>
       )}
 

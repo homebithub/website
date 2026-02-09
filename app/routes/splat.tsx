@@ -9,7 +9,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium" className="flex-1">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="medium" className="flex-1">
         <main className="flex-1 flex items-center justify-center px-4 py-16">
           <PurpleCard hover={false} glow={true} className="w-full max-w-2xl p-12 text-center">
             {/* 404 Number */}
@@ -30,7 +30,7 @@ export default function NotFound() {
             </div>
 
             {/* Message */}
-            <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
               Oops! Page Not Found
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-md mx-auto">

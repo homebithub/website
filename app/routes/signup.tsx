@@ -445,7 +445,7 @@ export default function SignupPage() {
     return (
         <div className="min-h-screen flex flex-col">
         <Navigation/>
-        <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+        <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
         <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
             {/* Profile Selection Modal */}
             <Modal 
@@ -543,7 +543,7 @@ export default function SignupPage() {
             {/* Right: Signup form card */}
             <PurpleCard hover={false} glow={true} className="flex-1 p-8 sm:p-10 w-full max-w-md">
       <div className="flex items-center justify-between mb-6">
-                <h2 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent text-center flex-1">Join Us! 🎉</h2>
+                <h2 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent text-center flex-1">Join Us! 🎉</h2>
                 {form.profile_type && (
                     <button 
                         type="button" 

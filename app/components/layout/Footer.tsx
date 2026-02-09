@@ -16,11 +16,11 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
 
   return (
     <footer className={`${baseClasses} ${themeClasses}`}>
-      <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
+      <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="mb-4 md:mb-0">
           <span className="font-bold text-lg gradient-text">Homebit</span> <span className="text-gray-400">&copy; {new Date().getFullYear()}</span>
         </div>
-        <div className="flex space-x-6">
+        <div className="flex flex-wrap justify-center gap-x-6 gap-y-2">
           <Link to="/privacy" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Privacy Policy</Link>
           <Link to="/terms" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Terms of Service</Link>
           <Link to="/contact" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Contact</Link>

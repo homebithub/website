@@ -79,7 +79,7 @@ export default function BureauHomeDashboard() {
             key={stat.label}
             className="bg-white dark:bg-[#13131a] rounded-xl shadow dark:shadow-glow-sm border border-gray-100 dark:border-purple-500/30 p-4 sm:p-5 flex flex-col items-center transition-colors duration-300"
           >
-            <div className="text-2xl sm:text-3xl font-extrabold text-purple-600 mb-2">
+            <div className="text-xl sm:text-2xl font-extrabold text-purple-600 mb-2">
               {stat.value}
             </div>
             <div className="text-gray-500  text-base text-center">

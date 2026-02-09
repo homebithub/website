@@ -136,7 +136,7 @@ export function Loading({
         {/* Logo with glow effect */}
         <div className="mb-4 relative">
           <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-pink-600 blur-2xl opacity-50 animate-pulse" />
-          <div className="relative text-5xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent animate-gradient-x">
+          <div className="relative text-3xl font-extrabold bg-gradient-to-r from-purple-600 via-pink-500 to-purple-600 bg-clip-text text-transparent animate-gradient-x">
             HomeBit
           </div>
         </div>

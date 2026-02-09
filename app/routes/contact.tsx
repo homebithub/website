@@ -77,11 +77,11 @@ export default function Contact() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium" className="flex-1">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="medium" className="flex-1">
       <main className="flex-1 container mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
-        <div className="max-w-4xl mx-auto bg-white dark:bg-[#13131a] p-8 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg transition-all duration-500 hover:scale-105 hover:shadow-light-glow-lg dark:hover:shadow-glow-lg fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/30">
+        <div className="max-w-lg mx-auto bg-white dark:bg-[#13131a] p-8 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg transition-all duration-500 hover:scale-105 hover:shadow-light-glow-lg dark:hover:shadow-glow-lg  border-2 border-purple-200/40 dark:border-purple-500/30">
           <div className="mb-8 text-center">
-            <h1 className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
               Contact Us 💬
             </h1>
             <p className="text-lg text-gray-600 dark:text-gray-400">
@@ -94,14 +94,14 @@ export default function Contact() {
           {success ? (
             <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-500/30 p-6 shadow-md">
               <div className="flex items-center justify-center">
-                <span className="text-3xl mr-3">🎉</span>
+                <span className="text-xl mr-3">🎉</span>
                 <p className="text-lg font-bold text-green-800 dark:text-green-100">
                   Thank you for your message! We'll get back to you soon. ✔️
                 </p>
               </div>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-6 max-w-2xl mx-auto">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div>
                 <label
                   htmlFor="name"

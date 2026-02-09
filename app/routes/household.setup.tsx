@@ -97,8 +97,8 @@ export default function HouseholdSetupPage() {
         <Navigation />
         <main className="flex-1 flex items-center justify-center px-4 py-8">
           <div className="max-w-2xl w-full p-8 bg-white dark:bg-[#13131a] rounded-2xl shadow-xl dark:shadow-glow border-2 border-purple-200 dark:border-purple-500/30 text-center">
-            <div className="text-6xl mb-6">⏳</div>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            <div className="text-4xl mb-6">⏳</div>
+            <h2 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
               Request Sent!
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">
@@ -146,8 +146,8 @@ export default function HouseholdSetupPage() {
         <Navigation />
         <main className="flex-1 flex items-center justify-center px-4 py-8">
           <div className="max-w-2xl w-full p-8 bg-white dark:bg-[#13131a] rounded-2xl shadow-xl dark:shadow-glow border-2 border-green-200 dark:border-green-500/30 text-center">
-            <div className="text-6xl mb-6">🎉</div>
-            <h2 className="text-3xl font-bold text-green-600 dark:text-green-400 mb-4">
+            <div className="text-4xl mb-6">🎉</div>
+            <h2 className="text-xl font-bold text-green-600 dark:text-green-400 mb-4">
               Welcome to the Household!
             </h2>
             <p className="text-lg text-gray-600 dark:text-gray-300 mb-6">

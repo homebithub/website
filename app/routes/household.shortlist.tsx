@@ -247,10 +247,10 @@ export default function HouseholdShortlistPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className={`flex-1 py-8 ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
 
             {items.length === 0 && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
@@ -296,7 +296,7 @@ export default function HouseholdShortlistPage() {
 
                       {/* Profile Picture */}
                       <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-3xl font-bold shadow-lg overflow-hidden relative">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden relative">
                           {(() => {
                             const imageUrl = h?.avatar_url || h?.profile_picture || (h?.photos && h.photos[0]);
                             if (imageUrl) {

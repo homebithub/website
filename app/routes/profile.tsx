@@ -127,10 +127,10 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
         <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
           <div className="w-full max-w-3xl bg-gradient-to-br from-purple-50 to-white dark:from-[#020617] dark:to-[#020617] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 p-8 transition-colors duration-300">
-            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 text-center">My Profile 👤</h1>
+            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 text-center">My Profile 👤</h1>
             <p className="text-center text-gray-600 dark:text-gray-300 mb-6">Manage your profile information. Only email, name and phone are editable.</p>
 
             {error && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/40 dark:to-pink-950/40 border-2 border-red-200 dark:border-red-500/40 p-4 shadow-md mb-4 transition-colors duration-300"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800 dark:text-red-200">{error}</p></div></div>}

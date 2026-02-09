@@ -141,7 +141,7 @@ export default function HouseholdMembersPage() {
       <main className="flex-1 px-4 py-8 max-w-7xl mx-auto w-full">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
             Household Members
           </h1>
           <p className="text-gray-600 dark:text-gray-300">

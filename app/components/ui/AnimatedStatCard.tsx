@@ -35,7 +35,7 @@ const AnimatedStatCard = ({ name, value }: AnimatedStatCardProps) => {
   return (
     <div className="flex flex-col bg-slate-50 p-8 dark:bg-slate-800 rounded-xl shadow-md transition-transform duration-300 hover:scale-105">
       <dt className="text-sm font-semibold leading-6 text-slate-600 dark:text-gray-300">{name}</dt>
-      <dd className="order-first text-3xl font-semibold tracking-tight text-slate-900 dark:text-primary-200 animate-pulse">
+      <dd className="order-first text-xl font-semibold tracking-tight text-slate-900 dark:text-primary-200 animate-pulse">
         {displayValue}
       </dd>
     </div>

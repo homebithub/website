@@ -261,7 +261,7 @@ export default function HireRequestDetail() {
             ← Back to Hiring History
           </button>
           <div className="flex items-center justify-between">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
               Hire Request Details
             </h1>
             <span className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-sm font-medium ${getStatusColor(hireRequest.status)}`}>

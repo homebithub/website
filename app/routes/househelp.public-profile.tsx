@@ -385,7 +385,7 @@ export default function HousehelpPublicProfile() {
   return (
     <div className="min-h-screen flex flex-col">
       {isEmbed ? null : <Navigation />}
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
         <main className="flex-1">
           <div className={`max-w-6xl mx-auto px-4 pb-6 ${isEmbed ? 'pt-4' : 'pt-6 sm:pt-8'}`}>
             {/* Header (hidden in embed) */}
@@ -403,7 +403,7 @@ export default function HousehelpPublicProfile() {
                       </button>
                     )}
                     <div>
-                      <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+                      <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-3">
                         {((profile.user?.first_name || profile.first_name) || (profile.user?.last_name || profile.last_name))
                           ? `${profile.user?.first_name || profile.first_name || ''} ${profile.user?.last_name || profile.last_name || ''}`.trim()
                           : 'Househelp Profile'}

@@ -13,7 +13,7 @@ export default function CheckoutPage() {
       <Navigation />
       <PurpleThemeWrapper
         variant="gradient"
-        bubbles={true}
+        bubbles={false}
         bubbleDensity="medium"
         className="flex-1 flex items-center justify-center px-4 py-12"
       >
@@ -30,7 +30,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <h1 className="text-3xl sm:text-4xl font-extrabold bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 bg-clip-text text-transparent mb-3">
+              <h1 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 bg-clip-text text-transparent mb-3">
                 Checkout is Coming Soon
               </h1>
 

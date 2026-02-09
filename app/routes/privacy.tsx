@@ -9,12 +9,12 @@ export default function Privacy() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
       <main className="container mx-auto px-4 sm:px-6 py-8 max-w-4xl">
         <PurpleCard hover={false} glow={true} className="p-6 sm:p-8">
         <div className="w-full">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
               Privacy Statement
             </h1>
             <p className="mt-2 text-slate-600 dark:text-slate-400">

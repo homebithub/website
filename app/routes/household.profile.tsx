@@ -512,14 +512,14 @@ export default function HouseholdProfile() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
       <main className="flex-1 py-8">
     <div className="max-w-5xl mx-auto px-4">
       {/* Header */}
       <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl dark:border-b dark:border-purple-500/20">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold mb-2">🏠 My Household Profile</h1>
+            <h1 className="text-xl sm:text-2xl font-bold mb-2">🏠 My Household Profile</h1>
             <p className="text-purple-100 dark:text-purple-300 text-sm sm:text-base">View and manage your household information</p>
           </div>
           <button
@@ -588,7 +588,7 @@ export default function HouseholdProfile() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Your Household Code:</p>
-                  <p className="text-3xl font-bold text-purple-900 dark:text-purple-100 tracking-wider font-mono">
+                  <p className="text-xl font-bold text-purple-900 dark:text-purple-100 tracking-wider font-mono">
                     {invitationCode}
                   </p>
                   {invitationExpiresAt && (

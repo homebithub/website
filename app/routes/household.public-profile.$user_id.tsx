@@ -140,14 +140,14 @@ export default function HouseholdPublicProfilePage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
         <main className="flex-1 py-8">
           <div className="max-w-5xl mx-auto px-4">
             {/* Header */}
             <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl dark:border-b dark:border-purple-500/20">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
                 <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold mb-2">🏠 Household Profile</h1>
+                  <h1 className="text-xl sm:text-2xl font-bold mb-2">🏠 Household Profile</h1>
                   <p className="text-purple-100 dark:text-purple-300 text-sm sm:text-base">Public view - This is how others see this profile</p>
                 </div>
                 <button

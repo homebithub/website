@@ -126,7 +126,7 @@ const HousehelpsTable = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-primary-800 mb-6 dark:text-primary-400">List of Househelps</h1>
+      <h1 className="text-xl font-bold text-primary-800 mb-6 dark:text-primary-400">List of Househelps</h1>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700">
           <thead>

@@ -14,7 +14,7 @@ export default function HiringTermsAndConditions() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 mb-8">
             <div className="flex items-center gap-3 mb-4">
               <FileText className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
                 Hiring Terms & Conditions
               </h1>
             </div>

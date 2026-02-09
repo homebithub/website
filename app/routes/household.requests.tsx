@@ -145,7 +145,7 @@ export default function HouseholdRequestsPage() {
     return (
       <div className="min-h-screen flex flex-col">
         <Navigation />
-        <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col">
+        <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
           <main className="flex-1 flex items-center justify-center py-12">
             <div className="text-center">
               <svg className="animate-spin h-12 w-12 text-purple-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -164,7 +164,7 @@ export default function HouseholdRequestsPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className="flex-1 py-12">
           <div className="max-w-4xl mx-auto px-4">
             {/* Header */}
@@ -178,7 +178,7 @@ export default function HouseholdRequestsPage() {
                 </svg>
                 Back to Profile
               </button>
-              <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                 📬 Join Requests
               </h1>
               <p className="text-lg text-gray-600 dark:text-gray-400">

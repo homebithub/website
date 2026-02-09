@@ -117,7 +117,7 @@ export default function ResetPassword() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center px-4">
         <div className="max-w-md w-full text-center">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
             Password reset successful
           </h1>
           <p className="mt-2 text-slate-600 dark:text-slate-400">
@@ -147,11 +147,11 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
       <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
         <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
             Reset Password 🔐
           </h1>
           <p className="text-gray-600 text-base">

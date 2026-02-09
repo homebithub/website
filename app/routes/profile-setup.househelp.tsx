@@ -311,7 +311,7 @@ function HousehelpProfileSetupContent() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
       
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
@@ -320,7 +320,7 @@ function HousehelpProfileSetupContent() {
           <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
-                <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
                   Complete Your Househelp Profile 👩‍💼
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -594,9 +594,9 @@ function HousehelpProfileSetupContent() {
             <div className="relative transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 text-center shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border-4 border-purple-500">
               <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-8">
                 <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white mb-4 animate-bounce">
-                  <span className="text-5xl">🎉</span>
+                  <span className="text-3xl">🎉</span>
                 </div>
-                <h3 className="text-3xl font-bold text-white mb-2" id="modal-title">
+                <h3 className="text-xl font-bold text-white mb-2" id="modal-title">
                   Congratulations!
                 </h3>
                 <p className="text-xl text-purple-100">

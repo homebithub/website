@@ -136,7 +136,7 @@ export default function HousehelpFindHouseholds() {
     <div className="w-full">
       {/* Filters header with gradient theme to match household page */}
       <div className="rounded-3xl bg-gradient-to-r from-purple-600 via-pink-600 to-pink-500 p-6 sm:p-8 shadow-2xl shadow-purple-500/30 mb-6">
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-white mb-6">Find Households</h1>
+        <h1 className="text-xl sm:text-2xl font-extrabold text-white mb-6">Find Households</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-4">
         <div className="flex flex-col">
           <label className="mb-1 text-sm font-medium text-white/90">Town</label>

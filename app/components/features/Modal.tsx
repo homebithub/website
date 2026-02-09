@@ -64,7 +64,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
                     </div>
                     <Dialog.Title
                       as="h3"
-                      className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-pink-400 mb-3"
+                      className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent dark:from-purple-400 dark:to-pink-400 mb-3"
                     >
                       {title}
                     </Dialog.Title>

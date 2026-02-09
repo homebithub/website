@@ -15,7 +15,7 @@ export default function LoadingDemoPage() {
       
       <main className="container mx-auto px-4 py-8 border-2 border-purple-500 dark:border-purple-400 rounded-xl bg-white dark:bg-black text-slate-900 dark:text-white shadow-card">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-4xl font-bold text-primary-800 dark:text-primary-400 mb-8 text-center">
+          <h1 className="text-2xl font-bold text-primary-800 dark:text-primary-400 mb-8 text-center">
             Loading Component Demo
           </h1>
           
@@ -148,7 +148,7 @@ export default function LoadingDemoPage() {
 
           {/* Individual Component Examples */}
           <div className="mt-12">
-            <h2 className="text-3xl font-bold text-primary-800 dark:text-primary-400 mb-8 text-center">
+            <h2 className="text-xl font-bold text-primary-800 dark:text-primary-400 mb-8 text-center">
               Individual Component Examples
             </h2>
             
