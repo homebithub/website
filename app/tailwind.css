@@ -165,7 +165,10 @@
   }
 }
 
-/* Hide any stray text nodes that might appear */
-body > *:not(div):not(script):not(noscript) {
-  display: none !important;
+/* Hide stray text nodes (e.g. React Suspense "$" markers) that appear during SSR streaming */
+body {
+  font-size: 0;
+}
+body > * {
+  font-size: 1rem;
 }

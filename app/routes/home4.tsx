@@ -273,15 +273,19 @@ export default function Home4() {
                 </div>
               </SlideUp>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-16">
+              <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 mb-16">
+                {/* Connector lines between steps — hidden on mobile */}
+                <div className="hidden md:block absolute top-6 left-1/6 right-1/6 h-0.5 z-0" style={{ left: 'calc(16.667% + 24px)', right: 'calc(16.667% + 24px)' }}>
+                  <div className="w-full h-full bg-gradient-to-r from-purple-300 via-purple-400 to-purple-300 dark:from-purple-700 dark:via-purple-500 dark:to-purple-700 rounded-full" />
+                </div>
                 {[
                   { step: "01", title: "Complete Your Profile", desc: "Sign up and set up your household profile — tell us your location, chores, budget, and preferences." },
                   { step: "02", title: "Browse & Connect", desc: "Search househelp profiles by skill, location, and ratings. Chat directly before hiring." },
                   { step: "03", title: "Hire with Confidence", desc: "Send a hire request, agree on terms, and enjoy professional help in your home." },
                 ].map((item, idx) => (
                   <SlideUp key={item.step} delay={idx * 150}>
-                    <div className="text-center">
-                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-4">
+                    <div className="text-center relative z-10">
+                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-4 ring-4 ring-white dark:ring-[#0a0a0f]">
                         <span className="text-sm font-extrabold text-purple-700 dark:text-purple-400">{item.step}</span>
                       </div>
                       <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">{item.title}</h3>
@@ -308,15 +312,19 @@ export default function Home4() {
                 </div>
               </SlideUp>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+              <div className="relative grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
+                {/* Connector lines between steps — hidden on mobile */}
+                <div className="hidden md:block absolute top-6 left-1/6 right-1/6 h-0.5 z-0" style={{ left: 'calc(16.667% + 24px)', right: 'calc(16.667% + 24px)' }}>
+                  <div className="w-full h-full bg-gradient-to-r from-pink-300 via-pink-400 to-pink-300 dark:from-pink-700 dark:via-pink-500 dark:to-pink-700 rounded-full" />
+                </div>
                 {[
                   { step: "01", title: "Create Your Profile", desc: "Sign up and showcase your skills, experience, availability, and salary expectations." },
                   { step: "02", title: "Get Discovered", desc: "Households browse and find you based on your skills and location. Respond to messages and hire requests." },
                   { step: "03", title: "Start Working", desc: "Accept a hire request, agree on terms, and begin your new role with a verified household." },
                 ].map((item, idx) => (
                   <SlideUp key={`hh-${item.step}`} delay={idx * 150}>
-                    <div className="text-center">
-                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-pink-100 dark:bg-pink-900/30 mb-4">
+                    <div className="text-center relative z-10">
+                      <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-pink-100 dark:bg-pink-900/30 mb-4 ring-4 ring-white dark:ring-[#0a0a0f]">
                         <span className="text-sm font-extrabold text-pink-700 dark:text-pink-400">{item.step}</span>
                       </div>
                       <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">{item.title}</h3>
