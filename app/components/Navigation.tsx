@@ -304,7 +304,7 @@ export function Navigation() {
                         <div className="flex items-center space-x-3">
                             <button
   onClick={() => setIsWaitlistOpen(true)}
-  className="hidden lg:block glow-button bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg sm:text-xl font-bold rounded-xl shadow-lg px-6 py-1.5 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+  className="hidden lg:block glow-button bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg sm:text-xl font-medium rounded-xl shadow-lg px-6 py-1.5 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
 >
   Join Waitlist
 </button>
@@ -312,13 +312,13 @@ export function Navigation() {
                                 <>
                                     <Link
                                         to="/login"
-                                        className="link hidden lg:block text-lg font-bold rounded-xl transition-all duration-200 px-5 py-1.5 text-primary-600 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500 hover:bg-primary-100 dark:hover:bg-purple-900/30 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
+                                        className="link hidden lg:block text-lg font-medium rounded-xl transition-all duration-200 px-5 py-1.5 text-primary-600 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500 hover:bg-primary-100 dark:hover:bg-purple-900/30 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
                                     >
                                         Log in
                                     </Link>
                                     <Link
                                         to="/signup"
-                                        className="hidden lg:block px-6 py-1.5 text-lg rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+                                        className="hidden lg:block px-6 py-1.5 text-lg rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
                                     >
                                         Sign up
                                     </Link>
@@ -439,7 +439,7 @@ export function Navigation() {
   {({ active }) => (
     <button
       onClick={() => setIsWaitlistOpen(true)}
-      className={`lg:hidden w-full text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold block px-5 py-1 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500`}
+      className={`lg:hidden w-full text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium block px-5 py-1 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500`}
     >
       Join Waitlist
     </button>
@@ -451,7 +451,7 @@ export function Navigation() {
                                                         {({ active }) => (
                                                             <Link
                                                                 to="/login"
-                                                                className={`font-bold ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-2 border-transparent scale-105' : 'text-primary-700 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500'} block px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 my-1 hover:scale-105`}
+                                                                className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-2 border-transparent scale-105' : 'text-primary-700 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500'} block px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 my-1 hover:scale-105`}
                                                             >
                                                                 Log in
                                                             </Link>
@@ -461,7 +461,7 @@ export function Navigation() {
                                                         {({ active }) => (
                                                             <Link
                                                                 to="/signup"
-                                                                className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-5 py-1 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
+                                                                className={`font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-5 py-1 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
                                                             >
                                                                 Sign up
                                                             </Link>
