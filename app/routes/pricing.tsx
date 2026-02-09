@@ -333,7 +333,7 @@ export default function Pricing() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="medium" className="flex-1">
-        <main className="flex-1 container mx-auto px-4 py-8 min-h-[calc(100vh-200px)] flex flex-col items-center justify-center">
+        <main className="flex-1 container mx-auto px-4 pt-4 pb-8 min-h-[calc(100vh-200px)] flex flex-col items-center">
           <SlideUp>
             <div className="mx-auto max-w-6xl text-center">
               <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 dark:bg-purple-900/30 px-3 py-1 mb-5">
@@ -385,8 +385,8 @@ export default function Pricing() {
                 {/* Household Plans */}
                 <Tab.Panel>
                   {householdPlans.length === 0 ? (
-                    <div className="text-center py-12 bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
-                      <p className="text-gray-600 dark:text-gray-300">No household plans available at the moment</p>
+                    <div className="text-center py-16 px-8 bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
+                      <p className="text-lg text-gray-600 dark:text-gray-300">No household plans available at the moment</p>
                     </div>
                   ) : (
                     <>
@@ -476,8 +476,8 @@ export default function Pricing() {
                 {/* Househelp Plans */}
                 <Tab.Panel>
                   {househelpPlans.length === 0 ? (
-                    <div className="text-center py-12 bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
-                      <p className="text-gray-600 dark:text-gray-300">No househelp plans available at the moment</p>
+                    <div className="text-center py-16 px-8 bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
+                      <p className="text-lg text-gray-600 dark:text-gray-300">No househelp plans available at the moment</p>
                     </div>
                   ) : (
                     <>
