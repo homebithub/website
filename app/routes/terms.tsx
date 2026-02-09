@@ -9,7 +9,7 @@ export default function Terms() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
       <main className="container mx-auto px-4 sm:px-6 py-8 max-w-4xl">
         <PurpleCard hover={false} glow={true} className="p-6 sm:p-8">
         <div className="w-full">

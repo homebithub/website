@@ -147,7 +147,7 @@ export default function ResetPassword() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
       <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
         <div className="text-center">

@@ -11,7 +11,7 @@ interface PurpleThemeWrapperProps {
 export const PurpleThemeWrapper: React.FC<PurpleThemeWrapperProps> = ({
   children,
   variant = 'gradient',
-  bubbles = true,
+  bubbles = false,
   bubbleDensity = 'medium',
   className = '',
 }) => {

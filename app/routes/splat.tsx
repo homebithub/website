@@ -9,7 +9,7 @@ export default function NotFound() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium" className="flex-1">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="medium" className="flex-1">
         <main className="flex-1 flex items-center justify-center px-4 py-16">
           <PurpleCard hover={false} glow={true} className="w-full max-w-2xl p-12 text-center">
             {/* 404 Number */}

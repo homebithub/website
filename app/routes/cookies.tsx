@@ -9,7 +9,7 @@ export default function Cookies() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="light" bubbles={true} bubbleDensity="low" className="flex-1">
+      <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
       <main className="container mx-auto px-4 py-8">
         <PurpleCard hover={false} glow={true} className="p-8">
         <div className="max-w-3xl mx-auto">

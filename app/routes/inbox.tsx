@@ -1653,7 +1653,7 @@ export default function InboxPage() {
     return (
       <div className="h-screen flex flex-col overflow-hidden">
         <Navigation />
-        <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
+        <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
           <main className="flex-1 flex items-center justify-center">
             <div className="text-center">
               <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
@@ -1668,7 +1668,7 @@ export default function InboxPage() {
   return (
     <div className="h-screen flex flex-col overflow-hidden">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
         <main className="flex-1 flex flex-col relative pt-6 pb-4 overflow-hidden min-h-0">
           {/* Desktop: Split view */}
           <div className="hidden lg:flex flex-1 max-w-7xl mx-auto w-full mt-2 overflow-hidden min-h-0">

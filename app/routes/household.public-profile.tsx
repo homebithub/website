@@ -334,7 +334,7 @@ export default function HouseholdPublicProfile() {
   return (
     <div className="min-h-screen flex flex-col">
       {isEmbed ? null : <Navigation />}
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
         <main className="flex-1 py-8">
           <div className="max-w-6xl mx-auto px-4">
             {/* Header (hidden in embed mode) */}

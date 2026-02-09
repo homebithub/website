@@ -144,7 +144,7 @@ export default function Index() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="high">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="high">
       <main className="flex-grow">
         {/* Initial Signup Modal - User Type Selection */}
         <SignupFlow 

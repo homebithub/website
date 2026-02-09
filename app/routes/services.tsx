@@ -61,7 +61,7 @@ export default function Services() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium" className="flex-1">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="medium" className="flex-1">
         <div className="relative isolate overflow-hidden bg-transparent dark:from-[#050508] dark:via-[#0a0a0f] dark:to-purple-950 transition-colors duration-500">
           <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
             <div className="mx-auto max-w-2xl lg:mx-0">

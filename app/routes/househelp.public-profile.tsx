@@ -385,7 +385,7 @@ export default function HousehelpPublicProfile() {
   return (
     <div className="min-h-screen flex flex-col">
       {isEmbed ? null : <Navigation />}
-      <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="low">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
         <main className="flex-1">
           <div className={`max-w-6xl mx-auto px-4 pb-6 ${isEmbed ? 'pt-4' : 'pt-6 sm:pt-8'}`}>
             {/* Header (hidden in embed) */}
