@@ -78,7 +78,7 @@ export default function About() {
                 </div>
 
                 {/* About Us and Mission Section */}
-                <div className="relative isolate overflow-hidden bg-white dark:bg-[#13131a] py-16 sm:py-24 rounded-3xl shadow-light-glow-md dark:shadow-glow-md mx-3 sm:mx-8 mt-10 fade-in-scroll transition-colors duration-300 border-2 border-purple-200/40 dark:border-purple-500/20">
+                <div className="relative isolate overflow-hidden bg-white dark:bg-[#13131a] py-16 sm:py-24 rounded-3xl shadow-light-glow-md dark:shadow-glow-md mx-3 sm:mx-8 mt-10  transition-colors duration-300 border-2 border-purple-200/40 dark:border-purple-500/20">
                     <div className="mx-auto max-w-7xl px-6 lg:px-8">
                         <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
                             <div className="lg:pr-8 lg:pt-4">

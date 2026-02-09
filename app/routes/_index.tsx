@@ -1,6 +1,5 @@
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
-import useScrollFadeIn from "~/hooks/useScrollFadeIn";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { Link, useNavigate } from "react-router";
@@ -39,7 +38,6 @@ const features = [
 ];
 
 export default function Index() {
-  useScrollFadeIn();
 
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -172,37 +170,37 @@ export default function Index() {
           onClose={handleProfileComplete}
           initialUserType={userType || undefined}
         />
-        <div className="relative bg-transparent dark:from-[#050508] dark:via-[#0a0a0f] dark:to-purple-950 overflow-hidden fade-in-scroll transition-colors duration-500">
+        <div className="relative bg-transparent dark:from-[#050508] dark:via-[#0a0a0f] dark:to-purple-950 overflow-hidden  transition-colors duration-500">
   <div className="flex flex-col items-center justify-center w-full px-4 sm:px-6 pt-6 sm:pt-8 pb-12 sm:pb-16 lg:px-8 lg:pt-10 lg:pb-20 relative z-10">
     <div className="mx-auto max-w-4xl text-center px-2 sm:px-0">
-      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-6 sm:mb-8 font-sans drop-shadow-lg animate-fadeIn">
+      <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-gray-900 dark:text-white mb-6 sm:mb-8 font-sans drop-shadow-lg ">
         Your Home, Our Expertise!
       </h1>
-      <p className="mt-6 sm:mt-8 md:mt-12 text-base sm:text-lg md:text-2xl leading-7 sm:leading-8 md:leading-9 text-gray-700 dark:text-purple-200 font-medium px-2 sm:px-0 animate-fadeIn fade-in-scroll">
+      <p className="mt-6 sm:mt-8 md:mt-12 text-base sm:text-lg md:text-2xl leading-7 sm:leading-8 md:leading-9 text-gray-700 dark:text-purple-200 font-medium px-2 sm:px-0  ">
         Transform your living space with our comprehensive home services. From deep cleaning to specialized childcare, we connect you with verified professionals who treat your home like their own.
       </p>
       {/* Image Cards Section */}
-      <div className="mt-12 sm:mt-16 md:mt-20 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 fade-in-scroll">
+      <div className="mt-12 sm:mt-16 md:mt-20 w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-8 ">
         <div className="grid grid-cols-2 gap-4 sm:gap-6 md:flex md:justify-center md:gap-8">
-          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
+          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md  border-2 border-purple-200/40 dark:border-purple-500/20">
             <img src="/assets/mtoi.svg" alt="Laundry Service" className="w-full h-full object-contain rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/mtoi.svg';}}} />
           </div>
-          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
+          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md  border-2 border-purple-200/40 dark:border-purple-500/20">
             <img src="/assets/shopping.svg" alt="Shopping" className="w-full h-full object-contain rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/shopping.svg';}}} />
           </div>
-          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
+          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md  border-2 border-purple-200/40 dark:border-purple-500/20">
             <img src="/assets/man-trash.svg" alt="Man taking out trash" className="w-full h-full object-contain rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/man-trash.svg';}}} />
           </div>
-          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
+          <div className="aspect-square w-full md:w-56 h-40 sm:h-48 md:h-56 bg-white dark:bg-[#13131a] rounded-xl shadow-light-glow-sm dark:shadow-glow-sm p-3 sm:p-4 transition-all duration-500 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md  border-2 border-purple-200/40 dark:border-purple-500/20">
             <img src="/assets/babysitter.webp" alt="Babysitter with child" className="w-full h-full object-cover rounded-md" onError={(e)=>{const img=e.currentTarget as HTMLImageElement; if(!img.dataset.fallback){img.dataset.fallback='1'; img.src='/babysitter.webp';}}} />
           </div>
         </div>
       </div>
       {/* CTA Button */}
-      <div className="mt-8 sm:mt-10 md:mt-12 flex items-center justify-center gap-x-2 px-4 sm:px-0 fade-in-scroll">
+      <div className="mt-8 sm:mt-10 md:mt-12 flex items-center justify-center gap-x-2 px-4 sm:px-0 ">
         <Link
           to="/signup"
-          className="glow-button rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 sm:px-8 py-1.5 text-lg sm:text-2xl font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 transform hover:scale-110 transition-all duration-300 animate-fadeIn"
+          className="glow-button rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 sm:px-8 py-1.5 text-lg sm:text-2xl font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 transform hover:scale-110 transition-all duration-300 "
         >
           Get Started
         </Link>
@@ -213,16 +211,16 @@ export default function Index() {
 </div>
 
         {/* What we offer section */}
-        <div className="relative bg-gradient-to-br from-purple-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-24 rounded-2xl sm:rounded-3xl mx-4 sm:mx-7 md:mx-14 lg:mx-28 fade-in-scroll overflow-hidden transition-colors duration-300">
+        <div className="relative bg-gradient-to-br from-purple-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-24 rounded-2xl sm:rounded-3xl mx-4 sm:mx-7 md:mx-14 lg:mx-28  overflow-hidden transition-colors duration-300">
   <div className="mx-auto max-w-7xl px-6 lg:px-8">
-    <div className="mx-auto max-w-6xl rounded-2xl sm:rounded-3xl bg-white dark:bg-[#13131a] p-6 sm:p-8 md:p-12 lg:p-16 shadow-light-glow-lg dark:shadow-glow-lg fade-in-scroll transition-colors duration-300 border-2 border-purple-200/50 dark:border-purple-500/20">
+    <div className="mx-auto max-w-6xl rounded-2xl sm:rounded-3xl bg-white dark:bg-[#13131a] p-6 sm:p-8 md:p-12 lg:p-16 shadow-light-glow-lg dark:shadow-glow-lg  transition-colors duration-300 border-2 border-purple-200/50 dark:border-purple-500/20">
       <div className="text-center">
-        <h2 className="text-3xl font-extrabold tracking-tight text-primary-700 dark:text-purple-400 animate-fadeIn">What We Offer</h2>
-        <p className="mt-4 font-bold text-2xl sm:text-3xl md:text-4xl leading-tight text-gray-900 dark:text-white animate-fadeIn">More than just a home services platform.</p>
-        <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 animate-fadeIn">Whether you need a quick clean, or full-time help, Homebit connects you with reliable professionals you can trust.</p>
+        <h2 className="text-3xl font-extrabold tracking-tight text-primary-700 dark:text-purple-400 ">What We Offer</h2>
+        <p className="mt-4 font-bold text-2xl sm:text-3xl md:text-4xl leading-tight text-gray-900 dark:text-white ">More than just a home services platform.</p>
+        <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 ">Whether you need a quick clean, or full-time help, Homebit connects you with reliable professionals you can trust.</p>
       </div>
       <div className="mt-12 sm:mt-16 grid grid-cols-1 gap-y-8 sm:gap-y-12 text-center sm:grid-cols-3 sm:gap-x-6 lg:gap-x-8">
-        <div className="flex flex-col items-center fade-in-scroll">
+        <div className="flex flex-col items-center ">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-yellow-200 to-yellow-400 dark:from-yellow-600 dark:to-yellow-800 shadow-lg dark:shadow-glow-sm">
             <svg className="h-12 w-12 text-yellow-600 dark:text-yellow-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -230,7 +228,7 @@ export default function Index() {
           </div>
           <h3 className="mt-5 text-lg font-bold text-primary-700 dark:text-purple-400">Comprehensive Home Services</h3>
         </div>
-        <div className="flex flex-col items-center fade-in-scroll">
+        <div className="flex flex-col items-center ">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-pink-400 dark:from-pink-600 dark:to-pink-800 shadow-lg dark:shadow-glow-sm">
             <svg className="h-12 w-12 text-pink-600 dark:text-pink-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.286zm0 13.036h.008v.008h-.008v-.008z" />
@@ -238,7 +236,7 @@ export default function Index() {
           </div>
           <h3 className="mt-5 text-lg font-bold text-primary-700 dark:text-purple-400">Qualified Househelps</h3>
         </div>
-        <div className="flex flex-col items-center fade-in-scroll">
+        <div className="flex flex-col items-center ">
           <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-teal-200 to-teal-400 dark:from-teal-600 dark:to-teal-800 shadow-lg dark:shadow-glow-sm">
             <svg className="h-12 w-12 text-teal-600 dark:text-teal-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -253,26 +251,26 @@ export default function Index() {
 </div>
 
         {/* Whatever You Need section */}
-        <div className="relative bg-gradient-to-br from-purple-100/60 via-purple-200/40 to-pink-100/60 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-24 fade-in-scroll overflow-hidden transition-colors duration-300">
+        <div className="relative bg-gradient-to-br from-purple-100/60 via-purple-200/40 to-pink-100/60 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-24  overflow-hidden transition-colors duration-300">
   <div className="mx-auto max-w-[1400px] px-6 lg:px-8">
     <div className="mx-auto max-w-[1400px]">
       <div className="flex flex-col lg:flex-row gap-8 sm:gap-12 lg:gap-16 items-center">
         {/* Text Content - Left Column */}
-        <div className="lg:w-1/2 mx-auto text-center fade-in-scroll">
-          <p className="font-bold text-2xl sm:text-3xl md:text-4xl leading-tight text-gray-900 dark:text-white animate-fadeIn">Where Quality help meets Opportunity</p>
-          <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 animate-fadeIn">At Homebit, we bring skilled, reliable househelps together with households that value trust and professionalism. Whether you're seeking work or looking to hire, we make the connection simple, secure, and stress-free.</p>
-          <div className="mt-8 sm:mt-10 md:mt-12 flex items-center justify-center fade-in-scroll">
+        <div className="lg:w-1/2 mx-auto text-center ">
+          <p className="font-bold text-2xl sm:text-3xl md:text-4xl leading-tight text-gray-900 dark:text-white ">Where Quality help meets Opportunity</p>
+          <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 ">At Homebit, we bring skilled, reliable househelps together with households that value trust and professionalism. Whether you're seeking work or looking to hire, we make the connection simple, secure, and stress-free.</p>
+          <div className="mt-8 sm:mt-10 md:mt-12 flex items-center justify-center ">
             <Link
               to="/signup"
-              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-8 sm:px-10 py-1.5 sm:py-1 text-lg sm:text-2xl font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 transform hover:scale-110 transition-all duration-300 animate-fadeIn"
+              className="rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-8 sm:px-10 py-1.5 sm:py-1 text-lg sm:text-2xl font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-600 transform hover:scale-110 transition-all duration-300 "
             >
               Join Homebit Today
             </Link>
           </div>
         </div>
         {/* How It Works Image - Right Column */}
-        <div className="lg:w-1/2 flex justify-center lg:justify-end fade-in-scroll">
-          <div className="w-full max-w-[500px] rounded-3xl overflow-hidden shadow-xl dark:shadow-glow-lg border-4 border-primary-200 dark:border-purple-500/30 animate-fadeIn group transition-all duration-500 hover:scale-110 hover:shadow-2xl dark:hover:shadow-glow-lg">
+        <div className="lg:w-1/2 flex justify-center lg:justify-end ">
+          <div className="w-full max-w-[500px] rounded-3xl overflow-hidden shadow-xl dark:shadow-glow-lg border-4 border-primary-200 dark:border-purple-500/30  group transition-all duration-500 hover:scale-110 hover:shadow-2xl dark:hover:shadow-glow-lg">
             <img 
   src="/assets/how it works.jpg" 
   alt="How It Works" 
@@ -287,20 +285,20 @@ export default function Index() {
 </div>
 
         {/* Why Choose Us section */}
-        <div className="relative bg-gradient-to-br from-purple-200 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-20 fade-in-scroll overflow-hidden transition-colors duration-300">
+        <div className="relative bg-gradient-to-br from-purple-200 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-12 sm:py-16 md:py-20  overflow-hidden transition-colors duration-300">
   <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-    <div className="mx-auto max-w-[1100px] rounded-2xl sm:rounded-3xl bg-white dark:bg-[#13131a] shadow-light-glow-md dark:shadow-glow-md p-6 sm:p-10 md:p-16 lg:p-20 mb-6 sm:mb-8 fade-in-scroll border-2 border-purple-200/40 dark:border-purple-500/20">
+    <div className="mx-auto max-w-[1100px] rounded-2xl sm:rounded-3xl bg-white dark:bg-[#13131a] shadow-light-glow-md dark:shadow-glow-md p-6 sm:p-10 md:p-16 lg:p-20 mb-6 sm:mb-8  border-2 border-purple-200/40 dark:border-purple-500/20">
       <div className="text-center max-w-5xl mx-auto">
-        <h2 className="text-3xl font-extrabold tracking-tight text-primary-700 dark:text-purple-400 animate-fadeIn">Why Choose Us</h2>
-        <p className="mt-4 font-bold text-3xl leading-tight text-gray-900 dark:text-white sm:text-4xl animate-fadeIn">Everything you need for your home</p>
-        <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 animate-fadeIn">We provide comprehensive home services with a focus on quality, reliability, and customer satisfaction.</p>
+        <h2 className="text-3xl font-extrabold tracking-tight text-primary-700 dark:text-purple-400 ">Why Choose Us</h2>
+        <p className="mt-4 font-bold text-3xl leading-tight text-gray-900 dark:text-white sm:text-4xl ">Everything you need for your home</p>
+        <p className="mt-2 text-base leading-7 text-gray-700 dark:text-gray-300 ">We provide comprehensive home services with a focus on quality, reliability, and customer satisfaction.</p>
       </div>
       <div className="mt-12 sm:mt-16 max-w-7xl mx-auto">
         <div className="grid grid-cols-1 gap-6 sm:gap-8 lg:grid-cols-3">
           {features.map((feature, idx) => (
             <div
               key={feature.name}
-              className="relative flex flex-col items-center text-center rounded-xl sm:rounded-2xl border-2 border-primary-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-6 sm:p-8 shadow-light-glow-sm dark:shadow-glow-sm transition-transform duration-300 hover:-translate-y-2 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md fade-in-scroll animate-fadeIn"
+              className="relative flex flex-col items-center text-center rounded-xl sm:rounded-2xl border-2 border-primary-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-6 sm:p-8 shadow-light-glow-sm dark:shadow-glow-sm transition-transform duration-300 hover:-translate-y-2 hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md  "
               style={{ animationDelay: `${0.1 * idx}s` }}
             >
               <div className="relative inline-flex items-center justify-center p-[2px] rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-500 shadow-lg shadow-purple-500/40">
