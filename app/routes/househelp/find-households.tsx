@@ -9,6 +9,10 @@ const RATING_OPTS = ["", 5, 4, 3, 2, 1];
 const NANNY_TYPES = ["", "dayburg", "sleeper"];
 const PET_TYPES = ["", "cat", "dog", "bird", "fish", "other"];
 
+function getInitials(firstName?: string, lastName?: string): string {
+  return `${(firstName || '').charAt(0)}${(lastName || '').charAt(0)}`.toUpperCase();
+}
+
 export default function HousehelpFindHouseholds() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState({

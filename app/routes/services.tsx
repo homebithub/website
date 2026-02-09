@@ -3,6 +3,13 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { Link } from "react-router";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
+
+export const meta = () => [
+    { title: "Home Services — Homebit Kenya" },
+    { name: "description", content: "Explore Homebit's range of home services: housekeeping, nanny care, cooking, laundry, gardening, and more. Professional, vetted staff across Kenya." },
+    { property: "og:title", content: "Home Services — Homebit Kenya" },
+    { property: "og:url", content: "https://homebit.co.ke/services" },
+];
 import {
   WrenchScrewdriverIcon,
   PaintBrushIcon,

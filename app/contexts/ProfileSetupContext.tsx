@@ -70,25 +70,29 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
         throw new Error('No authentication token found');
       }
 
-      // Single call to profile endpoint - backend handles step tracking
+      // Single call to profile update endpoint - backend handles step tracking
       const endpoint = profileType === 'househelp' 
-        ? API_ENDPOINTS.profile.househelp.me 
-        : API_ENDPOINTS.profile.household.me;
+        ? API_ENDPOINTS.profile.househelp.update 
+        : API_ENDPOINTS.profile.household.update;
 
       const stepPayload = transformStepData(stepId, data);
       
-      // Add step metadata for backend to track
-      const payload = {
-        ...stepPayload,
-        _step_metadata: {
-          step_id: stepId,
-          step_number: stepNumber,
-          is_completed: true
-        }
+      // Househelp endpoint expects { updates: {...}, _step_metadata: {...} }
+      // Household endpoint expects flat fields with _step_metadata
+      const stepMetadata = {
+        step_id: stepId,
+        step_number: stepNumber,
+        is_completed: true
       };
 
+      const payload = profileType === 'househelp'
+        ? { updates: stepPayload, _step_metadata: stepMetadata }
+        : { ...stepPayload, _step_metadata: stepMetadata };
+
+      const method = profileType === 'househelp' ? 'PATCH' : 'PUT';
+
       const response = await fetch(endpoint, {
-        method: 'PATCH',
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -212,14 +216,21 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       // Determine which endpoint to use based on profile type
       const endpoint = profileType === 'househelp' 
-        ? API_ENDPOINTS.profile.househelp.me 
-        : API_ENDPOINTS.profile.household.me;
+        ? API_ENDPOINTS.profile.househelp.update 
+        : API_ENDPOINTS.profile.household.update;
 
       // Transform the data to match backend expectations
-      const payload = transformProfileData(profileData);
+      const transformed = transformProfileData(profileData);
+
+      // Househelp endpoint expects { updates: {...} }, household expects flat fields
+      const payload = profileType === 'househelp'
+        ? { updates: transformed }
+        : transformed;
+
+      const method = profileType === 'househelp' ? 'PATCH' : 'PUT';
 
       const response = await fetch(endpoint, {
-        method: 'PATCH',
+        method,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`

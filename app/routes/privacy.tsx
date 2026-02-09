@@ -5,6 +5,13 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 
+export const meta = () => [
+    { title: "Privacy Policy — Homebit" },
+    { name: "description", content: "Read Homebit's privacy policy. Learn how we collect, use, and protect your personal data when using our home-services platform." },
+    { property: "og:title", content: "Privacy Policy — Homebit" },
+    { property: "og:url", content: "https://homebit.co.ke/privacy" },
+];
+
 export default function Privacy() {
   return (
     <div className="min-h-screen flex flex-col">

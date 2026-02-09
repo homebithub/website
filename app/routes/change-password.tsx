@@ -3,7 +3,7 @@ import { useLoaderData, Form } from "react-router";
 import React, { useState, useEffect } from "react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
-import { Error } from "~/components/Error";
+import { Error as ErrorDisplay } from "~/components/Error";
 import { changePasswordSchema, validateForm, validateField } from '~/utils/validation';
 import { useAuth } from "~/contexts/useAuth";
 import { useNavigate, useLocation } from "react-router";

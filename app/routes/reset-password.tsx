@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useSearchParams, useNavigate } from "react-router";
-import { Error } from "~/components/Error";
+import { Error as ErrorDisplay } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";

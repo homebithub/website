@@ -13,6 +13,13 @@ import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 
+export const meta = () => [
+    { title: "Log In — Homebit" },
+    { name: "description", content: "Log in to your Homebit account to manage your home services, view your househelp shortlist, and more." },
+    { property: "og:title", content: "Log In — Homebit" },
+    { property: "og:url", content: "https://homebit.co.ke/login" },
+];
+
 export type LoginRequest = {
   phone: string;
   password: string;

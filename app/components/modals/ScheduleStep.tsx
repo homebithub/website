@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { HouseholdProfileData } from '../../types/household-profile';
+import type { HouseholdProfileData } from '../../types/household-profile';
 
 interface ScheduleStepProps {
   data: HouseholdProfileData;

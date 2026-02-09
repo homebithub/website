@@ -10,10 +10,30 @@ import { WebSocketProvider } from "~/contexts/WebSocketContext";
 import { AUTH_API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL, PAYMENTS_API_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
-export const links: Route.LinksFunction = () => [];
+export const meta: Route.MetaFunction = () => [
+    { title: "Homebit — Find Trusted Home Help in Kenya" },
+    { name: "description", content: "Homebit connects Kenyan households with vetted, rated housekeepers, nannies, and home-service professionals. Browse profiles, compare prices, and hire with confidence." },
+    { name: "keywords", content: "househelp Kenya, home services Nairobi, nanny Kenya, housekeeper, domestic worker, cleaning services, Homebit" },
+    { name: "author", content: "Homebit" },
+    { property: "og:type", content: "website" },
+    { property: "og:site_name", content: "Homebit" },
+    { property: "og:title", content: "Homebit — Find Trusted Home Help in Kenya" },
+    { property: "og:description", content: "Connect with vetted, rated housekeepers, nannies, and home-service professionals across Kenya." },
+    { property: "og:image", content: "https://homebit.co.ke/logo_512x512.png" },
+    { property: "og:url", content: "https://homebit.co.ke" },
+    { property: "og:locale", content: "en_KE" },
+    { name: "twitter:card", content: "summary_large_image" },
+    { name: "twitter:title", content: "Homebit — Find Trusted Home Help in Kenya" },
+    { name: "twitter:description", content: "Connect with vetted, rated housekeepers, nannies, and home-service professionals across Kenya." },
+    { name: "twitter:image", content: "https://homebit.co.ke/logo_512x512.png" },
+];
+
+export const links: Route.LinksFunction = () => [
+    { rel: "canonical", href: "https://homebit.co.ke" },
+];
 
 export const headers: Route.HeadersFunction = () => ({
-    "Cache-Control": "no-store",
+    "Cache-Control": "no-cache, max-age=0, must-revalidate",
 });
 
 export function loader() {
@@ -93,6 +113,47 @@ export default function App() {
                 <link
                   href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap"
                   rel="stylesheet"
+                />
+                {/* Structured data: Organization + WebSite */}
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{
+                        __html: JSON.stringify({
+                            "@context": "https://schema.org",
+                            "@graph": [
+                                {
+                                    "@type": "Organization",
+                                    "@id": "https://homebit.co.ke/#organization",
+                                    "name": "Homebit",
+                                    "url": "https://homebit.co.ke",
+                                    "logo": {
+                                        "@type": "ImageObject",
+                                        "url": "https://homebit.co.ke/logo_512x512.png",
+                                        "width": 512,
+                                        "height": 512
+                                    },
+                                    "description": "Homebit connects Kenyan households with vetted, rated housekeepers, nannies, and home-service professionals.",
+                                    "areaServed": {
+                                        "@type": "Country",
+                                        "name": "Kenya"
+                                    },
+                                    "sameAs": [
+                                        "https://web.facebook.com/profile.php?id=61582801828384",
+                                        "https://www.instagram.com/homebithub/",
+                                        "https://x.com/homebithub",
+                                        "https://www.linkedin.com/company/homebithub"
+                                    ]
+                                },
+                                {
+                                    "@type": "WebSite",
+                                    "@id": "https://homebit.co.ke/#website",
+                                    "url": "https://homebit.co.ke",
+                                    "name": "Homebit",
+                                    "publisher": { "@id": "https://homebit.co.ke/#organization" }
+                                }
+                            ]
+                        })
+                    }}
                 />
                 <title>Homebit</title>
             </head>

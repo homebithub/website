@@ -7,6 +7,13 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { API_BASE_URL } from '~/config/api';
 import CustomSelect from '~/components/ui/CustomSelect';
 
+export const meta = () => [
+    { title: "Contact Us — Homebit Kenya" },
+    { name: "description", content: "Get in touch with the Homebit team. Questions about our home services, hiring, or partnerships? We'd love to hear from you." },
+    { property: "og:title", content: "Contact Us — Homebit Kenya" },
+    { property: "og:url", content: "https://homebit.co.ke/contact" },
+];
+
 interface ApiError {
   message: string;
 }

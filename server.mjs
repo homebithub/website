@@ -1,4 +1,5 @@
 import express from "express";
+import compression from "compression";
 import cors from "cors";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { createRequestHandler } from "@react-router/express";
@@ -11,6 +12,9 @@ const __dirname = path.dirname(__filename);
 const BUILD_CLIENT_DIR = path.join(__dirname, "build", "client");
 
 const app = express();
+
+// Compress all HTTP responses (gzip/deflate)
+app.use(compression());
 
 // Enable CORS
 app.use(cors({
