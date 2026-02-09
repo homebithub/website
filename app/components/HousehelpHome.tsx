@@ -509,7 +509,7 @@ export default function HousehelpHome() {
                 )}
                 <button
                   onClick={search}
-                  className="px-6 py-1.5 rounded-xl font-bold bg-white text-purple-700 border border-white/20 shadow-lg hover:bg-purple-50 transition-all dark:bg-white/90 dark:text-purple-700 dark:hover:bg-white focus:outline-none focus:ring-2 focus:ring-white/70 dark:shadow-[0_0_20px_rgba(168,85,247,0.35)]"
+                  className="px-6 py-1.5 rounded-xl font-bold bg-white text-purple-700 border border-white/20 shadow-lg hover:bg-purple-50 transition-all dark:bg-white dark:text-purple-700 dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white/70 dark:shadow-[0_0_20px_rgba(168,85,247,0.35)]"
                 >
                   Search
                 </button>

@@ -267,7 +267,7 @@ export default function HouseholdContracts() {
                       </div>
 
                       {contract.notes && (
-                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
                           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Notes:</span>
                           <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
                             {contract.notes}

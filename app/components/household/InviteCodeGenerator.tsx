@@ -262,21 +262,21 @@ export function InviteCodeGenerator({
 
               {/* Details */}
               <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="text-gray-600 dark:text-gray-400 mb-1">Role</div>
                   <div className="font-bold text-gray-900 dark:text-white capitalize">{invitation.role}</div>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="text-gray-600 dark:text-gray-400 mb-1">Expires</div>
                   <div className="font-bold text-gray-900 dark:text-white">
                     {new Date(invitation.expires_at).toLocaleDateString()}
                   </div>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="text-gray-600 dark:text-gray-400 mb-1">Max Uses</div>
                   <div className="font-bold text-gray-900 dark:text-white">{invitation.max_uses}</div>
                 </div>
-                <div className="p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="text-gray-600 dark:text-gray-400 mb-1">Used</div>
                   <div className="font-bold text-gray-900 dark:text-white">{invitation.uses_count}</div>
                 </div>

@@ -63,19 +63,6 @@ export default function Services() {
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={true} bubbleDensity="medium" className="flex-1">
         <div className="relative isolate overflow-hidden bg-transparent dark:from-[#050508] dark:via-[#0a0a0f] dark:to-purple-950 transition-colors duration-500">
-          {/* Floating SVG shapes for playful effect */}
-          <svg
-            className="absolute top-0 left-0 w-48 h-48 opacity-30 dark:opacity-20 animate-float"
-            viewBox="0 0 200 200"
-          >
-            <circle cx="100" cy="100" r="100" fill="#ec4899" />
-          </svg>
-          <svg
-            className="absolute bottom-0 right-0 w-64 h-64 opacity-20 dark:opacity-10 animate-float delay-1000"
-            viewBox="0 0 200 200"
-          >
-            <rect width="200" height="200" rx="70" fill="#a855f7" />
-          </svg>
           <div className="mx-auto max-w-7xl px-6 py-24 sm:py-32 lg:px-8">
             <div className="mx-auto max-w-2xl lg:mx-0">
               <h2 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-6xl drop-shadow-lg">

@@ -307,7 +307,7 @@ export default function Pricing() {
 
           <div className="mt-12 w-full max-w-6xl">
             <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
-              <Tab.List className="flex space-x-1 rounded-xl bg-white/90 dark:bg-[#13131a]/95 p-1 shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30 max-w-md mx-auto mb-8">
+              <Tab.List className="flex space-x-1 rounded-xl bg-white dark:bg-[#13131a] p-1 shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30 max-w-md mx-auto mb-8">
                 <Tab
                   className={({ selected }) =>
                     `w-full rounded-xl py-1.5 text-sm font-medium leading-5 transition-all
@@ -338,7 +338,7 @@ export default function Pricing() {
                 {/* Household Plans */}
                 <Tab.Panel>
                   {householdPlans.length === 0 ? (
-                    <div className="text-center py-12 bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
+                    <div className="text-center py-12 bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
                       <p className="text-gray-600 dark:text-gray-300">No household plans available at the moment</p>
                     </div>
                   ) : (
@@ -363,7 +363,7 @@ export default function Pricing() {
                           return (
                             <div
                               key={plan.id}
-                              className={`relative bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border-2 p-8 hover:scale-105 transition-all flex flex-col h-full ${
+                              className={`relative bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border-2 p-8 hover:scale-105 transition-all flex flex-col h-full ${
                                 index === 2 
                                   ? 'border-purple-400 dark:border-purple-400 ring-2 ring-purple-300 dark:ring-purple-500' 
                                   : 'border-purple-100 dark:border-purple-500/30 hover:border-purple-300 dark:hover:border-purple-400'
@@ -429,7 +429,7 @@ export default function Pricing() {
                 {/* Househelp Plans */}
                 <Tab.Panel>
                   {househelpPlans.length === 0 ? (
-                    <div className="text-center py-12 bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
+                    <div className="text-center py-12 bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
                       <p className="text-gray-600 dark:text-gray-300">No househelp plans available at the moment</p>
                     </div>
                   ) : (
@@ -453,7 +453,7 @@ export default function Pricing() {
                           return (
                             <div
                               key={plan.id}
-                              className="relative bg-white/90 dark:bg-[#13131a]/95 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border-2 border-purple-400 dark:border-purple-400 ring-2 ring-purple-300 dark:ring-purple-500 p-8 flex flex-col"
+                              className="relative bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border-2 border-purple-400 dark:border-purple-400 ring-2 ring-purple-300 dark:ring-purple-500 p-8 flex flex-col"
                             >
                               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">

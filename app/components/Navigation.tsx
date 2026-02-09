@@ -235,15 +235,10 @@ export function Navigation() {
     }
 
     return (
-        <nav className="sticky top-0 z-40 shadow-xl shadow-purple-200/50 bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f]/95 dark:via-[#13131a]/95 dark:to-[#0a0a0f]/95 fade-in-scroll overflow-visible backdrop-blur-xl border-b border-primary-200/60 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
-  {/* Animated Blobs & Icons */}
-  <svg className="absolute top-0 right-0 w-24 h-24 opacity-30 dark:opacity-20 animate-float z-0" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#f472b6" /></svg>
-  <svg className="absolute bottom-0 left-0 w-20 h-20 opacity-20 dark:opacity-10 blur-sm animate-float delay-500 z-0" viewBox="0 0 100 100"><path d="M10,80 Q50,10 90,80" stroke="#2dd4bf" strokeWidth="8" fill="none" /></svg>
+        <nav className="sticky top-0 z-40 shadow-xl shadow-purple-200/50 bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] fade-in-scroll overflow-visible border-b border-primary-200/60 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
             <div className="flex justify-between items-center px-8 sm:px-16 lg:px-32 min-h-[64px] sm:min-h-[72px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
-  {/* Floating purple blob */}
-  <svg className="absolute -top-8 -left-8 w-16 h-16 opacity-30 animate-float" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="50" ry="40" fill="#a855f7" /></svg>
   <Link to="/" prefetch="intent" className="relative gradient-text font-extrabold text-3xl sm:text-4xl px-3 py-1 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-purple-300/50 hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
     HomeBit
   </Link>
@@ -299,8 +294,6 @@ export function Navigation() {
 
                 {/* Right section */}
                 <div className="flex items-center space-x-4 ml-6 relative">
-  {/* Floating sparkle icon */}
-  <svg className="absolute -top-6 right-0 w-8 h-8 opacity-40 animate-float delay-1000 z-0" viewBox="0 0 32 32"><path d="M16 2 L20 12 L30 16 L20 20 L16 30 L12 20 L2 16 L12 12 Z" fill="#a855f7" /></svg>
 
                     {/* Theme Toggle - Always visible on desktop */}
                     <div className="hidden lg:block">
@@ -423,7 +416,7 @@ export function Navigation() {
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                         >
-                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white/90 dark:bg-[#13131a]/95 border-2 border-primary-200 dark:border-purple-500/30 shadow-xl shadow-purple-200/50 dark:shadow-glow-sm focus:outline-none backdrop-blur-xl">
+                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white dark:bg-[#13131a] border-2 border-primary-200 dark:border-purple-500/30 shadow-xl shadow-purple-200/50 dark:shadow-glow-sm focus:outline-none">
                                 <div className="py-2">
                                     {/* Navigation links in mobile menu (non-app host) */}
                                     {!isAppHost && (user ? authLinks : navigation).map((item) => (

@@ -273,7 +273,7 @@ export default function HiringTermsAndConditions() {
                 <p>
                   For questions about these Hiring Terms and Conditions, please contact us at:
                 </p>
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <p><strong>Email:</strong> support@homexpert.co.ke</p>
                   <p><strong>Website:</strong> www.homexpert.co.ke</p>
                 </div>

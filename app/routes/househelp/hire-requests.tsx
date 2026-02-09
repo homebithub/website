@@ -365,7 +365,7 @@ export default function HousehelpHireRequests() {
 
                 {/* Special Requirements */}
                 {request.special_requirements && (
-                  <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                  <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                       Special Requirements:
                     </span>

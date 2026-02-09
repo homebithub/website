@@ -996,7 +996,7 @@ export default function InboxPage() {
                     setSearchParams({ conversation: c.id }, { replace: true });
                   }}
                   className={`w-full px-4 py-1.5 flex items-center gap-3 text-left hover:bg-purple-50 dark:hover:bg-slate-800/70 transition ${
-                    isActive ? 'bg-purple-50/70 dark:bg-slate-800/80' : ''
+                    isActive ? 'bg-purple-50 dark:bg-slate-800' : ''
                   }`}
                 >
                   <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
@@ -1473,7 +1473,7 @@ export default function InboxPage() {
                             onMouseLeave={() => setOpenMsgMenuId(null)}
                           >
                             {/* Quick emoji reactions bar (mobile only) */}
-                            <div className="lg:hidden flex items-center justify-around gap-1 px-3 py-1 border-b border-purple-100 dark:border-purple-500/20 bg-purple-50/50 dark:bg-slate-800/50">
+                            <div className="lg:hidden flex items-center justify-around gap-1 px-3 py-1 border-b border-purple-100 dark:border-purple-500/20 bg-purple-50 dark:bg-slate-800">
                               {['👍','❤️','😂','😮'].map(em => (
                                 <button 
                                   key={em} 
@@ -1554,7 +1554,7 @@ export default function InboxPage() {
         {/* Input - At bottom (grid row) */}
         <div className="p-4 border-t border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a]">
           {selectedIds.size > 0 && (
-            <div className="mb-2 flex items-center justify-between rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50/60 dark:bg-slate-800/60 px-3 py-1">
+            <div className="mb-2 flex items-center justify-between rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-slate-800 px-3 py-1">
               <div className="text-xs font-semibold">{selectedIds.size} selected</div>
               <div className="flex items-center gap-2">
                 <button
@@ -1576,7 +1576,7 @@ export default function InboxPage() {
             </div>
           )}
           {replyTo && (
-            <div className="mb-2 flex items-start justify-between rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50/60 dark:bg-slate-800/60 px-3 py-1">
+            <div className="mb-2 flex items-start justify-between rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-slate-800 px-3 py-1">
               <div className="text-xs">
                 <div className="font-semibold text-purple-700 dark:text-purple-300">
                   Replying to {replyTo.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')}
@@ -1744,7 +1744,7 @@ export default function InboxPage() {
           >
             <button
               type="button"
-              className="absolute top-3 right-3 z-[71] p-2 rounded-full bg-white/90 dark:bg-[#13131a]/90 border border-purple-200 dark:border-purple-500/30 shadow hover:scale-105 transition"
+              className="absolute top-3 right-3 z-[71] p-2 rounded-full bg-white dark:bg-[#13131a] border border-purple-200 dark:border-purple-500/30 shadow hover:scale-105 transition"
               onClick={() => {
                 setShowProfileModal(false);
                 setProfileModalUrl(null);

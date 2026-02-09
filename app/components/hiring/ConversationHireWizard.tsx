@@ -299,7 +299,7 @@ export default function ConversationHireWizard({
       </div>
 
       {/* Summary */}
-      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3">
+      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
         <div>
           <span className="text-sm text-gray-600 dark:text-gray-400">Hiring:</span>
           <p className="font-medium text-gray-900 dark:text-white">{househelpName}</p>
@@ -339,7 +339,7 @@ export default function ConversationHireWizard({
       </div>
 
       {/* Terms */}
-      <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+      <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           By sending this hire request, you agree to our{' '}
           <a

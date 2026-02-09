@@ -233,7 +233,7 @@ export default function HouseholdRequestsPage() {
                     </div>
 
                     {request.message && (
-                      <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                      <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
                         <p className="text-sm text-gray-700 dark:text-gray-300">
                           💬 "{request.message}"
                         </p>

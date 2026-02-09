@@ -651,7 +651,7 @@ export default function SubscriptionsPage() {
                         <button
                           key={payment.id}
                           onClick={() => handleViewTransaction(payment)}
-                          className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer text-left"
+                          className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer text-left"
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
@@ -924,7 +924,7 @@ export default function SubscriptionsPage() {
                       </div>
 
                       {/* Transaction Details */}
-                      <div className="space-y-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
+                      <div className="space-y-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Transaction ID</span>
                           <span className="text-sm font-medium text-gray-900 dark:text-white font-mono">

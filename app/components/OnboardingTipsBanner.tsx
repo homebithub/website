@@ -43,7 +43,7 @@ export default function OnboardingTipsBanner({ onDismiss, role = 'household' }: 
             </button>
             <button
               type="button"
-              className="px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-500/60 text-xs sm:text-sm text-purple-700 dark:text-purple-200 bg-white/80 dark:bg-[#13131a] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
+              className="px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-500/60 text-xs sm:text-sm text-purple-700 dark:text-purple-200 bg-white dark:bg-[#13131a] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
               onClick={() => navigate(shortlistPath, { replace: false })}
             >
               View my shortlist

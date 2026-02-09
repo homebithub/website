@@ -728,7 +728,7 @@ export default function AuthenticatedHome() {
                           {selectedSkills.map((skill) => (
                             <span
                               key={skill}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-800/40 text-purple-800 dark:text-purple-200 rounded-xl text-sm font-medium"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-xl text-sm font-medium"
                             >
                               {skill}
                               <button

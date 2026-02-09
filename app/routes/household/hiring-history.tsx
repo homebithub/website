@@ -443,7 +443,7 @@ export default function HiringHistory() {
 
         {/* Empty State for Interests */}
         {!loading && activeTab === 'interested' && interests.length === 0 && (
-          <div className="bg-white/95 dark:bg-purple-900/30 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+          <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <HandHeart className="w-16 h-16 text-green-400 dark:text-green-300 mx-auto mb-4" />
             <h3 className="text-xl sm:text-2xl font-semibold text-purple-900 dark:text-white mb-2">
               No interested househelps yet
@@ -586,7 +586,7 @@ export default function HiringHistory() {
 
         {/* Empty State for Hire Requests */}
         {!loading && activeTab !== 'interested' && hireRequests.length === 0 && (
-          <div className="bg-white/95 dark:bg-purple-900/30 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+          <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <FileText className="w-16 h-16 text-purple-400 dark:text-purple-300 mx-auto mb-4" />
             <h3 className="text-xl sm:text-2xl font-semibold text-purple-900 dark:text-white mb-2">
               No hire requests yet
@@ -855,7 +855,7 @@ export default function HiringHistory() {
           <h4 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide mb-2">
             Special Requirements
           </h4>
-          <p className="text-sm sm:text-base text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-900/40 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/80">
+          <p className="text-sm sm:text-base text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/80">
             {selectedRequest.special_requirements}
           </p>
         </div>
@@ -877,7 +877,7 @@ export default function HiringHistory() {
               <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">
                 Message sent to househelp:
               </span>
-              <p className="text-sm sm:text-base text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900/40 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/60 mt-1">
+              <p className="text-sm sm:text-base text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/60 mt-1">
                 {selectedRequest.cancellation_message}
               </p>
             </div>
