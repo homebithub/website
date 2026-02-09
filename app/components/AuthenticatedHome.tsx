@@ -633,7 +633,7 @@ export default function AuthenticatedHome() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Find Househelps</h1>
                 <button
                   onClick={() => setShowMoreFilters(true)}
-                  className="px-4 py-2 bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold rounded-xl border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition"
+                  className="px-4 py-1 bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold rounded-xl border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition"
                 >
                   More filters
                 </button>
@@ -644,7 +644,7 @@ export default function AuthenticatedHome() {
                   <div className="relative">
                     <div
                       onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                      className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
+                      className="w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
                     >
                       <span className={getTypeValue() ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
                         {getTypeValue() === 'live_in' ? 'Live-in' : getTypeValue() === 'day_worker' ? 'Day worker' : 'Any'}
@@ -666,7 +666,7 @@ export default function AuthenticatedHome() {
                               setTypeValue(option.value);
                               setShowTypeDropdown(false);
                             }}
-                            className="px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                            className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
                           >
                             {option.label}
                           </div>
@@ -680,7 +680,7 @@ export default function AuthenticatedHome() {
                   <div className="relative">
                     <div
                       onClick={() => setShowExperienceDropdown(!showExperienceDropdown)}
-                      className="w-full h-12 px-4 py-3 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
+                      className="w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
                     >
                       <span className={fields.experience ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
                         {fields.experience ? EXPERIENCE_LEVELS.find(l => l.value === fields.experience)?.label : 'Any'}
@@ -696,7 +696,7 @@ export default function AuthenticatedHome() {
                             handleFieldChange('experience', '');
                             setShowExperienceDropdown(false);
                           }}
-                          className="px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800"
+                          className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800"
                         >
                           Any
                         </div>
@@ -707,7 +707,7 @@ export default function AuthenticatedHome() {
                               handleFieldChange('experience', level.value);
                               setShowExperienceDropdown(false);
                             }}
-                            className="px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                            className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
                           >
                             {level.label}
                           </div>
@@ -721,14 +721,14 @@ export default function AuthenticatedHome() {
                   <div className="relative">
                     <div
                       onClick={() => setShowSkillsDropdown(!showSkillsDropdown)}
-                      className="w-full min-h-[48px] px-4 py-2 rounded-xl text-base bg-white dark:bg-[#13131a] border-2 border-transparent focus-within:border-purple-500 focus-within:ring-4 focus-within:ring-purple-300 shadow-md cursor-pointer"
+                      className="w-full min-h-[48px] px-4 py-1 rounded-xl text-base bg-white dark:bg-[#13131a] border-2 border-transparent focus-within:border-purple-500 focus-within:ring-4 focus-within:ring-purple-300 shadow-md cursor-pointer"
                     >
                       {selectedSkills.length > 0 ? (
                         <div className="flex flex-wrap gap-2">
                           {selectedSkills.map((skill) => (
                             <span
                               key={skill}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-800/40 text-purple-800 dark:text-purple-200 rounded-lg text-sm font-medium"
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-xl text-sm font-medium"
                             >
                               {skill}
                               <button
@@ -766,7 +766,7 @@ export default function AuthenticatedHome() {
                             filteredSkills.map((skill) => (
                               <label
                                 key={skill}
-                                className="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
+                                className="flex items-center gap-3 px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
                               >
                                 <input
                                   type="checkbox"
@@ -796,7 +796,7 @@ export default function AuthenticatedHome() {
                 </div>
                 <button
                   onClick={() => handleSearch()}
-                  className="w-full px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500"
+                  className="w-full px-8 py-1.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500"
                 >
                   Search
                 </button>
@@ -850,7 +850,7 @@ export default function AuthenticatedHome() {
                   </p>
                   <button
                     onClick={() => handleSearch()}
-                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg"
+                    className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg"
                   >
                     <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -988,7 +988,7 @@ export default function AuthenticatedHome() {
                         </div>
                         <button
                           onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleViewProfile(String(househelp.profile_id)); }}
-                          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
+                          className="px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >
                           View more
                         </button>

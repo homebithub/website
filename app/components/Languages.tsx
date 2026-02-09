@@ -207,7 +207,7 @@ const Languages = () => {
                     <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Select languages you're comfortable with</h2>
                     
                     {/* English */}
-                    <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+                    <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                         selectedLanguages.includes('English')
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
                             : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -222,7 +222,7 @@ const Languages = () => {
                     </label>
                     
                     {/* Swahili */}
-                    <label className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+                    <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                         selectedLanguages.includes('Swahili')
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
                             : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -239,7 +239,7 @@ const Languages = () => {
                     {/* Other Languages */}
                     <div className="relative" ref={dropdownRef}>
                         <div 
-                            className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+                            className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                                 selectedLanguages.some(lang => !['English', 'Swahili'].includes(lang))
                                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
                                     : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -262,7 +262,7 @@ const Languages = () => {
                         </div>
                         
                         {showOtherLanguages && (
-                            <div className="mt-2 w-full bg-white dark:bg-[#0b0b10] rounded-lg shadow-lg border border-gray-200 dark:border-purple-500/30 overflow-hidden z-10">
+                            <div className="mt-2 w-full bg-white dark:bg-[#0b0b10] rounded-xl shadow-lg border border-gray-200 dark:border-purple-500/30 overflow-hidden z-10">
                                 {/* Search input */}
                                 <div className="p-3 border-b border-gray-200">
                                     <div className="relative">
@@ -288,7 +288,7 @@ const Languages = () => {
                                         <div className="py-1">
                                             {filteredLanguages.length > 0 ? (
                                                 filteredLanguages.map((language) => (
-                                                    <div key={language} className="px-4 py-2 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100">
+                                                    <div key={language} className="px-4 py-1 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100">
                                                         <label className={`flex items-center space-x-3 cursor-pointer w-full p-2 rounded ${
                                                             selectedLanguages.includes(language)
                                                                 ? 'bg-purple-50 dark:bg-purple-900/20'
@@ -305,7 +305,7 @@ const Languages = () => {
                                                     </div>
                                                 ))
                                             ) : (
-                                                <div className="px-4 py-2 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100">No languages found</div>
+                                                <div className="px-4 py-1 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100">No languages found</div>
                                             )}
                                         </div>
                                     ) : (
@@ -327,12 +327,12 @@ const Languages = () => {
                                                 
                                                 return (
                                                     <div key={group} className="py-1">
-                                                        <div className="px-4 py-2 text-sm font-medium text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-[#11111a] sticky top-0 z-10">
+                                                        <div className="px-4 py-1 text-sm font-medium text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-[#11111a] sticky top-0 z-10">
                                                             {groupName}
                                                         </div>
                                                         <div className="divide-y divide-gray-100">
                                                             {filtered.map((language) => (
-                                                                <div key={language} className="px-4 py-2 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100">
+                                                                <div key={language} className="px-4 py-1 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100">
                                                                     <label className={`flex items-center space-x-3 cursor-pointer w-full p-2 rounded ${
                                                                         selectedLanguages.includes(language)
                                                                             ? 'bg-purple-50 dark:bg-purple-900/20'
@@ -393,7 +393,7 @@ const Languages = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                        className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                     >
                         {loading ? (
                             <>

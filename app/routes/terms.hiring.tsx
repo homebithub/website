@@ -273,7 +273,7 @@ export default function HiringTermsAndConditions() {
                 <p>
                   For questions about these Hiring Terms and Conditions, please contact us at:
                 </p>
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
                   <p><strong>Email:</strong> support@homexpert.co.ke</p>
                   <p><strong>Website:</strong> www.homexpert.co.ke</p>
                 </div>
@@ -281,7 +281,7 @@ export default function HiringTermsAndConditions() {
             </section>
 
             {/* Acceptance Notice */}
-            <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-lg p-6 mt-8">
+            <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-800 rounded-xl p-6 mt-8">
               <div className="flex items-start gap-3">
                 <CheckCircle className="w-6 h-6 text-purple-600 dark:text-purple-400 flex-shrink-0 mt-1" />
                 <div>

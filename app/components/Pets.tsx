@@ -258,16 +258,16 @@ const Pets: React.FC = () => {
             <table className="w-full">
               <thead className="bg-purple-50 dark:bg-purple-900/20">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Pet Type</th>
-                  <th className="px-4 py-3 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Traits</th>
-                  <th className="px-4 py-3 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Care Required</th>
-                  <th className="px-4 py-3 text-center text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Action</th>
+                  <th className="px-4 py-1.5 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Pet Type</th>
+                  <th className="px-4 py-1.5 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Traits</th>
+                  <th className="px-4 py-1.5 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Care Required</th>
+                  <th className="px-4 py-1.5 text-center text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {pets.map((pet, index) => (
                   <tr key={pet.id} className={`${index % 2 === 0 ? 'bg-white dark:bg-[#13131a]' : 'bg-purple-50/50 dark:bg-purple-900/10'} hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors`}>
-                    <td className="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 border-b border-purple-100 dark:border-purple-500/20 capitalize font-medium">{pet.type}</td>
+                    <td className="px-4 py-1.5 text-sm text-gray-900 dark:text-gray-100 border-b border-purple-100 dark:border-purple-500/20 capitalize font-medium">{pet.type}</td>
                     <td className="px-4 py-3 text-sm border-b border-purple-100 dark:border-purple-500/20">
                       {pet.traits.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
@@ -316,7 +316,7 @@ const Pets: React.FC = () => {
         <button
           type="button"
           onClick={handleAddPet}
-          className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
+          className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
         >
           ➕ Add Pet
         </button>
@@ -440,7 +440,7 @@ const Pets: React.FC = () => {
                       type="button"
                       onClick={() => handleTraitToggle(trait)}
                       disabled={!selectedTraits.includes(trait) && selectedTraits.length >= 3}
-                      className={`px-4 py-2 rounded-xl border-2 text-sm font-medium transition-all ${
+                      className={`px-4 py-1 rounded-xl border-2 text-sm font-medium transition-all ${
                         selectedTraits.includes(trait)
                           ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100'
                           : selectedTraits.length >= 3
@@ -467,14 +467,14 @@ const Pets: React.FC = () => {
               <button
                 onClick={() => setShowModal(false)}
                 disabled={loading}
-                className="flex-1 px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitPet}
                 disabled={!petType || (petType === "Other" && !otherPetType.trim()) || loading}
-                className="flex-1 px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="flex-1 px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {loading ? "Adding..." : "Add Pet"}
               </button>
@@ -514,14 +514,14 @@ const Pets: React.FC = () => {
               <button
                 onClick={cancelDelete}
                 disabled={deleteLoading}
-                className="flex-1 px-6 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-6 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 font-bold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeletePet}
                 disabled={deleteLoading}
-                className="flex-1 px-6 py-3 rounded-xl bg-red-600 text-white font-bold shadow-lg hover:bg-red-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="flex-1 px-6 py-1.5 rounded-xl bg-red-600 text-white font-bold shadow-lg hover:bg-red-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               >
                 {deleteLoading ? "Deleting..." : "Delete"}
               </button>

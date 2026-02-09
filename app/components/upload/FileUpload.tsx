@@ -233,7 +233,7 @@ export default function FileUpload({
           
           <button
             type="button"
-            className="px-4 py-2 bg-purple-600 dark:bg-purple-700 text-white rounded-lg hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors disabled:opacity-50"
+            className="px-4 py-1 bg-purple-600 dark:bg-purple-700 text-white rounded-xl hover:bg-purple-700 dark:hover:bg-purple-600 transition-colors disabled:opacity-50"
             disabled={isUploading}
           >
             <CloudArrowUpIcon className="h-5 w-5 inline-block mr-2" />
@@ -320,7 +320,7 @@ export default function FileUpload({
       {selectedFiles.length > 0 && !isUploading && Object.keys(uploadProgress).length === 0 && (
         <button
           onClick={handleUpload}
-          className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl"
+          className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl"
         >
           Upload {selectedFiles.length} {selectedFiles.length === 1 ? 'File' : 'Files'}
         </button>
@@ -328,7 +328,7 @@ export default function FileUpload({
 
       {/* Uploaded files preview */}
       {uploadedFiles.length > 0 && (
-        <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+        <div className="mt-6 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
           <p className="text-green-800 dark:text-green-300 font-semibold mb-2">
             ✓ Successfully uploaded {uploadedFiles.length} {uploadedFiles.length === 1 ? 'file' : 'files'}
           </p>

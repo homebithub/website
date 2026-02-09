@@ -39,13 +39,13 @@ export function ErrorBoundary() {
             <div className="space-y-3">
               <Link 
                 to="/" 
-                className="block w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
+                className="block w-full px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
               >
                 🏠 Go Home
               </Link>
               <button
                 onClick={() => window.location.reload()}
-                className="block w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-semibold"
+                className="block w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-1.5 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-semibold"
               >
                 🔄 Reload Page
               </button>
@@ -83,13 +83,13 @@ export function ErrorBoundary() {
           <div className="space-y-3">
             <Link 
               to="/" 
-              className="block w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
+              className="block w-full px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
             >
               🏠 Go Home
             </Link>
             <button
               onClick={() => window.location.reload()}
-              className="block w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-3 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-semibold"
+              className="block w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-1.5 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-semibold"
             >
               🔄 Reload Page
             </button>

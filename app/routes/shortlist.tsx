@@ -358,7 +358,7 @@ export default function ShortlistPage() {
                               state: { profileId: s.user_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
                             });
                           }}
-                          className="ml-auto px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
+                          className="ml-auto px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >
                           View more
                         </button>

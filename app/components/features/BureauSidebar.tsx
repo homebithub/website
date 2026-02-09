@@ -17,7 +17,7 @@ export default function BureauSidebar() {
           key={item.to}
           to={item.to}
           prefetch="intent"
-          className={`block px-4 py-2 rounded-lg text-base font-medium transition-all duration-150
+          className={`block px-4 py-1 rounded-xl text-base font-medium transition-all duration-150
             ${location.pathname === item.to
               ? "bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 font-bold dark:shadow-glow-sm"
               : "text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:text-purple-600 dark:hover:text-purple-400"}

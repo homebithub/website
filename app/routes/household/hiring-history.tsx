@@ -443,7 +443,7 @@ export default function HiringHistory() {
 
         {/* Empty State for Interests */}
         {!loading && activeTab === 'interested' && interests.length === 0 && (
-          <div className="bg-white/95 dark:bg-purple-900/30 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+          <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <HandHeart className="w-16 h-16 text-green-400 dark:text-green-300 mx-auto mb-4" />
             <h3 className="text-xl sm:text-2xl font-semibold text-purple-900 dark:text-white mb-2">
               No interested househelps yet
@@ -460,7 +460,7 @@ export default function HiringHistory() {
             {interests.map((interest) => (
               <div
                 key={interest.id}
-                className={`bg-white rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border dark:bg-purple-950/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl ${
+                className={`bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border dark:bg-purple-950/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl ${
                   !interest.viewed_at 
                     ? 'border-green-300 dark:border-green-600/40 ring-2 ring-green-100 dark:ring-green-900/30' 
                     : 'border-purple-100 dark:border-purple-800/40'
@@ -542,7 +542,7 @@ export default function HiringHistory() {
                       </div>
 
                       {interest.comments && (
-                        <div className="mt-3 p-3 bg-gray-50 dark:bg-purple-900/20 rounded-lg">
+                        <div className="mt-3 p-3 bg-gray-50 dark:bg-purple-900/20 rounded-xl">
                           <span className="text-xs text-gray-500 dark:text-purple-300 block mb-1">Message</span>
                           <p className="text-sm text-gray-700 dark:text-purple-100">{interest.comments}</p>
                         </div>
@@ -554,7 +554,7 @@ export default function HiringHistory() {
                   <div className="flex flex-row lg:flex-col gap-2 lg:items-end">
                     <button
                       onClick={() => handleViewInterest(interest)}
-                      className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-purple-700 bg-purple-100 rounded-lg hover:bg-purple-200 dark:text-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 transition-colors"
+                      className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-sm font-medium text-purple-700 bg-purple-100 rounded-xl hover:bg-purple-200 dark:text-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 transition-colors"
                     >
                       <Eye className="w-4 h-4" />
                       View Profile
@@ -563,14 +563,14 @@ export default function HiringHistory() {
                       <>
                         <button
                           onClick={() => handleAcceptInterest(interest)}
-                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-lg hover:bg-green-600 transition-colors"
+                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-sm font-medium text-white bg-green-500 rounded-xl hover:bg-green-600 transition-colors"
                         >
                           <UserCheck className="w-4 h-4" />
                           Accept
                         </button>
                         <button
                           onClick={() => handleDeclineInterest(interest)}
-                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-red-700 bg-red-100 rounded-lg hover:bg-red-200 dark:text-red-200 dark:bg-red-900/40 dark:hover:bg-red-800/60 transition-colors"
+                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-xl hover:bg-red-200 dark:text-red-200 dark:bg-red-900/40 dark:hover:bg-red-800/60 transition-colors"
                         >
                           <UserX className="w-4 h-4" />
                           Decline
@@ -586,7 +586,7 @@ export default function HiringHistory() {
 
         {/* Empty State for Hire Requests */}
         {!loading && activeTab !== 'interested' && hireRequests.length === 0 && (
-          <div className="bg-white/95 dark:bg-purple-900/30 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+          <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <FileText className="w-16 h-16 text-purple-400 dark:text-purple-300 mx-auto mb-4" />
             <h3 className="text-xl sm:text-2xl font-semibold text-purple-900 dark:text-white mb-2">
               No hire requests yet
@@ -596,7 +596,7 @@ export default function HiringHistory() {
             </p>
             <button
               onClick={() => navigate('/')}
-              className="inline-flex items-center justify-center px-6 sm:px-8 py-3 text-base sm:text-lg rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-1.5 text-base sm:text-lg rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
             >
               Find Househelps
             </button>
@@ -609,7 +609,7 @@ export default function HiringHistory() {
             {hireRequests.map((request) => (
               <div
                 key={request.id}
-                className="bg-white rounded-lg shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border border-purple-100 dark:bg-purple-950/40 dark:border-purple-800/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl"
+                className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border border-purple-100 dark:bg-purple-950/40 dark:border-purple-800/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   {/* Left: Househelp Info */}
@@ -690,7 +690,7 @@ export default function HiringHistory() {
                       )}
 
                       {request.decline_reason && (
-                        <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700/40 dark:text-red-100">
+                        <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700/40 dark:text-red-100">
                           <span className="text-sm font-medium">Decline Reason:</span>
                           <p className="text-sm mt-1">
                             {request.decline_reason}
@@ -704,7 +704,7 @@ export default function HiringHistory() {
                   <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto">
                     <button
                       onClick={() => setSelectedRequest(request)}
-                      className="inline-flex items-center justify-center px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 flex-1"
+                      className="inline-flex items-center justify-center px-4 py-1 text-sm rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 flex-1"
                     >
                       View Details
                     </button>
@@ -712,7 +712,7 @@ export default function HiringHistory() {
                     {request.status === 'pending' && (
                       <button
                         onClick={() => openCancelModal(request)}
-                        className="inline-flex items-center justify-center px-4 py-2 text-sm rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-400 text-white font-semibold shadow-lg shadow-red-500/40 hover:from-red-700 hover:via-red-500 hover:to-orange-400 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 flex-1"
+                        className="inline-flex items-center justify-center px-4 py-1 text-sm rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-400 text-white font-semibold shadow-lg shadow-red-500/40 hover:from-red-700 hover:via-red-500 hover:to-orange-400 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 flex-1"
                       >
                         Cancel Request
                       </button>
@@ -737,14 +737,14 @@ export default function HiringHistory() {
               <button
                 onClick={() => setOffset(Math.max(0, offset - limit))}
                 disabled={offset === 0}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
+                className="px-4 py-1 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
               >
                 Previous
               </button>
               <button
                 onClick={() => setOffset(offset + limit)}
                 disabled={offset + limit >= total}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
+                className="px-4 py-1 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
               >
                 Next
               </button>
@@ -855,7 +855,7 @@ export default function HiringHistory() {
           <h4 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide mb-2">
             Special Requirements
           </h4>
-          <p className="text-sm sm:text-base text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-900/40 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/80">
+          <p className="text-sm sm:text-base text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/80">
             {selectedRequest.special_requirements}
           </p>
         </div>
@@ -877,7 +877,7 @@ export default function HiringHistory() {
               <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">
                 Message sent to househelp:
               </span>
-              <p className="text-sm sm:text-base text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900/40 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/60 mt-1">
+              <p className="text-sm sm:text-base text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/60 mt-1">
                 {selectedRequest.cancellation_message}
               </p>
             </div>
@@ -903,7 +903,7 @@ export default function HiringHistory() {
           }}
           className="
             flex-1 inline-flex items-center justify-center
-            px-5 sm:px-6 py-2.5 sm:py-3
+            px-5 sm:px-6 py-1 sm:py-1.5
             text-sm sm:text-base
             rounded-xl sm:rounded-2xl
             bg-gradient-to-r from-purple-600 to-pink-600
@@ -924,7 +924,7 @@ export default function HiringHistory() {
           onClick={() => setSelectedRequest(null)}
           className="
             inline-flex items-center justify-center
-            px-5 sm:px-6 py-2.5 sm:py-3
+            px-5 sm:px-6 py-1 sm:py-1.5
             text-sm sm:text-base
             rounded-xl sm:rounded-2xl
             border border-gray-300 dark:border-gray-600
@@ -1067,9 +1067,9 @@ export default function HiringHistory() {
           disabled={cancelSubmitting}
           className="
             flex-1 inline-flex items-center justify-center
-            px-5 sm:px-6 py-2.5 sm:py-3
+            px-5 sm:px-6 py-1 sm:py-1.5
             text-sm sm:text-base
-            rounded-xl sm:rounded-2xl
+            rounded-xl
             bg-gradient-to-r from-red-600 via-red-500 to-orange-400
             text-white font-semibold
             shadow-lg shadow-red-500/30
@@ -1088,9 +1088,9 @@ export default function HiringHistory() {
           disabled={cancelSubmitting}
           className="
             inline-flex items-center justify-center
-            px-5 sm:px-6 py-2.5 sm:py-3
+            px-5 sm:px-6 py-1 sm:py-1.5
             text-sm sm:text-base
-            rounded-xl sm:rounded-2xl
+            rounded-xl
             border border-gray-300 dark:border-gray-600
             text-gray-700 dark:text-gray-200 font-semibold
             hover:bg-gray-50 dark:hover:bg-gray-800

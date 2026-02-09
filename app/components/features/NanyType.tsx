@@ -100,7 +100,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       
       <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Type of househelp</h2>
       <div className="flex flex-col gap-5">
-        <label className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${selected === "sleep_in" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${selected === "sleep_in" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
           <input
             type="radio"
             name="nanyType"
@@ -111,7 +111,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           />
           <span>Sleep in</span>
         </label>
-        <label className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${selected === "day" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${selected === "day" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
           <input
             type="radio"
             name="nanyType"
@@ -179,9 +179,9 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           <table className="min-w-full table-fixed border-separate border-spacing-y-0">
             <thead>
               <tr>
-                <th className="w-24 px-2 py-2 text-sm text-slate-700 font-medium text-left"></th>
+                <th className="w-24 px-2 py-1 text-sm text-slate-700 font-medium text-left"></th>
                 {TIMES.map(time => (
-                  <th key={time} className="w-20 px-2 py-2 text-sm text-slate-700 font-medium capitalize text-center -ml-2">
+                  <th key={time} className="w-20 px-2 py-1 text-sm text-slate-700 font-medium capitalize text-center -ml-2">
                     <button
                       type="button"
                       className="w-full focus:outline-none"
@@ -259,14 +259,14 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           type="date"
           value={availableFrom}
           onChange={e => setAvailableFrom(e.target.value)}
-          className={`w-full px-3 py-2 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${(!availableFrom || isNaN(Date.parse(availableFrom))) && error && error.includes('Available from') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-purple-300 hover:border-purple-400'} [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100`}
+          className={`w-full px-3 py-1 rounded-lg border transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 ${(!availableFrom || isNaN(Date.parse(availableFrom))) && error && error.includes('Available from') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-purple-300 hover:border-purple-400'} [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100`}
           min={new Date().toISOString().split('T')[0]}
           required
         />
       </div>
       <button
         type="button"
-        className={`mt-8 w-full bg-primary-700 hover:bg-primary-800 text-white font-semibold py-3 rounded-lg shadow-sm transition ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
+        className={`mt-8 w-full bg-primary-700 hover:bg-primary-800 text-white font-semibold py-1.5 rounded-xl shadow-sm transition ${loading ? 'opacity-60 cursor-not-allowed' : ''}`}
         onClick={handleSubmit}
         disabled={loading}
       >

@@ -262,13 +262,13 @@ export default function HouseholdEmployment() {
       {/* Tabs */}
       <div className="flex items-center border-b border-gray-200 dark:border-slate-700 mb-6">
         <button
-          className={`px-6 py-2 font-semibold text-base focus:outline-none transition border-b-2 ${activeTab === 'find' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
+          className={`px-6 py-1 font-semibold text-base focus:outline-none transition border-b-2 ${activeTab === 'find' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
           onClick={() => setActiveTab('find')}
         >
           Find a househelp
         </button>
         <button
-          className={`ml-2 px-6 py-2 font-semibold text-base focus:outline-none transition border-b-2 relative flex items-center ${activeTab === 'shortlist' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
+          className={`ml-2 px-6 py-1 font-semibold text-base focus:outline-none transition border-b-2 relative flex items-center ${activeTab === 'shortlist' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
           onClick={() => setActiveTab('shortlist')}
         >
           My Shortlist
@@ -286,7 +286,7 @@ export default function HouseholdEmployment() {
             <div className="sm:hidden w-full">
               <button
                 onClick={() => setFiltersOpen(true)}
-                className="w-full mb-4 rounded-xl border-2 border-purple-300 text-purple-700 bg-purple-50 px-4 py-3 font-semibold"
+                className="w-full mb-4 rounded-xl border-2 border-purple-300 text-purple-700 bg-purple-50 px-4 py-1.5 font-semibold"
               >
                 Filter search
               </button>
@@ -305,14 +305,14 @@ export default function HouseholdEmployment() {
             {/* Results */}
             <div className="flex-1 min-w-0">
               {loading && <div className="text-center py-8">Loading...</div>}
-              {error && <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-center">{error}</div>}
+              {error && <div className="bg-red-100 text-red-700 px-4 py-1 rounded mb-4 text-center">{error}</div>}
               <div className="space-y-4">
                 {!hasSearched && !loading && <div className="text-center text-gray-500">Customize your search to find househelps.</div>}
                 {hasSearched && results.length === 0 && !loading && <div className="text-center text-gray-500">No househelps found.</div>}
                 {results.map((h) => (
                   <div
                     key={h.id}
-                    className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
+                    className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-xl p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
                     onClick={() => navigate('/household/househelp/profile', { state: { profileId: h.profile_id } })}
                     role="button"
                     tabIndex={0}
@@ -382,7 +382,7 @@ export default function HouseholdEmployment() {
           {shortlistProfiles.map((h) => (
             <div
               key={h.id}
-              className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-lg p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
+              className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-xl p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
               onClick={() => navigate(`/household/househelp/contact?profile_id=${h.profile_id}&tab=shortlist`)}
               role="button"
               tabIndex={0}

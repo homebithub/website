@@ -33,14 +33,14 @@ export function EnhancedDarkShowcase() {
               glow-button 
               bg-gradient-to-r from-purple-600 to-pink-600
               dark:shadow-glow-sm hover:dark:shadow-glow-md
-              px-6 py-3 rounded-xl text-white font-bold
+              px-6 py-1.5 rounded-xl text-white font-bold
               transition-all duration-300 hover:scale-105
             ">
               Primary Glow
             </button>
             
             <button className="
-              px-6 py-3 rounded-xl font-bold
+              px-6 py-1.5 rounded-xl font-bold
               bg-white dark:bg-[#13131a]
               text-purple-600 dark:text-purple-400
               border-2 border-purple-600 dark:border-purple-500/50
@@ -52,7 +52,7 @@ export function EnhancedDarkShowcase() {
             
             <button className="
               neon-border
-              px-6 py-3 rounded-xl font-bold
+              px-6 py-1.5 rounded-xl font-bold
               bg-transparent
               text-purple-600 dark:text-purple-400
               transition-all duration-300 hover:scale-105
@@ -173,13 +173,13 @@ export function EnhancedDarkShowcase() {
                 glow-button
                 bg-gradient-to-r from-purple-600 to-pink-600
                 dark:shadow-glow-sm hover:dark:shadow-glow-md
-                px-4 py-2 rounded-lg text-white text-sm font-bold
+                px-4 py-1 rounded-xl text-white text-sm font-bold
                 transition-all duration-300
               ">
                 Action
               </button>
               <button className="
-                px-4 py-2 rounded-lg text-sm font-bold
+                px-4 py-1 rounded-xl text-sm font-bold
                 bg-white/10 hover:bg-white/20
                 text-gray-900 dark:text-white
                 backdrop-blur-sm
@@ -250,7 +250,7 @@ export function EnhancedDarkShowcase() {
             </div>
             
             <div className="space-y-2">
-              <div className="h-20 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 shadow-glow-md" />
+              <div className="h-20 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 shadow-glow-md" />
               <p className="text-sm text-gray-600 dark:text-gray-400 font-mono">
                 Gradient
               </p>

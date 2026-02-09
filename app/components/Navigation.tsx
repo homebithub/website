@@ -235,16 +235,11 @@ export function Navigation() {
     }
 
     return (
-        <nav className="sticky top-0 z-40 shadow-xl shadow-purple-200/50 bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f]/95 dark:via-[#13131a]/95 dark:to-[#0a0a0f]/95 fade-in-scroll overflow-visible backdrop-blur-xl border-b border-primary-200/60 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
-  {/* Animated Blobs & Icons */}
-  <svg className="absolute top-0 right-0 w-24 h-24 opacity-30 dark:opacity-20 animate-float z-0" viewBox="0 0 100 100"><circle cx="50" cy="50" r="50" fill="#f472b6" /></svg>
-  <svg className="absolute bottom-0 left-0 w-20 h-20 opacity-20 dark:opacity-10 blur-sm animate-float delay-500 z-0" viewBox="0 0 100 100"><path d="M10,80 Q50,10 90,80" stroke="#2dd4bf" strokeWidth="8" fill="none" /></svg>
+        <nav className="sticky top-0 z-40 shadow-xl shadow-purple-200/50 bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] fade-in-scroll overflow-visible border-b border-primary-200/60 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
             <div className="flex justify-between items-center px-8 sm:px-16 lg:px-32 min-h-[64px] sm:min-h-[72px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
-  {/* Floating purple blob */}
-  <svg className="absolute -top-8 -left-8 w-16 h-16 opacity-30 animate-float" viewBox="0 0 100 100"><ellipse cx="50" cy="50" rx="50" ry="40" fill="#a855f7" /></svg>
-  <Link to="/" prefetch="intent" className="relative gradient-text font-extrabold text-3xl sm:text-4xl px-3 py-2 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-purple-300/50 hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
+  <Link to="/" prefetch="intent" className="relative gradient-text font-extrabold text-3xl sm:text-4xl px-3 py-1 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-purple-300/50 hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
     HomeBit
   </Link>
 </div>
@@ -257,7 +252,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110"
+                                className="link text-lg sm:text-xl font-bold transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110"
                             >
                                 {item.name}
                             </Link>
@@ -273,7 +268,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg font-bold transition-all duration-300 px-5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
+                                className="link text-lg font-bold transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
                                 id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
@@ -299,8 +294,6 @@ export function Navigation() {
 
                 {/* Right section */}
                 <div className="flex items-center space-x-4 ml-6 relative">
-  {/* Floating sparkle icon */}
-  <svg className="absolute -top-6 right-0 w-8 h-8 opacity-40 animate-float delay-1000 z-0" viewBox="0 0 32 32"><path d="M16 2 L20 12 L30 16 L20 20 L16 30 L12 20 L2 16 L12 12 Z" fill="#a855f7" /></svg>
 
                     {/* Theme Toggle - Always visible on desktop */}
                     <div className="hidden lg:block">
@@ -311,7 +304,7 @@ export function Navigation() {
                         <div className="flex items-center space-x-3">
                             <button
   onClick={() => setIsWaitlistOpen(true)}
-  className="hidden lg:block glow-button bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg sm:text-xl font-bold rounded-xl shadow-lg px-6 py-3 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+  className="hidden lg:block glow-button bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg sm:text-xl font-bold rounded-xl shadow-lg px-6 py-1.5 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
 >
   Join Waitlist
 </button>
@@ -319,13 +312,13 @@ export function Navigation() {
                                 <>
                                     <Link
                                         to="/login"
-                                        className="link hidden lg:block text-lg font-bold rounded-xl transition-all duration-200 px-5 py-3 text-primary-600 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500 hover:bg-primary-100 dark:hover:bg-purple-900/30 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
+                                        className="link hidden lg:block text-lg font-bold rounded-xl transition-all duration-200 px-5 py-1.5 text-primary-600 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500 hover:bg-primary-100 dark:hover:bg-purple-900/30 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
                                     >
                                         Log in
                                     </Link>
                                     <Link
                                         to="/signup"
-                                        className="hidden lg:block px-6 py-3 text-lg rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+                                        className="hidden lg:block px-6 py-1.5 text-lg rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-bold shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
                                     >
                                         Sign up
                                     </Link>
@@ -337,7 +330,7 @@ export function Navigation() {
                     {/* Authenticated User Greeting */}
                     {user && userName && (
                         <Menu as="div" className="relative hidden lg:inline-block text-left">
-                            <Menu.Button className="flex items-center space-x-2 px-4 py-2 rounded-lg hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all">
+                            <Menu.Button className="flex items-center space-x-2 px-4 py-1 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all">
                                 <div className="text-sm text-gray-600 dark:text-gray-300">
                                     <span className="font-semibold text-base">Hello, {userName}</span>
                                 </div>
@@ -361,7 +354,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
-                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl mx-2 transition-all`}
                                                 >
                                                     <UserIcon className="mr-3 h-5 w-5" />
                                                     {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
@@ -372,7 +365,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to="/settings"
-                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl mx-2 transition-all`}
                                                 >
                                                     <CogIcon className="mr-3 h-5 w-5" />
                                                     Settings
@@ -383,7 +376,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to="/subscriptions"
-                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl mx-2 transition-all`}
                                                 >
                                                     <CreditCardIcon className="mr-3 h-5 w-5" />
                                                     Subscriptions
@@ -395,7 +388,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <button
                                                     onClick={handleLogout}
-                                                    className={`${active ? 'bg-gradient-to-r from-red-600 to-red-700 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center w-full px-4 py-3 text-sm font-semibold rounded-lg mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-red-600 to-red-700 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center w-full px-4 py-1.5 text-sm font-semibold rounded-xl mx-2 transition-all`}
                                                 >
                                                     <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
                                                     Logout
@@ -410,7 +403,7 @@ export function Navigation() {
 
                     {/* Menu Dropdown - Only show on mobile */}
                     <Menu as="div" className="relative inline-block text-left lg:hidden">
-                        <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-purple-600 to-pink-600 dark:from-purple-600 dark:to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 dark:shadow-glow-sm hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-glow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
+                        <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 dark:from-purple-600 dark:to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 dark:shadow-glow-sm hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-glow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
                             <Bars3Icon className="h-7 w-7" />
                         </Menu.Button>
 
@@ -423,7 +416,7 @@ export function Navigation() {
                             leaveFrom="transform opacity-100 scale-100"
                             leaveTo="transform opacity-0 scale-95"
                         >
-                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white/90 dark:bg-[#13131a]/95 border-2 border-primary-200 dark:border-purple-500/30 shadow-xl shadow-purple-200/50 dark:shadow-glow-sm focus:outline-none backdrop-blur-xl">
+                            <Menu.Items className="absolute right-0 z-50 mt-2 w-64 origin-top-right rounded-xl bg-white dark:bg-[#13131a] border-2 border-primary-200 dark:border-purple-500/30 shadow-xl shadow-purple-200/50 dark:shadow-glow-sm focus:outline-none">
                                 <div className="py-2">
                                     {/* Navigation links in mobile menu (non-app host) */}
                                     {!isAppHost && (user ? authLinks : navigation).map((item) => (
@@ -431,7 +424,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to={item.href}
-                                                    className={`font-bold ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} block px-5 py-2 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
+                                                    className={`font-bold ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} block px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
                                                 >
                                                     {item.name}
                                                 </Link>
@@ -446,7 +439,7 @@ export function Navigation() {
   {({ active }) => (
     <button
       onClick={() => setIsWaitlistOpen(true)}
-      className={`lg:hidden w-full text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold block px-5 py-2 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500`}
+      className={`lg:hidden w-full text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold block px-5 py-1 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500`}
     >
       Join Waitlist
     </button>
@@ -458,7 +451,7 @@ export function Navigation() {
                                                         {({ active }) => (
                                                             <Link
                                                                 to="/login"
-                                                                className={`font-bold ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-2 border-transparent scale-105' : 'text-primary-700 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500'} block px-5 py-2 text-lg rounded-xl transition-all duration-200 mx-2 my-1 hover:scale-105`}
+                                                                className={`font-bold ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-2 border-transparent scale-105' : 'text-primary-700 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500'} block px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 my-1 hover:scale-105`}
                                                             >
                                                                 Log in
                                                             </Link>
@@ -468,7 +461,7 @@ export function Navigation() {
                                                         {({ active }) => (
                                                             <Link
                                                                 to="/signup"
-                                                                className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-5 py-2 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
+                                                                className={`font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-5 py-1 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
                                                             >
                                                                 Sign up
                                                             </Link>
@@ -492,7 +485,7 @@ export function Navigation() {
                                         <>
                                             <div className="border-t border-gray-200 my-1"></div>
                                             {/* User Greeting in Mobile Menu */}
-                                            <div className="px-5 py-2 text-lg font-bold rounded-xl text-primary-700 dark:text-purple-400 border-b border-primary-100 dark:border-gray-700">
+                                            <div className="px-5 py-1 text-lg font-bold rounded-xl text-primary-700 dark:text-purple-400 border-b border-primary-100 dark:border-gray-700">
   <div className="font-semibold text-base">Hello, {userName}</div>
 </div>
 
@@ -503,7 +496,7 @@ export function Navigation() {
                                                 <>
                                                     {authLinks.map((item) => (
                                                         <Menu.Item key={item.name}>{({ active }) => (
-                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-2 text-sm relative`}>
+                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 text-purple-600' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-1 text-sm relative`}>
                                                                 <span>{item.name}</span>
                                                                 {item.name === 'Shortlist' && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md shadow-purple-500/40" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
@@ -528,7 +521,7 @@ export function Navigation() {
                                                         to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
                                                         className={`${
                                                             active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                                                        } flex items-center px-4 py-2 text-sm`}
+                                                        } flex items-center px-4 py-1 text-sm`}
                                                     >
                                                         <UserIcon className="mr-3 h-5 w-5" />
                                                         {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
@@ -541,7 +534,7 @@ export function Navigation() {
                                                         to="/settings"
                                                         className={`${
                                                             active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                                                        } flex items-center px-4 py-2 text-sm`}
+                                                        } flex items-center px-4 py-1 text-sm`}
                                                     >
                                                         <CogIcon className="mr-3 h-5 w-5" />
                                                         Settings
@@ -554,7 +547,7 @@ export function Navigation() {
                                                         to="/subscriptions"
                                                         className={`${
                                                             active ? 'bg-purple-100 text-purple-600' : 'text-gray-700'
-                                                        } flex items-center px-4 py-2 text-sm`}
+                                                        } flex items-center px-4 py-1 text-sm`}
                                                     >
                                                         <CreditCardIcon className="mr-3 h-5 w-5" />
                                                         Subscriptions
@@ -567,7 +560,7 @@ export function Navigation() {
                                                         onClick={handleLogout}
                                                         className={`${
                                                             active ? 'bg-red-100 text-red-700' : 'text-gray-700'
-                                                        } flex items-center w-full px-4 py-2 text-sm`}
+                                                        } flex items-center w-full px-4 py-1 text-sm`}
                                                     >
                                                         <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
                                                         Logout

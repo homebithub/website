@@ -237,7 +237,7 @@ export function SubscriptionWallet() {
       {/* Wallet Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="relative flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-lg hover:shadow-xl"
+        className="relative flex items-center gap-2 px-4 py-1 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 transition-all duration-200 shadow-lg hover:shadow-xl"
       >
         <WalletIcon className="w-5 h-5" />
         <span className="hidden sm:inline font-medium">Subscription</span>
@@ -275,7 +275,7 @@ export function SubscriptionWallet() {
                 <Dialog.Panel className="w-full max-w-4xl transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title as="div" className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
+                      <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
                         <WalletIcon className="w-6 h-6 text-white" />
                       </div>
                       <div>
@@ -289,7 +289,7 @@ export function SubscriptionWallet() {
                     </div>
                     <button
                       onClick={() => setIsOpen(false)}
-                      className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                     >
                       <XMarkIcon className="w-6 h-6 text-gray-500" />
                     </button>
@@ -348,7 +348,7 @@ export function SubscriptionWallet() {
                               setPaymentAmount(subscription.plan?.price_amount || 0);
                               setShowPaymentModal(true);
                             }}
-                            className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                            className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
                           >
                             <CreditCardIcon className="w-5 h-5" />
                             Make Payment Now
@@ -357,7 +357,7 @@ export function SubscriptionWallet() {
                       ) : (
                         <div className="text-center py-8">
                           <p className="text-gray-500 dark:text-gray-400 mb-4">No active subscription</p>
-                          <button className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                          <button className="px-6 py-1 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors">
                             View Plans
                           </button>
                         </div>
@@ -375,7 +375,7 @@ export function SubscriptionWallet() {
                             {payments.map((payment) => (
                               <div
                                 key={payment.id}
-                                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                               >
                                 <div className="flex-1">
                                   <div className="flex items-center gap-3 mb-1">
@@ -531,14 +531,14 @@ export function SubscriptionWallet() {
                         <button
                           onClick={() => setShowPaymentModal(false)}
                           disabled={processingPayment}
-                          className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                          className="flex-1 px-4 py-1 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
                         >
                           Cancel
                         </button>
                         <button
                           onClick={initiatePayment}
                           disabled={!phoneNumber || processingPayment}
-                          className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                          className="flex-1 px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
                         >
                           Pay Now
                         </button>

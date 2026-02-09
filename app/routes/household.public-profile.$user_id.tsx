@@ -152,7 +152,7 @@ export default function HouseholdPublicProfilePage() {
                 </div>
                 <button
                   onClick={handleBackNavigation}
-                  className="px-4 sm:px-6 py-2 sm:py-3 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
+                  className="px-4 sm:px-6 py-1 sm:py-1.5 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
                 >
                   ← {backLabel}
                 </button>
@@ -181,7 +181,7 @@ export default function HouseholdPublicProfilePage() {
               <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">👥 Service Type Needed</h2>
               <div className="space-y-3">
                 {profile.needs_live_in && (
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                     <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 They need Live-in Help</p>
                     {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Off days: {profile.live_in_off_days.join(', ')}</p>
@@ -209,7 +209,7 @@ export default function HouseholdPublicProfilePage() {
               {pets.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {pets.map((pet, idx) => (
-                    <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                    <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                       <p className="font-semibold text-purple-900 dark:text-purple-100 capitalize">🐾 {pet.pet_type}</p>
                       {pet.requires_care && <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">⚠️ Requires care</p>}
                     </div>
@@ -226,7 +226,7 @@ export default function HouseholdPublicProfilePage() {
               {profile.chores && profile.chores.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {profile.chores.map((chore, idx) => (
-                    <span key={idx} className="px-3 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-lg font-medium">
+                    <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-xl font-medium">
                       {chore}
                     </span>
                   ))}

@@ -177,7 +177,7 @@ const Pets: React.FC = () => {
       <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Pets</h2>
       
       <div className="flex flex-col gap-5">
-        <label className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${hasPet === "no" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${hasPet === "no" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
           <input
             type="radio"
             name="hasPet"
@@ -189,7 +189,7 @@ const Pets: React.FC = () => {
           <span>I do not have a pet</span>
         </label>
         
-        <label className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${hasPet === "yes" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${hasPet === "yes" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
           <input
             type="radio"
             name="hasPet"
@@ -210,10 +210,10 @@ const Pets: React.FC = () => {
             <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Pet Type</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Traits</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 border-b">Care Required</th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-700 border-b">Action</th>
+                  <th className="px-4 py-1.5 text-left text-sm font-medium text-gray-700 border-b">Pet Type</th>
+                  <th className="px-4 py-1.5 text-left text-sm font-medium text-gray-700 border-b">Traits</th>
+                  <th className="px-4 py-1.5 text-left text-sm font-medium text-gray-700 border-b">Care Required</th>
+                  <th className="px-4 py-1.5 text-center text-sm font-medium text-gray-700 border-b">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,7 +269,7 @@ const Pets: React.FC = () => {
           <button
             type="button"
             onClick={handleAddPet}
-            className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-3 rounded-lg shadow-sm transition"
+            className="w-full bg-purple-700 hover:bg-purple-800 text-white font-semibold py-1.5 rounded-xl shadow-sm transition"
           >
             Add pet
           </button>
@@ -368,7 +368,7 @@ const Pets: React.FC = () => {
                       type="button"
                       onClick={() => handleTraitToggle(trait)}
                       disabled={!selectedTraits.includes(trait) && selectedTraits.length >= 3}
-                      className={`px-4 py-2 rounded-full border text-sm font-medium transition-colors ${
+                      className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${
                         selectedTraits.includes(trait)
                           ? 'bg-purple-100 border-purple-500 text-purple-700'
                           : selectedTraits.length >= 3
@@ -385,7 +385,7 @@ const Pets: React.FC = () => {
 
             {/* Error Display */}
             {error && (
-              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
@@ -395,14 +395,14 @@ const Pets: React.FC = () => {
               <button
                 onClick={() => setShowModal(false)}
                 disabled={loading}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-1 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmitPet}
                 disabled={!petType || loading}
-                className="flex-1 px-4 py-2 bg-purple-700 text-white rounded-lg hover:bg-purple-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-1 bg-purple-700 text-white rounded-xl hover:bg-purple-800 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? "Adding..." : "Add Pet"}
               </button>
@@ -433,7 +433,7 @@ const Pets: React.FC = () => {
             </div>
 
             {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
                 <p className="text-red-600 text-sm">{error}</p>
               </div>
             )}
@@ -442,14 +442,14 @@ const Pets: React.FC = () => {
               <button
                 onClick={cancelDelete}
                 disabled={deleteLoading}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-1 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeletePet}
                 disabled={deleteLoading}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 px-4 py-1 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {deleteLoading ? "Deleting..." : "Delete"}
               </button>

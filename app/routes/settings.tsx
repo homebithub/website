@@ -102,12 +102,12 @@ export default function SettingsPage() {
 					<p className="text-lg text-gray-600 dark:text-gray-300 mb-8">Manage your account settings and app preferences.</p>
 					
 					{errorMessage && (
-						<div className="mb-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/40 dark:border-red-500/40 text-red-700 dark:text-red-200 px-4 py-3 text-sm text-left transition-colors duration-300">
+						<div className="mb-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/40 dark:border-red-500/40 text-red-700 dark:text-red-200 px-4 py-1.5 text-sm text-left transition-colors duration-300">
 							{errorMessage}
 						</div>
 					)}
 					{successMessage && (
-						<div className="mb-4 rounded-xl border border-green-200 bg-green-50 dark:bg-emerald-950/40 dark:border-emerald-500/40 text-green-700 dark:text-green-200 px-4 py-3 text-sm text-left transition-colors duration-300">
+						<div className="mb-4 rounded-xl border border-green-200 bg-green-50 dark:bg-emerald-950/40 dark:border-emerald-500/40 text-green-700 dark:text-green-200 px-4 py-1.5 text-sm text-left transition-colors duration-300">
 							{successMessage}
 						</div>
 					)}
@@ -116,13 +116,13 @@ export default function SettingsPage() {
 						<div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6 hover:border-purple-200 dark:hover:border-purple-400 transition-colors duration-300">
 							<div className="font-bold text-purple-700 dark:text-purple-300 text-xl mb-2">👤 Account Settings</div>
 							<div className="text-gray-600 dark:text-gray-300 text-sm mb-4">Update your account information and profile details.</div>
-							<a href="/profile" className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all">Edit Account</a>
+							<a href="/profile" className="inline-block px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all">Edit Account</a>
 						</div>
 						
 						<div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6 hover:border-purple-200 dark:hover:border-purple-400 transition-colors duration-300">
 							<div className="font-bold text-purple-700 dark:text-purple-300 text-xl mb-2">🔒 Security Settings</div>
 							<div className="text-gray-600 dark:text-gray-300 text-sm mb-4">Change your password and manage security options.</div>
-							<a href="/change-password" className="inline-block px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all">Change Password</a>
+							<a href="/change-password" className="inline-block px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all">Change Password</a>
 						</div>
 					</div>
 					
@@ -212,7 +212,7 @@ export default function SettingsPage() {
 						<div className="mt-6 flex justify-end">
 							<button
 								type="button"
-								className="px-6 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+								className="px-6 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
 								onClick={handleSavePreferences}
 								disabled={saving || prefsLoading}
 							>

@@ -23,7 +23,7 @@ export default function CheckoutPage() {
             <div className="absolute -inset-1 bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 rounded-3xl blur-3xl opacity-40 dark:opacity-60 animate-pulse" />
 
             {/* Card */}
-            <div className="relative rounded-3xl bg-white/90 dark:bg-[#050510]/90 border border-purple-200/70 dark:border-purple-500/40 shadow-xl shadow-purple-500/20 dark:shadow-[0_0_40px_rgba(168,85,247,0.6)] backdrop-blur-xl px-6 sm:px-10 py-10 sm:py-12 flex flex-col items-center text-center overflow-hidden">
+            <div className="relative rounded-3xl bg-white dark:bg-[#050510] border border-purple-200/70 dark:border-purple-500/40 shadow-xl shadow-purple-500/20 dark:shadow-[0_0_40px_rgba(168,85,247,0.6)] px-6 sm:px-10 py-10 sm:py-12 flex flex-col items-center text-center overflow-hidden">
               <div className="mb-6 flex items-center justify-center">
                 <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-indigo-500 flex items-center justify-center animate-bounce">
                   <CreditCardIcon className="h-9 w-9 text-white" />
@@ -48,7 +48,7 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={() => navigate(-1)}
-                  className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl border border-purple-200/70 dark:border-purple-500/60 text-sm font-semibold text-purple-700 dark:text-purple-100 bg-white/80 dark:bg-black/40 hover:bg-purple-50 dark:hover:bg-purple-900/40 shadow-sm transition-colors"
+                  className="inline-flex items-center justify-center px-6 py-1 rounded-xl border border-purple-200/70 dark:border-purple-500/60 text-sm font-semibold text-purple-700 dark:text-purple-100 bg-white dark:bg-black hover:bg-purple-50 dark:hover:bg-purple-900/40 shadow-sm transition-colors"
                 >
                   Go Back
                 </button>
@@ -56,7 +56,7 @@ export default function CheckoutPage() {
                 <Link
                   to="/"
                   prefetch="intent"
-                  className="inline-flex items-center justify-center px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-sm font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
+                  className="inline-flex items-center justify-center px-6 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-sm font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
                 >
                   Back to Home
                 </Link>

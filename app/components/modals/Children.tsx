@@ -128,7 +128,7 @@ const Children: React.FC = () => {
           {options.map((opt) => (
             <label
               key={opt.value}
-              className={`flex items-center gap-4 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+              className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                 selected === opt.value
                   ? "border-primary-500 bg-primary-50 text-primary-900"
                   : "border-gray-200 bg-white hover:bg-gray-50"
@@ -159,7 +159,7 @@ const Children: React.FC = () => {
         <div className="flex justify-end">
           <button
             type="submit"
-            className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            className="px-6 py-1 bg-primary-600 text-white rounded-xl hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
           >
             Save Changes
           </button>

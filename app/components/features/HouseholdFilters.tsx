@@ -26,7 +26,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
           <select
             value={fields.has_kids || ""}
             onChange={(e) => onChange("has_kids", e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+            className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
           >
             <option value="">Any</option>
             <option value="true">Yes</option>
@@ -38,7 +38,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
           <select
             value={fields.has_pets || ""}
             onChange={(e) => onChange("has_pets", e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+            className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
           >
             <option value="">Any</option>
             <option value="true">Yes</option>
@@ -53,7 +53,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
           <select
             value={fields.type_of_househelp || ""}
             onChange={(e) => onChange("type_of_househelp", e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+            className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
           >
             <option value="">Any</option>
             <option value="live_in">Live-in</option>
@@ -66,14 +66,14 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
             type="date"
             value={fields.available_from || ""}
             onChange={(e) => onChange("available_from", e.target.value)}
-            className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+            className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
           />
         </div>
       </div>
 
       <div className="flex items-center justify-end gap-2 pt-2">
-        <button onClick={onClear} className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10">Clear</button>
-        <button onClick={onSearch} className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">Apply</button>
+        <button onClick={onClear} className="px-4 py-1 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10">Clear</button>
+        <button onClick={onSearch} className="px-6 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">Apply</button>
       </div>
     </div>
   );

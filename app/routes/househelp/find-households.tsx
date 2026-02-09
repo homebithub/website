@@ -214,14 +214,14 @@ export default function HousehelpFindHouseholds() {
         </div>
         </div>
         <div className="flex justify-end mt-6">
-          <button onClick={search} className="inline-flex items-center px-6 py-2.5 rounded-xl bg-white text-purple-700 font-semibold shadow hover:bg-purple-50 transition">
+          <button onClick={search} className="inline-flex items-center px-6 py-1 rounded-xl bg-white text-purple-700 font-semibold shadow hover:bg-purple-50 transition">
             Search
           </button>
         </div>
       </div>
 
       {loading && <div className="text-center py-4">Loading...</div>}
-      {error && <div className="bg-red-100 text-red-700 px-4 py-2 rounded mb-4 text-center">{error}</div>}
+      {error && <div className="bg-red-100 text-red-700 px-4 py-1 rounded mb-4 text-center">{error}</div>}
 
       <div className="space-y-4">
         {!hasSearched && !loading && (
@@ -263,7 +263,7 @@ export default function HousehelpFindHouseholds() {
                 onClick={() => navigate(`/household/public-profile?profile_id=${r.profile_id}`, {
                   state: { backTo: '/househelp/find-households', backLabel: 'Back to results' }
                 })}
-                className="ml-4 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all"
+                className="ml-4 px-4 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all"
               >
                 View more
               </button>

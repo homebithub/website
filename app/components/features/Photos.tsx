@@ -293,13 +293,13 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
       </p>
       
       {error && (
-        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-md text-sm whitespace-pre-line">
+        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm whitespace-pre-line">
           {error}
         </div>
       )}
       
       {success && (
-        <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-md text-sm">
+        <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-sm">
           {success}
         </div>
       )}
@@ -330,7 +330,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
             <div className="flex text-sm text-gray-600">
               <label
                 htmlFor="file-upload"
-                className="relative cursor-pointer bg-white rounded-md font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500 mx-auto"
+                className="relative cursor-pointer bg-white rounded-xl font-medium text-primary-600 hover:text-primary-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-primary-500 mx-auto"
               >
                 <span>{currentContent.uploadText}</span>
                 <input
@@ -392,7 +392,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
           <button
             type="submit"
             disabled={isSubmitting || images.length === 0}
-            className={`w-full px-6 py-3 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+            className={`w-full px-6 py-1.5 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
               images.length > 0 
                 ? 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500' 
                 : 'bg-gray-200 text-gray-500 cursor-not-allowed'
@@ -429,7 +429,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
                   <div className="absolute right-0 top-0 pr-4 pt-4">
                     <button
                       type="button"
-                      className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                      className="rounded-xl bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
                       onClick={closeImageModal}
                     >
                       <span className="sr-only">Close</span>
@@ -499,7 +499,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
                       <div className="absolute bottom-4 left-0 right-0 flex justify-center space-x-4">
                         <button
                           type="button"
-                          className="px-4 py-2 bg-white text-gray-700 rounded-md border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 flex items-center space-x-2"
+                          className="px-4 py-1 bg-white text-gray-700 rounded-xl border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 flex items-center space-x-2"
                           onClick={closeImageModal}
                         >
                           <XMarkIcon className="h-5 w-5" />
@@ -507,7 +507,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
                         </button>
                         <button
                           type="button"
-                          className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center space-x-2"
+                          className="px-4 py-1 bg-red-600 text-white rounded-xl hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 flex items-center space-x-2"
                           onClick={(e) => {
                             e.stopPropagation();
                             if (images[selectedImageIndex]) {

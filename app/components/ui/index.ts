@@ -5,5 +5,5 @@ export { default as ProtectedRoute } from './ProtectedRoute';
 export { default as HousehelpsTable } from './HousehelpsTable';
 export { default as AnimatedStatCard } from './AnimatedStatCard';
 export { OfferCard } from './OfferCard';
-export { default as FloatingBubbles } from './FloatingBubbles';
+
 export { default as PurpleCard } from './PurpleCard';

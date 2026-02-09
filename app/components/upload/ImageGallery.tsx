@@ -117,7 +117,7 @@ export default function ImageGallery({
 
   if (error) {
     return (
-      <div className={`p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg ${className}`}>
+      <div className={`p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl ${className}`}>
         <p className="text-red-600 dark:text-red-400">Error: {error}</p>
         <button
           onClick={loadImages}
@@ -149,7 +149,7 @@ export default function ImageGallery({
         {images.map((image) => (
           <div
             key={image.id}
-            className="group relative aspect-square bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-shadow"
+            className="group relative aspect-square bg-gray-100 dark:bg-gray-800 rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-shadow"
           >
             {/* Image */}
             <img
@@ -208,7 +208,7 @@ export default function ImageGallery({
               <p className="text-white font-medium">{selectedImage.file_name}</p>
               <button
                 onClick={() => setSelectedImage(null)}
-                className="mt-2 px-4 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                className="mt-2 px-4 py-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
               >
                 Close
               </button>

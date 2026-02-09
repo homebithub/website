@@ -47,7 +47,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
                 <div className="absolute right-4 top-4 sm:block z-10">
                   <button
                     type="button"
-                    className="rounded-full bg-gray-800/80 dark:bg-gray-800/90 p-2.5 text-gray-300 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200 backdrop-blur-sm"
+                    className="rounded-full bg-gray-800 dark:bg-gray-800 p-2.5 text-gray-300 hover:text-white hover:bg-gray-700 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all duration-200"
                     onClick={onClose}
                     ref={cancelButtonRef}
                   >

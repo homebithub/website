@@ -127,7 +127,7 @@ const EmergencyContact: React.FC = () => {
                   {(['Father', 'Mother', 'Sibling', 'Other'] as Relationship[]).map((rel) => (
                     <label 
                       key={rel}
-                      className={`flex items-center justify-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+                      className={`flex items-center justify-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                         relationship === rel
                           ? 'border-primary-500 bg-primary-50 text-primary-900' 
                           : 'border-gray-200 bg-white hover:bg-gray-50'
@@ -210,13 +210,13 @@ const EmergencyContact: React.FC = () => {
 
         {/* Error and Success Messages */}
         {error && (
-          <div className="p-4 bg-red-50 text-red-700 rounded-md text-sm">
+          <div className="p-4 bg-red-50 text-red-700 rounded-xl text-sm">
             {error}
           </div>
         )}
         
         {success && (
-          <div className="p-4 bg-green-50 text-green-700 rounded-md text-sm">
+          <div className="p-4 bg-green-50 text-green-700 rounded-xl text-sm">
             {success}
           </div>
         )}
@@ -225,7 +225,7 @@ const EmergencyContact: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-primary-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-primary-600 text-white px-6 py-1.5 rounded-xl font-semibold hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center">

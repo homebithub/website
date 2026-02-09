@@ -165,7 +165,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
               <button
                 type="button"
                 onClick={() => setShowChildModal(true)}
-                className="flex items-center gap-2 px-6 py-3 font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 shadow-lg dark:shadow-glow-md hover:scale-105 transition-all"
+                className="flex items-center gap-2 px-6 py-1.5 font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 shadow-lg dark:shadow-glow-md hover:scale-105 transition-all"
               >
                 <span className="text-xl">➕</span>
                 Add Child
@@ -173,7 +173,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
               <button
                 type="button"
                 onClick={() => setShowExpectingModal(true)}
-                className="flex items-center gap-2 px-6 py-3 font-semibold bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 border-2 border-purple-600 dark:border-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-gray-700 hover:scale-105 transition-all"
+                className="flex items-center gap-2 px-6 py-1.5 font-semibold bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 border-2 border-purple-600 dark:border-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-gray-700 hover:scale-105 transition-all"
               >
                 <span className="text-xl">🤰🏿</span>
                 Expecting a Child
@@ -194,7 +194,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
                     <button
                       type="button"
                       onClick={() => handleRemoveChild(index)}
-                      className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
                     >
                       Remove
                     </button>
@@ -252,7 +252,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
             (hasChildren && children.length === 0 && !expecting) ||
             (expecting && !dueDate)
           }
-          className="w-full px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+          className="w-full px-8 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
           <span>📦</span>
           Continue

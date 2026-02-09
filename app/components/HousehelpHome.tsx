@@ -404,7 +404,7 @@ export default function HousehelpHome() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-white">Find Households</h1>
                 <button
                   onClick={() => setShowMoreFilters(true)}
-                  className="px-4 py-2 bg-white/15 text-white font-semibold rounded-xl border border-white/20 hover:bg-white/25 transition"
+                  className="px-4 py-1 bg-white/15 text-white font-semibold rounded-xl border border-white/20 hover:bg-white/25 transition"
                 >
                   More filters
                 </button>
@@ -416,7 +416,7 @@ export default function HousehelpHome() {
                     name="town"
                     value={filters.town}
                     onChange={handleSelect}
-                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
                   >
                     {['', 'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika'].map((t) => (
                       <option key={t} value={t}>
@@ -431,7 +431,7 @@ export default function HousehelpHome() {
                     name="house_size"
                     value={filters.house_size}
                     onChange={handleSelect}
-                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
                   >
                     {['', 'bedsitter', '1br', '2br', '3br+', 'mansion'].map((s) => (
                       <option key={s} value={s}>
@@ -446,7 +446,7 @@ export default function HousehelpHome() {
                     name="verified"
                     value={filters.verified}
                     onChange={handleSelect}
-                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
                   >
                     <option value="">Any</option>
                     <option value="true">Verified</option>
@@ -459,7 +459,7 @@ export default function HousehelpHome() {
                     name="has_kids"
                     value={filters.has_kids}
                     onChange={handleSelect}
-                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
                   >
                     <option value="">Any</option>
                     <option value="true">Yes</option>
@@ -472,7 +472,7 @@ export default function HousehelpHome() {
                     name="has_pets"
                     value={filters.has_pets}
                     onChange={handleSelect}
-                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
                   >
                     <option value="">Any</option>
                     <option value="true">Yes</option>
@@ -485,7 +485,7 @@ export default function HousehelpHome() {
                     name="type_of_househelp"
                     value={filters.type_of_househelp}
                     onChange={handleSelect}
-                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
                   >
                     <option value="">Any</option>
                     <option value="live_in">Live-in</option>
@@ -499,7 +499,7 @@ export default function HousehelpHome() {
                     name="available_from"
                     value={filters.available_from}
                     onChange={(e) => setFilters(prev => ({ ...prev, available_from: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
                   />
                 </div>
               </div>
@@ -509,7 +509,7 @@ export default function HousehelpHome() {
                 )}
                 <button
                   onClick={search}
-                  className="px-6 py-3 rounded-xl font-bold bg-white text-purple-700 border border-white/20 shadow-lg hover:bg-purple-50 transition-all dark:bg-white/90 dark:text-purple-700 dark:hover:bg-white focus:outline-none focus:ring-2 focus:ring-white/70 dark:shadow-[0_0_20px_rgba(168,85,247,0.35)]"
+                  className="px-6 py-1.5 rounded-xl font-bold bg-white text-purple-700 border border-white/20 shadow-lg hover:bg-purple-50 transition-all dark:bg-white dark:text-purple-700 dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white/70 dark:shadow-[0_0_20px_rgba(168,85,247,0.35)]"
                 >
                   Search
                 </button>
@@ -623,7 +623,7 @@ export default function HousehelpHome() {
                         </div>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleViewMore(r); }}
-                          className="ml-auto px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
+                          className="ml-auto px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >
                           View more
                         </button>

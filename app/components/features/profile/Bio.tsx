@@ -113,7 +113,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
         </div>
 
         {success && (
-          <div className="p-4 bg-green-50 text-green-700 rounded-md text-sm">
+          <div className="p-4 bg-green-50 text-green-700 rounded-xl text-sm">
             {success}
           </div>
         )}
@@ -122,7 +122,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
           <button
             type="submit"
             disabled={!isBioValid || isSubmitting}
-            className={`w-full px-6 py-3 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+            className={`w-full px-6 py-1.5 rounded-xl font-semibold focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
               isBioValid 
                 ? 'bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500' 
                 : 'bg-gray-200 text-gray-500 cursor-not-allowed'

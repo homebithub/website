@@ -351,7 +351,7 @@ export default function HouseholdShortlistPage() {
                         </div>
                         <button
                           onClick={(e) => { e.stopPropagation(); navigate('/househelp/public-profile', { state: { profileId: s.profile_id, fromShortlist: true } }); }}
-                          className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
+                          className="px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >
                           View more
                         </button>

@@ -21,7 +21,7 @@ export default function LoadingDemoPage() {
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Controls Panel */}
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
               <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-6">
                 Customization Options
               </h2>
@@ -111,7 +111,7 @@ export default function LoadingDemoPage() {
             </div>
 
             {/* Preview Panel */}
-            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
               <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-6">
                 Preview
               </h2>
@@ -153,7 +153,7 @@ export default function LoadingDemoPage() {
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Spinner</h3>
                 <div className="flex justify-center">
                   <Spinner size="lg" color="primary" />
@@ -163,7 +163,7 @@ export default function LoadingDemoPage() {
                 </pre>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Dots</h3>
                 <div className="flex justify-center">
                   <Dots size="lg" color="success" />
@@ -173,7 +173,7 @@ export default function LoadingDemoPage() {
                 </pre>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Pulse</h3>
                 <div className="flex justify-center">
                   <Pulse size="lg" color="warning" />
@@ -183,7 +183,7 @@ export default function LoadingDemoPage() {
                 </pre>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Wave</h3>
                 <div className="flex justify-center">
                   <Wave size="lg" color="error" />
@@ -193,7 +193,7 @@ export default function LoadingDemoPage() {
                 </pre>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Bounce</h3>
                 <div className="flex justify-center">
                   <Bounce size="lg" color="secondary" />
@@ -203,7 +203,7 @@ export default function LoadingDemoPage() {
                 </pre>
               </div>
 
-              <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-slate-700">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
                 <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Ring</h3>
                 <div className="flex justify-center">
                   <Ring size="lg" color="primary" />

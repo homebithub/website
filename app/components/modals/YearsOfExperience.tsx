@@ -80,13 +80,13 @@ const YearsOfExperience = () => {
     return (
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6">
             {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-md text-sm">
+                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm">
                     {error}
                 </div>
             )}
             
             {success && (
-                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-md text-sm">
+                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-sm">
                     {success}
                 </div>
             )}
@@ -98,7 +98,7 @@ const YearsOfExperience = () => {
                         {experienceOptions.map((option) => (
                             <label 
                                 key={option.value}
-                                className={`flex items-center justify-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+                                className={`flex items-center justify-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                                     years === option.value 
                                         ? 'border-primary-500 bg-primary-50 text-primary-900' 
                                         : 'border-gray-200 bg-white hover:bg-gray-50'
@@ -138,7 +138,7 @@ const YearsOfExperience = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${
+                        className={`w-full flex justify-center py-1.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${
                             loading ? 'opacity-70 cursor-not-allowed' : ''
                         }`}
                     >

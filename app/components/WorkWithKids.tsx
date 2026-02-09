@@ -200,7 +200,7 @@ const WorkWithKids = () => {
                                 {ageRanges.map((age) => (
                                     <label 
                                         key={age.value}
-                                        className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+                                        className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                                             selectedAges.includes(age.value) ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                                         }`}
                                     >
@@ -228,7 +228,7 @@ const WorkWithKids = () => {
                                 {capacities.map((capacity) => (
                                     <label 
                                         key={capacity.value}
-                                        className={`flex items-center gap-3 p-4 rounded-lg border cursor-pointer shadow-sm text-lg font-medium ${
+                                        className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
                                             selectedCapacities.includes(capacity.value) ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                                         }`}
                                     >
@@ -254,7 +254,7 @@ const WorkWithKids = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                        className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                     >
                         {loading ? (
                             <>

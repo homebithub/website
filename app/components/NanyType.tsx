@@ -287,9 +287,9 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           <table className="min-w-full table-fixed border-separate border-spacing-y-0">
             <thead>
               <tr>
-                <th className="w-24 px-2 py-2 text-sm text-purple-700 dark:text-purple-400 font-bold text-left"></th>
+                <th className="w-24 px-2 py-1 text-sm text-purple-700 dark:text-purple-400 font-bold text-left"></th>
                 {TIMES.map(time => (
-                  <th key={time} className="w-20 px-2 py-2 text-sm text-purple-700 dark:text-purple-400 font-bold capitalize text-center -ml-2">
+                  <th key={time} className="w-20 px-2 py-1 text-sm text-purple-700 dark:text-purple-400 font-bold capitalize text-center -ml-2">
                     <button
                       type="button"
                       className="w-full focus:outline-none"
@@ -369,7 +369,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           type="date"
           value={availableFrom}
           onChange={e => setAvailableFrom(e.target.value)}
-          className={`w-full h-14 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${(!availableFrom || isNaN(Date.parse(availableFrom))) && error && error.includes('Available from') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-purple-200 dark:border-purple-500/30'} [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100`}
+          className={`w-full h-14 px-4 py-1.5 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${(!availableFrom || isNaN(Date.parse(availableFrom))) && error && error.includes('Available from') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-purple-200 dark:border-purple-500/30'} [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100`}
           min={new Date().toISOString().split('T')[0]}
           required
         />
@@ -386,7 +386,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       )}
       <button
         type="button"
-        className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+        className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
         onClick={handleSubmit}
         disabled={
           loading || 

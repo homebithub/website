@@ -47,14 +47,14 @@ export default function ImageViewModal({ imageUrl, altText = 'Image', onClose }:
         <div className="flex justify-center gap-4 mt-4">
           <button
             onClick={handleOpenInNewTab}
-            className="flex items-center gap-2 px-6 py-3 bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 rounded-lg font-semibold hover:bg-purple-50 dark:hover:bg-gray-700 transition-all shadow-lg hover:scale-105"
+            className="flex items-center gap-2 px-6 py-1.5 bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 rounded-xl font-semibold hover:bg-purple-50 dark:hover:bg-gray-700 transition-all shadow-lg hover:scale-105"
           >
             <ArrowTopRightOnSquareIcon className="h-5 w-5" />
             Open in New Tab
           </button>
           <button
             onClick={onClose}
-            className="px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-all shadow-lg"
+            className="px-6 py-1.5 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-all shadow-lg"
           >
             Close
           </button>

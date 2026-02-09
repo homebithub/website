@@ -1,7 +1,5 @@
 import React from 'react';
 import type { ReactNode } from 'react';
-import FloatingBubbles from '../ui/FloatingBubbles';
-
 interface PurpleThemeWrapperProps {
   children: ReactNode;
   variant?: 'gradient' | 'light' | 'white';
@@ -32,15 +30,6 @@ export const PurpleThemeWrapper: React.FC<PurpleThemeWrapperProps> = ({
 
   return (
     <div className={`relative ${getBackgroundClass()} transition-colors duration-300 ${className}`}>
-      {/* Radial gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-radial from-purple-500/5 via-transparent to-transparent dark:from-purple-500/10 pointer-events-none" />
-      
-      {bubbles && <FloatingBubbles density={bubbleDensity} variant="mixed" />}
-      
-      {/* Animated gradient orbs for dark mode */}
-      <div className="hidden dark:block absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl animate-pulse-slow pointer-events-none" />
-      <div className="hidden dark:block absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl animate-pulse-slow pointer-events-none" style={{ animationDelay: '1s' }} />
-      
       <div className="relative z-10 h-full min-h-0 flex flex-col">
         {children}
       </div>

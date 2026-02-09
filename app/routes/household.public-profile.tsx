@@ -346,7 +346,7 @@ export default function HouseholdPublicProfile() {
                       {shouldShowBackButton && (
                         <button
                           onClick={handleBackNavigation}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold transition-colors text-sm sm:text-base"
+                          className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold transition-colors text-sm sm:text-base"
                         >
                           ← {backLabel}
                         </button>
@@ -390,7 +390,7 @@ export default function HouseholdPublicProfile() {
                           <button
                             onClick={() => setIsInterestModalOpen(true)}
                             disabled={hasExpressedInterest}
-                            className={`px-4 py-2 rounded-full font-semibold shadow-lg transition-all flex items-center gap-2 ${
+                            className={`px-4 py-1 rounded-full font-semibold shadow-lg transition-all flex items-center gap-2 ${
                               hasExpressedInterest
                                 ? 'bg-gray-400 text-white cursor-not-allowed'
                                 : 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
@@ -423,7 +423,7 @@ export default function HouseholdPublicProfile() {
                   }}
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
-                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-lg text-sm font-semibold">
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-xl text-sm font-semibold">
                     View Full
                   </span>
                 </div>
@@ -455,7 +455,7 @@ export default function HouseholdPublicProfile() {
         <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">👥 Service Type Needed</h2>
         <div className="space-y-3">
           {profile.needs_live_in && (
-            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
               <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 They need Live-in Help</p>
               {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
                 <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Off days: {profile.live_in_off_days.join(', ')}</p>
@@ -483,7 +483,7 @@ export default function HouseholdPublicProfile() {
         {kids.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {kids.map((kid, idx) => (
-              <div key={kid.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <div key={kid.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                 <p className="font-semibold text-purple-900 dark:text-purple-100">
                   {kid.is_expecting ? '🤰 Expecting a child' : `👶 Child ${idx + 1}`}
                 </p>
@@ -507,7 +507,7 @@ export default function HouseholdPublicProfile() {
         {pets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {pets.map((pet, idx) => (
-              <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                 <p className="font-semibold text-purple-900 dark:text-purple-100 capitalize">🐾 {pet.pet_type}</p>
                 {pet.requires_care && <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">⚠️ Requires care</p>}
               </div>
@@ -524,7 +524,7 @@ export default function HouseholdPublicProfile() {
         {profile.chores && profile.chores.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {profile.chores.map((chore, idx) => (
-              <span key={idx} className="px-3 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-lg font-medium">
+              <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-xl font-medium">
                 {chore}
               </span>
             ))}

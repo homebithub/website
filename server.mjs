@@ -54,5 +54,6 @@ app.all("*", createRequestHandler({
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, "0.0.0.0", () => {
-    console.log(`🚀 Express SSR server running on port ${PORT}`);
+    // Log to stderr instead of stdout to avoid any potential output issues
+    console.error(`🚀 Express SSR server running on port ${PORT}`);
 });

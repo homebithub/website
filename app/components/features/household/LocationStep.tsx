@@ -100,7 +100,7 @@ export function LocationStep({ data, onUpdate, onNext }: LocationStepProps) {
         </div>
 
         {coordinates[0] !== 0 && coordinates[1] !== 0 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="bg-green-50 border border-green-200 rounded-xl p-4">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
@@ -123,7 +123,7 @@ export function LocationStep({ data, onUpdate, onNext }: LocationStepProps) {
           <button
             type="submit"
             disabled={!address || coordinates[0] === 0 || coordinates[1] === 0}
-            className="px-6 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-6 py-1 bg-primary-600 text-white rounded-xl hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             Next
           </button>

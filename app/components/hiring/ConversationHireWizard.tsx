@@ -175,7 +175,7 @@ export default function ConversationHireWizard({
             key={type}
             type="button"
             onClick={() => setJobType(type)}
-            className={`px-4 py-4 rounded-lg border-2 font-semibold capitalize transition-all ${
+            className={`px-4 py-1 rounded-xl border-2 font-semibold capitalize transition-all ${
               jobType === type
                 ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent shadow-lg'
                 : 'bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:border-purple-400'
@@ -273,7 +273,7 @@ export default function ConversationHireWizard({
                   key={slot}
                   type="button"
                   onClick={() => toggleTimeSlot(day, slot)}
-                  className={`px-3 py-1 text-xs rounded-md font-medium transition-colors ${
+                  className={`px-3 py-1 text-xs rounded-xl font-medium transition-colors ${
                     workSchedule[day][slot]
                       ? 'bg-purple-700 text-white'
                       : 'bg-white dark:bg-gray-700 border border-purple-400 dark:border-purple-500/30 text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -299,7 +299,7 @@ export default function ConversationHireWizard({
       </div>
 
       {/* Summary */}
-      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 space-y-3">
+      <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
         <div>
           <span className="text-sm text-gray-600 dark:text-gray-400">Hiring:</span>
           <p className="font-medium text-gray-900 dark:text-white">{househelpName}</p>
@@ -339,7 +339,7 @@ export default function ConversationHireWizard({
       </div>
 
       {/* Terms */}
-      <div className="bg-gray-50 dark:bg-gray-700/50 p-4 rounded-lg">
+      <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
         <p className="text-sm text-gray-600 dark:text-gray-400">
           By sending this hire request, you agree to our{' '}
           <a
@@ -356,7 +356,7 @@ export default function ConversationHireWizard({
   );
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-2xl w-full">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 max-w-2xl w-full">
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
@@ -372,7 +372,7 @@ export default function ConversationHireWizard({
 
       {/* Error Message */}
       {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
           <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
         </div>
       )}
@@ -391,7 +391,7 @@ export default function ConversationHireWizard({
           <button
             onClick={handleBack}
             disabled={loading}
-            className="flex-1 px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             <ChevronLeft className="w-5 h-5" />
             Back
@@ -401,7 +401,7 @@ export default function ConversationHireWizard({
         {currentStep < totalSteps ? (
           <button
             onClick={handleNext}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
           >
             Next
             <ChevronRight className="w-5 h-5" />
@@ -410,7 +410,7 @@ export default function ConversationHireWizard({
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {loading ? 'Sending...' : 'Send Hire Request'}
             <Check className="w-5 h-5" />
@@ -420,7 +420,7 @@ export default function ConversationHireWizard({
         <button
           onClick={onClose}
           disabled={loading}
-          className="px-6 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-50"
+          className="px-6 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors disabled:opacity-50"
         >
           Cancel
         </button>

@@ -240,7 +240,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                                         handleSuggestionClick(s);
                                     }}
                                     onMouseEnter={() => setSelectedIndex(idx)}
-                                    className={`px-4 py-3 cursor-pointer font-medium border-b border-purple-100 dark:border-purple-500/20 last:border-b-0 transition-colors ${
+                                    className={`px-4 py-1.5 cursor-pointer font-medium border-b border-purple-100 dark:border-purple-500/20 last:border-b-0 transition-colors ${
                                         idx === selectedIndex 
                                             ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100' 
                                             : 'bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100'
@@ -264,7 +264,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                 <button
                     type="submit"
                     disabled={submitting || !selectedLocation || (savedLocation?.mapbox_id === selectedLocation?.mapbox_id)}
-                    className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                    className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                 >
                     {submitting ? (
                         <>

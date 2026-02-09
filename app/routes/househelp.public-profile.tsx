@@ -397,7 +397,7 @@ export default function HousehelpPublicProfile() {
                     {shouldShowBackButton && (
                       <button
                         onClick={isViewingOther ? handleBackNavigation : () => navigate('/househelp/profile')}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold transition-colors text-sm sm:text-base"
+                        className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold transition-colors text-sm sm:text-base"
                       >
                         ← {backButtonText}
                       </button>
@@ -440,7 +440,7 @@ export default function HousehelpPublicProfile() {
                       </button>
                       <button
                         onClick={() => setIsHireModalOpen(true)}
-                        className="px-4 py-2 rounded-full bg-green-500 text-white font-semibold shadow-lg hover:bg-green-600 transition-all flex items-center gap-2"
+                        className="px-4 py-1 rounded-full bg-green-500 text-white font-semibold shadow-lg hover:bg-green-600 transition-all flex items-center gap-2"
                       >
                         <Briefcase className="w-5 h-5" />
                         Hire
@@ -479,7 +479,7 @@ export default function HousehelpPublicProfile() {
                         }}
                       />
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="px-3 py-1 bg-white text-purple-600 rounded-lg text-sm font-semibold">
+                        <span className="px-3 py-1 bg-white text-purple-600 rounded-xl text-sm font-semibold">
                           View Full
                         </span>
                       </div>
@@ -580,7 +580,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Certifications</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.certifications.split(',').map((cert, idx) => (
-                        <span key={idx} className="px-3 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-lg font-medium">
+                        <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-xl font-medium">
                           ✓ {cert.trim()}
                         </span>
                       ))}
@@ -592,7 +592,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Languages</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.languages.map((lang, idx) => (
-                        <span key={idx} className="px-3 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 rounded-lg font-medium">
+                        <span key={idx} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 rounded-xl font-medium">
                           🗣️ {lang}
                         </span>
                       ))}
@@ -604,7 +604,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Skills</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.skills.map((skill, idx) => (
-                        <span key={idx} className="px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 rounded-lg font-medium">
+                        <span key={idx} className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 rounded-xl font-medium">
                           ⭐ {skill}
                         </span>
                       ))}
@@ -616,7 +616,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Personal Traits</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.traits.map((trait, idx) => (
-                        <span key={idx} className="px-3 py-2 bg-pink-100 dark:bg-pink-900/30 text-pink-900 dark:text-pink-100 rounded-lg font-medium">
+                        <span key={idx} className="px-3 py-1 bg-pink-100 dark:bg-pink-900/30 text-pink-900 dark:text-pink-100 rounded-xl font-medium">
                           💫 {trait}
                         </span>
                       ))}
@@ -628,7 +628,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Can Help With</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.can_help_with.split(',').map((item, idx) => (
-                        <span key={idx} className="px-3 py-2 bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 rounded-lg font-medium">
+                        <span key={idx} className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 rounded-xl font-medium">
                           🛠️ {item.trim()}
                         </span>
                       ))}
@@ -644,17 +644,17 @@ export default function HousehelpPublicProfile() {
                 <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📜 Certifications & Abilities</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {profile.first_aid_certificate && (
-                    <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
+                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
                       <p className="font-semibold text-green-900 dark:text-green-100">✅ First Aid Certificate</p>
                     </div>
                   )}
                   {profile.certificate_of_good_conduct && (
-                    <div className="p-4 rounded-lg bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
+                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
                       <p className="font-semibold text-green-900 dark:text-green-100">✅ Certificate of Good Conduct</p>
                     </div>
                   )}
                   {profile.can_drive && (
-                    <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500">
+                    <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500">
                       <p className="font-semibold text-blue-900 dark:text-blue-100">✅ Can Drive</p>
                     </div>
                   )}
@@ -690,7 +690,7 @@ export default function HousehelpPublicProfile() {
                       <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Special Talents with Kids</span>
                       <div className="flex flex-wrap gap-2">
                         {profile.talent_with_kids.map((talent, idx) => (
-                          <span key={idx} className="px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100 rounded-lg font-medium">
+                          <span key={idx} className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100 rounded-xl font-medium">
                             🌟 {talent}
                           </span>
                         ))}
@@ -709,7 +709,7 @@ export default function HousehelpPublicProfile() {
                   <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Comfortable with</span>
                   <div className="flex flex-wrap gap-2">
                     {profile.pet_types.split(',').map((pet, idx) => (
-                      <span key={idx} className="px-3 py-2 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 rounded-lg font-medium">
+                      <span key={idx} className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 rounded-xl font-medium">
                         🐕 {pet.trim()}
                       </span>
                     ))}
@@ -762,7 +762,7 @@ export default function HousehelpPublicProfile() {
               <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">⚙️ Work Preferences</h2>
               <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className={`p-4 rounded-lg ${profile.can_work_with_kid ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
+                  <div className={`p-4 rounded-xl ${profile.can_work_with_kid ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
                     <p className={`font-semibold ${profile.can_work_with_kid ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
                       👶 Work with Kids
                     </p>
@@ -770,7 +770,7 @@ export default function HousehelpPublicProfile() {
                       {profile.can_work_with_kid ? 'Yes, comfortable with children' : 'No'}
                     </p>
                   </div>
-                  <div className={`p-4 rounded-lg ${profile.can_work_with_pets ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
+                  <div className={`p-4 rounded-xl ${profile.can_work_with_pets ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
                     <p className={`font-semibold ${profile.can_work_with_pets ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
                       🐾 Work with Pets
                     </p>
@@ -781,7 +781,7 @@ export default function HousehelpPublicProfile() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {profile.offers_live_in && (
-                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                       <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 Available for Live-in</p>
                       <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Can live with the family</p>
                     </div>
@@ -806,7 +806,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Off Days</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.off_days.map((day, idx) => (
-                        <span key={idx} className="px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100 rounded-lg font-medium">
+                        <span key={idx} className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100 rounded-xl font-medium">
                           📅 {day}
                         </span>
                       ))}
@@ -828,7 +828,7 @@ export default function HousehelpPublicProfile() {
                     if (dayTimes.afternoon) availableTimes.push('Afternoon');
                     if (dayTimes.evening) availableTimes.push('Evening');
                     return (
-                      <div key={day} className={`p-3 rounded-lg border-2 ${availableTimes.length > 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-gray-300 dark:border-gray-700'}`}>
+                      <div key={day} className={`p-3 rounded-xl border-2 ${availableTimes.length > 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-gray-300 dark:border-gray-700'}`}>
                         <p className={`font-semibold capitalize mb-1 ${availableTimes.length > 0 ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{day}</p>
                         {availableTimes.length > 0 ? (
                           <p className="text-xs text-gray-600 dark:text-gray-400">{availableTimes.join(', ')}</p>
@@ -912,13 +912,13 @@ export default function HousehelpPublicProfile() {
               <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">✅ Status & Verification</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {profile.status && (
-                  <div className={`p-4 rounded-lg ${profile.status === 'active' ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
+                  <div className={`p-4 rounded-xl ${profile.status === 'active' ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
                     <p className={`font-semibold ${profile.status === 'active' ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>Profile Status</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 capitalize">{profile.status}</p>
                   </div>
                 )}
                 {profile.verified !== undefined && (
-                  <div className={`p-4 rounded-lg ${profile.verified ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
+                  <div className={`p-4 rounded-xl ${profile.verified ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
                     <p className={`font-semibold ${profile.verified ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.verified ? '✅' : '❌'} Verified Profile</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{profile.verified ? 'Identity verified' : 'Not verified'}</p>
                   </div>
@@ -930,7 +930,7 @@ export default function HousehelpPublicProfile() {
                   </div>
                 )}
                 {profile.background_check_consent !== undefined && (
-                  <div className={`p-4 rounded-lg ${profile.background_check_consent ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
+                  <div className={`p-4 rounded-xl ${profile.background_check_consent ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
                     <p className={`font-semibold ${profile.background_check_consent ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.background_check_consent ? '✅' : '❌'} Background Check</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{profile.background_check_consent ? 'Consented to check' : 'Not consented'}</p>
                   </div>

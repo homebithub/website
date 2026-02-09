@@ -242,7 +242,7 @@ const Certifications: React.FC = () => {
                   <button
                     type="button"
                     onClick={addOtherCert}
-                    className="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold transition-all flex items-center justify-center shadow-md hover:shadow-lg"
+                    className="px-4 py-1 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold transition-all flex items-center justify-center shadow-md hover:shadow-lg"
                     aria-label="Add certification"
                     title="Add another certification"
                   >
@@ -255,7 +255,7 @@ const Certifications: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => removeOtherCert(index)}
-                    className="px-4 py-2 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
+                    className="px-4 py-1 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
                     aria-label="Remove certification"
                   >
                     ✕
@@ -331,7 +331,7 @@ const Certifications: React.FC = () => {
                   <button
                     type="button"
                     onClick={addOtherHelp}
-                    className="px-4 py-2 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold transition-all flex items-center justify-center shadow-md hover:shadow-lg"
+                    className="px-4 py-1 rounded-xl bg-purple-500 hover:bg-purple-600 text-white font-bold transition-all flex items-center justify-center shadow-md hover:shadow-lg"
                     aria-label="Add skill"
                     title="Add another skill"
                   >
@@ -344,7 +344,7 @@ const Certifications: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => removeOtherHelp(index)}
-                    className="px-4 py-2 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
+                    className="px-4 py-1 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all"
                     aria-label="Remove skill"
                   >
                     ✕
@@ -378,7 +378,7 @@ const Certifications: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full px-8 py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+            className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>

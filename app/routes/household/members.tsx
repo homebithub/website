@@ -178,7 +178,7 @@ export default function HouseholdMembersPage() {
               {pendingRequests.map((request) => (
                 <div
                   key={request.id}
-                  className="p-4 bg-white dark:bg-[#13131a] rounded-lg border-2 border-amber-200 dark:border-amber-500/30 shadow-md"
+                  className="p-4 bg-white dark:bg-[#13131a] rounded-xl border-2 border-amber-200 dark:border-amber-500/30 shadow-md"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
@@ -202,13 +202,13 @@ export default function HouseholdMembersPage() {
                     <div className="flex gap-2 ml-4">
                       <button
                         onClick={() => handleApprove(request.id)}
-                        className="px-4 py-2 rounded-lg bg-green-600 text-white font-bold hover:bg-green-700 transition-all focus:outline-none focus:ring-2 focus:ring-green-500"
+                        className="px-4 py-1 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all focus:outline-none focus:ring-2 focus:ring-green-500"
                       >
                         ✅ Approve
                       </button>
                       <button
                         onClick={() => handleReject(request.id)}
-                        className="px-4 py-2 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+                        className="px-4 py-1 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
                       >
                         ❌ Reject
                       </button>
@@ -277,17 +277,17 @@ export default function HouseholdMembersPage() {
                         {/* Permissions */}
                         <div className="flex flex-wrap gap-2 mt-3">
                           {member.permissions.can_edit_profile && (
-                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-md">
+                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-xl">
                               Edit Profile
                             </span>
                           )}
                           {member.permissions.can_manage_househelps && (
-                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-md">
+                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-xl">
                               Manage Househelps
                             </span>
                           )}
                           {member.permissions.can_invite_members && (
-                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-md">
+                            <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs rounded-xl">
                               Invite Members
                             </span>
                           )}
@@ -301,7 +301,7 @@ export default function HouseholdMembersPage() {
                         {member.role !== 'owner' && (
                           <button
                             onClick={() => handleChangeRole(member.user_id, member.role)}
-                            className="px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="px-4 py-1 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
                             title="Change role"
                           >
                             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -316,7 +316,7 @@ export default function HouseholdMembersPage() {
                               `${member.user?.first_name} ${member.user?.last_name}`
                             )
                           }
-                          className="px-4 py-2 rounded-lg bg-red-600 text-white font-semibold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+                          className="px-4 py-1 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
                           title="Remove member"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

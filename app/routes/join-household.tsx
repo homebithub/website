@@ -146,7 +146,7 @@ export default function JoinHouseholdPage() {
                     <button
                       onClick={handleValidateCode}
                       disabled={!inviteCode.trim() || loading || validating}
-                      className="px-6 py-3 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                      className="px-6 py-1.5 bg-purple-600 text-white font-semibold rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
                     >
                       {validating ? "Validating..." : "Validate"}
                     </button>
@@ -201,7 +201,7 @@ export default function JoinHouseholdPage() {
                     <button
                       onClick={handleJoinHousehold}
                       disabled={loading}
-                      className="w-full mt-4 px-6 py-4 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg text-lg"
+                      className="w-full mt-4 px-6 py-1 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg text-lg"
                     >
                       {loading ? (
                         <span className="flex items-center justify-center gap-2">

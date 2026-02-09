@@ -153,7 +153,7 @@ export default function HousehelpProfile() {
     }, [data && data.User && data.User.id]);
 
     if (loading) return <div className="flex justify-center py-12">Loading...</div>;
-    if (error) return <div className="bg-red-100 text-red-700 px-4 py-2 rounded mt-6 text-center">{error}</div>;
+    if (error) return <div className="bg-red-100 text-red-700 px-4 py-1 rounded mt-6 text-center">{error}</div>;
     if (!data) return null;
 
     const {User, Househelp} = data;
@@ -214,13 +214,13 @@ export default function HousehelpProfile() {
 
               <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
                 <button
-                  className="px-4 py-2 text-sm rounded-lg bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                  className="px-4 py-1 text-sm rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
                   onClick={() => setShowUnlockModal(false)}
                 >
                   Cancel
                 </button>
                 <button
-                  className="flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-lg bg-green-600 hover:bg-green-700 text-white font-bold shadow transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-1 text-sm rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold shadow transition-colors"
                   onClick={async () => {
                     try {
                       const token = localStorage.getItem('token');
@@ -329,7 +329,7 @@ export default function HousehelpProfile() {
               ) : (
                 <>
                   <button
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full font-semibold shadow transition
+                    className={`flex items-center gap-2 px-4 py-1 rounded-full font-semibold shadow transition
                       ${shortlistDisabled ? 'bg-gray-300 dark:bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700 text-white dark:bg-primary-500 dark:hover:bg-primary-400'}
                       ${shortlistLoading ? 'opacity-60 cursor-not-allowed' : ''}`}
                     aria-label="Shortlist"
@@ -341,7 +341,7 @@ export default function HousehelpProfile() {
                     <HeartIcon className="w-6 h-6" />
                   </button>
                   {shortlistDisabled && shortlistDisabledReason && (
-                    <div className="absolute left-1/2 -translate-x-1/2 -top-12 w-56 bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900 text-xs rounded px-3 py-2 shadow-lg z-10 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
+                    <div className="absolute left-1/2 -translate-x-1/2 -top-12 w-56 bg-gray-800 text-white dark:bg-gray-200 dark:text-gray-900 text-xs rounded px-3 py-1 shadow-lg z-10 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity pointer-events-none">
                       {shortlistDisabledReason}
                     </div>
                   )}
