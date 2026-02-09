@@ -314,9 +314,10 @@ function transformProfileData(data: ProfileSetupData): any {
     transformed.bio = data.bio.text || data.bio;
   }
 
-  // Photos
+  // Photos — must always be an array for the text[] column
   if (data.photos) {
-    transformed.photos = data.photos.urls || data.photos;
+    const rawPhotos = data.photos.urls || data.photos;
+    transformed.photos = Array.isArray(rawPhotos) ? rawPhotos : [];
   }
 
   // Household-specific fields
