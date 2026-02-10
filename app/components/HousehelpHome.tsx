@@ -7,6 +7,7 @@ import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import HouseholdFilters, { type HouseholdSearchFields } from "~/components/features/HouseholdFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
@@ -542,9 +543,7 @@ export default function HousehelpHome() {
                   <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
                 </div>
               ) : error ? (
-                <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 rounded-xl p-6 text-center">
-                  <p className="text-red-600 dark:text-red-400">{getFriendlyErrorMessage(error)}</p>
-                </div>
+                <ErrorAlert message={getFriendlyErrorMessage(error)} />
               ) : results.length === 0 ? (
                 <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
                   <p className="text-gray-600 dark:text-gray-400 text-lg">No households found. Try adjusting filters.</p>

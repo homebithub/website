@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 // List of languages organized by groups
 const LANGUAGE_GROUPS = {
@@ -190,11 +191,7 @@ const Languages = () => {
             </p>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Languages You Speak</h1>
             
-            {error && (
-                <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
-                    ⚠️ {error}
-                </div>
-            )}
+            {error && <ErrorAlert message={error} />}
             
             {success && (
                 <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">

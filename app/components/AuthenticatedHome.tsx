@@ -8,6 +8,7 @@ import { apiClient } from "~/utils/apiClient";
 import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { TOWNS, SKILLS, EXPERIENCE_LEVELS } from '~/constants/profileOptions';
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
@@ -832,9 +833,7 @@ export default function AuthenticatedHome() {
                   <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
                 </div>
               ) : error ? (
-                <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 rounded-xl p-6 text-center">
-                  <p className="text-red-600 dark:text-red-400">{error}</p>
-                </div>
+                <ErrorAlert message={error} />
               ) : !hasSearched ? (
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
                   <div className="mb-4">

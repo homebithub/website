@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/types/users";
 import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
 import { migratePreferences } from '~/utils/preferencesApi';
+import { extractErrorMessage } from '~/utils/errorMessages';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
 
 interface User {
@@ -95,8 +96,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const data: LoginResponse | LoginErrorResponse = await response.json();
       if (!response.ok) {
-
-        throw new Error((data as LoginErrorResponse).message || "Failed to login");
+        const errorMsg = extractErrorMessage(data) || "Invalid phone number or password";
+        throw new Error(errorMsg);
       }
 
       localStorage.setItem("token", (data as LoginResponse).token);
@@ -192,7 +193,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error((data as LoginErrorResponse).message || "Failed to sign up");
+        const errorMsg = extractErrorMessage(data) || "Failed to sign up";
+        throw new Error(errorMsg);
       }
 
       const { token, user } = await response.json();

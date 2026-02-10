@@ -9,6 +9,7 @@ import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { fetchPreferences } from "~/utils/preferencesApi";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 // Types
 type ShortlistItem = {
@@ -259,9 +260,7 @@ export default function HouseholdShortlistPage() {
               </div>
             )}
 
-            {error && (
-              <div className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-4 text-red-700 dark:text-red-300 mb-4">{error}</div>
-            )}
+            {error && <ErrorAlert message={error} className="mb-4" />}
 	
             <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>
               {items

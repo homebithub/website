@@ -13,6 +13,7 @@ import { useWebSocketContext } from '~/contexts/WebSocketContext';
 import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved } from '~/types/websocket';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 import { formatTimeAgo } from "~/utils/timeAgo";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 type Conversation = {
   id: string;
@@ -988,11 +989,7 @@ export default function InboxPage() {
         )}
       </div>
 
-      {error && (
-        <div className="m-3 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-2 text-xs text-red-700 dark:text-red-300">
-          {error}
-        </div>
-      )}
+      {error && <div className="m-3"><ErrorAlert message={error} /></div>}
 
       <div className="flex-1 overflow-y-auto">
         {deduplicatedItems.length === 0 && !loading && !error && (
@@ -1198,9 +1195,7 @@ export default function InboxPage() {
             <div className="text-center text-gray-500 dark:text-gray-400 py-12">No messages yet. Start the conversation!</div>
           )}
 
-          {messagesError && (
-            <div className="mb-3 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-3 text-red-700 dark:text-red-300">{messagesError}</div>
-          )}
+          {messagesError && <ErrorAlert message={messagesError} className="mb-3" />}
 
           {groupedMessages.map(group => (
             <div key={group.key} className="space-y-3">

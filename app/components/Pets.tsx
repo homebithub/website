@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface Pet {
   id: string;
@@ -456,11 +457,7 @@ const Pets: React.FC = () => {
             </div>
 
             {/* Error Display */}
-            {error && (
-              <div className="mt-4 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
-                ⚠️ {error}
-              </div>
-            )}
+            {error && <ErrorAlert message={error} className="mt-4" />}
 
             {/* Modal Actions */}
             <div className="flex gap-3 mt-6">
@@ -504,11 +501,7 @@ const Pets: React.FC = () => {
               </p>
             </div>
 
-            {error && (
-              <div className="mb-4 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
-                ⚠️ {error}
-              </div>
-            )}
+            {error && <ErrorAlert message={error} className="mb-4" />}
 
             <div className="flex gap-3">
               <button

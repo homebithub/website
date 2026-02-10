@@ -5,8 +5,10 @@ import { Loading } from "~/components/Loading";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { API_BASE_URL } from '~/config/api';
+import { extractErrorMessage } from '~/utils/errorMessages';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface PasswordStrength {
   score: number;
@@ -90,7 +92,7 @@ export default function ResetPassword() {
 
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || "Failed to reset password");
+        throw new Error(extractErrorMessage(data) || "Failed to reset password");
       }
 
       setSuccess(true);
@@ -159,14 +161,7 @@ export default function ResetPassword() {
           </p>
         </div>
 
-        {error && (
-          <div className="mt-6 mb-4 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
-            <div className="flex items-center justify-center">
-              <span className="text-2xl mr-3">⚠️</span>
-              <p className="text-base font-semibold text-red-800">{error}</p>
-            </div>
-          </div>
-        )}
+        {error && <ErrorAlert message={error} className="mt-6 mb-4" />}
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
           <div>

@@ -7,6 +7,7 @@ import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
 import { API_ENDPOINTS } from '~/config/api';
 import { formatTimeAgo } from "~/utils/timeAgo";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface UserProfile {
   id: string;
@@ -133,7 +134,7 @@ export default function ProfilePage() {
             <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 text-center">My Profile 👤</h1>
             <p className="text-center text-gray-600 dark:text-gray-300 mb-6">Manage your profile information. Only email, name and phone are editable.</p>
 
-            {error && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/40 dark:to-pink-950/40 border-2 border-red-200 dark:border-red-500/40 p-4 shadow-md mb-4 transition-colors duration-300"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800 dark:text-red-200">{error}</p></div></div>}
+            {error && <ErrorAlert message={error} className="mb-4" />}
             {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-4 shadow-md mb-4 transition-colors duration-300"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800 dark:text-green-200">{success}</p></div></div>}
 
             <form className="space-y-4">

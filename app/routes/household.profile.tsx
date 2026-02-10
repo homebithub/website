@@ -7,6 +7,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface HouseholdData {
   id?: string;
@@ -467,11 +468,8 @@ export default function HouseholdProfile() {
   if (error || hasError) {
     return (
       <div className="max-w-2xl mx-auto mt-8">
-        <div className="p-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl">⚠️</span>
-            <p className="font-semibold text-red-800 dark:text-red-400">{error || "Something went wrong"}</p>
-          </div>
+        <div className="p-6 rounded-xl">
+          <ErrorAlert message={error || "Something went wrong"} />
           <div className="flex gap-3">
             <button
               onClick={() => window.location.reload()}
@@ -579,9 +577,7 @@ export default function HouseholdProfile() {
         )}
 
         {invitationError && (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-xl">
-            <p className="text-sm text-red-600 dark:text-red-400">⚠️ {invitationError}</p>
-          </div>
+          <ErrorAlert message={invitationError} />
         )}
 
         {invitationCode && (
@@ -725,9 +721,7 @@ export default function HouseholdProfile() {
 
         {/* Error/Success Messages */}
         {uploadError && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30">
-            <p className="text-sm text-red-600 dark:text-red-400">⚠️ {uploadError}</p>
-          </div>
+          <ErrorAlert message={uploadError} className="mb-4" />
         )}
 
         {/* Upload Progress Bar */}

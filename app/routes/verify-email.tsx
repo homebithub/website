@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate, useLocation } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
-import { handleApiError } from '~/utils/errorMessages';
+import { handleApiError, extractErrorMessage } from '~/utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -49,14 +50,18 @@ export default function VerifyEmail() {
     setError(null);
     setSuccess(false);
     try {
+      const token = localStorage.getItem('token');
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/update-email`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ email,user_id }),
       });
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data.message || "Failed to request email verification");
+        throw new Error(extractErrorMessage(data) || "Failed to request email verification");
       }
       if (data.verification) {
         // Navigate to verify-otp page with verification object in state
@@ -113,14 +118,7 @@ console.log(user_id,"user_id");
                 <p className="text-green-600 dark:text-green-400 text-sm mt-1">✓ Valid email</p>
               )}
             </div>
-            {error && (
-              <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
-                <div className="flex items-center justify-center">
-                  <span className="text-2xl mr-3">⚠️</span>
-                  <p className="text-base font-semibold text-red-800">{error}</p>
-                </div>
-              </div>
-            )}
+            {error && <ErrorAlert message={error} />}
             {success && (
               <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-5 shadow-md">
                 <div className="flex items-center justify-center">
@@ -148,14 +146,16 @@ console.log(user_id,"user_id");
             style={{ boxShadow: 'none' }}
             onClick={() => {
               const userObj = localStorage.getItem('user_object');
+              const profileType = localStorage.getItem('profile_type') || '';
               let path = '/';
               if (userObj) {
                 const parsed = JSON.parse(userObj);
-                if (parsed.profile_type === 'household' || parsed.profile_type === 'household') {
-                  path = '/household/setup';
-                } else if (parsed.profile_type === 'househelp') {
-                  path = '/profile-setup/househelp';
-                } else if (parsed.profile_type === 'bureau') {
+                const pt = parsed.profile_type || profileType;
+                if (pt === 'household') {
+                  path = '/profile-setup/household?step=1';
+                } else if (pt === 'househelp') {
+                  path = '/profile-setup/househelp?step=1';
+                } else if (pt === 'bureau') {
                   path = '/bureau';
                 }
               }

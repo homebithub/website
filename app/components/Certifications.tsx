@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 const CERTIFICATIONS = [
   'I have a valid driving license',
@@ -368,11 +369,7 @@ const Certifications: React.FC = () => {
           </div>
         )}
 
-        {error && (
-          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
-            ⚠️ {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         <div className="pt-4">
           <button

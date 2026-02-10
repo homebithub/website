@@ -4,6 +4,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL } from "~/config/api";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface JoinRequest {
   id: string;
@@ -187,11 +188,7 @@ export default function HouseholdRequestsPage() {
             </div>
 
             {/* Error Message */}
-            {error && (
-              <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-xl">
-                <p className="text-sm text-red-600 dark:text-red-400">⚠️ {error}</p>
-              </div>
-            )}
+            {error && <ErrorAlert message={error} />}
 
             {/* Requests List */}
             {requests.length === 0 ? (

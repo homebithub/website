@@ -6,6 +6,7 @@ import { Loading } from '~/components/Loading';
 import { useAuth } from '~/contexts/useAuth';
 import { InviteCodeGenerator } from '~/components/household/InviteCodeGenerator';
 import { formatTimeAgo } from "~/utils/timeAgo";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import {
   listMembers,
   listPendingRequests,
@@ -149,11 +150,7 @@ export default function HouseholdMembersPage() {
           </p>
         </div>
 
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 rounded-xl">
-            <p className="text-red-800 dark:text-red-300">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert message={error} className="mb-6" />}
 
         {/* Invite Button */}
         {canInvite && householdId && (

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { API_ENDPOINTS } from '~/config/api';
 import { apiClient } from '~/utils/apiClient';
 import { FileText, CheckCircle, XCircle, Calendar, DollarSign, Briefcase } from 'lucide-react';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface HireContract {
   id: string;
@@ -153,11 +154,7 @@ export default function HouseholdContracts() {
         </div>
 
         {/* Error State */}
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-6">
-            <p className="text-red-800 dark:text-red-200">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert message={error} className="mb-6" />}
 
         {/* Loading State */}
         {loading && (

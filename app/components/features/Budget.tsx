@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useSubmit } from 'react-router';
 import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../../utils/errorMessages';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 type BudgetFrequency = 'Daily' | 'Weekly' | 'Monthly';
 type BudgetRange = string;
@@ -211,11 +212,7 @@ const Budget: React.FC = () => {
           </div>
         </div>
 
-        {error && (
-          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
-            ⚠️ {error}
-          </div>
-        )}
+        {error && <ErrorAlert message={error} />}
 
         {success && (
           <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">

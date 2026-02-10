@@ -3,6 +3,7 @@ import { handleApiError } from '../utils/errorMessages';
 import { UserGroupIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import Kids from "./Kids";
 import { API_BASE_URL } from '~/config/api';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 export interface Child {
   id?: string | number;
@@ -154,14 +155,13 @@ const Children: React.FC = () => {
         </div>
 
         {/* Save Status Message */}
-        {saveMessage && (
-          <div className={`p-4 rounded-xl text-sm font-semibold border-2 ${
-            saveMessage.type === 'success'
-              ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30'
-              : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30'
-          }`}>
-            {saveMessage.type === 'success' ? '✓ ' : '⚠️ '}{saveMessage.text}
+        {saveMessage && saveMessage.type === 'success' && (
+          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+            ✓ {saveMessage.text}
           </div>
+        )}
+        {saveMessage && saveMessage.type !== 'success' && (
+          <ErrorAlert message={saveMessage.text} />
         )}
       </div>
     </div>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL, getAuthHeaders } from '~/config/api';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 export interface ImageDocument {
   id: string;
@@ -117,11 +118,11 @@ export default function ImageGallery({
 
   if (error) {
     return (
-      <div className={`p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl ${className}`}>
-        <p className="text-red-600 dark:text-red-400">Error: {error}</p>
+      <div className={className}>
+        <ErrorAlert message={error} />
         <button
           onClick={loadImages}
-          className="mt-2 text-sm text-red-700 dark:text-red-300 underline hover:no-underline"
+          className="mt-2 text-sm text-purple-700 dark:text-purple-300 underline hover:no-underline"
         >
           Try again
         </button>

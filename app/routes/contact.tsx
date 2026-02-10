@@ -5,6 +5,7 @@ import { Loading } from "~/components/Loading";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { API_BASE_URL } from '~/config/api';
+import { extractErrorMessage } from '~/utils/errorMessages';
 import CustomSelect from '~/components/ui/CustomSelect';
 
 export const meta = () => [
@@ -57,8 +58,8 @@ export default function Contact() {
       });
 
       if (!response.ok) {
-        const data = await response.json() as ApiError;
-        const errorMessage = data.message || "Failed to send message";
+        const data = await response.json();
+        const errorMessage = extractErrorMessage(data) || "Failed to send message";
         setError(errorMessage);
         return;
       }

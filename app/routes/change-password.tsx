@@ -9,8 +9,10 @@ import { useAuth } from "~/contexts/useAuth";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
 import { API_BASE_URL } from '~/config/api';
+import { extractErrorMessage } from '~/utils/errorMessages';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface User {
   id: string;
@@ -136,7 +138,7 @@ export default function ChangePasswordPage() {
       
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || "Failed to change password");
+        throw new Error(extractErrorMessage(err) || "Failed to change password");
       }
       
       setSuccess(true);
@@ -167,14 +169,7 @@ export default function ChangePasswordPage() {
           <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Change Password 🔐</h1>
           <p className="text-base text-gray-600 dark:text-gray-300 mb-8">Update your password and manage security settings.</p>
           
-          {error && (
-            <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/40 dark:to-pink-950/40 border-2 border-red-200 dark:border-red-500/40 p-5 shadow-md transition-colors duration-300">
-              <div className="flex items-center justify-center">
-                <span className="text-2xl mr-3">⚠️</span>
-                <p className="text-base font-semibold text-red-800 dark:text-red-200">{error}</p>
-              </div>
-            </div>
-          )}
+          {error && <ErrorAlert message={error} />}
           
           {success && (
             <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-5 shadow-md transition-colors duration-300">

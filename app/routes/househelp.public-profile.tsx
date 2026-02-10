@@ -8,6 +8,7 @@ import ImageViewModal from '~/components/ImageViewModal';
 import { apiClient } from '~/utils/apiClient';
 import { MessageCircle, Heart, Briefcase } from 'lucide-react';
 import HireRequestModal from '~/components/modals/HireRequestModal';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface UserData {
   id?: string;
@@ -375,8 +376,8 @@ export default function HousehelpPublicProfile() {
   if (error || !profile) {
     return (
       <div className="max-w-2xl mx-auto mt-8">
-        <div className="p-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30">
-          <p className="font-semibold text-red-800 dark:text-red-400">{error || "Profile not found"}</p>
+        <div className="p-6 rounded-xl">
+          <ErrorAlert message={error || "Profile not found"} />
         </div>
       </div>
     );

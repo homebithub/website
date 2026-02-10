@@ -3,6 +3,7 @@ import { apiClient } from '~/utils/apiClient';
 import { API_ENDPOINTS } from '~/config/api';
 import { ChevronLeft, ChevronRight, Check, Briefcase, DollarSign, Calendar, Clock, FileText } from 'lucide-react';
 import CustomSelect from '~/components/ui/CustomSelect';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface ConversationHireWizardProps {
   househelpId: string;
@@ -371,11 +372,7 @@ export default function ConversationHireWizard({
       {renderStepIndicator()}
 
       {/* Error Message */}
-      {error && (
-        <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-        </div>
-      )}
+      {error && <ErrorAlert message={error} />}
 
       {/* Step Content */}
       <div className="mb-6">

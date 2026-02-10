@@ -3,6 +3,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { FcGoogle } from 'react-icons/fc';
 import { API_BASE_URL } from '~/config/api';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface WaitlistProps {
   isOpen: boolean;
@@ -327,20 +328,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   </div>
                 )}
 
-                {error && (
-                  <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-900/20 dark:to-pink-900/20 border-2 border-red-200 dark:border-red-700 p-5 shadow-md dark:shadow-glow-sm">
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <span className="text-xl">⚠️</span>
-                      </div>
-                      <div className="ml-4">
-                        <p className="text-base font-semibold text-red-800 dark:text-red-300">
-                          {error}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                {error && <ErrorAlert message={error} />}
 
                 {/* Google Sign-In Option */}
                 {isClient && (

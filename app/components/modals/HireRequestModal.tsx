@@ -4,6 +4,7 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { apiClient } from '~/utils/apiClient';
 import { API_ENDPOINTS } from '~/config/api';
 import CustomSelect from '~/components/ui/CustomSelect';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface HireRequestModalProps {
   isOpen: boolean;
@@ -199,11 +200,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
           )}
 
           {/* Error Message */}
-          {error && (
-            <div className="mx-6 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-              <p className="text-red-800 dark:text-red-200">{error}</p>
-            </div>
-          )}
+          {error && <div className="mx-6 mt-4"><ErrorAlert message={error} /></div>}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">

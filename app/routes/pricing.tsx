@@ -13,6 +13,7 @@ import {
   SparklesIcon
 } from '@heroicons/react/24/outline';
 import { Navigation } from "~/components/Navigation";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { useAuth } from "~/contexts/useAuth";
@@ -632,14 +633,7 @@ export default function Pricing() {
                           </ol>
                         </div>
 
-                        {errorMessage && (
-                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-                            <div className="flex items-start gap-2">
-                              <ExclamationTriangleIcon className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
-                              <p className="text-sm text-red-800 dark:text-red-300">{errorMessage}</p>
-                            </div>
-                          </div>
-                        )}
+                        {errorMessage && <ErrorAlert message={errorMessage} />}
 
                         <div className="flex gap-3 mt-6">
                           <button
@@ -733,16 +727,7 @@ export default function Pricing() {
                       <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
                         Payment Failed
                       </p>
-                      {errorMessage && (
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-4">
-                          <p className="text-sm text-red-800 dark:text-red-300 font-medium mb-2">
-                            Reason:
-                          </p>
-                          <p className="text-sm text-red-700 dark:text-red-400">
-                            {errorMessage}
-                          </p>
-                        </div>
-                      )}
+                      {errorMessage && <ErrorAlert message={errorMessage} title="Reason" className="mb-4" />}
                       <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 mb-4">
                         <p className="text-sm text-yellow-800 dark:text-yellow-300 mb-2">
                           <strong>Common reasons for failure:</strong>

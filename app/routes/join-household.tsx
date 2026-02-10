@@ -4,6 +4,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL } from "~/config/api";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 export default function JoinHouseholdPage() {
   const navigate = useNavigate();
@@ -154,11 +155,7 @@ export default function JoinHouseholdPage() {
                 </div>
 
                 {/* Error Message */}
-                {error && (
-                  <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-xl">
-                    <p className="text-sm text-red-600 dark:text-red-400">⚠️ {error}</p>
-                  </div>
-                )}
+                {error && <ErrorAlert message={error} />}
 
                 {/* Validation Info */}
                 {validationInfo && (

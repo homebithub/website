@@ -6,6 +6,7 @@ import { Loading } from '~/components/Loading';
 import { useAuth } from '~/contexts/useAuth';
 import { HouseholdCodePrompt } from '~/components/household/HouseholdCodePrompt';
 import { joinHousehold } from '~/utils/householdApi';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 export default function HouseholdSetupPage() {
   const { user, loading: authLoading } = useAuth();
@@ -166,14 +167,7 @@ export default function HouseholdSetupPage() {
       <main className="flex-1 flex items-center justify-center px-4 py-8">
         {error && (
           <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
-            <div className="p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 rounded-xl shadow-lg">
-              <div className="flex items-center">
-                <svg className="w-6 h-6 text-red-600 dark:text-red-400 mr-3" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-                </svg>
-                <p className="text-red-800 dark:text-red-300 font-semibold">{error}</p>
-              </div>
-            </div>
+            <ErrorAlert message={error} />
           </div>
         )}
 

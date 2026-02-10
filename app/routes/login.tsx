@@ -12,6 +12,7 @@ import { handleApiError } from '~/utils/errorMessages';
 import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 export const meta = () => [
     { title: "Log In — Homebit" },
@@ -252,15 +253,7 @@ export default function LoginPage() {
           
           {/* Login Error Alert */}
           {loginError && (
-            <div className="mb-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 p-4 shadow-md">
-              <div className="flex items-start">
-                <span className="text-2xl mr-3">⚠️</span>
-                <div className="flex-1">
-                  <p className="text-base font-semibold text-red-700 dark:text-red-400 mb-1">Login Failed</p>
-                  <p className="text-sm text-red-600 dark:text-red-300">{loginError}</p>
-                </div>
-              </div>
-            </div>
+            <ErrorAlert title="Login Failed" message={loginError} />
           )}
 
           {loading && (

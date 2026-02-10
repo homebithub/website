@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router";
 import { API_ENDPOINTS } from '~/config/api';
 import { apiClient } from '~/utils/apiClient';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
   Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User
@@ -375,11 +376,7 @@ export default function HousehelpHiringHistory() {
         </div>
 
         {/* Error State */}
-        {error && (
-          <div className="mx-6 mt-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-            <p className="text-red-800 dark:text-red-200">{error}</p>
-          </div>
-        )}
+        {error && <div className="mx-6 mt-4"><ErrorAlert message={error} /></div>}
 
         {/* Loading State */}
         {loading && (
