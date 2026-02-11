@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router';
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 type PetPreference = 'with_pets' | 'no_pets';
 type PetType = 'dog' | 'cat' | 'bird' | 'fish' | 'reptile' | 'small_mammal' | 'other';
@@ -134,11 +135,7 @@ const WorkWithPets = () => {
             
             {error && <ErrorAlert message={error} />}
             
-            {success && (
-                <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
-                    ✓ {success}
-                </div>
-            )}
+            {success && <SuccessAlert message={success} />}
             
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div>

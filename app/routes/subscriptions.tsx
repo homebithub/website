@@ -14,6 +14,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { Navigation } from "~/components/Navigation";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
@@ -1034,9 +1035,7 @@ export default function SubscriptionsPage() {
 
                           {/* Success/Error Message */}
                           {receiptMessage && receiptMessage.type === 'success' && (
-                            <div className="rounded-lg p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
-                              <p className="text-sm text-green-800 dark:text-green-300">{receiptMessage.text}</p>
-                            </div>
+                            <SuccessAlert message={receiptMessage.text} />
                           )}
                           {receiptMessage && receiptMessage.type !== 'success' && (
                             <ErrorAlert message={receiptMessage.text} />

@@ -126,7 +126,7 @@ export function Navigation() {
                 const data = await res.json();
                 const count = profileType === 'househelp'
                     ? (data.total || 0) // Pending requests for househelps
-                    : (data.data?.filter((req: any) => req.status === 'pending' || req.status === 'accepted').length || 0); // Active requests for households
+                    : (Array.isArray(data.data) ? data.data.filter((req: any) => req.status === 'pending' || req.status === 'accepted').length : 0); // Active requests for households
                 setHireRequestCount(count);
             }
         } catch (error) {

@@ -2,6 +2,7 @@ import React, {useState, useRef, useEffect} from "react";
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 interface LocationSuggestion {
     name: string;
@@ -253,11 +254,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                         </div>
                     )}
                 </div>
-                {submitStatus && submitStatus.success && (
-                    <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
-                        ✓ {submitStatus.message}
-                    </div>
-                )}
+                {submitStatus && submitStatus.success && <SuccessAlert message={submitStatus.message} />}
                 {submitStatus && !submitStatus.success && (
                     <ErrorAlert message={submitStatus.message} />
                 )}

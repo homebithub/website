@@ -5,6 +5,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL } from "~/config/api";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 export default function JoinHouseholdPage() {
   const navigate = useNavigate();
@@ -108,21 +109,16 @@ export default function JoinHouseholdPage() {
             </div>
 
             {success ? (
-              <div className="bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-500/30 rounded-2xl p-8 text-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-800/30 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <svg className="w-8 h-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+              <div className="space-y-6">
+                <SuccessAlert message="You have successfully joined the household." title="Successfully Joined!" />
+                <div className="text-center">
+                  <button
+                    onClick={() => navigate('/household/members')}
+                    className="px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold"
+                  >
+                    View Household Members
+                  </button>
                 </div>
-                <h2 className="text-2xl font-bold text-green-900 dark:text-green-100 mb-2">
-                  Request Sent Successfully!
-                </h2>
-                <p className="text-green-700 dark:text-green-300">
-                  Your request has been sent to the household owner for approval. You'll be notified once they approve your request.
-                </p>
-                <p className="text-sm text-green-600 dark:text-green-400 mt-4">
-                  Redirecting to your profile...
-                </p>
               </div>
             ) : (
               <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-xl border-2 border-purple-200 dark:border-purple-500/30 p-8">

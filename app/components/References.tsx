@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 interface Reference {
   name: string;
@@ -263,11 +264,7 @@ const References: React.FC = () => {
           </button>
         )}
 
-        {success && (
-          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
-            ✓ {success}
-          </div>
-        )}
+        {success && <SuccessAlert message={success} />}
 
         {error && <ErrorAlert message={error} />}
 

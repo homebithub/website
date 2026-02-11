@@ -93,11 +93,14 @@ export default function HouseholdProfile() {
         });
         if (!profileRes.ok) throw new Error("Failed to fetch profile");
         const profileData = await profileRes.json();
+        console.log('Profile data:', profileData);
         setProfile(profileData);
 
         // Load existing invitation code if available
         try {
-          const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/${profileData.id}/invitation-code`, {
+          const householdId = profileData.id || profileData.household?.id || profileData.data?.id;
+          console.log('Household ID:', householdId);
+          const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/invitations/${householdId}/code`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (inviteRes.ok) {
@@ -109,7 +112,7 @@ export default function HouseholdProfile() {
           console.log("No existing invitation code or error loading it:", err);
         }
 
-        const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household/kids`, {
+        const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (kidsRes.ok) {
@@ -117,7 +120,7 @@ export default function HouseholdProfile() {
           setKids(kidsData);
         }
 
-        const petsRes = await fetch(`${API_BASE_URL}/api/v1/household/pets`, {
+        const petsRes = await fetch(`${API_BASE_URL}/api/v1/pets/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (petsRes.ok) {

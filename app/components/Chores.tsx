@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 const CHORES = [
   "Laundry",
@@ -219,11 +220,7 @@ const Chores: React.FC = () => {
           </div>
         </div>
       )}
-      {message && message.includes('successfully') && (
-        <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
-          ✓ {message}
-        </div>
-      )}
+      {message && message.includes('successfully') && <SuccessAlert message={message} />}
       {message && !message.includes('successfully') && (
         <ErrorAlert message={message} />
       )}

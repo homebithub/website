@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const TIMES = ["morning", "afternoon", "evening"];
@@ -376,11 +377,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
         />
       </div>
       {error && <ErrorAlert message={error} />}
-      {success && (
-        <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
-          ✓ {success}
-        </div>
-      )}
+      {success && <SuccessAlert message={success} />}
       <button
         type="button"
         className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"

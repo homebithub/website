@@ -10,6 +10,7 @@ import { API_BASE_URL } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 export default function VerifyOtpPage() {
   // UI state for changing phone
@@ -467,7 +468,7 @@ export default function VerifyOtpPage() {
               />
               {otpError && <ErrorAlert message={otpError} />}
               {error && <ErrorAlert message={error} />}
-              {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-4 shadow-md"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800">OTP verified! ✔️</p></div></div>}
+              {success && <SuccessAlert message="OTP verified! 🎉" />}
               <button
                 type="submit"
                 className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
