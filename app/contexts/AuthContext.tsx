@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
-import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/types/users";
+import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/routes/login";
 import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
 import { migratePreferences } from '~/utils/preferencesApi';
 import { extractErrorMessage } from '~/utils/errorMessages';
+import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
 
 interface User {
@@ -66,7 +67,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (response.ok) {
         const user = await response.json();
-        setUser(user);
+        setUser({ token: localStorage.getItem("token") || "", user } as LoginResponse);
         localStorage.setItem("user_object", JSON.stringify(user));
       } else {
         console.log("not logged in")
@@ -86,12 +87,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
+      // Normalize phone number to international format
+      const normalizedPhone = normalizeKenyanPhoneNumber(phone);
+
       const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ phone, password } as LoginRequest),
+        body: JSON.stringify({ phone: normalizedPhone, password } as LoginRequest),
       });
 
       const data: LoginResponse | LoginErrorResponse = await response.json();
@@ -101,8 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       localStorage.setItem("token", (data as LoginResponse).token);
-      const userData = {...data as LoginResponse};
-      delete (userData as any).token;
+      const userData = (data as LoginResponse).user;
       localStorage.setItem("user_object", JSON.stringify(userData));
       localStorage.setItem("profile_type", userData.profile_type || "");
       setUser(data as LoginResponse);
@@ -129,7 +132,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Check if profile setup is complete
       if (profileType === "household" || profileType === "househelp") {
         try {
-          const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+          const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
             headers: {
               'Authorization': `Bearer ${(data as LoginResponse).token}`
             }
@@ -137,8 +140,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
           if (setupResponse.ok) {
             const setupData = await setupResponse.json();
-            const isComplete = setupData.is_complete || false;
-            const lastStep = setupData.last_completed_step || 0;
+            // Handle response structure: { data: { last_completed_step: ..., status: ... } }
+            const progressData = setupData.data || {};
+            const isComplete = progressData.status === 'completed';
+            const lastStep = progressData.last_completed_step || 0;
 
             console.log("Profile setup status:", { isComplete, lastStep });
 
@@ -152,6 +157,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               navigate(setupRoute);
               return;
             }
+          } else if (setupResponse.status === 404) {
+            // No profile setup record exists - user hasn't started setup
+            console.log("No profile setup record found, starting from step 1");
+            const setupRoute = profileType === "household" 
+              ? `/profile-setup/household?step=1`
+              : `/profile-setup/househelp?step=1`;
+            navigate(setupRoute);
+            return;
           }
         } catch (err) {
           console.error("Failed to check profile setup status:", err);

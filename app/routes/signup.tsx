@@ -3,7 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
-import { signupSchema, validateForm, validateField } from '~/utils/validation';
+import { signupSchema, validateForm, validateField, normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { handleApiError, extractErrorMessage } from '~/utils/errorMessages';
 import { useAuth } from '~/contexts/useAuth';
 import { Loading } from '~/components/Loading';
@@ -21,7 +21,7 @@ export const meta = () => [
     { property: "og:title", content: "Sign Up — Homebit" },
     { property: "og:url", content: "https://homebit.co.ke/signup" },
 ];
-import type { LoginResponse as AuthLoginResponse } from "~/types/users";
+import type { LoginResponse as AuthLoginResponse } from "~/routes/login";
 
 // Types for request and response
 export type SignupRequest = {
@@ -124,7 +124,7 @@ export default function SignupPage() {
     useEffect(() => {
         // If user is already authenticated, redirect them
         if (user) {
-            const profileType = user.profile_type;
+            const profileType = user.user?.profile_type;
             // Bureau users should not access regular signup flow
             if (profileType === "bureau") {
                 navigate("/");
@@ -288,8 +288,8 @@ export default function SignupPage() {
                 if (data.token) {
                     // Store auth data in the same format as the regular login flow
                     localStorage.setItem('token', data.token);
-                    const userData: any = { ...data };
-                    delete userData.token;
+                    // Extract user object from nested structure
+                    const userData = data.user || data;
                     localStorage.setItem('user_object', JSON.stringify(userData));
                     localStorage.setItem('profile_type', userData.profile_type || form.profile_type);
                     try { localStorage.setItem('userType', userData.profile_type || ''); } catch {}
@@ -318,6 +318,14 @@ export default function SignupPage() {
                                     navigate(setupRoute);
                                     return;
                                 }
+                            } else if (setupResponse.status === 404) {
+                                // No profile setup record exists - user hasn't started setup
+                                console.log("No profile setup record found, starting from step 1");
+                                const setupRoute = profileType === 'household'
+                                    ? `/profile-setup/household?step=1`
+                                    : `/profile-setup/househelp?step=1`;
+                                navigate(setupRoute);
+                                return;
                             }
                         } catch (err) {
                             console.error('Failed to check profile setup status after Google signup:', err);
@@ -333,6 +341,9 @@ export default function SignupPage() {
             
             // Regular signup flow
             let payload = { ...form };
+            // Normalize phone number to international format
+            payload.phone = normalizeKenyanPhoneNumber(form.phone);
+            
             if (form.profile_type === 'househelp' && bureauId) {
                 payload = { ...payload, bureau_id: bureauId };
             }

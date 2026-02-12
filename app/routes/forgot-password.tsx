@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
-import { forgotPasswordSchema, validateForm, validateField } from '~/utils/validation';
+import { forgotPasswordSchema, validateForm, validateField, normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { API_BASE_URL } from '~/config/api';
 import { extractErrorMessage } from '~/utils/errorMessages';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -71,10 +71,13 @@ export default function ForgotPasswordPage() {
     setFieldError(null);
     
     try {
+      // Normalize phone number to international format
+      const normalizedPhone = normalizeKenyanPhoneNumber(input);
+
       const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: input }),
+        body: JSON.stringify({ phone: normalizedPhone }),
       });
       
       if (!res.ok) {

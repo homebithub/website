@@ -45,7 +45,25 @@ function HouseholdProfileSetupContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
-  const { saveProfileToBackend, loadProfileFromBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
+  const { saveProfileToBackend, loadProfileFromBackend, updateStepData, saveStepToBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
+  
+  const currentStepData = STEPS[currentStep];
+
+  const handleLocationSaved = async (location: any) => {
+    const locationData = { place: location.name, mapbox_id: location.mapbox_id };
+    
+    // Update local state
+    updateStepData('location', locationData);
+    
+    // Also save to backend step tracking
+    try {
+      // Find the step index for 'location'
+      const locationStepIndex = STEPS.findIndex(step => step.id === 'location');
+      await saveStepToBackend('location', locationData, locationStepIndex);
+    } catch (error) {
+      console.error('Failed to save location step data:', error);
+    }
+  };
   
   // Check if user is editing from profile page using location state (secure, can't be manipulated)
   const isEditMode = location.state?.fromProfile === true;
@@ -357,6 +375,8 @@ function HouseholdProfileSetupContent() {
                   }} />
                 ) : STEPS[currentStep].id === 'nannytype' ? (
                   <CurrentComponent userType="household" />
+                ) : STEPS[currentStep].id === 'location' ? (
+                  <CurrentComponent onSaved={handleLocationSaved} />
                 ) : (
                   <CurrentComponent />
                 )}
@@ -399,7 +419,12 @@ function HouseholdProfileSetupContent() {
 
                   <button
                     onClick={handleNext}
-                    className="flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
+                    disabled={saving}
+                    className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
+                      saving 
+                        ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                        : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
+                    }`}
                   >
                     {currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →'}
                     {currentStep !== STEPS.length - 1 && (
@@ -438,7 +463,11 @@ function HouseholdProfileSetupContent() {
                 <button
                   onClick={handleNext}
                   disabled={saving}
-                  className="flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                  className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
+                    saving 
+                      ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                      : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
+                  }`}
                 >
                   {saving ? '✨ Saving...' : (currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →')}
                   {currentStep !== STEPS.length - 1 && !saving && (

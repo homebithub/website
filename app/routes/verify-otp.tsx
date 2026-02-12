@@ -284,6 +284,14 @@ export default function VerifyOtpPage() {
                   navigate(setupRoute);
                   return;
                 }
+              } else if (setupResponse.status === 404) {
+                // No profile setup record exists - user hasn't started setup
+                console.log("[VERIFY-OTP] No profile setup record found, starting from step 1");
+                const setupRoute = profileType === 'household'
+                  ? `/profile-setup/household?step=1`
+                  : `/profile-setup/househelp?step=1`;
+                navigate(setupRoute);
+                return;
               }
             }
           } catch (err) {

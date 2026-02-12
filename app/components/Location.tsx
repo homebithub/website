@@ -12,9 +12,10 @@ interface LocationSuggestion {
 
 interface LocationProps {
     onSelect?: (suggestion: LocationSuggestion) => void;
+    onSaved?: (location: LocationSuggestion) => void;
 }
 
-const Location: React.FC<LocationProps> = ({onSelect}) => {
+const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
     const [input, setInput] = useState("");
     const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -64,7 +65,8 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     }, [baseUrl]);
 
     useEffect(() => {
-        if (input.length > 2) {
+        // Don't search if we just selected a location or if input is too short
+        if (input.length > 2 && (!selectedLocation || input !== selectedLocation.name)) {
             setLoading(true);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(() => {
@@ -75,8 +77,9 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                   },
                 })
                   .then((res) => res.json())
-                  .then((data: LocationSuggestion[]) => {
-                    setSuggestions(data);
+                  .then((response) => {
+                    const data = response.data?.data || response.data || response;
+                    setSuggestions(Array.isArray(data) ? data : []);
                     setShowDropdown(true);
                   })
                   .catch(() => setSuggestions([]))
@@ -188,6 +191,12 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                 });
                 // Save the location to disable button
                 setSavedLocation(selectedLocation);
+                
+                // Notify parent that location was saved
+                if (onSaved) {
+                    onSaved(selectedLocation);
+                }
+
                 // Clear the status after 3 seconds
                 setTimeout(() => setSubmitStatus(null), 3000);
             } else {

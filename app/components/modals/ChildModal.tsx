@@ -30,12 +30,19 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
 
   // Reset form when modal is opened/closed or initialData changes
   useEffect(() => {
+    console.log('ChildModal - isOpen:', isOpen);
+    console.log('ChildModal - initialData:', initialData);
     if (isOpen) {
       setGender(initialData?.gender || '');
       setDateOfBirth(initialData?.date_of_birth || initialData?.dob || '');
       setTraits(initialData?.traits || []);
       setError('');
       setOtherTrait('');
+      console.log('ChildModal - Form initialized with:', {
+        gender: initialData?.gender || '',
+        dateOfBirth: initialData?.date_of_birth || initialData?.dob || '',
+        traits: initialData?.traits || []
+      });
     }
   }, [isOpen, initialData]);
 
@@ -153,7 +160,9 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
 
         <div className="flex items-center gap-2 mb-6">
           <span className="text-xl">👶🏿</span>
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Add Child</h3>
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+            {initialData ? 'Edit Child' : 'Add Child'}
+          </h3>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -278,7 +287,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
                 </svg>
                 Saving...
               </>
-            ) : 'Save Child'}
+            ) : (initialData ? 'Update Child' : 'Add Child')}
           </button>
         </div>
       </form>

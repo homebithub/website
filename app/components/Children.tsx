@@ -43,7 +43,10 @@ const Children: React.FC = () => {
         });
         
         if (kidsRes.ok) {
-          const kids = await kidsRes.json();
+          const kidsResponse = await kidsRes.json();
+          const kids = kidsResponse.data?.data || [];
+          console.log('Loaded children response:', kidsResponse);
+          console.log('Extracted kids array:', kids);
           if (kids && kids.length > 0) {
             setChildrenList(kids);
             setSelected("have_or_expecting");

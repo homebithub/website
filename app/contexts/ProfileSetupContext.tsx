@@ -141,24 +141,38 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
       });
 
+      // Fetch progress tracking data
+      const progressResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      let lastCompleted = 0;
+      if (progressResponse.ok) {
+        const progressData = await progressResponse.json();
+        lastCompleted = progressData.last_completed_step || 0;
+      }
+
       if (stepsResponse.ok) {
-        const stepsData = await stepsResponse.json();
-        console.log('Steps tracking data:', stepsData);
+        const responseData = await stepsResponse.json();
+        const steps = Array.isArray(responseData.data?.data) ? responseData.data.data : [];
+        console.log('Steps tracking data:', steps);
         
-        // Set last completed step from tracking data
-        setLastCompletedStep(stepsData.last_completed_step || 0);
+        // Set last completed step from tracking data if available, otherwise use progress
+        setLastCompletedStep(lastCompleted);
         
         // Reconstruct profile data from steps
         const reconstructed: ProfileSetupData = {};
-        stepsData.steps?.forEach((step: any) => {
-          if (step.data && step.is_completed) {
+        steps.forEach((step: any) => {
+          if (step.data && (step.is_completed || step.is_skipped)) {
             reconstructed[step.step_id as keyof ProfileSetupData] = step.data;
           }
         });
         
         setProfileData(reconstructed);
         console.log('Profile loaded from steps tracking', { 
-          lastCompletedStep: stepsData.last_completed_step,
+          lastCompletedStep: lastCompleted,
           profileData: reconstructed 
         });
       } else if (stepsResponse.status === 404) {

@@ -73,7 +73,7 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
       }
 
       // Check profile setup status
-      const response = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -81,8 +81,10 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
 
       if (response.ok) {
         const data = await response.json();
-        const isComplete = data.is_complete || false;
-        const lastStep = data.last_completed_step || 0;
+        // Handle response structure: { data: { last_completed_step: ..., status: ... } }
+        const progressData = data.data || {};
+        const isComplete = progressData.status === 'completed';
+        const lastStep = progressData.last_completed_step || 0;
 
         console.log('ProfileSetupGuard - Setup status:', { isComplete, lastStep });
 
@@ -93,13 +95,11 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
             : `/profile-setup/househelp?step=${lastStep + 1}`;
 
           console.log('ProfileSetupGuard - Redirecting to:', setupRoute);
-          navigate(setupRoute, { replace: true });
-          return;
+          return setupRoute;
         }
-
-        setIsSetupComplete(true);
       } else if (response.status === 404) {
-        // No setup tracking found, redirect to start of setup
+        // No profile setup record exists - user hasn't started setup
+        console.log("ProfileSetupGuard - No profile setup record found, starting from step 1");
         const setupRoute = profileType === 'household'
           ? '/profile-setup/household?step=1'
           : '/profile-setup/househelp?step=1';

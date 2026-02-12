@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate, Form } from "react-router";
 import { useAuth } from "~/contexts/useAuth";
-import { Error } from "~/components/Error";
+import { Error as ErrorComponent } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -118,6 +118,14 @@ export default function LoginPage() {
                   navigate(setupRoute, { replace: true });
                   return;
                 }
+              } else if (setupResponse.status === 404) {
+                // No profile setup record exists - user hasn't started setup
+                console.log("No profile setup record found, starting from step 1");
+                const setupRoute = profileType === 'household'
+                  ? `/profile-setup/household?step=1`
+                  : `/profile-setup/househelp?step=1`;
+                navigate(setupRoute, { replace: true });
+                return;
               }
             } catch (err) {
               console.error('Failed to check profile setup status after Google login:', err);

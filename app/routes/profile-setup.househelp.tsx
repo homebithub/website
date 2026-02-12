@@ -82,12 +82,31 @@ function HousehelpProfileSetupContent() {
   const { 
     profileData, 
     updateStepData, 
+    saveStepToBackend,
     saveProfileToBackend, 
     loadProfileFromBackend,
     lastCompletedStep,
     isLoading, 
     error 
   } = useProfileSetup();
+
+  const currentStepData = STEPS[currentStep];
+
+  const handleLocationSaved = async (location: any) => {
+    const locationData = { place: location.name, mapbox_id: location.mapbox_id };
+    
+    // Update local state
+    updateStepData('location', locationData);
+    
+    // Also save to backend step tracking
+    try {
+      // Find the step index for 'location'
+      const locationStepIndex = STEPS.findIndex(step => step.id === 'location');
+      await saveStepToBackend('location', locationData, locationStepIndex);
+    } catch (error) {
+      console.error('Failed to save location step data:', error);
+    }
+  };
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -417,6 +436,8 @@ function HousehelpProfileSetupContent() {
                   />
                 ) : ['bio', 'nannytype'].includes(STEPS[currentStep].id) ? (
                   <CurrentComponent userType="househelp" />
+                ) : STEPS[currentStep].id === 'location' ? (
+                  <CurrentComponent onSaved={handleLocationSaved} />
                 ) : (
                   <CurrentComponent />
                 )}
@@ -460,7 +481,11 @@ function HousehelpProfileSetupContent() {
                   <button
                     onClick={handleNext}
                     disabled={isSaving}
-                    className="flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
+                      isSaving 
+                        ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                        : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
+                    }`}
                   >
                     {isSaving ? '✨ Saving...' : (currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →')}
                     {currentStep !== STEPS.length - 1 && !isSaving && (
@@ -499,7 +524,11 @@ function HousehelpProfileSetupContent() {
                 <button
                   onClick={handleNext}
                   disabled={isSaving}
-                  className="flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                  className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
+                    isSaving 
+                      ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                      : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
+                  }`}
                 >
                   {isSaving ? '✨ Saving...' : (currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →')}
                   {currentStep !== STEPS.length - 1 && !isSaving && (
