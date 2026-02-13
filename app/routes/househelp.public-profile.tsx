@@ -391,59 +391,59 @@ export default function HousehelpPublicProfile() {
           <div className={`max-w-6xl mx-auto px-4 pb-6 ${isEmbed ? 'pt-4' : 'pt-6 sm:pt-8'}`}>
             {/* Header (hidden in embed) */}
             {!isEmbed && (
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 text-white rounded-t-3xl p-4 sm:p-8 shadow-lg border border-white/10 dark:border-purple-500/20">
-              <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="space-y-4">
+            <div className="rounded-2xl p-4 sm:p-6 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 mb-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="space-y-3">
                     {shouldShowBackButton && (
                       <button
                         onClick={isViewingOther ? handleBackNavigation : () => navigate('/househelp/profile')}
-                        className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold transition-colors text-sm sm:text-base"
+                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-semibold transition-colors text-xs"
                       >
                         ← {backButtonText}
                       </button>
                     )}
                     <div>
-                      <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-3">
+                      <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
                         {((profile.user?.first_name || profile.first_name) || (profile.user?.last_name || profile.last_name))
                           ? `${profile.user?.first_name || profile.first_name || ''} ${profile.user?.last_name || profile.last_name || ''}`.trim()
                           : 'Househelp Profile'}
                       </h1>
                       {profile['househelp-type'] && (
-                        <p className="text-white/80 capitalize">{profile['househelp-type']}</p>
+                        <p className="text-xs text-gray-600 dark:text-gray-300 capitalize mt-1">{profile['househelp-type']}</p>
                       )}
                     </div>
                   </div>
 
                   {isViewingOther && (
-                    <div className="flex items-center gap-3 sm:gap-4 self-start lg:self-auto">
+                    <div className="flex items-center gap-2 sm:gap-3 self-start lg:self-auto">
                       <button
                         onClick={handleShortlistToggle}
                         disabled={actionLoading === 'shortlist'}
                         aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
-                        className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all ${
+                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shadow transition-all ${
                           isShortlisted
                             ? 'bg-pink-500 border-pink-200 text-white hover:bg-pink-600'
-                            : 'bg-white/20 border-white/40 text-white hover:bg-white/30'
+                            : 'bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-200'
                         } ${actionLoading === 'shortlist' ? 'opacity-70 cursor-not-allowed' : ''}`}
                       >
-                        <Heart className="w-5 h-5" />
+                        <Heart className="w-4 h-4" />
                       </button>
                       <button
                         onClick={handleChat}
                         disabled={actionLoading === 'chat'}
                         aria-label="Chat"
-                        className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all bg-white text-purple-600 ${
+                        className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shadow transition-all bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 ${
                           actionLoading === 'chat' ? 'opacity-70 cursor-not-allowed' : 'hover:scale-105'
                         }`}
                       >
-                        <MessageCircle className="w-5 h-5" />
+                        <MessageCircle className="w-4 h-4" />
                       </button>
                       <button
                         onClick={() => setIsHireModalOpen(true)}
-                        className="px-4 py-1 rounded-full bg-green-500 text-white font-semibold shadow-lg hover:bg-green-600 transition-all flex items-center gap-2"
+                        className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg flex items-center gap-2"
                       >
-                        <Briefcase className="w-5 h-5" />
+                        <Briefcase className="w-4 h-4" />
                         Hire
                       </button>
                     </div>
@@ -455,7 +455,7 @@ export default function HousehelpPublicProfile() {
 
             {/* Photo Gallery */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📸 Photo Gallery</h2>
+              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📸 Photo Gallery</h2>
               {profile.photos && profile.photos.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {profile.photos.map((photo, idx) => (
@@ -494,16 +494,16 @@ export default function HousehelpPublicProfile() {
 
             {/* Personal Information */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">👤 Personal Information</h2>
+              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">👤 Personal Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Gender</span>
-                  <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.gender || 'Not specified'}</p>
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Gender</span>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.gender || 'Not specified'}</p>
                 </div>
                 {profile.date_of_birth && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Age</span>
-                    <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Age</span>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
                       {Math.floor(
                         (new Date().getTime() - new Date(profile.date_of_birth ?? '').getTime()) /
                           (365.25 * 24 * 60 * 60 * 1000)
@@ -514,26 +514,26 @@ export default function HousehelpPublicProfile() {
                 )}
                 {profile.religion && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Religion</span>
-                    <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.religion}</p>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Religion</span>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.religion}</p>
                   </div>
                 )}
                 {profile.marital_status && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Marital Status</span>
-                    <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.marital_status}</p>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Marital Status</span>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.marital_status}</p>
                   </div>
                 )}
                 {profile.education_level && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Education Level</span>
-                    <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.education_level}</p>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Education Level</span>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.education_level}</p>
                   </div>
                 )}
                 {profile.has_kids !== undefined && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Has Children</span>
-                    <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.has_kids ? 'Yes' : 'No'}</p>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Has Children</span>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.has_kids ? 'Yes' : 'No'}</p>
                   </div>
                 )}
               </div>
@@ -542,24 +542,24 @@ export default function HousehelpPublicProfile() {
             {/* Location & Contact Area */}
             {(profile.location || profile.address || profile.town) && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📍 Location</h2>
+                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📍 Location</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {profile.location?.place && (
                     <div>
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Area</span>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.location.place}</p>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Area</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.location.place}</p>
                     </div>
                   )}
                   {profile.town && (
                     <div>
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Town</span>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.town}</p>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Town</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.town}</p>
                     </div>
                   )}
                   {profile.address && (
                     <div className="md:col-span-2">
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Address</span>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.address}</p>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Address</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.address}</p>
                     </div>
                   )}
                 </div>
@@ -568,17 +568,17 @@ export default function HousehelpPublicProfile() {
 
             {/* Experience & Skills */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">💼 Experience & Skills</h2>
+              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">💼 Experience & Skills</h2>
               <div className="space-y-4">
                 <div>
-                  <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Years of Experience</span>
-                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100 mt-1">
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Years of Experience</span>
+                  <p className="text-sm font-bold text-purple-900 dark:text-purple-100 mt-1">
                     {profile.years_of_experience ? `${profile.years_of_experience} years` : 'Not specified'}
                   </p>
                 </div>
                 {profile.certifications && profile.certifications.trim() && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Certifications</span>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Certifications</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.certifications.split(',').map((cert, idx) => (
                         <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-xl font-medium">
@@ -590,7 +590,7 @@ export default function HousehelpPublicProfile() {
                 )}
                 {profile.languages && Array.isArray(profile.languages) && profile.languages.length > 0 && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Languages</span>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Languages</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.languages.map((lang, idx) => (
                         <span key={idx} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 rounded-xl font-medium">
@@ -602,7 +602,7 @@ export default function HousehelpPublicProfile() {
                 )}
                 {profile.skills && Array.isArray(profile.skills) && profile.skills.length > 0 && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Skills</span>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Skills</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.skills.map((skill, idx) => (
                         <span key={idx} className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 rounded-xl font-medium">
@@ -614,7 +614,7 @@ export default function HousehelpPublicProfile() {
                 )}
                 {profile.traits && Array.isArray(profile.traits) && profile.traits.length > 0 && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Personal Traits</span>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Personal Traits</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.traits.map((trait, idx) => (
                         <span key={idx} className="px-3 py-1 bg-pink-100 dark:bg-pink-900/30 text-pink-900 dark:text-pink-100 rounded-xl font-medium">
@@ -626,7 +626,7 @@ export default function HousehelpPublicProfile() {
                 )}
                 {profile.can_help_with && profile.can_help_with.trim() && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Can Help With</span>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Can Help With</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.can_help_with.split(',').map((item, idx) => (
                         <span key={idx} className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 rounded-xl font-medium">
@@ -642,7 +642,7 @@ export default function HousehelpPublicProfile() {
             {/* Certifications & Abilities */}
             {(profile.first_aid_certificate || profile.certificate_of_good_conduct || profile.can_drive) && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📜 Certifications & Abilities</h2>
+                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📜 Certifications & Abilities</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {profile.first_aid_certificate && (
                     <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
@@ -666,29 +666,29 @@ export default function HousehelpPublicProfile() {
             {/* Work with Children Details */}
             {profile.can_work_with_kid && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">👶 Working with Children</h2>
+                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">👶 Working with Children</h2>
                 <div className="space-y-4">
                   {profile.children_age_range && (
                     <div>
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Preferred Children Age Range</span>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.children_age_range}</p>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Children Age Range</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.children_age_range}</p>
                     </div>
                   )}
                   {profile.number_of_concurrent_children !== undefined && profile.number_of_concurrent_children > 0 && (
                     <div>
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Can Handle</span>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.number_of_concurrent_children} children at once</p>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Can Handle</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.number_of_concurrent_children} children at once</p>
                     </div>
                   )}
                   {profile.my_child_preference && (
                     <div>
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Child Preference</span>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.my_child_preference}</p>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Child Preference</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.my_child_preference}</p>
                     </div>
                   )}
                   {profile.talent_with_kids && Array.isArray(profile.talent_with_kids) && profile.talent_with_kids.length > 0 && (
                     <div>
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Special Talents with Kids</span>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Special Talents with Kids</span>
                       <div className="flex flex-wrap gap-2">
                         {profile.talent_with_kids.map((talent, idx) => (
                           <span key={idx} className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100 rounded-xl font-medium">
@@ -705,9 +705,9 @@ export default function HousehelpPublicProfile() {
             {/* Work with Pets Details */}
             {profile.can_work_with_pets && profile.pet_types && profile.pet_types.trim() && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">🐾 Working with Pets</h2>
+                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🐾 Working with Pets</h2>
                 <div>
-                  <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Comfortable with</span>
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Comfortable with</span>
                   <div className="flex flex-wrap gap-2">
                     {profile.pet_types.split(',').map((pet, idx) => (
                       <span key={idx} className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 rounded-xl font-medium">
@@ -722,37 +722,37 @@ export default function HousehelpPublicProfile() {
             {/* Household Preferences */}
             {(profile.preferred_household_size || profile.preferred_location_type || profile.preferred_family_type || profile.needs_accommodation) && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">🏠 Household Preferences</h2>
+                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🏠 Household Preferences</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {profile.preferred_household_size && (
                     <div>
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Preferred Household Size</span>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_household_size}</p>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Household Size</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_household_size}</p>
                     </div>
                   )}
                   {profile.preferred_location_type && (
                     <div>
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Preferred Location Type</span>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_location_type}</p>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Location Type</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_location_type}</p>
                     </div>
                   )}
                   {profile.preferred_family_type && (
                     <div>
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Preferred Family Type</span>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_family_type}</p>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Family Type</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_family_type}</p>
                     </div>
                   )}
                   {profile.needs_accommodation !== undefined && (
                     <div>
-                      <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Needs Accommodation</span>
-                      <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.needs_accommodation ? 'Yes' : 'No'}</p>
+                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Needs Accommodation</span>
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.needs_accommodation ? 'Yes' : 'No'}</p>
                     </div>
                   )}
                 </div>
                 {profile.work_environment_notes && (
                   <div className="mt-4">
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
-                    <p className="text-base text-gray-900 dark:text-gray-100 mt-1 whitespace-pre-wrap">{profile.work_environment_notes}</p>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
+                    <p className="text-sm text-gray-900 dark:text-gray-100 mt-1 whitespace-pre-wrap">{profile.work_environment_notes}</p>
                   </div>
                 )}
               </div>
@@ -760,7 +760,7 @@ export default function HousehelpPublicProfile() {
 
             {/* Work Preferences */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">⚙️ Work Preferences</h2>
+              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">⚙️ Work Preferences</h2>
               <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className={`p-4 rounded-xl ${profile.can_work_with_kid ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
@@ -796,15 +796,15 @@ export default function HousehelpPublicProfile() {
                 </div>
                 {profile.available_from && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">They are available from</span>
-                    <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">They are available from</span>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
                       {new Date(profile.available_from).toLocaleDateString()}
                     </p>
                   </div>
                 )}
                 {profile.off_days && profile.off_days.length > 0 && (
                   <div>
-                    <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Off Days</span>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Off Days</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.off_days.map((day, idx) => (
                         <span key={idx} className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100 rounded-xl font-medium">
@@ -820,7 +820,7 @@ export default function HousehelpPublicProfile() {
             {/* Availability Schedule */}
             {profile.availability && Object.keys(profile.availability).length > 0 && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📅 Weekly Availability</h2>
+                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📅 Weekly Availability</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {Object.entries(profile.availability).map(([day, times]) => {
                     const dayTimes = times as { morning?: boolean; afternoon?: boolean; evening?: boolean };
@@ -845,10 +845,10 @@ export default function HousehelpPublicProfile() {
 
             {/* Salary Expectations */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">💰 Salary Expectations</h2>
+              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">💰 Salary Expectations</h2>
               {profile.salary_expectation ? (
                 <div className="space-y-2">
-                  <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                  <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
                     KES {profile.salary_expectation.toLocaleString()}
                   </p>
                   {profile.salary_frequency && (
@@ -865,7 +865,7 @@ export default function HousehelpPublicProfile() {
             {/* References */}
             {profile.reference && profile.reference.trim() && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📝 References</h2>
+                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📝 References</h2>
                 {(() => {
                   try {
                     const parsedOnce = JSON.parse(profile.reference);
@@ -910,7 +910,7 @@ export default function HousehelpPublicProfile() {
 
             {/* Status & Verification */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">✅ Status & Verification</h2>
+              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">✅ Status & Verification</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {profile.status && (
                   <div className={`p-4 rounded-xl ${profile.status === 'active' ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
@@ -942,8 +942,8 @@ export default function HousehelpPublicProfile() {
             {/* Bio */}
             {profile.bio && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
-                <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Person</h2>
-                <p className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio}</p>
+                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Person</h2>
+                <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio}</p>
               </div>
             )}
           </div>

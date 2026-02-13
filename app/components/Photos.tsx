@@ -449,8 +449,8 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">{currentContent.title} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(Optional)</span></h2>
-      <p className="text-base text-gray-600 dark:text-gray-400 mb-2">
+      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">{currentContent.title} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(Optional)</span></h2>
+      <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
         {currentContent.description}
       </p>
       
@@ -508,7 +508,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
               />
             </svg>
-            <div className="text-purple-700 dark:text-purple-400 font-bold text-lg">
+            <div className="text-purple-700 dark:text-purple-400 font-bold text-sm">
               {currentContent.uploadText}
             </div>
             <div className="text-sm text-gray-600 dark:text-gray-400">
@@ -580,11 +580,11 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
             type="button"
             onClick={handleSkip}
             disabled={isSubmitting || isSkipping}
-            className="flex-1 px-8 py-1 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-400 font-bold text-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 px-8 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-400 font-bold text-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSkipping ? (
               <>
-                <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
@@ -600,11 +600,11 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
           <button
             type="submit"
             disabled={isSubmitting || isSkipping || images.length === 0}
-            className="flex-1 px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+            className="flex-1 px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
-                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>

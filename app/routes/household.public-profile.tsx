@@ -339,39 +339,39 @@ export default function HouseholdPublicProfile() {
           <div className="max-w-6xl mx-auto px-4">
             {/* Header (hidden in embed mode) */}
             {!isEmbed && (
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl shadow-lg border border-white/10 dark:border-purple-500/20">
-                <div className="flex flex-col gap-6">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-4">
+              <div className="rounded-2xl p-4 sm:p-6 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 mb-4">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-3">
                       {shouldShowBackButton && (
                         <button
                           onClick={handleBackNavigation}
-                          className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold transition-colors text-sm sm:text-base"
+                          className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-semibold transition-colors text-xs"
                         >
                           ← {backLabel}
                         </button>
                       )}
                       <div>
-                        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-3">
+                        <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
                           🏠 Household Profile
                         </h1>
                       </div>
                     </div>
 
                     {showActions && (
-                      <div className="flex items-center gap-3 sm:gap-4 self-start lg:self-auto">
+                      <div className="flex items-center gap-2 sm:gap-3 self-start lg:self-auto">
                         {canShortlist && (
                           <button
                             onClick={handleToggleShortlist}
                             disabled={actionLoading === 'shortlist'}
                             aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
-                            className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all ${
+                            className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shadow transition-all ${
                               isShortlisted
                                 ? 'bg-pink-500 border-pink-200 text-white hover:bg-pink-600'
-                                : 'bg-white/20 border-white/40 text-white hover:bg-white/30'
+                                : 'bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-200'
                             } ${actionLoading === 'shortlist' ? 'opacity-70 cursor-not-allowed' : ''}`}
                           >
-                            <Heart className="w-5 h-5" />
+                            <Heart className="w-4 h-4" />
                           </button>
                         )}
                         {canChat && (
@@ -379,24 +379,24 @@ export default function HouseholdPublicProfile() {
                             onClick={handleStartChat}
                             disabled={actionLoading === 'chat'}
                             aria-label="Chat"
-                            className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all bg-white text-purple-600 ${
+                            className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shadow transition-all bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 ${
                               actionLoading === 'chat' ? 'opacity-70 cursor-not-allowed' : 'hover:scale-105'
                             }`}
                           >
-                            <MessageCircle className="w-5 h-5" />
+                            <MessageCircle className="w-4 h-4" />
                           </button>
                         )}
                         {canInteract && (
                           <button
                             onClick={() => setIsInterestModalOpen(true)}
                             disabled={hasExpressedInterest}
-                            className={`px-4 py-1 rounded-full font-semibold shadow-lg transition-all flex items-center gap-2 ${
+                            className={`px-4 py-1.5 text-xs rounded-xl font-semibold shadow-lg transition-all flex items-center gap-2 ${
                               hasExpressedInterest
                                 ? 'bg-gray-400 text-white cursor-not-allowed'
-                                : 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
+                                : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                             }`}
                           >
-                            <HandHeart className="w-5 h-5" />
+                            <HandHeart className="w-4 h-4" />
                             {hasExpressedInterest ? 'Interest Sent' : 'Show Interest'}
                           </button>
                         )}
@@ -410,7 +410,7 @@ export default function HouseholdPublicProfile() {
       {/* Profile Photos */}
       {profile.photos && profile.photos.length > 0 && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📸 Home Photos</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📸 Home Photos</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {profile.photos.map((photo, idx) => (
               <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer" onClick={() => setSelectedImage(photo)}>
@@ -435,16 +435,16 @@ export default function HouseholdPublicProfile() {
 
       {/* House Size & Notes */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">🏠 House Information</h2>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🏠 House Information</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">House Size</span>
-            <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
+            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">House Size</span>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
           </div>
           {profile.household_notes && (
             <div className="md:col-span-2">
-              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
-              <p className="text-base text-gray-900 dark:text-gray-100 mt-1">{profile.household_notes}</p>
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
+              <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{profile.household_notes}</p>
             </div>
           )}
         </div>
@@ -452,7 +452,7 @@ export default function HouseholdPublicProfile() {
 
       {/* Service Type */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">👥 Service Type Needed</h2>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">👥 Service Type Needed</h2>
         <div className="space-y-3">
           {profile.needs_live_in && (
             <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
@@ -470,8 +470,8 @@ export default function HouseholdPublicProfile() {
           )}
           {profile.available_from && (
             <div>
-              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">They need your availability from</span>
-              <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString()}</p>
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">They need your availability from</span>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString()}</p>
             </div>
           )}
         </div>
@@ -479,7 +479,7 @@ export default function HouseholdPublicProfile() {
 
       {/* Children */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">👶 Children</h2>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">👶 Children</h2>
         {kids.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {kids.map((kid, idx) => (
@@ -503,7 +503,7 @@ export default function HouseholdPublicProfile() {
 
       {/* Pets */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">🐾 Pets</h2>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🐾 Pets</h2>
         {pets.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {pets.map((pet, idx) => (
@@ -520,7 +520,7 @@ export default function HouseholdPublicProfile() {
 
       {/* Chores */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">🧹 Chores & Duties</h2>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🧹 Chores & Duties</h2>
         {profile.chores && profile.chores.length > 0 ? (
           <div className="flex flex-wrap gap-2">
             {profile.chores.map((chore, idx) => (
@@ -536,10 +536,10 @@ export default function HouseholdPublicProfile() {
 
       {/* Budget */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">💰 Budget</h2>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">💰 Budget</h2>
         {profile.budget_min || profile.budget_max ? (
           <div className="space-y-2">
-            <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+            <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
               {profile.budget_min && profile.budget_max ? `KES ${profile.budget_min.toLocaleString()} - ${profile.budget_max.toLocaleString()}` : profile.budget_min ? `KES ${profile.budget_min.toLocaleString()}+` : 'Negotiable'}
             </p>
             {profile.salary_frequency && (
@@ -559,14 +559,14 @@ export default function HouseholdPublicProfile() {
 
       {/* Religion */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">🙏 Religion & Beliefs</h2>
-        <p className="text-base font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🙏 Religion & Beliefs</h2>
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
       </div>
 
       {/* Bio */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Household</h2>
-        <p className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Household</h2>
+        <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
       </div>
     </div>
       </main>

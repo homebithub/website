@@ -220,32 +220,32 @@ const Pets: React.FC = () => {
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-8">
-      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">🐾 Pets</h2>
-      <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
+      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🐾 Pets</h2>
+      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
         Do you have any pets that need care?
       </p>
       
       <div className="flex flex-col gap-4">
-        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${hasPet === "no" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
+        <label className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${hasPet === "no" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
             type="radio"
             name="hasPet"
             value="no"
             checked={hasPet === "no"}
             onChange={() => setHasPet("no")}
-            className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
+            className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
           />
           <span className="flex-1">❌ I do not have pets</span>
         </label>
         
-        <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${hasPet === "yes" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
+        <label className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${hasPet === "yes" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
             type="radio"
             name="hasPet"
             value="yes"
             checked={hasPet === "yes"}
             onChange={() => setHasPet("yes")}
-            className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
+            className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
           />
           <span className="flex-1">✅ I have pets</span>
         </label>
@@ -254,7 +254,7 @@ const Pets: React.FC = () => {
       {/* Pet Table - Show if user has pets */}
       {hasPet === "yes" && pets.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-4">Your Pets</h3>
+          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-3">Your Pets</h3>
           <div className="overflow-x-auto rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
             <table className="w-full">
               <thead className="bg-purple-50 dark:bg-purple-900/20">
@@ -317,7 +317,7 @@ const Pets: React.FC = () => {
         <button
           type="button"
           onClick={handleAddPet}
-          className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
+          className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
         >
           ➕ Add Pet
         </button>
@@ -339,13 +339,13 @@ const Pets: React.FC = () => {
 
             <div className="flex items-center gap-2 mb-6">
               <span className="text-xl">🐾</span>
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Add Pet</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Add Pet</h3>
             </div>
 
             <div className="space-y-4">
               {/* Pet Type Dropdown */}
               <div>
-                <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
+                <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                   Pet Type <span className="text-red-500">*</span>
                 </label>
                 <select
@@ -369,7 +369,7 @@ const Pets: React.FC = () => {
               {/* Other Pet Type Input */}
               {petType === "Other" && (
                 <div>
-                  <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
+                  <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                     Specify Pet Type <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -409,14 +409,14 @@ const Pets: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <span className="text-base font-bold text-purple-700 dark:text-purple-400">Requires Care</span>
+                  <span className="text-sm font-semibold text-purple-700 dark:text-purple-400">Requires Care</span>
                 </label>
               </div>
 
               {/* Care Details Textarea */}
               {requiresCare && (
                 <div>
-                  <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
+                  <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                     Care Details
                   </label>
                   <textarea
@@ -431,7 +431,7 @@ const Pets: React.FC = () => {
 
               {/* Pet Traits */}
               <div>
-                <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
+                <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                   Traits <span className="text-sm text-gray-500 dark:text-gray-400">(Select up to 3)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">

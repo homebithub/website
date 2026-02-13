@@ -366,7 +366,7 @@ export default function HousehelpProfile() {
           </div>
           <button
             onClick={() => navigate('/househelp/public-profile')}
-            className="px-3 py-1.5 text-xs rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-all whitespace-nowrap self-start"
+            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg whitespace-nowrap self-start"
           >
             View Public Profile
           </button>

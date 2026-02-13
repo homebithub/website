@@ -203,19 +203,19 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-8">
-      <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">🏠 Service Type</h2>
-      <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
+      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🏠 Service Type</h2>
+      <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
         {userType === 'household' 
           ? 'What type of help are you looking for? (You can select both)'
           : 'What type of work do you offer? (You can select both)'}
       </p>
       {/* Live-in Option */}
-      <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${needsLiveIn ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
+      <label className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${needsLiveIn ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
         <input
           type="checkbox"
           checked={needsLiveIn}
           onChange={(e) => setNeedsLiveIn(e.target.checked)}
-          className="form-checkbox h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
+          className="form-checkbox h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
         />
         <span className="flex-1">🌙 Live-in {userType === 'household' ? '(Lives with you)' : '(I can live with the family)'}</span>
       </label>
@@ -223,7 +223,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       {/* Off Days Selection for Live-in */}
       {needsLiveIn && (
         <div className="space-y-4 p-6 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
-          <h3 className="text-lg font-bold text-purple-700 dark:text-purple-400">
+          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">
             📅 Select Off Days <span className="text-sm text-gray-500 dark:text-gray-400">(Up to 3 days)</span>
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -272,19 +272,19 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       )}
       
       {/* Day Worker Option */}
-      <label className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${needsDayWorker ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
+      <label className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${needsDayWorker ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
         <input
           type="checkbox"
           checked={needsDayWorker}
           onChange={(e) => setNeedsDayWorker(e.target.checked)}
-          className="form-checkbox h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
+          className="form-checkbox h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
         />
         <span className="flex-1">☀️ Day Worker {userType === 'household' ? '(Comes during the day)' : '(I work during the day)'}</span>
       </label>
       
       {needsDayWorker && (
         <div className={`bg-purple-50 dark:bg-purple-900/20 p-6 rounded-xl border-2 overflow-x-auto ${error && error.includes('available day or time slot') ? 'border-red-500 dark:border-red-400' : 'border-purple-200 dark:border-purple-500/30'}`}>
-          <div className="mb-4 font-bold text-lg text-center text-purple-700 dark:text-purple-400">📅 Select Availability</div>
+          <div className="mb-4 font-semibold text-sm text-center text-purple-700 dark:text-purple-400">📅 Select Availability</div>
           <p className="text-sm text-center text-gray-600 dark:text-gray-400 mb-4">Click day names or time slots to select all. Click individual cells to toggle.</p>
           <table className="min-w-full table-fixed border-separate border-spacing-y-0">
             <thead>
@@ -364,14 +364,14 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
         </div>
       )}
       <div className="space-y-3">
-        <label className="block text-base font-bold text-purple-700 dark:text-purple-400">
+        <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400">
           📆 Available from <span className="text-red-500">*</span>
         </label>
         <input
           type="date"
           value={availableFrom}
           onChange={e => setAvailableFrom(e.target.value)}
-          className={`w-full h-14 px-4 py-1.5 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${(!availableFrom || isNaN(Date.parse(availableFrom))) && error && error.includes('Available from') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-purple-200 dark:border-purple-500/30'} [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100`}
+          className={`w-full h-10 px-4 py-1.5 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${(!availableFrom || isNaN(Date.parse(availableFrom))) && error && error.includes('Available from') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-purple-200 dark:border-purple-500/30'} [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100`}
           min={new Date().toISOString().split('T')[0]}
           required
         />
@@ -380,7 +380,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       {success && <SuccessAlert message={success} />}
       <button
         type="button"
-        className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+        className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
         onClick={handleSubmit}
         disabled={
           loading || 
@@ -393,7 +393,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       >
         {loading ? (
           <>
-            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>

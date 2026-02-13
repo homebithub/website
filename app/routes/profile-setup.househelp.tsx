@@ -348,7 +348,7 @@ function HousehelpProfileSetupContent() {
           <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                <h1 className="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">
                   Complete Your Househelp Profile 👩‍💼
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -372,16 +372,16 @@ function HousehelpProfileSetupContent() {
               </div>
               
               {/* Progress Bar */}
-              <div className="w-full bg-purple-100 rounded-full h-4 mb-4 shadow-inner">
+              <div className="w-full bg-purple-100 rounded-full h-2.5 mb-3 shadow-inner">
                 <div 
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 h-4 rounded-full transition-all duration-300 ease-out shadow-md"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 h-2.5 rounded-full transition-all duration-300 ease-out shadow-md"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
               
               {/* Current Step Title */}
               <div className="flex items-center justify-between">
-                <h2 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-400">
+                <h2 className="text-sm sm:text-base font-semibold text-purple-700 dark:text-purple-400">
                   {STEPS[currentStep].title}
                 </h2>
                 {STEPS[currentStep].skippable && (
@@ -406,7 +406,7 @@ function HousehelpProfileSetupContent() {
               >
                 ← Back to Profile
               </button>
-              <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <h2 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Edit {STEPS[currentStep].title}
               </h2>
             </div>

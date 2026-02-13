@@ -121,15 +121,15 @@ const Children: React.FC = () => {
   return (
     <div className="w-full max-w-3xl mx-auto">
       <div className="flex flex-col gap-8">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">👶 Children</h2>
-        <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">👶 Children</h2>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
           Tell us about your children so we can find the perfect match
         </p>
         <div className="flex flex-col gap-4">
           {options.map((opt) => (
             <label
               key={opt.value}
-              className={`flex items-center gap-4 p-5 rounded-xl border-2 cursor-pointer shadow-sm text-base font-semibold transition-all ${
+              className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
                 selected === opt.value
                   ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105"
                   : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"
@@ -141,9 +141,9 @@ const Children: React.FC = () => {
                 value={opt.value}
                 checked={selected === opt.value}
                 onChange={() => handleOptionChange(opt.value)}
-                className="form-radio h-6 w-6 text-purple-600 border-purple-300 focus:ring-purple-500"
+                className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
               />
-              <opt.icon className="h-8 w-8 text-purple-600 dark:text-purple-400" aria-hidden="true" />
+              <opt.icon className="h-6 w-6 text-purple-600 dark:text-purple-400" aria-hidden="true" />
               <span className="flex-1">{opt.label}</span>
             </label>
           ))}
