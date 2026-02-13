@@ -125,10 +125,19 @@ export default function HouseholdShortlistPage() {
           `${API_BASE}/api/v1/shortlists/mine?offset=${offset}&limit=${limit}`
         );
         if (!res.ok) throw new Error("Failed to load shortlist");
-        const data = await apiClient.json<ShortlistItem[]>(res);
+        const response = await apiClient.json<any>(res);
+        console.log('Shortlist response:', response);
+        
+        // Extract shortlist array from nested structure
+        const data = response.data?.data || response.data || response;
+        console.log('Extracted shortlist data:', data);
+        
+        // Ensure it's an array
+        const shortlistArray = Array.isArray(data) ? data : [];
+        
         if (cancelled) return;
-        setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
-        setHasMore(data.length === limit);
+        setItems((prev) => (offset === 0 ? shortlistArray : [...prev, ...shortlistArray]));
+        setHasMore(shortlistArray.length === limit);
         // Trigger event to update badge count in navigation
         window.dispatchEvent(new CustomEvent('shortlist-updated'));
       } catch (e: any) {
@@ -145,7 +154,7 @@ export default function HouseholdShortlistPage() {
 
   // Load househelp profiles for shortlist entries (only where profile_type === 'househelp')
   useEffect(() => {
-    const missingIds = items
+    const missingIds = (items || [])
       .filter((s) => s.profile_type === "househelp")
       .map((s) => s.profile_id)
       .filter((pid) => pid && !(pid in profilesById));
@@ -184,7 +193,7 @@ export default function HouseholdShortlistPage() {
     try {
       const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/${profileId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to remove from shortlist');
-      setItems((prev) => prev.filter((s) => s.profile_id !== profileId));
+      setItems((prev) => (prev || []).filter((s) => s.profile_id !== profileId));
       // Trigger event to update badge count in navigation
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch {}
@@ -253,7 +262,7 @@ export default function HouseholdShortlistPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
 
-            {items.length === 0 && !loading && !error && (
+            {(items || []).length === 0 && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
                 <p className="text-gray-600 dark:text-gray-300 text-lg">No shortlisted househelps yet.</p>
@@ -263,7 +272,7 @@ export default function HouseholdShortlistPage() {
             {error && <ErrorAlert message={error} className="mb-4" />}
 	
             <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>
-              {items
+              {(items || [])
                 .filter((s) => s.profile_type === "househelp")
                 .map((s) => {
                   const h = profilesById[s.profile_id];

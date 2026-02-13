@@ -66,7 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (response.ok) {
-        const user = await response.json();
+        const userResponse = await response.json();
+        console.log('Auth check response:', userResponse);
+        
+        // Extract user data from nested structure
+        const user = userResponse.data || userResponse;
+        console.log('Extracted user data in auth check:', user);
+        
         setUser({ token: localStorage.getItem("token") || "", user } as LoginResponse);
         localStorage.setItem("user_object", JSON.stringify(user));
       } else {
@@ -98,7 +104,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         body: JSON.stringify({ phone: normalizedPhone, password } as LoginRequest),
       });
 
-      const data: LoginResponse | LoginErrorResponse = await response.json();
+      const dataResponse = await response.json();
+      console.log('Login response:', dataResponse);
+      
+      // Extract login data from nested structure
+      const data = dataResponse.data || dataResponse;
+      console.log('Extracted login data:', data);
+      
       if (!response.ok) {
         const errorMsg = extractErrorMessage(data) || "Invalid phone number or password";
         throw new Error(errorMsg);
@@ -205,12 +217,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        const errorMsg = extractErrorMessage(data) || "Failed to sign up";
+        const errorResponse = await response.json();
+        console.log('Signup error response:', errorResponse);
+        
+        // Extract error data from nested structure
+        const errorData = errorResponse.data || errorResponse;
+        console.log('Extracted signup error data:', errorData);
+        
+        const errorMsg = extractErrorMessage(errorData) || "Failed to sign up";
         throw new Error(errorMsg);
       }
 
-      const { token, user } = await response.json();
+      const signupResponse = await response.json();
+      console.log('Signup success response:', signupResponse);
+      
+      // Extract signup data from nested structure
+      const signupData = signupResponse.data || signupResponse;
+      console.log('Extracted signup data:', signupData);
+      
+      const { token, user } = signupData;
       localStorage.setItem("token", token);
       setUser(user);
       

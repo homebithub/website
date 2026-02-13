@@ -47,8 +47,15 @@ export default function HouseholdRequestsPage() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!profileRes.ok) throw new Error("Failed to fetch household profile");
-      const profileData = await profileRes.json();
+      const profileResponse = await profileRes.json();
+      console.log('Profile response in requests:', profileResponse);
+      
+      // Extract household ID from nested structure
+      const profileData = profileResponse.data || profileResponse;
+      console.log('Extracted profile data in requests:', profileData);
+      
       const hId = profileData.id;
+      console.log('Household ID in requests:', hId);
       setHouseholdId(hId);
 
       // Fetch pending requests
@@ -57,8 +64,16 @@ export default function HouseholdRequestsPage() {
       });
 
       if (!requestsRes.ok) throw new Error("Failed to fetch requests");
-      const requestsData = await requestsRes.json();
-      setRequests(requestsData || []);
+      const requestsResponse = await requestsRes.json();
+      console.log('Requests response:', requestsResponse);
+      
+      // Extract requests array from nested structure
+      const requestsData = requestsResponse.data?.data || requestsResponse.data || requestsResponse;
+      console.log('Extracted requests data:', requestsData);
+      
+      // Ensure it's an array
+      const requestsArray = Array.isArray(requestsData) ? requestsData : [];
+      setRequests(requestsArray);
     } catch (err: any) {
       console.error("Error fetching requests:", err);
       setError(err.message || "Failed to load requests");
@@ -87,7 +102,8 @@ export default function HouseholdRequestsPage() {
       );
 
       if (!res.ok) {
-        const errorData = await res.json();
+        const errorResponse = await res.json();
+        const errorData = errorResponse.data || errorResponse;
         throw new Error(errorData.error || "Failed to approve request");
       }
 
@@ -128,7 +144,8 @@ export default function HouseholdRequestsPage() {
       );
 
       if (!res.ok) {
-        const errorData = await res.json();
+        const errorResponse = await res.json();
+        const errorData = errorResponse.data || errorResponse;
         throw new Error(errorData.error || "Failed to reject request");
       }
 

@@ -92,19 +92,29 @@ export default function HouseholdProfile() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!profileRes.ok) throw new Error("Failed to fetch profile");
-        const profileData = await profileRes.json();
-        console.log('Profile data:', profileData);
+        const profileResponse = await profileRes.json();
+        console.log('Profile response:', profileResponse);
+        
+        // Extract profile data from nested structure
+        const profileData = profileResponse.data || profileResponse;
+        console.log('Extracted profile data:', profileData);
         setProfile(profileData);
 
         // Load existing invitation code if available
         try {
-          const householdId = profileData.id || profileData.household?.id || profileData.data?.id;
+          const householdId = profileData.id;
           console.log('Household ID:', householdId);
           const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/invitations/${householdId}/code`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (inviteRes.ok) {
-            const inviteData = await inviteRes.json();
+            const inviteResponse = await inviteRes.json();
+            console.log('Invitation response:', inviteResponse);
+            
+            // Extract invitation data from nested structure
+            const inviteData = inviteResponse.data || inviteResponse;
+            console.log('Extracted invitation data:', inviteData);
+            
             setInvitationCode(inviteData.invite_code);
             setInvitationExpiresAt(inviteData.expires_at);
           }
@@ -116,16 +126,32 @@ export default function HouseholdProfile() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (kidsRes.ok) {
-          const kidsData = await kidsRes.json();
-          setKids(kidsData);
+          const kidsResponse = await kidsRes.json();
+          console.log('Kids response:', kidsResponse);
+          
+          // Extract kids array from nested structure
+          const kidsData = kidsResponse.data?.data || kidsResponse.data || kidsResponse;
+          console.log('Extracted kids data:', kidsData);
+          
+          // Ensure it's an array
+          const kidsArray = Array.isArray(kidsData) ? kidsData : [];
+          setKids(kidsArray);
         }
 
         const petsRes = await fetch(`${API_BASE_URL}/api/v1/pets/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (petsRes.ok) {
-          const petsData = await petsRes.json();
-          setPets(petsData);
+          const petsResponse = await petsRes.json();
+          console.log('Pets response:', petsResponse);
+          
+          // Extract pets array from nested structure
+          const petsData = petsResponse.data?.data || petsResponse.data || petsResponse;
+          console.log('Extracted pets data:', petsData);
+          
+          // Ensure it's an array
+          const petsArray = Array.isArray(petsData) ? petsData : [];
+          setPets(petsArray);
         }
 
         // Fetch photos from documents table
@@ -133,8 +159,16 @@ export default function HouseholdProfile() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (docsRes.ok) {
-          const docsData = await docsRes.json();
-          const photoUrls = docsData.documents?.map((doc: any) => doc.url || doc.public_url).filter(Boolean) || [];
+          const docsResponse = await docsRes.json();
+          console.log('Documents response:', docsResponse);
+          
+          // Extract documents array from nested structure
+          const docsData = docsResponse.data?.documents || docsResponse.documents || docsResponse.data || docsResponse;
+          console.log('Extracted documents data:', docsData);
+          
+          // Ensure it's an array before mapping
+          const documentsArray = Array.isArray(docsData) ? docsData : [];
+          const photoUrls = documentsArray.map((doc: any) => doc.url || doc.public_url).filter(Boolean) || [];
           setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
         }
       } catch (err: any) {
@@ -184,7 +218,8 @@ export default function HouseholdProfile() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!householdRes.ok) throw new Error("Failed to fetch household");
-      const householdData = await householdRes.json();
+      const householdResponse = await householdRes.json();
+      const householdData = householdResponse.data || householdResponse;
       const householdId = householdData.id;
       
       // Get or create invitation code
@@ -198,8 +233,9 @@ export default function HouseholdProfile() {
         throw new Error(errorData.error || `Failed to fetch invitation code (${inviteRes.status})`);
       }
       const inviteData = await inviteRes.json();
-      setInvitationCode(inviteData.invite_code);
-      setInvitationExpiresAt(inviteData.expires_at);
+      const extractedInviteData = inviteData.data || inviteData;
+      setInvitationCode(extractedInviteData.invite_code);
+      setInvitationExpiresAt(extractedInviteData.expires_at);
     } catch (err: any) {
       console.error("Error fetching invitation code:", err);
       setInvitationError(err.message || "Failed to load invitation code");
@@ -252,8 +288,16 @@ export default function HouseholdProfile() {
       });
       
       if (res.ok) {
-        const data = await res.json();
-        setMembers(data || []);
+        const response = await res.json();
+        console.log('Members response:', response);
+        
+        // Extract members array from nested structure
+        const membersData = response.data || response.members || response;
+        console.log('Extracted members data:', membersData);
+        
+        // Ensure it's an array
+        const membersArray = Array.isArray(membersData) ? membersData : [];
+        setMembers(membersArray);
       }
     } catch (err) {
       console.error("Error fetching members:", err);
@@ -372,7 +416,8 @@ export default function HouseholdProfile() {
       });
       
       if (profileRes.ok) {
-        const profileData = await profileRes.json();
+        const profileResponse = await profileRes.json();
+        const profileData = profileResponse.data || profileResponse;
         setProfile(profileData);
       }
       
@@ -416,8 +461,13 @@ export default function HouseholdProfile() {
       if (!docsRes.ok) {
         console.warn('Failed to fetch documents, will only remove from profile');
       } else {
-        const docsData = await docsRes.json();
-        const document = docsData.documents?.find((doc: any) => doc.url === photoUrl);
+        const docsResponse = await docsRes.json();
+        console.log('Documents response for deletion:', docsResponse);
+        
+        // Extract documents array from nested structure
+        const docsData = docsResponse.data?.documents || docsResponse.documents || docsResponse.data || docsResponse;
+        const documentsArray = Array.isArray(docsData) ? docsData : [];
+        const document = documentsArray.find((doc: any) => doc.url === photoUrl);
 
         // Step 2: Delete from documents table and S3
         if (document?.id) {
@@ -443,7 +493,8 @@ export default function HouseholdProfile() {
 
       if (!profileRes.ok) throw new Error('Failed to refresh profile');
       
-      const profileData = await profileRes.json();
+      const profileResponse = await profileRes.json();
+      const profileData = profileResponse.data || profileResponse;
       setProfile(profileData);
     } catch (err: any) {
       console.error('Error deleting photo:', err);
