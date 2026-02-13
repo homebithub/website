@@ -153,8 +153,8 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
       
       // Photos is the last step in both flows:
       // Household: step 10 (0-indexed: 9)
-      // Househelp: step 15 (0-indexed: 14)
-      const stepNumber = userType === 'household' ? 9 : 14;
+      // Househelp: step 13 (0-indexed: 12)
+      const stepNumber = userType === 'household' ? 9 : 12;
       
       // Update the profile_setup_steps tracking to mark photos as completed
       // This is what ProfileSetupGuard checks to determine if onboarding is complete
@@ -226,7 +226,9 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify({
-            updates: {},
+            updates: {
+              photos: []
+            },
             _step_metadata: {
               step_id: "photos",
               step_number: stepNumber,
@@ -361,7 +363,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
             },
             _step_metadata: {
               step_id: "photos",
-              step_number: 13,
+              step_number: 12,
               is_completed: true
             }
           }),

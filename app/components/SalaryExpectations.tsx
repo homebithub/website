@@ -32,6 +32,19 @@ const SALARY_RANGES: Record<SalaryFrequency, SalaryRange[]> = {
   ]
 };
 
+function parseSalaryRangeToNumber(range: string): number | null {
+  const trimmed = (range || '').trim();
+  if (!trimmed || trimmed.toLowerCase() === 'negotiable') {
+    return null;
+  }
+
+  // Remove currency labels and commas, then parse first numeric bound.
+  const normalized = trimmed.replace(/KES/gi, '').replace(/,/g, '').trim();
+  const firstPart = normalized.split('-')[0].replace('+', '').trim();
+  const parsed = Number(firstPart);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
 const SalaryExpectations: React.FC = () => {
   const [frequency, setFrequency] = useState<SalaryFrequency>('Daily');
   const [selectedRange, setSelectedRange] = useState<string>('');
@@ -54,6 +67,15 @@ const SalaryExpectations: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
+      const normalizedExpectation = parseSalaryRangeToNumber(selectedRange);
+      const updates: Record<string, string | number> = {
+        salary_frequency: frequency.toLowerCase(),
+      };
+
+      if (normalizedExpectation !== null) {
+        updates.salary_expectation = normalizedExpectation;
+      }
+
       const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
         method: 'PATCH',
         headers: {
@@ -61,10 +83,7 @@ const SalaryExpectations: React.FC = () => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          updates: {
-            salary_frequency: frequency.toLowerCase(),
-            salary_expectation: selectedRange,
-          },
+          updates,
           _step_metadata: {
             step_id: "salary",
             step_number: 6,

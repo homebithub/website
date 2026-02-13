@@ -36,22 +36,30 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
+
+                const profileType = localStorage.getItem('profile_type');
+                const profileEndpoint = profileType === 'househelp'
+                    ? `${baseUrl}/api/v1/profile/househelp/me`
+                    : `${baseUrl}/api/v1/household/profile`;
                 
-                const response = await fetch(`${baseUrl}/api/v1/household/profile`, {
+                const response = await fetch(profileEndpoint, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 
                 if (response.ok) {
-                    const data = await response.json();
-                    if (data.location && data.location.place) {
-                        setInput(data.location.place);
+                    const responseBody = await response.json();
+                    const data = responseBody?.data || responseBody || {};
+
+                    const place = data?.location?.place || data?.location || data?.town || '';
+                    if (place) {
+                        setInput(place);
                         setSavedLocation({
-                            name: data.location.place,
+                            name: place,
                             mapbox_id: data.location.mapbox_id || '',
                             feature_type: data.location.feature_type || 'place'
                         });
                         setSelectedLocation({
-                            name: data.location.place,
+                            name: place,
                             mapbox_id: data.location.mapbox_id || '',
                             feature_type: data.location.feature_type || 'place'
                         });

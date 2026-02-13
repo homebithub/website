@@ -76,6 +76,7 @@ function HousehelpProfileSetupContent() {
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerChecked, setDisclaimerChecked] = useState(false);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
@@ -126,6 +127,8 @@ function HousehelpProfileSetupContent() {
   
   // Track time spent on each step
   useEffect(() => {
+    if (!isProfileLoaded) return;
+
     const startTime = Date.now();
     const interval = setInterval(() => {
       setTimeSpent(prev => prev + 1);
@@ -136,12 +139,16 @@ function HousehelpProfileSetupContent() {
       const timeOnStep = Math.floor((Date.now() - startTime) / 1000);
       saveProgressToBackend(currentStep, timeOnStep);
     };
-  }, [currentStep]);
+  }, [currentStep, isProfileLoaded]);
 
   useEffect(() => {
     // Load existing profile data on mount
-    loadProfileFromBackend();
-  }, []);
+    const load = async () => {
+      await loadProfileFromBackend();
+      setIsProfileLoaded(true);
+    };
+    load();
+  }, [loadProfileFromBackend]);
 
   useEffect(() => {
     // If editing a specific section from profile page, navigate to that step
@@ -185,6 +192,8 @@ function HousehelpProfileSetupContent() {
   
   // Auto-save progress every 30 seconds
   useEffect(() => {
+    if (!isProfileLoaded) return;
+
     const autoSaveInterval = setInterval(async () => {
       setAutoSaving(true);
       await saveProgressToBackend(currentStep, timeSpent, false, false, true);
@@ -193,7 +202,7 @@ function HousehelpProfileSetupContent() {
     }, 30000);
     
     return () => clearInterval(autoSaveInterval);
-  }, [currentStep, timeSpent]);
+  }, [currentStep, timeSpent, isProfileLoaded]);
   
   const finishSetup = async () => {
     setIsSaving(true);

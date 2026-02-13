@@ -150,7 +150,8 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       let lastCompleted = 0;
       if (progressResponse.ok) {
-        const progressData = await progressResponse.json();
+        const progressResponseBody = await progressResponse.json();
+        const progressData = progressResponseBody?.data || progressResponseBody || {};
         lastCompleted = progressData.last_completed_step || 0;
       }
 
@@ -165,7 +166,7 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
         // Reconstruct profile data from steps
         const reconstructed: ProfileSetupData = {};
         steps.forEach((step: any) => {
-          if (step.data && (step.is_completed || step.is_skipped)) {
+          if (hasData(step.data) && (step.is_completed || step.is_skipped)) {
             reconstructed[step.step_id as keyof ProfileSetupData] = step.data;
           }
         });
@@ -374,8 +375,11 @@ function transformProfileData(data: ProfileSetupData): any {
     }
 
     // Nanny Type for househelp
-    if (data.nannytype) {
-      transformed.househelp_type = data.nannytype.type || data.nannytype;
+    if (hasData(data.nannytype)) {
+      const househelpType = data.nannytype?.type || (typeof data.nannytype === 'string' ? data.nannytype : undefined);
+      if (househelpType) {
+        transformed.househelp_type = househelpType;
+      }
     }
 
     // Years of Experience
@@ -629,6 +633,7 @@ function calculateLastCompletedStep(data: ProfileSetupData): number {
   // Househelp step order (based on the 13 steps in househelp.tsx)
   const househelpStepOrder = [
     'location',       // Location
+    'nannytype',      // Service Type
     'gender',         // Gender & Age
     'experience',     // Experience
     'workwithkids',   // Work with Kids

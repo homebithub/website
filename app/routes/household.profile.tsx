@@ -919,7 +919,7 @@ export default function HouseholdProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🏠 House Information</h2>
           <button
             onClick={() => handleEditSection('housesize')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-sm rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -944,7 +944,7 @@ export default function HouseholdProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👥 Service Type Needed</h2>
           <button
             onClick={() => handleEditSection('nannytype')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-sm rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -982,7 +982,7 @@ export default function HouseholdProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👶 Children</h2>
           <button
             onClick={() => handleEditSection('children')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-sm rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -1018,7 +1018,7 @@ export default function HouseholdProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🐾 Pets</h2>
           <button
             onClick={() => handleEditSection('pets')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-sm rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -1051,7 +1051,7 @@ export default function HouseholdProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🧹 Chores & Duties</h2>
           <button
             onClick={() => handleEditSection('chores')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-sm rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -1075,7 +1075,7 @@ export default function HouseholdProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">💰 Budget</h2>
           <button
             onClick={() => handleEditSection('budget')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-sm rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -1100,7 +1100,7 @@ export default function HouseholdProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🙏 Religion & Beliefs</h2>
           <button
             onClick={() => handleEditSection('religion')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-sm rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -1114,7 +1114,7 @@ export default function HouseholdProfile() {
           <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">✍️ About Your Household</h2>
           <button
             onClick={() => handleEditSection('bio')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-sm rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
