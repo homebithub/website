@@ -433,6 +433,16 @@ export default function HouseholdPublicProfile() {
         </div>
       )}
 
+      {/* Location */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📍 Location</h2>
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {typeof profile.location === 'string'
+            ? (profile.location || 'Not specified')
+            : (profile.location?.place || profile.location?.name || 'Not specified')}
+        </p>
+      </div>
+
       {/* House Size & Notes */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🏠 House Information</h2>
@@ -510,6 +520,14 @@ export default function HouseholdPublicProfile() {
               <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                 <p className="font-semibold text-purple-900 dark:text-purple-100 capitalize">🐾 {pet.pet_type}</p>
                 {pet.requires_care && <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">⚠️ Requires care</p>}
+                {pet.care_details && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{pet.care_details}</p>}
+                {pet.traits && pet.traits.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {pet.traits.map((trait: string, i: number) => (
+                      <span key={i} className="text-xs px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full capitalize">{trait}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>

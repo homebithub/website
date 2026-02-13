@@ -98,6 +98,7 @@ export default function HouseholdProfile() {
         // Extract profile data from nested structure
         const profileData = profileResponse.data || profileResponse;
         console.log('Extracted profile data:', profileData);
+        console.log('Household location field:', profileData?.location);
         setProfile(profileData);
 
         // Load existing invitation code if available
@@ -584,6 +585,24 @@ export default function HouseholdProfile() {
             View Public Profile
           </button>
         </div>
+      </div>
+
+      {/* Location */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📍 Location</h2>
+          <button
+            onClick={() => handleEditSection('location')}
+            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {typeof profile.location === 'string'
+            ? (profile.location || 'Not specified')
+            : (profile.location?.place || profile.location?.name || 'Not specified')}
+        </p>
       </div>
 
       {/* Household Invitation Code */}

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/routes/login";
 import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
 import { migratePreferences } from '~/utils/preferencesApi';
-import { extractErrorMessage } from '~/utils/errorMessages';
+import { extractErrorMessage, transformErrorMessage } from '~/utils/errorMessages';
 import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
 
@@ -112,7 +112,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('Extracted login data:', data);
       
       if (!response.ok) {
-        const errorMsg = extractErrorMessage(data) || "Invalid phone number or password";
+        const rawMsg = extractErrorMessage(data);
+        const errorMsg = rawMsg ? transformErrorMessage(rawMsg) : "Invalid phone number or password. Please check and try again.";
         throw new Error(errorMsg);
       }
 

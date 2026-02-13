@@ -318,6 +318,13 @@ function transformProfileData(data: ProfileSetupData): any {
     transformed.area = data.location.area;
     transformed.address = data.location.address;
     transformed.mapbox_id = data.location.mapbox_id;
+    // Populate the location JSONB field so it persists in the DB
+    transformed.location = {
+      place: data.location.place || data.location.name || data.location.town || '',
+      name: data.location.name || data.location.place || data.location.town || '',
+      mapbox_id: data.location.mapbox_id || '',
+      feature_type: data.location.feature_type || 'place',
+    };
   }
 
   // Religion

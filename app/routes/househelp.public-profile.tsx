@@ -28,6 +28,9 @@ interface UserData {
 
 interface LocationData {
   place?: string;
+  name?: string;
+  mapbox_id?: string;
+  feature_type?: string;
   latitude?: number;
   longitude?: number;
 }
@@ -109,11 +112,35 @@ interface ProfileResponse {
   data?: {
     Househelp?: HousehelpData;
     User?: UserData;
+    user?: UserData;
+    [key: string]: any;
   };
   // For backward compatibility with direct response
   id?: string;
   user?: UserData;
   [key: string]: any;
+}
+
+function normalizeHousehelpData(raw: any): HousehelpData {
+  if (!raw) return {} as HousehelpData;
+  const user = raw.user || raw.User || {};
+  return {
+    ...raw,
+    first_name: raw.first_name || user.first_name || '',
+    last_name: raw.last_name || user.last_name || '',
+    can_work_with_kid: raw.can_work_with_kid ?? raw.can_work_with_kids ?? raw.work_with_kids ?? false,
+    can_work_with_pets: raw.can_work_with_pets ?? raw.work_with_pets ?? false,
+    offers_live_in: raw.offers_live_in ?? raw.live_in ?? false,
+    offers_day_worker: raw.offers_day_worker ?? raw.day_worker ?? false,
+    years_of_experience: raw.years_of_experience ?? raw.experience_years ?? undefined,
+    salary_expectation: raw.salary_expectation ?? raw.salary_min ?? undefined,
+    photos: Array.isArray(raw.photos) ? raw.photos : [],
+    languages: Array.isArray(raw.languages) ? raw.languages : [],
+    skills: Array.isArray(raw.skills) ? raw.skills : [],
+    traits: Array.isArray(raw.traits) ? raw.traits : [],
+    off_days: Array.isArray(raw.off_days) ? raw.off_days : [],
+    talent_with_kids: Array.isArray(raw.talent_with_kids) ? raw.talent_with_kids : [],
+  };
 }
 
 export default function HousehelpPublicProfile() {
@@ -232,15 +259,26 @@ export default function HousehelpPublicProfile() {
         if (!profileRes.ok) throw new Error("Failed to fetch profile");
         const profileData: ProfileResponse = await profileRes.json();
         
-        // Handle nested response structure (data.Househelp and data.User)
+        // Handle nested response structure
+        let rawProfile: any;
+        let rawUser: UserData | null = null;
+        
         if (profileData.data?.Househelp) {
-          setProfile(profileData.data.Househelp);
-          setUser(profileData.data.User || null);
+          // profile_with_user endpoint: { data: { Househelp: {...}, User: {...} } }
+          rawProfile = profileData.data.Househelp;
+          rawUser = profileData.data.User || null;
+        } else if (profileData.data && typeof profileData.data === 'object' && !Array.isArray(profileData.data)) {
+          // /me endpoint: { data: { gender: "...", ... } }
+          rawProfile = profileData.data;
+          rawUser = profileData.data.user || profileData.data.User || null;
         } else {
           // Fallback for direct response format
-          setProfile(profileData as HousehelpData);
-          setUser(profileData.user || null);
+          rawProfile = profileData;
+          rawUser = profileData.user || null;
         }
+        
+        setProfile(normalizeHousehelpData(rawProfile));
+        setUser(rawUser);
         setIsViewingOther(!!profileId); // Set to true if viewing someone else's profile
         
         // Check if profile is shortlisted (only if viewing someone else's profile)
@@ -540,31 +578,31 @@ export default function HousehelpPublicProfile() {
             </div>
 
             {/* Location & Contact Area */}
-            {(profile.location || profile.address || profile.town) && (
-              <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📍 Location</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {profile.location?.place && (
-                    <div>
-                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Area</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.location.place}</p>
-                    </div>
-                  )}
-                  {profile.town && (
-                    <div>
-                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Town</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.town}</p>
-                    </div>
-                  )}
-                  {profile.address && (
-                    <div className="md:col-span-2">
-                      <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Address</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.address}</p>
-                    </div>
-                  )}
+            <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📍 Location</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Area</span>
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+                    {typeof profile.location === 'string'
+                      ? (profile.location || 'Not specified')
+                      : (profile.location?.place || profile.location?.name || 'Not specified')}
+                  </p>
                 </div>
+                {profile.town && (
+                  <div>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Town</span>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.town}</p>
+                  </div>
+                )}
+                {profile.address && (
+                  <div className="md:col-span-2">
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Address</span>
+                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.address}</p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
 
             {/* Experience & Skills */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">

@@ -182,15 +182,23 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
         const token = localStorage.getItem('token');
 
         try {
+            const payload = {
+                mapbox_id: selectedLocation.mapbox_id,
+                location: {
+                    place: selectedLocation.name,
+                    name: selectedLocation.name,
+                    mapbox_id: selectedLocation.mapbox_id,
+                    feature_type: selectedLocation.feature_type
+                }
+            };
+            console.log('Saving location payload:', JSON.stringify(payload, null, 2));
             const response = await fetch(`${baseUrl}/api/v1/location/save-user-location`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': token ? `Bearer ${token}` : ''
                 },
-                body: JSON.stringify({
-                    mapbox_id: selectedLocation.mapbox_id
-                })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();

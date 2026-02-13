@@ -94,7 +94,12 @@ function HousehelpProfileSetupContent() {
   const currentStepData = STEPS[currentStep];
 
   const handleLocationSaved = async (location: any) => {
-    const locationData = { place: location.name, mapbox_id: location.mapbox_id };
+    const locationData = {
+      place: location.name,
+      name: location.name,
+      mapbox_id: location.mapbox_id,
+      feature_type: location.feature_type || 'place',
+    };
     
     // Update local state
     updateStepData('location', locationData);
