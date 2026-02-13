@@ -101,6 +101,25 @@ const getHouseholdInitials = (household?: HireRequest['household'] | HireContrac
   return name.slice(0, 2).toUpperCase();
 };
 
+const extractEnvelopeObject = <T = any,>(raw: any): T =>
+  (raw?.data?.data || raw?.data || raw || {}) as T;
+
+const extractEnvelopeArray = <T = any,>(raw: any): T[] => {
+  const payload: any = extractEnvelopeObject(raw);
+  if (Array.isArray(payload)) return payload as T[];
+  if (Array.isArray(payload?.data)) return payload.data as T[];
+  if (Array.isArray(payload?.items)) return payload.items as T[];
+  if (Array.isArray(raw?.data)) return raw.data as T[];
+  if (Array.isArray(raw?.items)) return raw.items as T[];
+  return [];
+};
+
+const extractTotal = (raw: any, fallbackLength: number): number => {
+  const payload: any = extractEnvelopeObject(raw);
+  const total = payload?.total ?? raw?.total;
+  return typeof total === 'number' ? total : fallbackLength;
+};
+
 export default function HousehelpHiringHistory() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -143,8 +162,9 @@ export default function HousehelpHiringHistory() {
           { method: 'GET' }
         );
         if (response.ok) {
-          const data = await response.json();
-          setPendingCount(data.total || 0);
+          const raw = await apiClient.json<any>(response);
+          const items = extractEnvelopeArray(raw);
+          setPendingCount(extractTotal(raw, items.length));
         }
       } catch (err) {
         console.error('Failed to fetch pending count:', err);
@@ -172,9 +192,10 @@ export default function HousehelpHiringHistory() {
       const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
       const response = await apiClient.auth(`${API_ENDPOINTS.hiring.requests.base}?${params.toString()}`, { method: 'GET' });
       if (!response.ok) throw new Error('Failed to fetch hire requests');
-      const data = await response.json();
-      setHireRequests(data.data || []);
-      setRequestsTotal(data.total || 0);
+      const raw = await apiClient.json<any>(response);
+      const items = extractEnvelopeArray<HireRequest>(raw);
+      setHireRequests(items);
+      setRequestsTotal(extractTotal(raw, items.length));
     } catch (err: any) {
       setError(err.message || 'Failed to load hire requests');
     } finally {
@@ -191,9 +212,10 @@ export default function HousehelpHiringHistory() {
       const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
       const response = await apiClient.auth(`${API_ENDPOINTS.hiring.contracts.base}?${params.toString()}`, { method: 'GET' });
       if (!response.ok) throw new Error('Failed to fetch work history');
-      const data = await response.json();
-      setContracts(data.data || []);
-      setContractsTotal(data.total || 0);
+      const raw = await apiClient.json<any>(response);
+      const items = extractEnvelopeArray<HireContract>(raw);
+      setContracts(items);
+      setContractsTotal(extractTotal(raw, items.length));
     } catch (err: any) {
       setError(err.message || 'Failed to load work history');
     } finally {
@@ -210,9 +232,10 @@ export default function HousehelpHiringHistory() {
       const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
       const response = await apiClient.auth(`${API_ENDPOINTS.interests.househelp}?${params.toString()}`, { method: 'GET' });
       if (!response.ok) throw new Error('Failed to fetch interests');
-      const data = await response.json();
-      setInterests(data.items || data.data || []);
-      setInterestsTotal(data.total || 0);
+      const raw = await apiClient.json<any>(response);
+      const items = extractEnvelopeArray<Interest>(raw);
+      setInterests(items);
+      setInterestsTotal(extractTotal(raw, items.length));
     } catch (err: any) {
       setError(err.message || 'Failed to load interests');
     } finally {
@@ -388,7 +411,7 @@ export default function HousehelpHiringHistory() {
         {/* Requests Tab Content */}
         {activeTab === 'requests' && !loading && (
           <>
-            {hireRequests.length === 0 ? (
+            {!Array.isArray(hireRequests) || hireRequests.length === 0 ? (
               <div className="p-12 text-center">
                 <MessageCircle className="w-16 h-16 text-purple-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No hire requests yet</h3>
@@ -399,7 +422,7 @@ export default function HousehelpHiringHistory() {
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-purple-800/40">
-                {hireRequests.map((request) => (
+                {(Array.isArray(hireRequests) ? hireRequests : []).map((request) => (
                   <div key={request.id} className="p-6 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
