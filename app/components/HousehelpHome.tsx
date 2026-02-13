@@ -306,40 +306,31 @@ export default function HousehelpHome() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch shortlist status for current results
+  // Fetch the user's full shortlist once on mount
   useEffect(() => {
-    if (!results.length) {
-      setShortlistedProfiles(new Set());
-      return;
-    }
     let cancelled = false;
-    const fetchStatuses = async () => {
+    const fetchShortlist = async () => {
       try {
-        const profileIds = Array.from(new Set((Array.isArray(results) ? results : []).map((r) => r.profile_id).filter(Boolean)));
-        const statuses = await Promise.all(
-          profileIds.map(async (profileId) => {
-            try {
-              const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/exists/${profileId}`);
-              if (!res.ok) return { profileId, exists: false };
-              const data = await apiClient.json<{ exists: boolean }>(res);
-              return { profileId, exists: data.exists };
-            } catch {
-              return { profileId, exists: false };
-            }
-          })
-        );
+        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists`);
+        if (!res.ok) return;
+        const raw = await apiClient.json<any>(res);
+        const items = raw?.data?.data || raw?.data || raw || [];
         if (cancelled) return;
-        const shortlisted = statuses.filter((s) => s.exists).map((s) => s.profileId);
-        setShortlistedProfiles(new Set(shortlisted));
+        const ids = new Set<string>(
+          (Array.isArray(items) ? items : [])
+            .map((s: any) => s.profile_id)
+            .filter(Boolean)
+        );
+        setShortlistedProfiles(ids);
       } catch (err) {
-        console.error('Failed to fetch shortlist statuses', err);
+        console.error('Failed to fetch shortlist', err);
       }
     };
-    fetchStatuses();
+    fetchShortlist();
     return () => {
       cancelled = true;
     };
-  }, [results, API_BASE]);
+  }, [API_BASE]);
 
   // Debounced count updates on filter changes
   useEffect(() => {
