@@ -3,8 +3,8 @@ import { Link, useNavigate, useLocation } from 'react-router';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
-import { signupSchema, validateForm, validateField } from '~/utils/validation';
-import { handleApiError } from '~/utils/errorMessages';
+import { signupSchema, validateForm, validateField, normalizeKenyanPhoneNumber } from '~/utils/validation';
+import { handleApiError, extractErrorMessage } from '~/utils/errorMessages';
 import { useAuth } from '~/contexts/useAuth';
 import { Loading } from '~/components/Loading';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
@@ -13,6 +13,7 @@ import { Modal } from '~/components/features/Modal';
 import { API_BASE_URL } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
@@ -20,7 +21,7 @@ export const meta = () => [
     { property: "og:title", content: "Sign Up — Homebit" },
     { property: "og:url", content: "https://homebit.co.ke/signup" },
 ];
-import type { LoginResponse as AuthLoginResponse } from "~/types/users";
+import type { LoginResponse as AuthLoginResponse } from "~/routes/login";
 
 // Types for request and response
 export type SignupRequest = {
@@ -123,7 +124,7 @@ export default function SignupPage() {
     useEffect(() => {
         // If user is already authenticated, redirect them
         if (user) {
-            const profileType = user.profile_type;
+            const profileType = user.user?.profile_type;
             // Bureau users should not access regular signup flow
             if (profileType === "bureau") {
                 navigate("/");
@@ -263,7 +264,22 @@ export default function SignupPage() {
 
                 if (!res.ok) {
                     const err = await res.json();
-                    throw new Error(err.message || 'Google signup completion failed');
+                    const errorMsg = extractErrorMessage(err);
+                    const lowerMsg = errorMsg.toLowerCase();
+                    
+                    // Handle duplicate phone/email for Google signups too
+                    if (res.status === 409 || lowerMsg.includes('already exists')) {
+                        const friendlyMsg = handleApiError(err, 'signup');
+                        if (lowerMsg.includes('phone')) {
+                            setFieldErrors({ phone: friendlyMsg });
+                            setTouchedFields(prev => ({ ...prev, phone: true }));
+                        }
+                        setError(friendlyMsg);
+                        setFormLoading(false);
+                        return;
+                    }
+                    
+                    throw new Error(errorMsg || 'Google signup completion failed');
                 }
 
                 // /api/v1/auth/google/complete returns the same shape as LoginResponse
@@ -272,8 +288,8 @@ export default function SignupPage() {
                 if (data.token) {
                     // Store auth data in the same format as the regular login flow
                     localStorage.setItem('token', data.token);
-                    const userData: any = { ...data };
-                    delete userData.token;
+                    // Extract user object from nested structure
+                    const userData = data.user || data;
                     localStorage.setItem('user_object', JSON.stringify(userData));
                     localStorage.setItem('profile_type', userData.profile_type || form.profile_type);
                     try { localStorage.setItem('userType', userData.profile_type || ''); } catch {}
@@ -302,6 +318,14 @@ export default function SignupPage() {
                                     navigate(setupRoute);
                                     return;
                                 }
+                            } else if (setupResponse.status === 404) {
+                                // No profile setup record exists - user hasn't started setup
+                                console.log("No profile setup record found, starting from step 1");
+                                const setupRoute = profileType === 'household'
+                                    ? `/profile-setup/household?step=1`
+                                    : `/profile-setup/househelp?step=1`;
+                                navigate(setupRoute);
+                                return;
                             }
                         } catch (err) {
                             console.error('Failed to check profile setup status after Google signup:', err);
@@ -317,6 +341,9 @@ export default function SignupPage() {
             
             // Regular signup flow
             let payload = { ...form };
+            // Normalize phone number to international format
+            payload.phone = normalizeKenyanPhoneNumber(form.phone);
+            
             if (form.profile_type === 'househelp' && bureauId) {
                 payload = { ...payload, bureau_id: bureauId };
             }
@@ -329,9 +356,11 @@ export default function SignupPage() {
                 const err = await res.json();
                 console.log('[SIGNUP] Backend error response:', err);
                 
-                // Check if backend returned field-specific errors
+                // Extract message from any response shape (gateway or legacy)
+                const errorMsg = extractErrorMessage(err);
+                
+                // Check if backend returned field-specific errors (legacy shape)
                 if (err.errors && typeof err.errors === 'object') {
-                    // Map backend field names to frontend field names
                     const backendErrors: { [key: string]: string } = {};
                     Object.keys(err.errors).forEach(key => {
                         backendErrors[key] = err.errors[key];
@@ -339,41 +368,53 @@ export default function SignupPage() {
                     
                     setFieldErrors(backendErrors);
                     
-                    // Mark all error fields as touched
                     const touchedErrorFields = Object.keys(backendErrors).reduce((acc, key) => {
                         acc[key] = true;
                         return acc;
                     }, {} as { [key: string]: boolean });
                     setTouchedFields(prev => ({ ...prev, ...touchedErrorFields }));
                     
-                    // Set a general error message
                     const errorCount = Object.keys(backendErrors).length;
                     setError(`Please fix ${errorCount} error${errorCount > 1 ? 's' : ''} in the form`);
-                    return; // Don't throw, just return to show the errors
-                }
-                
-                // Handle conflict errors (e.g., duplicate phone number)
-                if (res.status === 409 && err.message) {
-                    // Show conflict error on the phone field
-                    if (err.message.toLowerCase().includes('phone')) {
-                        setFieldErrors({ phone: err.message });
-                        setTouchedFields(prev => ({ ...prev, phone: true }));
-                    }
-                    setError(err.message);
                     return;
                 }
                 
-                // If no field-specific errors, throw with the general message
-                throw new Error(err.message || 'Signup failed');
+                // Handle conflict / duplicate errors (409 or message-based)
+                const lowerMsg = errorMsg.toLowerCase();
+                if (res.status === 409 || lowerMsg.includes('already exists')) {
+                    const friendlyMsg = handleApiError(err, 'signup');
+                    
+                    if (lowerMsg.includes('phone')) {
+                        setFieldErrors({ phone: friendlyMsg });
+                        setTouchedFields(prev => ({ ...prev, phone: true }));
+                    } else if (lowerMsg.includes('email')) {
+                        setFieldErrors({ email: friendlyMsg });
+                        setTouchedFields(prev => ({ ...prev, email: true }));
+                    }
+                    setError(friendlyMsg);
+                    return;
+                }
+                
+                // For all other errors, transform and show
+                throw new Error(errorMsg || 'Signup failed');
             }
-            const data: SignupResponse = await res.json();
+            const data = await res.json();
             
-            console.log('Signup response:', data);
-            console.log('Verification data:', data.verification);
+            console.log('[SIGNUP] Full response:', JSON.stringify(data));
+            
+            // Extract user_id from either { user: { user_id } } or { user_id } shape
+            const userId = data.user?.user_id || data.user_id;
+            const profileType = data.user?.profile_type || form.profile_type;
+            
+            if (!userId) {
+                console.error('[SIGNUP] No user_id in response:', data);
+                setError('Signup succeeded but response was unexpected. Please try logging in.');
+                return;
+            }
             
             // Store user data temporarily (before verification)
-            localStorage.setItem('user_id', data.user.user_id);
-            localStorage.setItem('profile_type', data.user.profile_type || form.profile_type);
+            localStorage.setItem('user_id', userId);
+            localStorage.setItem('profile_type', profileType);
             
             // DO NOT store token yet - wait until after OTP verification
             // The token will be stored after successful OTP verification in verify-otp.tsx
@@ -381,23 +422,26 @@ export default function SignupPage() {
             // Redirect to OTP verification with verification data
             // The OTP page will handle the rest of the flow
             if (data.verification) {
-                console.log('Redirecting to verify-otp with verification:', data.verification);
+                console.log('[SIGNUP] Redirecting to verify-otp with verification:', data.verification);
                 navigate('/verify-otp', { 
                     state: { 
                         verification: data.verification,
-                        profileType: form.profile_type 
+                        profileType: profileType 
                     } 
                 });
             } else {
-                // Fallback if no verification required (shouldn't happen)
-                console.error('No verification data in signup response!', data);
-                alert('Signup successful but verification data is missing. Please contact support.');
-                if (data.token) {
-                    localStorage.setItem('token', data.token);
-                }
-                navigate('/');
+                // Fallback if no verification data - still navigate to verify-otp
+                // The OTP page can request a new code using the user_id
+                console.warn('[SIGNUP] No verification data in response, navigating to verify-otp anyway');
+                navigate('/verify-otp', {
+                    state: {
+                        userId: userId,
+                        profileType: profileType
+                    }
+                });
             }
         } catch (err: any) {
+            console.error('[SIGNUP] Error in signup flow:', err);
             const errorMessage = handleApiError(err, 'signup');
             setError(errorMessage);
         } finally {
@@ -567,15 +611,6 @@ export default function SignupPage() {
         <a href="/login"
           className="ml-2 text-base text-primary-600 dark:text-purple-400 font-bold hover:text-primary-700 dark:hover:text-purple-300 hover:underline transition-colors">Login</a>
       </div>
-      {error && (
-        <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
-          <div className="flex items-center justify-center">
-            <span className="text-2xl mr-3">⚠️</span>
-            <p className="text-base font-semibold text-red-800">{error}</p>
-          </div>
-        </div>
-      )}
-      
       {/* Google Sign Up - Primary Option (hide if already signed in with Google) */}
       {!googleData && (
         <>

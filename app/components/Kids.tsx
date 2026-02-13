@@ -6,6 +6,15 @@ import type { Child } from './Children';
 import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 
+// Simple UUID generator function
+const generateUUID = (): string => {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
+
 interface KidsProps {
   onChildrenUpdate: (children: Child[]) => void;
   initialChildren?: Child[];
@@ -30,6 +39,15 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
       const childId = children[index].id;
       const token = localStorage.getItem("token");
       
+      // Safety check: if no ID, just remove from local state
+      if (!childId) {
+        console.warn('Child ID is missing, removing from local state only');
+        const updatedChildren = children.filter((_, i) => i !== index);
+        setChildren(updatedChildren);
+        onChildrenUpdate(updatedChildren);
+        return;
+      }
+      
       const res = await fetch(`${API_BASE_URL}/api/v1/household_kids/${childId}`, {
         method: "DELETE",
         headers: {
@@ -49,6 +67,8 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
   };
 
   const handleEditChild = (index: number) => {
+    console.log('Editing child at index:', index);
+    console.log('Child data being edited:', children[index]);
     setEditingChild(children[index]);
     setEditingIndex(index);
     setShowChildModal(true);
@@ -61,37 +81,97 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
       if (editingIndex >= 0) {
         // Update existing child
         const childId = children[editingIndex].id;
-        const res = await fetch(`${API_BASE_URL}/api/v1/household_kids/${childId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(childData),
-        });
+        console.log('Editing child at index:', editingIndex);
+        console.log('Child data:', children[editingIndex]);
+        console.log('Child ID:', childId);
+        console.log('Child ID type:', typeof childId);
+        console.log('Child ID length:', typeof childId === 'string' ? childId.length : (typeof childId === 'number' ? childId.toString().length : 'N/A'));
+        console.log('Constructed URL:', childId ? `${API_BASE_URL}/api/v1/household_kids/${childId}` : 'URL would be undefined');
         
-        if (!res.ok) throw new Error("Failed to update child");
-        const updatedChild = await res.json();
-        
-        const updatedChildren = [...children];
-        updatedChildren[editingIndex] = updatedChild;
-        setChildren(updatedChildren);
-        onChildrenUpdate(updatedChildren);
+        // Safety check: if no ID, generate one and update
+        if (!childId) {
+          console.warn('Child ID is missing, generating UUID and updating');
+          const newChildWithId = { ...children[editingIndex], ...childData, id: generateUUID() };
+          console.log('Generated new ID for existing child:', newChildWithId.id);
+          
+          // Update with generated ID
+          const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(newChildWithId),
+          });
+          
+          if (!res.ok) throw new Error("Failed to save child");
+          const savedChild = await res.json();
+          console.log('Saved child response:', savedChild);
+          console.log('Saved child ID:', savedChild.id);
+          console.log('Saved child keys:', Object.keys(savedChild));
+          // Check if ID might be nested
+          if (savedChild.data) {
+            console.log('Saved child.data:', savedChild.data);
+            console.log('Saved child.data.id:', savedChild.data.id);
+          }
+          
+          // Use the generated ID if backend doesn't return one, otherwise use backend's ID
+          const finalChild = { ...newChildWithId, ...savedChild, id: savedChild.id || newChildWithId.id };
+          console.log('Final child with ID:', finalChild);
+          
+          const updatedChildren = [...children];
+          updatedChildren[editingIndex] = finalChild;
+          setChildren(updatedChildren);
+          onChildrenUpdate(updatedChildren);
+        } else {
+          // Update existing child with valid ID
+          const res = await fetch(`${API_BASE_URL}/api/v1/household_kids/${childId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify(childData),
+          });
+          
+          if (!res.ok) throw new Error("Failed to update child");
+          const updatedChild = await res.json();
+          
+          const updatedChildren = [...children];
+          updatedChildren[editingIndex] = updatedChild;
+          setChildren(updatedChildren);
+          onChildrenUpdate(updatedChildren);
+        }
       } else {
         // Create new child
+        const newChildWithId = { ...childData, id: generateUUID() };
+        console.log('Creating new child with generated ID:', newChildWithId.id);
+        
         const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
-          body: JSON.stringify(childData),
+          body: JSON.stringify(newChildWithId),
         });
         
         if (!res.ok) throw new Error("Failed to save child");
         const savedChild = await res.json();
+        console.log('New child created response:', savedChild);
+        console.log('New child ID:', savedChild.id);
+        console.log('New child keys:', Object.keys(savedChild));
+        // Check if ID might be nested
+        if (savedChild.data) {
+          console.log('New child.data:', savedChild.data);
+          console.log('New child.data.id:', savedChild.data.id);
+        }
         
-        const updatedChildren = [...children, savedChild];
+        // Use the generated ID if backend doesn't return one, otherwise use backend's ID
+        const finalChild = { ...newChildWithId, ...savedChild, id: savedChild.id || newChildWithId.id };
+        console.log('Final child with ID:', finalChild);
+        
+        const updatedChildren = [...children, finalChild];
         setChildren(updatedChildren);
         onChildrenUpdate(updatedChildren);
       }

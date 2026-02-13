@@ -13,6 +13,8 @@ import {
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { Navigation } from "~/components/Navigation";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
@@ -751,11 +753,7 @@ export default function SubscriptionsPage() {
                           </p>
                         </div>
 
-                        {errorMessage && (
-                          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3">
-                            <p className="text-sm text-red-800 dark:text-red-300">{errorMessage}</p>
-                          </div>
-                        )}
+                        {errorMessage && <ErrorAlert message={errorMessage} />}
 
                         <div className="flex gap-3 mt-6">
                           <button
@@ -826,16 +824,7 @@ export default function SubscriptionsPage() {
                       <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                         Payment Failed
                       </p>
-                      {errorMessage && (
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4 mb-4">
-                          <p className="text-sm text-red-800 dark:text-red-300 font-medium mb-1">
-                            Reason:
-                          </p>
-                          <p className="text-sm text-red-700 dark:text-red-400">
-                            {errorMessage}
-                          </p>
-                        </div>
-                      )}
+                      {errorMessage && <ErrorAlert message={errorMessage} title="Reason" className="mb-4" />}
                       <button
                         onClick={handleRetry}
                         className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg"
@@ -1045,20 +1034,11 @@ export default function SubscriptionsPage() {
                           </div>
 
                           {/* Success/Error Message */}
-                          {receiptMessage && (
-                            <div className={`rounded-lg p-3 ${
-                              receiptMessage.type === 'success' 
-                                ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' 
-                                : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-                            }`}>
-                              <p className={`text-sm ${
-                                receiptMessage.type === 'success'
-                                  ? 'text-green-800 dark:text-green-300'
-                                  : 'text-red-800 dark:text-red-300'
-                              }`}>
-                                {receiptMessage.text}
-                              </p>
-                            </div>
+                          {receiptMessage && receiptMessage.type === 'success' && (
+                            <SuccessAlert message={receiptMessage.text} />
+                          )}
+                          {receiptMessage && receiptMessage.type !== 'success' && (
+                            <ErrorAlert message={receiptMessage.text} />
                           )}
                         </div>
                       )}

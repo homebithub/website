@@ -1,7 +1,25 @@
-import React, { useMemo, useState, useRef, useEffect } from "react";
-import { PRIMARY_LANGUAGES, ALL_LANGUAGES, EXPERIENCE_LEVELS } from "~/constants/profileOptions";
+import React, { useMemo, useState } from "react";
+import {
+  PRIMARY_LANGUAGES,
+  ALL_LANGUAGES,
+  PROFILE_STATUS,
+  GENDERS,
+  SALARY_FREQUENCIES,
+  SALARY_FREQUENCY_LABELS,
+  SKILLS,
+} from "~/constants/profileOptions";
+import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 
 export type HousehelpMoreFilterFields = {
+  status?: string;
+  gender?: string;
+  town?: string;
+  salary_frequency?: string;
+  skill?: string;
+  traits?: string;
+  min_rating?: string;
+  salary_min?: string;
+  salary_max?: string;
   can_work_with_kids?: string; // "", "true", "false"
   can_work_with_pets?: string; // "", "true", "false"
   offers_live_in?: string; // "", "true", "false"
@@ -21,46 +39,26 @@ interface Props {
 }
 
 export default function HousehelpMoreFilters({ fields, onChange, onSearch, onClear }: Props) {
-  const [showKidsDropdown, setShowKidsDropdown] = useState(false);
-  const [showPetsDropdown, setShowPetsDropdown] = useState(false);
-  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
-  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
-  const [showExperienceDropdown, setShowExperienceDropdown] = useState(false);
-  
-  const kidsDropdownRef = useRef<HTMLDivElement>(null);
-  const petsDropdownRef = useRef<HTMLDivElement>(null);
-  const typeDropdownRef = useRef<HTMLDivElement>(null);
-  const languageDropdownRef = useRef<HTMLDivElement>(null);
-  const experienceDropdownRef = useRef<HTMLDivElement>(null);
+  const EXPERIENCE_OPTIONS = [
+    { value: "", label: "Any" },
+    { value: "1", label: "1+ years" },
+    { value: "2", label: "2+ years" },
+    { value: "5", label: "5+ years" },
+    { value: "10", label: "10+ years" },
+  ];
+  const TRAITS = ["", "honest", "patient", "punctual", "organized", "friendly", "calm", "proactive"];
+  const [openSections, setOpenSections] = useState({
+    basics: true,
+    compensation: true,
+    compatibility: true,
+  });
 
   const minAge = parseInt(fields.min_age || "18");
   const maxAge = parseInt(fields.max_age || "65");
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (kidsDropdownRef.current && !kidsDropdownRef.current.contains(event.target as Node)) {
-        setShowKidsDropdown(false);
-      }
-      if (petsDropdownRef.current && !petsDropdownRef.current.contains(event.target as Node)) {
-        setShowPetsDropdown(false);
-      }
-      if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) {
-        setShowTypeDropdown(false);
-      }
-      if (languageDropdownRef.current && !languageDropdownRef.current.contains(event.target as Node)) {
-        setShowLanguageDropdown(false);
-      }
-      if (experienceDropdownRef.current && !experienceDropdownRef.current.contains(event.target as Node)) {
-        setShowExperienceDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const inputCls =
-    "w-full px-4 py-1.5 rounded-xl text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-transparent focus:border-purple-500 focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md";
+    "w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm";
+  const selectCls = `${inputCls} appearance-none`;
 
   // Derive single select for type of househelp from two boolean-like flags
   const typeValue = useMemo(() => {
@@ -85,270 +83,233 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
   };
 
   return (
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Works with Kids */}
-        <div className="flex flex-col relative" ref={kidsDropdownRef}>
-          <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Works with Kids</label>
-          <div className="relative">
-            <div
-              onClick={() => setShowKidsDropdown(!showKidsDropdown)}
-              className="w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
-            >
-              <span className={fields.can_work_with_kids ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
-                {fields.can_work_with_kids === 'true' ? 'Yes' : fields.can_work_with_kids === 'false' ? 'No' : 'Any'}
-              </span>
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-            {showKidsDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
-                {[{ value: '', label: 'Any' }, { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }].map((option) => (
-                  <div
-                    key={option.value}
-                    onClick={() => {
-                      onChange('can_work_with_kids', option.value);
-                      setShowKidsDropdown(false);
-                    }}
-                    className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-                  >
-                    {option.label}
-                  </div>
-                ))}
+    <div className="space-y-3">
+      <div className="rounded-2xl border border-gray-200/80 dark:border-gray-700/70 bg-white/70 dark:bg-black/20 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setOpenSections((prev) => ({ ...prev, basics: !prev.basics }))}
+          className="w-full px-4 py-3 flex items-center justify-between text-left"
+        >
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Basics & Availability</span>
+          <span className="text-gray-500">{openSections.basics ? "−" : "+"}</span>
+        </button>
+        {openSections.basics && (
+          <div className="px-4 pb-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Status</label>
+                <select value={fields.status || ""} onChange={(e) => onChange("status", e.target.value)} className={selectCls}>
+                  <option value="">Any</option>
+                  {PROFILE_STATUS.map((status) => (
+                    <option key={status} value={status}>{status[0].toUpperCase() + status.slice(1)}</option>
+                  ))}
+                </select>
               </div>
-            )}
-          </div>
-        </div>
-        {/* Works with Pets */}
-        <div className="flex flex-col relative" ref={petsDropdownRef}>
-          <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Works with Pets</label>
-          <div className="relative">
-            <div
-              onClick={() => setShowPetsDropdown(!showPetsDropdown)}
-              className="w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
-            >
-              <span className={fields.can_work_with_pets ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
-                {fields.can_work_with_pets === 'true' ? 'Yes' : fields.can_work_with_pets === 'false' ? 'No' : 'Any'}
-              </span>
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-            {showPetsDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
-                {[{ value: '', label: 'Any' }, { value: 'true', label: 'Yes' }, { value: 'false', label: 'No' }].map((option) => (
-                  <div
-                    key={option.value}
-                    onClick={() => {
-                      onChange('can_work_with_pets', option.value);
-                      setShowPetsDropdown(false);
-                    }}
-                    className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-                  >
-                    {option.label}
-                  </div>
-                ))}
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Gender</label>
+                <select value={fields.gender || ""} onChange={(e) => onChange("gender", e.target.value)} className={selectCls}>
+                  <option value="">Any</option>
+                  {GENDERS.map((gender) => (
+                    <option key={gender} value={gender.toLowerCase()}>{gender}</option>
+                  ))}
+                </select>
               </div>
-            )}
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Town</label>
+                <SearchableTownSelect
+                  value={fields.town || ""}
+                  onChange={(value) => onChange("town", value)}
+                  target="househelps"
+                  buttonClassName={selectCls}
+                />
+              </div>
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Type of Househelp</label>
+                <select value={typeValue} onChange={(e) => setType(e.target.value)} className={selectCls}>
+                  <option value="">Any</option>
+                  <option value="live_in">Live-in</option>
+                  <option value="day_worker">Day worker</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Available From</label>
+                <input type="date" value={fields.available_from || ""} onChange={(e) => onChange("available_from", e.target.value)} className={inputCls} />
+              </div>
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Experience</label>
+                <select value={fields.experience || ""} onChange={(e) => onChange("experience", e.target.value)} className={selectCls}>
+                  {EXPERIENCE_OPTIONS.map((option) => (
+                    <option key={option.value || "any"} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Language</label>
+                <select value={fields.language || ""} onChange={(e) => onChange("language", e.target.value)} className={selectCls}>
+                  <option value="">Any</option>
+                  {PRIMARY_LANGUAGES.map((language) => (
+                    <option key={language} value={language}>{language}</option>
+                  ))}
+                  {ALL_LANGUAGES.filter((language) => !PRIMARY_LANGUAGES.includes(language as any)).map((language) => (
+                    <option key={language} value={language}>{language}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Skills / Can Help With</label>
+                <select value={fields.skill || ""} onChange={(e) => onChange("skill", e.target.value)} className={selectCls}>
+                  <option value="">Any</option>
+                  {SKILLS.map((skill) => (
+                    <option key={skill} value={skill.toLowerCase()}>{skill}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Trait</label>
+                <select value={fields.traits || ""} onChange={(e) => onChange("traits", e.target.value)} className={selectCls}>
+                  {TRAITS.map((trait) => (
+                    <option key={trait || "any"} value={trait}>{trait ? trait[0].toUpperCase() + trait.slice(1) : "Any"}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Type of Househelp */}
-        <div className="flex flex-col relative" ref={typeDropdownRef}>
-          <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Type of Househelp</label>
-          <div className="relative">
-            <div
-              onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-              className="w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
-            >
-              <span className={typeValue ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
-                {typeValue === 'live_in' ? 'Live-in' : typeValue === 'day_worker' ? 'Day worker' : 'Any'}
-              </span>
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
-            {showTypeDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
-                {[{ value: '', label: 'Any' }, { value: 'live_in', label: 'Live-in' }, { value: 'day_worker', label: 'Day worker' }].map((option) => (
-                  <div
-                    key={option.value}
-                    onClick={() => {
-                      setType(option.value);
-                      setShowTypeDropdown(false);
-                    }}
-                    className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-                  >
-                    {option.label}
-                  </div>
-                ))}
+      <div className="rounded-2xl border border-gray-200/80 dark:border-gray-700/70 bg-white/70 dark:bg-black/20 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setOpenSections((prev) => ({ ...prev, compensation: !prev.compensation }))}
+          className="w-full px-4 py-3 flex items-center justify-between text-left"
+        >
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Compensation & Rating</span>
+          <span className="text-gray-500">{openSections.compensation ? "−" : "+"}</span>
+        </button>
+        {openSections.compensation && (
+          <div className="px-4 pb-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Salary Frequency</label>
+                <select value={fields.salary_frequency || ""} onChange={(e) => onChange("salary_frequency", e.target.value)} className={selectCls}>
+                  <option value="">Any</option>
+                  {SALARY_FREQUENCIES.map((frequency) => (
+                    <option key={frequency} value={frequency}>{SALARY_FREQUENCY_LABELS[frequency]}</option>
+                  ))}
+                </select>
               </div>
-            )}
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Minimum Rating</label>
+                <select value={fields.min_rating || ""} onChange={(e) => onChange("min_rating", e.target.value)} className={selectCls}>
+                  <option value="">Any</option>
+                  <option value="4.5">4.5+</option>
+                  <option value="4">4.0+</option>
+                  <option value="3">3.0+</option>
+                  <option value="2">2.0+</option>
+                  <option value="1">1.0+</option>
+                </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Min Salary</label>
+                <input type="number" min="0" value={fields.salary_min || ""} onChange={(e) => onChange("salary_min", e.target.value)} placeholder="e.g. 15000" className={inputCls} />
+              </div>
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Max Salary</label>
+                <input type="number" min="0" value={fields.salary_max || ""} onChange={(e) => onChange("salary_max", e.target.value)} placeholder="e.g. 45000" className={inputCls} />
+              </div>
+            </div>
           </div>
-        </div>
-        {/* Available From */}
-        <div className="flex flex-col">
-          <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Available From</label>
-          <input
-            type="date"
-            value={fields.available_from || ""}
-            onChange={(e) => onChange("available_from", e.target.value)}
-            className={inputCls}
-          />
-        </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Language */}
-        <div className="flex flex-col relative" ref={languageDropdownRef}>
-          <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Language</label>
-          <div className="relative">
-            <div
-              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
-              className="w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
-            >
-              <span className={fields.language ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
-                {fields.language || 'Any'}
-              </span>
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+      <div className="rounded-2xl border border-gray-200/80 dark:border-gray-700/70 bg-white/70 dark:bg-black/20 overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setOpenSections((prev) => ({ ...prev, compatibility: !prev.compatibility }))}
+          className="w-full px-4 py-3 flex items-center justify-between text-left"
+        >
+          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Compatibility</span>
+          <span className="text-gray-500">{openSections.compatibility ? "−" : "+"}</span>
+        </button>
+        {openSections.compatibility && (
+          <div className="px-4 pb-4 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Works with Kids</label>
+                <select value={fields.can_work_with_kids || ""} onChange={(e) => onChange("can_work_with_kids", e.target.value)} className={selectCls}>
+                  <option value="">Any</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
+              <div className="flex flex-col">
+                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Works with Pets</label>
+                <select value={fields.can_work_with_pets || ""} onChange={(e) => onChange("can_work_with_pets", e.target.value)} className={selectCls}>
+                  <option value="">Any</option>
+                  <option value="true">Yes</option>
+                  <option value="false">No</option>
+                </select>
+              </div>
             </div>
-            {showLanguageDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                <div
-                  onClick={() => {
-                    onChange('language', '');
-                    setShowLanguageDropdown(false);
-                  }}
-                  className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800"
-                >
-                  Any
+
+            <div className="flex flex-col">
+              <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Age Range: {minAge} - {maxAge} years</label>
+              <div className="px-2 py-4">
+                <div className="relative">
+                  <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full relative">
+                    <div
+                      className="absolute h-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"
+                      style={{
+                        left: `${((minAge - 18) / (65 - 18)) * 100}%`,
+                        right: `${100 - ((maxAge - 18) / (65 - 18)) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <input
+                    type="range"
+                    min="18"
+                    max="65"
+                    value={minAge}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (val <= maxAge) {
+                        onChange("min_age", e.target.value);
+                      }
+                    }}
+                    className="absolute w-full top-0 h-2 bg-transparent appearance-none cursor-pointer z-30"
+                  />
+                  <input
+                    type="range"
+                    min="18"
+                    max="65"
+                    value={maxAge}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (val >= minAge) {
+                        onChange("max_age", e.target.value);
+                      }
+                    }}
+                    className="absolute w-full top-0 h-2 bg-transparent appearance-none cursor-pointer z-30"
+                  />
                 </div>
-                {PRIMARY_LANGUAGES.map((lang) => (
-                  <div
-                    key={lang}
-                    onClick={() => {
-                      onChange('language', lang);
-                      setShowLanguageDropdown(false);
-                    }}
-                    className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800"
-                  >
-                    {lang}
-                  </div>
-                ))}
-                <div className="px-4 py-1 text-xs font-semibold text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-900">Other Languages</div>
-                {ALL_LANGUAGES.filter(lang => !PRIMARY_LANGUAGES.includes(lang as any)).map((lang) => (
-                  <div
-                    key={lang}
-                    onClick={() => {
-                      onChange('language', lang);
-                      setShowLanguageDropdown(false);
-                    }}
-                    className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-                  >
-                    {lang}
-                  </div>
-                ))}
               </div>
-            )}
-          </div>
-        </div>
-        {/* Experience */}
-        <div className="flex flex-col relative" ref={experienceDropdownRef}>
-          <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Experience</label>
-          <div className="relative">
-            <div
-              onClick={() => setShowExperienceDropdown(!showExperienceDropdown)}
-              className="w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
-            >
-              <span className={fields.experience ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
-                {fields.experience ? EXPERIENCE_LEVELS.find(l => l.value === fields.experience)?.label : 'Any'}
-              </span>
-              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
             </div>
-            {showExperienceDropdown && (
-              <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-800 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                <div
-                  onClick={() => {
-                    onChange('experience', '');
-                    setShowExperienceDropdown(false);
-                  }}
-                  className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800"
-                >
-                  Any
-                </div>
-                {EXPERIENCE_LEVELS.map((level) => (
-                  <div
-                    key={level.value}
-                    onClick={() => {
-                      onChange('experience', level.value);
-                      setShowExperienceDropdown(false);
-                    }}
-                    className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-                  >
-                    {level.label}
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        </div>
-      </div>
-
-      {/* Age Range Slider */}
-      <div className="flex flex-col">
-        <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Age Range: {minAge} - {maxAge} years</label>
-        <div className="px-2 py-4">
-          <div className="relative">
-            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full relative">
-              <div
-                className="absolute h-2 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full"
-                style={{
-                  left: `${((minAge - 18) / (65 - 18)) * 100}%`,
-                  right: `${100 - ((maxAge - 18) / (65 - 18)) * 100}%`,
-                }}
-              />
-            </div>
-            <input
-              type="range"
-              min="18"
-              max="65"
-              value={minAge}
-              onChange={(e) => {
-                const val = parseInt(e.target.value);
-                if (val <= maxAge) {
-                  onChange('min_age', e.target.value);
-                }
-              }}
-              className="absolute w-full top-0 h-2 bg-transparent appearance-none cursor-pointer z-30"
-              style={{
-                pointerEvents: 'auto',
-              }}
-            />
-            <input
-              type="range"
-              min="18"
-              max="65"
-              value={maxAge}
-              onChange={(e) => {
-                const val = parseInt(e.target.value);
-                if (val >= minAge) {
-                  onChange('max_age', e.target.value);
-                }
-              }}
-              className="absolute w-full top-0 h-2 bg-transparent appearance-none cursor-pointer z-30"
-              style={{
-                pointerEvents: 'auto',
-              }}
-            />
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 pt-2">

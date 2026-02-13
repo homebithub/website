@@ -43,6 +43,20 @@ interface ProfileSetupContextType {
 
 const ProfileSetupContext = createContext<ProfileSetupContextType | undefined>(undefined);
 
+const fallbackProfileSetupContext: ProfileSetupContextType = {
+  profileData: {},
+  updateStepData: () => {},
+  saveStepToBackend: async () => {},
+  saveProfileToBackend: async () => {},
+  loadProfileFromBackend: async () => {},
+  clearProfileData: () => {},
+  isLoading: false,
+  error: null,
+  lastCompletedStep: 0,
+};
+
+let hasWarnedMissingProfileSetupProvider = false;
+
 export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [profileData, setProfileData] = useState<ProfileSetupData>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -141,24 +155,39 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
       });
 
+      // Fetch progress tracking data
+      const progressResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      let lastCompleted = 0;
+      if (progressResponse.ok) {
+        const progressResponseBody = await progressResponse.json();
+        const progressData = progressResponseBody?.data || progressResponseBody || {};
+        lastCompleted = progressData.last_completed_step || 0;
+      }
+
       if (stepsResponse.ok) {
-        const stepsData = await stepsResponse.json();
-        console.log('Steps tracking data:', stepsData);
+        const responseData = await stepsResponse.json();
+        const steps = Array.isArray(responseData.data?.data) ? responseData.data.data : [];
+        console.log('Steps tracking data:', steps);
         
-        // Set last completed step from tracking data
-        setLastCompletedStep(stepsData.last_completed_step || 0);
+        // Set last completed step from tracking data if available, otherwise use progress
+        setLastCompletedStep(lastCompleted);
         
         // Reconstruct profile data from steps
         const reconstructed: ProfileSetupData = {};
-        stepsData.steps?.forEach((step: any) => {
-          if (step.data && step.is_completed) {
+        steps.forEach((step: any) => {
+          if (hasData(step.data) && (step.is_completed || step.is_skipped)) {
             reconstructed[step.step_id as keyof ProfileSetupData] = step.data;
           }
         });
         
         setProfileData(reconstructed);
         console.log('Profile loaded from steps tracking', { 
-          lastCompletedStep: stepsData.last_completed_step,
+          lastCompletedStep: lastCompleted,
           profileData: reconstructed 
         });
       } else if (stepsResponse.status === 404) {
@@ -285,7 +314,11 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
 export const useProfileSetup = () => {
   const context = useContext(ProfileSetupContext);
   if (context === undefined) {
-    throw new Error('useProfileSetup must be used within a ProfileSetupProvider');
+    if (typeof window !== 'undefined' && !hasWarnedMissingProfileSetupProvider) {
+      hasWarnedMissingProfileSetupProvider = true;
+      console.error('useProfileSetup used outside ProfileSetupProvider. Falling back to no-op context.');
+    }
+    return fallbackProfileSetupContext;
   }
   return context;
 };
@@ -302,6 +335,14 @@ function transformProfileData(data: ProfileSetupData): any {
     transformed.town = data.location.town;
     transformed.area = data.location.area;
     transformed.address = data.location.address;
+    transformed.mapbox_id = data.location.mapbox_id;
+    // Populate the location JSONB field so it persists in the DB
+    transformed.location = {
+      place: data.location.place || data.location.name || data.location.town || '',
+      name: data.location.name || data.location.place || data.location.town || '',
+      mapbox_id: data.location.mapbox_id || '',
+      feature_type: data.location.feature_type || 'place',
+    };
   }
 
   // Religion
@@ -359,8 +400,11 @@ function transformProfileData(data: ProfileSetupData): any {
     }
 
     // Nanny Type for househelp
-    if (data.nannytype) {
-      transformed.househelp_type = data.nannytype.type || data.nannytype;
+    if (hasData(data.nannytype)) {
+      const househelpType = data.nannytype?.type || (typeof data.nannytype === 'string' ? data.nannytype : undefined);
+      if (househelpType) {
+        transformed.househelp_type = househelpType;
+      }
     }
 
     // Years of Experience
@@ -613,8 +657,8 @@ function calculateLastCompletedStep(data: ProfileSetupData): number {
 
   // Househelp step order (based on the 13 steps in househelp.tsx)
   const househelpStepOrder = [
-    'nannytype',      // Service Type
     'location',       // Location
+    'nannytype',      // Service Type
     'gender',         // Gender & Age
     'experience',     // Experience
     'workwithkids',   // Work with Kids

@@ -45,7 +45,30 @@ function HouseholdProfileSetupContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
-  const { saveProfileToBackend, loadProfileFromBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
+  const { saveProfileToBackend, loadProfileFromBackend, updateStepData, saveStepToBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
+  
+  const currentStepData = STEPS[currentStep];
+
+  const handleLocationSaved = async (location: any) => {
+    const locationData = {
+      place: location.name,
+      name: location.name,
+      mapbox_id: location.mapbox_id,
+      feature_type: location.feature_type || 'place',
+    };
+    
+    // Update local state
+    updateStepData('location', locationData);
+    
+    // Also save to backend step tracking
+    try {
+      // Find the step index for 'location'
+      const locationStepIndex = STEPS.findIndex(step => step.id === 'location');
+      await saveStepToBackend('location', locationData, locationStepIndex);
+    } catch (error) {
+      console.error('Failed to save location step data:', error);
+    }
+  };
   
   // Check if user is editing from profile page using location state (secure, can't be manipulated)
   const isEditMode = location.state?.fromProfile === true;
@@ -286,7 +309,7 @@ function HouseholdProfileSetupContent() {
           <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                <h1 className="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">
                   Complete Your Household Profile 🏠
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -310,16 +333,16 @@ function HouseholdProfileSetupContent() {
               </div>
               
               {/* Progress Bar */}
-              <div className="w-full bg-purple-100 rounded-full h-4 mb-4 shadow-inner">
+              <div className="w-full bg-purple-100 rounded-full h-2.5 mb-3 shadow-inner">
                 <div 
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 h-4 rounded-full transition-all duration-300 ease-out shadow-md"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 h-2.5 rounded-full transition-all duration-300 ease-out shadow-md"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
               
               {/* Current Step Title */}
               <div className="flex items-center justify-between">
-                <h2 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-400">
+                <h2 className="text-sm sm:text-base font-semibold text-purple-700 dark:text-purple-400">
                   {STEPS[currentStep].title}
                 </h2>
               </div>
@@ -336,7 +359,7 @@ function HouseholdProfileSetupContent() {
               >
                 ← Back to Profile
               </button>
-              <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <h2 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Edit {STEPS[currentStep].title}
               </h2>
             </div>
@@ -357,6 +380,8 @@ function HouseholdProfileSetupContent() {
                   }} />
                 ) : STEPS[currentStep].id === 'nannytype' ? (
                   <CurrentComponent userType="household" />
+                ) : STEPS[currentStep].id === 'location' ? (
+                  <CurrentComponent onSaved={handleLocationSaved} />
                 ) : (
                   <CurrentComponent />
                 )}
@@ -399,7 +424,12 @@ function HouseholdProfileSetupContent() {
 
                   <button
                     onClick={handleNext}
-                    className="flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all"
+                    disabled={saving}
+                    className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
+                      saving 
+                        ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                        : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
+                    }`}
                   >
                     {currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →'}
                     {currentStep !== STEPS.length - 1 && (
@@ -438,7 +468,11 @@ function HouseholdProfileSetupContent() {
                 <button
                   onClick={handleNext}
                   disabled={saving}
-                  className="flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                  className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
+                    saving 
+                      ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                      : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
+                  }`}
                 >
                   {saving ? '✨ Saving...' : (currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →')}
                   {currentStep !== STEPS.length - 1 && !saving && (

@@ -1,5 +1,6 @@
 import React from "react";
 import type { HousehelpSearchFields } from "~/components/features/HousehelpFilters";
+import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 
 interface Props {
   fields: HousehelpSearchFields;
@@ -9,7 +10,6 @@ interface Props {
 }
 
 // Option sets aligned with HousehelpFilters
-const TOWNS = ["", "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"];
 const SKILLS = ["", "cooking", "cleaning", "babysitting", "laundry", "elderly care"];
 const TRAITS = ["", "honest", "patient", "punctual", "organized", "friendly"];
 const EXPERIENCES = Array.from({ length: 11 }, (_, i) => String(i));
@@ -79,13 +79,12 @@ export default function HousehelpFiltersCompact({ fields, onChange, onSearch, on
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Town</label>
-          <select className={selectClass} value={fields.town} onChange={(e) => onChange("town", e.target.value)}>
-            {TOWNS.map((t) => (
-              <option key={t} value={t}>
-                {t || "Any"}
-              </option>
-            ))}
-          </select>
+          <SearchableTownSelect
+            value={fields.town}
+            onChange={(value) => onChange("town", value)}
+            target="househelps"
+            buttonClassName={selectClass}
+          />
         </div>
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Salary frequency</label>

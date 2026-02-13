@@ -4,6 +4,8 @@ import { XMarkIcon } from '@heroicons/react/24/outline';
 import { apiClient } from '~/utils/apiClient';
 import { API_ENDPOINTS } from '~/config/api';
 import CustomSelect from '~/components/ui/CustomSelect';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 interface HireRequestModalProps {
   isOpen: boolean;
@@ -191,19 +193,13 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
 
           {/* Success Message */}
           {success && (
-            <div className="mx-6 mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-              <p className="text-green-800 dark:text-green-200 font-medium">
-                ✅ Hire request sent successfully to {househelpName}!
-              </p>
+            <div className="mx-6 mt-4">
+              <SuccessAlert message={`Hire request sent successfully to ${househelpName}!`} />
             </div>
           )}
 
           {/* Error Message */}
-          {error && (
-            <div className="mx-6 mt-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl">
-              <p className="text-red-800 dark:text-red-200">{error}</p>
-            </div>
-          )}
+          {error && <div className="mx-6 mt-4"><ErrorAlert message={error} /></div>}
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="p-6 space-y-6">

@@ -2,13 +2,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
-import { handleApiError } from '~/utils/errorMessages';
+import { handleApiError, extractErrorMessage } from '~/utils/errorMessages';
 // Temporarily commented out to debug module loading issue
 // import { HouseholdProfileModal } from '~/components/modals/HouseholdProfileModal';
 import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
 import { API_BASE_URL } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 export default function VerifyOtpPage() {
   // UI state for changing phone
@@ -55,7 +57,7 @@ export default function VerifyOtpPage() {
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || 'Failed to update phone');
+        throw new Error(extractErrorMessage(err) || 'Failed to update phone');
       }
       const data = await res.json();
       if (data.verification) {
@@ -65,6 +67,7 @@ export default function VerifyOtpPage() {
         setLocalFailedAttempts(0);
         setOtp('');
         setLastTriedOtp('');
+        setResendSeconds(30);
       }
     }else{
       const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
@@ -74,7 +77,7 @@ export default function VerifyOtpPage() {
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || 'Failed to send OTP');
+        throw new Error(extractErrorMessage(err) || 'Failed to send OTP');
       }
       const data = await res.json();
       if (data.verification) {
@@ -84,6 +87,7 @@ export default function VerifyOtpPage() {
         setLocalFailedAttempts(0);
         setOtp('');
         setLastTriedOtp('');
+        setResendSeconds(30);
       }
     }
     } catch (err: any) {
@@ -124,22 +128,31 @@ export default function VerifyOtpPage() {
   const [success, setSuccess] = useState(false);
   const [resent, setResent] = useState(false);
 
-  // Timer state for resend cooldown
+  // Timer state for resend cooldown - always start with 30s on initial load
   const [resendSeconds, setResendSeconds] = useState<number>(() => {
-    if (!verification?.next_resend_at) return 0;
-    const nextResend = new Date(verification.next_resend_at).getTime(); // UTC
-    const now = Date.now(); // User's local device time (ms since epoch)
-    const diff = Math.floor((nextResend - now) / 1000);
-    return diff > 0 ? diff : 0;
+    if (verification?.next_resend_at) {
+      const nextResend = new Date(verification.next_resend_at).getTime();
+      const now = Date.now();
+      const diff = Math.floor((nextResend - now) / 1000);
+      return diff > 0 ? diff : 30;
+    }
+    return 30;
   });
 
-  // Reset resend timer and attempts when verification changes
+  // Reset resend timer when verification changes (e.g. after resend/change phone)
+  const verificationRef = React.useRef(verification);
   React.useEffect(() => {
-    if (!verification?.next_resend_at) return;
-    const nextResend = new Date(verification.next_resend_at).getTime();
-    const now = Date.now();
-    const diff = Math.floor((nextResend - now) / 1000);
-    setResendSeconds(diff > 0 ? diff : 0);
+    // Only reset timer when verification actually changes (not on initial mount)
+    if (verificationRef.current === verification) return;
+    verificationRef.current = verification;
+    if (verification?.next_resend_at) {
+      const nextResend = new Date(verification.next_resend_at).getTime();
+      const now = Date.now();
+      const diff = Math.floor((nextResend - now) / 1000);
+      setResendSeconds(diff > 0 ? diff : 30);
+    } else {
+      setResendSeconds(30);
+    }
   }, [verification]);
 
   // Helper to get user_id and phone from verification
@@ -156,18 +169,14 @@ export default function VerifyOtpPage() {
     ? Math.max(0, verification.max_attempts - (verification.attempts + localFailedAttempts))
     : null;
 
-  // Countdown effect
+  // Countdown effect - simple 1-second decrement
   React.useEffect(() => {
     if (resendSeconds <= 0) return;
-    const interval = setInterval(() => {
-      if (!verification?.next_resend_at) return;
-      const nextResend = new Date(verification.next_resend_at).getTime(); // UTC
-      const now = Date.now(); // User's local device time
-      const diff = Math.floor((nextResend - now) / 1000);
-      setResendSeconds(diff > 0 ? diff : 0);
+    const timer = setTimeout(() => {
+      setResendSeconds((prev) => (prev > 0 ? prev - 1 : 0));
     }, 1000);
-    return () => clearInterval(interval);
-  }, [resendSeconds, verification]);
+    return () => clearTimeout(timer);
+  }, [resendSeconds]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,103 +202,106 @@ export default function VerifyOtpPage() {
       if (!res.ok) {
         const err = await res.json();
         console.log(err)
-        throw new Error(err.message || 'OTP verification failed');
+        throw new Error(extractErrorMessage(err) || 'OTP verification failed');
       }
       const userData = await res.json();
+      console.log('[VERIFY-OTP] Raw response:', JSON.stringify(userData));
+      
+      // Flatten user data: gateway returns { user: { id, profile_type, ... }, token }
+      const userObj = userData.user || {};
+      const flatUser = {
+        ...userObj,
+        user_id: userObj.id || userObj.user_id,
+        profile_type: userObj.profile_type || localStorage.getItem('profile_type') || '',
+      };
+      
       // Store token and user_object in localStorage
       if (userData.token) {
         localStorage.setItem('token', userData.token);
-        // Remove token from user object before storing
-        const { token, ...userObj } = userData;
-        localStorage.setItem('user_object', JSON.stringify(userObj));
+        localStorage.setItem('user_object', JSON.stringify(flatUser));
 
-			// Persist profile metadata consistently with login flow
-			try {
-				const profileType = userObj.profile_type || localStorage.getItem('profile_type') || '';
-				if (profileType) {
-					localStorage.setItem('profile_type', profileType);
-					localStorage.setItem('userType', profileType);
-				}
-			} catch {}
+        // Persist profile metadata consistently with login flow
+        if (flatUser.profile_type) {
+          localStorage.setItem('profile_type', flatUser.profile_type);
+          localStorage.setItem('userType', flatUser.profile_type);
+        }
       }
       setSuccess(true);
       setLocalFailedAttempts(0); // reset on success
       setLastTriedOtp('');
+      
+      const profileType = flatUser.profile_type;
+      const userId = flatUser.user_id;
+      console.log('[VERIFY-OTP] Profile type:', profileType, 'User ID:', userId);
+      
       // If bureauId is present in state, redirect to /bureau/househelps after verification
       if (locationState.bureauId) {
         navigate('/bureau/househelps');
       } else {
-        const userObj = localStorage.getItem('user_object');
-        let path = '/';
-        if (userObj) {
-          const parsed = JSON.parse(userObj);
-          console.log('User object after OTP verification:', parsed);
-          console.log('Profile type:', parsed.profile_type);
+        // Bureau users should not verify through regular flow
+        if (profileType === 'bureau') {
+          console.log('[VERIFY-OTP] Bureau user detected, redirecting to home');
+          navigate('/');
+          return;
+        }
 
-			  // Ensure profile_type is persisted for guards
-			  try {
-				  const pt = parsed.profile_type || localStorage.getItem('profile_type') || '';
-				  if (pt) {
-					  localStorage.setItem('profile_type', pt);
-					  localStorage.setItem('userType', pt);
-				  }
-			  } catch {}
-          
-          // Bureau users should not verify through regular flow
-          if (parsed.profile_type === 'bureau') {
-            console.log('Bureau user detected, redirecting to home');
-            navigate('/');
+        // Step 1: After phone OTP, go to email entry page (unless already done)
+        if (!afterEmailVerification) {
+          if (profileType === 'household' || profileType === 'househelp') {
+            console.log('[VERIFY-OTP] Phone verified, redirecting to verify-email');
+            navigate('/verify-email', {
+              state: {
+                user_id: userId,
+                from: 'phone-verification',
+              },
+            });
             return;
           }
-
-			  const profileType = parsed.profile_type;
-			  // If email verification is still required by your flow, keep routing there.
-			  if (!afterEmailVerification) {
-				  if (profileType === 'household' || profileType === 'househelp') {
-					  navigate('/verify-email', {
-						  state: {
-							  user_id: parsed.user_id || parsed.id,
-							  from: 'phone-verification',
-						  },
-					  });
-					  return;
-				  }
-			  }
-
-			  // After verification, send household/househelp to profile setup flow.
-			  if (profileType === 'household' || profileType === 'househelp') {
-				  try {
-					  const token = localStorage.getItem('token');
-					  if (token) {
-						  const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-							  headers: {
-								  Authorization: `Bearer ${token}`,
-							  },
-						  });
-
-						  if (setupResponse.ok) {
-							  const setupData = await setupResponse.json();
-							  const isComplete = setupData.is_complete || false;
-							  const lastStep = setupData.last_completed_step || 0;
-
-							  if (!isComplete) {
-								  const setupRoute = profileType === 'household'
-									  ? `/profile-setup/household?step=${lastStep + 1}`
-									  : `/profile-setup/househelp?step=${lastStep + 1}`;
-								  navigate(setupRoute);
-								  return;
-							  }
-						  }
-					  }
-				  } catch (err) {
-					  console.error('Failed to check profile setup status after OTP verification:', err);
-				  }
-
-				  // Fallback: start setup from step 1
-				  path = profileType === 'household' ? '/profile-setup/household?step=1' : '/profile-setup/househelp?step=1';
-			  }
         }
-        console.log('Redirecting to:', path);
+
+        // Step 2: After email OTP, go to profile setup
+        let path = '/';
+        if (profileType === 'household' || profileType === 'househelp') {
+          try {
+            const token = localStorage.getItem('token');
+            if (token) {
+              const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              });
+
+              if (setupResponse.ok) {
+                const setupData = await setupResponse.json();
+                const isComplete = setupData.is_complete || false;
+                const lastStep = setupData.last_completed_step || 0;
+
+                if (!isComplete) {
+                  const setupRoute = profileType === 'household'
+                    ? `/profile-setup/household?step=${lastStep + 1}`
+                    : `/profile-setup/househelp?step=${lastStep + 1}`;
+                  console.log('[VERIFY-OTP] Email verified, redirecting to profile setup:', setupRoute);
+                  navigate(setupRoute);
+                  return;
+                }
+              } else if (setupResponse.status === 404) {
+                // No profile setup record exists - user hasn't started setup
+                console.log("[VERIFY-OTP] No profile setup record found, starting from step 1");
+                const setupRoute = profileType === 'household'
+                  ? `/profile-setup/household?step=1`
+                  : `/profile-setup/househelp?step=1`;
+                navigate(setupRoute);
+                return;
+              }
+            }
+          } catch (err) {
+            console.error('[VERIFY-OTP] Failed to check profile setup status:', err);
+          }
+
+          // Fallback: start setup from step 1
+          path = profileType === 'household' ? '/profile-setup/household?step=1' : '/profile-setup/househelp?step=1';
+        }
+        console.log('[VERIFY-OTP] Redirecting to:', path);
         navigate(path);
       }
     } catch (err: any) {
@@ -315,7 +327,7 @@ export default function VerifyOtpPage() {
       });
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || 'Failed to resend OTP');
+        throw new Error(extractErrorMessage(err) || 'Failed to resend OTP');
       }
       const data = await res.json();
       if (data.verification) {
@@ -324,6 +336,7 @@ export default function VerifyOtpPage() {
         setOtp('');
         setLastTriedOtp('');
       }
+      setResendSeconds(30);
       setResent(true);
     } catch (err: any) {
       const errorMessage = handleApiError(err, 'otp');
@@ -415,6 +428,11 @@ export default function VerifyOtpPage() {
     navigate('/household/profile');
   };
 
+  // Guard: render nothing while redirecting if verification is missing
+  if (!verification) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -447,7 +465,7 @@ export default function VerifyOtpPage() {
                 maxLength={6}
                 inputMode="numeric"
                 pattern="[0-9]*"
-                className={`w-full h-14 px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 text-center tracking-widest text-2xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm transition-all ${
+                className={`w-full h-14 px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)] text-center tracking-widest text-2xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm transition-all ${
                   otpError 
                     ? 'border-red-300 dark:border-red-600' 
                     : otpTouched && !otpError && otp.length === 6
@@ -456,9 +474,9 @@ export default function VerifyOtpPage() {
                 }`}
                 placeholder="Enter OTP"
               />
-              {otpError && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-4 shadow-md"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800">{otpError}</p></div></div>}
-              {error && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-4 shadow-md"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800">{error}</p></div></div>}
-              {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-4 shadow-md"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800">OTP verified! ✔️</p></div></div>}
+              {otpError && <ErrorAlert message={otpError} />}
+              {error && <ErrorAlert message={error} />}
+              {success && <SuccessAlert message="OTP verified! 🎉" />}
               <button
                 type="submit"
                 className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
@@ -501,12 +519,16 @@ export default function VerifyOtpPage() {
             <div className="text-center mt-4">
               <button
                 type="button"
-                className="text-purple-600 hover:text-purple-700 font-semibold hover:underline text-sm transition-colors"
+                className="text-sm transition-colors"
                 onClick={() => setShowChangePhone(true)}
               >
-                {verification.type === 'phone' || verification.type === 'password_reset'
-                  ? 'Used the wrong phone number? Click here to change'
-                  : 'Used the wrong email? Click here to change'}
+                <span className="text-gray-400 dark:text-gray-300">
+                  {verification.type === 'phone' || verification.type === 'password_reset'
+                    ? 'Used the wrong phone number? Click '
+                    : 'Used the wrong email? Click '}
+                </span>
+                <span className="text-purple-500 underline font-semibold hover:text-purple-400">here</span>
+                <span className="text-gray-400 dark:text-gray-300"> to change</span>
               </button>
             </div>
           )}
@@ -530,7 +552,7 @@ export default function VerifyOtpPage() {
                   });
                   if (!res.ok) {
                     const err = await res.json();
-                    throw new Error(err.message || 'Failed to update email');
+                    throw new Error(extractErrorMessage(err) || 'Failed to update email');
                   }
                   const data = await res.json();
                   if (data.verification) {
@@ -540,6 +562,7 @@ export default function VerifyOtpPage() {
                     setLocalFailedAttempts(0);
                     setOtp('');
                     setLastTriedOtp('');
+                    setResendSeconds(30);
                   }
                 } catch (err: any) {
                   setChangePhoneError(err.message || 'Failed to update email');
@@ -572,7 +595,7 @@ export default function VerifyOtpPage() {
                 placeholder={verification.type === 'phone' || verification.type === 'password_reset' ? 'e.g. 0712345678' : 'e.g. user@email.com'}
               />
               {newPhoneError && (
-                <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center w-full max-w-xs">{newPhoneError}</div>
+                <div className="w-full max-w-xs"><ErrorAlert message={newPhoneError} /></div>
               )}
               <button
                 type="submit"
@@ -587,7 +610,7 @@ export default function VerifyOtpPage() {
               </button>
 
               {changePhoneError && (
-                <div className="text-red-700 bg-red-50 border border-red-200 rounded p-2 text-center w-full max-w-xs">{changePhoneError}</div>
+                <div className="w-full max-w-xs"><ErrorAlert message={changePhoneError} /></div>
               )}
               <button
                 type="button"

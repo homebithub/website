@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -11,21 +12,40 @@ import { MessageCircle, Heart, HandHeart } from "lucide-react";
 interface HouseholdData {
   id?: string;
   user_id?: string;
+  owner_user_id?: string;
+  owner?: { id?: string; first_name?: string; last_name?: string; avatar_url?: string };
+  // From embedded Profile
+  town?: string;
+  address?: string;
+  bio?: string;
+  status?: string;
+  avatar_url?: string;
+  location?: any;
+  verified?: boolean;
+  premium?: boolean;
+  rating?: number;
+  review_count?: number;
+  created_at?: string;
+  updated_at?: string;
+  // Household-specific
   house_size?: string;
   household_notes?: string;
+  is_shared?: boolean;
+  member_count?: number;
+  // Service Requirements
   needs_live_in?: boolean;
   live_in_off_days?: string[];
   needs_day_worker?: boolean;
   day_worker_schedule?: any;
   available_from?: string;
   chores?: string[];
+  househelp_ids?: string[];
+  // Budget
   budget_min?: number;
   budget_max?: number;
   salary_frequency?: string;
+  // Preferences
   religion?: string;
-  bio?: string;
-  address?: string;
-  location?: any;
   photos?: string[];
 }
 
@@ -63,7 +83,11 @@ export default function HouseholdPublicProfile() {
     }
   }, []);
   const resolvedUserId =
-    params.get("user_id") || params.get("profileId") || navigationState.profileId || currentUserId;
+    params.get("user_id") ||
+    params.get("profile_id") ||
+    params.get("profileId") ||
+    navigationState.profileId ||
+    currentUserId;
   const [profile, setProfile] = useState<HouseholdData | null>(null);
   const [kids, setKids] = useState<any[]>([]);
   const [pets, setPets] = useState<any[]>([]);
@@ -88,7 +112,8 @@ export default function HouseholdPublicProfile() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!profileRes.ok) throw new Error("Failed to fetch profile");
-        const profileData = await profileRes.json();
+        const profileRaw = await profileRes.json();
+        const profileData = profileRaw?.data?.data || profileRaw?.data || profileRaw;
         setProfile(profileData);
 
         try {
@@ -96,22 +121,22 @@ export default function HouseholdPublicProfile() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (petsRes.ok) {
-            const petsData = await petsRes.json();
-            setPets(petsData || []);
+            const petsRaw = await petsRes.json();
+            const petsData = petsRaw?.data?.data || petsRaw?.data || petsRaw;
+            setPets(Array.isArray(petsData) ? petsData : []);
           }
         } catch (err) {
           console.error("Failed to fetch pets:", err);
         }
 
         try {
-          if (currentUserId && resolvedUserId === currentUserId) {
-            const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (kidsRes.ok) {
-              const kidsData = await kidsRes.json();
-              setKids(kidsData || []);
-            }
+          const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids/user/${resolvedUserId}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (kidsRes.ok) {
+            const kidsRaw = await kidsRes.json();
+            const kidsData = kidsRaw?.data?.data || kidsRaw?.data || kidsRaw;
+            setKids(Array.isArray(kidsData) ? kidsData : []);
           }
         } catch (err) {
           console.error("Failed to fetch kids:", err);
@@ -143,13 +168,17 @@ export default function HouseholdPublicProfile() {
     const checkShortlist = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) throw new Error("Not authenticated");
-        const res = await fetch(`${API_BASE_URL}/api/v1/shortlists/exists/${profile.id}`, {
+        if (!token) return;
+        const res = await fetch(`${API_BASE_URL}/api/v1/shortlists`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!cancelled && res.ok) {
-          const data = await res.json();
-          setIsShortlisted(Boolean(data?.exists));
+          const raw = await res.json();
+          const items = raw?.data?.data || raw?.data || raw || [];
+          const ids = new Set(
+            (Array.isArray(items) ? items : []).map((s: any) => s.profile_id).filter(Boolean)
+          );
+          setIsShortlisted(ids.has(profile.id));
         }
       } catch (err) {
         console.error("Failed to fetch shortlist status", err);
@@ -264,11 +293,8 @@ export default function HouseholdPublicProfile() {
     if (!resolvedUserId || !currentUserId) return;
     setActionLoading('chat');
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Not authenticated");
-
       // In this view, the current user is typically a househelp viewing a household profile.
-      const payload: Record<string, any> = {
+      const payload: StartConversationPayload = {
         household_user_id: resolvedUserId,
         househelp_user_id: currentUserId,
       };
@@ -276,26 +302,8 @@ export default function HouseholdPublicProfile() {
         payload.household_profile_id = profile.id;
       }
 
-      const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to start conversation');
-
-      let convId: string | undefined;
-      try {
-        const data = await res.json();
-        convId = data?.id || data?.ID || data?.conversation_id;
-      } catch {
-        convId = undefined;
-      }
-
-      if (convId) navigate(`/inbox?conversation=${convId}`);
-      else navigate('/inbox');
+      const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      navigate(getInboxRoute(convId));
     } catch (err) {
       console.error('Failed to start chat', err);
       navigate('/inbox');
@@ -339,39 +347,40 @@ export default function HouseholdPublicProfile() {
           <div className="max-w-6xl mx-auto px-4">
             {/* Header (hidden in embed mode) */}
             {!isEmbed && (
-              <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl shadow-lg border border-white/10 dark:border-purple-500/20">
-                <div className="flex flex-col gap-6">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="space-y-4">
+              <div className="rounded-2xl p-4 sm:p-6 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 mb-4">
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-3">
                       {shouldShowBackButton && (
                         <button
                           onClick={handleBackNavigation}
-                          className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white font-semibold transition-colors text-sm sm:text-base"
+                          className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-semibold transition-colors text-xs"
                         >
                           ← {backLabel}
                         </button>
                       )}
                       <div>
-                        <h1 className="text-xl sm:text-2xl font-bold flex items-center gap-3">
-                          🏠 Household Profile
+                        <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+                          🏠 {profile.owner ? `${profile.owner.first_name || ''} ${profile.owner.last_name || ''}`.trim() || 'Household Profile' : 'Household Profile'}
                         </h1>
+                        {profile.town && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {profile.town}</p>}
                       </div>
                     </div>
 
                     {showActions && (
-                      <div className="flex items-center gap-3 sm:gap-4 self-start lg:self-auto">
+                      <div className="flex items-center gap-2 sm:gap-3 self-start lg:self-auto">
                         {canShortlist && (
                           <button
                             onClick={handleToggleShortlist}
                             disabled={actionLoading === 'shortlist'}
                             aria-label={isShortlisted ? 'Remove from shortlist' : 'Add to shortlist'}
-                            className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all ${
+                            className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shadow transition-all ${
                               isShortlisted
                                 ? 'bg-pink-500 border-pink-200 text-white hover:bg-pink-600'
-                                : 'bg-white/20 border-white/40 text-white hover:bg-white/30'
+                                : 'bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-200'
                             } ${actionLoading === 'shortlist' ? 'opacity-70 cursor-not-allowed' : ''}`}
                           >
-                            <Heart className="w-5 h-5" />
+                            <Heart className="w-4 h-4" fill={isShortlisted ? 'currentColor' : 'none'} />
                           </button>
                         )}
                         {canChat && (
@@ -379,24 +388,24 @@ export default function HouseholdPublicProfile() {
                             onClick={handleStartChat}
                             disabled={actionLoading === 'chat'}
                             aria-label="Chat"
-                            className={`w-12 h-12 rounded-full border-2 flex items-center justify-center shadow-lg transition-all bg-white text-purple-600 ${
+                            className={`w-10 h-10 rounded-full border-2 flex items-center justify-center shadow transition-all bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 ${
                               actionLoading === 'chat' ? 'opacity-70 cursor-not-allowed' : 'hover:scale-105'
                             }`}
                           >
-                            <MessageCircle className="w-5 h-5" />
+                            <MessageCircle className="w-4 h-4" />
                           </button>
                         )}
                         {canInteract && (
                           <button
                             onClick={() => setIsInterestModalOpen(true)}
                             disabled={hasExpressedInterest}
-                            className={`px-4 py-1 rounded-full font-semibold shadow-lg transition-all flex items-center gap-2 ${
+                            className={`px-4 py-1.5 text-xs rounded-xl font-semibold shadow-lg transition-all flex items-center gap-2 ${
                               hasExpressedInterest
                                 ? 'bg-gray-400 text-white cursor-not-allowed'
-                                : 'bg-green-500 text-white hover:bg-green-600 hover:scale-105'
+                                : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                             }`}
                           >
-                            <HandHeart className="w-5 h-5" />
+                            <HandHeart className="w-4 h-4" />
                             {hasExpressedInterest ? 'Interest Sent' : 'Show Interest'}
                           </button>
                         )}
@@ -407,10 +416,43 @@ export default function HouseholdPublicProfile() {
               </div>
             )}
 
+      {/* Quick Info Badges */}
+      <div className="bg-white dark:bg-[#13131a] p-4 sm:p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex flex-wrap gap-2">
+          {profile.verified && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-xs font-semibold">✅ Verified</span>
+          )}
+          {profile.premium && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-full text-xs font-semibold">⭐ Premium</span>
+          )}
+          {profile.is_shared && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-xs font-semibold">👨‍👩‍👧 Shared Household ({profile.member_count || 1} members)</span>
+          )}
+          {profile.house_size && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-xs font-semibold">🏠 {profile.house_size}</span>
+          )}
+          {profile.rating && profile.rating > 0 && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded-full text-xs font-semibold">⭐ {profile.rating}/5 ({profile.review_count || 0} reviews)</span>
+          )}
+          {profile.needs_live_in && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 rounded-full text-xs font-semibold">🌙 Needs Live-in</span>
+          )}
+          {profile.needs_day_worker && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded-full text-xs font-semibold">☀️ Needs Day Worker</span>
+          )}
+          {profile.religion && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-xs font-semibold">🙏 {profile.religion}</span>
+          )}
+          {profile.created_at && (
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-xs">Member since {new Date(profile.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>
+          )}
+        </div>
+      </div>
+
       {/* Profile Photos */}
       {profile.photos && profile.photos.length > 0 && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">📸 Home Photos</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📸 Home Photos</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
             {profile.photos.map((photo, idx) => (
               <div key={idx} className="relative aspect-square rounded-lg overflow-hidden group cursor-pointer" onClick={() => setSelectedImage(photo)}>
@@ -418,14 +460,10 @@ export default function HouseholdPublicProfile() {
                   src={photo}
                   alt={`Home photo ${idx + 1}`}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                  onError={(e) => {
-                    e.currentTarget.src = '/assets/placeholder-image.png';
-                  }}
+                  onError={(e) => { e.currentTarget.src = '/assets/placeholder-image.png'; }}
                 />
                 <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center">
-                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-xl text-sm font-semibold">
-                    View Full
-                  </span>
+                  <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-xl text-sm font-semibold">View Full</span>
                 </div>
               </div>
             ))}
@@ -433,141 +471,243 @@ export default function HouseholdPublicProfile() {
         </div>
       )}
 
-      {/* House Size & Notes */}
+      {/* About / Bio */}
+      {profile.bio && (
+        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Household</h2>
+          <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap leading-relaxed">{profile.bio}</p>
+        </div>
+      )}
+
+      {/* Location & House Info */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">🏠 House Information</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">House Size</span>
-            <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📍 Location & House</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Location</span>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+              {typeof profile.location === 'string'
+                ? (profile.location || profile.town || 'Not specified')
+                : (profile.location?.place || profile.location?.name || profile.town || 'Not specified')}
+            </p>
           </div>
-          {profile.household_notes && (
-            <div className="md:col-span-2">
-              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
-              <p className="text-base text-gray-900 dark:text-gray-100 mt-1">{profile.household_notes}</p>
+          <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">House Size</span>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
+          </div>
+          {profile.address && (
+            <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Address</span>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.address}</p>
             </div>
           )}
         </div>
+        {profile.household_notes && (
+          <div className="mt-4 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Household Notes</span>
+            <p className="text-sm text-gray-900 dark:text-gray-100 mt-1 whitespace-pre-wrap">{profile.household_notes}</p>
+          </div>
+        )}
       </div>
 
-      {/* Service Type */}
+      {/* Service Type & Schedule */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">👥 Service Type Needed</h2>
-        <div className="space-y-3">
-          {profile.needs_live_in && (
-            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 They need Live-in Help</p>
-              {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Off days: {profile.live_in_off_days.join(', ')}</p>
-              )}
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">👥 Service Requirements</h2>
+        {!profile.needs_live_in && !profile.needs_day_worker && !profile.available_from ? (
+          <p className="text-gray-500 dark:text-gray-400">No service requirements specified yet</p>
+        ) : (
+          <div className="space-y-4">
+            {profile.needs_live_in && (
+              <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200/50 dark:border-indigo-500/20">
+                <p className="font-semibold text-indigo-900 dark:text-indigo-100 mb-1">🌙 Live-in Help Needed</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">This household needs a househelp who can live on the premises.</p>
+                {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
+                  <div className="mt-2">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Off days:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {profile.live_in_off_days.map((day, i) => (
+                        <span key={i} className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-800/40 text-indigo-800 dark:text-indigo-200 rounded-full text-xs capitalize">{day}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            {profile.needs_day_worker && (
+              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200/50 dark:border-amber-500/20">
+                <p className="font-semibold text-amber-900 dark:text-amber-100 mb-1">☀️ Day Worker Needed</p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">This household needs a househelp for daytime work.</p>
+                {profile.day_worker_schedule && (() => {
+                  try {
+                    const schedule = typeof profile.day_worker_schedule === 'string' ? JSON.parse(profile.day_worker_schedule) : profile.day_worker_schedule;
+                    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+                    const activeDays = days.filter(d => schedule[d]?.morning || schedule[d]?.afternoon || schedule[d]?.evening);
+                    if (activeDays.length === 0) return null;
+                    return (
+                      <div className="mt-3">
+                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Weekly Schedule</span>
+                        <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                          {activeDays.map(day => {
+                            const d = schedule[day];
+                            const slots = [d?.morning && 'Morning', d?.afternoon && 'Afternoon', d?.evening && 'Evening'].filter(Boolean);
+                            return (
+                              <div key={day} className="p-2 bg-amber-100/60 dark:bg-amber-800/20 rounded-lg">
+                                <p className="text-xs font-bold text-amber-900 dark:text-amber-200 capitalize">{day}</p>
+                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{slots.join(', ')}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  } catch { return null; }
+                })()}
+              </div>
+            )}
+            {profile.available_from && (
+              <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
+                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Service Needed From</span>
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Budget & Compensation */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">� Budget & Compensation</h2>
+        {profile.budget_min || profile.budget_max ? (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200/50 dark:border-green-500/20 sm:col-span-2">
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Salary Range</span>
+              <p className="text-lg font-bold text-green-800 dark:text-green-200 mt-1">
+                {profile.budget_min && profile.budget_max
+                  ? `KES ${profile.budget_min.toLocaleString()} – ${profile.budget_max.toLocaleString()}`
+                  : profile.budget_min
+                    ? `KES ${profile.budget_min.toLocaleString()}+`
+                    : profile.budget_max
+                      ? `Up to KES ${profile.budget_max.toLocaleString()}`
+                      : 'Negotiable'}
+              </p>
             </div>
-          )}
-          {profile.needs_day_worker && (
-            <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-              <p className="font-semibold text-yellow-900 dark:text-yellow-100">☀️ They need Day Worker</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Schedule configured</p>
+            <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
+              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Pay Frequency</span>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">
+                {profile.salary_frequency === 'daily' ? 'Daily'
+                  : profile.salary_frequency === 'weekly' ? 'Weekly'
+                  : profile.salary_frequency === 'monthly' ? 'Monthly'
+                  : profile.salary_frequency === 'yearly' ? 'Yearly'
+                  : profile.salary_frequency || 'Monthly'}
+              </p>
             </div>
-          )}
-          {profile.available_from && (
-            <div>
-              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">They need your availability from</span>
-              <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString()}</p>
-            </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400">Budget not specified yet — you can discuss compensation directly.</p>
+        )}
+      </div>
+
+      {/* Chores & Duties */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🧹 Chores & Duties</h2>
+        {profile.chores && profile.chores.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {profile.chores.map((chore, idx) => (
+              <span key={idx} className="px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-xl text-sm font-medium">{chore}</span>
+            ))}
+          </div>
+        ) : (
+          <p className="text-gray-500 dark:text-gray-400">No specific chores listed — duties can be discussed.</p>
+        )}
       </div>
 
       {/* Children */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">👶 Children</h2>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">� Children ({kids.length})</h2>
         {kids.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {kids.map((kid, idx) => (
-              <div key={kid.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <p className="font-semibold text-purple-900 dark:text-purple-100">
-                  {kid.is_expecting ? '🤰 Expecting a child' : `👶 Child ${idx + 1}`}
-                </p>
-                {kid.age_years !== undefined && (
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Age: {kid.age_years} {kid.age_years === 1 ? 'year' : 'years'} {kid.age_months ? `and ${kid.age_months} months` : ''}
+              <div key={kid.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200/30 dark:border-purple-500/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg">{kid.is_expecting ? '🤰' : '👶'}</span>
+                  <p className="font-semibold text-purple-900 dark:text-purple-100">
+                    {kid.is_expecting ? 'Expecting a child' : `Child ${idx + 1}`}
                   </p>
+                  {kid.gender && <span className="text-xs px-2 py-0.5 bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full capitalize">{kid.gender}</span>}
+                </div>
+                {kid.date_of_birth && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Born: {new Date(kid.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
                 )}
-                {kid.special_needs && <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">⚠️ Has special needs</p>}
+                {kid.is_expecting && kid.expected_date && (
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Expected: {new Date(kid.expected_date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</p>
+                )}
+                {kid.notes && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{kid.notes}</p>}
+                {kid.traits && kid.traits.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {kid.traits.map((trait: string, i: number) => (
+                      <span key={i} className="text-xs px-2 py-0.5 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full capitalize">{trait}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 dark:text-gray-400">No children</p>
+          <p className="text-gray-500 dark:text-gray-400">No children in this household</p>
         )}
       </div>
 
       {/* Pets */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">🐾 Pets</h2>
+        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🐾 Pets ({pets.length})</h2>
         {pets.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {pets.map((pet, idx) => (
-              <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <p className="font-semibold text-purple-900 dark:text-purple-100 capitalize">🐾 {pet.pet_type}</p>
-                {pet.requires_care && <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">⚠️ Requires care</p>}
+              <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200/30 dark:border-purple-500/20">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-lg">🐾</span>
+                  <p className="font-semibold text-purple-900 dark:text-purple-100 capitalize">{pet.pet_type}</p>
+                  {pet.requires_care && <span className="text-xs px-2 py-0.5 bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 rounded-full">Needs care</span>}
+                </div>
+                {pet.care_details && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{pet.care_details}</p>}
+                {pet.traits && pet.traits.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-2">
+                    {pet.traits.map((trait: string, i: number) => (
+                      <span key={i} className="text-xs px-2 py-0.5 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full capitalize">{trait}</span>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-gray-500 dark:text-gray-400">No pets</p>
-        )}
-      </div>
-
-      {/* Chores */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">🧹 Chores & Duties</h2>
-        {profile.chores && profile.chores.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {profile.chores.map((chore, idx) => (
-              <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-xl font-medium">
-                {chore}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No chores specified</p>
-        )}
-      </div>
-
-      {/* Budget */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">💰 Budget</h2>
-        {profile.budget_min || profile.budget_max ? (
-          <div className="space-y-2">
-            <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-              {profile.budget_min && profile.budget_max ? `KES ${profile.budget_min.toLocaleString()} - ${profile.budget_max.toLocaleString()}` : profile.budget_min ? `KES ${profile.budget_min.toLocaleString()}+` : 'Negotiable'}
-            </p>
-            {profile.salary_frequency && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
-                Per {profile.salary_frequency === 'daily' ? 'Day' : 
-                     profile.salary_frequency === 'weekly' ? 'Week' : 
-                     profile.salary_frequency === 'monthly' ? 'Month' : 
-                     profile.salary_frequency === 'yearly' ? 'Year' : 
-                     profile.salary_frequency}
-              </p>
-            )}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">Budget not specified</p>
+          <p className="text-gray-500 dark:text-gray-400">No pets in this household</p>
         )}
       </div>
 
       {/* Religion */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">🙏 Religion & Beliefs</h2>
-        <p className="text-base font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
-      </div>
+      {profile.religion && (
+        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🙏 Religion & Beliefs</h2>
+          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{profile.religion}</p>
+        </div>
+      )}
 
-      {/* Bio */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
-        <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Household</h2>
-        <p className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
-      </div>
+      {/* Currently Employed Househelps */}
+      {profile.househelp_ids && profile.househelp_ids.length > 0 && (
+        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">👤 Current Staff</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">This household currently has {profile.househelp_ids.length} househelp{profile.househelp_ids.length > 1 ? 's' : ''} employed.</p>
+        </div>
+      )}
+
+      {/* No Bio placeholder at bottom */}
+      {!profile.bio && (
+        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Household</h2>
+          <p className="text-gray-500 dark:text-gray-400">No bio added yet</p>
+        </div>
+      )}
     </div>
       </main>
       </PurpleThemeWrapper>

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Navigation } from "~/components/Navigation";
 import { API_BASE_URL } from '~/config/api';
 import { formatTimeAgo } from "~/utils/timeAgo";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 export default function BureauProfile() {
     const [profile, setProfile] = useState<any>(null);
@@ -85,7 +86,7 @@ export default function BureauProfile() {
     };
 
     if (loading) return <div className="flex justify-center py-12">Loading...</div>;
-    if (error) return <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md mt-6"><div className="flex items-center justify-center"><span className="text-2xl mr-3">⚠️</span><p className="text-base font-semibold text-red-800">{error}</p></div></div>;
+    if (error) return <div className="mt-6 max-w-md mx-auto"><ErrorAlert message={error} /></div>;
     if (!profile) return null;
 
     return (

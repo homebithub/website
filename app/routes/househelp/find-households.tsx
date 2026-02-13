@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
+import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 
 // Dropdown-only options (no text inputs)
-const TOWNS = ["", "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"];
 const HOUSE_SIZES = ["", "bedsitter", "1br", "2br", "3br+", "mansion"];
 const RATING_OPTS = ["", 5, 4, 3, 2, 1];
 const NANNY_TYPES = ["", "dayburg", "sleeper"];
@@ -144,13 +144,15 @@ export default function HousehelpFindHouseholds() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-4">
         <div className="flex flex-col">
           <label className="mb-1 text-sm font-medium text-white/90">Town</label>
-          <select name="town" value={filters.town} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
-            {TOWNS.map((t) => (
-              <option key={t} value={t}>
-                {t || "Any"}
-              </option>
-            ))}
-          </select>
+          <SearchableTownSelect
+            value={filters.town}
+            onChange={(value) => setFilters((prev) => ({ ...prev, town: value }))}
+            target="households"
+            buttonClassName="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition"
+            dropdownClassName="absolute z-20 w-full mt-1 bg-gray-900 text-white border border-white/20 rounded-xl shadow-xl max-h-72 overflow-hidden"
+            inputClassName="w-full h-10 px-3 border-b border-white/20 bg-gray-900 text-white focus:outline-none"
+            optionClassName="px-3 py-2 text-white hover:bg-white/10 cursor-pointer"
+          />
         </div>
         <div className="flex flex-col">
           <label className="mb-1 text-sm font-medium text-white/90">House Size</label>

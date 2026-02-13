@@ -8,9 +8,11 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { fetchPreferences } from "~/utils/preferencesApi";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 type ShortlistItem = {
   id: string;
@@ -92,9 +94,10 @@ export default function ShortlistPage() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
-            const data = await res.json();
+            const raw = await res.json();
+            const profile = raw?.data?.data || raw?.data || raw;
             if (!cancelled) {
-              setCurrentHouseholdProfileId(data?.id || data?.profile_id || null);
+              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
             }
           }
         } catch (err) {
@@ -118,7 +121,8 @@ export default function ShortlistPage() {
         setError(null);
         const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/mine?offset=${offset}&limit=${limit}`);
         if (!res.ok) throw new Error("Failed to load shortlist");
-        const data = await apiClient.json<ShortlistItem[]>(res);
+        const raw = await apiClient.json<any>(res);
+        const data = raw?.data?.data || raw?.data || raw || [];
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
         setHasMore(data.length === limit);
@@ -134,17 +138,17 @@ export default function ShortlistPage() {
 
   // Fetch household public profiles for newly loaded shortlist items (househelp's own shortlist)
   useEffect(() => {
-    const neededUserIds = Array.from(
+    const neededProfileIds = Array.from(
       new Set(
-        items
+        (Array.isArray(items) ? items : [])
           .filter((s) => s.profile_type === 'household')
-          .map((s) => s.user_id)
+          .map((s) => s.profile_id)
           .filter(Boolean)
       )
     );
 
-    const missing = neededUserIds.filter(
-      (uid) => uid && !fetchedProfilesRef.current.has(uid)
+    const missing = neededProfileIds.filter(
+      (profileId) => profileId && !fetchedProfilesRef.current.has(profileId)
     );
 
     if (missing.length === 0) return;
@@ -154,20 +158,21 @@ export default function ShortlistPage() {
       try {
         setLoadingProfiles(true);
         const results = await Promise.all(
-          missing.map(async (uid) => {
-            const res = await apiClient.auth(`${API_BASE}/api/v1/profile/household/${uid}`);
-            if (!res.ok) return { uid, data: null };
-            const data = await apiClient.json<any>(res);
-            return { uid, data };
+          missing.map(async (profileId) => {
+            const res = await apiClient.auth(`${API_BASE}/api/v1/profile/household/${profileId}`);
+            if (!res.ok) return { profileId, data: null };
+            const raw = await apiClient.json<any>(res);
+            const data = raw?.data?.data || raw?.data || raw;
+            return { profileId, data };
           })
         );
         if (cancelled) return;
         setProfiles((prev) => {
           const next = { ...prev } as Record<string, any>;
           for (const r of results) {
-            if (r.uid && r.data) {
-              next[r.uid] = r.data;
-              fetchedProfilesRef.current.add(r.uid);
+            if (r.profileId && r.data) {
+              next[r.profileId] = r.data;
+              fetchedProfilesRef.current.add(r.profileId);
             }
           }
           return next;
@@ -216,7 +221,7 @@ export default function ShortlistPage() {
         househelpId = targetUserId;
       }
 
-      const payload: Record<string, any> = {
+      const payload: StartConversationPayload = {
         household_user_id: householdId,
         househelp_user_id: househelpId,
       };
@@ -228,26 +233,8 @@ export default function ShortlistPage() {
         payload.household_profile_id = currentHouseholdProfileId;
       }
 
-      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to start conversation');
-
-      let convId: string | undefined;
-      try {
-        const data = await apiClient.json<any>(res);
-        convId = data?.id || data?.ID || data?.conversation_id;
-      } catch {
-        convId = undefined;
-      }
-
-      if (convId) {
-        navigate(`/inbox?conversation=${convId}`);
-      } else {
-        navigate('/inbox');
-      }
+      const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      navigate(getInboxRoute(convId));
     } catch (e) {
       console.error('Failed to start chat from shortlist (household)', e);
       navigate('/inbox');
@@ -262,33 +249,33 @@ export default function ShortlistPage() {
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
 
-            {items.length === 0 && !loading && !error && (
+            {(!items || items.length === 0) && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
                 <p className="text-gray-600 dark:text-gray-300 text-lg">No shortlisted households yet.</p>
               </div>
             )}
 
-            {error && (
-              <div className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-4 text-red-700 dark:text-red-300 mb-4">{error}</div>
-            )}
+            {error && <ErrorAlert message={error} className="mb-4" />}
 
             <div className={`grid grid-cols-1 md:grid-cols-2 ${compactView ? 'gap-4' : 'gap-6'}`}>
-              {items
+              {(Array.isArray(items) ? items : [])
                 .filter((s) => s.profile_type === "household")
                 .map((s) => {
-                  const prof = s.user_id ? profiles[s.user_id] : null;
+                  const prof = s.profile_id ? profiles[s.profile_id] : null;
+                  const owner = prof?.owner || prof;
+                  const householdUserId = prof?.owner_user_id || prof?.user_id || owner?.id || s.user_id;
                   return (
                     <div
                       key={s.id}
-                      onClick={() => navigate(`/household/public-profile?user_id=${s.user_id}`, {
-                        state: { profileId: s.user_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
+                      onClick={() => navigate(`/household/public-profile?user_id=${householdUserId || s.profile_id}`, {
+                        state: { profileId: householdUserId || s.profile_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
                       })}
                       className={`relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 transition-all duration-300 cursor-pointer`}
                     >
                       <div className="absolute top-3 right-3 flex items-center gap-2">
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleChatWithHousehold(s.user_id, s.profile_id); }}
+                          onClick={(e) => { e.stopPropagation(); handleChatWithHousehold(householdUserId, s.profile_id); }}
                           className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-purple-700 dark:text-purple-200 shadow"
                           aria-label="Chat"
                           title="Chat"
@@ -308,7 +295,7 @@ export default function ShortlistPage() {
                       <div className="flex justify-center mb-4">
                         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-2xl font-bold shadow-lg overflow-hidden relative">
                           {(() => {
-                            const imageUrl = prof?.avatar_url;
+                            const imageUrl = prof?.avatar_url || owner?.avatar_url;
                             if (imageUrl) {
                               return (
                                 <>
@@ -317,7 +304,7 @@ export default function ShortlistPage() {
                                   )}
                                   <img
                                     src={imageUrl}
-                                    alt={`${prof?.first_name || ""} ${prof?.last_name || ""}`}
+                                    alt={`${owner?.first_name || ""} ${owner?.last_name || ""}`}
                                     className={`w-full h-full object-cover transition-opacity duration-300 ${
                                       imageLoadingStates[s.profile_id] === false ? "opacity-100" : "opacity-0"
                                     }`}
@@ -330,17 +317,17 @@ export default function ShortlistPage() {
                                 </>
                               );
                             }
-                            return `${prof?.first_name?.[0] || "H"}${prof?.last_name?.[0] || "H"}`;
+                            return `${owner?.first_name?.[0] || "H"}${owner?.last_name?.[0] || "H"}`;
                           })()}
                         </div>
                       </div>
 
                       <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
-                        {prof ? `${prof.first_name || ""} ${prof.last_name || ""}`.trim() || "Household" : "Loading..."}
+                        {prof ? `${owner?.first_name || ""} ${owner?.last_name || ""}`.trim() || "Household" : "Loading..."}
                       </h3>
 
                       <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
-                        📍 {prof?.town?.trim() || "No location specified"}
+                        📍 {prof?.town?.trim() || owner?.town?.trim() || "No location specified"}
                       </p>
 
                       {prof?.house_size && (
@@ -354,8 +341,8 @@ export default function ShortlistPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/household/public-profile?user_id=${s.user_id}`, {
-                              state: { profileId: s.user_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
+                            navigate(`/household/public-profile?user_id=${householdUserId || s.profile_id}`, {
+                              state: { profileId: householdUserId || s.profile_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
                             });
                           }}
                           className="ml-auto px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"

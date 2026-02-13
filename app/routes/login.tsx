@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate, Form } from "react-router";
 import { useAuth } from "~/contexts/useAuth";
-import { Error } from "~/components/Error";
+import { Error as ErrorComponent } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -12,6 +12,7 @@ import { handleApiError } from '~/utils/errorMessages';
 import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 export const meta = () => [
     { title: "Log In — Homebit" },
@@ -117,6 +118,14 @@ export default function LoginPage() {
                   navigate(setupRoute, { replace: true });
                   return;
                 }
+              } else if (setupResponse.status === 404) {
+                // No profile setup record exists - user hasn't started setup
+                console.log("No profile setup record found, starting from step 1");
+                const setupRoute = profileType === 'household'
+                  ? `/profile-setup/household?step=1`
+                  : `/profile-setup/househelp?step=1`;
+                navigate(setupRoute, { replace: true });
+                return;
               }
             } catch (err) {
               console.error('Failed to check profile setup status after Google login:', err);
@@ -252,15 +261,7 @@ export default function LoginPage() {
           
           {/* Login Error Alert */}
           {loginError && (
-            <div className="mb-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 p-4 shadow-md">
-              <div className="flex items-start">
-                <span className="text-2xl mr-3">⚠️</span>
-                <div className="flex-1">
-                  <p className="text-base font-semibold text-red-700 dark:text-red-400 mb-1">Login Failed</p>
-                  <p className="text-sm text-red-600 dark:text-red-300">{loginError}</p>
-                </div>
-              </div>
-            </div>
+            <ErrorAlert title="Login Failed" message={loginError} />
           )}
 
           {loading && (

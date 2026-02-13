@@ -1,6 +1,5 @@
-import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, Form } from "react-router";
 import React, { useState, useEffect } from "react";
+import { Form } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { Error as ErrorDisplay } from "~/components/Error";
@@ -8,32 +7,37 @@ import { changePasswordSchema, validateForm, validateField } from '~/utils/valid
 import { useAuth } from "~/contexts/useAuth";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
-import { API_BASE_URL } from '~/config/api';
+import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
+import { extractErrorMessage } from '~/utils/errorMessages';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface User {
   id: string;
   email: string;
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const cookie = request.headers.get("cookie") || "";
-  const res = await fetch(`${API_BASE_URL}/users/me`, {
-    headers: { "cookie": cookie },
-    credentials: "include",
-  });
-  if (!res.ok) {
-    throw new Response("Failed to fetch user data", { status: res.status });
+export const loader = async () => {
+  try {
+    // For server-side loading, we need to check if user is authenticated
+    // Since this is a protected route, we'll let the client-side auth handle it
+    // Return null user data and let the component handle authentication
+    return { user: null };
+  } catch (error) {
+    console.error('Loader error:', error);
+    // Don't throw an error, just return null user data
+    return { user: null };
   }
-  const user = await res.json();
-  return { user };
 };
 
 export default function ChangePasswordPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  
+  // Remove loader data usage - rely only on client-side auth
+  // const loaderData = useLoaderData<typeof loader>();
   const [formData, setFormData] = useState({
     currentPassword: "",
     newPassword: "",
@@ -127,16 +131,35 @@ export default function ChangePasswordPage() {
     setSuccess(false);
     
     try {
+      // Get authentication token
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("You must be logged in to change your password");
+      }
+      
       // Add your password change API call here
+      // Use the correct /change-password endpoint as specified in the gateway
       const res = await fetch(`${API_BASE_URL}/api/v1/auth/change-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          current_password: formData.currentPassword,
+          new_password: formData.newPassword,
+        }),
       });
       
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || "Failed to change password");
+        const errorResponse = await res.json();
+        console.log('Change password error response:', errorResponse);
+        
+        // Extract error data from nested structure
+        const err = errorResponse.data || errorResponse;
+        console.log('Extracted error data:', err);
+        
+        throw new Error(extractErrorMessage(err) || "Failed to change password");
       }
       
       setSuccess(true);
@@ -167,14 +190,7 @@ export default function ChangePasswordPage() {
           <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Change Password 🔐</h1>
           <p className="text-base text-gray-600 dark:text-gray-300 mb-8">Update your password and manage security settings.</p>
           
-          {error && (
-            <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/40 dark:to-pink-950/40 border-2 border-red-200 dark:border-red-500/40 p-5 shadow-md transition-colors duration-300">
-              <div className="flex items-center justify-center">
-                <span className="text-2xl mr-3">⚠️</span>
-                <p className="text-base font-semibold text-red-800 dark:text-red-200">{error}</p>
-              </div>
-            </div>
-          )}
+          {error && <ErrorAlert message={error} />}
           
           {success && (
             <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-5 shadow-md transition-colors duration-300">

@@ -7,6 +7,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface HouseholdData {
   id?: string;
@@ -91,16 +92,30 @@ export default function HouseholdProfile() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!profileRes.ok) throw new Error("Failed to fetch profile");
-        const profileData = await profileRes.json();
+        const profileResponse = await profileRes.json();
+        console.log('Profile response:', profileResponse);
+        
+        // Extract profile data from nested structure
+        const profileData = profileResponse.data || profileResponse;
+        console.log('Extracted profile data:', profileData);
+        console.log('Household location field:', profileData?.location);
         setProfile(profileData);
 
         // Load existing invitation code if available
         try {
-          const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/${profileData.id}/invitation-code`, {
+          const householdId = profileData.id;
+          console.log('Household ID:', householdId);
+          const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/invitations/${householdId}/code`, {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (inviteRes.ok) {
-            const inviteData = await inviteRes.json();
+            const inviteResponse = await inviteRes.json();
+            console.log('Invitation response:', inviteResponse);
+            
+            // Extract invitation data from nested structure
+            const inviteData = inviteResponse.data || inviteResponse;
+            console.log('Extracted invitation data:', inviteData);
+            
             setInvitationCode(inviteData.invite_code);
             setInvitationExpiresAt(inviteData.expires_at);
           }
@@ -108,20 +123,36 @@ export default function HouseholdProfile() {
           console.log("No existing invitation code or error loading it:", err);
         }
 
-        const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household/kids`, {
+        const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (kidsRes.ok) {
-          const kidsData = await kidsRes.json();
-          setKids(kidsData);
+          const kidsResponse = await kidsRes.json();
+          console.log('Kids response:', kidsResponse);
+          
+          // Extract kids array from nested structure
+          const kidsData = kidsResponse.data?.data || kidsResponse.data || kidsResponse;
+          console.log('Extracted kids data:', kidsData);
+          
+          // Ensure it's an array
+          const kidsArray = Array.isArray(kidsData) ? kidsData : [];
+          setKids(kidsArray);
         }
 
-        const petsRes = await fetch(`${API_BASE_URL}/api/v1/household/pets`, {
+        const petsRes = await fetch(`${API_BASE_URL}/api/v1/pets/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (petsRes.ok) {
-          const petsData = await petsRes.json();
-          setPets(petsData);
+          const petsResponse = await petsRes.json();
+          console.log('Pets response:', petsResponse);
+          
+          // Extract pets array from nested structure
+          const petsData = petsResponse.data?.data || petsResponse.data || petsResponse;
+          console.log('Extracted pets data:', petsData);
+          
+          // Ensure it's an array
+          const petsArray = Array.isArray(petsData) ? petsData : [];
+          setPets(petsArray);
         }
 
         // Fetch photos from documents table
@@ -129,8 +160,16 @@ export default function HouseholdProfile() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (docsRes.ok) {
-          const docsData = await docsRes.json();
-          const photoUrls = docsData.documents?.map((doc: any) => doc.url || doc.public_url).filter(Boolean) || [];
+          const docsResponse = await docsRes.json();
+          console.log('Documents response:', docsResponse);
+          
+          // Extract documents array from nested structure
+          const docsData = docsResponse.data?.documents || docsResponse.documents || docsResponse.data || docsResponse;
+          console.log('Extracted documents data:', docsData);
+          
+          // Ensure it's an array before mapping
+          const documentsArray = Array.isArray(docsData) ? docsData : [];
+          const photoUrls = documentsArray.map((doc: any) => doc.url || doc.public_url).filter(Boolean) || [];
           setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
         }
       } catch (err: any) {
@@ -180,7 +219,8 @@ export default function HouseholdProfile() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!householdRes.ok) throw new Error("Failed to fetch household");
-      const householdData = await householdRes.json();
+      const householdResponse = await householdRes.json();
+      const householdData = householdResponse.data || householdResponse;
       const householdId = householdData.id;
       
       // Get or create invitation code
@@ -194,8 +234,9 @@ export default function HouseholdProfile() {
         throw new Error(errorData.error || `Failed to fetch invitation code (${inviteRes.status})`);
       }
       const inviteData = await inviteRes.json();
-      setInvitationCode(inviteData.invite_code);
-      setInvitationExpiresAt(inviteData.expires_at);
+      const extractedInviteData = inviteData.data || inviteData;
+      setInvitationCode(extractedInviteData.invite_code);
+      setInvitationExpiresAt(extractedInviteData.expires_at);
     } catch (err: any) {
       console.error("Error fetching invitation code:", err);
       setInvitationError(err.message || "Failed to load invitation code");
@@ -248,8 +289,16 @@ export default function HouseholdProfile() {
       });
       
       if (res.ok) {
-        const data = await res.json();
-        setMembers(data || []);
+        const response = await res.json();
+        console.log('Members response:', response);
+        
+        // Extract members array from nested structure
+        const membersData = response.data || response.members || response;
+        console.log('Extracted members data:', membersData);
+        
+        // Ensure it's an array
+        const membersArray = Array.isArray(membersData) ? membersData : [];
+        setMembers(membersArray);
       }
     } catch (err) {
       console.error("Error fetching members:", err);
@@ -368,7 +417,8 @@ export default function HouseholdProfile() {
       });
       
       if (profileRes.ok) {
-        const profileData = await profileRes.json();
+        const profileResponse = await profileRes.json();
+        const profileData = profileResponse.data || profileResponse;
         setProfile(profileData);
       }
       
@@ -412,8 +462,13 @@ export default function HouseholdProfile() {
       if (!docsRes.ok) {
         console.warn('Failed to fetch documents, will only remove from profile');
       } else {
-        const docsData = await docsRes.json();
-        const document = docsData.documents?.find((doc: any) => doc.url === photoUrl);
+        const docsResponse = await docsRes.json();
+        console.log('Documents response for deletion:', docsResponse);
+        
+        // Extract documents array from nested structure
+        const docsData = docsResponse.data?.documents || docsResponse.documents || docsResponse.data || docsResponse;
+        const documentsArray = Array.isArray(docsData) ? docsData : [];
+        const document = documentsArray.find((doc: any) => doc.url === photoUrl);
 
         // Step 2: Delete from documents table and S3
         if (document?.id) {
@@ -439,7 +494,8 @@ export default function HouseholdProfile() {
 
       if (!profileRes.ok) throw new Error('Failed to refresh profile');
       
-      const profileData = await profileRes.json();
+      const profileResponse = await profileRes.json();
+      const profileData = profileResponse.data || profileResponse;
       setProfile(profileData);
     } catch (err: any) {
       console.error('Error deleting photo:', err);
@@ -467,11 +523,8 @@ export default function HouseholdProfile() {
   if (error || hasError) {
     return (
       <div className="max-w-2xl mx-auto mt-8">
-        <div className="p-6 rounded-xl bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30">
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl">⚠️</span>
-            <p className="font-semibold text-red-800 dark:text-red-400">{error || "Something went wrong"}</p>
-          </div>
+        <div className="p-6 rounded-xl">
+          <ErrorAlert message={error || "Something went wrong"} />
           <div className="flex gap-3">
             <button
               onClick={() => window.location.reload()}
@@ -518,28 +571,46 @@ export default function HouseholdProfile() {
       <main className="flex-1 py-8">
     <div className="max-w-5xl mx-auto px-4">
       {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-pink-600 dark:from-gray-800 dark:to-gray-900 p-4 sm:p-8 text-white rounded-t-3xl dark:border-b dark:border-purple-500/20">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+      <div className="rounded-2xl p-4 sm:p-6 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold mb-2">🏠 My Household Profile</h1>
-            <p className="text-purple-100 dark:text-purple-300 text-sm sm:text-base">View and manage your household information</p>
+            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">🏠 My Household Profile</h1>
+            <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your household information</p>
           </div>
           <button
             onClick={() => navigate(`/household/public-profile?user_id=${profile?.user_id || ''}`)}
-            className="px-4 sm:px-6 py-1 sm:py-1.5 bg-white text-purple-600 font-bold rounded-xl hover:bg-purple-50 hover:scale-105 transition-all shadow-lg text-sm sm:text-base whitespace-nowrap self-start"
+            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg whitespace-nowrap self-start"
             disabled={!profile?.user_id}
           >
-            👁️ View Public Profile
+            View Public Profile
           </button>
         </div>
+      </div>
+
+      {/* Location */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📍 Location</h2>
+          <button
+            onClick={() => handleEditSection('location')}
+            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+          >
+            ✏️ Edit
+          </button>
+        </div>
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+          {typeof profile.location === 'string'
+            ? (profile.location || 'Not specified')
+            : (profile.location?.place || profile.location?.name || 'Not specified')}
+        </p>
       </div>
 
       {/* Household Invitation Code */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🔑 Household Code</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🔑 Household Code</h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
               Share this code with your partner to give them access to this household profile
             </p>
           </div>
@@ -579,9 +650,7 @@ export default function HouseholdProfile() {
         )}
 
         {invitationError && (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30 rounded-xl">
-            <p className="text-sm text-red-600 dark:text-red-400">⚠️ {invitationError}</p>
-          </div>
+          <ErrorAlert message={invitationError} />
         )}
 
         {invitationCode && (
@@ -590,7 +659,7 @@ export default function HouseholdProfile() {
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
                   <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Your Household Code:</p>
-                  <p className="text-xl font-bold text-purple-900 dark:text-purple-100 tracking-wider font-mono">
+                  <p className="text-sm font-bold text-purple-900 dark:text-purple-100 tracking-wider font-mono">
                     {invitationCode}
                   </p>
                   {invitationExpiresAt && (
@@ -640,7 +709,7 @@ export default function HouseholdProfile() {
       {/* Household Members */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👥 Household Members</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">👥 Household Members</h2>
         </div>
 
         {membersLoading ? (
@@ -716,8 +785,8 @@ export default function HouseholdProfile() {
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">📸 Home Photos</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📸 Home Photos</h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
               {profile.photos?.length || 0}/{MAX_PHOTOS} photos
             </p>
           </div>
@@ -725,9 +794,7 @@ export default function HouseholdProfile() {
 
         {/* Error/Success Messages */}
         {uploadError && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-500/30">
-            <p className="text-sm text-red-600 dark:text-red-400">⚠️ {uploadError}</p>
-          </div>
+          <ErrorAlert message={uploadError} className="mb-4" />
         )}
 
         {/* Upload Progress Bar */}
@@ -868,23 +935,23 @@ export default function HouseholdProfile() {
       {/* House Size & Notes */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🏠 House Information</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🏠 House Information</h2>
           <button
             onClick={() => handleEditSection('housesize')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">House Size</span>
-            <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
+            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">House Size</span>
+            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
           </div>
           {profile.household_notes && (
             <div className="md:col-span-2">
-              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
-              <p className="text-base text-gray-900 dark:text-gray-100 mt-1">{profile.household_notes}</p>
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
+              <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{profile.household_notes}</p>
             </div>
           )}
         </div>
@@ -893,10 +960,10 @@ export default function HouseholdProfile() {
       {/* Service Type */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👥 Service Type Needed</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">👥 Service Type Needed</h2>
           <button
             onClick={() => handleEditSection('nannytype')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -921,8 +988,8 @@ export default function HouseholdProfile() {
           )}
           {profile.available_from && (
             <div>
-              <span className="text-sm font-semibold text-gray-600 dark:text-gray-400">Available From</span>
-              <p className="text-base font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString()}</p>
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Available From</span>
+              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString()}</p>
             </div>
           )}
         </div>
@@ -931,10 +998,10 @@ export default function HouseholdProfile() {
       {/* Children */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">👶 Children</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">👶 Children</h2>
           <button
             onClick={() => handleEditSection('children')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -967,10 +1034,10 @@ export default function HouseholdProfile() {
       {/* Pets */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🐾 Pets</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🐾 Pets</h2>
           <button
             onClick={() => handleEditSection('pets')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -1000,10 +1067,10 @@ export default function HouseholdProfile() {
       {/* Chores */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🧹 Chores & Duties</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🧹 Chores & Duties</h2>
           <button
             onClick={() => handleEditSection('chores')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
@@ -1024,17 +1091,17 @@ export default function HouseholdProfile() {
       {/* Budget */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">💰 Budget</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">💰 Budget</h2>
           <button
             onClick={() => handleEditSection('budget')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
         </div>
         {profile.budget_min || profile.budget_max ? (
           <div className="space-y-2">
-            <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+            <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
               {profile.budget_min && profile.budget_max ? `KES ${profile.budget_min.toLocaleString()} - ${profile.budget_max.toLocaleString()}` : profile.budget_min ? `KES ${profile.budget_min.toLocaleString()}+` : 'Negotiable'}
             </p>
             {profile.salary_frequency && (
@@ -1049,29 +1116,29 @@ export default function HouseholdProfile() {
       {/* Religion */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">🙏 Religion & Beliefs</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🙏 Religion & Beliefs</h2>
           <button
             onClick={() => handleEditSection('religion')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
         </div>
-        <p className="text-base font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
+        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
       </div>
 
       {/* Bio */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400">✍️ About Your Household</h2>
+          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">✍️ About Your Household</h2>
           <button
             onClick={() => handleEditSection('bio')}
-            className="px-4 py-1 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
+            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             ✏️ Edit
           </button>
         </div>
-        <p className="text-base text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
+        <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
       </div>
     </div>
       </main>

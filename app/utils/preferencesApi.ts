@@ -5,7 +5,7 @@
  */
 
 import { API_BASE_URL, getAuthHeaders } from '~/config/api';
-import { getOrCreateSessionId, isAuthenticated } from './userTracking';
+import { getOrCreateSessionId, isAuthenticated, getAuthenticatedUserId } from './userTracking';
 
 export interface UserPreferences {
   theme?: 'light' | 'dark' | 'system';
@@ -47,8 +47,13 @@ export const fetchPreferences = async (): Promise<PreferencesResponse | null> =>
 
     let url = PREFERENCES_ENDPOINTS.get;
     
-    // Add session_id for anonymous users
-    if (!authenticated) {
+    // Add user_id for authenticated users, session_id for anonymous users
+    if (authenticated) {
+      const userId = getAuthenticatedUserId();
+      if (userId) {
+        url = `${url}?user_id=${userId}`;
+      }
+    } else {
       const sessionId = getOrCreateSessionId();
       url = `${url}?session_id=${sessionId}`;
     }
@@ -88,8 +93,13 @@ export const updatePreferences = async (
       settings,
     };
 
-    // Add session_id for anonymous users
-    if (!authenticated) {
+    // Add user_id for authenticated users, session_id for anonymous users
+    if (authenticated) {
+      const userId = getAuthenticatedUserId();
+      if (userId) {
+        body.user_id = userId;
+      }
+    } else {
       body.session_id = getOrCreateSessionId();
     }
 
@@ -150,8 +160,13 @@ export const deletePreferences = async (): Promise<boolean> => {
 
     let url = PREFERENCES_ENDPOINTS.delete;
     
-    // Add session_id for anonymous users
-    if (!authenticated) {
+    // Add user_id for authenticated users, session_id for anonymous users
+    if (authenticated) {
+      const userId = getAuthenticatedUserId();
+      if (userId) {
+        url = `${url}?user_id=${userId}`;
+      }
+    } else {
       const sessionId = getOrCreateSessionId();
       url = `${url}?session_id=${sessionId}`;
     }

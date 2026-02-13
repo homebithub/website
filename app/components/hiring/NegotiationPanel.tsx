@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { apiClient } from '~/utils/apiClient';
 import { API_ENDPOINTS } from '~/config/api';
 import { Send, MessageCircle } from 'lucide-react';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface Negotiation {
   id: string;
@@ -147,11 +148,7 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
           </div>
         )}
 
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-3 mb-4">
-            <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert message={error} className="mb-4" />}
 
         {!loading && negotiations.length === 0 && (
           <div className="text-center py-8">

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from "react-router";
 import { API_ENDPOINTS } from '~/config/api';
 import { apiClient } from '~/utils/apiClient';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX } from 'lucide-react';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface HireRequest {
   id: string;
@@ -428,11 +429,7 @@ export default function HiringHistory() {
         </div>
 
         {/* Error State */}
-        {error && (
-          <div className="bg-red-50/90 dark:bg-red-900/30 border border-red-200 dark:border-red-600/40 rounded-2xl p-4 mb-6 transition-colors">
-            <p className="text-red-700 dark:text-red-100 font-medium">{error}</p>
-          </div>
-        )}
+        {error && <ErrorAlert message={error} className="mb-6" />}
 
         {/* Loading State */}
         {loading && (
@@ -1055,11 +1052,7 @@ export default function HiringHistory() {
         />
       </div>
 
-      {cancelError && (
-        <div className="mb-4 p-3 rounded-xl sm:rounded-2xl border border-red-300 dark:border-red-600 bg-red-50 dark:bg-red-900/20 text-xs sm:text-sm text-red-700 dark:text-red-200">
-          {cancelError}
-        </div>
-      )}
+      {cancelError && <ErrorAlert message={cancelError} className="mb-4" />}
 
       <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 pt-2">
         <button

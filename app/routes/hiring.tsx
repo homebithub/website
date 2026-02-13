@@ -4,6 +4,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 type Employment = {
   id: string;
@@ -89,9 +90,7 @@ export default function HiringHistoryPage() {
               </div>
             )}
 
-            {error && (
-              <div className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-4 text-red-700 dark:text-red-300 mb-4">{error}</div>
-            )}
+            {error && <ErrorAlert message={error} className="mb-4" />}
 
             <ul className="space-y-3">
               {items.map((e) => (

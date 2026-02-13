@@ -13,6 +13,7 @@ import { useWebSocketContext } from '~/contexts/WebSocketContext';
 import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved } from '~/types/websocket';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 import { formatTimeAgo } from "~/utils/timeAgo";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 type Conversation = {
   id: string;
@@ -55,10 +56,102 @@ type ToastItem = {
 
 type HireRequestSummary = {
   id: string;
-  household_id: string;
-  househelp_id: string;
+  household_id?: string;
+  househelp_id?: string;
+  household_user_id?: string;
+  househelp_user_id?: string;
+  household?: { user_id?: string; id?: string };
+  househelp?: { user_id?: string; id?: string };
   status: string;
 };
+
+function normalizeId(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
+}
+
+function intersects(a: string[], b: string[]): boolean {
+  if (a.length === 0 || b.length === 0) return false;
+  const setA = new Set(a.map((v) => v.toLowerCase()));
+  return b.some((v) => setA.has(v.toLowerCase()));
+}
+
+function extractEnvelopeArray<T = any>(response: any, key: string): T[] {
+  if (Array.isArray(response?.[key])) return response[key];
+  if (Array.isArray(response?.data?.[key])) return response.data[key];
+  if (Array.isArray(response?.data?.data?.[key])) return response.data.data[key];
+  if (key === 'messages' && Array.isArray(response?.items)) return response.items;
+  if (key === 'messages' && Array.isArray(response?.data?.items)) return response.data.items;
+  if (key === 'messages' && Array.isArray(response?.data?.data?.items)) return response.data.data.items;
+  if (Array.isArray(response?.data?.data) && key === 'messages') return response.data.data;
+  if (Array.isArray(response?.data) && key === 'messages') return response.data;
+  return [];
+}
+
+function extractEnvelopeObject<T = any>(response: any): T {
+  if (response?.data?.data && typeof response.data.data === 'object') return response.data.data as T;
+  if (response?.data && typeof response.data === 'object') return response.data as T;
+  return (response || {}) as T;
+}
+
+function getNameFromUser(user: any): string {
+  if (!user || typeof user !== 'object') return '';
+  const firstName = String(user.first_name || user.firstName || user.FirstName || '').trim();
+  const lastName = String(user.last_name || user.lastName || user.LastName || '').trim();
+  return `${firstName} ${lastName}`.trim();
+}
+
+function getNameFromProfile(profile: any, fallback: string): string {
+  if (!profile || typeof profile !== 'object') return fallback;
+
+  const directName = String(
+    profile.participant_name ||
+    profile.participantName ||
+    profile.name ||
+    profile.household_name ||
+    profile.householdName ||
+    ''
+  ).trim();
+  if (directName) return directName;
+
+  const nestedName = getNameFromUser(profile.user) || getNameFromUser(profile.owner);
+  if (nestedName) return nestedName;
+
+  const fallbackName = `${String(profile.first_name || profile.firstName || '').trim()} ${String(profile.last_name || profile.lastName || '').trim()}`.trim();
+  return fallbackName || fallback;
+}
+
+function normalizeMessage(raw: any): Message | null {
+  if (!raw || typeof raw !== 'object') return null;
+
+  const id = String(raw.id || raw.ID || '').trim();
+  const body = typeof raw.body === 'string' ? raw.body : '';
+  const conversationId = String(raw.conversation_id || raw.conversationId || '').trim();
+  const senderId = String(raw.sender_id || raw.senderId || '').trim();
+  const createdAt = String(raw.created_at || raw.createdAt || '').trim();
+
+  if (!id || !conversationId || !senderId || !createdAt) {
+    return null;
+  }
+
+  return {
+    ...raw,
+    id,
+    body,
+    conversation_id: conversationId,
+    sender_id: senderId,
+    created_at: createdAt,
+    read_at: raw.read_at ?? raw.readAt ?? null,
+    deleted_at: raw.deleted_at ?? raw.deletedAt ?? null,
+    edited_at: raw.edited_at ?? raw.editedAt ?? null,
+    reply_to_id: raw.reply_to_id ?? raw.replyToId ?? null,
+  } as Message;
+}
+
+function normalizeMessageList(rawMessages: any[]): Message[] {
+  return rawMessages.map(normalizeMessage).filter((m): m is Message => m !== null);
+}
 
 export default function InboxPage() {
   const { user, loading: authLoading } = useAuth();
@@ -260,24 +353,43 @@ export default function InboxPage() {
             // Household user: other participant is a househelp
             // Use househelp_id (which is the user_id) to fetch the profile
             const househelpUserId = conv.househelp_id;
-            if (!househelpUserId) continue;
-            const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
-            if (!res.ok) {
-              console.error('[Inbox] Failed to fetch househelp profile:', res.status);
-              continue;
+            let profileResponse: any;
+
+            if (househelpUserId) {
+              const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
+              if (res.ok) {
+                profileResponse = await apiClient.json(res);
+              }
             }
-            const profileData: any = await apiClient.json(res);
+
+            if (!profileResponse) {
+              const fallbackProfileId = conv.househelp_profile_id;
+              if (!fallbackProfileId) {
+                console.error('[Inbox] Missing househelp user/profile id for conversation:', conv.id);
+                continue;
+              }
+              const fallbackRes = await apiClient.auth(`${API_BASE}/api/v1/househelps/${encodeURIComponent(fallbackProfileId)}/profile_with_user`);
+              if (!fallbackRes.ok) {
+                console.error('[Inbox] Failed to fetch househelp profile fallback:', fallbackRes.status);
+                continue;
+              }
+              profileResponse = await apiClient.json(fallbackRes);
+            }
+
+            const profileData = extractEnvelopeObject<any>(profileResponse);
             console.log('[Inbox] Househelp profile data:', profileData);
             
             // Extract househelp name from the preloaded user object
-            const user = profileData?.user;
+            const user = profileData?.user || profileData?.househelp?.user;
             console.log('[Inbox] Househelp user object:', user);
-            const firstName = (user?.first_name || user?.FirstName || "").trim();
-            const lastName = (user?.last_name || user?.LastName || "").trim();
-            const fullName = firstName ? `${firstName} ${lastName}`.trim() : "Househelp";
-            console.log('[Inbox] Extracted househelp name:', { firstName, lastName, fullName });
+            const fullName = getNameFromUser(user) || getNameFromProfile(profileData, "Househelp");
+            console.log('[Inbox] Extracted househelp name:', { fullName });
             
-            const avatar = profileData?.avatar_url || (Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined);
+            const avatar =
+              profileData?.avatar_url ||
+              profileData?.househelp?.avatar_url ||
+              (Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined) ||
+              (Array.isArray(profileData?.househelp?.photos) && profileData.househelp.photos.length > 0 ? profileData.househelp.photos[0] : undefined);
             updates.push({ id: conv.id, participant_name: fullName, participant_avatar: avatar });
           } else if (role === "househelp") {
             // Househelp user: other participant is a household
@@ -285,15 +397,17 @@ export default function InboxPage() {
             if (!householdUserId) continue;
             const res = await apiClient.auth(`${API_BASE}/api/v1/profile/household/${encodeURIComponent(householdUserId)}`);
             if (!res.ok) continue;
-            const profileData: any = await apiClient.json(res);
+            const profileResponse: any = await apiClient.json(res);
+            const profileData = extractEnvelopeObject<any>(profileResponse);
             
             // Extract household owner's name from the preloaded owner object
-            const owner = profileData?.owner;
-            const firstName = (owner?.first_name || owner?.FirstName || "").trim();
-            const lastName = (owner?.last_name || owner?.LastName || "").trim();
-            const name = firstName ? `${firstName} ${lastName}`.trim() : "Household";
+            const owner = profileData?.owner || profileData?.household?.owner || profileData?.user;
+            const name = getNameFromUser(owner) || getNameFromProfile(profileData, "Household");
             
-            const avatar = Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined;
+            const avatar =
+              profileData?.avatar_url ||
+              (Array.isArray(profileData?.photos) && profileData.photos.length > 0 ? profileData.photos[0] : undefined) ||
+              (Array.isArray(profileData?.household?.photos) && profileData.household.photos.length > 0 ? profileData.household.photos[0] : undefined);
             updates.push({ id: conv.id, participant_name: name, participant_avatar: avatar });
           }
         } catch (err) {
@@ -330,12 +444,39 @@ export default function InboxPage() {
       const params = new URLSearchParams({ limit: "50" });
       const res = await apiClient.auth(`${API_BASE}/api/v1/hire-requests?${params.toString()}`);
       if (!res.ok) throw new Error('Failed to load hire requests');
-      const payload = await apiClient.json<{ data?: HireRequestSummary[] }>(res);
-      const match = payload?.data?.find(
-        (req) =>
-          req.household_id === conversation.household_id &&
-          req.househelp_id === conversation.househelp_id
-      );
+      const payload = await apiClient.json<any>(res);
+      const requests = extractEnvelopeArray<HireRequestSummary>(payload, 'data');
+
+      const conversationHouseholdCandidates = [
+        normalizeId(conversation.household_profile_id),
+        normalizeId(conversation.household_id),
+      ].filter((v): v is string => Boolean(v));
+
+      const conversationHousehelpCandidates = [
+        normalizeId(conversation.househelp_profile_id),
+        normalizeId(conversation.househelp_id),
+      ].filter((v): v is string => Boolean(v));
+
+      const match = requests.find((req) => {
+        const requestHouseholdCandidates = [
+          normalizeId(req.household_id),
+          normalizeId(req.household_user_id),
+          normalizeId(req.household?.id),
+          normalizeId(req.household?.user_id),
+        ].filter((v): v is string => Boolean(v));
+
+        const requestHousehelpCandidates = [
+          normalizeId(req.househelp_id),
+          normalizeId(req.househelp_user_id),
+          normalizeId(req.househelp?.id),
+          normalizeId(req.househelp?.user_id),
+        ].filter((v): v is string => Boolean(v));
+
+        return (
+          intersects(conversationHouseholdCandidates, requestHouseholdCandidates) &&
+          intersects(conversationHousehelpCandidates, requestHousehelpCandidates)
+        );
+      });
       if (match) {
         setHireRequestStatus(match.status);
         setHireRequestId(match.id);
@@ -366,18 +507,50 @@ export default function InboxPage() {
         setError(null);
         const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=${offset}&limit=${limit}`);
         if (!res.ok) throw new Error("Failed to load conversations");
-        const response = await apiClient.json<{ conversations: any[] }>(res);
-        const raw = response.conversations || [];
-        // Normalise field names so the rest of the UI can rely on household_id / househelp_id
-        const data: Conversation[] = raw.map((c: any) => ({
+        const response = await apiClient.json<any>(res);
+        const raw = extractEnvelopeArray<any>(response, 'conversations');
+        const normalizeConversation = (c: any): Conversation => ({
           ...c,
-          household_id: c.household_id || c.household_user_id || c.householdId || "",
-          househelp_id: c.househelp_id || c.househelp_user_id || c.househelpId || "",
+          id: c.id || c.ID,
+          household_id: c.household_user_id || c.household_id || c.householdId || "",
+          househelp_id: c.househelp_user_id || c.househelp_id || c.househelpId || "",
+          household_profile_id: c.household_profile_id || c.householdProfileId || c.household?.id || null,
+          househelp_profile_id: c.househelp_profile_id || c.househelpProfileId || c.househelp?.id || null,
           last_message_at: c.last_message_at ?? null,
-        }));
+          participant_name:
+            c.participant_name ||
+            c.participantName ||
+            c.other_participant_name ||
+            c.otherParticipantName ||
+            c.household_name ||
+            c.householdName ||
+            undefined,
+        });
+
+        // Normalise field names so the rest of the UI can rely on household_id / househelp_id
+        let data: Conversation[] = raw.map(normalizeConversation).filter((c) => !!c.id);
+
+        // If we're deep-linking to a conversation that isn't in this page, fetch it explicitly.
+        if (offset === 0 && selectedConversationId && !data.some((c) => c.id === selectedConversationId)) {
+          try {
+            const detailRes = await apiClient.auth(
+              `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${encodeURIComponent(selectedConversationId)}`,
+            );
+            if (detailRes.ok) {
+              const detailResponse = await apiClient.json<any>(detailRes);
+              const detailRaw = detailResponse?.data?.data || detailResponse?.data || detailResponse;
+              const normalized = normalizeConversation(detailRaw);
+              if (normalized.id) {
+                data = [normalized, ...data];
+              }
+            }
+          } catch (detailErr) {
+            console.warn('[Inbox] Failed to hydrate selected conversation', detailErr);
+          }
+        }
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
-        setHasMore(data.length === limit);
+        setHasMore(raw.length === limit);
         
         // Auto-select the first conversation if none is selected and we have conversations
         if (offset === 0 && data.length > 0 && !activeConversationId && !selectedConversationId) {
@@ -394,7 +567,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [offset, NOTIFICATIONS_BASE, authLoading, user]);
+  }, [offset, NOTIFICATIONS_BASE, authLoading, user, selectedConversationId]);
 
   // Load messages when conversation is selected
   useEffect(() => {
@@ -421,9 +594,9 @@ export default function InboxPage() {
         );
         console.log('[Inbox] Messages API response status:', res.status);
         if (!res.ok) throw new Error("Failed to load messages");
-        const response = await apiClient.json<{ messages: Message[] }>(res);
+        const response = await apiClient.json<any>(res);
         console.log('[Inbox] Messages API response:', response);
-        const data = response.messages || [];
+        const data = normalizeMessageList(extractEnvelopeArray<any>(response, 'messages'));
         console.log('[Inbox] Parsed messages count:', data.length, 'Messages:', data);
         if (cancelled) return;
         setMessages(data);
@@ -728,7 +901,9 @@ export default function InboxPage() {
         },
       );
       if (!res.ok) throw new Error('Failed to edit message');
-      const updated = await apiClient.json<Message>(res);
+      const updatedResponse = await apiClient.json<any>(res);
+      const updated = normalizeMessage(extractEnvelopeObject(updatedResponse));
+      if (!updated) throw new Error('Invalid message payload from edit API');
       setMessages((prev) => prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)));
       cancelEditMessage();
     } catch (err) {
@@ -750,7 +925,9 @@ export default function InboxPage() {
         },
       );
       if (!res.ok) return;
-      const updated = await apiClient.json<Message>(res);
+      const updatedResponse = await apiClient.json<any>(res);
+      const updated = normalizeMessage(extractEnvelopeObject(updatedResponse));
+      if (!updated) return;
       setMessages((prev) => prev.map((msg) => (msg.id === updated.id ? { ...msg, ...updated } : msg)));
     } catch (err) {
       console.error(err);
@@ -809,7 +986,9 @@ export default function InboxPage() {
         },
       );
       if (!res.ok) throw new Error('Failed to send message');
-      const saved = await apiClient.json<Message>(res);
+      const savedResponse = await apiClient.json<any>(res);
+      const saved = normalizeMessage(extractEnvelopeObject(savedResponse));
+      if (!saved) throw new Error('Invalid message payload from send API');
       setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...saved, _status: 'sent' } : m)));
     } catch (err) {
       console.error(err);
@@ -862,7 +1041,7 @@ export default function InboxPage() {
       try {
         const inboxEvent = event as any;
         // Backend sends InboxEvent: { type, conversation_id, message, user_id, timestamp }
-        const msg = inboxEvent.message;
+        const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
         
         console.log('[Inbox] Extracted message:', msg);
         
@@ -922,7 +1101,7 @@ export default function InboxPage() {
       console.log('[Inbox] Received message_edited event:', event);
       try {
         const inboxEvent = event as any;
-        const msg = inboxEvent.message;
+        const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
         if (msg && msg.id) {
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
@@ -935,7 +1114,7 @@ export default function InboxPage() {
       console.log('[Inbox] Received message_deleted event:', event);
       try {
         const inboxEvent = event as any;
-        const msg = inboxEvent.message;
+        const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
         if (msg && msg.id) {
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
@@ -947,7 +1126,7 @@ export default function InboxPage() {
     const offReactionAdded = addEventListener('reaction_added', (event: WSMessageEvent) => {
       try {
         const inboxEvent = event as any;
-        const msg = inboxEvent.message;
+        const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
         if (msg && msg.id) {
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
@@ -959,7 +1138,7 @@ export default function InboxPage() {
     const offReactionRemoved = addEventListener('reaction_removed', (event: WSMessageEvent) => {
       try {
         const inboxEvent = event as any;
-        const msg = inboxEvent.message;
+        const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
         if (msg && msg.id) {
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
@@ -988,11 +1167,7 @@ export default function InboxPage() {
         )}
       </div>
 
-      {error && (
-        <div className="m-3 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-2 text-xs text-red-700 dark:text-red-300">
-          {error}
-        </div>
-      )}
+      {error && <div className="m-3"><ErrorAlert message={error} /></div>}
 
       <div className="flex-1 overflow-y-auto">
         {deduplicatedItems.length === 0 && !loading && !error && (
@@ -1149,7 +1324,7 @@ export default function InboxPage() {
                   if (currentUserProfileType?.toLowerCase() === 'household') {
                     navigate(`/household/hire-request/${hireRequestId}`);
                   } else {
-                    navigate(`/househelp/hire-requests`);
+                    navigate(`/househelp/hiring`);
                   }
                 }
               }}
@@ -1198,9 +1373,7 @@ export default function InboxPage() {
             <div className="text-center text-gray-500 dark:text-gray-400 py-12">No messages yet. Start the conversation!</div>
           )}
 
-          {messagesError && (
-            <div className="mb-3 rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-3 text-red-700 dark:text-red-300">{messagesError}</div>
-          )}
+          {messagesError && <ErrorAlert message={messagesError} className="mb-3" />}
 
           {groupedMessages.map(group => (
             <div key={group.key} className="space-y-3">
@@ -1932,10 +2105,11 @@ export default function InboxPage() {
                 )
                 .then((res) => {
                   if (res.ok) {
-                    return apiClient.json<Message>(res);
+                    return apiClient.json<any>(res);
                   }
                 })
-                .then((msg) => {
+                .then((responseBody) => {
+                  const msg = normalizeMessage(extractEnvelopeObject(responseBody));
                   if (msg) {
                     setMessages((prev) => [...prev, msg]);
                     setTimeout(

@@ -7,8 +7,10 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { fetchPreferences } from "~/utils/preferencesApi";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 // Types
 type ShortlistItem = {
@@ -95,9 +97,10 @@ export default function HouseholdShortlistPage() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
-            const data = await res.json();
+            const raw = await res.json();
+            const profile = raw?.data?.data || raw?.data || raw;
             if (!cancelled) {
-              setCurrentHouseholdProfileId(data?.id || data?.profile_id || null);
+              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
             }
           }
         } catch (err) {
@@ -124,10 +127,19 @@ export default function HouseholdShortlistPage() {
           `${API_BASE}/api/v1/shortlists/mine?offset=${offset}&limit=${limit}`
         );
         if (!res.ok) throw new Error("Failed to load shortlist");
-        const data = await apiClient.json<ShortlistItem[]>(res);
+        const response = await apiClient.json<any>(res);
+        console.log('Shortlist response:', response);
+        
+        // Extract shortlist array from nested structure
+        const data = response.data?.data || response.data || response;
+        console.log('Extracted shortlist data:', data);
+        
+        // Ensure it's an array
+        const shortlistArray = Array.isArray(data) ? data : [];
+        
         if (cancelled) return;
-        setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
-        setHasMore(data.length === limit);
+        setItems((prev) => (offset === 0 ? shortlistArray : [...prev, ...shortlistArray]));
+        setHasMore(shortlistArray.length === limit);
         // Trigger event to update badge count in navigation
         window.dispatchEvent(new CustomEvent('shortlist-updated'));
       } catch (e: any) {
@@ -144,7 +156,7 @@ export default function HouseholdShortlistPage() {
 
   // Load househelp profiles for shortlist entries (only where profile_type === 'househelp')
   useEffect(() => {
-    const missingIds = items
+    const missingIds = (items || [])
       .filter((s) => s.profile_type === "househelp")
       .map((s) => s.profile_id)
       .filter((pid) => pid && !(pid in profilesById));
@@ -160,10 +172,13 @@ export default function HouseholdShortlistPage() {
           body: JSON.stringify({ profile_type: "househelp", profile_ids: missingIds }),
         });
         if (!res.ok) throw new Error("Failed to fetch profiles");
-        const data = await apiClient.json<any[]>(res);
+        const response = await apiClient.json<any>(res);
+        // Gateway responses can be nested as { data: [...] } or { data: { data: [...] } }
+        const data = response?.data?.data || response?.data || response;
+        const profiles = Array.isArray(data) ? data : [];
         if (cancelled) return;
         const next: Record<string, any> = { ...profilesById };
-        for (const h of data || []) {
+        for (const h of profiles) {
           if (h.profile_id) next[h.profile_id] = h;
         }
         setProfilesById(next);
@@ -183,7 +198,7 @@ export default function HouseholdShortlistPage() {
     try {
       const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/${profileId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to remove from shortlist');
-      setItems((prev) => prev.filter((s) => s.profile_id !== profileId));
+      setItems((prev) => (prev || []).filter((s) => s.profile_id !== profileId));
       // Trigger event to update badge count in navigation
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch {}
@@ -192,7 +207,7 @@ export default function HouseholdShortlistPage() {
   async function handleChatWithHousehelp(profileId?: string, househelpUserId?: string) {
     if (!profileId || !househelpUserId || !currentUserId) return;
     try {
-      const payload: Record<string, any> = {
+      const payload: StartConversationPayload = {
         household_user_id: currentUserId,
         househelp_user_id: househelpUserId,
         househelp_profile_id: profileId,
@@ -203,26 +218,8 @@ export default function HouseholdShortlistPage() {
         payload.household_profile_id = currentHouseholdProfileId;
       }
 
-      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to start chat');
-
-      let convId: string | undefined;
-      try {
-        const data = await apiClient.json<any>(res);
-        convId = data?.id || data?.ID || data?.conversation_id;
-      } catch {
-        convId = undefined;
-      }
-
-      if (convId) {
-        navigate(`/inbox?conversation=${convId}`);
-      } else {
-        navigate('/inbox');
-      }
+      const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      navigate(getInboxRoute(convId));
     } catch (e) {
       console.error('Failed to start chat from shortlist (househelp)', e);
       navigate('/inbox');
@@ -252,19 +249,17 @@ export default function HouseholdShortlistPage() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h1 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
 
-            {items.length === 0 && !loading && !error && (
+            {(items || []).length === 0 && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
                 <p className="text-gray-600 dark:text-gray-300 text-lg">No shortlisted househelps yet.</p>
               </div>
             )}
 
-            {error && (
-              <div className="rounded-xl border border-red-300 bg-red-50 dark:bg-red-900/20 p-4 text-red-700 dark:text-red-300 mb-4">{error}</div>
-            )}
+            {error && <ErrorAlert message={error} className="mb-4" />}
 	
             <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>
-              {items
+              {(items || [])
                 .filter((s) => s.profile_type === "househelp")
                 .map((s) => {
                   const h = profilesById[s.profile_id];

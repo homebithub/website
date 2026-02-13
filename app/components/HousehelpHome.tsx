@@ -5,12 +5,15 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import HouseholdFilters, { type HouseholdSearchFields } from "~/components/features/HouseholdFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
+import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 
 interface HouseholdItem {
   id?: string; // household user id
@@ -23,8 +26,6 @@ interface HouseholdItem {
   verified?: boolean;
   created_at?: string;
 };
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const getFriendlyErrorMessage = (error?: string | null) => {
   if (!error) return "";
@@ -53,6 +54,14 @@ export default function HousehelpHome() {
     has_pets: "",
     type_of_househelp: "",
     available_from: "",
+    needs_live_in: "",
+    needs_day_worker: "",
+    budget_min: "",
+    budget_max: "",
+    salary_frequency: "",
+    religion: "",
+    chore: "",
+    min_rating: "",
   });
   const [results, setResults] = useState<HouseholdItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,9 +110,10 @@ export default function HousehelpHome() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
-            const data = await res.json();
+            const raw = await res.json();
+            const profile = raw?.data?.data || raw?.data || raw;
             if (!cancelled) {
-              setCurrentHouseholdProfileId(data?.id || data?.profile_id || null);
+              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
             }
           }
         } catch (err) {
@@ -190,7 +200,7 @@ export default function HousehelpHome() {
         househelpId = householdUserId;
       }
 
-      const payload: Record<string, any> = {
+      const payload: StartConversationPayload = {
         household_user_id: householdId,
         househelp_user_id: househelpId,
       };
@@ -200,46 +210,8 @@ export default function HousehelpHome() {
         payload.household_profile_id = currentHouseholdProfileId;
       }
 
-      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to start conversation');
-
-      let convId: string | undefined;
-      try {
-        const data = await apiClient.json<any>(res);
-        convId = data?.id || data?.ID || data?.conversation_id;
-      } catch {
-        convId = undefined;
-      }
-
-      if (!convId || !UUID_REGEX.test(convId)) {
-        try {
-          const convRes = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=0&limit=50`);
-          if (convRes.ok) {
-            const response = await apiClient.json<{
-              conversations: Array<{ id?: string; ID?: string; household_id?: string; househelp_id?: string }>;
-            }>(convRes);
-            const conversations = response.conversations || [];
-            const match = conversations.find(
-              (c) =>
-                (c.household_id === householdId && c.househelp_id === househelpId) ||
-                (c.household_id === househelpId && c.househelp_id === householdId),
-            );
-            convId = match?.id || match?.ID;
-          }
-        } catch (err) {
-          console.error('Failed to hydrate conversation id', err);
-        }
-      }
-
-      if (convId) {
-        navigate(`/inbox?conversation=${convId}`);
-      } else {
-        navigate('/inbox');
-      }
+      const convId = await startOrGetConversation(NOTIFICATIONS_BASE, payload);
+      navigate(getInboxRoute(convId));
     } catch (err) {
       console.error('Failed to start chat from households list', err);
       navigate('/inbox');
@@ -282,33 +254,32 @@ export default function HousehelpHome() {
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  const toPayload = () => {
+  const toBool = (v?: string) => v === "true" ? true : v === "false" ? false : undefined;
+  const toNum = (v?: string) => v ? Number(v) : undefined;
+
+  const buildFilters = () => {
     const base: Record<string, any> = {
       town: filters.town || undefined,
       house_size: filters.house_size || undefined,
-      verified: filters.verified === "true" ? true : filters.verified === "false" ? false : undefined,
-      has_kids: filters.has_kids === "true" ? true : filters.has_kids === "false" ? false : undefined,
-      has_pets: filters.has_pets === "true" ? true : filters.has_pets === "false" ? false : undefined,
+      verified: toBool(filters.verified),
+      has_kids: toBool(filters.has_kids),
+      has_pets: toBool(filters.has_pets),
       type_of_househelp: filters.type_of_househelp || undefined,
       available_from: filters.available_from || undefined,
-      limit: 12,
-      offset: 0,
+      needs_live_in: toBool(filters.needs_live_in),
+      needs_day_worker: toBool(filters.needs_day_worker),
+      budget_min: toNum(filters.budget_min),
+      budget_max: toNum(filters.budget_max),
+      salary_frequency: filters.salary_frequency || undefined,
+      religion: filters.religion || undefined,
+      chore: filters.chore || undefined,
+      min_rating: toNum(filters.min_rating),
     };
     return Object.fromEntries(Object.entries(base).filter(([_, v]) => v !== undefined && v !== null && v !== ""));
   };
 
-  const buildCountPayload = () => {
-    const base: Record<string, any> = {
-      town: filters.town || undefined,
-      house_size: filters.house_size || undefined,
-      verified: filters.verified === "true" ? true : filters.verified === "false" ? false : undefined,
-      has_kids: filters.has_kids === "true" ? true : filters.has_kids === "false" ? false : undefined,
-      has_pets: filters.has_pets === "true" ? true : filters.has_pets === "false" ? false : undefined,
-      type_of_househelp: filters.type_of_househelp || undefined,
-      available_from: filters.available_from || undefined,
-    };
-    return Object.fromEntries(Object.entries(base).filter(([_, v]) => v !== undefined && v !== null && v !== ""));
-  };
+  const toPayload = () => ({ ...buildFilters(), limit: 12, offset: 0 });
+  const buildCountPayload = () => buildFilters();
 
   const search = async () => {
     setLoading(true);
@@ -319,8 +290,9 @@ export default function HousehelpHome() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(toPayload()),
       });
-      const data = await apiClient.json<any>(res);
-      setResults((data?.data as HouseholdItem[]) || []);
+      const raw = await apiClient.json<any>(res);
+      const data = raw?.data?.data || raw?.data || raw || [];
+      setResults((data as HouseholdItem[]) || []);
     } catch (err: any) {
       setError(err.message || "Failed to load households");
       setResults([]);
@@ -334,40 +306,31 @@ export default function HousehelpHome() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Fetch shortlist status for current results
+  // Fetch the user's full shortlist once on mount
   useEffect(() => {
-    if (!results.length) {
-      setShortlistedProfiles(new Set());
-      return;
-    }
     let cancelled = false;
-    const fetchStatuses = async () => {
+    const fetchShortlist = async () => {
       try {
-        const profileIds = Array.from(new Set(results.map((r) => r.profile_id).filter(Boolean)));
-        const statuses = await Promise.all(
-          profileIds.map(async (profileId) => {
-            try {
-              const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/exists/${profileId}`);
-              if (!res.ok) return { profileId, exists: false };
-              const data = await apiClient.json<{ exists: boolean }>(res);
-              return { profileId, exists: data.exists };
-            } catch {
-              return { profileId, exists: false };
-            }
-          })
-        );
+        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists`);
+        if (!res.ok) return;
+        const raw = await apiClient.json<any>(res);
+        const items = raw?.data?.data || raw?.data || raw || [];
         if (cancelled) return;
-        const shortlisted = statuses.filter((s) => s.exists).map((s) => s.profileId);
-        setShortlistedProfiles(new Set(shortlisted));
+        const ids = new Set<string>(
+          (Array.isArray(items) ? items : [])
+            .map((s: any) => s.profile_id)
+            .filter(Boolean)
+        );
+        setShortlistedProfiles(ids);
       } catch (err) {
-        console.error('Failed to fetch shortlist statuses', err);
+        console.error('Failed to fetch shortlist', err);
       }
     };
-    fetchStatuses();
+    fetchShortlist();
     return () => {
       cancelled = true;
     };
-  }, [results, API_BASE]);
+  }, [API_BASE]);
 
   // Debounced count updates on filter changes
   useEffect(() => {
@@ -399,39 +362,33 @@ export default function HousehelpHome() {
         <main className={`flex-1 py-8 ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {showTips && <OnboardingTipsBanner role="househelp" onDismiss={handleDismissTips} />}
-            <div className={`bg-gradient-to-r from-purple-600 to-pink-600 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg`}>
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-xl sm:text-2xl font-bold text-white">Find Households</h1>
+            <div className={`bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-gray-700/50`}>
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Find Households</h1>
                 <button
                   onClick={() => setShowMoreFilters(true)}
-                  className="px-4 py-1 bg-white/15 text-white font-semibold rounded-xl border border-white/20 hover:bg-white/25 transition"
+                  className="px-4 py-1 rounded-xl bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition"
                 >
                   More filters
                 </button>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-5 md:grid-cols-7 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-white">Town</label>
-                  <select
-                    name="town"
+                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Town</label>
+                  <SearchableTownSelect
                     value={filters.town}
-                    onChange={handleSelect}
-                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
-                  >
-                    {['', 'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika'].map((t) => (
-                      <option key={t} value={t}>
-                        {t || 'Any'}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => setFilters((prev) => ({ ...prev, town: value }))}
+                    target="households"
+                    buttonClassName="w-full h-12 px-4 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  />
                 </div>
                 <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-white">House Size</label>
+                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">House Size</label>
                   <select
                     name="house_size"
                     value={filters.house_size}
                     onChange={handleSelect}
-                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                    className="w-full h-12 px-4 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     {['', 'bedsitter', '1br', '2br', '3br+', 'mansion'].map((s) => (
                       <option key={s} value={s}>
@@ -441,75 +398,29 @@ export default function HousehelpHome() {
                   </select>
                 </div>
                 <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-white">Verified</label>
-                  <select
-                    name="verified"
-                    value={filters.verified}
-                    onChange={handleSelect}
-                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
-                  >
-                    <option value="">Any</option>
-                    <option value="true">Verified</option>
-                    <option value="false">Not verified</option>
-                  </select>
-                </div>
-                <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-white">Has Kids</label>
+                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Has Kids</label>
                   <select
                     name="has_kids"
                     value={filters.has_kids}
                     onChange={handleSelect}
-                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                    className="w-full h-12 px-4 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     <option value="">Any</option>
                     <option value="true">Yes</option>
                     <option value="false">No</option>
                   </select>
-                </div>
-                <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-white">Has Pets</label>
-                  <select
-                    name="has_pets"
-                    value={filters.has_pets}
-                    onChange={handleSelect}
-                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
-                  >
-                    <option value="">Any</option>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                  </select>
-                </div>
-                <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-white">Type of Househelp</label>
-                  <select
-                    name="type_of_househelp"
-                    value={filters.type_of_househelp}
-                    onChange={handleSelect}
-                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
-                  >
-                    <option value="">Any</option>
-                    <option value="live_in">Live-in</option>
-                    <option value="day_worker">Day worker</option>
-                  </select>
-                </div>
-                <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-white">Available From</label>
-                  <input
-                    type="date"
-                    name="available_from"
-                    value={filters.available_from}
-                    onChange={(e) => setFilters(prev => ({ ...prev, available_from: e.target.value }))}
-                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
-                  />
                 </div>
               </div>
-              <div className="mt-4 flex items-center justify-end gap-3">
-                {totalCount !== null && (
-                  <span className="text-white font-semibold">{totalCount} results</span>
-                )}
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                <div className="sm:col-span-2 flex items-center">
+                  <span className="text-gray-700 dark:text-white font-medium">
+                    Use quick filters above or open <span className="font-semibold">More filters</span> for advanced options.
+                    {totalCount !== null ? ` ${totalCount} results` : ''}
+                  </span>
+                </div>
                 <button
                   onClick={search}
-                  className="px-6 py-1.5 rounded-xl font-bold bg-white text-purple-700 border border-white/20 shadow-lg hover:bg-purple-50 transition-all dark:bg-white dark:text-purple-700 dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-white/70 dark:shadow-[0_0_20px_rgba(168,85,247,0.35)]"
+                  className="w-full px-8 py-1.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500"
                 >
                   Search
                 </button>
@@ -518,18 +429,30 @@ export default function HousehelpHome() {
 
             {/* Slide-over Drawer for full filters */}
             {showMoreFilters && (
-              <div className="fixed inset-0 z-50">
-                <div className="absolute inset-0 bg-black/40" onClick={() => setShowMoreFilters(false)} />
-                <div className="absolute right-0 top-24 sm:top-28 bottom-20 sm:bottom-24 w-full max-w-md bg-white dark:bg-[#13131a] shadow-xl rounded-l-3xl p-6 overflow-y-auto">
-                  <div className="flex items-center justify-between mb-4">
+              <div className="fixed inset-0 z-[70]">
+                <div className="absolute inset-x-0 top-20 sm:top-24 bottom-20 sm:bottom-24 bg-slate-900/20 backdrop-blur-[2px]" onClick={() => setShowMoreFilters(false)} />
+                <div className="absolute right-0 sm:right-4 top-20 sm:top-24 bottom-20 sm:bottom-24 w-full max-w-[460px] bg-[#f3f4f7] dark:bg-gradient-to-br dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] shadow-[0_24px_80px_rgba(15,23,42,0.28)] rounded-[2rem] p-6 sm:p-7 overflow-y-auto border border-[#d6dbe7] dark:border-purple-500/30">
+                  <div className="sticky top-0 z-10 -mx-2 px-2 pb-4 pt-1 bg-[#f3f4f7] dark:bg-[#13131a] flex items-center justify-between mb-2">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">More Filters</h2>
-                    <button onClick={() => setShowMoreFilters(false)} className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">✕</button>
+                    <button
+                      onClick={() => setShowMoreFilters(false)}
+                      className="h-9 w-9 rounded-full border border-[#c7cdd9] dark:border-purple-500/30 text-slate-500 hover:text-slate-700 hover:bg-white/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-purple-500/10 transition-colors"
+                      aria-label="Close more filters"
+                    >
+                      <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                   <HouseholdFilters
                     fields={filters}
                     onChange={handleFieldChange}
                     onSearch={() => { setShowMoreFilters(false); search(); }}
-                    onClear={() => setFilters((prev) => ({ ...prev, has_kids: "", has_pets: "", type_of_househelp: "", available_from: "" }))}
+                    onClear={() => setFilters((prev) => ({
+                      ...prev, verified: "", has_kids: "", has_pets: "", type_of_househelp: "",
+                      available_from: "", needs_live_in: "", needs_day_worker: "", budget_min: "",
+                      budget_max: "", salary_frequency: "", religion: "", chore: "", min_rating: "",
+                    }))}
                   />
                 </div>
               </div>
@@ -542,16 +465,14 @@ export default function HousehelpHome() {
                   <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
                 </div>
               ) : error ? (
-                <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 rounded-xl p-6 text-center">
-                  <p className="text-red-600 dark:text-red-400">{getFriendlyErrorMessage(error)}</p>
-                </div>
-              ) : results.length === 0 ? (
+                <ErrorAlert message={getFriendlyErrorMessage(error)} />
+              ) : (!results || results.length === 0) ? (
                 <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
                   <p className="text-gray-600 dark:text-gray-400 text-lg">No households found. Try adjusting filters.</p>
                 </div>
               ) : (
                 <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>
-                  {results.map((r) => (
+                  {(Array.isArray(results) ? results : []).map((r) => (
                     <div
                       key={r.profile_id}
                       onClick={() => handleViewMore(r)}

@@ -1,5 +1,5 @@
 import React, { createContext } from "react";
-import type { LoginResponse } from "~/types/users";
+import type { LoginResponse } from "~/routes/login";
 
 export interface AuthContextType {
   user: LoginResponse | null;

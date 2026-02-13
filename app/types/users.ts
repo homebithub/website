@@ -91,29 +91,3 @@ export interface Admin extends BaseUser {
     manageContent: boolean;
   };
 }
-
-export type LoginRequest = {
-  phone: string;
-  password: string;
-};
-
-export type LoginResponse = {
-  id: string;
-  email: string;
-  first_name: string;
-  profile_type: string;
-  last_name: string;
-  phone: string;
-  email_verified: boolean;
-  country: string;
-  role: string;
-  status: string;
-  auth_provider: string;
-  created_at: string;
-  updated_at: string;
-  token: string;
-};
-
-export type LoginErrorResponse = {
-  message: string;
-};

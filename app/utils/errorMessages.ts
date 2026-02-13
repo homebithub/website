@@ -1,5 +1,9 @@
 /**
- * Transforms generic API error messages into human-readable form field errors
+ * Transforms generic API error messages into human-readable form field errors.
+ *
+ * The gateway returns errors in `{ error: { code, message } }` format.
+ * Legacy endpoints may return `{ message }` or `{ errors: { field: msg } }`.
+ * `extractErrorMessage` below normalises both shapes before transformation.
  */
 
 interface FieldErrorMap {
@@ -27,13 +31,26 @@ const ERROR_MAPPINGS: { [key: string]: string } = {
   'otp is not allowed to be empty': 'Please enter the verification code',
   'token is not allowed to be empty': 'Please enter the verification token',
   'Invalid email or password': 'The email or password you entered is incorrect',
-  'User not found': 'No account found with this email address',
+  'invalid credentials': 'The phone number or password you entered is incorrect',
+  'User not found': 'No account found with this phone number. Please check and try again.',
+  'user with that phone number not found': 'No account found with this phone number. Please check and try again.',
+  'Not Found': 'Invalid phone number or password. Please check and try again.',
+  'not found': 'Invalid phone number or password. Please check and try again.',
+  'record not found': 'Invalid phone number or password. Please check and try again.',
+  'Unauthorized': 'Invalid phone number or password. Please check and try again.',
+  'unauthorized': 'Invalid phone number or password. Please check and try again.',
+  'invalid password': 'The password you entered is incorrect. Please try again.',
+  'incorrect password': 'The password you entered is incorrect. Please try again.',
   'Invalid OTP': 'The verification code you entered is incorrect',
   'OTP expired': 'The verification code has expired. Please request a new one',
   'Invalid token': 'The verification link is invalid or has expired',
   'Email already exists': 'An account with this email address already exists',
   'Phone number already exists': 'An account with this phone number already exists',
-  'Account not verified': 'Please verify your email address before signing in',
+  'a user with the same phone number already exists': 'An account with this phone number already exists. Please log in instead.',
+  'a user with the same email already exists': 'An account with this email address already exists. Please log in instead.',
+  'Account not verified': 'Please verify your phone number before signing in',
+  'password must be at least 4 characters': 'Password must be at least 4 characters',
+  'first_name, last_name, phone, password, and profile_type are required': 'Please fill in all required fields',
   
   // Context-specific mappings for various forms
   'gender is not allowed to be empty': 'Please select your gender',
@@ -183,37 +200,69 @@ export function transformErrorMessage(errorMessage: string, context?: string): s
     return errorMessage; // Keep invalid format messages
   }
 
-  // Return original message if no transformation is found but make it more user-friendly
-  if (errorMessage.toLowerCase().includes('failed')) {
-    return 'Unable to save your information. Please try again.';
+  // If message is a vague internal error, show a helpful generic message.
+  // Only catch truly unhelpful messages; preserve anything actionable.
+  const lower = errorMessage.toLowerCase();
+  if (
+    lower === 'signup failed' ||
+    lower === 'login failed' ||
+    lower === 'failed' ||
+    lower === 'internal server error' ||
+    lower === 'an internal error occurred'
+  ) {
+    return 'Something went wrong. Please try again or contact support if the problem persists.';
   }
 
   return errorMessage;
 }
 
 /**
- * Transforms API error response into user-friendly message
- * @param error - Error object or string from API response
+ * Extract the human-readable error message from any API response shape.
+ *
+ * Supported response shapes:
+ *  - Gateway:  `{ error: { code, message } }`
+ *  - Legacy:   `{ message }` or `{ error: "string" }`
+ *  - JS Error: `error.message`
+ *  - String:   used as-is
+ */
+export function extractErrorMessage(error: unknown): string {
+  if (!error) return '';
+
+  if (typeof error === 'string') return error;
+
+  if (typeof error === 'object' && error !== null) {
+    const err = error as Record<string, unknown>;
+
+    // Gateway format: { error: { code, message } }
+    if (err.error && typeof err.error === 'object') {
+      const nested = err.error as Record<string, unknown>;
+      if (typeof nested.message === 'string') return nested.message;
+    }
+
+    // Legacy format: { message: "..." }
+    if (typeof err.message === 'string') return err.message;
+
+    // Legacy format: { error: "string" }
+    if (typeof err.error === 'string') return err.error;
+  }
+
+  return '';
+}
+
+/**
+ * Transforms API error response into user-friendly message.
+ *
+ * @param error - Error object, parsed JSON body, or string from API response
  * @param context - Optional context for more specific error messages
  * @param fallbackMessage - Fallback message if transformation fails
  * @returns Human-readable error message
  */
 export function handleApiError(
-  error: any, 
+  error: unknown, 
   context?: string, 
   fallbackMessage: string = 'An error occurred. Please try again.'
 ): string {
-  let errorMessage = '';
-
-  if (typeof error === 'string') {
-    errorMessage = error;
-  } else if (error?.message) {
-    errorMessage = error.message;
-  } else if (error?.error) {
-    errorMessage = error.error;
-  } else {
-    return fallbackMessage;
-  }
-
+  const errorMessage = extractErrorMessage(error);
+  if (!errorMessage) return fallbackMessage;
   return transformErrorMessage(errorMessage, context);
 }

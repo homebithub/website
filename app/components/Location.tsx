@@ -1,6 +1,8 @@
 import React, {useState, useRef, useEffect} from "react";
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 interface LocationSuggestion {
     name: string;
@@ -10,9 +12,10 @@ interface LocationSuggestion {
 
 interface LocationProps {
     onSelect?: (suggestion: LocationSuggestion) => void;
+    onSaved?: (location: LocationSuggestion) => void;
 }
 
-const Location: React.FC<LocationProps> = ({onSelect}) => {
+const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
     const [input, setInput] = useState("");
     const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -33,24 +36,35 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
             try {
                 const token = localStorage.getItem('token');
                 if (!token) return;
+
+                const profileType = localStorage.getItem('profile_type');
+                const profileEndpoint = profileType === 'househelp'
+                    ? `${baseUrl}/api/v1/profile/househelp/me`
+                    : `${baseUrl}/api/v1/household/profile`;
                 
-                const response = await fetch(`${baseUrl}/api/v1/household/profile`, {
+                const response = await fetch(profileEndpoint, {
                     headers: { Authorization: `Bearer ${token}` },
                 });
                 
                 if (response.ok) {
-                    const data = await response.json();
-                    if (data.location && data.location.place) {
-                        setInput(data.location.place);
+                    const responseBody = await response.json();
+                    const data = responseBody?.data || responseBody || {};
+
+                    const loc = data?.location;
+                    const place = (typeof loc === 'string' ? loc : loc?.place || loc?.name) || data?.town || '';
+                    if (place) {
+                        const mapboxId = (typeof loc === 'object' && loc?.mapbox_id) || '';
+                        const featureType = (typeof loc === 'object' && loc?.feature_type) || 'place';
+                        setInput(place);
                         setSavedLocation({
-                            name: data.location.place,
-                            mapbox_id: data.location.mapbox_id || '',
-                            feature_type: data.location.feature_type || 'place'
+                            name: place,
+                            mapbox_id: mapboxId,
+                            feature_type: featureType
                         });
                         setSelectedLocation({
-                            name: data.location.place,
-                            mapbox_id: data.location.mapbox_id || '',
-                            feature_type: data.location.feature_type || 'place'
+                            name: place,
+                            mapbox_id: mapboxId,
+                            feature_type: featureType
                         });
                     }
                 }
@@ -62,7 +76,8 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     }, [baseUrl]);
 
     useEffect(() => {
-        if (input.length > 2) {
+        // Don't search if we just selected a location or if input is too short
+        if (input.length > 2 && (!selectedLocation || input !== selectedLocation.name)) {
             setLoading(true);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(() => {
@@ -73,8 +88,9 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                   },
                 })
                   .then((res) => res.json())
-                  .then((data: LocationSuggestion[]) => {
-                    setSuggestions(data);
+                  .then((response) => {
+                    const data = response.data?.data || response.data || response;
+                    setSuggestions(Array.isArray(data) ? data : []);
                     setShowDropdown(true);
                   })
                   .catch(() => setSuggestions([]))
@@ -166,15 +182,24 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
         const token = localStorage.getItem('token');
 
         try {
+            const payload = {
+                mapbox_id: selectedLocation.mapbox_id,
+                town: selectedLocation.name,
+                location: {
+                    place: selectedLocation.name,
+                    name: selectedLocation.name,
+                    mapbox_id: selectedLocation.mapbox_id,
+                    feature_type: selectedLocation.feature_type
+                }
+            };
+            console.log('Saving location payload:', JSON.stringify(payload, null, 2));
             const response = await fetch(`${baseUrl}/api/v1/location/save-user-location`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': token ? `Bearer ${token}` : ''
                 },
-                body: JSON.stringify({
-                    mapbox_id: selectedLocation.mapbox_id
-                })
+                body: JSON.stringify(payload)
             });
 
             const data = await response.json();
@@ -186,6 +211,12 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                 });
                 // Save the location to disable button
                 setSavedLocation(selectedLocation);
+                
+                // Notify parent that location was saved
+                if (onSaved) {
+                    onSaved(selectedLocation);
+                }
+
                 // Clear the status after 3 seconds
                 setTimeout(() => setSubmitStatus(null), 3000);
             } else {
@@ -206,10 +237,10 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
         <div className="w-full max-w-md mx-auto">
             <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6">
                 <div className="relative z-10">
-                    <label htmlFor="location-input" className="block text-xl font-bold text-purple-700 dark:text-purple-400 mb-3">
+                    <label htmlFor="location-input" className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                         📍 Location <span className="text-red-500">*</span>
                     </label>
-                    <p className="text-base text-gray-600 dark:text-gray-400 mb-4">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
                         If your exact location isn't found, try searching for the nearest town or landmark
                     </p>
                     <input
@@ -220,7 +251,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
                         autoComplete="off"
-                        className="w-full h-14 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 shadow-sm"
+                        className="w-full h-10 text-sm px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 shadow-sm"
                         placeholder="Enter location..."
                     />
                     {showDropdown && suggestions.length > 0 && (
@@ -252,23 +283,18 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                         </div>
                     )}
                 </div>
-                {submitStatus && (
-                    <div className={`p-4 rounded-xl text-sm font-semibold border-2 ${
-                        submitStatus.success 
-                            ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30' 
-                            : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30'
-                    }`}>
-                        {submitStatus.success ? '✓ ' : '⚠️ '}{submitStatus.message}
-                    </div>
+                {submitStatus && submitStatus.success && <SuccessAlert message={submitStatus.message} />}
+                {submitStatus && !submitStatus.success && (
+                    <ErrorAlert message={submitStatus.message} />
                 )}
                 <button
                     type="submit"
                     disabled={submitting || !selectedLocation || (savedLocation?.mapbox_id === selectedLocation?.mapbox_id)}
-                    className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                    className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                 >
                     {submitting ? (
                         <>
-                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>

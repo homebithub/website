@@ -5,8 +5,11 @@ import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
-import { API_ENDPOINTS } from '~/config/api';
+import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
 import { formatTimeAgo } from "~/utils/timeAgo";
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { extractErrorMessage } from '~/utils/errorMessages';
 
 interface UserProfile {
   id: string;
@@ -33,8 +36,20 @@ export default function ProfilePage() {
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string|null>(null);
   const [success, setSuccess] = React.useState<string|null>(null);
+  
+  // OTP Modal States
   const [showEmailModal, setShowEmailModal] = React.useState(false);
   const [showPhoneModal, setShowPhoneModal] = React.useState(false);
+  const [newEmail, setNewEmail] = React.useState('');
+  const [newPhone, setNewPhone] = React.useState('');
+  const [otpCode, setOtpCode] = React.useState('');
+  const [currentVerificationType, setCurrentVerificationType] = React.useState<'email' | 'phone' | null>(null);
+  const [currentVerificationId, setCurrentVerificationId] = React.useState<string | null>(null);
+  const [otpLoading, setOtpLoading] = React.useState(false);
+  const [otpError, setOtpError] = React.useState<string | null>(null);
+  const [otpSuccess, setOtpSuccess] = React.useState<string | null>(null);
+  const [resendSeconds, setResendSeconds] = React.useState(30);
+  const [canResend, setCanResend] = React.useState(false);
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -44,7 +59,7 @@ export default function ProfilePage() {
     }
   }, [user, loading, navigate, location.pathname]);
 
-  // Fetch profile from /api/v1/auth/me
+  // Fetch profile from /api/v1/users/me which returns non-sensitive information from the users table
   React.useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('token');
@@ -52,13 +67,19 @@ export default function ProfilePage() {
       try {
         setError(null);
         setSuccess(null);
-        const res = await fetch(API_ENDPOINTS.auth.me, {
+        const res = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
         });
         if (!res.ok) throw new Error('Failed to fetch profile');
-        const data = await res.json();
+        const response = await res.json();
+        console.log('Profile response:', response);
+        
+        // Extract profile data from nested structure
+        const data = response.data || response;
+        console.log('Extracted profile data:', data);
+        
         setProfile(data);
         setForm({
           email: data.email || '',
@@ -73,6 +94,20 @@ export default function ProfilePage() {
     if (user) fetchProfile();
   }, [user]);
 
+  // Countdown timer for OTP resend
+  React.useEffect(() => {
+    if (resendSeconds <= 0) {
+      setCanResend(true);
+      return;
+    }
+    
+    const timer = setTimeout(() => {
+      setResendSeconds(prev => prev - 1);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, [resendSeconds]);
+
   const handleEdit = () => setEditMode(true);
   const handleCancel = () => {
     setEditMode(false);
@@ -85,6 +120,246 @@ export default function ProfilePage() {
     setError(null);
     setSuccess(null);
   };
+
+  // Handle email change - send OTP
+  const handleEmailChange = async () => {
+    if (!newEmail || newEmail === profile?.email) {
+      setOtpError('Please enter a different email address');
+      return;
+    }
+    
+    setOtpLoading(true);
+    setOtpError(null);
+    setOtpSuccess(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      // Use the existing update-email endpoint (this might directly update without OTP)
+      // If OTP is needed, the backend should handle the OTP sending
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/update-email`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email: newEmail }),
+      });
+      
+      if (!res.ok) {
+        const errorResponse = await res.json();
+        const errorData = errorResponse.data || errorResponse;
+        throw new Error(extractErrorMessage(errorData) || 'Failed to update email');
+      }
+      
+      const response = await res.json();
+      const data = response.data || response;
+      
+      // If the response contains verification info, show OTP modal
+      if (data.verification && data.verification.id) {
+        setCurrentVerificationId(data.verification.id);
+        setCurrentVerificationType('email');
+        setShowEmailModal(true);
+        setResendSeconds(30);
+        setCanResend(false);
+        setOtpSuccess('OTP sent to your new email address');
+      } else {
+        // Direct update succeeded
+        await fetchProfile();
+        setOtpSuccess('Email updated successfully!');
+        setTimeout(() => {
+          setShowEmailModal(false);
+          resetOtpState();
+        }, 2000);
+      }
+    } catch (err: any) {
+      setOtpError(err.message || 'Failed to update email');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Handle phone change - send OTP
+  const handlePhoneChange = async () => {
+    if (!newPhone || newPhone === profile?.phone) {
+      setOtpError('Please enter a different phone number');
+      return;
+    }
+    
+    setOtpLoading(true);
+    setOtpError(null);
+    setOtpSuccess(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      // Use the existing update-phone endpoint (this might directly update without OTP)
+      // If OTP is needed, the backend should handle the OTP sending
+      const res = await fetch(`${API_BASE_URL}/api/v1/auth/update-phone`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ phone: newPhone }),
+      });
+      
+      if (!res.ok) {
+        const errorResponse = await res.json();
+        const errorData = errorResponse.data || errorResponse;
+        throw new Error(extractErrorMessage(errorData) || 'Failed to update phone');
+      }
+      
+      const response = await res.json();
+      const data = response.data || response;
+      
+      // If the response contains verification info, show OTP modal
+      if (data.verification && data.verification.id) {
+        setCurrentVerificationId(data.verification.id);
+        setCurrentVerificationType('phone');
+        setShowPhoneModal(true);
+        setResendSeconds(30);
+        setCanResend(false);
+        setOtpSuccess('OTP sent to your new phone number');
+      } else {
+        // Direct update succeeded
+        await fetchProfile();
+        setOtpSuccess('Phone updated successfully!');
+        setTimeout(() => {
+          setShowPhoneModal(false);
+          resetOtpState();
+        }, 2000);
+      }
+    } catch (err: any) {
+      setOtpError(err.message || 'Failed to update phone');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Verify OTP and complete email/phone change
+  const handleVerifyOtp = async () => {
+    if (!otpCode || !currentVerificationId) {
+      setOtpError('Please enter the OTP code');
+      return;
+    }
+    
+    setOtpLoading(true);
+    setOtpError(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      // Use the new verify-profile-otp endpoint (requires JWT)
+      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/verify-profile-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          verification_type: currentVerificationType,
+          otp: otpCode,
+        }),
+      });
+      
+      if (!res.ok) {
+        const errorResponse = await res.json();
+        const errorData = errorResponse.data || errorResponse;
+        throw new Error(extractErrorMessage(errorData) || 'Failed to verify OTP');
+      }
+      
+      // Success - update profile data
+      await fetchProfile();
+      setOtpSuccess(`${currentVerificationType === 'email' ? 'Email' : 'Phone'} updated successfully!`);
+      
+      // Close modal and reset state
+      setTimeout(() => {
+        setShowEmailModal(false);
+        setShowPhoneModal(false);
+        resetOtpState();
+      }, 2000);
+      
+    } catch (err: any) {
+      setOtpError(err.message || 'Failed to verify OTP');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    if (!currentVerificationId || !currentVerificationType) return;
+    
+    setOtpLoading(true);
+    setOtpError(null);
+    setOtpSuccess(null);
+    
+    try {
+      const token = localStorage.getItem('token');
+      // Use the new resend-profile-otp endpoint (requires JWT)
+      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/resend-profile-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          verification_type: currentVerificationType,
+        }),
+      });
+      
+      if (!res.ok) {
+        const errorResponse = await res.json();
+        const errorData = errorResponse.data || errorResponse;
+        throw new Error(extractErrorMessage(errorData) || 'Failed to resend OTP');
+      }
+      
+      setOtpCode('');
+      setResendSeconds(30);
+      setCanResend(false);
+      setOtpSuccess('OTP resent successfully');
+    } catch (err: any) {
+      setOtpError(err.message || 'Failed to resend OTP');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  // Reset OTP state
+  const resetOtpState = () => {
+    setNewEmail('');
+    setNewPhone('');
+    setOtpCode('');
+    setCurrentVerificationType(null);
+    setCurrentVerificationId(null);
+    setOtpError(null);
+    setOtpSuccess(null);
+    setResendSeconds(30);
+    setCanResend(false);
+  };
+
+  // Refetch profile function
+  const fetchProfile = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    
+    const res = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    
+    if (res.ok) {
+      const response = await res.json();
+      const data = response.data || response;
+      setProfile(data);
+      setForm({
+        email: data.email || '',
+        first_name: data.first_name || '',
+        last_name: data.last_name || '',
+        phone: data.phone || '',
+      });
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
   };
@@ -133,7 +408,7 @@ export default function ProfilePage() {
             <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 text-center">My Profile 👤</h1>
             <p className="text-center text-gray-600 dark:text-gray-300 mb-6">Manage your profile information. Only email, name and phone are editable.</p>
 
-            {error && <div className="rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 dark:from-red-950/40 dark:to-pink-950/40 border-2 border-red-200 dark:border-red-500/40 p-4 shadow-md mb-4 transition-colors duration-300"><div className="flex items-center justify-center"><span className="text-xl mr-2">⚠️</span><p className="text-sm font-semibold text-red-800 dark:text-red-200">{error}</p></div></div>}
+            {error && <ErrorAlert message={error} className="mb-4" />}
             {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-4 shadow-md mb-4 transition-colors duration-300"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800 dark:text-green-200">{success}</p></div></div>}
 
             <form className="space-y-4">
@@ -231,24 +506,14 @@ export default function ProfilePage() {
                   <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.profile_type || '-'}</span>
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Role</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.role || '-'}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                <div>
                   <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Status</span>
                   <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.status || '-'}</span>
                 </div>
-                <div>
-                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Email Verified</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.email_verified ? 'Yes' : 'No'}</span>
-                </div>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                 <div>
-                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Auth Provider</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.auth_provider || '-'}</span>
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Email Verified</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.is_verified ? 'Yes' : 'No'}</span>
                 </div>
                 <div>
                   <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Country</span>
@@ -257,12 +522,11 @@ export default function ProfilePage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                 <div>
-                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Created At</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.created_at ? formatTimeAgo(profile.created_at) : '-'}</span>
+                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Member for</span>
+                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.created_at || '-'}</span>
                 </div>
                 <div>
-                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Updated At</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.updated_at ? formatTimeAgo(profile.updated_at) : '-'}</span>
+                  {/* Empty div to maintain grid layout */}
                 </div>
               </div>
               <div className="flex justify-center gap-3 mt-6">
@@ -300,6 +564,217 @@ export default function ProfilePage() {
           </div>
         </main>
       </PurpleThemeWrapper>
+      
+      {/* Email Change Modal */}
+      {showEmailModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#13131a] rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Change Email</h3>
+            
+            {!currentVerificationId ? (
+              // Step 1: Enter new email
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">New Email</label>
+                  <input
+                    type="email"
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    className="w-full h-12 px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 shadow-sm transition-all border-purple-200 dark:border-purple-500/30"
+                    placeholder="Enter new email address"
+                  />
+                </div>
+                
+                {otpError && <ErrorAlert message={otpError} />}
+                {otpSuccess && <SuccessAlert message={otpSuccess} />}
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleEmailChange}
+                    disabled={otpLoading || !newEmail}
+                    className="flex-1 px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                  >
+                    {otpLoading ? '✨ Sending...' : '🚀 Send OTP'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowEmailModal(false);
+                      resetOtpState();
+                    }}
+                    className="px-6 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-transparent text-purple-600 dark:text-purple-300 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-400 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Step 2: Enter OTP
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Enter the OTP sent to {newEmail}
+                </p>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">OTP Code</label>
+                  <input
+                    type="text"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    className="w-full h-14 px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)] text-center tracking-widest text-2xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm transition-all border-purple-200 dark:border-purple-500/30"
+                    placeholder="Enter 6-digit OTP"
+                    maxLength={6}
+                  />
+                </div>
+                
+                {otpError && <ErrorAlert message={otpError} />}
+                {otpSuccess && <SuccessAlert message={otpSuccess} />}
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleVerifyOtp}
+                    disabled={otpLoading || !otpCode}
+                    className="flex-1 px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:hover:scale-100"
+                  >
+                    {otpLoading ? '✨ Verifying...' : '🚀 Verify OTP'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowEmailModal(false);
+                      resetOtpState();
+                    }}
+                    className="px-6 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-transparent text-purple-600 dark:text-purple-300 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-400 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                
+                {/* Resend OTP */}
+                <div className="text-center">
+                  {canResend ? (
+                    <button
+                      onClick={handleResendOtp}
+                      disabled={otpLoading}
+                      className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 text-sm font-semibold hover:underline transition-colors"
+                    >
+                      Resend OTP
+                    </button>
+                  ) : (
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">
+                      Resend available in {resendSeconds}s
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      {/* Phone Change Modal */}
+      {showPhoneModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-[#13131a] rounded-2xl p-6 w-full max-w-md">
+            <h3 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">Change Phone</h3>
+            
+            {!currentVerificationId ? (
+              // Step 1: Enter new phone
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">New Phone</label>
+                  <input
+                    type="tel"
+                    value={newPhone}
+                    onChange={(e) => setNewPhone(e.target.value)}
+                    className="w-full h-12 px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 shadow-sm transition-all border-purple-200 dark:border-purple-500/30"
+                    placeholder="Enter new phone number"
+                  />
+                </div>
+                
+                {otpError && <ErrorAlert message={otpError} />}
+                {otpSuccess && <SuccessAlert message={otpSuccess} />}
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={handlePhoneChange}
+                    disabled={otpLoading || !newPhone}
+                    className="flex-1 px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                  >
+                    {otpLoading ? '✨ Sending...' : '🚀 Send OTP'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPhoneModal(false);
+                      resetOtpState();
+                    }}
+                    className="px-6 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-transparent text-purple-600 dark:text-purple-300 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-400 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Step 2: Enter OTP
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Enter the OTP sent to {newPhone}
+                </p>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">OTP Code</label>
+                  <input
+                    type="text"
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    className="w-full h-14 px-4 py-3 border-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:shadow-[0_0_15px_rgba(168,85,247,0.4)] text-center tracking-widest text-2xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm transition-all border-purple-200 dark:border-purple-500/30"
+                    placeholder="Enter 6-digit OTP"
+                    maxLength={6}
+                  />
+                </div>
+                
+                {otpError && <ErrorAlert message={otpError} />}
+                {otpSuccess && <SuccessAlert message={otpSuccess} />}
+                
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleVerifyOtp}
+                    disabled={otpLoading || !otpCode}
+                    className="flex-1 px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:hover:scale-100"
+                  >
+                    {otpLoading ? '✨ Verifying...' : '🚀 Verify OTP'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowPhoneModal(false);
+                      resetOtpState();
+                    }}
+                    className="px-6 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-transparent text-purple-600 dark:text-purple-300 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-400 transition-all"
+                  >
+                    Cancel
+                  </button>
+                </div>
+                
+                {/* Resend OTP */}
+                <div className="text-center">
+                  {canResend ? (
+                    <button
+                      onClick={handleResendOtp}
+                      disabled={otpLoading}
+                      className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 text-sm font-semibold hover:underline transition-colors"
+                    >
+                      Resend OTP
+                    </button>
+                  ) : (
+                    <span className="text-gray-500 dark:text-gray-400 text-sm">
+                      Resend available in {resendSeconds}s
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
       <Footer />
     </div>
   );

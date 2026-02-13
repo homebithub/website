@@ -2,10 +2,12 @@ import React, { useState } from "react";
 import { Link } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
-import { forgotPasswordSchema, validateForm, validateField } from '~/utils/validation';
+import { forgotPasswordSchema, validateForm, validateField, normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { API_BASE_URL } from '~/config/api';
+import { extractErrorMessage } from '~/utils/errorMessages';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 export default function ForgotPasswordPage() {
   const [input, setInput] = useState("");
@@ -69,15 +71,18 @@ export default function ForgotPasswordPage() {
     setFieldError(null);
     
     try {
+      // Normalize phone number to international format
+      const normalizedPhone = normalizeKenyanPhoneNumber(input);
+
       const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: input }),
+        body: JSON.stringify({ phone: normalizedPhone }),
       });
       
       if (!res.ok) {
         const err = await res.json();
-        throw new Error(err.message || "Failed to send OTP");
+        throw new Error(extractErrorMessage(err) || "Failed to send OTP");
       }
       
       const data = await res.json();
@@ -108,14 +113,7 @@ export default function ForgotPasswordPage() {
             Enter your phone number and we'll send you a verification code to reset your password.
           </p>
           
-          {error && (
-            <div className="mb-6 rounded-2xl bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 p-5 shadow-md">
-              <div className="flex items-center justify-center">
-                <span className="text-2xl mr-3">⚠️</span>
-                <p className="text-base font-semibold text-red-800">{error}</p>
-              </div>
-            </div>
-          )}
+          {error && <ErrorAlert message={error} />}
           
           {success && (
             <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-5 shadow-md">

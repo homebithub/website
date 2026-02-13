@@ -5,7 +5,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { Footer } from '~/components/Footer';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupContext';
 import { API_BASE_URL } from '~/config/api';
 
 // Import all the components
@@ -76,18 +76,43 @@ function HousehelpProfileSetupContent() {
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerChecked, setDisclaimerChecked] = useState(false);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const { 
     profileData, 
     updateStepData, 
+    saveStepToBackend,
     saveProfileToBackend, 
     loadProfileFromBackend,
     lastCompletedStep,
     isLoading, 
     error 
   } = useProfileSetup();
+
+  const currentStepData = STEPS[currentStep];
+
+  const handleLocationSaved = async (location: any) => {
+    const locationData = {
+      place: location.name,
+      name: location.name,
+      mapbox_id: location.mapbox_id,
+      feature_type: location.feature_type || 'place',
+    };
+    
+    // Update local state
+    updateStepData('location', locationData);
+    
+    // Also save to backend step tracking
+    try {
+      // Find the step index for 'location'
+      const locationStepIndex = STEPS.findIndex(step => step.id === 'location');
+      await saveStepToBackend('location', locationData, locationStepIndex);
+    } catch (error) {
+      console.error('Failed to save location step data:', error);
+    }
+  };
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -107,6 +132,8 @@ function HousehelpProfileSetupContent() {
   
   // Track time spent on each step
   useEffect(() => {
+    if (!isProfileLoaded) return;
+
     const startTime = Date.now();
     const interval = setInterval(() => {
       setTimeSpent(prev => prev + 1);
@@ -117,12 +144,16 @@ function HousehelpProfileSetupContent() {
       const timeOnStep = Math.floor((Date.now() - startTime) / 1000);
       saveProgressToBackend(currentStep, timeOnStep);
     };
-  }, [currentStep]);
+  }, [currentStep, isProfileLoaded]);
 
   useEffect(() => {
     // Load existing profile data on mount
-    loadProfileFromBackend();
-  }, []);
+    const load = async () => {
+      await loadProfileFromBackend();
+      setIsProfileLoaded(true);
+    };
+    load();
+  }, [loadProfileFromBackend]);
 
   useEffect(() => {
     // If editing a specific section from profile page, navigate to that step
@@ -166,6 +197,8 @@ function HousehelpProfileSetupContent() {
   
   // Auto-save progress every 30 seconds
   useEffect(() => {
+    if (!isProfileLoaded) return;
+
     const autoSaveInterval = setInterval(async () => {
       setAutoSaving(true);
       await saveProgressToBackend(currentStep, timeSpent, false, false, true);
@@ -174,7 +207,7 @@ function HousehelpProfileSetupContent() {
     }, 30000);
     
     return () => clearInterval(autoSaveInterval);
-  }, [currentStep, timeSpent]);
+  }, [currentStep, timeSpent, isProfileLoaded]);
   
   const finishSetup = async () => {
     setIsSaving(true);
@@ -320,7 +353,7 @@ function HousehelpProfileSetupContent() {
           <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+                <h1 className="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">
                   Complete Your Househelp Profile 👩‍💼
                 </h1>
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -344,16 +377,16 @@ function HousehelpProfileSetupContent() {
               </div>
               
               {/* Progress Bar */}
-              <div className="w-full bg-purple-100 rounded-full h-4 mb-4 shadow-inner">
+              <div className="w-full bg-purple-100 rounded-full h-2.5 mb-3 shadow-inner">
                 <div 
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 h-4 rounded-full transition-all duration-300 ease-out shadow-md"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 h-2.5 rounded-full transition-all duration-300 ease-out shadow-md"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
               
               {/* Current Step Title */}
               <div className="flex items-center justify-between">
-                <h2 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-400">
+                <h2 className="text-sm sm:text-base font-semibold text-purple-700 dark:text-purple-400">
                   {STEPS[currentStep].title}
                 </h2>
                 {STEPS[currentStep].skippable && (
@@ -378,7 +411,7 @@ function HousehelpProfileSetupContent() {
               >
                 ← Back to Profile
               </button>
-              <h2 className="text-2xl font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <h2 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Edit {STEPS[currentStep].title}
               </h2>
             </div>
@@ -417,6 +450,8 @@ function HousehelpProfileSetupContent() {
                   />
                 ) : ['bio', 'nannytype'].includes(STEPS[currentStep].id) ? (
                   <CurrentComponent userType="househelp" />
+                ) : STEPS[currentStep].id === 'location' ? (
+                  <CurrentComponent onSaved={handleLocationSaved} />
                 ) : (
                   <CurrentComponent />
                 )}
@@ -460,7 +495,11 @@ function HousehelpProfileSetupContent() {
                   <button
                     onClick={handleNext}
                     disabled={isSaving}
-                    className="flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
+                      isSaving 
+                        ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                        : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
+                    }`}
                   >
                     {isSaving ? '✨ Saving...' : (currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →')}
                     {currentStep !== STEPS.length - 1 && !isSaving && (
@@ -499,7 +538,11 @@ function HousehelpProfileSetupContent() {
                 <button
                   onClick={handleNext}
                   disabled={isSaving}
-                  className="flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:hover:scale-100"
+                  className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
+                    isSaving 
+                      ? 'bg-gray-400 cursor-not-allowed opacity-50' 
+                      : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
+                  }`}
                 >
                   {isSaving ? '✨ Saving...' : (currentStep === STEPS.length - 1 ? '🎉 Complete' : 'Next →')}
                   {currentStep !== STEPS.length - 1 && !isSaving && (
@@ -649,7 +692,11 @@ function HousehelpProfileSetupContent() {
 }
 
 export default function HousehelpProfileSetup() {
-  return <HousehelpProfileSetupContent />;
+  return (
+    <ProfileSetupProvider>
+      <HousehelpProfileSetupContent />
+    </ProfileSetupProvider>
+  );
 }
 
 // Error boundary for better error handling

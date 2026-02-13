@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 // List of languages organized by groups
 const LANGUAGE_GROUPS = {
@@ -184,30 +186,22 @@ const Languages = () => {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h2 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-2">🗣️ Languages</h2>
-            <p className="text-base text-gray-600 dark:text-gray-400 mb-6">
+            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🗣️ Languages</h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                 What languages do you speak?
             </p>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-6">Languages You Speak</h1>
+            <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Languages You Speak</h1>
             
-            {error && (
-                <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 border-red-200 dark:border-red-500/30">
-                    ⚠️ {error}
-                </div>
-            )}
+            {error && <ErrorAlert message={error} />}
             
-            {success && (
-                <div className="mb-6 p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
-                    ✓ {success}
-                </div>
-            )}
+            {success && <SuccessAlert message={success} />}
             
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
-                    <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100">Select languages you're comfortable with</h2>
+                    <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">Select languages you're comfortable with</h2>
                     
                     {/* English */}
-                    <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-sm font-medium ${
                         selectedLanguages.includes('English')
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
                             : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -222,7 +216,7 @@ const Languages = () => {
                     </label>
                     
                     {/* Swahili */}
-                    <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
+                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-sm font-medium ${
                         selectedLanguages.includes('Swahili')
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
                             : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -239,7 +233,7 @@ const Languages = () => {
                     {/* Other Languages */}
                     <div className="relative" ref={dropdownRef}>
                         <div 
-                            className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
+                            className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-sm font-medium ${
                                 selectedLanguages.some(lang => !['English', 'Swahili'].includes(lang))
                                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
                                     : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -275,7 +269,7 @@ const Languages = () => {
                                             type="text"
                                             value={searchTerm}
                                             onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="w-full h-14 pl-10 pr-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
+                                            className="w-full h-10 pl-10 pr-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
                                             placeholder="Search languages..."
                                         />
                                     </div>
@@ -393,11 +387,11 @@ const Languages = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full px-8 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                        className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                     >
                         {loading ? (
                             <>
-                                <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                 </svg>
