@@ -14,6 +14,16 @@ const resolveGatewayBaseCandidate = (url?: string): string | undefined => {
 
   const normalized = normalizeGatewayBaseUrl(url);
 
+  try {
+    const parsed = new URL(normalized);
+    const host = parsed.hostname.toLowerCase();
+    if (host === 'homebit.co.ke' || host === 'www.homebit.co.ke') {
+      return `${parsed.protocol}//api.homebit.co.ke`;
+    }
+  } catch {
+    // Fall through to existing behavior for malformed URLs
+  }
+
   if (typeof window !== 'undefined') {
     const localHostLike = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalized);
     if (localHostLike && normalized === window.location.origin) {
@@ -265,23 +275,23 @@ export const API_ENDPOINTS = {
     decline: (id: string) => `${AUTH_API_BASE_URL}/api/v1/interests/${id}/decline`,
   },
   
-  // Payments & Subscriptions endpoints
+  // Payments & Subscriptions endpoints (routed through gateway → gRPC)
   payments: {
-    plans: `${PAYMENTS_API_BASE_URL}/api/v1/plans`,
-    planById: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/plans/${id}`,
-    checkout: `${PAYMENTS_API_BASE_URL}/api/v1/payments/checkout`,
+    plans: `${AUTH_API_BASE_URL}/api/v1/plans`,
+    planById: (id: string) => `${AUTH_API_BASE_URL}/api/v1/plans/${id}`,
+    checkout: `${AUTH_API_BASE_URL}/api/v1/payments/checkout`,
     subscriptions: {
-      create: `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions`,
-      mine: `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions/mine`,
-      list: `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions/list`,
-      byId: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions/${id}`,
-      cancel: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/subscriptions/${id}/cancel`,
+      create: `${AUTH_API_BASE_URL}/api/v1/subscriptions`,
+      mine: `${AUTH_API_BASE_URL}/api/v1/subscriptions/mine`,
+      list: `${AUTH_API_BASE_URL}/api/v1/subscriptions/list`,
+      byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/subscriptions/${id}`,
+      cancel: (id: string) => `${AUTH_API_BASE_URL}/api/v1/subscriptions/${id}/cancel`,
     },
     transactions: {
-      initiate: `${PAYMENTS_API_BASE_URL}/api/v1/payments`,
-      list: `${PAYMENTS_API_BASE_URL}/api/v1/payments`,
-      byId: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/payments/${id}`,
-      status: (id: string) => `${PAYMENTS_API_BASE_URL}/api/v1/payments/${id}/status`,
+      initiate: `${AUTH_API_BASE_URL}/api/v1/payments`,
+      list: `${AUTH_API_BASE_URL}/api/v1/payments`,
+      byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/payments/${id}`,
+      status: (id: string) => `${AUTH_API_BASE_URL}/api/v1/payments/${id}/status`,
     },
   },
 } as const;
