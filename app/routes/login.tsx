@@ -227,8 +227,7 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const base = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL;
-      const res = await fetch(`${base}/api/v1/auth/google/url?flow=auth`);
+      const res = await fetch(`${API_ENDPOINTS.auth.googleUrl}?flow=auth`);
       const data = await res.json();
       if (data?.url) {
         window.location.href = data.url as string;

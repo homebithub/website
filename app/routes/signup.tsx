@@ -10,7 +10,7 @@ import { Loading } from '~/components/Loading';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { FcGoogle } from 'react-icons/fc';
 import { Modal } from '~/components/features/Modal';
-import { API_BASE_URL } from '~/config/api';
+import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -464,7 +464,6 @@ export default function SignupPage() {
 
     const startGoogle = async (flow: 'auth' | 'signup' = 'auth') => {
         try {
-            const base = (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL;
             // Pass profile_type in state to preserve it through OAuth redirect
             const statePayload = {
                 profile_type: form.profile_type,
@@ -472,7 +471,7 @@ export default function SignupPage() {
             };
             const state = encodeURIComponent(JSON.stringify(statePayload));
             console.log('[GOOGLE_AUTH] Requesting OAuth URL with state:', statePayload);
-            const res = await fetch(`${base}/api/v1/auth/google/url?flow=${flow}&state=${state}`);
+            const res = await fetch(`${API_ENDPOINTS.auth.googleUrl}?flow=${flow}&state=${state}`);
             const data = await res.json();
             console.log('[GOOGLE_AUTH] Received response:', data);
             if (data?.url) {
