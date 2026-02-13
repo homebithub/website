@@ -168,13 +168,17 @@ export default function HouseholdPublicProfile() {
     const checkShortlist = async () => {
       try {
         const token = localStorage.getItem("token");
-        if (!token) throw new Error("Not authenticated");
-        const res = await fetch(`${API_BASE_URL}/api/v1/shortlists/exists/${profile.id}`, {
+        if (!token) return;
+        const res = await fetch(`${API_BASE_URL}/api/v1/shortlists`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!cancelled && res.ok) {
-          const data = await res.json();
-          setIsShortlisted(Boolean(data?.exists));
+          const raw = await res.json();
+          const items = raw?.data?.data || raw?.data || raw || [];
+          const ids = new Set(
+            (Array.isArray(items) ? items : []).map((s: any) => s.profile_id).filter(Boolean)
+          );
+          setIsShortlisted(ids.has(profile.id));
         }
       } catch (err) {
         console.error("Failed to fetch shortlist status", err);
@@ -376,7 +380,7 @@ export default function HouseholdPublicProfile() {
                                 : 'bg-purple-100 dark:bg-purple-900/30 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-200'
                             } ${actionLoading === 'shortlist' ? 'opacity-70 cursor-not-allowed' : ''}`}
                           >
-                            <Heart className="w-4 h-4" />
+                            <Heart className="w-4 h-4" fill={isShortlisted ? 'currentColor' : 'none'} />
                           </button>
                         )}
                         {canChat && (
