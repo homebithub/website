@@ -1324,7 +1324,7 @@ export default function InboxPage() {
                   if (currentUserProfileType?.toLowerCase() === 'household') {
                     navigate(`/household/hire-request/${hireRequestId}`);
                   } else {
-                    navigate(`/househelp/hire-requests`);
+                    navigate(`/househelp/hiring`);
                   }
                 }
               }}
