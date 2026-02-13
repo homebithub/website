@@ -316,6 +316,7 @@ function transformProfileData(data: ProfileSetupData): any {
     transformed.town = data.location.town;
     transformed.area = data.location.area;
     transformed.address = data.location.address;
+    transformed.mapbox_id = data.location.mapbox_id;
   }
 
   // Religion
@@ -627,7 +628,6 @@ function calculateLastCompletedStep(data: ProfileSetupData): number {
 
   // Househelp step order (based on the 13 steps in househelp.tsx)
   const househelpStepOrder = [
-    'nannytype',      // Service Type
     'location',       // Location
     'gender',         // Gender & Age
     'experience',     // Experience
