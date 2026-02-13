@@ -8,6 +8,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { fetchPreferences } from "~/utils/preferencesApi";
@@ -93,9 +94,10 @@ export default function ShortlistPage() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
-            const data = await res.json();
+            const raw = await res.json();
+            const profile = raw?.data?.data || raw?.data || raw;
             if (!cancelled) {
-              setCurrentHouseholdProfileId(data?.id || data?.profile_id || null);
+              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
             }
           }
         } catch (err) {
@@ -217,7 +219,7 @@ export default function ShortlistPage() {
         househelpId = targetUserId;
       }
 
-      const payload: Record<string, any> = {
+      const payload: StartConversationPayload = {
         household_user_id: householdId,
         househelp_user_id: househelpId,
       };
@@ -229,26 +231,8 @@ export default function ShortlistPage() {
         payload.household_profile_id = currentHouseholdProfileId;
       }
 
-      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to start conversation');
-
-      let convId: string | undefined;
-      try {
-        const data = await apiClient.json<any>(res);
-        convId = data?.id || data?.ID || data?.conversation_id;
-      } catch {
-        convId = undefined;
-      }
-
-      if (convId) {
-        navigate(`/inbox?conversation=${convId}`);
-      } else {
-        navigate('/inbox');
-      }
+      const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      navigate(getInboxRoute(convId));
     } catch (e) {
       console.error('Failed to start chat from shortlist (household)', e);
       navigate('/inbox');

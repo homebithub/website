@@ -184,6 +184,7 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
         try {
             const payload = {
                 mapbox_id: selectedLocation.mapbox_id,
+                town: selectedLocation.name,
                 location: {
                     place: selectedLocation.name,
                     name: selectedLocation.name,

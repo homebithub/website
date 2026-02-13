@@ -121,6 +121,13 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                 },
                 body: JSON.stringify({
                     mapbox_id: selectedLocation.mapbox_id,
+                    town: selectedLocation.name,
+                    location: {
+                        place: selectedLocation.name,
+                        name: selectedLocation.name,
+                        mapbox_id: selectedLocation.mapbox_id,
+                        feature_type: selectedLocation.feature_type,
+                    },
                     _step_metadata: {
                         step_id: "location",
                         step_number: 1,

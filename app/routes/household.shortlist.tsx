@@ -7,6 +7,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -96,9 +97,10 @@ export default function HouseholdShortlistPage() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
-            const data = await res.json();
+            const raw = await res.json();
+            const profile = raw?.data?.data || raw?.data || raw;
             if (!cancelled) {
-              setCurrentHouseholdProfileId(data?.id || data?.profile_id || null);
+              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
             }
           }
         } catch (err) {
@@ -170,10 +172,13 @@ export default function HouseholdShortlistPage() {
           body: JSON.stringify({ profile_type: "househelp", profile_ids: missingIds }),
         });
         if (!res.ok) throw new Error("Failed to fetch profiles");
-        const data = await apiClient.json<any[]>(res);
+        const response = await apiClient.json<any>(res);
+        // Gateway responses can be nested as { data: [...] } or { data: { data: [...] } }
+        const data = response?.data?.data || response?.data || response;
+        const profiles = Array.isArray(data) ? data : [];
         if (cancelled) return;
         const next: Record<string, any> = { ...profilesById };
-        for (const h of data || []) {
+        for (const h of profiles) {
           if (h.profile_id) next[h.profile_id] = h;
         }
         setProfilesById(next);
@@ -202,7 +207,7 @@ export default function HouseholdShortlistPage() {
   async function handleChatWithHousehelp(profileId?: string, househelpUserId?: string) {
     if (!profileId || !househelpUserId || !currentUserId) return;
     try {
-      const payload: Record<string, any> = {
+      const payload: StartConversationPayload = {
         household_user_id: currentUserId,
         househelp_user_id: househelpUserId,
         househelp_profile_id: profileId,
@@ -213,26 +218,8 @@ export default function HouseholdShortlistPage() {
         payload.household_profile_id = currentHouseholdProfileId;
       }
 
-      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to start chat');
-
-      let convId: string | undefined;
-      try {
-        const data = await apiClient.json<any>(res);
-        convId = data?.id || data?.ID || data?.conversation_id;
-      } catch {
-        convId = undefined;
-      }
-
-      if (convId) {
-        navigate(`/inbox?conversation=${convId}`);
-      } else {
-        navigate('/inbox');
-      }
+      const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      navigate(getInboxRoute(convId));
     } catch (e) {
       console.error('Failed to start chat from shortlist (househelp)', e);
       navigate('/inbox');

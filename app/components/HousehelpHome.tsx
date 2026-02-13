@@ -5,6 +5,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import HouseholdFilters, { type HouseholdSearchFields } from "~/components/features/HouseholdFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -12,6 +13,7 @@ import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
+import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 
 interface HouseholdItem {
   id?: string; // household user id
@@ -24,8 +26,6 @@ interface HouseholdItem {
   verified?: boolean;
   created_at?: string;
 };
-
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const getFriendlyErrorMessage = (error?: string | null) => {
   if (!error) return "";
@@ -102,9 +102,10 @@ export default function HousehelpHome() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
-            const data = await res.json();
+            const raw = await res.json();
+            const profile = raw?.data?.data || raw?.data || raw;
             if (!cancelled) {
-              setCurrentHouseholdProfileId(data?.id || data?.profile_id || null);
+              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
             }
           }
         } catch (err) {
@@ -191,7 +192,7 @@ export default function HousehelpHome() {
         househelpId = householdUserId;
       }
 
-      const payload: Record<string, any> = {
+      const payload: StartConversationPayload = {
         household_user_id: householdId,
         househelp_user_id: househelpId,
       };
@@ -201,46 +202,8 @@ export default function HousehelpHome() {
         payload.household_profile_id = currentHouseholdProfileId;
       }
 
-      const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to start conversation');
-
-      let convId: string | undefined;
-      try {
-        const data = await apiClient.json<any>(res);
-        convId = data?.id || data?.ID || data?.conversation_id;
-      } catch {
-        convId = undefined;
-      }
-
-      if (!convId || !UUID_REGEX.test(convId)) {
-        try {
-          const convRes = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=0&limit=50`);
-          if (convRes.ok) {
-            const response = await apiClient.json<{
-              conversations: Array<{ id?: string; ID?: string; household_id?: string; househelp_id?: string }>;
-            }>(convRes);
-            const conversations = response.conversations || [];
-            const match = conversations.find(
-              (c) =>
-                (c.household_id === householdId && c.househelp_id === househelpId) ||
-                (c.household_id === househelpId && c.househelp_id === householdId),
-            );
-            convId = match?.id || match?.ID;
-          }
-        } catch (err) {
-          console.error('Failed to hydrate conversation id', err);
-        }
-      }
-
-      if (convId) {
-        navigate(`/inbox?conversation=${convId}`);
-      } else {
-        navigate('/inbox');
-      }
+      const convId = await startOrGetConversation(NOTIFICATIONS_BASE, payload);
+      navigate(getInboxRoute(convId));
     } catch (err) {
       console.error('Failed to start chat from households list', err);
       navigate('/inbox');
@@ -413,18 +376,12 @@ export default function HousehelpHome() {
               <div className="grid grid-cols-1 sm:grid-cols-5 md:grid-cols-7 gap-4">
                 <div className="flex flex-col">
                   <label className="mb-2 text-sm font-semibold text-white">Town</label>
-                  <select
-                    name="town"
+                  <SearchableTownSelect
                     value={filters.town}
-                    onChange={handleSelect}
-                    className="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
-                  >
-                    {['', 'Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret', 'Thika'].map((t) => (
-                      <option key={t} value={t}>
-                        {t || 'Any'}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(value) => setFilters((prev) => ({ ...prev, town: value }))}
+                    target="households"
+                    buttonClassName="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <label className="mb-2 text-sm font-semibold text-white">House Size</label>

@@ -10,6 +10,7 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
   const location = useLocation();
   const isHousehelpProfileRoute = location.pathname.startsWith('/househelp/profile');
+  const isHouseholdHomeRoute = ['/', '/home1', '/home2', '/home3'].includes(location.pathname);
 
   const baseClasses = 'py-8 border-t transition-colors duration-300';
   const themeClasses =
@@ -48,6 +49,13 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
             <Link to="/househelp/profile1" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">Profile 1</Link>
             <Link to="/househelp/profile2" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">Profile 2</Link>
             <Link to="/househelp/profile3" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">Profile 3</Link>
+          </div>
+        )}
+        {isHouseholdHomeRoute && (
+          <div className="flex flex-wrap justify-center gap-2 text-sm">
+            <Link to="/home1" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">home1</Link>
+            <Link to="/home2" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">home2</Link>
+            <Link to="/home3" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">home3</Link>
           </div>
         )}
       </div>

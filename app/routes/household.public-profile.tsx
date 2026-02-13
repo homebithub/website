@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -63,7 +64,11 @@ export default function HouseholdPublicProfile() {
     }
   }, []);
   const resolvedUserId =
-    params.get("user_id") || params.get("profileId") || navigationState.profileId || currentUserId;
+    params.get("user_id") ||
+    params.get("profile_id") ||
+    params.get("profileId") ||
+    navigationState.profileId ||
+    currentUserId;
   const [profile, setProfile] = useState<HouseholdData | null>(null);
   const [kids, setKids] = useState<any[]>([]);
   const [pets, setPets] = useState<any[]>([]);
@@ -264,11 +269,8 @@ export default function HouseholdPublicProfile() {
     if (!resolvedUserId || !currentUserId) return;
     setActionLoading('chat');
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("Not authenticated");
-
       // In this view, the current user is typically a househelp viewing a household profile.
-      const payload: Record<string, any> = {
+      const payload: StartConversationPayload = {
         household_user_id: resolvedUserId,
         househelp_user_id: currentUserId,
       };
@@ -276,26 +278,8 @@ export default function HouseholdPublicProfile() {
         payload.household_profile_id = profile.id;
       }
 
-      const res = await fetch(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to start conversation');
-
-      let convId: string | undefined;
-      try {
-        const data = await res.json();
-        convId = data?.id || data?.ID || data?.conversation_id;
-      } catch {
-        convId = undefined;
-      }
-
-      if (convId) navigate(`/inbox?conversation=${convId}`);
-      else navigate('/inbox');
+      const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      navigate(getInboxRoute(convId));
     } catch (err) {
       console.error('Failed to start chat', err);
       navigate('/inbox');

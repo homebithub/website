@@ -159,12 +159,7 @@ export function Navigation() {
                     console.log('[Navigation] Is household?', profileType === "household");
 
                     // Fetch counts for authenticated users
-                    if (profileType === "household") {
-                        console.log('[Navigation] Fetching shortlist count for household user');
-                        fetchShortlistCount();
-                    } else {
-                        console.log('[Navigation] Not fetching shortlist count - profile type is:', profileType);
-                    }
+                    fetchShortlistCount();
                     fetchInboxCount();
                     fetchHireRequestCount();
                 } else {
@@ -200,6 +195,33 @@ export function Navigation() {
             window.removeEventListener('inbox-updated', handleInboxUpdate);
         };
     }, []);
+
+    // Poll all counts every 60 seconds
+    useEffect(() => {
+        if (!user || !profileType) return;
+
+        const pollCounts = () => {
+            fetchShortlistCount();
+            fetchInboxCount();
+            fetchHireRequestCount();
+        };
+
+        const intervalId = setInterval(pollCounts, 60_000);
+        return () => clearInterval(intervalId);
+    }, [user, profileType]);
+
+    // Badge helper: 0 = null (hidden), 1-9 = number, >9 = "9+"
+    const renderBadge = (count: number, gradient = 'from-purple-600 to-pink-600', shadow = 'shadow-purple-500/50') => {
+        if (count <= 0) return null;
+        const label = count > 9 ? '9+' : String(count);
+        return (
+            <span
+                className={`absolute -top-2 -right-3 bg-gradient-to-r ${gradient} text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-lg ${shadow} px-1`}
+            >
+                {label}
+            </span>
+        );
+    };
 
     // Open waitlist modal automatically if URL contains waitlist params (used by OAuth callback)
     useEffect(() => {
@@ -252,9 +274,12 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg sm:text-xl font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110"
+                                className="link text-lg sm:text-xl font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
                             >
                                 {item.name}
+                                {'count' in item && item.name === 'Shortlist' && renderBadge((item as any).count)}
+                                {'count' in item && item.name === 'Inbox' && renderBadge((item as any).count)}
+                                {'count' in item && item.name === 'Hiring' && renderBadge((item as any).count, 'from-green-600 to-emerald-600', 'shadow-green-500/50')}
                             </Link>
                         ))}
                     </div>
@@ -272,21 +297,9 @@ export function Navigation() {
                                 id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
-                                {item.name === 'Shortlist' && (
-                                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-purple-500/50" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
-                                        {shortlistCount}
-                                    </span>
-                                )}
-                                {item.name === 'Inbox' && inboxCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-purple-500/50" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
-                                        {inboxCount}
-                                    </span>
-                                )}
-                                {item.name === 'Hiring' && hireRequestCount > 0 && (
-                                    <span className="absolute -top-1 -right-1 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-lg shadow-green-500/50" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
-                                        {hireRequestCount}
-                                    </span>
-                                )}
+                                {item.name === 'Shortlist' && renderBadge(shortlistCount)}
+                                {item.name === 'Inbox' && renderBadge(inboxCount)}
+                                {item.name === 'Hiring' && renderBadge(hireRequestCount, 'from-green-600 to-emerald-600', 'shadow-green-500/50')}
                             </Link>
                         ))}
                     </div>
@@ -424,9 +437,14 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to={item.href}
-                                                    className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} block px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
+                                                    className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
                                                 >
-                                                    {item.name}
+                                                    <span>{item.name}</span>
+                                                    {'count' in item && (item as any).count > 0 && (
+                                                        <span className={`bg-gradient-to-r ${item.name === 'Hiring' ? 'from-green-600 to-emerald-600' : 'from-purple-600 to-pink-600'} text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1`}>
+                                                            {(item as any).count > 9 ? '9+' : (item as any).count}
+                                                        </span>
+                                                    )}
                                                 </Link>
                                             )}
                                         </Menu.Item>
@@ -498,14 +516,19 @@ export function Navigation() {
                                                         <Menu.Item key={item.name}>{({ active }) => (
                                                             <Link to={item.href} className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-1 text-sm relative`}>
                                                                 <span>{item.name}</span>
-                                                                {item.name === 'Shortlist' && (
-                                                                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md shadow-purple-500/40" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
-                                                                        {shortlistCount}
+                                                                {item.name === 'Shortlist' && shortlistCount > 0 && (
+                                                                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
+                                                                        {shortlistCount > 9 ? '9+' : shortlistCount}
                                                                     </span>
                                                                 )}
                                                                 {item.name === 'Inbox' && inboxCount > 0 && (
-                                                                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shadow-md shadow-purple-500/40" style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
-                                                                        {inboxCount}
+                                                                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
+                                                                        {inboxCount > 9 ? '9+' : inboxCount}
+                                                                    </span>
+                                                                )}
+                                                                {item.name === 'Hiring' && hireRequestCount > 0 && (
+                                                                    <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-green-500/40 px-1">
+                                                                        {hireRequestCount > 9 ? '9+' : hireRequestCount}
                                                                     </span>
                                                                 )}
                                                             </Link>

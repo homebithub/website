@@ -43,6 +43,20 @@ interface ProfileSetupContextType {
 
 const ProfileSetupContext = createContext<ProfileSetupContextType | undefined>(undefined);
 
+const fallbackProfileSetupContext: ProfileSetupContextType = {
+  profileData: {},
+  updateStepData: () => {},
+  saveStepToBackend: async () => {},
+  saveProfileToBackend: async () => {},
+  loadProfileFromBackend: async () => {},
+  clearProfileData: () => {},
+  isLoading: false,
+  error: null,
+  lastCompletedStep: 0,
+};
+
+let hasWarnedMissingProfileSetupProvider = false;
+
 export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [profileData, setProfileData] = useState<ProfileSetupData>({});
   const [isLoading, setIsLoading] = useState(false);
@@ -300,7 +314,11 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
 export const useProfileSetup = () => {
   const context = useContext(ProfileSetupContext);
   if (context === undefined) {
-    throw new Error('useProfileSetup must be used within a ProfileSetupProvider');
+    if (typeof window !== 'undefined' && !hasWarnedMissingProfileSetupProvider) {
+      hasWarnedMissingProfileSetupProvider = true;
+      console.error('useProfileSetup used outside ProfileSetupProvider. Falling back to no-op context.');
+    }
+    return fallbackProfileSetupContext;
   }
   return context;
 };

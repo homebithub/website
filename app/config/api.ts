@@ -5,33 +5,54 @@
  * Update API_BASE_URL to switch between development and production.
  */
 
+const normalizeGatewayBaseUrl = (url: string): string => {
+  return url.replace(/\/+$/, '').replace(/\/(auth|payments|notifications)$/, '');
+};
+
+const resolveGatewayBaseCandidate = (url?: string): string | undefined => {
+  if (!url) return undefined;
+
+  const normalized = normalizeGatewayBaseUrl(url);
+
+  if (typeof window !== 'undefined') {
+    const localHostLike = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalized);
+    if (localHostLike && normalized === window.location.origin) {
+      const fallback = `${window.location.protocol}//${window.location.hostname}:8080`;
+      console.warn('[API Config] Ignoring API base matching frontend origin in local dev; falling back to:', fallback);
+      return fallback;
+    }
+  }
+
+  return normalized;
+};
+
 // Get auth service base URL from environment or use default
 const getAuthApiBaseUrl = (): string => {
-  const normalizeGatewayBaseUrl = (url: string): string => {
-    return url.replace(/\/+$/, '').replace(/\/(auth|payments|notifications)$/, '');
-  };
-
   // Check if running in browser
   if (typeof window !== 'undefined') {
     const gatewayUrl = (window as any).ENV?.GATEWAY_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.GATEWAY_API_BASE_URL:', gatewayUrl);
-    if (gatewayUrl) return normalizeGatewayBaseUrl(gatewayUrl);
+    const resolvedGatewayUrl = resolveGatewayBaseCandidate(gatewayUrl);
+    if (resolvedGatewayUrl) return resolvedGatewayUrl;
 
     // Try to get from window.ENV (set in root.tsx)
     const envUrl = (window as any).ENV?.AUTH_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.AUTH_API_BASE_URL:', envUrl);
-    if (envUrl) return normalizeGatewayBaseUrl(envUrl);
+    const resolvedEnvUrl = resolveGatewayBaseCandidate(envUrl);
+    if (resolvedEnvUrl) return resolvedEnvUrl;
   }
   
   // Check environment variable
   if (typeof process !== 'undefined' && process.env.AUTH_API_BASE_URL) {
     console.log('[API Config] Server - process.env.AUTH_API_BASE_URL:', process.env.AUTH_API_BASE_URL);
-    return normalizeGatewayBaseUrl(process.env.AUTH_API_BASE_URL);
+    const resolved = resolveGatewayBaseCandidate(process.env.AUTH_API_BASE_URL);
+    if (resolved) return resolved;
   }
 
   if (typeof process !== 'undefined' && process.env.GATEWAY_API_BASE_URL) {
     console.log('[API Config] Server - process.env.GATEWAY_API_BASE_URL:', process.env.GATEWAY_API_BASE_URL);
-    return normalizeGatewayBaseUrl(process.env.GATEWAY_API_BASE_URL);
+    const resolved = resolveGatewayBaseCandidate(process.env.GATEWAY_API_BASE_URL);
+    if (resolved) return resolved;
   }
   
   // Default to production
@@ -52,30 +73,30 @@ const normalizeNotificationsBaseUrl = (url?: string): string | undefined => {
 // This base URL should already include the /notifications prefix so that
 // calling `${NOTIFICATIONS_API_BASE_URL}/api/v1/...` yields /notifications/api/v1/...
 const getNotificationsApiBaseUrl = (): string => {
-  const normalizeGatewayBaseUrl = (url: string): string => {
-    return url.replace(/\/+$/, '').replace(/\/(auth|payments|notifications)$/, '');
-  };
-
   // Check if running in browser
   if (typeof window !== 'undefined') {
     const gatewayUrl = (window as any).ENV?.GATEWAY_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.GATEWAY_API_BASE_URL:', gatewayUrl);
-    if (gatewayUrl) return normalizeGatewayBaseUrl(gatewayUrl);
+    const resolvedGatewayUrl = resolveGatewayBaseCandidate(gatewayUrl);
+    if (resolvedGatewayUrl) return resolvedGatewayUrl;
 
     const envUrl = (window as any).ENV?.NOTIFICATIONS_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.NOTIFICATIONS_API_BASE_URL:', envUrl);
-    if (envUrl) return normalizeGatewayBaseUrl(envUrl);
+    const resolvedEnvUrl = resolveGatewayBaseCandidate(envUrl);
+    if (resolvedEnvUrl) return resolvedEnvUrl;
   }
 
   // Check environment variable
   if (typeof process !== 'undefined' && process.env.NOTIFICATIONS_API_BASE_URL) {
     console.log('[API Config] Server - process.env.NOTIFICATIONS_API_BASE_URL:', process.env.NOTIFICATIONS_API_BASE_URL);
-    return normalizeGatewayBaseUrl(process.env.NOTIFICATIONS_API_BASE_URL);
+    const resolved = resolveGatewayBaseCandidate(process.env.NOTIFICATIONS_API_BASE_URL);
+    if (resolved) return resolved;
   }
 
   if (typeof process !== 'undefined' && process.env.GATEWAY_API_BASE_URL) {
     console.log('[API Config] Server - process.env.GATEWAY_API_BASE_URL:', process.env.GATEWAY_API_BASE_URL);
-    return normalizeGatewayBaseUrl(process.env.GATEWAY_API_BASE_URL);
+    const resolved = resolveGatewayBaseCandidate(process.env.GATEWAY_API_BASE_URL);
+    if (resolved) return resolved;
   }
 
   // Default to production notifications microservice path
@@ -106,30 +127,30 @@ const getNotificationsWsBaseUrl = (): string => {
 
 // Get payments service base URL from environment or use default
 const getPaymentsApiBaseUrl = (): string => {
-  const normalizeGatewayBaseUrl = (url: string): string => {
-    return url.replace(/\/+$/, '').replace(/\/(auth|payments|notifications)$/, '');
-  };
-
   // Check if running in browser
   if (typeof window !== 'undefined') {
     const gatewayUrl = (window as any).ENV?.GATEWAY_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.GATEWAY_API_BASE_URL:', gatewayUrl);
-    if (gatewayUrl) return normalizeGatewayBaseUrl(gatewayUrl);
+    const resolvedGatewayUrl = resolveGatewayBaseCandidate(gatewayUrl);
+    if (resolvedGatewayUrl) return resolvedGatewayUrl;
 
     const envUrl = (window as any).ENV?.PAYMENTS_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.PAYMENTS_API_BASE_URL:', envUrl);
-    if (envUrl) return normalizeGatewayBaseUrl(envUrl);
+    const resolvedEnvUrl = resolveGatewayBaseCandidate(envUrl);
+    if (resolvedEnvUrl) return resolvedEnvUrl;
   }
 
   // Check environment variable
   if (typeof process !== 'undefined' && process.env.PAYMENTS_API_BASE_URL) {
     console.log('[API Config] Server - process.env.PAYMENTS_API_BASE_URL:', process.env.PAYMENTS_API_BASE_URL);
-    return normalizeGatewayBaseUrl(process.env.PAYMENTS_API_BASE_URL);
+    const resolved = resolveGatewayBaseCandidate(process.env.PAYMENTS_API_BASE_URL);
+    if (resolved) return resolved;
   }
 
   if (typeof process !== 'undefined' && process.env.GATEWAY_API_BASE_URL) {
     console.log('[API Config] Server - process.env.GATEWAY_API_BASE_URL:', process.env.GATEWAY_API_BASE_URL);
-    return normalizeGatewayBaseUrl(process.env.GATEWAY_API_BASE_URL);
+    const resolved = resolveGatewayBaseCandidate(process.env.GATEWAY_API_BASE_URL);
+    if (resolved) return resolved;
   }
 
   // Default to production payments microservice path (matches /payments ingress prefix)

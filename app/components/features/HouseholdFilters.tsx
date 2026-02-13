@@ -1,4 +1,5 @@
 import React from "react";
+import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 
 export type HouseholdSearchFields = {
   town?: string;
@@ -21,6 +22,15 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="flex flex-col">
+          <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Town</label>
+          <SearchableTownSelect
+            value={fields.town || ""}
+            onChange={(value) => onChange("town", value)}
+            target="households"
+            buttonClassName="w-full px-4 py-1.5 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-purple-300 shadow-md"
+          />
+        </div>
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Has Kids</label>
           <select

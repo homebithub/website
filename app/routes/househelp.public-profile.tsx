@@ -6,6 +6,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import { apiClient } from '~/utils/apiClient';
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { MessageCircle, Heart, Briefcase } from 'lucide-react';
 import HireRequestModal from '~/components/modals/HireRequestModal';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -196,8 +197,9 @@ export default function HousehelpPublicProfile() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
-            const data = await res.json();
-            setCurrentHouseholdProfileId(data?.id || data?.profile_id || null);
+            const raw = await res.json();
+            const profile = raw?.data?.data || raw?.data || raw;
+            setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
           }
         } catch (err) {
           console.error('Failed to fetch household profile ID:', err);
@@ -322,7 +324,7 @@ export default function HousehelpPublicProfile() {
         househelpId = currentUserId;
       }
 
-      const payload: Record<string, any> = {
+      const payload: StartConversationPayload = {
         household_user_id: householdId,
         househelp_user_id: househelpId,
         househelp_profile_id: targetProfileId,
@@ -333,23 +335,8 @@ export default function HousehelpPublicProfile() {
         payload.household_profile_id = currentHouseholdProfileId;
       }
 
-      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to start conversation');
-
-      let convId: string | undefined;
-      try {
-        const data = await apiClient.json<any>(res);
-        convId = data?.id || data?.ID || data?.conversation_id;
-      } catch {
-        convId = undefined;
-      }
-
-      if (convId) navigate(`/inbox?conversation=${convId}`);
-      else navigate('/inbox');
+      const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      navigate(getInboxRoute(convId));
     } catch (e) {
       console.error('Failed to start chat:', e);
       navigate('/inbox');
@@ -987,7 +974,7 @@ export default function HousehelpPublicProfile() {
           </div>
         </main>
       </PurpleThemeWrapper>
-      <Footer />
+      {isEmbed ? null : <Footer />}
 
       {selectedImage && (
         <ImageViewModal

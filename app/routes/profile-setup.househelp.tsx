@@ -5,7 +5,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { Footer } from '~/components/Footer';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupContext';
 import { API_BASE_URL } from '~/config/api';
 
 // Import all the components
@@ -692,7 +692,11 @@ function HousehelpProfileSetupContent() {
 }
 
 export default function HousehelpProfileSetup() {
-  return <HousehelpProfileSetupContent />;
+  return (
+    <ProfileSetupProvider>
+      <HousehelpProfileSetupContent />
+    </ProfileSetupProvider>
+  );
 }
 
 // Error boundary for better error handling

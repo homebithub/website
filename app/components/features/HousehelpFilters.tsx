@@ -1,4 +1,5 @@
 import React from "react";
+import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 
 type ChangeHandler = (name: string, value: string) => void;
 
@@ -19,10 +20,12 @@ export type HousehelpSearchFields = {
   offers_live_in: string;
   offers_day_worker: string;
   available_from: string;
+  language?: string;
+  min_age?: string;
+  max_age?: string;
 };
 
 // Curated options (kept in sync with backend expectations)
-const TOWNS = ["", "Nairobi", "Mombasa", "Kisumu", "Nakuru", "Eldoret", "Thika"];
 const SKILLS = ["", "cooking", "cleaning", "babysitting", "laundry", "elderly care"];
 const TRAITS = ["", "honest", "patient", "punctual", "organized", "friendly"];
 const EXPERIENCES = Array.from({ length: 11 }, (_, i) => String(i)); // "0".."10"
@@ -114,11 +117,12 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Town</label>
         <div className={gradientWrap}>
-          <select className={selectBase} value={fields.town} onChange={(e) => onChange("town", e.target.value)}>
-            {TOWNS.map((t) => (
-              <option key={t} value={t}>{t || "Any"}</option>
-            ))}
-          </select>
+          <SearchableTownSelect
+            value={fields.town}
+            onChange={(value) => onChange("town", value)}
+            target="househelps"
+            buttonClassName={selectBase}
+          />
         </div>
       </div>
 

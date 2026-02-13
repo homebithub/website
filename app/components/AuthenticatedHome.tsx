@@ -5,14 +5,15 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { apiClient } from "~/utils/apiClient";
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
-import { TOWNS, SKILLS, EXPERIENCE_LEVELS } from '~/constants/profileOptions';
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
+import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 
 interface HousehelpProfile {
   id: number | string;
@@ -30,10 +31,34 @@ interface HousehelpProfile {
   location?: string;
   county_of_residence?: string;
   bio?: string;
+  househelp_type?: string;
+  skills?: string[];
+  languages?: string[];
+  can_work_with_kids?: boolean;
+  can_work_with_pets?: boolean;
+  rating?: number;
+  review_count?: number;
+  availability?: string;
+  is_available?: boolean;
+  verified?: boolean;
   created_at?: string;
 }
 
-export default function AuthenticatedHome() {
+type HouseholdHomeVariant = 'default' | 'home1' | 'home2' | 'home3';
+
+interface AuthenticatedHomeProps {
+  variant?: HouseholdHomeVariant;
+}
+
+const EXPERIENCE_MIN_OPTIONS = [
+  { value: "", label: "Any" },
+  { value: "1", label: "1+ years" },
+  { value: "2", label: "2+ years" },
+  { value: "5", label: "5+ years" },
+  { value: "10", label: "10+ years" },
+];
+
+export default function AuthenticatedHome({ variant = 'default' }: AuthenticatedHomeProps) {
   const initialFields: HousehelpSearchFields = {
     status: "",
     househelp_type: "",
@@ -51,6 +76,9 @@ export default function AuthenticatedHome() {
     offers_live_in: "",
     offers_day_worker: "",
     available_from: "",
+    language: "",
+    min_age: "",
+    max_age: "",
   };
 
   // Track image loading state for each profile
@@ -87,9 +115,10 @@ export default function AuthenticatedHome() {
             headers: { Authorization: `Bearer ${token}` },
           });
           if (res.ok) {
-            const data = await res.json();
+            const raw = await res.json();
+            const profile = raw?.data?.data || raw?.data || raw;
             if (!cancelled) {
-              setCurrentHouseholdProfileId(data?.id || data?.profile_id || null);
+              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
             }
           }
         } catch (err) {
@@ -123,7 +152,7 @@ export default function AuthenticatedHome() {
         househelpId = currentUserId;
       }
 
-      const payload: Record<string, any> = {
+      const payload: StartConversationPayload = {
         household_user_id: householdId,
         househelp_user_id: househelpId,
       };
@@ -136,26 +165,8 @@ export default function AuthenticatedHome() {
         payload.household_profile_id = currentHouseholdProfileId;
       }
 
-      const res = await apiClient.auth(`${NOTIFICATIONS_API_BASE_URL}/api/v1/inbox/conversations`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) throw new Error('Failed to start conversation');
-
-      let convId: string | undefined;
-      try {
-        const data = await apiClient.json<any>(res);
-        convId = data?.id || data?.ID || data?.conversation_id;
-      } catch {
-        convId = undefined;
-      }
-
-      if (convId) {
-        navigate(`/inbox?conversation=${convId}`);
-      } else {
-        navigate('/inbox');
-      }
+      const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      navigate(getInboxRoute(convId));
     } catch (e) {
       console.error('Failed to start chat from househelps search', e);
       navigate('/inbox');
@@ -270,14 +281,6 @@ export default function AuthenticatedHome() {
   const navigate = useNavigate();
   const lastSetQueryRef = useRef<string | null>(null);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
-  const [showSkillsDropdown, setShowSkillsDropdown] = useState(false);
-  const [skillSearchTerm, setSkillSearchTerm] = useState('');
-  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
-  const [showTypeDropdown, setShowTypeDropdown] = useState(false);
-  const [showExperienceDropdown, setShowExperienceDropdown] = useState(false);
-  const skillsDropdownRef = useRef<HTMLDivElement>(null);
-  const typeDropdownRef = useRef<HTMLDivElement>(null);
-  const experienceDropdownRef = useRef<HTMLDivElement>(null);
 
   // Initialize from URL params on mount
   useEffect(() => {
@@ -348,28 +351,10 @@ export default function AuthenticatedHome() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (skillsDropdownRef.current && !skillsDropdownRef.current.contains(event.target as Node)) {
-        setShowSkillsDropdown(false);
-      }
-      if (typeDropdownRef.current && !typeDropdownRef.current.contains(event.target as Node)) {
-        setShowTypeDropdown(false);
-      }
-      if (experienceDropdownRef.current && !experienceDropdownRef.current.contains(event.target as Node)) {
-        setShowExperienceDropdown(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const handleFieldChange = (name: string, value: string) => {
     setFields(prev => ({ ...prev, [name]: value }));
   };
 
-  // Helper to derive type value from offers_live_in and offers_day_worker
   const getTypeValue = () => {
     const liveIn = fields.offers_live_in === "true";
     const dayWorker = fields.offers_day_worker === "true";
@@ -388,47 +373,38 @@ export default function AuthenticatedHome() {
     }
   };
 
-  // Filter skills based on search term
-  const filteredSkills = SKILLS.filter(skill =>
-    skill.toLowerCase().includes(skillSearchTerm.toLowerCase())
-  );
-
-  // Toggle skill selection
-  const toggleSkill = (skill: string) => {
-    setSelectedSkills(prev => {
-      const newSkills = prev.includes(skill)
-        ? prev.filter(s => s !== skill)
-        : [...prev, skill];
-      
-      // Update the skill field with comma-separated values
-      handleFieldChange('skill', newSkills.join(', '));
-      return newSkills;
-    });
+  const parseExperienceMin = (val?: string) => {
+    if (!val) return undefined;
+    const parsed = parseInt(val, 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
   };
 
-  // Initialize selected skills from fields.skill
-  useEffect(() => {
-    if (fields.skill) {
-      const skills = fields.skill.split(',').map(s => s.trim()).filter(Boolean);
-      setSelectedSkills(skills);
-    } else {
-      setSelectedSkills([]);
-    }
-  }, [fields.skill]);
+  const deriveHousehelpType = (f: HousehelpSearchFields) => {
+    const liveIn = f.offers_live_in === "true";
+    const dayWorker = f.offers_day_worker === "true";
+    if (liveIn && !dayWorker) return "live_in";
+    if (dayWorker && !liveIn) return "day_worker";
+    return f.househelp_type || undefined;
+  };
 
   const buildCountPayload = (f: HousehelpSearchFields) => {
     return Object.fromEntries(
       Object.entries({
         ...f,
-        experience: f.experience ? Number(f.experience) : undefined,
+        experience: parseExperienceMin(f.experience),
         min_rating: f.min_rating ? Number(f.min_rating) : undefined,
         salary_min: f.salary_min ? Number(f.salary_min) : undefined,
         salary_max: f.salary_max ? Number(f.salary_max) : undefined,
+        salary_expectation_min: f.salary_min ? Number(f.salary_min) : undefined,
+        salary_expectation_max: f.salary_max ? Number(f.salary_max) : undefined,
+        househelp_type: deriveHousehelpType(f),
         can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
         can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
         offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
         offers_day_worker: f.offers_day_worker === 'true' ? true : f.offers_day_worker === 'false' ? false : undefined,
         available_from: f.available_from || undefined,
+        min_age: f.min_age ? Number(f.min_age) : undefined,
+        max_age: f.max_age ? Number(f.max_age) : undefined,
       }).filter(([, v]) => v !== undefined && v !== null && v !== "")
     );
   };
@@ -519,15 +495,20 @@ export default function AuthenticatedHome() {
       const payload = Object.fromEntries(
         Object.entries({
           ...f,
-          experience: f.experience ? Number(f.experience) : undefined,
+          experience: parseExperienceMin(f.experience),
           min_rating: f.min_rating ? Number(f.min_rating) : undefined,
           salary_min: f.salary_min ? Number(f.salary_min) : undefined,
           salary_max: f.salary_max ? Number(f.salary_max) : undefined,
+          salary_expectation_min: f.salary_min ? Number(f.salary_min) : undefined,
+          salary_expectation_max: f.salary_max ? Number(f.salary_max) : undefined,
+          househelp_type: deriveHousehelpType(f),
           can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
           can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
           offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
           offers_day_worker: f.offers_day_worker === 'true' ? true : f.offers_day_worker === 'false' ? false : undefined,
           available_from: f.available_from || undefined,
+          min_age: f.min_age ? Number(f.min_age) : undefined,
+          max_age: f.max_age ? Number(f.max_age) : undefined,
           limit,
           offset: 0,
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
@@ -537,8 +518,10 @@ export default function AuthenticatedHome() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await apiClient.json<{ data: HousehelpProfile[] }>(res);
-      const rows = data.data || [];
+      const data = await apiClient.json<any>(res);
+      console.log('Search househelps response:', data);
+      const inner = data?.data;
+      const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
       setHousehelps(rows);
       setHasMore(rows.length === limit);
     } catch (err) {
@@ -563,15 +546,20 @@ export default function AuthenticatedHome() {
       const payload = Object.fromEntries(
         Object.entries({
           ...f,
-          experience: f.experience ? Number(f.experience) : undefined,
+          experience: parseExperienceMin(f.experience),
           min_rating: f.min_rating ? Number(f.min_rating) : undefined,
           salary_min: f.salary_min ? Number(f.salary_min) : undefined,
           salary_max: f.salary_max ? Number(f.salary_max) : undefined,
+          salary_expectation_min: f.salary_min ? Number(f.salary_min) : undefined,
+          salary_expectation_max: f.salary_max ? Number(f.salary_max) : undefined,
+          househelp_type: deriveHousehelpType(f),
           can_work_with_kids: f.can_work_with_kids === 'true' ? true : f.can_work_with_kids === 'false' ? false : undefined,
           can_work_with_pets: f.can_work_with_pets === 'true' ? true : f.can_work_with_pets === 'false' ? false : undefined,
           offers_live_in: f.offers_live_in === 'true' ? true : f.offers_live_in === 'false' ? false : undefined,
           offers_day_worker: f.offers_day_worker === 'true' ? true : f.offers_day_worker === 'false' ? false : undefined,
           available_from: f.available_from || undefined,
+          min_age: f.min_age ? Number(f.min_age) : undefined,
+          max_age: f.max_age ? Number(f.max_age) : undefined,
           limit,
           offset: nextOffset,
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
@@ -581,8 +569,9 @@ export default function AuthenticatedHome() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      const data = await apiClient.json<{ data: HousehelpProfile[] }>(res);
-      const rows = data.data || [];
+      const data = await apiClient.json<any>(res);
+      const inner = data?.data;
+      const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
       setHousehelps(prev => [...prev, ...rows]);
       setOffset(nextOffset);
       setHasMore(rows.length === limit);
@@ -611,7 +600,7 @@ export default function AuthenticatedHome() {
   // Helper: map URLSearchParams to fields
   function paramsToFields(sp: URLSearchParams, base: HousehelpSearchFields): HousehelpSearchFields {
     const keys = [
-      'status','househelp_type','gender','experience','town','salary_frequency','skill','traits','min_rating','salary_min','salary_max','can_work_with_kids','can_work_with_pets','offers_live_in','offers_day_worker','available_from'
+      'status','househelp_type','gender','experience','town','salary_frequency','skill','traits','min_rating','salary_min','salary_max','can_work_with_kids','can_work_with_pets','offers_live_in','offers_day_worker','available_from','language','min_age','max_age'
     ];
     const obj: Record<string, string> = {};
     keys.forEach(k => {
@@ -621,183 +610,125 @@ export default function AuthenticatedHome() {
     return { ...base, ...obj } as HousehelpSearchFields;
   }
 
+  const isHome1 = variant === 'home1';
+  const isHome2 = variant === 'home2';
+  const isHome3 = variant === 'home3';
+
+  const gridClass = isHome2
+    ? 'grid grid-cols-1 gap-4'
+    : isHome3
+      ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4'
+      : isHome1
+        ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4'
+        : `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`;
+
+  const cardTitleClass = isHome3 ? 'text-base' : isHome1 ? 'text-lg' : 'text-xl';
+  const cardTextClass = isHome3 ? 'text-xs' : 'text-sm';
+  const filterSectionClass = isHome1
+    ? 'bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:via-[#161625] dark:to-slate-900 rounded-3xl p-5 sm:p-7 mb-8 border border-purple-300/40 dark:border-purple-400/30 shadow-xl shadow-purple-300/25 dark:shadow-purple-500/20'
+    : isHome2
+      ? 'bg-white dark:bg-gradient-to-br dark:from-[#0f1020] dark:to-[#18182a] rounded-3xl p-5 sm:p-8 mb-8 border-2 border-purple-200/70 dark:border-purple-500/30 shadow-[0_20px_60px_rgba(26,26,46,0.35)]'
+      : isHome3
+        ? 'bg-white dark:bg-[#11131f]/95 rounded-2xl p-4 sm:p-5 mb-7 border border-purple-200/50 dark:border-purple-500/25 shadow-lg'
+        : `bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-gray-700/50`;
+  const controlsRowClass = isHome2
+    ? 'mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-end'
+    : isHome3
+      ? 'mt-3 grid grid-cols-1 sm:grid-cols-3 gap-3 items-end'
+      : 'mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end';
+  const quickFilterGridClass = isHome2
+    ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4'
+    : isHome3
+      ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3'
+      : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4';
+  const quickInputClass = isHome3
+    ? 'w-full h-10 px-3 rounded-lg text-sm bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500'
+    : 'w-full h-12 px-4 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500';
+  const quickLabelClass = isHome3
+    ? 'mb-1 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300'
+    : 'mb-2 text-sm font-semibold text-gray-700 dark:text-white';
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className={`flex-1 py-8 ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <main className={`flex-1 ${isHome3 ? 'py-6' : 'py-8'} ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
+          <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${isHome1 ? 'max-w-[88rem]' : isHome2 ? 'max-w-6xl' : 'max-w-7xl'}`}>
             {showTips && <OnboardingTipsBanner role="household" onDismiss={handleDismissTips} />}
             {/* Compact Filters Section */}
-            <div className={`bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-gray-700/50`}>
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Find Househelps</h1>
-                <button
-                  onClick={() => setShowMoreFilters(true)}
-                  className="px-4 py-1 bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold rounded-xl border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition"
-                >
-                  More filters
-                </button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex flex-col relative" ref={typeDropdownRef}>
-                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Type of Househelp</label>
-                  <div className="relative">
-                    <div
-                      onClick={() => setShowTypeDropdown(!showTypeDropdown)}
-                      className="w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
-                    >
-                      <span className={getTypeValue() ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
-                        {getTypeValue() === 'live_in' ? 'Live-in' : getTypeValue() === 'day_worker' ? 'Day worker' : 'Any'}
-                      </span>
-                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                    {showTypeDropdown && (
-                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg overflow-hidden">
-                        {[
-                          { value: '', label: 'Any' },
-                          { value: 'live_in', label: 'Live-in' },
-                          { value: 'day_worker', label: 'Day worker' }
-                        ].map((option) => (
-                          <div
-                            key={option.value}
-                            onClick={() => {
-                              setTypeValue(option.value);
-                              setShowTypeDropdown(false);
-                            }}
-                            className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-                          >
-                            {option.label}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col relative" ref={experienceDropdownRef}>
-                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Experience</label>
-                  <div className="relative">
-                    <div
-                      onClick={() => setShowExperienceDropdown(!showExperienceDropdown)}
-                      className="w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border-2 border-transparent focus-within:border-purple-500 shadow-md cursor-pointer flex items-center justify-between"
-                    >
-                      <span className={fields.experience ? 'text-gray-900 dark:text-gray-100' : 'text-gray-500 dark:text-gray-300'}>
-                        {fields.experience ? EXPERIENCE_LEVELS.find(l => l.value === fields.experience)?.label : 'Any'}
-                      </span>
-                      <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </div>
-                    {showExperienceDropdown && (
-                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg max-h-60 overflow-y-auto">
-                        <div
-                          onClick={() => {
-                            handleFieldChange('experience', '');
-                            setShowExperienceDropdown(false);
-                          }}
-                          className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800"
-                        >
-                          Any
-                        </div>
-                        {EXPERIENCE_LEVELS.map((level) => (
-                          <div
-                            key={level.value}
-                            onClick={() => {
-                              handleFieldChange('experience', level.value);
-                              setShowExperienceDropdown(false);
-                            }}
-                            className="px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-                          >
-                            {level.label}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-col relative" ref={skillsDropdownRef}>
-                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Skills / Can Help With</label>
-                  <div className="relative">
-                    <div
-                      onClick={() => setShowSkillsDropdown(!showSkillsDropdown)}
-                      className="w-full min-h-[48px] px-4 py-1 rounded-xl text-base bg-white dark:bg-[#13131a] border-2 border-transparent focus-within:border-purple-500 focus-within:ring-4 focus-within:ring-purple-300 shadow-md cursor-pointer"
-                    >
-                      {selectedSkills.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {selectedSkills.map((skill) => (
-                            <span
-                              key={skill}
-                              className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-xl text-sm font-medium"
-                            >
-                              {skill}
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  toggleSkill(skill);
-                                }}
-                                className="hover:text-purple-900 dark:hover:text-purple-100"
-                              >
-                                ×
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="text-gray-500 dark:text-gray-400">Select skills...</span>
-                      )}
-                    </div>
-                    {showSkillsDropdown && (
-                      <div className="absolute z-10 w-full mt-1 bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-lg max-h-60 overflow-hidden flex flex-col">
-                        {/* Search input */}
-                        <div className="p-2 border-b border-gray-200 dark:border-gray-700">
-                          <input
-                            type="text"
-                            value={skillSearchTerm}
-                            onChange={(e) => setSkillSearchTerm(e.target.value)}
-                            className="w-full px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-[#1a1a1f] text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="Search skills..."
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
-                        {/* Skills list */}
-                        <div className="overflow-y-auto max-h-48">
-                          {filteredSkills.length > 0 ? (
-                            filteredSkills.map((skill) => (
-                              <label
-                                key={skill}
-                                className="flex items-center gap-3 px-4 py-1.5 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100 border-b border-gray-100 dark:border-gray-800 last:border-b-0"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={selectedSkills.includes(skill)}
-                                  onChange={() => toggleSkill(skill)}
-                                  className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                                />
-                                <span>{skill}</span>
-                              </label>
-                            ))
-                          ) : (
-                            <div className="px-4 py-3 text-gray-500 dark:text-gray-400 text-center">
-                              No skills found
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-                <div className="sm:col-span-2 flex items-center">
-                  {totalCount !== null && (
-                    <span className="text-gray-700 dark:text-white font-semibold">{totalCount} results</span>
+            <div className={filterSectionClass}>
+              <div className={`flex ${isHome2 ? 'flex-col sm:flex-row sm:items-end' : 'items-center'} justify-between gap-3 mb-4`}>
+                <div>
+                  <h1 className={`${isHome3 ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'} font-bold text-gray-900 dark:text-white`}>Find Househelps</h1>
+                  {(isHome1 || isHome2 || isHome3) && (
+                    <p className={`${isHome3 ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-gray-400 mt-1`}>
+                      {isHome1 && 'Card grid style filter: wider controls and quick-action flow.'}
+                      {isHome2 && 'Editorial style filter: guided search with roomy controls.'}
+                      {isHome3 && 'Compact style filter: smaller type and dense arrangement.'}
+                    </p>
                   )}
                 </div>
                 <button
+                  onClick={() => setShowMoreFilters(true)}
+                  className={`px-4 py-1 ${isHome3 ? 'text-xs rounded-lg' : 'rounded-xl'} bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition`}
+                >
+                  More filters
+                  </button>
+                </div>
+              <div className={quickFilterGridClass}>
+                <div className="flex flex-col">
+                  <label className={quickLabelClass}>Town</label>
+                  <SearchableTownSelect
+                    value={fields.town || ""}
+                    onChange={(value) => handleFieldChange("town", value)}
+                    target="househelps"
+                    buttonClassName={quickInputClass}
+                  />
+                </div>
+                <div className="flex flex-col">
+                  <label className={quickLabelClass}>Type of Househelp</label>
+                  <select
+                    value={getTypeValue()}
+                    onChange={(e) => setTypeValue(e.target.value)}
+                    className={quickInputClass}
+                  >
+                    <option value="">Any</option>
+                    <option value="live_in">Live-in</option>
+                    <option value="day_worker">Day worker</option>
+                  </select>
+                </div>
+                <div className="flex flex-col">
+                  <label className={quickLabelClass}>Experience</label>
+                  <select
+                    value={fields.experience || ""}
+                    onChange={(e) => handleFieldChange('experience', e.target.value)}
+                    className={quickInputClass}
+                  >
+                    {EXPERIENCE_MIN_OPTIONS.map((level) => (
+                      <option key={level.value || "any"} value={level.value}>{level.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-col">
+                  <label className={quickLabelClass}>Skills / Can Help With</label>
+                  <input
+                    value={fields.skill || ""}
+                    onChange={(e) => handleFieldChange('skill', e.target.value)}
+                    className={quickInputClass}
+                    placeholder="e.g. cooking, childcare"
+                  />
+                </div>
+              </div>
+              <div className={controlsRowClass}>
+                <div className={`${isHome2 ? 'md:col-span-2' : 'sm:col-span-2'} flex items-center ${isHome3 ? 'text-sm' : ''}`}>
+                  <span className="text-gray-700 dark:text-white font-medium">
+                    Use quick filters above or open <span className="font-semibold">More filters</span> for advanced options.
+                    {totalCount !== null ? ` ${totalCount} results` : ''}
+                  </span>
+                </div>
+                <button
                   onClick={() => handleSearch()}
-                  className="w-full px-8 py-1.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500"
+                  className={`w-full ${isHome3 ? 'px-4 py-2 text-sm rounded-lg' : 'px-8 py-1.5 rounded-xl'} font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl ${isHome3 ? '' : 'hover:scale-105'} focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500`}
                 >
                   Search
                 </button>
@@ -806,12 +737,20 @@ export default function AuthenticatedHome() {
 
             {/* Slide-over Drawer for full filters */}
             {showMoreFilters && (
-              <div className="fixed inset-0 z-50">
-                <div className="absolute inset-0 bg-black/40" onClick={() => setShowMoreFilters(false)} />
-                <div className="absolute right-0 top-24 sm:top-28 bottom-20 sm:bottom-24 w-full max-w-md bg-white dark:bg-gradient-to-br dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] shadow-xl rounded-l-3xl p-6 overflow-y-auto border-2 border-gray-200 dark:border-purple-500/30">
-                  <div className="flex items-center justify-between mb-4">
+              <div className="fixed inset-0 z-[70]">
+                <div className="absolute inset-x-0 top-20 sm:top-24 bottom-20 sm:bottom-24 bg-slate-900/20 backdrop-blur-[2px]" onClick={() => setShowMoreFilters(false)} />
+                <div className="absolute right-0 sm:right-4 top-20 sm:top-24 bottom-20 sm:bottom-24 w-full max-w-[460px] bg-[#f3f4f7] dark:bg-gradient-to-br dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] shadow-[0_24px_80px_rgba(15,23,42,0.28)] rounded-[2rem] p-6 sm:p-7 overflow-y-auto border border-[#d6dbe7] dark:border-purple-500/30">
+                  <div className="sticky top-0 z-10 -mx-2 px-2 pb-4 pt-1 bg-[#f3f4f7] dark:bg-[#13131a] flex items-center justify-between mb-2">
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white">More Filters</h2>
-                    <button onClick={() => setShowMoreFilters(false)} className="text-gray-500 hover:text-gray-800 dark:hover:text-gray-200">✕</button>
+                    <button
+                      onClick={() => setShowMoreFilters(false)}
+                      className="h-9 w-9 rounded-full border border-[#c7cdd9] dark:border-purple-500/30 text-slate-500 hover:text-slate-700 hover:bg-white/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-purple-500/10 transition-colors"
+                      aria-label="Close more filters"
+                    >
+                      <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                   <HousehelpMoreFilters
                     fields={fields}
@@ -824,7 +763,7 @@ export default function AuthenticatedHome() {
             )}
 
             <div className="mt-6 sm:mt-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
+              <h2 className={`${isHome3 ? 'text-xl' : 'text-2xl'} font-bold text-gray-900 dark:text-white mb-6`}>
                 Available Househelps
               </h2>
 
@@ -867,12 +806,12 @@ export default function AuthenticatedHome() {
                   </p>
                 </div>
               ) : (
-                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>
+                <div className={gridClass}>
                   {househelps.map((househelp) => (
                     <div
                       key={househelp.id}
                       onClick={() => househelp.profile_id && handleViewProfile(String(househelp.profile_id))}
-                      className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 transition-all duration-300 cursor-pointer`}
+                      className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${isHome2 ? 'p-4 sm:p-5' : isHome3 ? 'p-4' : compactView ? 'p-4' : 'p-6'} ${isHome2 ? 'hover:-translate-y-0.5' : 'hover:scale-105'} transition-all duration-300 cursor-pointer`}
                     >
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">
@@ -907,90 +846,116 @@ export default function AuthenticatedHome() {
                           )}
                         </button>
                       </div>
-                      {/* Profile Picture */}
-                      <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden relative">
-                          {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) ? (
-                            <>
-                              {/* Skeleton loader - shows while image is loading */}
-                              {imageLoadingStates[househelp.profile_id] !== false && (
-                                <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
-                              )}
-                              <img
-                                src={
-                                  (househelp.avatar_url as string) || 
-                                  (househelp.profile_picture as string) || 
-                                  (househelp.photos && househelp.photos[0]) || 
-                                  ''
-                                }
-                                alt={`${househelp.first_name} ${househelp.last_name}`}
-                                className={`w-full h-full object-cover transition-opacity duration-300 ${
-                                  imageLoadingStates[househelp.profile_id] === false ? 'opacity-100' : 'opacity-0'
-                                }`}
-                                onLoad={() => {
-                                  setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
-                                }}
-                                onError={(e) => {
-                                  setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
-                            </>
-                          ) : (
-                            `${househelp.first_name?.[0] || ''}${househelp.last_name?.[0] || ''}`
+                      <div className={isHome2 ? 'flex items-start gap-4' : ''}>
+                        {/* Profile Picture */}
+                        <div className={`flex ${isHome2 ? 'justify-start' : 'justify-center'} ${isHome2 ? 'mb-0' : 'mb-4'} ${isHome2 ? 'shrink-0' : ''}`}>
+                          <div className={`${isHome2 ? 'w-20 h-20' : isHome3 ? 'w-20 h-20' : 'w-24 h-24'} rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white ${isHome3 ? 'text-lg' : 'text-xl'} font-bold shadow-lg overflow-hidden relative`}>
+                            {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) ? (
+                              <>
+                                {imageLoadingStates[househelp.profile_id] !== false && (
+                                  <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                                )}
+                                <img
+                                  src={
+                                    (househelp.avatar_url as string) ||
+                                    (househelp.profile_picture as string) ||
+                                    (househelp.photos && househelp.photos[0]) ||
+                                    ''
+                                  }
+                                  alt={`${househelp.first_name} ${househelp.last_name}`}
+                                  className={`w-full h-full object-cover transition-opacity duration-300 ${
+                                    imageLoadingStates[househelp.profile_id] === false ? 'opacity-100' : 'opacity-0'
+                                  }`}
+                                  onLoad={() => {
+                                    setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
+                                  }}
+                                  onError={(e) => {
+                                    setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </>
+                            ) : (
+                              `${househelp.first_name?.[0] || ''}${househelp.last_name?.[0] || ''}`
+                            )}
+                          </div>
+                        </div>
+
+                        <div className={`min-w-0 ${isHome2 ? 'flex-1 pr-8' : ''}`}>
+                          {/* Name */}
+                          <h3 className={`${cardTitleClass} font-bold ${isHome2 ? 'text-left' : 'text-center'} text-gray-900 dark:text-white mb-2`}>
+                            {househelp.first_name} {househelp.last_name}
+                          </h3>
+
+                          {(househelp.county_of_residence || househelp.location) && (
+                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 ${isHome2 ? 'text-left' : 'text-center'} mb-2`}>
+                              📍 {househelp.county_of_residence || househelp.location}
+                            </p>
                           )}
+
+                          {((househelp.years_of_experience ?? househelp.experience) as number) > 0 && (
+                            <p className={`${cardTextClass} text-purple-600 dark:text-purple-400 ${isHome2 ? 'text-left' : 'text-center'} mb-2`}>
+                              ⭐ {househelp.years_of_experience ?? househelp.experience} years experience
+                            </p>
+                          )}
+
+                          <p className={`${cardTextClass} font-semibold text-gray-700 dark:text-gray-300 ${isHome2 ? 'text-left' : 'text-center'} mb-2`}>
+                            💰 {househelp.salary_expectation && Number(househelp.salary_expectation) > 0
+                              ? `${househelp.salary_expectation}${househelp.salary_frequency ? ` per ${
+                                  househelp.salary_frequency === 'daily' ? 'day' :
+                                  househelp.salary_frequency === 'weekly' ? 'week' :
+                                  househelp.salary_frequency === 'monthly' ? 'month' :
+                                  househelp.salary_frequency
+                                }` : ''}`
+                              : 'Salary not yet specified'}
+                          </p>
+
+                          <div className={`flex flex-wrap gap-2 ${isHome2 ? 'justify-start' : 'justify-center'} mb-3`}>
+                            {househelp.househelp_type && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                                {househelp.househelp_type}
+                              </span>
+                            )}
+                            {typeof househelp.can_work_with_kids === 'boolean' && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                {househelp.can_work_with_kids ? 'Works with kids' : 'No kids'}
+                              </span>
+                            )}
+                            {typeof househelp.can_work_with_pets === 'boolean' && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                                {househelp.can_work_with_pets ? 'Pet friendly' : 'No pets'}
+                              </span>
+                            )}
+                            {(househelp.rating || househelp.review_count) && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300">
+                                ★ {househelp.rating ? Number(househelp.rating).toFixed(1) : 'New'}{househelp.review_count ? ` (${househelp.review_count})` : ''}
+                              </span>
+                            )}
+                            {typeof househelp.is_available === 'boolean' && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                {househelp.is_available ? 'Available now' : 'Busy'}
+                              </span>
+                            )}
+                          </div>
+
+                          {househelp.bio && (
+                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 ${isHome2 ? 'text-left' : 'text-center'} ${isHome3 ? 'line-clamp-2' : 'line-clamp-3'} mb-4`}>
+                              {househelp.bio}
+                            </p>
+                          )}
+
+                          <div className={`mt-3 flex items-center ${isHome2 ? 'justify-between' : 'justify-between'} gap-2`}>
+                            <div className="text-xs text-gray-400">
+                              {househelp.created_at ? `Joined ${new Date(househelp.created_at).toLocaleDateString()}` : ''}
+                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleViewProfile(String(househelp.profile_id)); }}
+                              className={`px-4 py-1 ${isHome3 ? 'text-xs' : 'text-sm'} bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition`}
+                            >
+                              View more
+                            </button>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Name */}
-                      <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
-                        {househelp.first_name} {househelp.last_name}
-                      </h3>
-
-                      {/* Location */}
-                      {(househelp.county_of_residence || househelp.location) && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
-                          📍 {househelp.county_of_residence || househelp.location}
-                        </p>
-                      )}
-
-                      {/* Experience */}
-                      {((househelp.years_of_experience ?? househelp.experience) as number) > 0 && (
-                        <p className="text-sm text-purple-600 dark:text-purple-400 text-center mb-3">
-                          ⭐ {househelp.years_of_experience ?? househelp.experience} years experience
-                        </p>
-                      )}
-
-                      {/* Salary */}
-                      <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center mb-3">
-                        💰 {househelp.salary_expectation && Number(househelp.salary_expectation) > 0 
-                          ? `${househelp.salary_expectation}${househelp.salary_frequency ? ` per ${
-                              househelp.salary_frequency === 'daily' ? 'day' :
-                              househelp.salary_frequency === 'weekly' ? 'week' :
-                              househelp.salary_frequency === 'monthly' ? 'month' :
-                              househelp.salary_frequency
-                            }` : ''}`
-                          : 'No salary expectations specified'}
-                      </p>
-
-                      {/* Bio Preview */}
-                      {househelp.bio && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 text-center line-clamp-2 mb-4">
-                          {househelp.bio}
-                        </p>
-                      )}
-
-                      {/* Bottom actions */}
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="text-xs text-gray-400">
-                          {househelp.created_at ? new Date(househelp.created_at).toLocaleDateString() : ''}
-                        </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleViewProfile(String(househelp.profile_id)); }}
-                          className="px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
-                        >
-                          View more
-                        </button>
                       </div>
                     </div>
                   ))}
