@@ -6,7 +6,10 @@
  */
 
 const normalizeGatewayBaseUrl = (url: string): string => {
-  return url.replace(/\/+$/, '').replace(/\/(auth|payments|notifications)$/, '');
+  return url
+    .replace(/\/+$/, '')
+    .replace(/\/(auth|payments|notifications)$/i, '')
+    .replace(/\/api(?:\/v1)?$/i, '');
 };
 
 const resolveGatewayBaseCandidate = (url?: string): string | undefined => {
@@ -65,7 +68,7 @@ const getAuthApiBaseUrl = (): string => {
     if (resolved) return resolved;
   }
   
-  // Default to production
+  // Default to production API host
   console.warn('[API Config] No AUTH_API_BASE_URL environment variable found, using production URL');
   return 'https://api.homebit.co.ke';
 };
@@ -109,7 +112,7 @@ const getNotificationsApiBaseUrl = (): string => {
     if (resolved) return resolved;
   }
 
-  // Default to production notifications microservice path
+  // Default to production API host
   console.warn('[API Config] No NOTIFICATIONS_API_BASE_URL environment variable found, using production /notifications URL');
   return 'https://api.homebit.co.ke';
 };
@@ -130,9 +133,9 @@ const getNotificationsWsBaseUrl = (): string => {
     if (normalizedServerUrl) return normalizedServerUrl;
   }
 
-  // Default to direct WebSocket path for real-time chat (bypasses gateway)
+  // Default to direct WebSocket path for real-time chat
   console.warn('[API Config] No NOTIFICATIONS_WS_BASE_URL environment variable found, using direct WebSocket URL');
-  return 'https://homebit.co.ke/ws';
+  return 'https://api.homebit.co.ke/ws';
 };
 
 // Get payments service base URL from environment or use default
@@ -163,7 +166,7 @@ const getPaymentsApiBaseUrl = (): string => {
     if (resolved) return resolved;
   }
 
-  // Default to production payments microservice path (matches /payments ingress prefix)
+  // Default to production API host
   console.warn('[API Config] No PAYMENTS_API_BASE_URL environment variable found, using production /payments URL');
   return 'https://api.homebit.co.ke';
 };

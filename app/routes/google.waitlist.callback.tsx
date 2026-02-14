@@ -1,4 +1,5 @@
 import type { LoaderFunctionArgs } from "react-router";
+import { AUTH_API_BASE_URL } from "~/config/api";
 
 // Google OAuth waitlist callback
 // Receives `code` from Google, exchanges it with the Auth API, and redirects
@@ -15,7 +16,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return Response.redirect(`${origin}/?waitlist=1&error=missing_code`);
   }
 
-  const baseUrl = process.env.GATEWAY_API_BASE_URL || process.env.AUTH_API_BASE_URL || "https://api.homebit.co.ke";
+  const baseUrl = AUTH_API_BASE_URL;
 
   try {
     const resp = await fetch(`${baseUrl}/api/v1/auth/google/signin`, {
