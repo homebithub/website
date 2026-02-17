@@ -400,7 +400,6 @@ export default function HousehelpProfile() {
       <div className="rounded-2xl p-4 sm:p-6 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <span className="inline-flex text-[11px] px-2 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">Design 1</span>
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mt-2">{profile.first_name} {profile.last_name}</h1>
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your professional information</p>
           </div>
