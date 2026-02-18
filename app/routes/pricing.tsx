@@ -305,7 +305,7 @@ export default function Pricing() {
   };
 
   const getFeaturesList = (features: any) => {
-    const featureList = [];
+    const featureList: string[] = [];
     if (!features) return featureList;
     
     if (features.messaging) featureList.push('Unlimited messaging');

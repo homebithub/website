@@ -5,11 +5,14 @@ import { fetchPreferences, updatePreferences, migratePreferences } from '~/utils
 import { getOrCreateUserId, isAuthenticated } from '~/utils/userTracking';
 
 type Theme = 'light' | 'dark';
+type ThemePreference = 'system' | 'light' | 'dark';
 
 interface ThemeContextType {
   theme: Theme;
+  themePreference: ThemePreference;
   toggleTheme: () => void;
   setTheme: (theme: Theme) => void;
+  setThemePreference: (preference: ThemePreference) => void;
   migrateUserPreferences: () => Promise<void>;
 }
 
@@ -19,9 +22,21 @@ interface ThemeProviderProps {
   children: ReactNode;
 }
 
+// Resolve the actual theme from a preference value
+const getSystemTheme = (): Theme => {
+  if (typeof window === 'undefined') return 'dark';
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
+const resolveTheme = (preference: ThemePreference): Theme => {
+  if (preference === 'system') return getSystemTheme();
+  return preference;
+};
+
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   const location = useLocation();
-  const [theme, setThemeState] = useState<Theme>('dark');
+  const [themePreference, setThemePreferenceState] = useState<ThemePreference>('system');
+  const [theme, setThemeState] = useState<Theme>(() => resolveTheme('system'));
   const [mounted, setMounted] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -30,6 +45,30 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email'];
     return publicPaths.some(path => location.pathname.startsWith(path));
   };
+
+  const applyTheme = (newTheme: Theme) => {
+    const root = document.documentElement;
+    if (newTheme === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  };
+
+  // Listen for system theme changes when preference is 'system'
+  useEffect(() => {
+    if (themePreference !== 'system') return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      const resolved = e.matches ? 'dark' : 'light';
+      setThemeState(resolved);
+      applyTheme(resolved);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [themePreference]);
 
   // Initialize user tracking and load preferences
   useEffect(() => {
@@ -41,18 +80,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
 
       // Skip backend preferences on public routes or if not authenticated
       if (isPublicRoute() || !isAuthenticated()) {
-        // Use localStorage or system preference only
-        const savedTheme = localStorage.getItem('theme') as Theme | null;
-        
-        if (savedTheme) {
-          setThemeState(savedTheme);
-          applyTheme(savedTheme);
-        } else {
-          // Default to dark theme for new/public users
-          const defaultTheme: Theme = 'dark';
-          setThemeState(defaultTheme);
-          applyTheme(defaultTheme);
-        }
+        // Use localStorage preference or default to system
+        const savedPref = localStorage.getItem('themePreference') as ThemePreference | null;
+        const preference = savedPref || 'system';
+        const resolved = resolveTheme(preference);
+
+        setThemePreferenceState(preference);
+        setThemeState(resolved);
+        applyTheme(resolved);
         setIsInitialized(true);
         return;
       }
@@ -61,29 +96,25 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
       const preferences = await fetchPreferences();
 
       if (preferences?.settings?.theme) {
-        // Use backend preference
-        const backendTheme = preferences.settings.theme === 'system' 
-          ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-          : preferences.settings.theme;
-        setThemeState(backendTheme);
-        applyTheme(backendTheme);
+        const backendPref = preferences.settings.theme as ThemePreference;
+        // Treat any value not in our set as 'system'
+        const preference: ThemePreference = ['system', 'light', 'dark'].includes(backendPref) ? backendPref : 'system';
+        const resolved = resolveTheme(preference);
+
+        setThemePreferenceState(preference);
+        setThemeState(resolved);
+        applyTheme(resolved);
       } else {
-        // Fallback to localStorage or system preference
-        const savedTheme = localStorage.getItem('theme') as Theme | null;
-        
-        if (savedTheme) {
-          setThemeState(savedTheme);
-          applyTheme(savedTheme);
-          // Sync to backend
-          updatePreferences({ theme: savedTheme }).catch(console.error);
-        } else {
-          // Default to dark theme when no preference exists
-          const defaultTheme: Theme = 'dark';
-          setThemeState(defaultTheme);
-          applyTheme(defaultTheme);
-          // Save to backend
-          updatePreferences({ theme: defaultTheme }).catch(console.error);
-        }
+        // Fallback to localStorage or default to system
+        const savedPref = localStorage.getItem('themePreference') as ThemePreference | null;
+        const preference = savedPref || 'system';
+        const resolved = resolveTheme(preference);
+
+        setThemePreferenceState(preference);
+        setThemeState(resolved);
+        applyTheme(resolved);
+        // Sync to backend
+        updatePreferences({ theme: preference }).catch(console.error);
       }
 
       setIsInitialized(true);
@@ -92,32 +123,29 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
     initializeTheme();
   }, [location.pathname]); // Re-run when route changes
 
-  const applyTheme = (newTheme: Theme) => {
-    const root = document.documentElement;
-    
-    if (newTheme === 'dark') {
-      root.classList.add('dark');
-    } else {
-      root.classList.remove('dark');
-    }
-  };
+  const setThemePreference = useCallback((preference: ThemePreference) => {
+    const resolved = resolveTheme(preference);
 
-  const setTheme = useCallback(async (newTheme: Theme) => {
-    // Optimistic update
-    setThemeState(newTheme);
-    localStorage.setItem('theme', newTheme);
-    applyTheme(newTheme);
+    setThemePreferenceState(preference);
+    setThemeState(resolved);
+    localStorage.setItem('themePreference', preference);
+    applyTheme(resolved);
 
     // Sync to backend (fire and forget) - only if authenticated
     if (isInitialized && !isPublicRoute() && isAuthenticated()) {
-      updatePreferences({ theme: newTheme }).catch(console.error);
+      updatePreferences({ theme: preference }).catch(console.error);
     }
   }, [isInitialized, location.pathname]);
 
+  const setTheme = useCallback((newTheme: Theme) => {
+    // Setting an explicit theme switches preference away from system
+    setThemePreference(newTheme);
+  }, [setThemePreference]);
+
   const toggleTheme = useCallback(() => {
     const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-  }, [theme, setTheme]);
+    setThemePreference(newTheme);
+  }, [theme, setThemePreference]);
 
   const migrateUserPreferences = useCallback(async () => {
     try {
@@ -126,12 +154,14 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
         // Reload preferences after migration
         const preferences = await fetchPreferences();
         if (preferences?.settings?.theme) {
-          const migratedTheme = preferences.settings.theme === 'system'
-            ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-            : preferences.settings.theme;
-          setThemeState(migratedTheme);
-          applyTheme(migratedTheme);
-          localStorage.setItem('theme', migratedTheme);
+          const backendPref = preferences.settings.theme as ThemePreference;
+          const preference: ThemePreference = ['system', 'light', 'dark'].includes(backendPref) ? backendPref : 'system';
+          const resolved = resolveTheme(preference);
+
+          setThemePreferenceState(preference);
+          setThemeState(resolved);
+          applyTheme(resolved);
+          localStorage.setItem('themePreference', preference);
         }
       }
     } catch (error) {
@@ -145,7 +175,7 @@ export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setTheme, migrateUserPreferences }}>
+    <ThemeContext.Provider value={{ theme, themePreference, toggleTheme, setTheme, setThemePreference, migrateUserPreferences }}>
       {children}
     </ThemeContext.Provider>
   );
