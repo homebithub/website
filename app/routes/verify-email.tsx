@@ -152,7 +152,7 @@ console.log(user_id,"user_id");
                 const parsed = JSON.parse(userObj);
                 const pt = parsed.profile_type || profileType;
                 if (pt === 'household') {
-                  path = '/profile-setup/household?step=1';
+                  path = '/household-choice';
                 } else if (pt === 'househelp') {
                   path = '/profile-setup/househelp?step=1';
                 } else if (pt === 'bureau') {

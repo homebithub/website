@@ -118,6 +118,11 @@ export default function LoginPage() {
                 const lastStep = setupData.last_completed_step || 0;
 
                 if (!isComplete) {
+                  // Household users who haven't started setup go to choice page first
+                  if (profileType === 'household' && lastStep === 0) {
+                    navigate('/household-choice', { replace: true });
+                    return;
+                  }
                   const setupRoute = profileType === 'household'
                     ? `/profile-setup/household?step=${lastStep + 1}`
                     : `/profile-setup/househelp?step=${lastStep + 1}`;
@@ -126,11 +131,12 @@ export default function LoginPage() {
                 }
               } else if (setupResponse.status === 404) {
                 // No profile setup record exists - user hasn't started setup
+                if (profileType === 'household') {
+                  navigate('/household-choice', { replace: true });
+                  return;
+                }
                 console.log("No profile setup record found, starting from step 1");
-                const setupRoute = profileType === 'household'
-                  ? `/profile-setup/household?step=1`
-                  : `/profile-setup/househelp?step=1`;
-                navigate(setupRoute, { replace: true });
+                navigate('/profile-setup/househelp?step=1', { replace: true });
                 return;
               }
             } catch (err) {

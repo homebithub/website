@@ -21,6 +21,8 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
   const exemptRoutes = [
     '/profile-setup/household',
     '/profile-setup/househelp',
+    '/household-choice',
+    '/join-household',
     '/login',
     '/signup',
     '/logout',
@@ -89,6 +91,12 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
         console.log('ProfileSetupGuard - Setup status:', { isComplete, lastStep });
 
         if (!isComplete) {
+          // Household users who haven't started setup go to choice page first
+          if (profileType === 'household' && lastStep === 0) {
+            console.log('ProfileSetupGuard - Household user at step 0, redirecting to choice page');
+            navigate('/household-choice', { replace: true });
+            return;
+          }
           // Profile incomplete, redirect to setup
           const setupRoute = profileType === 'household'
             ? `/profile-setup/household?step=${lastStep + 1}`
@@ -99,13 +107,13 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
         }
       } else if (response.status === 404) {
         // No profile setup record exists - user hasn't started setup
+        if (profileType === 'household') {
+          console.log('ProfileSetupGuard - No setup record, redirecting to household choice');
+          navigate('/household-choice', { replace: true });
+          return;
+        }
         console.log("ProfileSetupGuard - No profile setup record found, starting from step 1");
-        const setupRoute = profileType === 'household'
-          ? '/profile-setup/household?step=1'
-          : '/profile-setup/househelp?step=1';
-
-        console.log('ProfileSetupGuard - No setup found, redirecting to:', setupRoute);
-        navigate(setupRoute, { replace: true });
+        navigate('/profile-setup/househelp?step=1', { replace: true });
         return;
       } else {
         // Error checking, allow navigation (fail open)

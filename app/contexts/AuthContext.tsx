@@ -161,6 +161,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             console.log("Profile setup status:", { isComplete, lastStep });
 
             if (!isComplete) {
+              // Household users who haven't started setup go to choice page first
+              if (profileType === 'household' && lastStep === 0) {
+                console.log("Household user hasn't started setup, redirecting to choice page");
+                navigate('/household-choice');
+                return;
+              }
               // Redirect to profile setup at the last completed step
               const setupRoute = profileType === "household" 
                 ? `/profile-setup/household?step=${lastStep + 1}`
@@ -172,11 +178,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
           } else if (setupResponse.status === 404) {
             // No profile setup record exists - user hasn't started setup
+            if (profileType === 'household') {
+              console.log("No profile setup record, redirecting to household choice");
+              navigate('/household-choice');
+              return;
+            }
             console.log("No profile setup record found, starting from step 1");
-            const setupRoute = profileType === "household" 
-              ? `/profile-setup/household?step=1`
-              : `/profile-setup/househelp?step=1`;
-            navigate(setupRoute);
+            navigate('/profile-setup/househelp?step=1');
             return;
           }
         } catch (err) {
