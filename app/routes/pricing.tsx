@@ -306,6 +306,7 @@ export default function Pricing() {
 
   const getFeaturesList = (features: any) => {
     const featureList = [];
+    if (!features) return featureList;
     
     if (features.messaging) featureList.push('Unlimited messaging');
     if (features.profile_views) featureList.push(`${features.profile_views === 'unlimited' ? 'Unlimited' : features.profile_views} profile views`);
