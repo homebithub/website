@@ -36,6 +36,12 @@ export type LoginResponse = {
     profile_type: string;
     email?: string;
   };
+  // Flattened fields — present when AuthContext reconstructs the object
+  // from /auth/me or localStorage
+  id?: string;
+  role?: string;
+  phone?: string;
+  email?: string;
 };
 
 export type LoginErrorResponse = {

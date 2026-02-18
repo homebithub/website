@@ -51,7 +51,6 @@ function handleBotRequest(
             <ServerRouter
                 context={remixContext}
                 url={request.url}
-                abortDelay={ABORT_DELAY}
             />,
             {
                 onAllReady() {
@@ -101,7 +100,6 @@ function handleBrowserRequest(
             <ServerRouter
                 context={remixContext}
                 url={request.url}
-                abortDelay={ABORT_DELAY}
             />,
             {
                 onShellReady() {
