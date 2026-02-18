@@ -282,59 +282,40 @@ export default function SignupPage() {
                     throw new Error(errorMsg || 'Google signup completion failed');
                 }
 
-                // /api/v1/auth/google/complete returns the same shape as LoginResponse
-                const data: AuthLoginResponse = await res.json();
-
-                if (data.token) {
-                    // Store auth data in the same format as the regular login flow
-                    localStorage.setItem('token', data.token);
-                    // Extract user object from nested structure
-                    const userData = data.user || data;
-                    localStorage.setItem('user_object', JSON.stringify(userData));
-                    localStorage.setItem('profile_type', userData.profile_type || form.profile_type);
-                    try { localStorage.setItem('userType', userData.profile_type || ''); } catch {}
-
-                    const profileType = userData.profile_type;
-
-                    // Mirror the profile setup redirect logic used in AuthContext login
-                    if (profileType === 'household' || profileType === 'househelp') {
-                        try {
-                            const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-                                headers: {
-                                    'Authorization': `Bearer ${data.token}`,
-                                },
-                            });
-
-                            if (setupResponse.ok) {
-                                const setupData = await setupResponse.json();
-                                const isComplete = setupData.is_complete || false;
-                                const lastStep = setupData.last_completed_step || 0;
-
-                                if (!isComplete) {
-                                    const setupRoute = profileType === 'household'
-                                        ? `/profile-setup/household?step=${lastStep + 1}`
-                                        : `/profile-setup/househelp?step=${lastStep + 1}`;
-
-                                    navigate(setupRoute);
-                                    return;
-                                }
-                            } else if (setupResponse.status === 404) {
-                                // No profile setup record exists - user hasn't started setup
-                                console.log("No profile setup record found, starting from step 1");
-                                const setupRoute = profileType === 'household'
-                                    ? `/profile-setup/household?step=1`
-                                    : `/profile-setup/househelp?step=1`;
-                                navigate(setupRoute);
-                                return;
-                            }
-                        } catch (err) {
-                            console.error('Failed to check profile setup status after Google signup:', err);
-                            // If this fails, fall through to default redirect below
+                // google/complete now returns the same shape as regular signup:
+                // { user: { user_id, profile_type }, verification: {...} }
+                const data = await res.json();
+                
+                const userId = data.user?.user_id;
+                const profileType = data.user?.profile_type || form.profile_type;
+                
+                if (!userId) {
+                    console.error('[SIGNUP] No user_id in Google signup response:', data);
+                    setError('Signup succeeded but response was unexpected. Please try logging in.');
+                    return;
+                }
+                
+                // Store user data temporarily (before verification)
+                localStorage.setItem('user_id', userId);
+                localStorage.setItem('profile_type', profileType);
+                
+                // Redirect to OTP verification (same as regular signup)
+                if (data.verification) {
+                    console.log('[SIGNUP] Google signup complete, redirecting to verify-otp with verification:', data.verification);
+                    navigate('/verify-otp', { 
+                        state: { 
+                            verification: data.verification,
+                            profileType: profileType 
+                        } 
+                    });
+                } else {
+                    console.warn('[SIGNUP] No verification data in Google signup response, navigating to verify-otp anyway');
+                    navigate('/verify-otp', {
+                        state: {
+                            userId: userId,
+                            profileType: profileType
                         }
-                    }
-
-                    // If profile is complete or setup check failed, send them to home
-                    navigate('/');
+                    });
                 }
                 return;
             }

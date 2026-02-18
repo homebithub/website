@@ -259,7 +259,7 @@ export default function VerifyOtpPage() {
           }
         }
 
-        // Step 2: After email OTP, go to profile setup
+        // Step 2: After email OTP, go to next onboarding step
         let path = '/';
         if (profileType === 'household' || profileType === 'househelp') {
           try {
@@ -277,6 +277,12 @@ export default function VerifyOtpPage() {
                 const lastStep = setupData.last_completed_step || 0;
 
                 if (!isComplete) {
+                  // Household users who haven't started setup go to choice page first
+                  if (profileType === 'household' && lastStep === 0) {
+                    console.log('[VERIFY-OTP] Email verified, redirecting to household choice');
+                    navigate('/household-choice');
+                    return;
+                  }
                   const setupRoute = profileType === 'household'
                     ? `/profile-setup/household?step=${lastStep + 1}`
                     : `/profile-setup/househelp?step=${lastStep + 1}`;
@@ -286,11 +292,13 @@ export default function VerifyOtpPage() {
                 }
               } else if (setupResponse.status === 404) {
                 // No profile setup record exists - user hasn't started setup
+                if (profileType === 'household') {
+                  console.log('[VERIFY-OTP] No profile setup record, redirecting to household choice');
+                  navigate('/household-choice');
+                  return;
+                }
                 console.log("[VERIFY-OTP] No profile setup record found, starting from step 1");
-                const setupRoute = profileType === 'household'
-                  ? `/profile-setup/household?step=1`
-                  : `/profile-setup/househelp?step=1`;
-                navigate(setupRoute);
+                navigate('/profile-setup/househelp?step=1');
                 return;
               }
             }
@@ -298,8 +306,8 @@ export default function VerifyOtpPage() {
             console.error('[VERIFY-OTP] Failed to check profile setup status:', err);
           }
 
-          // Fallback: start setup from step 1
-          path = profileType === 'household' ? '/profile-setup/household?step=1' : '/profile-setup/househelp?step=1';
+          // Fallback
+          path = profileType === 'household' ? '/household-choice' : '/profile-setup/househelp?step=1';
         }
         console.log('[VERIFY-OTP] Redirecting to:', path);
         navigate(path);
