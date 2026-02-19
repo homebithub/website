@@ -263,6 +263,14 @@ export const API_ENDPOINTS = {
       complete: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-contracts/${id}/complete`,
       terminate: (id: string) => `${AUTH_API_BASE_URL}/api/v1/hire-contracts/${id}/terminate`,
     },
+    employmentContracts: {
+      base: `${AUTH_API_BASE_URL}/api/v1/employment-contracts`,
+      clauses: `${AUTH_API_BASE_URL}/api/v1/employment-contracts/clauses`,
+      byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/employment-contracts/${id}`,
+      signHousehold: (id: string) => `${AUTH_API_BASE_URL}/api/v1/employment-contracts/${id}/sign-household`,
+      signHousehelp: (id: string) => `${AUTH_API_BASE_URL}/api/v1/employment-contracts/${id}/sign-househelp`,
+      forward: (id: string) => `${AUTH_API_BASE_URL}/api/v1/employment-contracts/${id}/forward`,
+    },
   },
   
   // Interest endpoints (househelps showing interest in households)
@@ -296,6 +304,14 @@ export const API_ENDPOINTS = {
       byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/payments/${id}`,
       status: (id: string) => `${AUTH_API_BASE_URL}/api/v1/payments/${id}/status`,
     },
+  },
+  // KYC endpoints
+  kyc: {
+    submit: `${AUTH_API_BASE_URL}/api/v1/kyc`,
+    me: `${AUTH_API_BASE_URL}/api/v1/kyc/me`,
+    byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/kyc/${id}`,
+    updateStatus: (id: string) => `${AUTH_API_BASE_URL}/api/v1/kyc/${id}/status`,
+    pending: `${AUTH_API_BASE_URL}/api/v1/kyc/pending`,
   },
 } as const;
 

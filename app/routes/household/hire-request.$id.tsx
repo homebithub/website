@@ -39,11 +39,36 @@ export default function HireRequestDetail() {
   const [actionLoading, setActionLoading] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
   const [contractNotes, setContractNotes] = useState('');
+  const [existingEmploymentContract, setExistingEmploymentContract] = useState<string | null>(null);
 
   useEffect(() => {
     fetchHireRequest();
     fetchCurrentUser();
   }, [id]);
+
+  // Check if an employment contract already exists for this hire request's househelp
+  useEffect(() => {
+    if (hireRequest && (hireRequest.status === 'finalized' || hireRequest.status === 'accepted')) {
+      checkExistingEmploymentContract();
+    }
+  }, [hireRequest]);
+
+  const checkExistingEmploymentContract = async () => {
+    try {
+      const response = await apiClient.auth(
+        `${API_ENDPOINTS.hiring.employmentContracts.base}?limit=1`,
+        { method: 'GET' }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        const contracts = data.data?.data || data.data || [];
+        const match = contracts.find((c: any) => c.househelp_id === hireRequest?.househelp_id);
+        if (match) setExistingEmploymentContract(match.id);
+      }
+    } catch (err) {
+      // Silently fail - not critical
+    }
+  };
 
   const fetchCurrentUser = async () => {
     try {
@@ -110,6 +135,7 @@ export default function HireRequestDetail() {
   const handleCreateContract = async () => {
     setActionLoading(true);
     try {
+      // First create the hire contract to finalize the request
       const response = await apiClient.auth(
         API_ENDPOINTS.hiring.contracts.base,
         {
@@ -128,13 +154,39 @@ export default function HireRequestDetail() {
       }
 
       const contract = await response.json();
-      alert('Contract created successfully!');
       setShowContractModal(false);
-      navigate(`/household/contracts/${contract.id}`);
+
+      // Navigate to employment contract page pre-filled with hire request data
+      const params = new URLSearchParams({
+        househelp_id: hireRequest!.househelp_id,
+        hire_contract_id: contract.id || contract.data?.id || '',
+        job_type: hireRequest!.job_type || '',
+        salary: String(hireRequest!.salary_offered || ''),
+        salary_frequency: hireRequest!.salary_frequency || '',
+      });
+      if (hireRequest!.start_date) params.set('start_date', hireRequest!.start_date.split('T')[0]);
+      if (contractNotes) params.set('notes', contractNotes);
+
+      navigate(`/household/employment-contract?${params.toString()}`);
     } catch (err: any) {
       alert(err.message || 'Failed to create contract');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handleNavigateToEmploymentContract = () => {
+    if (existingEmploymentContract) {
+      navigate(`/household/employment-contract?id=${existingEmploymentContract}`);
+    } else {
+      const params = new URLSearchParams({
+        househelp_id: hireRequest!.househelp_id,
+        job_type: hireRequest!.job_type || '',
+        salary: String(hireRequest!.salary_offered || ''),
+        salary_frequency: hireRequest!.salary_frequency || '',
+      });
+      if (hireRequest!.start_date) params.set('start_date', hireRequest!.start_date.split('T')[0]);
+      navigate(`/household/employment-contract?${params.toString()}`);
     }
   };
 
@@ -432,6 +484,16 @@ export default function HireRequestDetail() {
                   className="w-full px-4 py-1.5 bg-green-600 text-white rounded-xl hover:bg-green-700 font-medium transition-colors mb-3"
                 >
                   Create Contract
+                </button>
+              )}
+
+              {hireRequest.status === 'finalized' && (
+                <button
+                  onClick={handleNavigateToEmploymentContract}
+                  className="w-full px-4 py-1.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-medium transition-colors mb-3 flex items-center justify-center gap-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  {existingEmploymentContract ? 'View Employment Contract' : 'Create Employment Contract'}
                 </button>
               )}
 

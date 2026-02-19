@@ -29,6 +29,7 @@ interface Subscription {
   current_period_start: string;
   current_period_end: string;
   trial_end?: string;
+  metadata?: Record<string, any>;
   plan?: SubscriptionPlan;
 }
 
@@ -313,7 +314,14 @@ export function SubscriptionWallet() {
                                 {subscription.plan?.description}
                               </p>
                             </div>
-                            {getStatusBadge(subscription.status)}
+                            <div className="flex items-center gap-2">
+                              {subscription.metadata?.early_adopter && (
+                                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                                  Early Adopter
+                                </span>
+                              )}
+                              {getStatusBadge(subscription.status)}
+                            </div>
                           </div>
                           
                           <div className="grid grid-cols-2 gap-4 mt-4">

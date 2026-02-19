@@ -163,13 +163,13 @@ export default function HouseholdProfile() {
           const docsResponse = await docsRes.json();
           console.log('Documents response:', docsResponse);
           
-          // Extract documents array from nested structure
-          const docsData = docsResponse.data?.documents || docsResponse.documents || docsResponse.data || docsResponse;
+          // Extract documents array from nested structure (gRPC bridge returns {data: {data: [...]}})
+          const docsData = docsResponse.data?.data || docsResponse.data?.documents || docsResponse.data || docsResponse;
           console.log('Extracted documents data:', docsData);
           
           // Ensure it's an array before mapping
           const documentsArray = Array.isArray(docsData) ? docsData : [];
-          const photoUrls = documentsArray.map((doc: any) => doc.url || doc.public_url).filter(Boolean) || [];
+          const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean) || [];
           setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
         }
       } catch (err: any) {
@@ -407,19 +407,22 @@ export default function HouseholdProfile() {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         xhr.send(formData);
       });
-      const imageUrl = uploadData.documents?.[0]?.url || uploadData.documents?.[0]?.public_url;
+      const docs = uploadData.data || uploadData.documents || [];
+      const firstDoc = Array.isArray(docs) ? docs[0] : null;
+      const imageUrl = firstDoc?.public_url || firstDoc?.signed_url || firstDoc?.url;
 
       if (!imageUrl) throw new Error('No image URL returned');
 
-      // Refetch profile to get updated photos from documents table
-      const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+      // Refetch photos from documents table
+      const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      
-      if (profileRes.ok) {
-        const profileResponse = await profileRes.json();
-        const profileData = profileResponse.data || profileResponse;
-        setProfile(profileData);
+      if (docsRes.ok) {
+        const docsResponse = await docsRes.json();
+        const docsData = docsResponse.data?.data || docsResponse.data || [];
+        const documentsArray = Array.isArray(docsData) ? docsData : [];
+        const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+        setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
       }
       
       // Reset file input
@@ -465,10 +468,10 @@ export default function HouseholdProfile() {
         const docsResponse = await docsRes.json();
         console.log('Documents response for deletion:', docsResponse);
         
-        // Extract documents array from nested structure
-        const docsData = docsResponse.data?.documents || docsResponse.documents || docsResponse.data || docsResponse;
-        const documentsArray = Array.isArray(docsData) ? docsData : [];
-        const document = documentsArray.find((doc: any) => doc.url === photoUrl);
+        // Extract documents array from nested structure (gRPC bridge returns {data: {data: [...]}})
+        const allDocs = docsResponse.data?.data || docsResponse.data || [];
+        const documentsArray = Array.isArray(allDocs) ? allDocs : [];
+        const document = documentsArray.find((doc: any) => (doc.public_url || doc.signed_url || doc.url) === photoUrl);
 
         // Step 2: Delete from documents table and S3
         if (document?.id) {
@@ -486,17 +489,18 @@ export default function HouseholdProfile() {
         }
       }
 
-      // Step 3: Refetch profile to get updated photos from documents table
-      setDeleteStatus('Refreshing profile...');
-      const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
+      // Step 3: Refetch photos from documents table
+      setDeleteStatus('Refreshing photos...');
+      const refreshRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!profileRes.ok) throw new Error('Failed to refresh profile');
-      
-      const profileResponse = await profileRes.json();
-      const profileData = profileResponse.data || profileResponse;
-      setProfile(profileData);
+      if (refreshRes.ok) {
+        const refreshData = await refreshRes.json();
+        const refreshDocs = refreshData.data?.data || refreshData.data || [];
+        const docsArray = Array.isArray(refreshDocs) ? refreshDocs : [];
+        const photoUrls = docsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+        setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
+      }
     } catch (err: any) {
       console.error('Error deleting photo:', err);
       setUploadError(err.message || 'Failed to delete photo');

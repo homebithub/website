@@ -15,6 +15,7 @@ import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSubscription } from '~/hooks/useSubscription';
+import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 
 type Conversation = {
   id: string;
@@ -342,6 +343,13 @@ export default function InboxPage() {
   
   // Track image loading state for avatars
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
+
+  // Fetch profile photos for conversation participants
+  const participantUserIds = useMemo(() => {
+    const role = currentUserProfileType?.toLowerCase();
+    return items.map(c => role === 'household' ? c.househelp_id : c.household_id).filter(Boolean);
+  }, [items, currentUserProfileType]);
+  const participantPhotos = useProfilePhotos(participantUserIds);
 
   // Hydrate conversations with participant profile information from the auth service
   useEffect(() => {
@@ -1212,8 +1220,15 @@ export default function InboxPage() {
                     isActive ? 'bg-purple-50 dark:bg-slate-800' : ''
                   }`}
                 >
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
-                    {(c.participant_name || 'U')[0].toUpperCase()}
+                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-500 flex items-center justify-center text-white font-semibold flex-shrink-0 overflow-hidden">
+                    {(() => {
+                      const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? c.househelp_id : c.household_id;
+                      const photoUrl = c.participant_avatar || (otherUserId && participantPhotos[otherUserId]);
+                      if (photoUrl) {
+                        return <img src={photoUrl} alt="" className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />;
+                      }
+                      return (c.participant_name || 'U')[0].toUpperCase();
+                    })()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
@@ -1291,32 +1306,38 @@ export default function InboxPage() {
             className="flex items-center gap-3 flex-1 hover:bg-purple-50 dark:hover:bg-slate-800/60 rounded-xl p-2 -m-2 transition-colors"
           >
             <div className="w-10 h-10 rounded-full relative overflow-hidden border-2 border-purple-300 dark:border-purple-500 flex-shrink-0">
-              {selectedConversation.participant_avatar ? (
-                <>
-                  {/* Skeleton loader */}
-                  {imageLoadingStates[`header-${selectedConversation.id}`] !== false && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
-                  )}
-                  <img
-                    src={selectedConversation.participant_avatar}
-                    alt={selectedConversation.participant_name || 'User'}
-                    className={`w-full h-full object-cover transition-opacity duration-300 ${
-                      imageLoadingStates[`header-${selectedConversation.id}`] === false ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    onLoad={() => {
-                      setImageLoadingStates(prev => ({ ...prev, [`header-${selectedConversation.id}`]: false }));
-                    }}
-                    onError={(e) => {
-                      setImageLoadingStates(prev => ({ ...prev, [`header-${selectedConversation.id}`]: false }));
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
-                </>
-              ) : (
-                <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
-                  {(selectedConversation.participant_name || 'U')[0].toUpperCase()}
-                </div>
-              )}
+              {(() => {
+                const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id;
+                const headerPhoto = selectedConversation.participant_avatar || (otherUserId && participantPhotos[otherUserId]);
+                if (headerPhoto) {
+                  return (
+                    <>
+                      {imageLoadingStates[`header-${selectedConversation.id}`] !== false && (
+                        <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                      )}
+                      <img
+                        src={headerPhoto}
+                        alt={selectedConversation.participant_name || 'User'}
+                        className={`w-full h-full object-cover transition-opacity duration-300 ${
+                          imageLoadingStates[`header-${selectedConversation.id}`] === false ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        onLoad={() => {
+                          setImageLoadingStates(prev => ({ ...prev, [`header-${selectedConversation.id}`]: false }));
+                        }}
+                        onError={(e) => {
+                          setImageLoadingStates(prev => ({ ...prev, [`header-${selectedConversation.id}`]: false }));
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </>
+                  );
+                }
+                return (
+                  <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
+                    {(selectedConversation.participant_name || 'U')[0].toUpperCase()}
+                  </div>
+                );
+              })()}
             </div>
             
             <div className="text-left">

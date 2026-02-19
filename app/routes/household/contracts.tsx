@@ -129,6 +129,20 @@ export default function HouseholdContracts() {
           </p>
         </div>
 
+        {/* Employment Contracts Link */}
+        <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-between">
+          <div>
+            <h3 className="font-medium text-purple-900 dark:text-purple-200">Formal Employment Contracts</h3>
+            <p className="text-sm text-purple-700 dark:text-purple-300">Create, sign, and manage formal employment contracts with your househelps</p>
+          </div>
+          <button
+            onClick={() => navigate('/household/employment-contracts')}
+            className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors whitespace-nowrap text-sm font-medium"
+          >
+            View Employment Contracts
+          </button>
+        </div>
+
         {/* Tabs */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm mb-6">
           <div className="border-b border-gray-200 dark:border-gray-700">

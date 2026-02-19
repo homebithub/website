@@ -7,6 +7,16 @@ import CustomSelect from '~/components/ui/CustomSelect';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
+interface AvailabilitySchedule {
+  monday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  tuesday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  wednesday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  thursday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  friday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  saturday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+  sunday?: { morning?: boolean; afternoon?: boolean; evening?: boolean };
+}
+
 interface HireRequestModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -14,6 +24,14 @@ interface HireRequestModalProps {
   househelpName: string;
   househelpSalaryExpectation?: number;
   househelpSalaryFrequency?: string;
+  househelpOffersLiveIn?: boolean;
+  househelpOffersDayWorker?: boolean;
+  househelpAvailability?: AvailabilitySchedule;
+  househelpAvailableFrom?: string;
+  househelpLocation?: string;
+  househelpSkills?: string[];
+  househelpLanguages?: string[];
+  househelpYearsOfExperience?: number;
 }
 
 interface WorkSchedule {
@@ -50,40 +68,84 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
   househelpName,
   househelpSalaryExpectation,
   househelpSalaryFrequency,
+  househelpOffersLiveIn,
+  househelpOffersDayWorker,
+  househelpAvailability,
+  househelpAvailableFrom,
+  househelpLocation,
+  househelpSkills,
+  househelpLanguages,
+  househelpYearsOfExperience,
 }) => {
-  const [jobType, setJobType] = useState<string>('live-in');
-  const [startDate, setStartDate] = useState('');
+  // Derive default job type from househelp profile
+  const deriveDefaultJobType = (): string => {
+    if (househelpOffersLiveIn && !househelpOffersDayWorker) return 'live-in';
+    if (househelpOffersDayWorker && !househelpOffersLiveIn) return 'day-worker';
+    return 'live-in';
+  };
+
+  // Derive work schedule from househelp availability
+  const deriveWorkSchedule = (): WorkSchedule => {
+    const defaultSlot = { morning: true, afternoon: true, evening: false };
+    const defaultSchedule: WorkSchedule = {
+      monday: { ...defaultSlot }, tuesday: { ...defaultSlot }, wednesday: { ...defaultSlot },
+      thursday: { ...defaultSlot }, friday: { ...defaultSlot },
+      saturday: { morning: false, afternoon: false, evening: false },
+      sunday: { morning: false, afternoon: false, evening: false },
+    };
+    if (!househelpAvailability) return defaultSchedule;
+    const schedule: WorkSchedule = { ...defaultSchedule };
+    for (const day of DAYS) {
+      const avail = househelpAvailability[day];
+      if (avail) {
+        schedule[day] = {
+          morning: avail.morning ?? false,
+          afternoon: avail.afternoon ?? false,
+          evening: avail.evening ?? false,
+        };
+      }
+    }
+    return schedule;
+  };
+
+  const [jobType, setJobType] = useState<string>(deriveDefaultJobType());
+  const [startDate, setStartDate] = useState(househelpAvailableFrom || '');
   const [salaryOffered, setSalaryOffered] = useState<string>(
     househelpSalaryExpectation ? String(househelpSalaryExpectation) : ''
   );
   const [salaryFrequency, setSalaryFrequency] = useState(househelpSalaryFrequency || 'monthly');
   const [specialRequirements, setSpecialRequirements] = useState('');
-  const [workSchedule, setWorkSchedule] = useState<WorkSchedule>({
-    monday: { morning: true, afternoon: true, evening: false },
-    tuesday: { morning: true, afternoon: true, evening: false },
-    wednesday: { morning: true, afternoon: true, evening: false },
-    thursday: { morning: true, afternoon: true, evening: false },
-    friday: { morning: true, afternoon: true, evening: false },
-    saturday: { morning: false, afternoon: false, evening: false },
-    sunday: { morning: false, afternoon: false, evening: false },
-  });
+  const [workSchedule, setWorkSchedule] = useState<WorkSchedule>(deriveWorkSchedule());
   
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  // Determine which job types the househelp offers
+  const availableJobTypes = (() => {
+    const types: string[] = [];
+    if (househelpOffersLiveIn) types.push('live-in');
+    if (househelpOffersDayWorker) types.push('day-worker');
+    // Always include part-time as an option
+    types.push('part-time');
+    // If no specific offerings, show all
+    if (!househelpOffersLiveIn && !househelpOffersDayWorker) return ['live-in', 'day-worker', 'part-time'];
+    return types;
+  })();
+
   // Reset form when modal opens
   useEffect(() => {
     if (isOpen) {
-      setJobType('live-in');
-      setStartDate('');
+      setJobType(deriveDefaultJobType());
+      setStartDate(househelpAvailableFrom || '');
       setSalaryOffered(househelpSalaryExpectation ? String(househelpSalaryExpectation) : '');
       setSalaryFrequency(househelpSalaryFrequency || 'monthly');
+      setWorkSchedule(deriveWorkSchedule());
       setSpecialRequirements('');
       setError('');
       setSuccess(false);
     }
-  }, [isOpen, househelpSalaryExpectation, househelpSalaryFrequency]);
+  }, [isOpen, househelpSalaryExpectation, househelpSalaryFrequency, househelpOffersLiveIn, househelpOffersDayWorker, househelpAvailability, househelpAvailableFrom]);
 
   const toggleTimeSlot = (day: DayKey, slot: TimeSlotKey) => {
     setWorkSchedule(prev => ({
@@ -205,8 +267,47 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Househelp Info */}
             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Hiring</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{househelpName}</p>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Hiring</p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">{househelpName}</p>
+                </div>
+                {househelpYearsOfExperience != null && househelpYearsOfExperience > 0 && (
+                  <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-800/40 text-purple-700 dark:text-purple-300">
+                    {househelpYearsOfExperience} yr{househelpYearsOfExperience !== 1 ? 's' : ''} exp
+                  </span>
+                )}
+              </div>
+              {/* Profile summary chips */}
+              <div className="flex flex-wrap gap-2 mt-3">
+                {househelpOffersLiveIn && (
+                  <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300">Live In</span>
+                )}
+                {househelpOffersDayWorker && (
+                  <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">Day Worker</span>
+                )}
+                {househelpLocation && (
+                  <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">{househelpLocation}</span>
+                )}
+                {househelpSalaryExpectation && househelpSalaryFrequency && (
+                  <span className="inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300">
+                    Expects KES {househelpSalaryExpectation.toLocaleString()} / {househelpSalaryFrequency}
+                  </span>
+                )}
+              </div>
+              {househelpSkills && househelpSkills.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {househelpSkills.slice(0, 6).map((skill) => (
+                    <span key={skill} className="text-xs px-2 py-0.5 rounded-full bg-white/60 dark:bg-purple-800/30 text-gray-600 dark:text-purple-300">{skill}</span>
+                  ))}
+                  {househelpSkills.length > 6 && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-white/60 dark:bg-purple-800/30 text-gray-500 dark:text-purple-400">+{househelpSkills.length - 6} more</span>
+                  )}
+                </div>
+              )}
+              {househelpLanguages && househelpLanguages.length > 0 && (
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">Languages: {househelpLanguages.join(', ')}</p>
+              )}
             </div>
 
             {/* Job Type */}
@@ -215,7 +316,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                 Job Type *
               </label>
               <div className="grid grid-cols-2 gap-3">
-                {['live-in', 'day-worker', 'part-time'].map((type) => (
+                {availableJobTypes.map((type) => (
                   <button
                     key={type}
                     type="button"

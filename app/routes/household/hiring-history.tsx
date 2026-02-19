@@ -61,6 +61,27 @@ interface Interest {
   };
 }
 
+const extractEnvelopeObject = <T = any,>(raw: any): T =>
+  (raw?.data?.data || raw?.data || raw || {}) as T;
+
+const extractEnvelopeArray = <T = any,>(raw: any): T[] => {
+  const payload: any = extractEnvelopeObject(raw);
+  if (Array.isArray(payload)) return payload as T[];
+  if (Array.isArray(payload?.data)) return payload.data as T[];
+  if (Array.isArray(payload?.items)) return payload.items as T[];
+  if (typeof payload === 'object' && payload !== null) {
+    const firstArray = Object.values(payload).find(Array.isArray);
+    if (firstArray) return firstArray as T[];
+  }
+  return [];
+};
+
+const extractTotal = (raw: any, fallbackLength: number): number => {
+  const payload: any = extractEnvelopeObject(raw);
+  const total = payload?.total ?? raw?.total;
+  return typeof total === 'number' ? total : fallbackLength;
+};
+
 const CANCEL_REASONS = [
   { value: 'schedule_change', label: 'My schedule changed' },
   { value: 'found_alternative', label: 'Found another househelp' },
@@ -109,6 +130,9 @@ export default function HiringHistory() {
   const [cancelMessage, setCancelMessage] = useState('');
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [contractCreating, setContractCreating] = useState<string | null>(null);
+  // Map of househelp_id -> employment contract id for quick lookup
+  const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, string>>({});
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
 
@@ -125,6 +149,30 @@ export default function HiringHistory() {
       console.warn('Failed to remove househelp from shortlist:', err);
     }
   };
+
+  // Fetch employment contracts to build lookup map
+  useEffect(() => {
+    const fetchECMap = async () => {
+      try {
+        const response = await apiClient.auth(
+          `${API_ENDPOINTS.hiring.employmentContracts.base}?limit=50`,
+          { method: 'GET' }
+        );
+        if (response.ok) {
+          const raw = await response.json();
+          const items = extractEnvelopeArray<any>(raw);
+          const map: Record<string, string> = {};
+          for (const ec of items) {
+            if (ec.househelp_id) map[ec.househelp_id] = ec.id;
+          }
+          setEmploymentContractMap(map);
+        }
+      } catch (err) {
+        // Non-critical
+      }
+    };
+    fetchECMap();
+  }, []);
 
   const getDaysRemaining = (expiresAt?: string) => {
     if (!expiresAt) return null;
@@ -184,9 +232,10 @@ export default function HiringHistory() {
         throw new Error('Failed to fetch interested househelps');
       }
 
-      const data = await response.json();
-      setInterests(data.items || []);
-      setInterestsTotal(data.total || 0);
+      const raw = await response.json();
+      const items = extractEnvelopeArray<Interest>(raw);
+      setInterests(items);
+      setInterestsTotal(extractTotal(raw, items.length));
     } catch (err: any) {
       setError(err.message || 'Failed to load interested househelps');
     } finally {
@@ -223,13 +272,60 @@ export default function HiringHistory() {
         throw new Error('Failed to fetch hire requests');
       }
 
-      const data = await response.json();
-      setHireRequests(data.data || []);
-      setTotal(data.total || 0);
+      const raw = await response.json();
+      const items = extractEnvelopeArray<HireRequest>(raw);
+      setHireRequests(items);
+      setTotal(extractTotal(raw, items.length));
     } catch (err: any) {
       setError(err.message || 'Failed to load hiring history');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const createContract = async (request: HireRequest) => {
+    setContractCreating(request.id);
+    try {
+      const response = await apiClient.auth(API_ENDPOINTS.hiring.contracts.base, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hire_request_id: request.id }),
+      });
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to create contract');
+      }
+      const contract = await response.json();
+      // Navigate to employment contract page pre-filled with hire request data
+      const params = new URLSearchParams({
+        househelp_id: request.househelp_id,
+        hire_contract_id: contract.id || contract.data?.id || '',
+        job_type: request.job_type || '',
+        salary: String(request.salary_offered || ''),
+        salary_frequency: request.salary_frequency || '',
+      });
+      if (request.start_date) params.set('start_date', request.start_date.split('T')[0]);
+      navigate(`/household/employment-contract?${params.toString()}`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to create contract');
+    } finally {
+      setContractCreating(null);
+    }
+  };
+
+  const navigateToEmploymentContract = (request: HireRequest) => {
+    const existingECId = employmentContractMap[request.househelp_id];
+    if (existingECId) {
+      navigate(`/household/employment-contract?id=${existingECId}`);
+    } else {
+      const params = new URLSearchParams({
+        househelp_id: request.househelp_id,
+        job_type: request.job_type || '',
+        salary: String(request.salary_offered || ''),
+        salary_frequency: request.salary_frequency || '',
+      });
+      if (request.start_date) params.set('start_date', request.start_date.split('T')[0]);
+      navigate(`/household/employment-contract?${params.toString()}`);
     }
   };
 
@@ -367,6 +463,7 @@ export default function HiringHistory() {
       await apiClient.auth(API_ENDPOINTS.interests.accept(interest.id), { method: 'PUT' });
       fetchInterests();
       setInterestsCount(prev => Math.max(0, prev - 1));
+      window.dispatchEvent(new Event('hiring-updated'));
     } catch (err) {
       console.error('Failed to accept interest:', err);
     }
@@ -377,6 +474,7 @@ export default function HiringHistory() {
       await apiClient.auth(API_ENDPOINTS.interests.decline(interest.id), { method: 'PUT' });
       fetchInterests();
       setInterestsCount(prev => Math.max(0, prev - 1));
+      window.dispatchEvent(new Event('hiring-updated'));
     } catch (err) {
       console.error('Failed to decline interest:', err);
     }
@@ -715,6 +813,27 @@ export default function HiringHistory() {
                       </button>
                     )}
 
+                    {request.status === 'accepted' && (
+                      <button
+                        onClick={() => createContract(request)}
+                        disabled={contractCreating === request.id}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-1 text-sm rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold shadow-lg shadow-green-500/30 hover:from-green-700 hover:to-emerald-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-500 flex-1 disabled:opacity-50"
+                      >
+                        <FileText className="w-4 h-4" />
+                        {contractCreating === request.id ? 'Creating...' : 'Create Contract'}
+                      </button>
+                    )}
+
+                    {request.status === 'finalized' && (
+                      <button
+                        onClick={() => navigateToEmploymentContract(request)}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-1 text-sm rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg shadow-blue-500/30 hover:from-blue-700 hover:to-purple-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 flex-1"
+                      >
+                        <FileText className="w-4 h-4" />
+                        {employmentContractMap[request.househelp_id] ? 'View Employment Contract' : 'Create Employment Contract'}
+                      </button>
+                    )}
+
                   </div>
                 </div>
               </div>
@@ -883,6 +1002,58 @@ export default function HiringHistory() {
       )}
 
       <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 pt-2">
+        {selectedRequest.status === 'finalized' && (
+          <button
+            onClick={() => {
+              navigateToEmploymentContract(selectedRequest);
+              setSelectedRequest(null);
+            }}
+            className="
+              flex-1 inline-flex items-center justify-center gap-2
+              px-5 sm:px-6 py-1 sm:py-1.5
+              text-sm sm:text-base
+              rounded-xl sm:rounded-2xl
+              bg-gradient-to-r from-blue-600 to-purple-600
+              text-white font-semibold
+              shadow-lg shadow-blue-500/30
+              hover:from-blue-700 hover:to-purple-700
+              transition-all
+              focus:outline-none focus-visible:ring-2
+              focus-visible:ring-offset-2 focus-visible:ring-blue-500
+            "
+          >
+            <FileText className="w-4 h-4" />
+            {employmentContractMap[selectedRequest.househelp_id] ? 'View Employment Contract' : 'Create Employment Contract'}
+          </button>
+        )}
+
+        {selectedRequest.status === 'accepted' && (
+          <button
+            onClick={() => {
+              createContract(selectedRequest);
+              setSelectedRequest(null);
+            }}
+            disabled={contractCreating === selectedRequest.id}
+            className="
+              flex-1 inline-flex items-center justify-center gap-2
+              px-5 sm:px-6 py-1 sm:py-1.5
+              text-sm sm:text-base
+              rounded-xl sm:rounded-2xl
+              bg-gradient-to-r from-green-600 to-emerald-600
+              text-white font-semibold
+              shadow-lg shadow-green-500/30
+              hover:from-green-700 hover:to-emerald-700
+              transition-all
+              focus:outline-none focus-visible:ring-2
+              focus-visible:ring-offset-2 focus-visible:ring-green-500
+              disabled:opacity-60 disabled:cursor-not-allowed
+            "
+          >
+            <FileText className="w-4 h-4" />
+            {contractCreating === selectedRequest.id ? 'Creating...' : 'Create Contract'}
+          </button>
+        )}
+
         <button
           onClick={() => {
             const profileId =

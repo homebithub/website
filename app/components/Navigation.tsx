@@ -7,6 +7,7 @@ import { Waitlist } from "~/components/features/Waitlist";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { useProfileSetupStatus } from "~/hooks/useProfileSetupStatus";
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -17,6 +18,7 @@ const navigation = [
 
 export function Navigation() {
     const { user, logout, loading } = useAuth();
+    const { isInSetupMode } = useProfileSetupStatus();
     const [profileType, setProfileType] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
     const [shortlistCount, setShortlistCount] = useState<number>(0);
@@ -109,26 +111,50 @@ export function Navigation() {
         }
     };
 
-    // Fetch hire request count (pending requests for househelps, or all for households)
-    const fetchHireRequestCount = async () => {
+    // Fetch hiring badge count: pending items the user has NOT acted upon
+    // Household: pending interests from househelps + pending hire requests received
+    // Househelp: pending hire requests received from households
+    const fetchHireRequestCount = async (overrideProfileType?: string | null) => {
         try {
             const token = localStorage.getItem("token");
             if (!token) return;
 
-            const status = profileType === 'househelp' ? 'pending' : '';
-            const params = status ? `?status=${status}&limit=100` : '?limit=100';
+            const pt = overrideProfileType ?? profileType;
+            let total = 0;
 
-            const res = await fetch(`${API_BASE_URL}/api/v1/hire-requests${params}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            if (pt === 'household') {
+                // 1. Count pending/viewed interests from househelps (not yet accepted/declined)
+                const interestsRes = await fetch(`${API_BASE_URL}/api/v1/interests/household`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (interestsRes.ok) {
+                    const iData = await interestsRes.json();
+                    const interests = iData.data?.data || iData.data || [];
+                    if (Array.isArray(interests)) {
+                        total += interests.filter((i: any) => i.status === 'pending' || i.status === 'viewed').length;
+                    }
+                }
 
-            if (res.ok) {
-                const data = await res.json();
-                const count = profileType === 'househelp'
-                    ? (data.total || 0) // Pending requests for househelps
-                    : (Array.isArray(data.data) ? data.data.filter((req: any) => req.status === 'pending' || req.status === 'accepted').length : 0); // Active requests for households
-                setHireRequestCount(count);
+                // 2. Count pending hire requests (ones where househelp hasn't responded yet)
+                const hireRes = await fetch(`${API_BASE_URL}/api/v1/hire-requests?status=pending&limit=100`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (hireRes.ok) {
+                    const hData = await hireRes.json();
+                    total += hData.total || (Array.isArray(hData.data) ? hData.data.length : 0);
+                }
+            } else if (pt === 'househelp') {
+                // Count pending hire requests received from households
+                const res = await fetch(`${API_BASE_URL}/api/v1/hire-requests?status=pending&limit=100`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    total = data.total || (Array.isArray(data.data) ? data.data.length : 0);
+                }
             }
+
+            setHireRequestCount(total);
         } catch (error) {
             console.error("Failed to fetch hire request count:", error);
         }
@@ -161,7 +187,7 @@ export function Navigation() {
                     // Fetch counts for authenticated users
                     fetchShortlistCount();
                     fetchInboxCount();
-                    fetchHireRequestCount();
+                    fetchHireRequestCount(profileType);
                 } else {
                     setProfileType(null);
                     setUserName(null);
@@ -188,11 +214,17 @@ export function Navigation() {
             fetchInboxCount();
         };
 
+        const handleHiringUpdate = () => {
+            fetchHireRequestCount();
+        };
+
         window.addEventListener('shortlist-updated', handleShortlistUpdate);
         window.addEventListener('inbox-updated', handleInboxUpdate);
+        window.addEventListener('hiring-updated', handleHiringUpdate);
         return () => {
             window.removeEventListener('shortlist-updated', handleShortlistUpdate);
             window.removeEventListener('inbox-updated', handleInboxUpdate);
+            window.removeEventListener('hiring-updated', handleHiringUpdate);
         };
     }, []);
 
@@ -253,6 +285,11 @@ export function Navigation() {
 
     // On app subdomain without an authenticated user, hide navbar completely
     if (isAppHost && !user) {
+        return null;
+    }
+
+    // Hide navbar during profile setup flow
+    if (isInSetupMode) {
         return null;
     }
 
@@ -317,7 +354,7 @@ export function Navigation() {
                         <div className="flex items-center space-x-3">
                             <button
   onClick={() => setIsWaitlistOpen(true)}
-  className="hidden lg:block glow-button bg-gradient-to-r from-purple-600 to-pink-600 text-white text-lg sm:text-xl font-medium rounded-xl shadow-lg px-6 py-1.5 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
+  className="hidden lg:block glow-button bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium rounded-xl shadow-lg px-4 py-1 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
 >
   Join Waitlist
 </button>
@@ -325,13 +362,13 @@ export function Navigation() {
                                 <>
                                     <Link
                                         to="/login"
-                                        className="link hidden lg:block text-lg font-medium rounded-xl transition-all duration-200 px-5 py-1.5 text-primary-600 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500 hover:bg-primary-100 dark:hover:bg-purple-900/30 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
+                                        className="link hidden lg:block text-sm font-medium rounded-xl transition-all duration-200 px-4 py-1 text-primary-600 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500 hover:bg-primary-100 dark:hover:bg-purple-900/30 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-primary-500 dark:focus-visible:ring-purple-500"
                                     >
                                         Log in
                                     </Link>
                                     <Link
                                         to="/signup"
-                                        className="hidden lg:block px-6 py-1.5 text-lg rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+                                        className="hidden lg:block px-4 py-1 text-sm rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
                                     >
                                         Sign up
                                     </Link>
@@ -457,7 +494,7 @@ export function Navigation() {
   {({ active }) => (
     <button
       onClick={() => setIsWaitlistOpen(true)}
-      className={`lg:hidden w-full text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium block px-5 py-1 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500`}
+      className={`lg:hidden w-full text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium block px-4 py-1 text-sm rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500`}
     >
       Join Waitlist
     </button>
@@ -469,7 +506,7 @@ export function Navigation() {
                                                         {({ active }) => (
                                                             <Link
                                                                 to="/login"
-                                                                className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-2 border-transparent scale-105' : 'text-primary-700 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500'} block px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 my-1 hover:scale-105`}
+                                                                className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white border-2 border-transparent scale-105' : 'text-primary-700 dark:text-purple-400 border-2 border-primary-600 dark:border-purple-500'} block px-4 py-1 text-sm rounded-xl transition-all duration-200 mx-2 my-1 hover:scale-105`}
                                                             >
                                                                 Log in
                                                             </Link>
@@ -479,7 +516,7 @@ export function Navigation() {
                                                         {({ active }) => (
                                                             <Link
                                                                 to="/signup"
-                                                                className={`font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-5 py-1 text-lg rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
+                                                                className={`font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-4 py-1 text-sm rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
                                                             >
                                                                 Sign up
                                                             </Link>

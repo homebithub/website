@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '~/contexts/useAuth';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { Footer } from '~/components/Footer';
 import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupContext';
 import { API_BASE_URL } from '~/config/api';
 
@@ -20,7 +18,7 @@ import MyKids from '~/components/MyKids';
 import Certifications from '~/components/Certifications';
 import SalaryExpectations from '~/components/SalaryExpectations';
 import Bio from '~/components/Bio';
-import Photos from '~/components/Photos';
+import KYCUpload from '~/components/KYCUpload';
 import PreferredWorkEnvironment from '~/components/PreferredWorkEnvironment';
 import References from '~/components/References';
 import BackgroundCheckConsent from '~/components/BackgroundCheckConsent';
@@ -64,8 +62,8 @@ const STEPS = [
   // Step 12: About You / Bio
   { id: 'bio', title: 'About You', component: Bio, description: 'Tell your story', skippable: false },
   
-  // Step 13: Photos (Optional but Recommended)
-  { id: 'photos', title: 'Photos', component: Photos, description: 'Add your profile photos', skippable: true },
+  // Step 13: KYC - Identity Verification & Photos
+  { id: 'kyc', title: 'Identity Verification & Photos', component: KYCUpload, description: 'Verify your identity and add profile photos', skippable: true },
 ];
 
 function HousehelpProfileSetupContent() {
@@ -343,7 +341,6 @@ function HousehelpProfileSetupContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
       
       <main className="flex-1">
@@ -438,11 +435,11 @@ function HousehelpProfileSetupContent() {
             <div className="px-4 sm:px-6 py-6 sm:py-8">
               <div className="max-w-2xl mx-auto">
                 {/* Components that need userType prop */}
-                {STEPS[currentStep].id === 'photos' ? (
+                {STEPS[currentStep].id === 'kyc' ? (
                   <CurrentComponent 
                     userType="househelp" 
                     onComplete={async () => {
-                      console.log('Photos onComplete callback triggered!');
+                      console.log('KYC onComplete callback triggered!');
                       // Show disclaimer modal before completing
                       setDisclaimerChecked(false);
                       setShowDisclaimer(true);
@@ -686,7 +683,6 @@ function HousehelpProfileSetupContent() {
       )}
       
       </PurpleThemeWrapper>
-      <Footer />
     </div>
   );
 }

@@ -13,6 +13,7 @@ import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholder
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 
 type ShortlistItem = {
   id: string;
@@ -36,6 +37,11 @@ export default function ShortlistPage() {
   const limit = 20;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [profiles, setProfiles] = useState<Record<string, any>>({});
+
+  // Fetch profile photos from documents table
+  const shortlistUserIds = useMemo(() => items.map(s => s.user_id).filter(Boolean), [items]);
+  const profilePhotos = useProfilePhotos(shortlistUserIds);
+
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
   const fetchedProfilesRef = useRef<Set<string>>(new Set());
@@ -295,7 +301,7 @@ export default function ShortlistPage() {
                       <div className="flex justify-center mb-4">
                         <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-2xl font-bold shadow-lg overflow-hidden relative">
                           {(() => {
-                            const imageUrl = prof?.avatar_url || owner?.avatar_url;
+                            const imageUrl = prof?.avatar_url || owner?.avatar_url || (s.user_id && profilePhotos[s.user_id]);
                             if (imageUrl) {
                               return (
                                 <>
