@@ -27,7 +27,7 @@ spec:
               weight: 100
       containers:
         - name: website
-          image: ghcr.io/homebithub/website:20260218223258
+          image: ghcr.io/homebithub/website:20260219205041
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
