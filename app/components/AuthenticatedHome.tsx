@@ -14,6 +14,7 @@ import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
+import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 
 interface HousehelpProfile {
   id: number | string;
@@ -266,6 +267,11 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   };
   const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
   const [househelps, setHousehelps] = useState<HousehelpProfile[]>([]);
+
+  // Fetch profile photos from documents table for all househelps
+  const househelpUserIds = useMemo(() => househelps.map(h => h.user_id || String(h.id)).filter(Boolean), [househelps]);
+  const profilePhotos = useProfilePhotos(househelpUserIds);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
@@ -850,7 +856,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                         {/* Profile Picture */}
                         <div className={`flex ${isHome2 ? 'justify-start' : 'justify-center'} ${isHome2 ? 'mb-0' : 'mb-4'} ${isHome2 ? 'shrink-0' : ''}`}>
                           <div className={`${isHome2 ? 'w-20 h-20' : isHome3 ? 'w-20 h-20' : 'w-24 h-24'} rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white ${isHome3 ? 'text-lg' : 'text-xl'} font-bold shadow-lg overflow-hidden relative`}>
-                            {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) ? (
+                            {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) || profilePhotos[househelp.user_id || String(househelp.id)] ? (
                               <>
                                 {imageLoadingStates[househelp.profile_id] !== false && (
                                   <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
@@ -860,6 +866,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                                     (househelp.avatar_url as string) ||
                                     (househelp.profile_picture as string) ||
                                     (househelp.photos && househelp.photos[0]) ||
+                                    profilePhotos[househelp.user_id || String(househelp.id)] ||
                                     ''
                                   }
                                   alt={`${househelp.first_name} ${househelp.last_name}`}

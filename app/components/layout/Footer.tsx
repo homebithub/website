@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router';
+import { useProfileSetupStatus } from '~/hooks/useProfileSetupStatus';
 
 type FooterVariant = 'dark' | 'light';
 
@@ -9,7 +10,13 @@ interface FooterProps {
 
 const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
   const location = useLocation();
+  const { isInSetupMode } = useProfileSetupStatus();
   const isHousehelpProfileRoute = location.pathname.startsWith('/househelp/profile');
+
+  // Hide footer during profile setup flow
+  if (isInSetupMode) {
+    return null;
+  }
 
   const baseClasses = 'py-8 border-t transition-colors duration-300';
   const themeClasses =

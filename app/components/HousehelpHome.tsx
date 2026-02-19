@@ -14,6 +14,7 @@ import { formatTimeAgo } from "~/utils/timeAgo";
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
+import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 
 interface HouseholdItem {
   id?: string; // household user id
@@ -64,6 +65,11 @@ export default function HousehelpHome() {
     min_rating: "",
   });
   const [results, setResults] = useState<HouseholdItem[]>([]);
+
+  // Fetch profile photos from documents table for household results
+  const householdUserIds = useMemo(() => results.map(r => r.id).filter(Boolean) as string[], [results]);
+  const profilePhotos = useProfilePhotos(householdUserIds);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
@@ -509,8 +515,8 @@ export default function HousehelpHome() {
                       {/* Avatar */}
                       <div className="flex justify-center mb-4">
                         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden">
-                          {r.avatar_url ? (
-                            <img src={r.avatar_url} alt={(r.first_name || 'H') + ' ' + (r.last_name || 'H')} className="w-full h-full object-cover" />
+                          {r.avatar_url || (r.id && profilePhotos[r.id]) ? (
+                            <img src={r.avatar_url || (r.id && profilePhotos[r.id]) || ''} alt={(r.first_name || 'H') + ' ' + (r.last_name || 'H')} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
                           ) : (
                             `${r.first_name?.[0] || 'H'}${r.last_name?.[0] || 'H'}`
                           )}

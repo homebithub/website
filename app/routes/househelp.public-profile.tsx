@@ -279,10 +279,33 @@ export default function HousehelpPublicProfile() {
           rawUser = profileData.user || null;
         }
         
-        setProfile(normalizeHousehelpData(rawProfile));
+        const normalizedProfile = normalizeHousehelpData(rawProfile);
         setUser(rawUser);
         setIsViewingOther(!!profileId); // Set to true if viewing someone else's profile
-        
+
+        // Fetch photos from documents table for this user
+        const targetUserId = rawUser?.id || rawProfile?.user_id;
+        if (targetUserId) {
+          try {
+            const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents/user/${targetUserId}?document_type=profile_photo`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (docsRes.ok) {
+              const docsResponse = await docsRes.json();
+              const docsData = docsResponse.data?.data || docsResponse.data || [];
+              const documentsArray = Array.isArray(docsData) ? docsData : [];
+              const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+              if (photoUrls.length > 0) {
+                normalizedProfile.photos = photoUrls;
+              }
+            }
+          } catch (err) {
+            console.error('Failed to fetch profile photos:', err);
+          }
+        }
+
+        setProfile(normalizedProfile);
+
         // Check if profile is shortlisted (only if viewing someone else's profile)
         if (profileId) {
           try {
@@ -992,6 +1015,14 @@ export default function HousehelpPublicProfile() {
           househelpName={`${profile.first_name || ''} ${profile.last_name || ''}`.trim()}
           househelpSalaryExpectation={profile.salary_expectation}
           househelpSalaryFrequency={profile.salary_frequency}
+          househelpOffersLiveIn={profile.offers_live_in}
+          househelpOffersDayWorker={profile.offers_day_worker}
+          househelpAvailability={profile.availability}
+          househelpAvailableFrom={profile.available_from}
+          househelpLocation={profile.town || profile.location?.name}
+          househelpSkills={profile.skills}
+          househelpLanguages={profile.languages}
+          househelpYearsOfExperience={profile.years_of_experience}
         />
       )}
     </div>

@@ -11,6 +11,7 @@ import { getInboxRoute, startOrGetConversation, type StartConversationPayload } 
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 
 // Types
 type ShortlistItem = {
@@ -41,6 +42,10 @@ export default function HouseholdShortlistPage() {
 
   // Map of profile_id -> househelp profile data
   const [profilesById, setProfilesById] = useState<Record<string, any>>({});
+
+  // Fetch profile photos from documents table
+  const shortlistUserIds = useMemo(() => items.map(s => s.user_id).filter(Boolean), [items]);
+  const profilePhotos = useProfilePhotos(shortlistUserIds);
   const [loadingProfiles, setLoadingProfiles] = useState(false);
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
   const [compactView, setCompactView] = useState(false);
@@ -293,7 +298,7 @@ export default function HouseholdShortlistPage() {
                       <div className="flex justify-center mb-4">
                         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden relative">
                           {(() => {
-                            const imageUrl = h?.avatar_url || h?.profile_picture || (h?.photos && h.photos[0]);
+                            const imageUrl = h?.avatar_url || h?.profile_picture || (h?.photos && h.photos[0]) || (s.user_id && profilePhotos[s.user_id]);
                             if (imageUrl) {
                               return (
                                 <>

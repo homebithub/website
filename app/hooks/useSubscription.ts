@@ -13,6 +13,7 @@ export type SubscriptionData = {
   trial_start?: string;
   trial_end?: string;
   is_trial_used: boolean;
+  metadata?: Record<string, any>;
   plan?: {
     id: string;
     name: string;
@@ -27,6 +28,7 @@ export type UseSubscriptionResult = {
   status: SubscriptionStatus;
   subscription: SubscriptionData | null;
   isActive: boolean;
+  isEarlyAdopter: boolean;
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -99,11 +101,13 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   }, [fetchSubscription]);
 
   const isActive = status === 'active' || status === 'trial';
+  const isEarlyAdopter = !!subscription?.metadata?.early_adopter;
 
   return {
     status,
     subscription,
     isActive,
+    isEarlyAdopter,
     loading,
     error,
     refetch: fetchSubscription,

@@ -103,7 +103,8 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
             : `/profile-setup/househelp?step=${lastStep + 1}`;
 
           console.log('ProfileSetupGuard - Redirecting to:', setupRoute);
-          return setupRoute;
+          navigate(setupRoute, { replace: true });
+          return;
         }
       } else if (response.status === 404) {
         // No profile setup record exists - user hasn't started setup

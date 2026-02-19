@@ -323,9 +323,10 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
         xhr.send(formData);
       });
       
-      // Extract URLs from document objects
-      const imageUrls = uploadData.documents 
-        ? uploadData.documents.map((doc: any) => doc.url || doc.public_url)
+      // Extract URLs from document objects (upload handler returns {data: [...]})
+      const docs = uploadData.data || uploadData.documents || [];
+      const imageUrls = Array.isArray(docs)
+        ? docs.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean)
         : [];
       
       // Step 2: Save image URLs to profile

@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '~/contexts/useAuth';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
-import { Navigation } from '~/components/Navigation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { Footer } from '~/components/Footer';
 import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupContext';
 import { API_BASE_URL } from '~/config/api';
 
@@ -299,7 +297,6 @@ function HouseholdProfileSetupContent() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
       
       <main className="flex-1">
@@ -616,7 +613,6 @@ function HouseholdProfileSetupContent() {
       )}
       
       </PurpleThemeWrapper>
-      <Footer />
     </div>
   );
 }

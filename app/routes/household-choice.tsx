@@ -1,7 +1,5 @@
 import React from "react";
 import { useNavigate } from "react-router";
-import { Navigation } from "~/components/Navigation";
-import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { PurpleCard } from "~/components/ui/PurpleCard";
 
@@ -10,7 +8,6 @@ export default function HouseholdChoicePage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1">
         <main className="flex-1 flex flex-col justify-center items-center px-4 py-12">
           <PurpleCard hover={false} glow={true} className="w-full max-w-lg p-8 sm:p-10">
@@ -87,7 +84,6 @@ export default function HouseholdChoicePage() {
           </PurpleCard>
         </main>
       </PurpleThemeWrapper>
-      <Footer />
     </div>
   );
 }

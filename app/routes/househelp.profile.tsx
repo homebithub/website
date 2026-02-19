@@ -127,6 +127,25 @@ export default function HousehelpProfile() {
         console.log('Location field:', profileData?.data?.location || profileData?.location);
         const normalized = normalizeHousehelpProfileResponse(profileData);
         console.log('Normalized profile location:', normalized.location);
+
+        // Fetch photos from documents table
+        try {
+          const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (docsRes.ok) {
+            const docsResponse = await docsRes.json();
+            const docsData = docsResponse.data?.data || docsResponse.data || [];
+            const documentsArray = Array.isArray(docsData) ? docsData : [];
+            const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+            if (photoUrls.length > 0) {
+              normalized.photos = photoUrls;
+            }
+          }
+        } catch (err) {
+          console.error('Failed to fetch profile photos:', err);
+        }
+
         setProfile(normalized);
       } catch (err: any) {
         console.error("Error loading househelp profile:", err);
@@ -218,30 +237,23 @@ export default function HousehelpProfile() {
         xhr.setRequestHeader('Authorization', `Bearer ${token}`);
         xhr.send(formData);
       });
-      const imageUrl = uploadData.documents?.[0]?.url || uploadData.documents?.[0]?.public_url;
+      const uploadedDocs = uploadData.data || uploadData.documents || [];
+      const firstDoc = Array.isArray(uploadedDocs) ? uploadedDocs[0] : null;
+      const imageUrl = firstDoc?.public_url || firstDoc?.signed_url || firstDoc?.url;
 
       if (!imageUrl) throw new Error('No image URL returned');
 
-      // Update profile with new photo
-      const updatedPhotos = [...(profile?.photos || []), imageUrl];
-      
-      const updateRes = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          updates: {
-            photos: updatedPhotos,
-          },
-        }),
+      // Refetch photos from documents table
+      const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (!updateRes.ok) throw new Error('Failed to update profile');
-
-      // Update local state
-      setProfile(prev => prev ? { ...prev, photos: updatedPhotos } : null);
+      if (docsRes.ok) {
+        const docsResponse = await docsRes.json();
+        const docsData = docsResponse.data?.data || docsResponse.data || [];
+        const documentsArray = Array.isArray(docsData) ? docsData : [];
+        const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+        setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
+      }
       
       // Reset file input
       if (fileInputRef.current) {
@@ -283,8 +295,10 @@ export default function HousehelpProfile() {
       if (!docsRes.ok) {
         console.warn('Failed to fetch documents, will only remove from profile');
       } else {
-        const docsData = await docsRes.json();
-        const document = docsData.documents?.find((doc: any) => doc.url === photoUrl);
+        const docsResponse = await docsRes.json();
+        const allDocs = docsResponse.data?.data || docsResponse.data || [];
+        const documentsArray = Array.isArray(allDocs) ? allDocs : [];
+        const document = documentsArray.find((doc: any) => (doc.public_url || doc.signed_url || doc.url) === photoUrl);
 
         // Step 2: Delete from documents table and S3
         if (document?.id) {

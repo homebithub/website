@@ -6,7 +6,7 @@ import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
-  Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User
+  Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User, FileText
 } from 'lucide-react';
 
 interface HireRequest {
@@ -81,7 +81,31 @@ interface Interest {
   };
 }
 
-type TabType = 'requests' | 'work-history' | 'interests';
+interface EmploymentContract {
+  id: string;
+  household_id: string;
+  househelp_id: string;
+  status: string;
+  job_title: string;
+  salary: number;
+  salary_frequency: string;
+  start_date?: string;
+  household_signed_at?: string;
+  househelp_signed_at?: string;
+  household_signer_name: string;
+  househelp_signer_name: string;
+  created_at: string;
+  household?: {
+    id: string;
+    household_name?: string;
+    avatar_url?: string;
+    town?: string;
+    user?: { first_name: string; last_name: string; };
+    user_id?: string;
+  };
+}
+
+type TabType = 'requests' | 'work-history' | 'employment-contracts' | 'interests';
 
 const getHouseholdName = (household?: HireRequest['household'] | HireContract['household'] | Interest['household']) => {
   if (!household) return 'Household';
@@ -136,6 +160,12 @@ export default function HousehelpHiringHistory() {
   const [interests, setInterests] = useState<Interest[]>([]);
   const [interestsTotal, setInterestsTotal] = useState(0);
   const [interestsLoading, setInterestsLoading] = useState(true);
+
+  const [employmentContracts, setEmploymentContracts] = useState<EmploymentContract[]>([]);
+  const [employmentContractsTotal, setEmploymentContractsTotal] = useState(0);
+  const [employmentContractsLoading, setEmploymentContractsLoading] = useState(true);
+  // Map of househelp_id -> employment contract for quick lookup on request cards
+  const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, EmploymentContract>>({});
   
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
@@ -178,6 +208,8 @@ export default function HousehelpHiringHistory() {
       fetchHireRequests();
     } else if (activeTab === 'work-history') {
       fetchContracts();
+    } else if (activeTab === 'employment-contracts') {
+      fetchEmploymentContracts();
     } else if (activeTab === 'interests') {
       fetchInterests();
     }
@@ -223,6 +255,48 @@ export default function HousehelpHiringHistory() {
     }
   };
 
+  // Fetch employment contracts for this househelp
+  const fetchEmploymentContracts = async () => {
+    setEmploymentContractsLoading(true);
+    setError(null);
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) { navigate('/login'); return; }
+      const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
+      const response = await apiClient.auth(`${API_ENDPOINTS.hiring.employmentContracts.base}?${params.toString()}`, { method: 'GET' });
+      if (!response.ok) throw new Error('Failed to fetch employment contracts');
+      const raw = await apiClient.json<any>(response);
+      const items = extractEnvelopeArray<EmploymentContract>(raw);
+      setEmploymentContracts(items);
+      setEmploymentContractsTotal(extractTotal(raw, items.length));
+    } catch (err: any) {
+      setError(err.message || 'Failed to load employment contracts');
+    } finally {
+      setEmploymentContractsLoading(false);
+    }
+  };
+
+  // Also fetch employment contracts on mount to build the lookup map for request cards
+  useEffect(() => {
+    const fetchECMap = async () => {
+      try {
+        const response = await apiClient.auth(`${API_ENDPOINTS.hiring.employmentContracts.base}?limit=50`, { method: 'GET' });
+        if (response.ok) {
+          const raw = await apiClient.json<any>(response);
+          const items = extractEnvelopeArray<EmploymentContract>(raw);
+          const map: Record<string, EmploymentContract> = {};
+          for (const ec of items) {
+            map[ec.household_id] = ec;
+          }
+          setEmploymentContractMap(map);
+        }
+      } catch (err) {
+        // Non-critical
+      }
+    };
+    fetchECMap();
+  }, []);
+
   const fetchInterests = async () => {
     setInterestsLoading(true);
     setError(null);
@@ -258,6 +332,7 @@ export default function HousehelpHiringHistory() {
         throw new Error(errorData.message || 'Failed to accept hire request');
       }
       fetchHireRequests();
+      window.dispatchEvent(new Event('hiring-updated'));
     } catch (err: any) {
       setError(err.message || 'Failed to accept hire request');
     } finally {
@@ -286,6 +361,7 @@ export default function HousehelpHiringHistory() {
       setShowDeclineModal(false);
       setSelectedRequest(null);
       setDeclineReason('');
+      window.dispatchEvent(new Event('hiring-updated'));
       alert('Hire request declined');
     } catch (err: any) {
       alert(err.message || 'Failed to decline hire request');
@@ -352,11 +428,12 @@ export default function HousehelpHiringHistory() {
 
   const tabs: { key: TabType; label: string; count?: number }[] = [
     { key: 'requests', label: 'Requests Received', count: pendingCount > 0 ? pendingCount : undefined },
+    { key: 'employment-contracts', label: 'Contracts' },
     { key: 'work-history', label: 'Work History' },
     { key: 'interests', label: 'Interests Sent' },
   ];
 
-  const loading = activeTab === 'requests' ? requestsLoading : activeTab === 'work-history' ? contractsLoading : interestsLoading;
+  const loading = activeTab === 'requests' ? requestsLoading : activeTab === 'work-history' ? contractsLoading : activeTab === 'employment-contracts' ? employmentContractsLoading : interestsLoading;
 
   return (
     <div>
@@ -385,6 +462,7 @@ export default function HousehelpHiringHistory() {
                 }`}
               >
                 {tab.key === 'requests' && <MessageCircle className="w-4 h-4" />}
+                {tab.key === 'employment-contracts' && <FileText className="w-4 h-4" />}
                 {tab.key === 'work-history' && <Briefcase className="w-4 h-4" />}
                 {tab.key === 'interests' && <HandHeart className="w-4 h-4" />}
                 {tab.label}
@@ -466,10 +544,104 @@ export default function HousehelpHiringHistory() {
                             </button>
                           </>
                         )}
+                        {request.status === 'accepted' && (
+                          employmentContractMap[request.household_id] ? (
+                            <button
+                              onClick={() => navigate(`/household/employment-contract?id=${employmentContractMap[request.household_id].id}`)}
+                              className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
+                            >
+                              <FileText className="w-4 h-4" /> View Contract
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700/40 rounded-xl">
+                              <CheckCircle className="w-4 h-4" /> Awaiting Contract
+                            </span>
+                          )
+                        )}
+                        {request.status === 'finalized' && (
+                          employmentContractMap[request.household_id] ? (
+                            <button
+                              onClick={() => navigate(`/household/employment-contract?id=${employmentContractMap[request.household_id].id}`)}
+                              className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
+                            >
+                              <FileText className="w-4 h-4" /> View Contract
+                            </button>
+                          ) : (
+                            <span className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700/40 rounded-xl">
+                              <FileText className="w-4 h-4" /> Finalized
+                            </span>
+                          )
+                        )}
                       </div>
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Employment Contracts Tab Content */}
+        {activeTab === 'employment-contracts' && !loading && (
+          <>
+            {employmentContracts.length === 0 ? (
+              <div className="p-12 text-center">
+                <FileText className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No employment contracts yet</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">When a household creates a formal employment contract, it will appear here for you to review and sign</p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200 dark:divide-purple-800/40">
+                {employmentContracts.map((ec) => {
+                  const getECStatusBadge = () => {
+                    if (ec.status === 'signed_by_both') return { label: 'Fully Signed', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300', icon: <CheckCircle className="w-4 h-4" /> };
+                    if (ec.status === 'pending_househelp') return { label: 'Awaiting Your Signature', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300', icon: <Clock className="w-4 h-4" /> };
+                    if (ec.status === 'draft') return { label: 'Draft', color: 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300', icon: <FileText className="w-4 h-4" /> };
+                    return { label: ec.status, color: 'bg-gray-100 text-gray-800', icon: <FileText className="w-4 h-4" /> };
+                  };
+                  const badge = getECStatusBadge();
+                  return (
+                    <div key={ec.id} className="p-6 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors">
+                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                        <div className="flex items-start gap-4 flex-1">
+                          <div className="w-14 h-14 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
+                            {ec.household?.avatar_url ? (
+                              <img src={ec.household.avatar_url} alt={getHouseholdName(ec.household)} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">{getHouseholdInitials(ec.household)}</div>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{ec.job_title}</h3>
+                              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${badge.color}`}>
+                                {badge.icon} {badge.label}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                              {getHouseholdName(ec.household)} &bull; KES {ec.salary?.toLocaleString()} / {ec.salary_frequency}
+                              {ec.start_date && ` \u2022 From ${formatDate(ec.start_date)}`}
+                            </p>
+                            <p className="text-xs text-gray-400 dark:text-gray-500">Created {formatDate(ec.created_at)}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
+                          <button
+                            onClick={() => navigate(`/household/employment-contract?id=${ec.id}`)}
+                            className={`inline-flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-xl transition-all ${
+                              ec.status === 'pending_househelp'
+                                ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
+                                : 'text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
+                            }`}
+                          >
+                            <FileText className="w-4 h-4" />
+                            {ec.status === 'pending_househelp' ? 'Review & Sign' : 'View Contract'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </>
@@ -610,13 +782,14 @@ export default function HousehelpHiringHistory() {
         {!loading && (
           (activeTab === 'requests' && requestsTotal > limit) ||
           (activeTab === 'work-history' && contractsTotal > limit) ||
+          (activeTab === 'employment-contracts' && employmentContractsTotal > limit) ||
           (activeTab === 'interests' && interestsTotal > limit)
         ) && (
           <div className="p-6 border-t border-gray-200 dark:border-purple-800/40 flex justify-center gap-2">
             <button onClick={() => setOffset(Math.max(0, offset - limit))} disabled={offset === 0} className="px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
               Previous
             </button>
-            <button onClick={() => setOffset(offset + limit)} disabled={(activeTab === 'requests' && offset + limit >= requestsTotal) || (activeTab === 'work-history' && offset + limit >= contractsTotal) || (activeTab === 'interests' && offset + limit >= interestsTotal)} className="px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={() => setOffset(offset + limit)} disabled={(activeTab === 'requests' && offset + limit >= requestsTotal) || (activeTab === 'work-history' && offset + limit >= contractsTotal) || (activeTab === 'employment-contracts' && offset + limit >= employmentContractsTotal) || (activeTab === 'interests' && offset + limit >= interestsTotal)} className="px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
               Next
             </button>
           </div>

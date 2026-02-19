@@ -1,7 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router";
-import { Navigation } from "~/components/Navigation";
-import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL } from "~/config/api";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -94,7 +92,6 @@ export default function JoinHouseholdPage() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
         <main className="flex-1 py-12">
           <div className="max-w-2xl mx-auto px-4">
@@ -229,7 +226,6 @@ export default function JoinHouseholdPage() {
           </div>
         </main>
       </PurpleThemeWrapper>
-      <Footer />
     </div>
   );
 }

@@ -114,6 +114,25 @@ export default function HouseholdPublicProfile() {
         if (!profileRes.ok) throw new Error("Failed to fetch profile");
         const profileRaw = await profileRes.json();
         const profileData = profileRaw?.data?.data || profileRaw?.data || profileRaw;
+
+        // Fetch photos from documents table for this household user
+        try {
+          const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents/user/${resolvedUserId}?document_type=profile_photo`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (docsRes.ok) {
+            const docsResponse = await docsRes.json();
+            const docsData = docsResponse.data?.data || docsResponse.data || [];
+            const documentsArray = Array.isArray(docsData) ? docsData : [];
+            const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+            if (photoUrls.length > 0) {
+              profileData.photos = photoUrls;
+            }
+          }
+        } catch (err) {
+          console.error("Failed to fetch profile photos:", err);
+        }
+
         setProfile(profileData);
 
         try {
@@ -431,7 +450,7 @@ export default function HouseholdPublicProfile() {
           {profile.house_size && (
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-xs font-semibold">🏠 {profile.house_size}</span>
           )}
-          {profile.rating && profile.rating > 0 && (
+          {profile.rating != null && profile.rating > 0 && (
             <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded-full text-xs font-semibold">⭐ {profile.rating}/5 ({profile.review_count || 0} reviews)</span>
           )}
           {profile.needs_live_in && (
@@ -577,7 +596,7 @@ export default function HouseholdPublicProfile() {
       {/* Budget & Compensation */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">� Budget & Compensation</h2>
-        {profile.budget_min || profile.budget_max ? (
+        {(profile.budget_min != null && profile.budget_min > 0) || (profile.budget_max != null && profile.budget_max > 0) ? (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200/50 dark:border-green-500/20 sm:col-span-2">
               <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Salary Range</span>
