@@ -1,6 +1,8 @@
 import useScrollFadeIn from "~/hooks/useScrollFadeIn";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
 import { lazyLoad } from "~/utils/lazyLoad";
+import { API_BASE_URL } from "~/config/api";
 
 const AuthenticatedHome = lazyLoad(() => import("~/components/AuthenticatedHome"));
 const HousehelpHome = lazyLoad(() => import("~/components/HousehelpHome"));
@@ -8,14 +10,15 @@ const LandingPage = lazyLoad(() => import("~/routes/landing"));
 
 export default function Index() {
   useScrollFadeIn();
+  const navigate = useNavigate();
 
   const [userType, setUserType] = useState<'househelp' | 'household' | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check authentication status on mount
+  // Check authentication status and profile setup progress on mount
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       const token = localStorage.getItem('token');
 
       let resolvedType: 'household' | 'househelp' | null = null;
@@ -49,6 +52,45 @@ export default function Index() {
         if (resolvedType) {
           setUserType(resolvedType);
           console.log('Authenticated user type:', resolvedType);
+
+          // Check profile setup progress and redirect if incomplete
+          try {
+            const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+
+            if (setupResponse.ok) {
+              const setupData = await setupResponse.json();
+              const progressData = setupData.data || {};
+              const totalSteps = progressData.total_steps || 0;
+              const lastStep = progressData.last_completed_step || 0;
+              const isComplete = progressData.status === 'completed' ||
+                (totalSteps > 0 && lastStep >= totalSteps);
+
+              if (!isComplete) {
+                if (resolvedType === 'household' && lastStep === 0) {
+                  navigate('/household-choice', { replace: true });
+                  return;
+                }
+                const setupRoute = resolvedType === 'household'
+                  ? `/profile-setup/household?step=${lastStep + 1}`
+                  : `/profile-setup/househelp?step=${lastStep + 1}`;
+                navigate(setupRoute, { replace: true });
+                return;
+              }
+            } else if (setupResponse.status === 404) {
+              // No profile setup record - user hasn't started setup
+              if (resolvedType === 'household') {
+                navigate('/household-choice', { replace: true });
+                return;
+              }
+              navigate('/profile-setup/househelp?step=1', { replace: true });
+              return;
+            }
+          } catch (err) {
+            console.error('Failed to check profile setup status:', err);
+            // If check fails, fall through and show home page
+          }
         } else {
           console.warn('Authenticated but no valid user type found');
         }
@@ -60,7 +102,7 @@ export default function Index() {
     };
 
     checkAuth();
-  }, []);
+  }, [navigate]);
 
   // Loading screen
   if (isLoading) {
