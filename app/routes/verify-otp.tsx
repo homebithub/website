@@ -100,7 +100,7 @@ export default function VerifyOtpPage() {
   const location = useLocation();
   const navigate = useNavigate();
   // Check if state exists
-  const locationState = (location.state || {}) as { verification?: any, bureauId?: string, afterEmailVerification?: boolean };
+  const locationState = (location.state || {}) as { verification?: any, bureauId?: string, afterEmailVerification?: boolean, isGoogleSignup?: boolean };
   const [verification, setVerification] = useState(locationState.verification);
   const afterEmailVerification = locationState.afterEmailVerification;
   
@@ -245,8 +245,8 @@ export default function VerifyOtpPage() {
           return;
         }
 
-        // Step 1: After phone OTP, go to email entry page (unless already done)
-        if (!afterEmailVerification) {
+        // Step 1: After phone OTP, go to email entry page (unless already done or Google signup)
+        if (!afterEmailVerification && !locationState.isGoogleSignup) {
           if (profileType === 'household' || profileType === 'househelp') {
             console.log('[VERIFY-OTP] Phone verified, redirecting to verify-email');
             navigate('/verify-email', {
