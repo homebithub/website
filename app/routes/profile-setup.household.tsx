@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { useAuth } from '~/contexts/useAuth';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
@@ -40,6 +40,7 @@ function HouseholdProfileSetupContent() {
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerChecked, setDisclaimerChecked] = useState(false);
+  const setupCompleteRef = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
@@ -99,9 +100,11 @@ function HouseholdProfileSetupContent() {
     
     return () => {
       clearInterval(interval);
-      const timeOnStep = Math.floor((Date.now() - startTime) / 1000);
-      // Save time spent when leaving step
-      saveProgressToBackend(currentStep, timeOnStep);
+      if (!setupCompleteRef.current) {
+        const timeOnStep = Math.floor((Date.now() - startTime) / 1000);
+        // Save time spent when leaving step
+        saveProgressToBackend(currentStep, timeOnStep);
+      }
     };
   }, [currentStep]);
 
@@ -159,6 +162,7 @@ function HouseholdProfileSetupContent() {
   // Auto-save progress every 30 seconds
   useEffect(() => {
     const autoSaveInterval = setInterval(async () => {
+      if (setupCompleteRef.current) return;
       setAutoSaving(true);
       await saveProgressToBackend(currentStep, timeSpent, false, false, true);
       setAutoSaving(false);
@@ -170,6 +174,7 @@ function HouseholdProfileSetupContent() {
   
   const finishSetup = async () => {
     setSaving(true);
+    setupCompleteRef.current = true;
     try {
       await saveProfileToBackend();
       await markAllStepsComplete();
@@ -219,7 +224,10 @@ function HouseholdProfileSetupContent() {
         body: JSON.stringify({
           current_step: STEPS.length,
           last_completed_step: STEPS.length,
+          total_steps: STEPS.length,
           completed_steps: STEPS.map(s => s.id),
+          status: 'completed',
+          completion_percentage: 100,
           step_id: 'completed',
           time_spent_seconds: 0
         })
