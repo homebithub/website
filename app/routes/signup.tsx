@@ -305,7 +305,8 @@ export default function SignupPage() {
                     navigate('/verify-otp', { 
                         state: { 
                             verification: data.verification,
-                            profileType: profileType 
+                            profileType: profileType,
+                            isGoogleSignup: true 
                         } 
                     });
                 } else {
@@ -313,7 +314,8 @@ export default function SignupPage() {
                     navigate('/verify-otp', {
                         state: {
                             userId: userId,
-                            profileType: profileType
+                            profileType: profileType,
+                            isGoogleSignup: true
                         }
                     });
                 }
