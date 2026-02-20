@@ -124,10 +124,11 @@ function HouseholdProfileSetupContent() {
       if (stepIndex !== -1) {
         setCurrentStep(stepIndex);
       }
-    } else if (lastCompletedStep > 0 && lastCompletedStep < STEPS.length) {
+    } else if (lastCompletedStep > 0) {
       // Jump to last completed step if returning user (not in edit mode)
-      setCurrentStep(lastCompletedStep);
-      console.log(`Resuming from step ${lastCompletedStep + 1}`);
+      // Clamp to valid range (lastCompletedStep is 1-indexed from backend)
+      setCurrentStep(Math.min(lastCompletedStep, STEPS.length - 1));
+      console.log(`Resuming from step ${Math.min(lastCompletedStep, STEPS.length - 1) + 1}`);
     }
   }, [lastCompletedStep, isEditMode, location.state]);
 
@@ -263,6 +264,7 @@ function HouseholdProfileSetupContent() {
         body: JSON.stringify({
           current_step: actualStep + 1,
           last_completed_step: actualStep + 1,
+          total_steps: STEPS.length,
           completed_steps: completedSteps,
           step_id: STEPS[actualStep]?.id || 'completed',
           time_spent_seconds: timeOnStep
