@@ -70,8 +70,10 @@ export function useProfileSetupStatus(): ProfileSetupStatus & { isInSetupMode: b
       if (response.ok) {
         const data = await response.json();
         const progressData = data.data || {};
-        const isComplete = progressData.status === 'completed';
+        const totalSteps = progressData.total_steps || 0;
         const lastStep = progressData.last_completed_step || 0;
+        const isComplete = progressData.status === 'completed' ||
+          (totalSteps > 0 && lastStep >= totalSteps);
 
         setStatus({ isComplete, isChecking: false, lastStep, profileType });
       } else if (response.status === 404) {

@@ -155,10 +155,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const setupData = await setupResponse.json();
             // Handle response structure: { data: { last_completed_step: ..., status: ... } }
             const progressData = setupData.data || {};
-            const isComplete = progressData.status === 'completed';
+            const totalSteps = progressData.total_steps || 0;
             const lastStep = progressData.last_completed_step || 0;
+            const isComplete = progressData.status === 'completed' ||
+              (totalSteps > 0 && lastStep >= totalSteps);
 
-            console.log("Profile setup status:", { isComplete, lastStep });
+            console.log("Profile setup status:", { isComplete, lastStep, totalSteps });
 
             if (!isComplete) {
               // Household users who haven't started setup go to choice page first

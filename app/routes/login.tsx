@@ -106,7 +106,7 @@ export default function LoginPage() {
           // Mirror the profile-setup redirect logic used in AuthContext.login
           if (profileType === 'household' || profileType === 'househelp') {
             try {
-              const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
+              const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
                 headers: {
                   Authorization: `Bearer ${token}`,
                 },
@@ -114,8 +114,11 @@ export default function LoginPage() {
 
               if (setupResponse.ok) {
                 const setupData = await setupResponse.json();
-                const isComplete = setupData.is_complete || false;
-                const lastStep = setupData.last_completed_step || 0;
+                const progressData = setupData.data || {};
+                const totalSteps = progressData.total_steps || 0;
+                const lastStep = progressData.last_completed_step || 0;
+                const isComplete = progressData.status === 'completed' ||
+                  (totalSteps > 0 && lastStep >= totalSteps);
 
                 if (!isComplete) {
                   // Household users who haven't started setup go to choice page first
