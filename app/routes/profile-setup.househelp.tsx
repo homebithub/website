@@ -129,6 +129,14 @@ function HousehelpProfileSetupContent() {
     }
   }, [authLoading, user, navigate]);
   
+  // Clean up URL on mount - remove any query parameters or hash
+  useEffect(() => {
+    const cleanPath = '/profile-setup/househelp';
+    if (window.location.search || window.location.hash) {
+      window.history.replaceState({}, '', cleanPath);
+    }
+  }, []);
+  
   // Track time spent on each step
   useEffect(() => {
     if (!isProfileLoaded) return;
@@ -164,9 +172,10 @@ function HousehelpProfileSetupContent() {
       if (stepIndex !== -1) {
         setCurrentStep(stepIndex);
       }
-    } else if (lastCompletedStep > 0 && lastCompletedStep < STEPS.length) {
+    } else if (lastCompletedStep > 0) {
       // Jump to last completed step if returning user (not in edit mode)
-      setCurrentStep(lastCompletedStep);
+      // Clamp to valid range (lastCompletedStep is 1-indexed from backend)
+      setCurrentStep(Math.min(lastCompletedStep, STEPS.length - 1));
     }
   }, [lastCompletedStep, isEditMode, location.state]);
 
@@ -303,6 +312,7 @@ function HousehelpProfileSetupContent() {
         body: JSON.stringify({
           current_step: actualStep + 1,
           last_completed_step: actualStep + 1,
+          total_steps: STEPS.length,
           completed_steps: completedSteps,
           step_id: STEPS[actualStep]?.id || 'completed',
           time_spent_seconds: timeOnStep
