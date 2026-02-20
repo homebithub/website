@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 interface Pet {
   id: string;
@@ -42,6 +43,7 @@ const PET_TRAITS = [
 ];
 
 const Pets: React.FC = () => {
+  const { markDirty, markClean } = useProfileSetup();
   const [hasPet, setHasPet] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [pets, setPets] = useState<Pet[]>([]);
@@ -162,6 +164,7 @@ const Pets: React.FC = () => {
       };
       
       setPets(prev => [...prev, petForDisplay]);
+      markClean();
       setShowModal(false);
       
       // Reset form
@@ -232,7 +235,7 @@ const Pets: React.FC = () => {
             name="hasPet"
             value="no"
             checked={hasPet === "no"}
-            onChange={() => setHasPet("no")}
+            onChange={() => { setHasPet("no"); markClean(); }}
             className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
           />
           <span className="flex-1">❌ I do not have pets</span>
@@ -244,7 +247,7 @@ const Pets: React.FC = () => {
             name="hasPet"
             value="yes"
             checked={hasPet === "yes"}
-            onChange={() => setHasPet("yes")}
+            onChange={() => { setHasPet("yes"); markDirty(); }}
             className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
           />
           <span className="flex-1">✅ I have pets</span>

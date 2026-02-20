@@ -3,6 +3,7 @@ import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 interface LocationSuggestion {
     name: string;
@@ -16,6 +17,7 @@ interface LocationProps {
 }
 
 const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
+    const { markDirty, markClean } = useProfileSetup();
     const [input, setInput] = useState("");
     const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -137,6 +139,7 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
         setShowDropdown(false);
         setSuggestions([]);
         setSubmitStatus(null);
+        markDirty();
         
         // Clear the timeout to prevent dropdown from reappearing
         if (timeoutRef.current) {
@@ -209,6 +212,7 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
                     success: true,
                     message: data.message || 'Location saved successfully!'
                 });
+                markClean();
                 // Save the location to disable button
                 setSavedLocation(selectedLocation);
                 

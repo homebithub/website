@@ -44,7 +44,7 @@ function HouseholdProfileSetupContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
-  const { saveProfileToBackend, loadProfileFromBackend, updateStepData, saveStepToBackend, lastCompletedStep, profileData, error: setupError } = useProfileSetup();
+  const { saveProfileToBackend, loadProfileFromBackend, updateStepData, saveStepToBackend, lastCompletedStep, profileData, error: setupError, hasUnsavedChanges, markClean } = useProfileSetup();
   
   const currentStepData = STEPS[currentStep];
 
@@ -133,8 +133,10 @@ function HouseholdProfileSetupContent() {
   }, [lastCompletedStep, isEditMode, location.state]);
 
   const handleNext = async () => {
+    if (hasUnsavedChanges) return;
     // Save progress before moving to next step
     await saveProgressToBackend(currentStep, timeSpent);
+    markClean();
     
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -149,6 +151,7 @@ function HouseholdProfileSetupContent() {
   const handleSkip = async () => {
     // Save that user skipped this step
     await saveProgressToBackend(currentStep, timeSpent, false, true);
+    markClean();
     
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -297,6 +300,7 @@ function HouseholdProfileSetupContent() {
     if (currentStep > 0) {
       // Save current progress before going back
       await saveProgressToBackend(currentStep, timeSpent);
+      markClean();
       setCurrentStep(currentStep - 1);
       setTimeSpent(0);
     }
@@ -431,9 +435,9 @@ function HouseholdProfileSetupContent() {
 
                   <button
                     onClick={handleNext}
-                    disabled={saving}
+                    disabled={saving || hasUnsavedChanges}
                     className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
-                      saving 
+                      saving || hasUnsavedChanges
                         ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                         : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                     }`}
@@ -444,10 +448,14 @@ function HouseholdProfileSetupContent() {
                     )}
                   </button>
                 </div>
+                {hasUnsavedChanges && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">Please save your changes before proceeding</p>
+                )}
               </div>
 
               {/* Desktop: Original horizontal layout */}
-              <div className="hidden sm:flex justify-between items-center">
+              <div className="hidden sm:flex flex-col">
+                <div className="flex justify-between items-center">
                 <button
                   onClick={handleBack}
                   disabled={currentStep === 0}
@@ -474,9 +482,9 @@ function HouseholdProfileSetupContent() {
 
                 <button
                   onClick={handleNext}
-                  disabled={saving}
+                  disabled={saving || hasUnsavedChanges}
                   className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
-                    saving 
+                    saving || hasUnsavedChanges
                       ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                       : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                   }`}
@@ -486,6 +494,10 @@ function HouseholdProfileSetupContent() {
                     <ChevronRightIcon className="h-4 w-4 ml-1" />
                   )}
                 </button>
+                </div>
+                {hasUnsavedChanges && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">Please save your changes before proceeding</p>
+                )}
               </div>
             </div>
           </div>

@@ -5,6 +5,7 @@ import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 type ImageFile = {
   id: string;
@@ -22,6 +23,7 @@ const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB in bytes
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) => {
+  const { markDirty, markClean } = useProfileSetup();
   const [images, setImages] = useState<ImageFile[]>([]);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState('');
@@ -80,6 +82,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
     
     if (newImages.length > 0) {
       setImages(prev => [...prev, ...newImages].slice(0, MAX_FILES));
+      markDirty();
     }
   }, [images.length]);
 
@@ -375,6 +378,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
         }
       }
 
+      markClean();
       setSuccess('Your photos have been uploaded successfully!');
       // Trigger completion callback if provided
       if (onComplete) {

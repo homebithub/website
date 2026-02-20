@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const CHORES = [
   "Laundry",
@@ -18,6 +19,7 @@ const CHORES = [
 ];
 
 const Chores: React.FC = () => {
+  const { markDirty, markClean } = useProfileSetup();
   const [selectedChores, setSelectedChores] = useState<string[]>([]);
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherChore, setOtherChore] = useState("");
@@ -58,6 +60,7 @@ const Chores: React.FC = () => {
   }, []);
 
   const toggleChore = (chore: string) => {
+    markDirty();
     if (chore === "Other") {
       setShowOtherInput(!showOtherInput);
       if (showOtherInput) {
@@ -119,6 +122,7 @@ const Chores: React.FC = () => {
       });
 
       if (response.ok) {
+        markClean();
         setMessage("Chores saved successfully!");
         setTimeout(() => setMessage(""), 3000);
       } else {

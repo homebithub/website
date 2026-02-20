@@ -4,6 +4,7 @@ import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 type HouseSizeOption = string;
 
@@ -17,6 +18,7 @@ const HOUSE_SIZE_OPTIONS: HouseSizeOption[] = [
 ];
 
 const HouseSize: React.FC = () => {
+  const { markDirty, markClean } = useProfileSetup();
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [additionalDetails, setAdditionalDetails] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -85,6 +87,7 @@ const HouseSize: React.FC = () => {
         throw new Error(errorData.message || 'Failed to save house size');
       }
 
+      markClean();
       setSuccess('House size saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -126,7 +129,7 @@ const HouseSize: React.FC = () => {
                   name="houseSize"
                   value={size}
                   checked={selectedSize === size}
-                  onChange={() => setSelectedSize(size)}
+                  onChange={() => { setSelectedSize(size); markDirty(); }}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 flex-shrink-0 ${
@@ -158,7 +161,7 @@ const HouseSize: React.FC = () => {
               name="additionalDetails"
               rows={4}
               value={additionalDetails}
-              onChange={(e) => setAdditionalDetails(e.target.value)}
+              onChange={(e) => { setAdditionalDetails(e.target.value); markDirty(); }}
               className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 placeholder-gray-500 dark:placeholder-gray-400 resize-vertical"
               placeholder="e.g., House has stairs, large garden, pets, specific cleaning requirements, etc."
               maxLength={500}

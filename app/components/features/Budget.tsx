@@ -4,6 +4,7 @@ import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 type BudgetFrequency = 'Daily' | 'Weekly' | 'Monthly';
 type BudgetRange = string;
@@ -33,6 +34,7 @@ const BUDGET_RANGES: Record<BudgetFrequency, BudgetRange[]> = {
 };
 
 const Budget: React.FC = () => {
+  const { markDirty, markClean } = useProfileSetup();
   const [frequency, setFrequency] = useState<BudgetFrequency>('Monthly');
   const [selectedRange, setSelectedRange] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -134,6 +136,7 @@ const Budget: React.FC = () => {
         throw new Error(errorData.message || 'Failed to save budget preferences');
       }
 
+      markClean();
       setSuccess('Budget saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -163,6 +166,7 @@ const Budget: React.FC = () => {
             onChange={(e) => {
               setFrequency(e.target.value as BudgetFrequency);
               setSelectedRange(''); // Reset selected range when frequency changes
+              markDirty();
             }}
             className="block w-full h-10 px-4 py-1.5 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 text-sm font-medium"
           >
@@ -195,7 +199,7 @@ const Budget: React.FC = () => {
                   name="budgetRange"
                   value={range}
                   checked={selectedRange === range}
-                  onChange={() => setSelectedRange(range)}
+                  onChange={() => { setSelectedRange(range); markDirty(); }}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 flex-shrink-0 ${

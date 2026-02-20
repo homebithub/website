@@ -6,8 +6,10 @@ import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { API_BASE_URL } from '~/config/api';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const MyKids = () => {
+    const { markDirty, markClean } = useProfileSetup();
     const [kidOption, setKidOption] = useState<string>('');
     const [children, setChildren] = useState<Child[]>([]);
     const [error, setError] = useState('');
@@ -102,6 +104,7 @@ const MyKids = () => {
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Failed to update profile');
             
+            markClean();
             setSuccess('Your preference has been saved successfully!');
             // navigate('/next-step');
         } catch (err: any) {
@@ -140,7 +143,7 @@ const MyKids = () => {
                                 type="radio"
                                 name="kidOption"
                                 checked={kidOption === 'needs_accommodation'}
-                                onChange={() => setKidOption('needs_accommodation')}
+                                onChange={() => { setKidOption('needs_accommodation'); markDirty(); }}
                                 className="mt-1 form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <div className="flex-1">
@@ -172,7 +175,7 @@ const MyKids = () => {
                             type="radio"
                             name="kidOption"
                             checked={kidOption === 'has_kids'}
-                            onChange={() => setKidOption('has_kids')}
+                            onChange={() => { setKidOption('has_kids'); markDirty(); }}
                             className="mt-1 form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                         />
                         <span>I do not have kids</span>
@@ -188,7 +191,7 @@ const MyKids = () => {
                             type="radio"
                             name="kidOption"
                             checked={kidOption === 'has_kids_no_accommodation'}
-                            onChange={() => setKidOption('has_kids_no_accommodation')}
+                            onChange={() => { setKidOption('has_kids_no_accommodation'); markDirty(); }}
                             className="mt-1 form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                         />
                         <div className="flex-1">

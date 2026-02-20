@@ -87,7 +87,9 @@ function HousehelpProfileSetupContent() {
     loadProfileFromBackend,
     lastCompletedStep,
     isLoading, 
-    error 
+    error,
+    hasUnsavedChanges,
+    markClean 
   } = useProfileSetup();
 
   const currentStepData = STEPS[currentStep];
@@ -180,7 +182,9 @@ function HousehelpProfileSetupContent() {
   }, [lastCompletedStep, isEditMode, location.state]);
 
   const handleNext = async () => {
+    if (hasUnsavedChanges) return;
     await saveProgressToBackend(currentStep, timeSpent);
+    markClean();
     
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -194,6 +198,7 @@ function HousehelpProfileSetupContent() {
   
   const handleSkip = async () => {
     await saveProgressToBackend(currentStep, timeSpent, false, true);
+    markClean();
     
     if (currentStep < STEPS.length - 1) {
       setCurrentStep(currentStep + 1);
@@ -344,6 +349,7 @@ function HousehelpProfileSetupContent() {
   const handleBack = async () => {
     if (currentStep > 0) {
       await saveProgressToBackend(currentStep, timeSpent);
+      markClean();
       setCurrentStep(currentStep - 1);
       setTimeSpent(0);
     }
@@ -509,9 +515,9 @@ function HousehelpProfileSetupContent() {
 
                   <button
                     onClick={handleNext}
-                    disabled={isSaving}
+                    disabled={isSaving || hasUnsavedChanges}
                     className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
-                      isSaving 
+                      isSaving || hasUnsavedChanges
                         ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                         : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                     }`}
@@ -522,10 +528,14 @@ function HousehelpProfileSetupContent() {
                     )}
                   </button>
                 </div>
+                {hasUnsavedChanges && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">Please save your changes before proceeding</p>
+                )}
               </div>
 
               {/* Desktop: Original horizontal layout */}
-              <div className="hidden sm:flex justify-between items-center">
+              <div className="hidden sm:flex flex-col">
+                <div className="flex justify-between items-center">
                 <button
                   onClick={handleBack}
                   disabled={currentStep === 0}
@@ -552,9 +562,9 @@ function HousehelpProfileSetupContent() {
 
                 <button
                   onClick={handleNext}
-                  disabled={isSaving}
+                  disabled={isSaving || hasUnsavedChanges}
                   className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
-                    isSaving 
+                    isSaving || hasUnsavedChanges
                       ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                       : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                   }`}
@@ -564,6 +574,10 @@ function HousehelpProfileSetupContent() {
                     <ChevronRightIcon className="h-4 w-4 ml-1" />
                   )}
                 </button>
+                </div>
+                {hasUnsavedChanges && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">Please save your changes before proceeding</p>
+                )}
               </div>
             </div>
           </div>

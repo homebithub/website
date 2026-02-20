@@ -3,6 +3,7 @@ import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const TIMES = ["morning", "afternoon", "evening"];
@@ -20,6 +21,7 @@ const initialAvailability: AvailabilityType = DAYS.reduce((acc, day) => {
 }, {} as AvailabilityType);
 
 const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
+  const { markDirty, markClean } = useProfileSetup();
   const [needsLiveIn, setNeedsLiveIn] = useState<boolean>(false);
   const [needsDayWorker, setNeedsDayWorker] = useState<boolean>(false);
   const [availableFrom, setAvailableFrom] = useState<string>("");
@@ -145,6 +147,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           console.error("Failed to save service type:", errorData);
           throw new Error(errorData.message || "Failed to save service type. Please try again.");
         }
+        markClean();
         setSuccess("Service type saved successfully!");
       } else {
         // For househelp, save to househelps/me/fields
@@ -170,6 +173,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           }),
         });
         if (!res.ok) throw new Error("Failed to save availability. Please try again.");
+        markClean();
         setSuccess("Service type saved successfully!");
       }
     } catch (err: any) {
@@ -181,6 +185,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
 
 
   const toggleSlot = (day: string, time: string) => {
+    markDirty();
     setAvailability(prev => ({
       ...prev,
       [day]: {
@@ -191,6 +196,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
   };
 
   const handleOffDayChange = (day: string) => {
+    markDirty();
     setOffDays(prev => {
       if (prev.includes(day)) {
         return prev.filter(d => d !== day);
@@ -214,7 +220,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
         <input
           type="checkbox"
           checked={needsLiveIn}
-          onChange={(e) => setNeedsLiveIn(e.target.checked)}
+          onChange={(e) => { setNeedsLiveIn(e.target.checked); markDirty(); }}
           className="form-checkbox h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
         />
         <span className="flex-1">🌙 Live-in {userType === 'household' ? '(Lives with you)' : '(I can live with the family)'}</span>
@@ -276,7 +282,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
         <input
           type="checkbox"
           checked={needsDayWorker}
-          onChange={(e) => setNeedsDayWorker(e.target.checked)}
+          onChange={(e) => { setNeedsDayWorker(e.target.checked); markDirty(); }}
           className="form-checkbox h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500 rounded"
         />
         <span className="flex-1">☀️ Day Worker {userType === 'household' ? '(Comes during the day)' : '(I work during the day)'}</span>
@@ -370,7 +376,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
         <input
           type="date"
           value={availableFrom}
-          onChange={e => setAvailableFrom(e.target.value)}
+          onChange={e => { setAvailableFrom(e.target.value); markDirty(); }}
           className={`w-full h-10 px-4 py-1.5 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${(!availableFrom || isNaN(Date.parse(availableFrom))) && error && error.includes('Available from') ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-purple-200 dark:border-purple-500/30'} [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100`}
           min={new Date().toISOString().split('T')[0]}
           required
