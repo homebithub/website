@@ -4,7 +4,7 @@ import { lazyLoad } from "~/utils/lazyLoad";
 
 const AuthenticatedHome = lazyLoad(() => import("~/components/AuthenticatedHome"));
 const HousehelpHome = lazyLoad(() => import("~/components/HousehelpHome"));
-const Home4 = lazyLoad(() => import("~/routes/home4"));
+const LandingPage = lazyLoad(() => import("~/routes/landing"));
 
 export default function Index() {
   useScrollFadeIn();
@@ -86,8 +86,8 @@ export default function Index() {
     return <AuthenticatedHome />;
   }
 
-  // Show Home4 marketing page for non-authenticated users
-  return <Home4 />;
+  // Show landing/marketing page for non-authenticated users
+  return <LandingPage />;
 }
 // Error boundary for better error handling
 export { ErrorBoundary } from "~/components/ErrorBoundary";
