@@ -480,8 +480,8 @@ function HousehelpProfileSetupContent() {
             </div>
           </div>
 
-          {/* Navigation Footer - Hide in edit mode */}
-          {!isEditMode && (
+          {/* Navigation Footer - Hide in edit mode and on KYC step (KYC has its own sub-step navigation) */}
+          {!isEditMode && STEPS[currentStep].id !== 'kyc' && (
           <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4">
               {/* Mobile: Stack buttons vertically with dots in between */}

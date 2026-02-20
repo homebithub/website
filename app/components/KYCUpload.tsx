@@ -706,7 +706,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
                   </svg>
                   Submitting...
                 </>
-              ) : 'Submit & Continue'}
+              ) : 'Upload & Finish'}
             </button>
           ) : (
             <button
