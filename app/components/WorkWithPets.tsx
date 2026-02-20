@@ -4,6 +4,7 @@ import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 type PetPreference = 'with_pets' | 'no_pets';
 type PetType = 'dog' | 'cat' | 'bird' | 'fish' | 'reptile' | 'small_mammal' | 'other';
@@ -16,6 +17,7 @@ const validateOtherPets = (input: string): boolean => {
 };
 
 const WorkWithPets = () => {
+    const { markDirty, markClean } = useProfileSetup();
     const [petPreference, setPetPreference] = useState<PetPreference | null>(null);
     const [selectedPets, setSelectedPets] = useState<PetType[]>([]);
     const [otherPets, setOtherPets] = useState('');
@@ -42,6 +44,7 @@ const WorkWithPets = () => {
             : [...selectedPets, petType];
             
         setSelectedPets(newSelectedPets);
+        markDirty();
         
         // Handle showing/hiding other pets input
         if (petType === 'other') {
@@ -115,6 +118,7 @@ const WorkWithPets = () => {
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Failed to update profile');
             
+            markClean();
             setSuccess('Your pet preferences have been saved successfully!');
             // navigate('/next-step');
         } catch (err: any) {

@@ -3,8 +3,10 @@ import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const BackgroundCheckConsent: React.FC = () => {
+  const { markDirty, markClean } = useProfileSetup();
   const [consent, setConsent] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -73,6 +75,7 @@ const BackgroundCheckConsent: React.FC = () => {
         throw new Error('Failed to save consent');
       }
 
+      markClean();
       setSuccess('Your preference has been saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'backgroundCheck', 'Failed to save your preference. Please try again.'));
@@ -138,7 +141,7 @@ const BackgroundCheckConsent: React.FC = () => {
               name="consent"
               value="yes"
               checked={consent === true}
-              onChange={() => setConsent(true)}
+              onChange={() => { setConsent(true); markDirty(); }}
               className="sr-only"
             />
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
@@ -174,7 +177,7 @@ const BackgroundCheckConsent: React.FC = () => {
               name="consent"
               value="no"
               checked={consent === false}
-              onChange={() => setConsent(false)}
+              onChange={() => { setConsent(false); markDirty(); }}
               className="sr-only"
             />
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${

@@ -39,6 +39,9 @@ interface ProfileSetupContextType {
   isLoading: boolean;
   error: string | null;
   lastCompletedStep: number;
+  hasUnsavedChanges: boolean;
+  markDirty: () => void;
+  markClean: () => void;
 }
 
 const ProfileSetupContext = createContext<ProfileSetupContextType | undefined>(undefined);
@@ -53,6 +56,9 @@ const fallbackProfileSetupContext: ProfileSetupContextType = {
   isLoading: false,
   error: null,
   lastCompletedStep: 0,
+  hasUnsavedChanges: false,
+  markDirty: () => {},
+  markClean: () => {},
 };
 
 let hasWarnedMissingProfileSetupProvider = false;
@@ -62,6 +68,10 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lastCompletedStep, setLastCompletedStep] = useState<number>(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  const markDirty = useCallback(() => setHasUnsavedChanges(true), []);
+  const markClean = useCallback(() => setHasUnsavedChanges(false), []);
 
   const updateStepData = (stepId: string, data: any) => {
     setProfileData(prev => ({
@@ -303,7 +313,10 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
         clearProfileData,
         isLoading,
         error,
-        lastCompletedStep
+        lastCompletedStep,
+        hasUnsavedChanges,
+        markDirty,
+        markClean
       }}
     >
       {children}

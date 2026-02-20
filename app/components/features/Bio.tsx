@@ -3,6 +3,7 @@ import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { handleApiError } from '../../utils/errorMessages';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const MIN_CHARACTERS = 25;
 const MAX_CHARACTERS = 2000;
@@ -12,6 +13,7 @@ interface BioProps {
 }
 
 const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
+  const { markDirty, markClean } = useProfileSetup();
   const [bio, setBio] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -127,6 +129,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
         }
       }
 
+      markClean();
       setSuccess('Your bio has been saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'bio', 'Failed to save your bio. Please try again.'));
@@ -160,7 +163,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
               }`}
               placeholder={currentContent.placeholder}
               value={bio}
-              onChange={(e) => setBio(e.target.value)}
+              onChange={(e) => { setBio(e.target.value); markDirty(); }}
               maxLength={MAX_CHARACTERS}
             />
             <div className="mt-2 flex justify-between text-sm">

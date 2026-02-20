@@ -3,8 +3,10 @@ import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const Gender = () => {
+    const { markDirty, markClean } = useProfileSetup();
     const [gender, setGender] = useState<'female' | 'male'>('female');
     const [dateOfBirth, setDateOfBirth] = useState<string>('');
     const [error, setError] = useState<string>('');
@@ -48,6 +50,7 @@ const Gender = () => {
 
     const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setDateOfBirth(e.target.value);
+        markDirty();
         if (error) setError('');
     };
 
@@ -101,6 +104,7 @@ const Gender = () => {
                 throw new Error(data.message || 'Failed to update profile');
             }
             
+            markClean();
             setSuccess('Your information has been saved successfully!');
             // router.push('/next-step'); // Uncomment and add navigation to next step if needed
         } catch (err: any) {
@@ -134,7 +138,7 @@ const Gender = () => {
                                 name="gender"
                                 value="female"
                                 checked={gender === 'female'}
-                                onChange={() => setGender('female')}
+                                onChange={() => { setGender('female'); markDirty(); }}
                                 className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span>Female</span>
@@ -147,7 +151,7 @@ const Gender = () => {
                                 name="gender"
                                 value="male"
                                 checked={gender === 'male'}
-                                onChange={() => setGender('male')}
+                                onChange={() => { setGender('male'); markDirty(); }}
                                 className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span>Male</span>

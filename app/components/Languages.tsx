@@ -4,6 +4,7 @@ import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 // List of languages organized by groups
 const LANGUAGE_GROUPS = {
@@ -83,6 +84,7 @@ const COMMON_LANGUAGES = [
 ].sort((a, b) => a.localeCompare(b));
 
 const Languages = () => {
+    const { markDirty, markClean } = useProfileSetup();
     const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
     const [showOtherLanguages, setShowOtherLanguages] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -120,6 +122,7 @@ const Languages = () => {
     }, []);
 
     const toggleLanguage = (language: string) => {
+        markDirty();
         setSelectedLanguages(prev => 
             prev.includes(language)
                 ? prev.filter(lang => lang !== language)
@@ -174,6 +177,7 @@ const Languages = () => {
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Failed to update profile');
             
+            markClean();
             setSuccess('Your language preferences have been saved successfully!');
             // navigate('/next-step');
         } catch (err: any) {

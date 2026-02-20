@@ -4,6 +4,7 @@ import { UserGroupIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import Kids from "./Kids";
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 export interface Child {
   id?: string | number;
@@ -23,6 +24,7 @@ const options = [
 ];
 
 const Children: React.FC = () => {
+  const { markDirty, markClean } = useProfileSetup();
   const [selected, setSelected] = useState<string>("");
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [saving, setSaving] = useState(false);
@@ -80,6 +82,7 @@ const Children: React.FC = () => {
 
   const handleOptionChange = async (value: string) => {
     setSelected(value);
+    markDirty();
     
     // If user selects "no children", save immediately
     if (value === "no_children") {
@@ -105,6 +108,7 @@ const Children: React.FC = () => {
       
       if (!res.ok) throw new Error("Failed to save preference");
       
+      markClean();
       setSaveMessage({ type: 'success', text: 'Preference saved successfully' });
       // Note: Step completion is tracked server-side when kids are added
     } catch (err: any) {

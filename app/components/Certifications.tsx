@@ -3,6 +3,7 @@ import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const CERTIFICATIONS = [
   'I have a valid driving license',
@@ -29,6 +30,7 @@ const HELP_WITH_OPTIONS = [
 ];
 
 const Certifications: React.FC = () => {
+  const { markDirty, markClean } = useProfileSetup();
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [selectedHelp, setSelectedHelp] = useState<string[]>([]);
   const [otherCerts, setOtherCerts] = useState<string[]>(['']);
@@ -86,6 +88,7 @@ const Certifications: React.FC = () => {
   }, []);
 
   const handleCertToggle = (cert: string) => {
+    markDirty();
     setSelectedCerts(prev => 
       prev.includes(cert)
         ? prev.filter(c => c !== cert)
@@ -94,6 +97,7 @@ const Certifications: React.FC = () => {
   };
 
   const handleHelpToggle = (help: string) => {
+    markDirty();
     setSelectedHelp(prev => 
       prev.includes(help)
         ? prev.filter(h => h !== help)
@@ -169,6 +173,7 @@ const Certifications: React.FC = () => {
         throw new Error('Failed to save certifications');
       }
 
+      markClean();
       setSuccess('Certifications saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'certifications', 'Failed to save your information. Please try again.'));

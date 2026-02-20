@@ -3,6 +3,7 @@ import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 type IDType = 'national_id' | 'alien_card' | 'passport';
 
@@ -48,6 +49,7 @@ const validateFile = (file: File): { valid: boolean; message?: string } => {
 };
 
 const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplete }) => {
+  const { markDirty, markClean } = useProfileSetup();
   const [subStep, setSubStep] = useState<number>(SUB_STEPS.ID_TYPE);
   const [idType, setIdType] = useState<IDType | null>(null);
   const [idNumber, setIdNumber] = useState('');
@@ -339,6 +341,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
         }),
       });
 
+      markClean();
       setSuccess('Your KYC documents and photos have been uploaded successfully!');
       if (onComplete) {
         setTimeout(() => onComplete(), 500);

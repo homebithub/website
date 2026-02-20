@@ -3,6 +3,7 @@ import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const RELIGIONS = [
   'Christianity',
@@ -21,6 +22,7 @@ interface ReligionProps {
 }
 
 const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
+  const { markDirty, markClean } = useProfileSetup();
   const [selectedReligion, setSelectedReligion] = useState<string>('');
   const [customReligion, setCustomReligion] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -100,6 +102,7 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
         throw new Error(errorData.message || 'Failed to save religion preferences');
       }
       
+      markClean();
       setSuccess('Religion preferences saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -112,6 +115,7 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
 
   const handleReligionChange = (religion: string) => {
     setSelectedReligion(religion);
+    markDirty();
     if (religion !== 'Other') {
       setCustomReligion('');
     }
@@ -174,7 +178,7 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
               id="customReligion"
               type="text"
               value={customReligion}
-              onChange={(e) => setCustomReligion(e.target.value)}
+              onChange={(e) => { setCustomReligion(e.target.value); markDirty(); }}
               placeholder="Enter your religion or belief system..."
               className="w-full h-10 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
               maxLength={100}

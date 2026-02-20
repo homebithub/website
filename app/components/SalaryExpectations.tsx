@@ -4,6 +4,7 @@ import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 type SalaryFrequency = 'Daily' | 'Weekly' | 'Monthly';
 type SalaryRange = string;
@@ -46,6 +47,7 @@ function parseSalaryRangeToNumber(range: string): number | null {
 }
 
 const SalaryExpectations: React.FC = () => {
+  const { markDirty, markClean } = useProfileSetup();
   const [frequency, setFrequency] = useState<SalaryFrequency>('Daily');
   const [selectedRange, setSelectedRange] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -96,6 +98,7 @@ const SalaryExpectations: React.FC = () => {
         throw new Error('Failed to save salary expectations');
       }
 
+      markClean();
       setSuccess('Salary expectations saved successfully!');
       console.log('Salary expectations saved successfully');
     } catch (err: any) {
@@ -125,6 +128,7 @@ const SalaryExpectations: React.FC = () => {
             onChange={(e) => {
               setFrequency(e.target.value as SalaryFrequency);
               setSelectedRange('');
+              markDirty();
             }}
             className="block w-full h-10 px-4 py-1.5 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 text-sm font-medium"
           >
@@ -157,7 +161,7 @@ const SalaryExpectations: React.FC = () => {
                   name="salaryRange"
                   value={range}
                   checked={selectedRange === range}
-                  onChange={() => setSelectedRange(range)}
+                  onChange={() => { setSelectedRange(range); markDirty(); }}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 flex-shrink-0 ${

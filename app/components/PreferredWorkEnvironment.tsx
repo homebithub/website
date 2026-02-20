@@ -3,6 +3,7 @@ import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const HOUSEHOLD_SIZES = [
   { value: 'small', label: 'Small (1-2 people)', icon: '👤' },
@@ -27,6 +28,7 @@ const FAMILY_TYPES = [
 ];
 
 const PreferredWorkEnvironment: React.FC = () => {
+  const { markDirty, markClean } = useProfileSetup();
   const [householdSize, setHouseholdSize] = useState<string>('');
   const [locationType, setLocationType] = useState<string>('');
   const [familyType, setFamilyType] = useState<string>('');
@@ -96,6 +98,7 @@ const PreferredWorkEnvironment: React.FC = () => {
         throw new Error('Failed to save preferences');
       }
 
+      markClean();
       setSuccess('Work environment preferences saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'workEnvironment', 'Failed to save your preferences. Please try again.'));
@@ -131,7 +134,7 @@ const PreferredWorkEnvironment: React.FC = () => {
                   name="householdSize"
                   value={size.value}
                   checked={householdSize === size.value}
-                  onChange={(e) => setHouseholdSize(e.target.value)}
+                  onChange={(e) => { setHouseholdSize(e.target.value); markDirty(); }}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
@@ -168,7 +171,7 @@ const PreferredWorkEnvironment: React.FC = () => {
                   name="locationType"
                   value={location.value}
                   checked={locationType === location.value}
-                  onChange={(e) => setLocationType(e.target.value)}
+                  onChange={(e) => { setLocationType(e.target.value); markDirty(); }}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
@@ -205,7 +208,7 @@ const PreferredWorkEnvironment: React.FC = () => {
                   name="familyType"
                   value={family.value}
                   checked={familyType === family.value}
-                  onChange={(e) => setFamilyType(e.target.value)}
+                  onChange={(e) => { setFamilyType(e.target.value); markDirty(); }}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
@@ -232,7 +235,7 @@ const PreferredWorkEnvironment: React.FC = () => {
           <textarea
             id="additionalPreferences"
             value={additionalPreferences}
-            onChange={(e) => setAdditionalPreferences(e.target.value)}
+            onChange={(e) => { setAdditionalPreferences(e.target.value); markDirty(); }}
             placeholder="Any other preferences about your ideal work environment? (e.g., quiet household, active family, specific requirements)"
             rows={4}
             className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 resize-none"

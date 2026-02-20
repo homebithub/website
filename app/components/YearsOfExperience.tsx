@@ -4,8 +4,10 @@ import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const YearsOfExperience = () => {
+    const { markDirty, markClean } = useProfileSetup();
     const [years, setYears] = useState<number>(0);
     const [customYears, setCustomYears] = useState<string>('');
     const [error, setError] = useState<string>('');
@@ -107,6 +109,7 @@ const YearsOfExperience = () => {
                 throw new Error(data.message || 'Failed to update profile');
             }
             
+            markClean();
             setSuccess('Your information has been saved successfully!');
             // Navigate to next step or show success message
             // navigate('/next-step');
@@ -146,7 +149,7 @@ const YearsOfExperience = () => {
                                     name="yearsOfExperience"
                                     value={option.value}
                                     checked={years === option.value}
-                                    onChange={() => setYears(option.value)}
+                                    onChange={() => { setYears(option.value); markDirty(); }}
                                     className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                                 />
                                 <span>{option.label}</span>
@@ -163,7 +166,7 @@ const YearsOfExperience = () => {
                                 type="number"
                                 id="customYears"
                                 value={customYears}
-                                onChange={(e) => setCustomYears(e.target.value)}
+                                onChange={(e) => { setCustomYears(e.target.value); markDirty(); }}
                                 min="6"
                                 max="50"
                                 className="w-full h-10 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"

@@ -3,6 +3,7 @@ import { API_BASE_URL } from '~/config/api';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 interface Reference {
   name: string;
@@ -22,6 +23,7 @@ const RELATIONSHIPS = [
 ];
 
 const References: React.FC = () => {
+  const { markDirty, markClean } = useProfileSetup();
   const [references, setReferences] = useState<Reference[]>([
     { name: '', relationship: '', phone: '', email: '', duration: '' }
   ]);
@@ -79,6 +81,7 @@ const References: React.FC = () => {
     const updated = [...references];
     updated[index][field] = value;
     setReferences(updated);
+    markDirty();
   };
 
   const validatePhone = (phone: string): boolean => {
@@ -142,6 +145,7 @@ const References: React.FC = () => {
         throw new Error('Failed to save references');
       }
 
+      markClean();
       setSuccess('References saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'references', 'Failed to save your references. Please try again.'));

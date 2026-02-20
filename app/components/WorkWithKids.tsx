@@ -4,12 +4,14 @@ import { handleApiError } from '../utils/errorMessages';
 import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 type WorkPreference = 'with_kids' | 'chores_only';
 type AgeRange = '0-2' | '2-5' | '5-10' | '10+';
 type ChildrenCapacity = '1-2' | '2-4' | '5+';
 
 const WorkWithKids = () => {
+    const { markDirty, markClean } = useProfileSetup();
     const [workPreference, setWorkPreference] = useState<WorkPreference | null>(null);
     const [selectedAges, setSelectedAges] = useState<AgeRange[]>([]);
     const [selectedCapacities, setSelectedCapacities] = useState<ChildrenCapacity[]>([]);
@@ -71,12 +73,14 @@ const WorkWithKids = () => {
         setSelectedAges(prev => 
             prev.includes(age) ? prev.filter(a => a !== age) : [...prev, age]
         );
+        markDirty();
     };
 
     const toggleCapacity = (capacity: ChildrenCapacity) => {
         setSelectedCapacities(prev => 
             prev.includes(capacity) ? prev.filter(c => c !== capacity) : [...prev, capacity]
         );
+        markDirty();
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -132,6 +136,7 @@ const WorkWithKids = () => {
             const data = await response.json();
             if (!response.ok) throw new Error(data.message || 'Failed to update profile');
             
+            markClean();
             setSuccess('Your preferences have been saved successfully!');
             // navigate('/next-step');
         } catch (err: any) {
@@ -163,7 +168,7 @@ const WorkWithKids = () => {
                                 type="radio"
                                 name="workPreference"
                                 checked={workPreference === 'with_kids'}
-                                onChange={() => setWorkPreference('with_kids')}
+                                onChange={() => { setWorkPreference('with_kids'); markDirty(); }}
                                 className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span>I can work with / have worked with children</span>
@@ -176,7 +181,7 @@ const WorkWithKids = () => {
                                 type="radio"
                                 name="workPreference"
                                 checked={workPreference === 'chores_only'}
-                                onChange={() => setWorkPreference('chores_only')}
+                                onChange={() => { setWorkPreference('chores_only'); markDirty(); }}
                                 className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span>I am only interested in chores</span>
