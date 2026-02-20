@@ -85,27 +85,33 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
         const data = await response.json();
         // Handle response structure: { data: { last_completed_step: ..., status: ... } }
         const progressData = data.data || {};
-        const isComplete = progressData.status === 'completed';
+        const totalSteps = progressData.total_steps || 0;
         const lastStep = progressData.last_completed_step || 0;
+        const isComplete = progressData.status === 'completed' ||
+          (totalSteps > 0 && lastStep >= totalSteps);
 
-        console.log('ProfileSetupGuard - Setup status:', { isComplete, lastStep });
+        console.log('ProfileSetupGuard - Setup status:', { isComplete, lastStep, totalSteps });
 
-        if (!isComplete) {
-          // Household users who haven't started setup go to choice page first
-          if (profileType === 'household' && lastStep === 0) {
-            console.log('ProfileSetupGuard - Household user at step 0, redirecting to choice page');
-            navigate('/household-choice', { replace: true });
-            return;
-          }
-          // Profile incomplete, redirect to setup
-          const setupRoute = profileType === 'household'
-            ? `/profile-setup/household?step=${lastStep + 1}`
-            : `/profile-setup/househelp?step=${lastStep + 1}`;
-
-          console.log('ProfileSetupGuard - Redirecting to:', setupRoute);
-          navigate(setupRoute, { replace: true });
+        if (isComplete) {
+          setIsSetupComplete(true);
+          setIsChecking(false);
           return;
         }
+
+        // Household users who haven't started setup go to choice page first
+        if (profileType === 'household' && lastStep === 0) {
+          console.log('ProfileSetupGuard - Household user at step 0, redirecting to choice page');
+          navigate('/household-choice', { replace: true });
+          return;
+        }
+        // Profile incomplete, redirect to setup
+        const setupRoute = profileType === 'household'
+          ? `/profile-setup/household?step=${lastStep + 1}`
+          : `/profile-setup/househelp?step=${lastStep + 1}`;
+
+        console.log('ProfileSetupGuard - Redirecting to:', setupRoute);
+        navigate(setupRoute, { replace: true });
+        return;
       } else if (response.status === 404) {
         // No profile setup record exists - user hasn't started setup
         if (profileType === 'household') {
