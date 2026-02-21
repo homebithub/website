@@ -21,6 +21,7 @@ export function InviteCodeGenerator({
   const [role, setRole] = useState<'admin' | 'member'>('member');
   const [expiresInDays, setExpiresInDays] = useState(7);
   const [maxUses, setMaxUses] = useState(1);
+  const [autoApprove, setAutoApprove] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -31,6 +32,7 @@ export function InviteCodeGenerator({
         role,
         expires_in_days: expiresInDays,
         max_uses: maxUses,
+        auto_approve: autoApprove,
       });
 
       setInvitation(newInvitation);
@@ -64,6 +66,7 @@ export function InviteCodeGenerator({
     setRole('member');
     setExpiresInDays(7);
     setMaxUses(1);
+    setAutoApprove(false);
   };
 
   if (!isOpen) {
@@ -189,6 +192,47 @@ export function InviteCodeGenerator({
                   <option value={3}>3 people</option>
                   <option value={5}>5 people</option>
                 </select>
+              </div>
+
+              {/* Auto-Approve Toggle */}
+              <div>
+                <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-3">
+                  Join Approval
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setAutoApprove(false)}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      !autoApprove
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 shadow-md'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-500/50'
+                    }`}
+                  >
+                    <div className="text-left">
+                      <div className="font-bold text-gray-900 dark:text-white mb-1">Require Approval</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        You must approve each join request
+                      </div>
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setAutoApprove(true)}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      autoApprove
+                        ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 shadow-md'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-500/50'
+                    }`}
+                  >
+                    <div className="text-left">
+                      <div className="font-bold text-gray-900 dark:text-white mb-1">Auto-Approve</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Members join instantly with the code
+                      </div>
+                    </div>
+                  </button>
+                </div>
               </div>
 
               {/* Generate Button */}

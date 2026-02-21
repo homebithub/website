@@ -33,6 +33,9 @@ const STEPS = [
 
 function HouseholdProfileSetupContent() {
   const [currentStep, setCurrentStep] = useState(0);
+  const [displayedStep, setDisplayedStep] = useState(0);
+  const [animationPhase, setAnimationPhase] = useState<'idle' | 'exit' | 'enter'>('idle');
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('left');
   const [saving, setSaving] = useState(false);
   const [autoSaving, setAutoSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
@@ -47,6 +50,21 @@ function HouseholdProfileSetupContent() {
   const { saveProfileToBackend, loadProfileFromBackend, updateStepData, saveStepToBackend, lastCompletedStep, profileData, error: setupError, hasUnsavedChanges, markClean } = useProfileSetup();
   
   const currentStepData = STEPS[currentStep];
+
+  const animateToStep = (newStep: number) => {
+    if (animationPhase !== 'idle') return;
+    const direction = newStep > currentStep ? 'left' : 'right';
+    setSlideDirection(direction);
+    setAnimationPhase('exit');
+    setTimeout(() => {
+      setCurrentStep(newStep);
+      setDisplayedStep(newStep);
+      setAnimationPhase('enter');
+      setTimeout(() => {
+        setAnimationPhase('idle');
+      }, 300);
+    }, 200);
+  };
 
   const handleLocationSaved = async (location: any) => {
     const locationData = {
@@ -103,7 +121,7 @@ function HouseholdProfileSetupContent() {
       if (!setupCompleteRef.current) {
         const timeOnStep = Math.floor((Date.now() - startTime) / 1000);
         // Save time spent when leaving step
-        saveProgressToBackend(currentStep, timeOnStep);
+        saveProgressToBackend(currentStep, timeOnStep, false, false, true);
       }
     };
   }, [currentStep]);
@@ -117,18 +135,25 @@ function HouseholdProfileSetupContent() {
   }, [loadProfileFromBackend]);
 
   useEffect(() => {
+    // Initialize the highest completed step ref from backend data
+    if (lastCompletedStep > 0) {
+      highestCompletedStepRef.current = Math.max(highestCompletedStepRef.current, lastCompletedStep);
+    }
+
     // If editing a specific section from profile page, navigate to that step
     if (isEditMode && location.state?.editSection) {
       const sectionId = location.state.editSection;
       const stepIndex = STEPS.findIndex(step => step.id === sectionId);
       if (stepIndex !== -1) {
         setCurrentStep(stepIndex);
+        setDisplayedStep(stepIndex);
       }
-    } else if (lastCompletedStep > 0) {
-      // Jump to last completed step if returning user (not in edit mode)
-      // Clamp to valid range (lastCompletedStep is 1-indexed from backend)
-      setCurrentStep(Math.min(lastCompletedStep, STEPS.length - 1));
-      console.log(`Resuming from step ${Math.min(lastCompletedStep, STEPS.length - 1) + 1}`);
+    } else if (lastCompletedStep > 1) {
+      // Jump to last completed step if returning user has completed more than just step 1
+      // lastCompletedStep is 1-indexed from backend, so >1 means they got past the first step
+      const resumeStep = Math.min(lastCompletedStep, STEPS.length - 1);
+      setCurrentStep(resumeStep);
+      setDisplayedStep(resumeStep);
     }
   }, [lastCompletedStep, isEditMode, location.state]);
 
@@ -139,7 +164,7 @@ function HouseholdProfileSetupContent() {
     markClean();
     
     if (currentStep < STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
+      animateToStep(currentStep + 1);
       setTimeSpent(0); // Reset timer for new step
     } else {
       // Last step - show disclaimer before completing
@@ -154,7 +179,7 @@ function HouseholdProfileSetupContent() {
     markClean();
     
     if (currentStep < STEPS.length - 1) {
-      setCurrentStep(currentStep + 1);
+      animateToStep(currentStep + 1);
       setTimeSpent(0);
     } else {
       // Last step - show disclaimer before completing
@@ -241,6 +266,8 @@ function HouseholdProfileSetupContent() {
     }
   };
   
+  const highestCompletedStepRef = useRef(0);
+
   const saveProgressToBackend = async (
     step: number, 
     timeOnStep: number, 
@@ -256,6 +283,11 @@ function HouseholdProfileSetupContent() {
       const actualStep = Math.min(step, STEPS.length - 1);
       // Backend expects step IDs (strings), not step numbers
       const completedSteps = Array.from({ length: actualStep + 1 }, (_, i) => STEPS[i].id);
+
+      // Only advance last_completed_step when explicitly completing/skipping, not on auto-saves
+      if (!isAutoSave) {
+        highestCompletedStepRef.current = Math.max(highestCompletedStepRef.current, actualStep + 1);
+      }
       
       // Save progress tracking
       await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
@@ -266,7 +298,7 @@ function HouseholdProfileSetupContent() {
         },
         body: JSON.stringify({
           current_step: actualStep + 1,
-          last_completed_step: actualStep + 1,
+          last_completed_step: highestCompletedStepRef.current,
           total_steps: STEPS.length,
           completed_steps: completedSteps,
           step_id: STEPS[actualStep]?.id || 'completed',
@@ -301,7 +333,7 @@ function HouseholdProfileSetupContent() {
       // Save current progress before going back
       await saveProgressToBackend(currentStep, timeSpent);
       markClean();
-      setCurrentStep(currentStep - 1);
+      animateToStep(currentStep - 1);
       setTimeSpent(0);
     }
   };
@@ -377,9 +409,19 @@ function HouseholdProfileSetupContent() {
           )}
 
           {/* Content Area */}
-          <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
+          <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300 overflow-hidden">
             <div className="px-4 sm:px-6 py-6 sm:py-8">
-              <div className="max-w-2xl mx-auto">
+              <div
+                key={displayedStep}
+                className={`max-w-2xl mx-auto transition-all ease-out ${
+                  animationPhase === 'exit'
+                    ? `duration-200 opacity-0 ${slideDirection === 'left' ? '-translate-x-8' : 'translate-x-8'}`
+                    : animationPhase === 'enter'
+                    ? 'duration-300 opacity-100 translate-x-0'
+                    : 'opacity-100 translate-x-0'
+                }`}
+                style={animationPhase === 'enter' ? { animation: `slideIn${slideDirection === 'left' ? 'Left' : 'Right'} 0.3s ease-out` } : undefined}
+              >
                 {STEPS[currentStep].id === 'bio' ? (
                   <CurrentComponent userType="household" />
                 ) : STEPS[currentStep].id === 'photos' ? (

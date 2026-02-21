@@ -588,6 +588,29 @@ i {
     100% { left: 150%; }
 }
 
+/* Profile setup step transition animations */
+@keyframes slideInLeft {
+    from {
+        opacity: 0;
+        transform: translateX(2rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(-2rem);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
 /* Glow effect */
 .glow-purple {
     box-shadow: 0 0 20px rgba(168, 85, 247, 0.4);
