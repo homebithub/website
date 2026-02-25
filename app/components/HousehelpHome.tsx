@@ -67,7 +67,10 @@ export default function HousehelpHome() {
   const [results, setResults] = useState<HouseholdItem[]>([]);
 
   // Fetch profile photos from documents table for household results
-  const householdUserIds = useMemo(() => results.map(r => r.id).filter(Boolean) as string[], [results]);
+  const householdUserIds = useMemo(() => {
+    if (!Array.isArray(results)) return [];
+    return results.map(r => r.id).filter(Boolean) as string[];
+  }, [results]);
   const profilePhotos = useProfilePhotos(householdUserIds);
 
   const [loading, setLoading] = useState(true);
@@ -297,8 +300,10 @@ export default function HousehelpHome() {
         body: JSON.stringify(toPayload()),
       });
       const raw = await apiClient.json<any>(res);
-      const data = raw?.data?.data || raw?.data || raw || [];
-      setResults((data as HouseholdItem[]) || []);
+      const data = raw?.data?.data || raw?.data || raw;
+      // Ensure data is always an array
+      const households = Array.isArray(data) ? data : [];
+      setResults(households as HouseholdItem[]);
     } catch (err: any) {
       setError(err.message || "Failed to load households");
       setResults([]);
