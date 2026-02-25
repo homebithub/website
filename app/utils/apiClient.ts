@@ -1,4 +1,5 @@
 import { API_BASE_URL, getAuthHeaders } from "~/config/api";
+import { getDeviceId } from "~/utils/deviceFingerprint";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -16,10 +17,19 @@ async function request(url: string, method: HttpMethod, options: RequestOptions 
   const { requireAuth = false, handle401 = "redirect", headers, ...rest } = options;
   const token = getToken();
 
+  // Get device ID for tracking
+  let deviceId: string | undefined;
+  try {
+    deviceId = await getDeviceId();
+  } catch (error) {
+    console.warn('Failed to get device ID:', error);
+  }
+
   // Build headers: include auth if token exists, never if missing
   const finalHeaders: HeadersInit = {
     ...(headers || {}),
     ...(token ? getAuthHeaders(token) : { "Content-Type": "application/json" }),
+    ...(deviceId ? { "X-Device-ID": deviceId } : {}),
   };
 
   // If auth explicitly required and no token, surface a 401-like error

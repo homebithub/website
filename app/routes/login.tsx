@@ -13,6 +13,8 @@ import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { prepareDeviceRegistration } from '~/utils/deviceFingerprint';
+import { registerDevice } from '~/utils/api/devices';
 
 export const meta = () => [
     { title: "Log In — Homebit" },
@@ -232,6 +234,24 @@ export default function LoginPage() {
     
     try {
       await login(formData.phone, formData.password);
+      
+      // After successful login, register the device
+      try {
+        const deviceData = await prepareDeviceRegistration();
+        const response = await registerDevice(deviceData);
+        
+        if (response.requires_confirmation) {
+          // Device needs confirmation - show message
+          console.log('Device registered, confirmation required');
+        } else {
+          // Device already confirmed or trusted
+          console.log('Device already confirmed');
+        }
+      } catch (deviceError) {
+        // Don't block login if device registration fails
+        console.error('Device registration failed:', deviceError);
+      }
+      
       // Login successful, redirect will be handled by useEffect
     } catch (error) {
       // Capture login error and display it

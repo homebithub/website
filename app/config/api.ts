@@ -297,12 +297,26 @@ export const API_ENDPOINTS = {
       list: `${AUTH_API_BASE_URL}/api/v1/subscriptions/list`,
       byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/subscriptions/${id}`,
       cancel: (id: string) => `${AUTH_API_BASE_URL}/api/v1/subscriptions/${id}/cancel`,
+      pause: (id: string) => `${AUTH_API_BASE_URL}/api/v1/subscriptions/${id}/pause`,
+      resume: (id: string) => `${AUTH_API_BASE_URL}/api/v1/subscriptions/${id}/resume`,
+      pauseStatus: (id: string) => `${AUTH_API_BASE_URL}/api/v1/subscriptions/${id}/pause-status`,
+      changePlan: (id: string) => `${AUTH_API_BASE_URL}/api/v1/subscriptions/${id}/change-plan`,
+      previewProration: (id: string) => `${AUTH_API_BASE_URL}/api/v1/subscriptions/${id}/preview-proration`,
+      creditBalance: (id: string) => `${AUTH_API_BASE_URL}/api/v1/subscriptions/${id}/credit-balance`,
     },
     transactions: {
       initiate: `${AUTH_API_BASE_URL}/api/v1/payments`,
       list: `${AUTH_API_BASE_URL}/api/v1/payments`,
       byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/payments/${id}`,
       status: (id: string) => `${AUTH_API_BASE_URL}/api/v1/payments/${id}/status`,
+    },
+    paymentMethods: {
+      list: `${AUTH_API_BASE_URL}/api/v1/payment-methods`,
+      add: `${AUTH_API_BASE_URL}/api/v1/payment-methods`,
+      default: `${AUTH_API_BASE_URL}/api/v1/payment-methods/default`,
+      setDefault: (id: string) => `${AUTH_API_BASE_URL}/api/v1/payment-methods/${id}/default`,
+      delete: (id: string) => `${AUTH_API_BASE_URL}/api/v1/payment-methods/${id}`,
+      updateNickname: (id: string) => `${AUTH_API_BASE_URL}/api/v1/payment-methods/${id}/nickname`,
     },
   },
   // KYC endpoints
@@ -312,6 +326,17 @@ export const API_ENDPOINTS = {
     byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/kyc/${id}`,
     updateStatus: (id: string) => `${AUTH_API_BASE_URL}/api/v1/kyc/${id}/status`,
     pending: `${AUTH_API_BASE_URL}/api/v1/kyc/pending`,
+  },
+  
+  // Device authentication endpoints
+  devices: {
+    register: `${AUTH_API_BASE_URL}/api/v1/devices`,
+    confirm: `${AUTH_API_BASE_URL}/api/v1/devices/confirm`,
+    list: `${AUTH_API_BASE_URL}/api/v1/devices`,
+    byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/devices/${id}`,
+    revoke: (id: string) => `${AUTH_API_BASE_URL}/api/v1/devices/${id}`,
+    revokeAll: `${AUTH_API_BASE_URL}/api/v1/devices/revoke-all`,
+    activity: (id: string) => `${AUTH_API_BASE_URL}/api/v1/devices/${id}/activity`,
   },
 } as const;
 

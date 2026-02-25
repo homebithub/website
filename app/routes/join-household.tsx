@@ -14,6 +14,7 @@ export default function JoinHouseholdPage() {
   const [error, setError] = useState<string | null>(null);
   const [validationInfo, setValidationInfo] = useState<any>(null);
   const [success, setSuccess] = useState(false);
+  const [joinStatus, setJoinStatus] = useState<'approved' | 'pending' | null>(null);
 
   const handleValidateCode = async () => {
     if (!inviteCode.trim()) {
@@ -76,12 +77,16 @@ export default function JoinHouseholdPage() {
       }
 
       const data = await res.json();
+      const status = data?.data?.status || data?.status || 'pending';
+      setJoinStatus(status);
       setSuccess(true);
       
-      // Redirect to household profile after 2 seconds
-      setTimeout(() => {
-        navigate("/household/profile");
-      }, 2000);
+      // Only auto-redirect if auto-approved
+      if (status === 'approved') {
+        setTimeout(() => {
+          navigate("/household/profile");
+        }, 2000);
+      }
     } catch (err: any) {
       console.error("Join error:", err);
       setError(err.message || "Failed to join household");
@@ -107,15 +112,31 @@ export default function JoinHouseholdPage() {
 
             {success ? (
               <div className="space-y-6">
-                <SuccessAlert message="You have successfully joined the household." title="Successfully Joined!" />
-                <div className="text-center">
-                  <button
-                    onClick={() => navigate('/household/members')}
-                    className="px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold"
-                  >
-                    View Household Members
-                  </button>
-                </div>
+                {joinStatus === 'approved' ? (
+                  <>
+                    <SuccessAlert message="You have been automatically added to the household. Redirecting..." title="Successfully Joined!" />
+                    <div className="text-center">
+                      <button
+                        onClick={() => navigate('/household/members')}
+                        className="px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold"
+                      >
+                        View Household Members
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <SuccessAlert message="Your request has been sent to the household owner for approval. You will be notified once they respond." title="Request Sent!" />
+                    <div className="text-center">
+                      <button
+                        onClick={() => navigate('/dashboard')}
+                        className="px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-semibold"
+                      >
+                        Back to Dashboard
+                      </button>
+                    </div>
+                  </>
+                )}
               </div>
             ) : (
               <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-xl border-2 border-purple-200 dark:border-purple-500/30 p-8">
@@ -163,12 +184,6 @@ export default function JoinHouseholdPage() {
                         <h3 className="text-lg font-bold text-green-900 dark:text-green-100 mb-1">
                           Valid Invitation Code!
                         </h3>
-                        <p className="text-sm text-green-700 dark:text-green-300">
-                          You're about to join: <strong>{validationInfo.household_name}</strong>
-                        </p>
-                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                          Role: {validationInfo.role}
-                        </p>
                       </div>
                     </div>
 
@@ -191,7 +206,7 @@ export default function JoinHouseholdPage() {
                     <button
                       onClick={handleJoinHousehold}
                       disabled={loading}
-                      className="w-full mt-4 px-6 py-1 bg-purple-600 text-white font-bold rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg text-lg"
+                      className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg text-lg"
                     >
                       {loading ? (
                         <span className="flex items-center justify-center gap-2">

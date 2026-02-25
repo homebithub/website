@@ -68,6 +68,7 @@ export interface CreateInvitationRequest {
   invited_phone?: string;
   expires_in_days?: number;
   max_uses?: number;
+  auto_approve?: boolean;
 }
 
 export interface JoinHouseholdRequest {
