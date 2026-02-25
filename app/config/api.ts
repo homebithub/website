@@ -327,6 +327,17 @@ export const API_ENDPOINTS = {
     updateStatus: (id: string) => `${AUTH_API_BASE_URL}/api/v1/kyc/${id}/status`,
     pending: `${AUTH_API_BASE_URL}/api/v1/kyc/pending`,
   },
+  
+  // Device authentication endpoints
+  devices: {
+    register: `${AUTH_API_BASE_URL}/api/v1/devices`,
+    confirm: `${AUTH_API_BASE_URL}/api/v1/devices/confirm`,
+    list: `${AUTH_API_BASE_URL}/api/v1/devices`,
+    byId: (id: string) => `${AUTH_API_BASE_URL}/api/v1/devices/${id}`,
+    revoke: (id: string) => `${AUTH_API_BASE_URL}/api/v1/devices/${id}`,
+    revokeAll: `${AUTH_API_BASE_URL}/api/v1/devices/revoke-all`,
+    activity: (id: string) => `${AUTH_API_BASE_URL}/api/v1/devices/${id}/activity`,
+  },
 } as const;
 
 /**
