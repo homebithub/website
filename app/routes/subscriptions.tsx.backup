@@ -10,10 +10,7 @@ import {
   XCircleIcon,
   ArrowPathIcon,
   BanknotesIcon,
-  ExclamationTriangleIcon,
-  PauseIcon,
-  PlayIcon,
-  XCircleIcon as CancelIcon
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { Navigation } from "~/components/Navigation";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -23,21 +20,6 @@ import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { API_ENDPOINTS, getAuthHeaders } from '~/config/api';
-import { PauseSubscriptionModal } from '~/components/subscriptions/PauseSubscriptionModal';
-import { CancelSubscriptionFlow } from '~/components/subscriptions/CancelSubscriptionFlow';
-import { ChangePlanModal } from '~/components/subscriptions/ChangePlanModal';
-import { CreditBalanceCard } from '~/components/subscriptions/CreditBalanceCard';
-import { PauseStatusCard } from '~/components/subscriptions/PauseStatusCard';
-import {
-  pauseSubscription,
-  resumeSubscription,
-  getPauseStatus,
-  cancelSubscription,
-  changePlan,
-  previewProration,
-  getCreditBalance,
-} from '~/utils/api/subscriptions';
-import type { PauseStatusResponse, CreditBalanceResponse, PauseReason, CancelReason } from '~/types/payments';
 
 interface SubscriptionPlan {
   id: string;
@@ -102,17 +84,6 @@ export default function SubscriptionsPage() {
   const [sendingReceipt, setSendingReceipt] = useState(false);
   const [downloadingReceipt, setDownloadingReceipt] = useState(false);
   const [receiptMessage, setReceiptMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-  
-  // Subscription management state
-  const [showPauseModal, setShowPauseModal] = useState(false);
-  const [showCancelFlow, setShowCancelFlow] = useState(false);
-  const [showChangePlanModal, setShowChangePlanModal] = useState(false);
-  const [selectedNewPlan, setSelectedNewPlan] = useState<SubscriptionPlan | null>(null);
-  const [pauseStatus, setPauseStatus] = useState<PauseStatusResponse | null>(null);
-  const [creditBalance, setCreditBalance] = useState<CreditBalanceResponse | null>(null);
-  const [loadingPauseStatus, setLoadingPauseStatus] = useState(false);
-  const [loadingCreditBalance, setLoadingCreditBalance] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
 
   const fetchSubscriptionData = React.useCallback(async () => {
     setDataLoading(true);
@@ -167,36 +138,6 @@ export default function SubscriptionsPage() {
     }
   }, []);
 
-  // Fetch pause status
-  const fetchPauseStatus = React.useCallback(async () => {
-    if (!subscription?.id) return;
-    
-    setLoadingPauseStatus(true);
-    try {
-      const status = await getPauseStatus(subscription.id);
-      setPauseStatus(status);
-    } catch (error) {
-      console.error('[Subscriptions] Failed to fetch pause status:', error);
-    } finally {
-      setLoadingPauseStatus(false);
-    }
-  }, [subscription?.id]);
-
-  // Fetch credit balance
-  const fetchCreditBalance = React.useCallback(async () => {
-    if (!subscription?.id) return;
-    
-    setLoadingCreditBalance(true);
-    try {
-      const balance = await getCreditBalance(subscription.id);
-      setCreditBalance(balance);
-    } catch (error) {
-      console.error('[Subscriptions] Failed to fetch credit balance:', error);
-    } finally {
-      setLoadingCreditBalance(false);
-    }
-  }, [subscription?.id]);
-
   useEffect(() => {
     // Cleanup polling on unmount
     return () => {
@@ -223,68 +164,6 @@ export default function SubscriptionsPage() {
       console.log('[Subscriptions] Setting phone number from user:', user.phone);
     }
   }, [user, fetchSubscriptionData]);
-
-  // Fetch pause status and credit balance when subscription is loaded
-  useEffect(() => {
-    if (subscription?.id) {
-      fetchPauseStatus();
-      fetchCreditBalance();
-    }
-  }, [subscription?.id, fetchPauseStatus, fetchCreditBalance]);
-
-  // Handle pause subscription
-  const handlePauseSubscription = async (reason: PauseReason, durationDays: number) => {
-    if (!subscription?.id) return;
-    
-    await pauseSubscription(subscription.id, { reason, duration_days: durationDays });
-    await fetchSubscriptionData();
-    await fetchPauseStatus();
-  };
-
-  // Handle resume subscription
-  const handleResumeSubscription = async () => {
-    if (!subscription?.id) return;
-    
-    setErrorMessage('');
-    try {
-      await resumeSubscription(subscription.id);
-      setSuccessMessage('Subscription resumed successfully');
-      await fetchSubscriptionData();
-      await fetchPauseStatus();
-      setTimeout(() => setSuccessMessage(''), 5000);
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : 'Failed to resume subscription');
-    }
-  };
-
-  // Handle cancel subscription
-  const handleCancelSubscription = async (reason: CancelReason, feedback?: string) => {
-    if (!subscription?.id) return;
-    
-    await cancelSubscription(subscription.id, { reason, feedback });
-    setSuccessMessage('Subscription cancelled successfully. Access continues until the end of your billing period.');
-    await fetchSubscriptionData();
-    setTimeout(() => setSuccessMessage(''), 5000);
-  };
-
-  // Handle change plan
-  const handleChangePlan = async (newPlanId: string) => {
-    if (!subscription?.id) return;
-    
-    await changePlan(subscription.id, { new_plan_id: newPlanId });
-    setSuccessMessage('Plan changed successfully');
-    await fetchSubscriptionData();
-    await fetchCreditBalance();
-    setTimeout(() => setSuccessMessage(''), 5000);
-  };
-
-  // Handle preview proration
-  const handlePreviewProration = async (newPlanId: string) => {
-    if (!subscription?.id) return { unused_credit: 0, prorated_charge: 0, net_amount: 0, days_used: 0, days_remaining: 0, total_days: 0, description: '' };
-    
-    const preview = await previewProration(subscription.id, { new_plan_id: newPlanId });
-    return preview.proration;
-  };
 
   const initiatePayment = async () => {
     if (!subscription || !phoneNumber) {
@@ -708,62 +587,7 @@ export default function SubscriptionsPage() {
                         <CreditCardIcon className="w-5 h-5" />
                         Make Payment Now
                       </button>
-
-                      {/* Subscription Management Actions */}
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        {subscription.status === 'active' && !pauseStatus?.is_paused && (
-                          <button
-                            onClick={() => setShowPauseModal(true)}
-                            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-xl hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-all text-sm font-medium"
-                          >
-                            <PauseIcon className="w-4 h-4" />
-                            Pause
-                          </button>
-                        )}
-                        
-                        {pauseStatus?.is_paused && (
-                          <button
-                            onClick={handleResumeSubscription}
-                            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-xl hover:bg-green-200 dark:hover:bg-green-900/50 transition-all text-sm font-medium"
-                          >
-                            <PlayIcon className="w-4 h-4" />
-                            Resume
-                          </button>
-                        )}
-                        
-                        {subscription.status === 'active' && (
-                          <button
-                            onClick={() => setShowCancelFlow(true)}
-                            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-all text-sm font-medium"
-                          >
-                            <CancelIcon className="w-4 h-4" />
-                            Cancel
-                          </button>
-                        )}
-                      </div>
                     </div>
-
-                    {/* Success/Error Messages */}
-                    {successMessage && <SuccessAlert message={successMessage} />}
-                    {errorMessage && <ErrorAlert message={errorMessage} />}
-
-                    {/* Pause Status Card */}
-                    {pauseStatus?.is_paused && (
-                      <PauseStatusCard
-                        pauseStatus={pauseStatus}
-                        loading={loadingPauseStatus}
-                        onResume={handleResumeSubscription}
-                      />
-                    )}
-
-                    {/* Credit Balance Card */}
-                    {creditBalance && (
-                      <CreditBalanceCard
-                        creditBalance={creditBalance.credit_balance}
-                        formatted={creditBalance.formatted}
-                        loading={loadingCreditBalance}
-                      />
-                    )}
 
                     {/* Change Plan Section */}
                     {plans.length > 0 && (
@@ -795,10 +619,7 @@ export default function SubscriptionsPage() {
                                   <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">/ {plan.billing_cycle}</span>
                                 </div>
                                 <button
-                                  onClick={() => {
-                                    setSelectedNewPlan(plan);
-                                    setShowChangePlanModal(true);
-                                  }}
+                                  onClick={() => navigate(`/pricing?plan=${plan.id}`)}
                                   className="w-full px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
                                 >
                                   Switch to This Plan
@@ -1249,57 +1070,6 @@ export default function SubscriptionsPage() {
           </div>
         </Dialog>
       </Transition>
-
-      {/* Pause Subscription Modal */}
-      {subscription && (
-        <PauseSubscriptionModal
-          isOpen={showPauseModal}
-          onClose={() => setShowPauseModal(false)}
-          subscription={subscription}
-          onSuccess={(resumeDate) => {
-            setSuccessMessage(`Subscription paused successfully. Will resume on ${formatDate(resumeDate)}`);
-            setTimeout(() => setSuccessMessage(''), 5000);
-          }}
-          onPause={handlePauseSubscription}
-        />
-      )}
-
-      {/* Cancel Subscription Flow */}
-      {subscription && (
-        <CancelSubscriptionFlow
-          isOpen={showCancelFlow}
-          onClose={() => setShowCancelFlow(false)}
-          subscription={subscription}
-          availablePlans={plans}
-          onCancel={handleCancelSubscription}
-          onPauseInstead={() => {
-            setShowCancelFlow(false);
-            setShowPauseModal(true);
-          }}
-          onDowngrade={(planId) => {
-            const plan = plans.find(p => p.id === planId);
-            if (plan) {
-              setSelectedNewPlan(plan);
-              setShowChangePlanModal(true);
-            }
-          }}
-        />
-      )}
-
-      {/* Change Plan Modal */}
-      {subscription && selectedNewPlan && (
-        <ChangePlanModal
-          isOpen={showChangePlanModal}
-          onClose={() => {
-            setShowChangePlanModal(false);
-            setSelectedNewPlan(null);
-          }}
-          currentSubscription={subscription}
-          newPlan={selectedNewPlan}
-          onPreview={handlePreviewProration}
-          onConfirm={handleChangePlan}
-        />
-      )}
     </div>
   );
 }
