@@ -254,8 +254,9 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
         </div>
       )}
       <div className="mt-8">
-        <label className="block mb-2 font-semibold text-gray-700">Available from <span className="text-red-500">*</span></label>
+        <label htmlFor="availableFrom" className="block mb-2 font-semibold text-gray-700">Available from <span className="text-red-500">*</span></label>
         <input
+          id="availableFrom"
           type="date"
           value={availableFrom}
           onChange={e => setAvailableFrom(e.target.value)}
