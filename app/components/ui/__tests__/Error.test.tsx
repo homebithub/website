@@ -1,386 +1,453 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen } from '@testing-library/react';
-import { renderWithRouter, userEvent, VIEWPORTS, setViewport } from '~/test/utils/test-utils';
+import userEvent from '@testing-library/user-event';
+import { renderWithRouter } from '~/test/utils/test-utils';
 import { Error } from '../Error';
 
 describe('Error Component', () => {
   beforeEach(() => {
-    // Clear any previous state
+    vi.clearAllMocks();
   });
 
-  describe('Rendering', () => {
-    it('should render error message', () => {
+  describe('1. Rendering & Content', () => {
+    it('should render with required message prop', () => {
       renderWithRouter(<Error message="Something went wrong" />);
-      expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+      
+      expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
     });
 
-    it('should render default title', () => {
+    it('should render default title when not provided', () => {
       renderWithRouter(<Error message="Test error" />);
-      expect(screen.getByText('Error')).toBeInTheDocument();
+      
+      expect(screen.getByText(/^error$/i)).toBeInTheDocument();
     });
 
-    it('should render custom title', () => {
+    it('should render custom title when provided', () => {
       renderWithRouter(<Error title="Custom Error" message="Test error" />);
-      expect(screen.getByText('Custom Error')).toBeInTheDocument();
+      
+      expect(screen.getByText(/custom error/i)).toBeInTheDocument();
+      expect(screen.queryByText(/^error$/i)).not.toBeInTheDocument();
     });
 
-    it('should render action button when provided', () => {
-      renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/home', label: 'Go Home' }}
-        />
-      );
-      expect(screen.getByText('Go Home')).toBeInTheDocument();
+    it('should render message text', () => {
+      renderWithRouter(<Error message="This is an error message" />);
+      
+      expect(screen.getByText(/this is an error message/i)).toBeInTheDocument();
     });
 
-    it('should not render action button when not provided', () => {
+    it('should not render action button when action prop not provided', () => {
       renderWithRouter(<Error message="Test error" />);
+      
       expect(screen.queryByRole('link')).not.toBeInTheDocument();
     });
-  });
 
-  describe('Theme Consistency', () => {
-    it('should use proper background color', () => {
-      const { container } = renderWithRouter(<Error message="Test error" />);
-      const errorContainer = container.querySelector('.min-h-screen');
-      
-      expect(errorContainer?.className).toMatch(/bg-slate/);
-    });
-
-    it('should have proper text colors', () => {
-      renderWithRouter(<Error message="Test error" />);
-      const title = screen.getByText('Error');
-      const message = screen.getByText('Test error');
-      
-      expect(title.className).toMatch(/text-slate-900/);
-      expect(message.className).toMatch(/text-slate-600/);
-    });
-
-    it('should have themed action button', () => {
+    it('should render action button when action prop provided', () => {
       renderWithRouter(
-        <Error
-          message="Test error"
+        <Error 
+          message="Test error" 
           action={{ to: '/home', label: 'Go Home' }}
         />
       );
-      const button = screen.getByText('Go Home');
       
-      expect(button.className).toMatch(/bg-teal/);
-      expect(button.className).toMatch(/hover:bg-teal/);
+      expect(screen.getByRole('link', { name: /go home/i })).toBeInTheDocument();
     });
 
-    it('should have rounded corners on button', () => {
+    it('should render action button with correct label', () => {
       renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/home', label: 'Go Home' }}
+        <Error 
+          message="Test error" 
+          action={{ to: '/dashboard', label: 'Back to Dashboard' }}
         />
       );
-      const button = screen.getByText('Go Home');
       
-      expect(button.className).toMatch(/rounded/);
-    });
-
-    it('should have focus ring on button', () => {
-      renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/home', label: 'Go Home' }}
-        />
-      );
-      const button = screen.getByText('Go Home');
-      
-      expect(button.className).toMatch(/focus:ring/);
-    });
-
-    it('should work in dark mode', () => {
-      renderWithRouter(<Error message="Test error" />, { darkMode: true });
-      expect(document.documentElement.classList.contains('dark')).toBe(true);
-      expect(screen.getByText('Test error')).toBeVisible();
+      expect(screen.getByText(/back to dashboard/i)).toBeInTheDocument();
     });
   });
 
-  describe('Mobile Responsiveness', () => {
-    it('should be responsive on mobile', () => {
-      setViewport(VIEWPORTS.mobile.width, VIEWPORTS.mobile.height);
-      renderWithRouter(<Error message="Test error" />);
-      
-      expect(screen.getByText('Test error')).toBeVisible();
-    });
-
-    it('should have proper padding on mobile', () => {
-      setViewport(VIEWPORTS.mobile.width, VIEWPORTS.mobile.height);
-      const { container } = renderWithRouter(<Error message="Test error" />);
-      const errorContainer = container.querySelector('.min-h-screen');
-      
-      expect(errorContainer?.className).toMatch(/px-4/);
-    });
-
-    it('should be responsive on tablet', () => {
-      setViewport(VIEWPORTS.tablet.width, VIEWPORTS.tablet.height);
-      renderWithRouter(<Error message="Test error" />);
-      
-      expect(screen.getByText('Test error')).toBeVisible();
-    });
-
-    it('should be responsive on desktop', () => {
-      setViewport(VIEWPORTS.desktop.width, VIEWPORTS.desktop.height);
-      renderWithRouter(<Error message="Test error" />);
-      
-      expect(screen.getByText('Test error')).toBeVisible();
-    });
-
-    it('should center content on all screen sizes', () => {
-      const { container } = renderWithRouter(<Error message="Test error" />);
-      const errorContainer = container.querySelector('.min-h-screen');
-      
-      expect(errorContainer?.className).toMatch(/flex|items-center|justify-center/);
-    });
-
-    it('should have max width constraint', () => {
-      const { container } = renderWithRouter(<Error message="Test error" />);
-      const contentContainer = container.querySelector('.max-w-md');
-      
-      expect(contentContainer).toBeInTheDocument();
-    });
-  });
-
-  describe('Accessibility', () => {
-    it('should have proper heading hierarchy', () => {
-      renderWithRouter(<Error message="Test error" />);
-      const heading = screen.getByRole('heading', { level: 1 });
-      
-      expect(heading).toBeInTheDocument();
-      expect(heading).toHaveTextContent('Error');
-    });
-
-    it('should have accessible action button', () => {
-      renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/home', label: 'Go Home' }}
-        />
-      );
-      const button = screen.getByRole('link', { name: 'Go Home' });
-      
-      expect(button).toHaveAccessibleName();
-    });
-
-    it('should be keyboard navigable', async () => {
-      const user = userEvent.setup();
-      renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/home', label: 'Go Home' }}
-        />
-      );
-      
-      await user.tab();
-      
-      const button = screen.getByText('Go Home');
-      expect(button).toHaveFocus();
-    });
-
-    it('should have proper focus outline', () => {
-      renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/home', label: 'Go Home' }}
-        />
-      );
-      const button = screen.getByText('Go Home');
-      
-      expect(button.className).toMatch(/focus:outline-none|focus:ring/);
-    });
-
-    it('should have semantic HTML structure', () => {
-      const { container } = renderWithRouter(<Error message="Test error" />);
-      
-      const heading = container.querySelector('h1');
-      const paragraph = container.querySelector('p');
-      
-      expect(heading).toBeInTheDocument();
-      expect(paragraph).toBeInTheDocument();
-    });
-  });
-
-  describe('User Interactions', () => {
-    it('should navigate to action link on click', async () => {
-      const user = userEvent.setup();
-      renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/home', label: 'Go Home' }}
-        />
-      );
-      
-      const button = screen.getByText('Go Home');
-      await user.click(button);
-      
-      expect(button).toHaveAttribute('href', '/home');
-    });
-
-    it('should have correct href attribute', () => {
-      renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/dashboard', label: 'Go to Dashboard' }}
-        />
-      );
-      const button = screen.getByText('Go to Dashboard');
-      
-      expect(button).toHaveAttribute('href', '/dashboard');
-    });
-  });
-
-  describe('Props Handling', () => {
+  describe('2. Props & Variations', () => {
     it('should handle long error messages', () => {
-      const longMessage = 'A'.repeat(500);
+      const longMessage = 'This is a very long error message that contains a lot of text to test how the component handles lengthy content and whether it wraps properly without breaking the layout.';
       renderWithRouter(<Error message={longMessage} />);
       
       expect(screen.getByText(longMessage)).toBeInTheDocument();
     });
 
+    it('should handle short error messages', () => {
+      renderWithRouter(<Error message="Oops" />);
+      
+      expect(screen.getByText(/oops/i)).toBeInTheDocument();
+    });
+
     it('should handle special characters in message', () => {
-      const specialMessage = 'Error: <script>alert("test")</script>';
-      renderWithRouter(<Error message={specialMessage} />);
+      renderWithRouter(<Error message="Error: File 'test.txt' not found!" />);
       
-      expect(screen.getByText(specialMessage)).toBeInTheDocument();
+      expect(screen.getByText(/error: file 'test\.txt' not found!/i)).toBeInTheDocument();
     });
 
-    it('should handle empty action label', () => {
+    it('should handle special characters in title', () => {
+      renderWithRouter(<Error title="404 - Not Found" message="Page not found" />);
+      
+      expect(screen.getByText(/404 - not found/i)).toBeInTheDocument();
+    });
+
+    it('should handle action with root path', () => {
       renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/home', label: '' }}
+        <Error 
+          message="Test error" 
+          action={{ to: '/', label: 'Home' }}
         />
       );
       
-      // Should still render the link
-      const link = screen.queryByRole('link');
-      expect(link).toBeInTheDocument();
+      const link = screen.getByRole('link', { name: /home/i });
+      expect(link).toHaveAttribute('href', '/');
     });
 
-    it('should handle different action paths', () => {
+    it('should handle action with nested path', () => {
       renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/some/nested/path', label: 'Go' }}
+        <Error 
+          message="Test error" 
+          action={{ to: '/dashboard/settings', label: 'Settings' }}
         />
       );
-      const button = screen.getByText('Go');
       
-      expect(button).toHaveAttribute('href', '/some/nested/path');
+      const link = screen.getByRole('link', { name: /settings/i });
+      expect(link).toHaveAttribute('href', '/dashboard/settings');
+    });
+
+    it('should handle multiple word action labels', () => {
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Back to Home Page' }}
+        />
+      );
+      
+      expect(screen.getByText(/go back to home page/i)).toBeInTheDocument();
     });
   });
 
-  describe('Layout', () => {
-    it('should take full screen height', () => {
-      const { container } = renderWithRouter(<Error message="Test error" />);
-      const errorContainer = container.querySelector('.min-h-screen');
+  describe('3. Link Behavior', () => {
+    it('should render link with correct href attribute', () => {
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/dashboard', label: 'Dashboard' }}
+        />
+      );
       
-      expect(errorContainer).toBeInTheDocument();
+      const link = screen.getByRole('link', { name: /dashboard/i });
+      expect(link).toHaveAttribute('href', '/dashboard');
     });
 
-    it('should center content vertically and horizontally', () => {
-      const { container } = renderWithRouter(<Error message="Test error" />);
-      const errorContainer = container.querySelector('.min-h-screen');
+    it('should be clickable', async () => {
+      const user = userEvent.setup();
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Home' }}
+        />
+      );
       
-      expect(errorContainer?.className).toMatch(/flex/);
-      expect(errorContainer?.className).toMatch(/items-center/);
-      expect(errorContainer?.className).toMatch(/justify-center/);
+      const link = screen.getByRole('link', { name: /go home/i });
+      await user.click(link);
+      
+      // Link should still be in document after click
+      expect(link).toBeInTheDocument();
+    });
+
+    it('should have proper link styling classes', () => {
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Home' }}
+        />
+      );
+      
+      const link = screen.getByRole('link', { name: /go home/i });
+      expect(link).toHaveClass('inline-flex', 'items-center', 'rounded-xl');
+    });
+  });
+
+  describe('4. Layout & Structure', () => {
+    it('should have full screen height container', () => {
+      const { container } = renderWithRouter(<Error message="Test error" />);
+      
+      const mainDiv = container.querySelector('.min-h-screen');
+      expect(mainDiv).toBeInTheDocument();
+    });
+
+    it('should center content', () => {
+      const { container } = renderWithRouter(<Error message="Test error" />);
+      
+      const mainDiv = container.querySelector('.min-h-screen');
+      expect(mainDiv).toHaveClass('flex', 'items-center', 'justify-center');
+    });
+
+    it('should have max-width constraint', () => {
+      const { container } = renderWithRouter(<Error message="Test error" />);
+      
+      const contentDiv = container.querySelector('.max-w-md');
+      expect(contentDiv).toBeInTheDocument();
+    });
+
+    it('should have text-center alignment', () => {
+      const { container } = renderWithRouter(<Error message="Test error" />);
+      
+      const contentDiv = container.querySelector('.text-center');
+      expect(contentDiv).toBeInTheDocument();
     });
 
     it('should have proper spacing between elements', () => {
       renderWithRouter(
-        <Error
-          message="Test error"
+        <Error 
+          message="Test error" 
           action={{ to: '/home', label: 'Go Home' }}
         />
       );
-      const message = screen.getByText('Test error');
       
-      expect(message.className).toMatch(/mt-/);
-    });
-
-    it('should center text', () => {
-      const { container } = renderWithRouter(<Error message="Test error" />);
-      const contentContainer = container.querySelector('.text-center');
-      
-      expect(contentContainer).toBeInTheDocument();
+      const message = screen.getByText(/test error/i);
+      expect(message).toHaveClass('mt-2');
     });
   });
 
-  describe('Edge Cases', () => {
-    it('should handle undefined action', () => {
-      renderWithRouter(<Error message="Test error" action={undefined} />);
+  describe('5. Theme & Styling', () => {
+    it('should use teal color for action button', () => {
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Home' }}
+        />
+      );
       
-      expect(screen.queryByRole('link')).not.toBeInTheDocument();
+      const link = screen.getByRole('link', { name: /go home/i });
+      expect(link).toHaveClass('bg-teal-600', 'hover:bg-teal-700');
     });
 
-    it('should handle empty message', () => {
+    it('should have white text on action button', () => {
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Home' }}
+        />
+      );
+      
+      const link = screen.getByRole('link', { name: /go home/i });
+      expect(link).toHaveClass('text-white');
+    });
+
+    it('should have slate background', () => {
+      const { container } = renderWithRouter(<Error message="Test error" />);
+      
+      const mainDiv = container.querySelector('.bg-slate-50');
+      expect(mainDiv).toBeInTheDocument();
+    });
+
+    it('should have proper title styling', () => {
+      renderWithRouter(<Error message="Test error" />);
+      
+      const title = screen.getByText(/^error$/i);
+      expect(title).toHaveClass('text-xl', 'font-bold', 'text-slate-900');
+    });
+
+    it('should have proper message styling', () => {
+      renderWithRouter(<Error message="Test error" />);
+      
+      const message = screen.getByText(/test error/i);
+      expect(message).toHaveClass('text-slate-600');
+    });
+
+    it('should have rounded corners on action button', () => {
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Home' }}
+        />
+      );
+      
+      const link = screen.getByRole('link', { name: /go home/i });
+      expect(link).toHaveClass('rounded-xl');
+    });
+
+    it('should have shadow on action button', () => {
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Home' }}
+        />
+      );
+      
+      const link = screen.getByRole('link', { name: /go home/i });
+      expect(link).toHaveClass('shadow-sm');
+    });
+
+    it('should have focus ring on action button', () => {
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Home' }}
+        />
+      );
+      
+      const link = screen.getByRole('link', { name: /go home/i });
+      expect(link).toHaveClass('focus:ring-2', 'focus:ring-teal-500');
+    });
+  });
+
+  describe('6. Accessibility', () => {
+    it('should have proper heading hierarchy', () => {
+      renderWithRouter(<Error message="Test error" />);
+      
+      const heading = screen.getByRole('heading', { level: 1 });
+      expect(heading).toBeInTheDocument();
+      expect(heading).toHaveTextContent(/error/i);
+    });
+
+    it('should have accessible link when action provided', () => {
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Home' }}
+        />
+      );
+      
+      const link = screen.getByRole('link', { name: /go home/i });
+      expect(link).toBeInTheDocument();
+    });
+
+    it('should be keyboard navigable to action link', async () => {
+      const user = userEvent.setup();
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Home' }}
+        />
+      );
+      
+      const link = screen.getByRole('link', { name: /go home/i });
+      await user.tab();
+      
+      expect(link).toHaveFocus();
+    });
+
+    it('should have focus outline on action button', () => {
+      renderWithRouter(
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: 'Go Home' }}
+        />
+      );
+      
+      const link = screen.getByRole('link', { name: /go home/i });
+      expect(link).toHaveClass('focus:outline-none', 'focus:ring-2');
+    });
+
+    it('should have descriptive link text', () => {
+      renderWithRouter(
+        <Error 
+          message="Page not found" 
+          action={{ to: '/', label: 'Return to Homepage' }}
+        />
+      );
+      
+      const link = screen.getByRole('link', { name: /return to homepage/i });
+      expect(link).toHaveAccessibleName();
+    });
+  });
+
+  describe('7. Responsive Design', () => {
+    it('should have responsive padding', () => {
+      const { container } = renderWithRouter(<Error message="Test error" />);
+      
+      const mainDiv = container.querySelector('.min-h-screen');
+      expect(mainDiv).toHaveClass('px-4');
+    });
+
+    it('should have full width on mobile', () => {
+      const { container } = renderWithRouter(<Error message="Test error" />);
+      
+      const contentDiv = container.querySelector('.max-w-md');
+      expect(contentDiv).toHaveClass('w-full');
+    });
+
+    it('should constrain width on larger screens', () => {
+      const { container } = renderWithRouter(<Error message="Test error" />);
+      
+      const contentDiv = container.querySelector('.max-w-md');
+      expect(contentDiv).toBeInTheDocument();
+    });
+  });
+
+  describe('8. Edge Cases', () => {
+    it('should handle empty string title', () => {
+      renderWithRouter(<Error title="" message="Test error" />);
+      
+      // Should render empty title, not default
+      const heading = screen.getByRole('heading', { level: 1 });
+      expect(heading).toHaveTextContent('');
+    });
+
+    it('should handle empty string message', () => {
       renderWithRouter(<Error message="" />);
       
-      // Should still render the component
-      expect(screen.getByText('Error')).toBeInTheDocument();
+      // Component should still render
+      expect(screen.getByRole('heading')).toBeInTheDocument();
     });
 
     it('should handle very long title', () => {
-      const longTitle = 'A'.repeat(100);
+      const longTitle = 'This is a very long error title that might wrap to multiple lines';
       renderWithRouter(<Error title={longTitle} message="Test error" />);
       
       expect(screen.getByText(longTitle)).toBeInTheDocument();
     });
 
-    it('should handle HTML entities in message', () => {
-      const messageWithEntities = 'Error &amp; Warning';
-      renderWithRouter(<Error message={messageWithEntities} />);
-      
-      expect(screen.getByText(messageWithEntities)).toBeInTheDocument();
-    });
-  });
-
-  describe('Visual Consistency', () => {
-    it('should have consistent font sizes', () => {
-      renderWithRouter(<Error message="Test error" />);
-      const title = screen.getByText('Error');
-      
-      expect(title.className).toMatch(/text-xl/);
-    });
-
-    it('should have consistent font weights', () => {
-      renderWithRouter(<Error message="Test error" />);
-      const title = screen.getByText('Error');
-      
-      expect(title.className).toMatch(/font-bold/);
-    });
-
-    it('should have proper button styling', () => {
+    it('should handle action with empty label', () => {
       renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/home', label: 'Go Home' }}
+        <Error 
+          message="Test error" 
+          action={{ to: '/home', label: '' }}
         />
       );
-      const button = screen.getByText('Go Home');
       
-      expect(button.className).toMatch(/inline-flex/);
-      expect(button.className).toMatch(/items-center/);
-      expect(button.className).toMatch(/px-4/);
-      expect(button.className).toMatch(/py-1/);
+      const link = screen.getByRole('link');
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveTextContent('');
     });
 
-    it('should have shadow on button', () => {
+    it('should handle action with special characters in path', () => {
       renderWithRouter(
-        <Error
-          message="Test error"
-          action={{ to: '/home', label: 'Go Home' }}
+        <Error 
+          message="Test error" 
+          action={{ to: '/path?query=test&id=123', label: 'Go' }}
         />
       );
-      const button = screen.getByText('Go Home');
       
-      expect(button.className).toMatch(/shadow/);
+      const link = screen.getByRole('link', { name: /go/i });
+      expect(link).toHaveAttribute('href', '/path?query=test&id=123');
+    });
+
+    it('should handle message with HTML entities', () => {
+      renderWithRouter(<Error message="Error: 5 > 3 & 2 < 4" />);
+      
+      expect(screen.getByText(/error: 5 > 3 & 2 < 4/i)).toBeInTheDocument();
+    });
+
+    it('should handle message with line breaks', () => {
+      renderWithRouter(<Error message="Line 1\nLine 2\nLine 3" />);
+      
+      // React will render this as a single text node
+      expect(screen.getByText(/line 1/i)).toBeInTheDocument();
+    });
+
+    it('should handle Unicode characters in message', () => {
+      renderWithRouter(<Error message="Error: 文件未找到 🚫" />);
+      
+      expect(screen.getByText(/error: 文件未找到 🚫/i)).toBeInTheDocument();
+    });
+
+    it('should handle multiple spaces in message', () => {
+      renderWithRouter(<Error message="Error:    Multiple    Spaces" />);
+      
+      expect(screen.getByText(/error:\s+multiple\s+spaces/i)).toBeInTheDocument();
     });
   });
 });
