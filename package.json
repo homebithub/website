@@ -12,7 +12,11 @@
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "node server.mjs",
     "typecheck": "react-router typegen && tsc --noEmit",
-    "clean": "rimraf build public/build .cache node_modules/.cache .react-router"
+    "clean": "rimraf build public/build .cache node_modules/.cache .react-router",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
@@ -56,6 +60,9 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^14.1.2",
+    "@testing-library/user-event": "^14.5.1",
     "@types/canvas-confetti": "^1.9.0",
     "@types/dompurify": "^3.0.5",
     "@types/lodash.debounce": "^4.0.9",
@@ -64,6 +71,8 @@
     "@types/react-dom": "^18.2.7",
     "@types/react-icons": "^3.0.0",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
+    "@vitejs/plugin-react": "^4.2.1",
+    "@vitest/ui": "^1.0.4",
     "autoprefixer": "^10.4.21",
     "cross-env": "^7.0.3",
     "eslint": "^8.38.0",
@@ -72,12 +81,15 @@
     "eslint-plugin-jsx-a11y": "^6.7.1",
     "eslint-plugin-react": "^7.33.2",
     "eslint-plugin-react-hooks": "^4.6.0",
+    "jsdom": "^23.0.1",
     "postcss": "^8.5.3",
     "postcss-cli": "^11.0.1",
     "remix-flat-routes": "^0.8.5",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^1.0.4",
+    "@vitest/coverage-v8": "^1.0.4"
   },
   "engines": {
     "node": ">=18.0.0"
