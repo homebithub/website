@@ -1,431 +1,491 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { screen } from '@testing-library/react';
-import { renderWithRouter, userEvent, VIEWPORTS, setViewport } from '~/test/utils/test-utils';
 import Footer from '../Footer';
+import { MemoryRouter } from 'react-router';
 
-// Mock the profile setup hook
+// Mock dependencies
+const mockUseLocation = vi.fn();
+const mockUseProfileSetupStatus = vi.fn();
+
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual('react-router');
+  return {
+    ...actual,
+    useLocation: () => mockUseLocation(),
+  };
+});
+
 vi.mock('~/hooks/useProfileSetupStatus', () => ({
-  useProfileSetupStatus: vi.fn(() => ({
-    isInSetupMode: false,
-  })),
+  useProfileSetupStatus: () => mockUseProfileSetupStatus(),
 }));
 
 describe('Footer Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseLocation.mockReturnValue({ pathname: '/', search: '', hash: '', state: null });
+    mockUseProfileSetupStatus.mockReturnValue({ isInSetupMode: false });
   });
 
-  describe('Rendering', () => {
-    it('should render footer with brand name', () => {
-      renderWithRouter(<Footer />);
-      expect(screen.getByText('Homebit')).toBeInTheDocument();
-    });
-
-    it('should render current year in copyright', () => {
-      renderWithRouter(<Footer />);
-      const currentYear = new Date().getFullYear();
-      expect(screen.getByText(new RegExp(currentYear.toString()))).toBeInTheDocument();
-    });
-
-    it('should render social media links', () => {
-      renderWithRouter(<Footer />);
+  describe('Basic Rendering', () => {
+    it('renders the footer', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      expect(screen.getByLabelText('Facebook')).toBeInTheDocument();
-      expect(screen.getByLabelText('Instagram')).toBeInTheDocument();
-      expect(screen.getByLabelText(/X.*Twitter/i)).toBeInTheDocument();
-      expect(screen.getByLabelText('LinkedIn')).toBeInTheDocument();
-    });
-
-    it('should render footer links', () => {
-      renderWithRouter(<Footer />);
-      
-      expect(screen.getByText('Privacy Policy')).toBeInTheDocument();
-      expect(screen.getByText('Terms of Service')).toBeInTheDocument();
-      expect(screen.getByText('Contact')).toBeInTheDocument();
-    });
-
-    it('should not render when in setup mode', () => {
-      const { useProfileSetupStatus } = require('~/hooks/useProfileSetupStatus');
-      useProfileSetupStatus.mockReturnValue({ isInSetupMode: true });
-      
-      const { container } = renderWithRouter(<Footer />);
-      expect(container.firstChild).toBeNull();
-    });
-
-    it('should render profile links on househelp profile route', () => {
-      renderWithRouter(<Footer />, { initialRoute: '/househelp/profile' });
-      
-      expect(screen.getByText('Profile')).toBeInTheDocument();
-      expect(screen.getByText('Profile 1')).toBeInTheDocument();
-      expect(screen.getByText('Profile 2')).toBeInTheDocument();
-      expect(screen.getByText('Profile 3')).toBeInTheDocument();
-    });
-  });
-
-  describe('Theme Consistency', () => {
-    it('should use dark variant by default', () => {
-      const { container } = renderWithRouter(<Footer />);
-      const footer = container.querySelector('footer');
-      
-      expect(footer?.className).toMatch(/bg-gray-900|dark:bg-/);
-    });
-
-    it('should use light variant when specified', () => {
-      const { container } = renderWithRouter(<Footer variant="light" />);
-      const footer = container.querySelector('footer');
-      
-      expect(footer?.className).toMatch(/bg-white/);
-    });
-
-    it('should have purple hover effects on links', () => {
-      renderWithRouter(<Footer />);
-      const privacyLink = screen.getByText('Privacy Policy');
-      
-      expect(privacyLink.className).toMatch(/hover:text-purple/);
-    });
-
-    it('should have purple hover effects on social icons', () => {
-      const { container } = renderWithRouter(<Footer />);
-      const socialLinks = container.querySelectorAll('a[aria-label]');
-      
-      socialLinks.forEach(link => {
-        expect(link.className).toMatch(/hover:text-purple/);
-      });
-    });
-
-    it('should have gradient text on brand', () => {
-      renderWithRouter(<Footer />);
-      const brand = screen.getByText('Homebit');
-      
-      expect(brand.className).toMatch(/gradient-text/);
-    });
-
-    it('should work in dark mode', () => {
-      renderWithRouter(<Footer />, { darkMode: true });
-      expect(document.documentElement.classList.contains('dark')).toBe(true);
-      expect(screen.getByText('Homebit')).toBeVisible();
-    });
-
-    it('should have transition effects', () => {
-      const { container } = renderWithRouter(<Footer />);
-      const footer = container.querySelector('footer');
-      
-      expect(footer?.className).toMatch(/transition/);
-    });
-
-    it('should have border styling', () => {
-      const { container } = renderWithRouter(<Footer />);
-      const footer = container.querySelector('footer');
-      
-      expect(footer?.className).toMatch(/border-t/);
-    });
-  });
-
-  describe('Mobile Responsiveness', () => {
-    it('should be responsive on mobile', () => {
-      setViewport(VIEWPORTS.mobile.width, VIEWPORTS.mobile.height);
-      renderWithRouter(<Footer />);
-      
-      expect(screen.getByText('Homebit')).toBeVisible();
-      expect(screen.getByText('Privacy Policy')).toBeVisible();
-    });
-
-    it('should stack elements vertically on mobile', () => {
-      setViewport(VIEWPORTS.mobile.width, VIEWPORTS.mobile.height);
-      const { container } = renderWithRouter(<Footer />);
-      const footerContent = container.querySelector('.container');
-      
-      expect(footerContent?.className).toMatch(/flex-col|md:flex-row/);
-    });
-
-    it('should be responsive on tablet', () => {
-      setViewport(VIEWPORTS.tablet.width, VIEWPORTS.tablet.height);
-      renderWithRouter(<Footer />);
-      
-      expect(screen.getByText('Homebit')).toBeVisible();
-    });
-
-    it('should be responsive on desktop', () => {
-      setViewport(VIEWPORTS.desktop.width, VIEWPORTS.desktop.height);
-      renderWithRouter(<Footer />);
-      
-      expect(screen.getByText('Homebit')).toBeVisible();
-    });
-
-    it('should have proper spacing on mobile', () => {
-      setViewport(VIEWPORTS.mobile.width, VIEWPORTS.mobile.height);
-      const { container } = renderWithRouter(<Footer />);
-      const footer = container.querySelector('footer');
-      
-      expect(footer?.className).toMatch(/py-/);
-    });
-
-    it('should wrap footer links on small screens', () => {
-      setViewport(VIEWPORTS.mobileSmall.width, VIEWPORTS.mobileSmall.height);
-      const { container } = renderWithRouter(<Footer />);
-      const linksContainer = container.querySelector('.flex-wrap');
-      
-      expect(linksContainer).toBeInTheDocument();
-    });
-  });
-
-  describe('Accessibility', () => {
-    it('should have proper footer landmark', () => {
-      const { container } = renderWithRouter(<Footer />);
-      const footer = container.querySelector('footer');
-      
+      const footer = screen.getByRole('contentinfo');
       expect(footer).toBeInTheDocument();
     });
 
-    it('should have accessible social media links', () => {
-      renderWithRouter(<Footer />);
+    it('renders Homebit branding', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      const facebookLink = screen.getByLabelText('Facebook');
-      const instagramLink = screen.getByLabelText('Instagram');
-      const twitterLink = screen.getByLabelText(/X.*Twitter/i);
-      const linkedinLink = screen.getByLabelText('LinkedIn');
-      
-      expect(facebookLink).toHaveAttribute('href');
-      expect(instagramLink).toHaveAttribute('href');
-      expect(twitterLink).toHaveAttribute('href');
-      expect(linkedinLink).toHaveAttribute('href');
+      expect(screen.getByText('Homebit')).toBeInTheDocument();
     });
 
-    it('should have rel="noopener noreferrer" on external links', () => {
-      const { container } = renderWithRouter(<Footer />);
-      const externalLinks = container.querySelectorAll('a[target="_blank"]');
+    it('renders current year in copyright', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      externalLinks.forEach(link => {
-        expect(link).toHaveAttribute('rel', 'noopener noreferrer');
-      });
+      const currentYear = new Date().getFullYear();
+      expect(screen.getByText(`© ${currentYear}`)).toBeInTheDocument();
     });
 
-    it('should be keyboard navigable', async () => {
-      const user = userEvent.setup();
-      renderWithRouter(<Footer />);
+    it('renders with dark variant by default', () => {
+      const { container } = render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      // Tab through footer links
-      await user.tab();
-      
-      // At least one element should have focus
-      expect(document.activeElement).not.toBe(document.body);
-    });
-
-    it('should have proper link text', () => {
-      renderWithRouter(<Footer />);
-      
-      const privacyLink = screen.getByText('Privacy Policy');
-      const termsLink = screen.getByText('Terms of Service');
-      const contactLink = screen.getByText('Contact');
-      
-      expect(privacyLink).toHaveAccessibleName();
-      expect(termsLink).toHaveAccessibleName();
-      expect(contactLink).toHaveAccessibleName();
-    });
-
-    it('should have proper ARIA labels for icon-only links', () => {
-      renderWithRouter(<Footer />);
-      
-      const facebookLink = screen.getByLabelText('Facebook');
-      const instagramLink = screen.getByLabelText('Instagram');
-      
-      expect(facebookLink).toHaveAttribute('aria-label');
-      expect(instagramLink).toHaveAttribute('aria-label');
+      const footer = container.querySelector('footer');
+      expect(footer).toHaveClass('bg-gray-900');
     });
   });
 
-  describe('Navigation Links', () => {
-    it('should link to privacy policy', () => {
-      renderWithRouter(<Footer />);
-      const privacyLink = screen.getByText('Privacy Policy');
+  describe('Variant Prop', () => {
+    it('applies dark variant classes', () => {
+      const { container } = render(
+        <MemoryRouter>
+          <Footer variant="dark" />
+        </MemoryRouter>
+      );
       
-      expect(privacyLink).toHaveAttribute('href', '/privacy');
+      const footer = container.querySelector('footer');
+      expect(footer).toHaveClass('bg-gray-900', 'dark:bg-[#0a0a0f]', 'text-gray-100');
     });
 
-    it('should link to terms of service', () => {
-      renderWithRouter(<Footer />);
-      const termsLink = screen.getByText('Terms of Service');
+    it('applies light variant classes', () => {
+      const { container } = render(
+        <MemoryRouter>
+          <Footer variant="light" />
+        </MemoryRouter>
+      );
       
-      expect(termsLink).toHaveAttribute('href', '/terms');
+      const footer = container.querySelector('footer');
+      expect(footer).toHaveClass('bg-white', 'text-gray-800');
     });
 
-    it('should link to contact page', () => {
-      renderWithRouter(<Footer />);
-      const contactLink = screen.getByText('Contact');
+    it('applies base classes regardless of variant', () => {
+      const { container } = render(
+        <MemoryRouter>
+          <Footer variant="light" />
+        </MemoryRouter>
+      );
       
-      expect(contactLink).toHaveAttribute('href', '/contact');
-    });
-
-    it('should have prefetch on internal links', () => {
-      renderWithRouter(<Footer />);
-      const privacyLink = screen.getByText('Privacy Policy');
-      
-      expect(privacyLink).toHaveAttribute('prefetch', 'viewport');
+      const footer = container.querySelector('footer');
+      expect(footer).toHaveClass('py-8', 'border-t', 'transition-colors', 'duration-300');
     });
   });
 
   describe('Social Media Links', () => {
-    it('should link to Facebook page', () => {
-      renderWithRouter(<Footer />);
+    it('renders Facebook link', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
       const facebookLink = screen.getByLabelText('Facebook');
-      
-      expect(facebookLink).toHaveAttribute('href');
-      expect(facebookLink.getAttribute('href')).toContain('facebook.com');
+      expect(facebookLink).toBeInTheDocument();
+      expect(facebookLink).toHaveAttribute('href', 'https://web.facebook.com/profile.php?id=61582801828384');
     });
 
-    it('should link to Instagram page', () => {
-      renderWithRouter(<Footer />);
+    it('renders Instagram link', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
       const instagramLink = screen.getByLabelText('Instagram');
-      
-      expect(instagramLink).toHaveAttribute('href');
-      expect(instagramLink.getAttribute('href')).toContain('instagram.com');
+      expect(instagramLink).toBeInTheDocument();
+      expect(instagramLink).toHaveAttribute('href', 'https://www.instagram.com/homebithub/');
     });
 
-    it('should link to X (Twitter) page', () => {
-      renderWithRouter(<Footer />);
-      const twitterLink = screen.getByLabelText(/X.*Twitter/i);
+    it('renders X (Twitter) link', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      expect(twitterLink).toHaveAttribute('href');
-      expect(twitterLink.getAttribute('href')).toContain('x.com');
+      const twitterLink = screen.getByLabelText('X (Twitter)');
+      expect(twitterLink).toBeInTheDocument();
+      expect(twitterLink).toHaveAttribute('href', 'https://x.com/homebithub');
     });
 
-    it('should link to LinkedIn page', () => {
-      renderWithRouter(<Footer />);
+    it('renders LinkedIn link', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
       const linkedinLink = screen.getByLabelText('LinkedIn');
-      
-      expect(linkedinLink).toHaveAttribute('href');
-      expect(linkedinLink.getAttribute('href')).toContain('linkedin.com');
+      expect(linkedinLink).toBeInTheDocument();
+      expect(linkedinLink).toHaveAttribute('href', 'https://www.linkedin.com/company/homebithub');
     });
 
-    it('should open social links in new tab', () => {
-      const { container } = renderWithRouter(<Footer />);
-      const socialLinks = container.querySelectorAll('a[aria-label]');
+    it('opens social links in new tab', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      socialLinks.forEach(link => {
-        expect(link).toHaveAttribute('target', '_blank');
-      });
+      const facebookLink = screen.getByLabelText('Facebook');
+      expect(facebookLink).toHaveAttribute('target', '_blank');
+      expect(facebookLink).toHaveAttribute('rel', 'noopener noreferrer');
     });
 
-    it('should have hover scale effect on social icons', () => {
-      const { container } = renderWithRouter(<Footer />);
-      const socialLinks = container.querySelectorAll('a[aria-label]');
+    it('applies hover styles to social links', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      socialLinks.forEach(link => {
-        expect(link.className).toMatch(/hover:scale/);
-      });
-    });
-  });
-
-  describe('Conditional Rendering', () => {
-    it('should hide footer during profile setup', () => {
-      const { useProfileSetupStatus } = require('~/hooks/useProfileSetupStatus');
-      useProfileSetupStatus.mockReturnValue({ isInSetupMode: true });
-      
-      const { container } = renderWithRouter(<Footer />);
-      expect(container.firstChild).toBeNull();
-    });
-
-    it('should show footer when not in setup mode', () => {
-      const { useProfileSetupStatus } = require('~/hooks/useProfileSetupStatus');
-      useProfileSetupStatus.mockReturnValue({ isInSetupMode: false });
-      
-      renderWithRouter(<Footer />);
-      expect(screen.getByText('Homebit')).toBeInTheDocument();
-    });
-
-    it('should show profile links only on househelp profile route', () => {
-      renderWithRouter(<Footer />, { initialRoute: '/househelp/profile' });
-      
-      expect(screen.getByText('Profile 1')).toBeInTheDocument();
-    });
-
-    it('should not show profile links on other routes', () => {
-      renderWithRouter(<Footer />, { initialRoute: '/about' });
-      
-      expect(screen.queryByText('Profile 1')).not.toBeInTheDocument();
+      const facebookLink = screen.getByLabelText('Facebook');
+      expect(facebookLink).toHaveClass('hover:text-purple-400', 'hover:scale-125');
     });
   });
 
-  describe('Variants', () => {
-    it('should apply dark variant styles', () => {
-      const { container } = renderWithRouter(<Footer variant="dark" />);
-      const footer = container.querySelector('footer');
+  describe('Navigation Links', () => {
+    it('renders Privacy Policy link', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      expect(footer?.className).toMatch(/bg-gray-900/);
-    });
-
-    it('should apply light variant styles', () => {
-      const { container } = renderWithRouter(<Footer variant="light" />);
-      const footer = container.querySelector('footer');
-      
-      expect(footer?.className).toMatch(/bg-white/);
-    });
-
-    it('should have proper text color for dark variant', () => {
-      const { container } = renderWithRouter(<Footer variant="dark" />);
-      const footer = container.querySelector('footer');
-      
-      expect(footer?.className).toMatch(/text-gray-100/);
-    });
-
-    it('should have proper text color for light variant', () => {
-      const { container } = renderWithRouter(<Footer variant="light" />);
-      const footer = container.querySelector('footer');
-      
-      expect(footer?.className).toMatch(/text-gray-800/);
-    });
-  });
-
-  describe('User Interactions', () => {
-    it('should navigate to privacy policy on click', async () => {
-      const user = userEvent.setup();
-      renderWithRouter(<Footer />);
-      
-      const privacyLink = screen.getByText('Privacy Policy');
-      await user.click(privacyLink);
-      
+      const privacyLink = screen.getByRole('link', { name: /privacy policy/i });
+      expect(privacyLink).toBeInTheDocument();
       expect(privacyLink).toHaveAttribute('href', '/privacy');
     });
 
-    it('should navigate to terms on click', async () => {
-      const user = userEvent.setup();
-      renderWithRouter(<Footer />);
+    it('renders Terms of Service link', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      const termsLink = screen.getByText('Terms of Service');
-      await user.click(termsLink);
-      
+      const termsLink = screen.getByRole('link', { name: /terms of service/i });
+      expect(termsLink).toBeInTheDocument();
       expect(termsLink).toHaveAttribute('href', '/terms');
     });
 
-    it('should navigate to contact on click', async () => {
-      const user = userEvent.setup();
-      renderWithRouter(<Footer />);
+    it('renders Contact link', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      const contactLink = screen.getByText('Contact');
-      await user.click(contactLink);
-      
+      const contactLink = screen.getByRole('link', { name: /contact/i });
+      expect(contactLink).toBeInTheDocument();
       expect(contactLink).toHaveAttribute('href', '/contact');
+    });
+
+    it('applies hover styles to navigation links', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      const privacyLink = screen.getByRole('link', { name: /privacy policy/i });
+      expect(privacyLink).toHaveClass('hover:text-purple-400', 'transition-colors');
     });
   });
 
-  describe('Performance', () => {
-    it('should render without unnecessary re-renders', () => {
-      const { rerender } = renderWithRouter(<Footer />);
+  describe('Profile Setup Mode', () => {
+    it('hides footer when in setup mode', () => {
+      mockUseProfileSetupStatus.mockReturnValue({ isInSetupMode: true });
       
-      const initialBrand = screen.getByText('Homebit');
+      const { container } = render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
       
-      rerender(<Footer />);
-      
-      const rerenderedBrand = screen.getByText('Homebit');
-      
-      expect(initialBrand).toBe(rerenderedBrand);
+      expect(container.firstChild).toBeNull();
     });
 
-    it('should memoize year calculation', () => {
-      renderWithRouter(<Footer />);
-      const currentYear = new Date().getFullYear();
+    it('shows footer when not in setup mode', () => {
+      mockUseProfileSetupStatus.mockReturnValue({ isInSetupMode: false });
       
-      expect(screen.getByText(new RegExp(currentYear.toString()))).toBeInTheDocument();
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    });
+  });
+
+  describe('Househelp Profile Route', () => {
+    it('shows profile navigation when on househelp profile route', () => {
+      mockUseLocation.mockReturnValue({ pathname: '/househelp/profile', search: '', hash: '', state: null });
+      
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /profile 1/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /profile 2/i })).toBeInTheDocument();
+      expect(screen.getByRole('link', { name: /profile 3/i })).toBeInTheDocument();
+    });
+
+    it('shows profile navigation on househelp profile1 route', () => {
+      mockUseLocation.mockReturnValue({ pathname: '/househelp/profile1', search: '', hash: '', state: null });
+      
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
+    });
+
+    it('shows profile navigation on househelp profile2 route', () => {
+      mockUseLocation.mockReturnValue({ pathname: '/househelp/profile2', search: '', hash: '', state: null });
+      
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
+    });
+
+    it('shows profile navigation on househelp profile3 route', () => {
+      mockUseLocation.mockReturnValue({ pathname: '/househelp/profile3', search: '', hash: '', state: null });
+      
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
+    });
+
+    it('does not show profile navigation on non-househelp routes', () => {
+      mockUseLocation.mockReturnValue({ pathname: '/dashboard', search: '', hash: '', state: null });
+      
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.queryByRole('link', { name: /profile 1/i })).not.toBeInTheDocument();
+    });
+
+    it('profile links have correct hrefs', () => {
+      mockUseLocation.mockReturnValue({ pathname: '/househelp/profile', search: '', hash: '', state: null });
+      
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.getByRole('link', { name: /^profile$/i })).toHaveAttribute('href', '/househelp/profile');
+      expect(screen.getByRole('link', { name: /profile 1/i })).toHaveAttribute('href', '/househelp/profile1');
+      expect(screen.getByRole('link', { name: /profile 2/i })).toHaveAttribute('href', '/househelp/profile2');
+      expect(screen.getByRole('link', { name: /profile 3/i })).toHaveAttribute('href', '/househelp/profile3');
+    });
+
+    it('profile links have hover styles', () => {
+      mockUseLocation.mockReturnValue({ pathname: '/househelp/profile', search: '', hash: '', state: null });
+      
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      const profileLink = screen.getByRole('link', { name: /^profile$/i });
+      expect(profileLink).toHaveClass('hover:bg-purple-500/15', 'transition-colors');
+    });
+  });
+
+  describe('Layout and Styling', () => {
+    it('has container with proper classes', () => {
+      const { container } = render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      const containerDiv = container.querySelector('.container');
+      expect(containerDiv).toHaveClass('mx-auto', 'px-4');
+    });
+
+    it('uses flexbox layout', () => {
+      const { container } = render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      const containerDiv = container.querySelector('.container');
+      expect(containerDiv).toHaveClass('flex', 'flex-col', 'md:flex-row');
+    });
+
+    it('has gradient text on branding', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      const branding = screen.getByText('Homebit');
+      expect(branding).toHaveClass('gradient-text');
+    });
+
+    it('applies transition classes', () => {
+      const { container } = render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      const footer = container.querySelector('footer');
+      expect(footer).toHaveClass('transition-colors', 'duration-300');
+    });
+  });
+
+  describe('Accessibility', () => {
+    it('has semantic footer element', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.getByRole('contentinfo')).toBeInTheDocument();
+    });
+
+    it('social links have aria-labels', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.getByLabelText('Facebook')).toBeInTheDocument();
+      expect(screen.getByLabelText('Instagram')).toBeInTheDocument();
+      expect(screen.getByLabelText('X (Twitter)')).toBeInTheDocument();
+      expect(screen.getByLabelText('LinkedIn')).toBeInTheDocument();
+    });
+
+    it('external links have proper rel attribute', () => {
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      const facebookLink = screen.getByLabelText('Facebook');
+      expect(facebookLink).toHaveAttribute('rel', 'noopener noreferrer');
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('handles undefined variant gracefully', () => {
+      const { container } = render(
+        <MemoryRouter>
+          <Footer variant={undefined} />
+        </MemoryRouter>
+      );
+      
+      const footer = container.querySelector('footer');
+      expect(footer).toHaveClass('bg-gray-900'); // defaults to dark
+    });
+
+    it('handles route with query parameters', () => {
+      mockUseLocation.mockReturnValue({ 
+        pathname: '/househelp/profile', 
+        search: '?tab=settings', 
+        hash: '', 
+        state: null 
+      });
+      
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
+    });
+
+    it('handles route with hash', () => {
+      mockUseLocation.mockReturnValue({ 
+        pathname: '/househelp/profile', 
+        search: '', 
+        hash: '#section', 
+        state: null 
+      });
+      
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.getByRole('link', { name: /^profile$/i })).toBeInTheDocument();
+    });
+
+    it('handles similar but non-matching routes', () => {
+      mockUseLocation.mockReturnValue({ pathname: '/househelp', search: '', hash: '', state: null });
+      
+      render(
+        <MemoryRouter>
+          <Footer />
+        </MemoryRouter>
+      );
+      
+      expect(screen.queryByRole('link', { name: /profile 1/i })).not.toBeInTheDocument();
     });
   });
 });
