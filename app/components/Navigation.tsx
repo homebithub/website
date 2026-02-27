@@ -354,10 +354,10 @@ export function Navigation() {
                         <button
                             type="button"
                             onClick={() => setIsNotificationsOpen(true)}
-                            className="relative hidden lg:inline-flex items-center justify-center rounded-xl p-2 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all"
+                            className="relative hidden lg:inline-flex items-center justify-center rounded-xl p-2 bg-white dark:bg-white/10 border-2 border-purple-200 dark:border-purple-500/30 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all shadow-sm dark:shadow-glow-sm"
                             aria-label="Notifications"
                         >
-                            <BellIcon className="h-6 w-6 text-primary-700 dark:text-purple-300" />
+                            <BellIcon className="h-6 w-6 text-purple-700 dark:text-purple-200" />
                             {renderBadge(unreadCount)}
                         </button>
                     )}

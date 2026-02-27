@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { Link } from "react-router";
+import { Button } from "~/components/ui";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 
 export const meta = () => [
@@ -170,12 +171,13 @@ export default function Services() {
                   Join Homebit and connect with trusted professionals today.
                 </p>
                 <div className="mt-6">
-                  <Link
+                  <Button
+                    as={Link}
                     to="/signup"
-                    className="inline-block rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-sm sm:text-base font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300"
+                    size="lg"
                   >
                     Get Started
-                  </Link>
+                  </Button>
                 </div>
               </SlideUp>
             </div>
