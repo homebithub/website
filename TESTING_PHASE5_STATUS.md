@@ -6,9 +6,9 @@
 
 ---
 
-## Current Status: 385/385 tests passing (100%)
+## Current Status: 414/414 tests passing (100%)
 
-### Utilities Completed: 9/14
+### Utilities Completed: 10/14
 
 | Utility | Tests | Passing | Pass Rate | Status |
 |---------|-------|---------|-----------|---------|
@@ -21,8 +21,9 @@
 | **householdApi.ts** | 43 | 43 | 100% | ✅ Perfect |
 | **preferencesApi.ts** | 29 | 29 | 100% | ✅ Perfect |
 | **useSubscription.ts** | 27 | 27 | 100% | ✅ Perfect |
+| **api/subscriptions.ts** | 29 | 29 | 100% | ✅ Perfect |
 
-**Total: 385 tests created, 385 passing (100% pass rate)**
+**Total: 414 tests created, 414 passing (100% pass rate)**
 
 ---
 
@@ -40,7 +41,10 @@
 
 ### Week 2: Custom Hooks 🔄 IN PROGRESS
 - useSubscription.ts: 27/27 tests (100%) ✅
-- **Subtotal: 385/385 tests (100%)**
+
+### Week 3: API Utilities 🔄 IN PROGRESS
+- api/subscriptions.ts: 29/29 tests (100%) ✅
+- **Subtotal: 414/414 tests (100%)**
 
 ### Remaining Utilities:
 - deviceFingerprint.ts (~15-20 tests) - NEXT
@@ -63,8 +67,8 @@
 - **Phase 2**: 232 tests ✅
 - **Phase 3**: 425/493 tests (86% pass rate)
 - **Phase 4**: 436/457 tests (95% pass rate) ✅
-- **Phase 5**: 385/385 tests (100% pass rate) 🔄
-- **Grand Total**: 1,788+ tests passing! 🎉
+- **Phase 5**: 414/414 tests (100% pass rate) 🔄
+- **Grand Total**: 1,817+ tests passing! 🎉
 
 ### Components/Utilities Tested:
 - Phase 1: 7 components
@@ -79,10 +83,10 @@
 ## Current Achievement
 
 **Progress - Exceeding Targets:**
-- ✅ 385 tests created (Week 1 target: 80-100, Week 2 target: 60-80)
-- ✅ 385 tests passing (100%)
-- ✅ 9 utilities/hooks completed with perfect coverage
-- ✅ Combined target exceeded by 2.7x (385 vs 140-180)!
+- ✅ 414 tests created (Week 1-3 target: 200-260)
+- ✅ 414 tests passing (100%)
+- ✅ 10 utilities/hooks completed with perfect coverage
+- ✅ Combined target exceeded by 1.9x (414 vs 200-260)!
 
 **Utilities Completed:**
 
@@ -166,6 +170,17 @@
    - User ID change handling
    - Plan information inclusion
 
+10. **api/subscriptions.ts** - 29 tests
+    - Pause subscription with duration/custom date
+    - Resume paused subscription
+    - Get pause status and remaining days
+    - Cancel subscription (immediate/period end)
+    - Change subscription plan with proration
+    - Preview proration for plan changes
+    - Get credit balance
+    - Authentication token handling
+    - Error handling and network failures
+
 ---
 
 ## Next Steps
@@ -183,7 +198,7 @@ Continue with Week 1 utilities:
 
 ## Summary
 
-Phase 5 is progressing excellently! We've completed 9 utilities and hooks with 385 tests achieving 100% pass rate. Combined Week 1+2 target exceeded by 2.7x (385 vs 140-180 tests).
+Phase 5 is progressing excellently! We've completed 10 utilities and hooks with 414 tests achieving 100% pass rate. Combined Week 1-3 target exceeded by 1.9x (414 vs 200-260 tests).
 
 These utilities are critical for the application:
 - **errorMessages**: User-friendly error display
@@ -195,6 +210,7 @@ These utilities are critical for the application:
 - **householdApi**: Household management, invitations, and member operations
 - **preferencesApi**: User preferences with anonymous/authenticated support
 - **useSubscription**: Subscription status and feature access control
+- **api/subscriptions**: Subscription management (pause, resume, cancel, change plan)
 
 All utilities have comprehensive test coverage including edge cases, multiple input formats, error handling, browser API mocking, authentication flows, React hook testing, and boundary conditions.
 
