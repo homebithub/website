@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import { API_ENDPOINTS } from '~/config/api';
-import { apiClient } from '~/utils/apiClient';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { transport, getGrpcMetadata, handleGrpcError } from '~/utils/grpcClient';
+import { PaymentsServiceClient } from '~/proto/payments/payments.client';
+import { GetMySubscriptionRequest } from '~/proto/payments/payments';
 
 export type SubscriptionStatus = 'loading' | 'active' | 'trial' | 'none' | 'expired' | 'error';
 
@@ -40,6 +41,8 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const client = useMemo(() => new PaymentsServiceClient(transport), []);
+
   const fetchSubscription = useCallback(async () => {
     if (!userId) {
       setStatus('none');
@@ -51,50 +54,67 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       setLoading(true);
       setError(null);
 
-      const res = await apiClient.auth(API_ENDPOINTS.payments.subscriptions.mine);
+      const request: GetMySubscriptionRequest = { userId: userId || "" };
+      const { response: dataResponse } = await client.getMySubscription(request, { metadata: getGrpcMetadata() });
       
-      if (res.status === 404) {
+      const fields = dataResponse.data?.fields || {};
+      const sub = fields.subscription?.structValue?.fields || dataResponse.subscription || null;
+
+      if (!sub || (!sub.id?.stringValue && !sub.id)) {
         setStatus('none');
         setSubscription(null);
         return;
       }
 
-      if (!res.ok) {
-        throw new Error('Failed to fetch subscription');
-      }
+      // Map dynamic fields to SubscriptionData
+      const normalizedSub: SubscriptionData = {
+        id: sub.id?.stringValue || sub.id || "",
+        plan_id: sub.plan_id?.stringValue || sub.plan_id || "",
+        status: sub.status?.stringValue || sub.status || "",
+        current_period_start: sub.current_period_start?.stringValue || sub.current_period_start || "",
+        current_period_end: sub.current_period_end?.stringValue || sub.current_period_end || "",
+        trial_start: sub.trial_start?.stringValue || sub.trial_start,
+        trial_end: sub.trial_end?.stringValue || sub.trial_end,
+        is_trial_used: sub.is_trial_used?.boolValue || sub.is_trial_used || false,
+        metadata: sub.metadata?.structValue ? sub.metadata.structValue.fields : {},
+        plan: sub.plan?.structValue?.fields ? {
+          id: sub.plan.structValue.fields.id?.stringValue || "",
+          name: sub.plan.structValue.fields.name?.stringValue || "",
+          description: sub.plan.structValue.fields.description?.stringValue || "",
+          price_amount: sub.plan.structValue.fields.price_amount?.numberValue || 0,
+          billing_cycle: sub.plan.structValue.fields.billing_cycle?.stringValue || "",
+          trial_days: sub.plan.structValue.fields.trial_days?.numberValue || 0,
+        } : undefined
+      };
 
-      const response = await apiClient.json<any>(res);
-      const sub = response?.data?.subscription || response?.subscription || response?.data?.data?.subscription || response?.data || null;
+      setSubscription(normalizedSub);
 
-      if (!sub || !sub.id) {
-        setStatus('none');
-        setSubscription(null);
-        return;
-      }
-
-      setSubscription(sub);
-
-      if (sub.status === 'active' || sub.status === 'trial') {
-        // Check if trial/period has expired client-side
-        const endDate = sub.trial_end || sub.current_period_end;
+      if (normalizedSub.status === 'active' || normalizedSub.status === 'trial') {
+        const endDate = normalizedSub.trial_end || normalizedSub.current_period_end;
         if (endDate && new Date(endDate) < new Date()) {
           setStatus('expired');
         } else {
-          setStatus(sub.status === 'trial' ? 'trial' : 'active');
+          setStatus(normalizedSub.status === 'trial' ? 'trial' : 'active');
         }
-      } else if (sub.status === 'expired') {
+      } else if (normalizedSub.status === 'expired') {
         setStatus('expired');
       } else {
         setStatus('none');
       }
     } catch (err: any) {
+      if (err.code === 'NOT_FOUND' || err.status === 5) {
+        setStatus('none');
+        setSubscription(null);
+        return;
+      }
       console.error('[useSubscription] Error fetching subscription:', err);
       setError(err?.message || 'Failed to check subscription');
       setStatus('error');
+      handleGrpcError(err, false);
     } finally {
       setLoading(false);
     }
-  }, [userId]);
+  }, [userId, client]);
 
   useEffect(() => {
     fetchSubscription();

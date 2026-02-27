@@ -1,6 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { API_BASE_URL } from "~/config/api";
 import type { NotificationItem } from "~/types/notifications";
+import { NotificationsServiceClient } from "~/proto/notifications/notifications.client";
+import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
+import { ListNotificationsByUserRequest, MarkNotificationAsClickedRequest, MarkAllNotificationsAsClickedRequest } from "~/proto/notifications/notifications";
 
 interface UseNotificationsOptions {
   pollingMs?: number;
@@ -18,11 +21,23 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   const [hasMore, setHasMore] = useState(true);
   const esRef = useRef<EventSource | null>(null);
 
-  const base = useMemo(() => NOTIFICATIONS_API_BASE_URL || API_BASE_URL, []);
+  const client = useMemo(() => new NotificationsServiceClient(transport), []);
 
   const computeUnread = (list: NotificationItem[]) => list.filter(n => !n.clicked && (n.status?.toLowerCase?.() !== "read")).length;
 
-  const fetchLatest = async (query: string = search) => {
+  const mapProtoToNotification = (fields: any): NotificationItem => ({
+    id: fields.id?.stringValue || "",
+    userId: fields.user_id?.stringValue || "",
+    title: fields.title?.stringValue || "",
+    message: fields.message?.stringValue || "",
+    type: fields.type?.stringValue || "",
+    status: fields.status?.stringValue || "",
+    clicked: fields.clicked?.boolValue || false,
+    createdAt: fields.created_at?.stringValue || "",
+    updatedAt: fields.updated_at?.stringValue || "",
+  });
+
+  const fetchLatest = useCallback(async (query: string = search) => {
     try {
       setLoading(true);
       const token = typeof window !== 'undefined' ? localStorage.getItem("token") : undefined;
@@ -34,41 +49,60 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
         setHasMore(false);
         return;
       }
-      const searchParam = query ? `&search=${encodeURIComponent(query)}` : "";
-      const res = await fetch(`${base}/api/v1/notifications?limit=${pageSize}&offset=0${searchParam}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      const list: NotificationItem[] = data.notifications || data.data?.notifications || [];
+
+      const userObj = localStorage.getItem('user_object');
+      if (!userObj) return;
+      const user = JSON.parse(userObj);
+
+      const request: ListNotificationsByUserRequest = {
+        userId: user.id,
+        limit: pageSize,
+        offset: 0,
+        search: query
+      };
+
+      const { response } = await client.listNotificationsByUser(request, { metadata: getGrpcMetadata() });
+      
+      const data = response.data?.fields || {};
+      const notifications = data.notifications?.listValue?.values || [];
+      
+      const list: NotificationItem[] = notifications.map((v: any) => mapProtoToNotification(v.structValue?.fields || {}));
+
       setItems(list);
       setHasMore(list.length >= pageSize);
-      setTotalCount(data.total_count || data.data?.total_count || list.length);
-      setShowingCount(data.showing_count || data.data?.showing_count || list.length);
-      setUnreadCount(typeof data.unread_count === 'number' ? data.unread_count : computeUnread(list));
+      
+      setTotalCount(data.total_count?.numberValue || list.length);
+      setShowingCount(list.length);
+      setUnreadCount(data.unread_count?.numberValue || computeUnread(list));
     } catch (e) {
-      // swallow for now
+      handleGrpcError(e, false);
     } finally {
       setLoading(false);
     }
-  };
+  }, [client, pageSize, search]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
     try {
       setLoadingMore(true);
-      const token = typeof window !== 'undefined' ? localStorage.getItem("token") : undefined;
-      if (!token) return;
-      const offset = items.length;
-      const searchParam = search ? `&search=${encodeURIComponent(search)}` : "";
-      const res = await fetch(`${base}/api/v1/notifications?limit=${pageSize}&offset=${offset}${searchParam}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) return;
-      const data = await res.json();
-      const list: NotificationItem[] = data.notifications || data.data?.notifications || [];
-      if (Array.isArray(list) && list.length) {
-        // append unique by id preserving order
+      const userObj = localStorage.getItem('user_object');
+      if (!userObj) return;
+      const user = JSON.parse(userObj);
+      
+      const request: ListNotificationsByUserRequest = {
+        userId: user.id,
+        limit: pageSize,
+        offset: items.length,
+        search: search
+      };
+
+      const { response } = await client.listNotificationsByUser(request, { metadata: getGrpcMetadata() });
+      const data = response.data?.fields || {};
+      const notifications = data.notifications?.listValue?.values || [];
+      
+      const list: NotificationItem[] = notifications.map((v: any) => mapProtoToNotification(v.structValue?.fields || {}));
+
+      if (list.length > 0) {
         setItems(prev => {
           const seen = new Set(prev.map(i => i.id));
           const merged = [...prev];
@@ -78,11 +112,12 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
           return merged;
         });
         setHasMore(list.length >= pageSize);
-        setTotalCount(data.total_count || data.data?.total_count || totalCount);
         setShowingCount(prev => prev + list.length);
       } else {
         setHasMore(false);
       }
+    } catch (e) {
+      handleGrpcError(e, false);
     } finally {
       setLoadingMore(false);
     }
@@ -92,65 +127,73 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
     fetchLatest(search);
     const id = setInterval(() => fetchLatest(search), pollingMs);
     return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [base, pageSize, pollingMs, search]);
+  }, [fetchLatest, pollingMs, search]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const url = new URL(`${base}/api/v1/notifications/stream`);
-    // Attach token via query if fetch EventSource cannot set headers easily
+    const url = new URL(`${API_BASE_URL}/api/v1/notifications/stream`);
     url.searchParams.set('token', token);
 
-    // Prefer standard EventSource with Authorization polyfill via token query
     const es = new EventSource(url.toString());
     esRef.current = es;
 
     es.onmessage = (ev) => {
       try {
         const payload = JSON.parse(ev.data);
-        const list: NotificationItem[] = payload.notifications || payload.data?.notifications || [];
-        if (Array.isArray(list) && list.length) {
-          // Reset to latest page (first chunk); infinite scroll can still append beyond this
+        const notifications = payload.notifications || payload.data?.notifications || [];
+        if (Array.isArray(notifications) && notifications.length) {
+          const list: NotificationItem[] = notifications.map((n: any) => ({
+            id: n.id,
+            userId: n.user_id,
+            title: n.title,
+            message: n.message,
+            type: n.type,
+            status: n.status,
+            clicked: n.clicked,
+            createdAt: n.created_at,
+            updatedAt: n.updated_at,
+          }));
+          
           setItems(list);
           setHasMore(list.length === pageSize);
           setUnreadCount(typeof payload.unread_count === 'number' ? payload.unread_count : computeUnread(list));
         }
       } catch {
-        // ignore parse errors
+        // ignore
       }
     };
-
-    es.addEventListener('error', () => {
-      // keep quiet; periodic polling still runs
-    });
 
     return () => {
       es.close();
       esRef.current = null;
     };
-  }, [base, pageSize]);
+  }, [pageSize]);
 
   const markAllAsRead = async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : undefined;
-    if (!token) return;
-    await fetch(`${base}/api/v1/notifications/mark-all-clicked`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    await fetchLatest();
+    try {
+      const userObj = localStorage.getItem('user_object');
+      if (!userObj) return;
+      const user = JSON.parse(userObj);
+      
+      const request: MarkAllNotificationsAsClickedRequest = { userId: user.id };
+      await client.markAllNotificationsAsClicked(request, { metadata: getGrpcMetadata() });
+      await fetchLatest();
+    } catch (e) {
+      handleGrpcError(e);
+    }
   };
 
   const markOneAsRead = async (id: string) => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : undefined;
-    if (!token) return;
-    await fetch(`${base}/api/v1/notifications/${id}/clicked`, {
-      method: 'PUT',
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    await fetchLatest();
+    try {
+      const request: MarkNotificationAsClickedRequest = { id };
+      await client.markNotificationAsClicked(request, { metadata: getGrpcMetadata() });
+      await fetchLatest();
+    } catch (e) {
+      handleGrpcError(e);
+    }
   };
 
   return { items, unreadCount, totalCount, showingCount, loading, loadingMore, hasMore, refresh: fetchLatest, loadMore, markAllAsRead, markOneAsRead };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useLocation, useNavigate } from "react-router";
+import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -861,14 +862,16 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                                 {imageLoadingStates[househelp.profile_id] !== false && (
                                   <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
                                 )}
-                                <img
-                                  src={
+                                <OptimizedImage
+                                  path={
                                     (househelp.avatar_url as string) ||
                                     (househelp.profile_picture as string) ||
                                     (househelp.photos && househelp.photos[0]) ||
                                     profilePhotos[househelp.user_id || String(househelp.id)] ||
                                     ''
                                   }
+                                  thumbnailPath={househelp.thumbnail_path}
+                                  mediumPath={househelp.medium_path}
                                   alt={`${househelp.first_name} ${househelp.last_name}`}
                                   className={`w-full h-full object-cover transition-opacity duration-300 ${
                                     imageLoadingStates[househelp.profile_id] === false ? 'opacity-100' : 'opacity-0'
@@ -876,7 +879,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                                   onLoad={() => {
                                     setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
                                   }}
-                                  onError={(e) => {
+                                  onError={(e: any) => {
                                     setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
                                     e.currentTarget.style.display = 'none';
                                   }}

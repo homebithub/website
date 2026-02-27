@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/routes/login";
 import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
@@ -6,6 +6,8 @@ import { migratePreferences } from '~/utils/preferencesApi';
 import { extractErrorMessage, transformErrorMessage } from '~/utils/errorMessages';
 import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
+import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
+import { AuthServiceClient, ProfileSetupServiceClient } from "~/proto/auth/auth.client";
 
 interface User {
   id: string;
@@ -22,6 +24,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const authClient = useMemo(() => new AuthServiceClient(transport), []);
+  const profileSetupClient = useMemo(() => new ProfileSetupServiceClient(transport), []);
+
   // Public routes that don't need auth check
   const isPublicRoute = () => {
     const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies'];
@@ -35,7 +40,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = async () => {
     try {
       const token = localStorage.getItem("token");
-      // Always hydrate from localStorage to avoid guest UI on public pages
       const userObj = localStorage.getItem("user_object");
       if (userObj) {
         try {
@@ -46,43 +50,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Skip server verification on public routes
       if (isPublicRoute()) {
         setLoading(false);
         return;
       }
 
       if (!token) {
-        console.log("not token found in local storage")
         setLoading(false);
         return;
       }
 
-      // Verify with the server on non-public routes
-      const response = await fetch(API_ENDPOINTS.auth.me, {
-        headers: {
-          "Authorization": `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-
-      if (response.ok) {
-        const userResponse = await response.json();
-        console.log('Auth check response:', userResponse);
-        
-        // Extract user data from nested structure
-        const user = userResponse.data || userResponse;
-        console.log('Extracted user data in auth check:', user);
-        
-        setUser({ token: localStorage.getItem("token") || "", user } as LoginResponse);
-        localStorage.setItem("user_object", JSON.stringify(user));
-      } else {
-        console.log("not logged in")
-        setUser(null);
-        localStorage.removeItem("token");
-        localStorage.removeItem("user_object");
-      }
+      const { response: userResponse } = await authClient.getCurrentUser({}, { metadata: getGrpcMetadata() });
+      const user = userResponse.data?.fields ? userResponse.data.fields : userResponse;
+      
+      setUser({ token: localStorage.getItem("token") || "", user } as unknown as LoginResponse);
+      localStorage.setItem("user_object", JSON.stringify(user));
     } catch (error) {
       console.error("Error checking auth:", error);
+      setUser(null);
+      localStorage.removeItem("token");
+      localStorage.removeItem("user_object");
     } finally {
       setLoading(false);
     }
@@ -93,121 +80,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      // Normalize phone number to international format
       const normalizedPhone = normalizeKenyanPhoneNumber(phone);
-
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ phone: normalizedPhone, password } as LoginRequest),
-      });
-
-      const dataResponse = await response.json();
-      console.log('Login response:', dataResponse);
+      const { response: dataResponse } = await authClient.login({ phone: normalizedPhone, password }, { metadata: getGrpcMetadata(false) });
       
-      // Extract login data from nested structure
-      const data = dataResponse.data || dataResponse;
-      console.log('Extracted login data:', data);
-      
-      if (!response.ok) {
-        const rawMsg = extractErrorMessage(data);
-        const errorMsg = rawMsg ? transformErrorMessage(rawMsg) : "Invalid phone number or password. Please check and try again.";
-        throw new Error(errorMsg);
-      }
+      const data = dataResponse.data?.fields || dataResponse;
+      const token = (data as any).token?.stringValue || (data as any).token || "";
+      const userData = (data as any).user?.structValue?.fields || (data as any).user || {};
 
-      localStorage.setItem("token", (data as LoginResponse).token);
-      const userData = (data as LoginResponse).user;
+      localStorage.setItem("token", token);
       localStorage.setItem("user_object", JSON.stringify(userData));
-      localStorage.setItem("profile_type", userData.profile_type || "");
-      setUser(data as LoginResponse);
       
-      // Migrate anonymous preferences to user account
-      migratePreferences().catch(err => {
-        console.error("Failed to migrate preferences:", err);
-        // Don't block login if migration fails
-      });
+      const profileType = userData.profile_type?.stringValue || userData.profile_type || "";
+      localStorage.setItem("profile_type", profileType);
+      localStorage.setItem("userType", profileType);
       
-      // Redirect to specific dashboard based on profile_type
-      const profileType = userData.profile_type;
-      try { localStorage.setItem("userType", profileType || ""); } catch {}
-      console.log("User data after login:", userData);
-      console.log("Redirecting to home with profile type:", profileType);
+      setUser({ token, user: userData } as unknown as LoginResponse);
+      
+      migratePreferences().catch(err => console.error("Failed to migrate preferences:", err));
 
-      // Bureau users should not login through regular flow
       if (profileType === "bureau") {
-        console.log("Bureau user detected, redirecting to home");
         navigate("/");
         return;
       }
 
-      // Check if profile setup is complete
       if (profileType === "household" || profileType === "househelp") {
         try {
-          const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-            headers: {
-              'Authorization': `Bearer ${(data as LoginResponse).token}`
-            }
-          });
+          const { response: setupData } = await profileSetupClient.getProgress({ userId: (userData.id?.stringValue || userData.id) }, { metadata: { authorization: `Bearer ${token}` } });
+          const progressData = setupData.data?.fields || {};
+          const totalSteps = progressData.total_steps?.numberValue || 0;
+          const lastStep = progressData.last_completed_step?.numberValue || 0;
+          const status = progressData.status?.stringValue || "";
+          
+          const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
 
-          if (setupResponse.ok) {
-            const setupData = await setupResponse.json();
-            // Handle response structure: { data: { last_completed_step: ..., status: ... } }
-            const progressData = setupData.data || {};
-            const totalSteps = progressData.total_steps || 0;
-            const lastStep = progressData.last_completed_step || 0;
-            const isComplete = progressData.status === 'completed' ||
-              (totalSteps > 0 && lastStep >= totalSteps);
-
-            console.log("Profile setup status:", { isComplete, lastStep, totalSteps });
-
-            if (!isComplete) {
-              // Household users who haven't started setup go to choice page first
-              if (profileType === 'household' && lastStep === 0) {
-                console.log("Household user hasn't started setup, redirecting to choice page");
-                navigate('/household-choice');
-                return;
-              }
-              // Redirect to profile setup at the last completed step
-              const setupRoute = profileType === "household" 
-                ? `/profile-setup/household?step=${lastStep + 1}`
-                : `/profile-setup/househelp?step=${lastStep + 1}`;
-              
-              console.log("Profile incomplete, redirecting to:", setupRoute);
-              navigate(setupRoute);
-              return;
-            }
-          } else if (setupResponse.status === 404) {
-            // No profile setup record exists - user hasn't started setup
-            if (profileType === 'household') {
-              console.log("No profile setup record, redirecting to household choice");
+          if (!isComplete) {
+            if (profileType === 'household' && lastStep === 0) {
               navigate('/household-choice');
               return;
             }
-            console.log("No profile setup record found, starting from step 1");
+            const setupRoute = profileType === "household" 
+              ? `/profile-setup/household?step=${lastStep + 1}`
+              : `/profile-setup/househelp?step=${lastStep + 1}`;
+            navigate(setupRoute);
+            return;
+          }
+        } catch (err: any) {
+          if (err.code === 'NOT_FOUND' || err.status === 5) {
+            if (profileType === 'household') {
+              navigate('/household-choice');
+              return;
+            }
             navigate('/profile-setup/househelp?step=1');
             return;
           }
-        } catch (err) {
-          console.error("Failed to check profile setup status:", err);
-          // Continue to home if check fails
         }
       }
 
-      // Profile is complete or setup check failed, redirect to home
-      if (profileType === "household" || profileType === "household") {
-        console.log("Redirecting to /");
-        navigate("/");
-      } else if (profileType === "househelp") {
-        console.log("Redirecting to /");
-        navigate("/");
-      } else {
-        console.log("No valid profile type found, redirecting to /");
-        navigate("/");
-      }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      navigate("/");
+    } catch (error: any) {
+      const errorMsg = error.message || "An error occurred during login";
+      setError(transformErrorMessage(errorMsg));
       throw error;
     } finally {
       setLoading(false);
@@ -219,46 +151,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/register`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password, firstName, lastName }),
-      });
-
-      if (!response.ok) {
-        const errorResponse = await response.json();
-        console.log('Signup error response:', errorResponse);
-        
-        // Extract error data from nested structure
-        const errorData = errorResponse.data || errorResponse;
-        console.log('Extracted signup error data:', errorData);
-        
-        const errorMsg = extractErrorMessage(errorData) || "Failed to sign up";
-        throw new Error(errorMsg);
-      }
-
-      const signupResponse = await response.json();
-      console.log('Signup success response:', signupResponse);
+      const { response: signupResponse } = await authClient.signup({ email, password, firstName, lastName }, { metadata: getGrpcMetadata(false) });
+      const data = signupResponse.data?.fields || signupResponse;
       
-      // Extract signup data from nested structure
-      const signupData = signupResponse.data || signupResponse;
-      console.log('Extracted signup data:', signupData);
-      
-      const { token, user } = signupData;
+      const token = (data as any).token?.stringValue || (data as any).token || "";
+      const user = (data as any).user?.structValue?.fields || (data as any).user || {};
+
       localStorage.setItem("token", token);
-      setUser(user);
+      localStorage.setItem("user_object", JSON.stringify(user));
+      setUser(user as any);
       
-      // Migrate anonymous preferences to user account
-      migratePreferences().catch(err => {
-        console.error("Failed to migrate preferences:", err);
-        // Don't block signup if migration fails
-      });
-      
+      migratePreferences().catch(err => console.error("Failed to migrate preferences:", err));
       navigate("/");
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+    } catch (error: any) {
+      const errorMsg = error.message || "An error occurred during signup";
+      setError(transformErrorMessage(errorMsg));
       throw error;
     } finally {
       setLoading(false);
@@ -270,35 +177,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      // Try to call logout endpoint (optional - for server-side cleanup)
       try {
-        await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
+        await authClient.logout({}, { metadata: getGrpcMetadata() });
       } catch (error) {
-        // Ignore server logout errors - we'll still clear local state
         console.log("Server logout failed, but clearing local state");
       }
 
-      // Clear all auth-related data from localStorage
       localStorage.removeItem("token");
       localStorage.removeItem("user_object");
       localStorage.removeItem("userType");
+      localStorage.removeItem("profile_type");
 
-      // Clear user state
       setUser(null);
 
-      // Force full page reload to ensure unauthenticated homepage is shown
       if (typeof window !== "undefined") {
         window.location.href = "/";
       } else {
         navigate("/");
       }
-    } catch (error) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+    } catch (error: any) {
+      setError(error.message || "An error occurred during logout");
       throw error;
     } finally {
       setLoading(false);

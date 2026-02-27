@@ -6,10 +6,14 @@ import { useAuth } from "~/contexts/useAuth";
 import { Waitlist } from "~/components/features/Waitlist";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
-import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { API_BASE_URL } from "~/config/api";
 import { useProfileSetupStatus } from "~/hooks/useProfileSetupStatus";
 import { useNotifications } from "~/hooks/useNotifications";
 import NotificationsModal from "~/components/notifications/NotificationsModal";
+import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
+import { ShortlistServiceClient, HireRequestServiceClient, InterestServiceClient } from "~/proto/auth/auth.client";
+import { ListConversationsRequest } from "~/proto/notifications/notifications";
+import { NotificationsServiceClient } from "~/proto/notifications/notifications.client";
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -34,6 +38,11 @@ export function Navigation() {
     const [prefillError, setPrefillError] = useState<string | undefined>(undefined);
     const navigate = useNavigate();
     const location = useLocation();
+
+    const shortlistClient = React.useMemo(() => new ShortlistServiceClient(transport), []);
+    const hireRequestClient = React.useMemo(() => new HireRequestServiceClient(transport), []);
+    const interestClient = React.useMemo(() => new InterestServiceClient(transport), []);
+    const notificationsClient = React.useMemo(() => new NotificationsServiceClient(transport), []);
 
     // Detect if running on app subdomain
     const isAppHost = React.useMemo(() => {
@@ -65,29 +74,9 @@ export function Navigation() {
     // Fetch shortlist count
     const fetchShortlistCount = async () => {
         try {
-            const token = localStorage.getItem("token");
-            if (!token) {
-                console.log('[Shortlist Count] No token found');
-                return;
-            }
-
-            console.log('[Shortlist Count] Fetching from:', `${API_BASE_URL}/api/v1/shortlists/count`);
-            const res = await fetch(`${API_BASE_URL}/api/v1/shortlists/count`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            console.log('[Shortlist Count] Response status:', res.status);
-
-            if (res.ok) {
-                const data = await res.json();
-                console.log('[Shortlist Count] Data received:', data);
-                const count = data.count || 0;
-                console.log('[Shortlist Count] Setting count to:', count);
-                setShortlistCount(count);
-            } else {
-                const errorText = await res.text();
-                console.error('[Shortlist Count] Error response:', res.status, errorText);
-            }
+            const { response } = await shortlistClient.countShortlist({}, { metadata: getGrpcMetadata() });
+            const count = response.data?.fields?.count?.numberValue || 0;
+            setShortlistCount(count);
         } catch (error) {
             console.error("[Shortlist Count] Failed to fetch:", error);
         }
@@ -96,66 +85,44 @@ export function Navigation() {
     // Fetch inbox unread count
     const fetchInboxCount = async () => {
         try {
-            const token = localStorage.getItem("token");
-            if (!token) return;
-
-            // Route inbox calls through gateway
-            const res = await fetch(`${API_BASE_URL}/api/v1/inbox/conversations?limit=100`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                const conversations = data.conversations || [];
-                const totalUnread = conversations.reduce((sum: number, conv: any) => sum + (conv.unread_count || 0), 0);
-                setInboxCount(totalUnread);
-            }
+            const request: ListConversationsRequest = { limit: 100, offset: 0 };
+            const { response } = await notificationsClient.listConversations(request, { metadata: getGrpcMetadata() });
+            const conversations = response.data?.fields?.conversations?.listValue?.values || [];
+            
+            const totalUnread = conversations.reduce((sum: number, v: any) => {
+                const conv = v.structValue?.fields || {};
+                return sum + (conv.unread_count?.numberValue || 0);
+            }, 0);
+            
+            setInboxCount(totalUnread);
         } catch (error) {
             console.error("Failed to fetch inbox count:", error);
         }
     };
 
     // Fetch hiring badge count: pending items the user has NOT acted upon
-    // Household: pending interests from househelps + pending hire requests received
-    // Househelp: pending hire requests received from households
     const fetchHireRequestCount = async (overrideProfileType?: string | null) => {
         try {
-            const token = localStorage.getItem("token");
-            if (!token) return;
-
             const pt = overrideProfileType ?? profileType;
             let total = 0;
 
             if (pt === 'household') {
-                // 1. Count pending/viewed interests from househelps (not yet accepted/declined)
-                const interestsRes = await fetch(`${API_BASE_URL}/api/v1/interests/household`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                if (interestsRes.ok) {
-                    const iData = await interestsRes.json();
-                    const interests = iData.data?.data || iData.data || [];
-                    if (Array.isArray(interests)) {
-                        total += interests.filter((i: any) => i.status === 'pending' || i.status === 'viewed').length;
-                    }
-                }
+                // 1. Count pending/viewed interests from househelps
+                const { response: iData } = await interestClient.listInterestsByHousehold({}, { metadata: getGrpcMetadata() });
+                const interests = iData.data?.fields?.data?.listValue?.values || [];
+                total += interests.filter((v: any) => {
+                    const i = v.structValue?.fields || {};
+                    const status = i.status?.stringValue || "";
+                    return status === 'pending' || status === 'viewed';
+                }).length;
 
-                // 2. Count pending hire requests (ones where househelp hasn't responded yet)
-                const hireRes = await fetch(`${API_BASE_URL}/api/v1/hire-requests?status=pending&limit=100`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                if (hireRes.ok) {
-                    const hData = await hireRes.json();
-                    total += hData.total || (Array.isArray(hData.data) ? hData.data.length : 0);
-                }
+                // 2. Count pending hire requests
+                const { response: hData } = await hireRequestClient.listHireRequests({ status: 'pending', limit: 100, offset: 0 }, { metadata: getGrpcMetadata() });
+                total += hData.data?.fields?.total?.numberValue || hData.data?.fields?.data?.listValue?.values?.length || 0;
             } else if (pt === 'househelp') {
                 // Count pending hire requests received from households
-                const res = await fetch(`${API_BASE_URL}/api/v1/hire-requests?status=pending&limit=100`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    total = data.total || (Array.isArray(data.data) ? data.data.length : 0);
-                }
+                const { response: data } = await hireRequestClient.listHireRequests({ status: 'pending', limit: 100, offset: 0 }, { metadata: getGrpcMetadata() });
+                total = data.data?.fields?.total?.numberValue || data.data?.fields?.data?.listValue?.values?.length || 0;
             }
 
             setHireRequestCount(total);

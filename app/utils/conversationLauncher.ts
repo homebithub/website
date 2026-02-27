@@ -1,4 +1,6 @@
-import { apiClient } from '~/utils/apiClient';
+import { transport, getGrpcMetadata } from '~/utils/grpcClient';
+import { NotificationsServiceClient } from '~/proto/notifications/notifications.client';
+import { StartConversationRequest, ListConversationsRequest } from '~/proto/notifications/notifications';
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -71,110 +73,86 @@ function intersects(a: string[], b: string[]): boolean {
 }
 
 async function resolveConversationIdFromList(
-  notificationsBase: string,
   payload: StartConversationPayload,
 ): Promise<string | undefined> {
-  const convRes = await apiClient.auth(`${notificationsBase}/api/v1/inbox/conversations?offset=0&limit=100`);
-  if (!convRes.ok) return undefined;
-
-  const response = await apiClient.json<any>(convRes);
-  const conversations = extractConversations(response);
-
-  // 1. Try matching by profile IDs first (strongest match, mirrors backend)
-  if (payload.household_profile_id && payload.househelp_profile_id) {
-    const match = conversations.find((c) => {
-      const convHouseholdProfileIds = uniqueIds([
-        c.household_profile_id,
-        c.household?.id,
-      ]);
-      const convHousehelpProfileIds = uniqueIds([
-        c.househelp_profile_id,
-        c.househelp?.id,
-      ]);
-      return (
-        intersects(uniqueIds([payload.household_profile_id]), convHouseholdProfileIds) &&
-        intersects(uniqueIds([payload.househelp_profile_id]), convHousehelpProfileIds)
-      );
+  const client = new NotificationsServiceClient(transport);
+  try {
+    const request: ListConversationsRequest = { limit: 100, offset: 0 };
+    const { response } = await client.listConversations(request, { metadata: getGrpcMetadata() });
+    
+    const raw = response.data?.fields?.conversations?.listValue?.values || [];
+    const conversations = raw.map((v: any) => {
+      const c = v.structValue?.fields || {};
+      return {
+        id: c.id?.stringValue,
+        household_id: c.household_user_id?.stringValue || c.household_id?.stringValue,
+        househelp_id: c.househelp_user_id?.stringValue || c.househelp_id?.stringValue,
+        household_profile_id: c.household_profile_id?.stringValue,
+        househelp_profile_id: c.househelp_profile_id?.stringValue
+      };
     });
-    if (match) return extractConversationId(match);
-  }
 
-  // 2. Try matching by househelp_profile_id + household_user_id
-  //    (covers rows where household_profile_id is null)
-  if (payload.househelp_profile_id) {
-    const match = conversations.find((c) => {
-      const convHousehelpProfileIds = uniqueIds([
-        c.househelp_profile_id,
-        c.househelp?.id,
-      ]);
-      const convHouseholdUserIds = uniqueIds([
-        c.household_user_id,
-        c.household_id,
-        c.household?.user_id,
-      ]);
-      return (
-        intersects(uniqueIds([payload.househelp_profile_id]), convHousehelpProfileIds) &&
-        intersects(uniqueIds([payload.household_user_id]), convHouseholdUserIds)
+    // 1. Try matching by profile IDs first
+    if (payload.household_profile_id && payload.househelp_profile_id) {
+      const match = conversations.find((c) => 
+        c.household_profile_id === payload.household_profile_id && 
+        c.househelp_profile_id === payload.househelp_profile_id
       );
-    });
-    if (match) return extractConversationId(match);
-  }
+      if (match?.id) return match.id;
+    }
 
-  // 3. Fallback: match by user IDs
-  const expectedHouseholdIds = uniqueIds([payload.household_user_id]);
-  const expectedHousehelpIds = uniqueIds([payload.househelp_user_id]);
+    // 2. Try matching by househelp_profile_id + household_user_id
+    if (payload.househelp_profile_id) {
+      const match = conversations.find((c) => 
+        c.househelp_profile_id === payload.househelp_profile_id && 
+        c.household_id === payload.household_user_id
+      );
+      if (match?.id) return match.id;
+    }
 
-  const match = conversations.find((c) => {
-    const conversationHouseholdIds = uniqueIds([
-      c.household_user_id,
-      c.household_id,
-      c.household?.user_id,
-    ]);
-    const conversationHousehelpIds = uniqueIds([
-      c.househelp_user_id,
-      c.househelp_id,
-      c.househelp?.user_id,
-    ]);
-    return (
-      intersects(expectedHouseholdIds, conversationHouseholdIds) &&
-      intersects(expectedHousehelpIds, conversationHousehelpIds)
+    // 3. Fallback: match by user IDs
+    const match = conversations.find((c) => 
+      c.household_id === payload.household_user_id && 
+      c.househelp_id === payload.househelp_user_id
     );
-  });
 
-  return extractConversationId(match);
+    return match?.id;
+  } catch (err) {
+    console.error('[resolveConversationIdFromList] Error:', err);
+    return undefined;
+  }
 }
 
 export async function startOrGetConversation(
-  notificationsBase: string,
+  _unused: string,
   payload: StartConversationPayload,
 ): Promise<string | undefined> {
-  const existingId = await resolveConversationIdFromList(notificationsBase, payload);
+  const existingId = await resolveConversationIdFromList(payload);
   if (existingId && UUID_REGEX.test(existingId)) {
     return existingId;
   }
 
-  const res = await apiClient.auth(`${notificationsBase}/api/v1/inbox/conversations`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!res.ok) {
+  const client = new NotificationsServiceClient(transport);
+  try {
+    const request: StartConversationRequest = {
+      householdUserId: payload.household_user_id,
+      househelpUserId: payload.househelp_user_id,
+      householdProfileId: payload.household_profile_id,
+      househelpProfileId: payload.househelp_profile_id
+    };
+
+    const { response } = await client.startConversation(request, { metadata: getGrpcMetadata() });
+    const conversationId = response.data?.fields?.id?.stringValue || (response as any).id;
+
+    if (conversationId && UUID_REGEX.test(conversationId)) {
+      return conversationId;
+    }
+    
+    return resolveConversationIdFromList(payload);
+  } catch (err) {
+    console.error('[startOrGetConversation] Error:', err);
     throw new Error('Failed to start conversation');
   }
-
-  let conversationId: string | undefined;
-  try {
-    const data = await apiClient.json<any>(res);
-    conversationId = extractConversationId(data);
-  } catch {
-    conversationId = undefined;
-  }
-
-  if (!conversationId || !UUID_REGEX.test(conversationId)) {
-    return resolveConversationIdFromList(notificationsBase, payload);
-  }
-
-  return conversationId;
 }
 
 export function getInboxRoute(conversationId?: string): string {

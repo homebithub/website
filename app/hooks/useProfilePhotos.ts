@@ -1,5 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
-import { API_BASE_URL } from '~/config/api';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { transport, getGrpcMetadata } from '~/utils/grpcClient';
+import { DocumentServiceClient } from '~/proto/auth/auth.client';
+import { ListDocumentsByOwnerRequest } from '~/proto/auth/auth';
 
 /**
  * Fetches the first profile_photo document URL for a list of user IDs.
@@ -11,6 +13,7 @@ const globalCache: Record<string, string> = {};
 export function useProfilePhotos(userIds: string[]): Record<string, string> {
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const fetchedRef = useRef<Set<string>>(new Set());
+  const client = useMemo(() => new DocumentServiceClient(transport), []);
 
   useEffect(() => {
     if (!userIds || userIds.length === 0) return;
@@ -40,21 +43,28 @@ export function useProfilePhotos(userIds: string[]): Record<string, string> {
     // Mark as in-flight
     toFetch.forEach((id) => fetchedRef.current.add(id));
 
-    // Fetch each user's first profile photo in parallel
+    // Fetch each user's first profile photo in parallel via gRPC
     Promise.all(
       toFetch.map(async (userId) => {
         try {
-          const res = await fetch(
-            `${API_BASE_URL}/api/v1/documents/user/${userId}?document_type=profile_photo`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          if (!res.ok) return;
-          const json = await res.json();
-          const docs = json.data?.data || json.data || [];
-          const arr = Array.isArray(docs) ? docs : [];
-          const url = arr[0]?.public_url || arr[0]?.signed_url || arr[0]?.url;
-          if (url) {
-            globalCache[userId] = url;
+          const request: ListDocumentsByOwnerRequest = {
+            ownerId: userId,
+            ownerType: 'user',
+            documentType: 'profile_photo',
+            limit: 1,
+            offset: 0
+          };
+
+          const { response } = await client.listDocumentsByOwner(request, { metadata: getGrpcMetadata() });
+          const fields = response.data?.fields || {};
+          const docs = fields.data?.listValue?.values || [];
+          
+          if (docs.length > 0) {
+            const first = docs[0].structValue?.fields || {};
+            const url = first.public_url?.stringValue || first.signed_url?.stringValue || first.url?.stringValue;
+            if (url) {
+              globalCache[userId] = url;
+            }
           }
         } catch {
           // silently ignore
@@ -67,7 +77,7 @@ export function useProfilePhotos(userIds: string[]): Record<string, string> {
       }
       setPhotos((prev) => ({ ...prev, ...result }));
     });
-  }, [userIds.join(',')]);
+  }, [userIds.join(','), client]);
 
   return photos;
 }
