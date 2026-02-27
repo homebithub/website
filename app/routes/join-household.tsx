@@ -1,9 +1,10 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router";
+import React, { useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL } from "~/config/api";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { Button } from '~/components/ui/Button';
 
 export default function JoinHouseholdPage() {
   const navigate = useNavigate();
@@ -11,10 +12,95 @@ export default function JoinHouseholdPage() {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [validationInfo, setValidationInfo] = useState<any>(null);
   const [success, setSuccess] = useState(false);
-  const [joinStatus, setJoinStatus] = useState<'approved' | 'pending' | null>(null);
+  const [joinStatus, setJoinStatus] = useState<'approved' | 'pending' | 'rejected' | null>(null);
+
+  useEffect(() => {
+    const checkCurrentStatus = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setCheckingStatus(false);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_BASE_URL}/api/v1/households/join/status`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          const request = data?.data;
+          if (request) {
+            setJoinStatus(request.status);
+            setSuccess(true);
+            
+            if (request.status === 'approved') {
+              navigate("/household/profile");
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error checking join status:", err);
+      } finally {
+        setCheckingStatus(false);
+      }
+    };
+
+    checkCurrentStatus();
+  }, [navigate]);
+
+  useEffect(() => {
+    if (!success || joinStatus !== 'pending') return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream?token=${token}`);
+
+    eventSource.onmessage = (event: any) => {
+      try {
+        const data = JSON.parse(event.data);
+        const notifications = data.notifications || [];
+        
+        // Handle snapshot or incremental updates
+        const list = Array.isArray(notifications) ? notifications : 
+                     (data.data?.notifications || []);
+        
+        // Look for join request approved or rejected notifications
+        for (const n of list) {
+          if (n.type === 'household_join_approved') {
+            setJoinStatus('approved');
+            setTimeout(() => navigate("/household/profile"), 2000);
+            eventSource.close();
+            break;
+          } else if (n.type === 'household_join_rejected') {
+            setJoinStatus('rejected');
+            setSuccess(false);
+            setError("Your request to join the household was rejected.");
+            eventSource.close();
+            break;
+          }
+        }
+      } catch (err) {
+        console.error("SSE error:", err);
+      }
+    };
+
+    eventSource.onerror = (err) => {
+      console.error("EventSource failed:", err);
+      eventSource.close();
+    };
+
+    return () => {
+      eventSource.close();
+    };
+  }, [success, joinStatus, navigate]);
 
   const handleValidateCode = async () => {
     if (!inviteCode.trim()) {
@@ -110,30 +196,38 @@ export default function JoinHouseholdPage() {
               </p>
             </div>
 
-            {success ? (
+            {checkingStatus ? (
+              <div className="flex justify-center py-12">
+                <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full" />
+              </div>
+            ) : success ? (
               <div className="space-y-6">
                 {joinStatus === 'approved' ? (
                   <>
                     <SuccessAlert message="You have been automatically added to the household. Redirecting..." title="Successfully Joined!" />
                     <div className="text-center">
-                      <button
-                        onClick={() => navigate('/household/members')}
-                        className="px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold"
+                      <Button
+                        as={Link}
+                        to="/household/members"
+                        variant="primary"
+                        size="lg"
                       >
                         View Household Members
-                      </button>
+                      </Button>
                     </div>
                   </>
                 ) : (
                   <>
                     <SuccessAlert message="Your request has been sent to the household owner for approval. You will be notified once they respond." title="Request Sent!" />
                     <div className="text-center">
-                      <button
-                        onClick={() => navigate('/dashboard')}
-                        className="px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-semibold"
+                      <Button
+                        as={Link}
+                        to="/dashboard"
+                        variant="secondary"
+                        size="lg"
                       >
                         Back to Dashboard
-                      </button>
+                      </Button>
                     </div>
                   </>
                 )}
@@ -158,18 +252,19 @@ export default function JoinHouseholdPage() {
                       className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-lg"
                       disabled={loading || validating}
                     />
-                    <button
+                    <Button
                       onClick={handleValidateCode}
                       disabled={!inviteCode.trim() || loading || validating}
-                      className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+                      isLoading={validating}
+                      variant="primary"
                     >
-                      {validating ? "Validating..." : "Validate"}
-                    </button>
+                      Validate
+                    </Button>
                   </div>
                 </div>
 
                 {/* Error Message */}
-                {error && <ErrorAlert message={error} />}
+                {error && <div className="mb-4"><ErrorAlert message={error} /></div>}
 
                 {/* Validation Info */}
                 {validationInfo && (
@@ -197,29 +292,21 @@ export default function JoinHouseholdPage() {
                         onChange={(e) => setMessage(e.target.value)}
                         placeholder="Introduce yourself to the household owner..."
                         rows={3}
-                        className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none"
+                        className="w-full px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white resize-none mb-4"
                         disabled={loading}
                       />
                     </div>
 
                     {/* Submit Button */}
-                    <button
+                    <Button
                       onClick={handleJoinHousehold}
-                      disabled={loading}
-                      className="w-full mt-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg text-lg"
+                      isLoading={loading}
+                      fullWidth
+                      variant="primary"
+                      size="lg"
                     >
-                      {loading ? (
-                        <span className="flex items-center justify-center gap-2">
-                          <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
-                          Sending Request...
-                        </span>
-                      ) : (
-                        "Request to Join Household"
-                      )}
-                    </button>
+                      Request to Join Household
+                    </Button>
                   </div>
                 )}
 

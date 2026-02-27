@@ -35,11 +35,11 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
       try {
         const token = localStorage.getItem('token');
         if (!token) return;
-        
+
         const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         if (response.ok) {
           const data = await response.json();
           if (data.religion) {
@@ -60,27 +60,25 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
     loadData();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedReligion) {
-      setError('Please select your religion or belief system');
-      return;
+  const handleReligionChange = async (religion: string) => {
+    setSelectedReligion(religion);
+    markDirty();
+    if (religion !== 'Other') {
+      setCustomReligion('');
+      // Auto-save if it's not 'Other'
+      await saveReligion(religion);
     }
+    setError('');
+  };
 
-    if (selectedReligion === 'Other' && !customReligion.trim()) {
-      setError('Please specify your religion or belief system');
-      return;
-    }
-
+  const saveReligion = async (religionValue: string) => {
     setIsSubmitting(true);
     setError('');
     setSuccess('');
 
     try {
       const token = localStorage.getItem('token');
-      const finalReligion = selectedReligion === 'Other' ? customReligion.trim() : selectedReligion;
-      
+
       const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
         method: 'PUT',
         headers: {
@@ -88,7 +86,7 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          religion: finalReligion,
+          religion: religionValue,
           _step_metadata: {
             step_id: "religion",
             step_number: 6,
@@ -101,9 +99,9 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || 'Failed to save religion preferences');
       }
-      
+
       markClean();
-      setSuccess('Religion preferences saved successfully!');
+      setSuccess('Religion preferences saved automatically!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(handleApiError(err, 'religion', 'Failed to save religion preferences. Please try again.'));
@@ -113,13 +111,21 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
     }
   };
 
-  const handleReligionChange = (religion: string) => {
-    setSelectedReligion(religion);
-    markDirty();
-    if (religion !== 'Other') {
-      setCustomReligion('');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedReligion) {
+      setError('Please select your religion or belief system');
+      return;
     }
-    setError('');
+
+    if (selectedReligion === 'Other' && !customReligion.trim()) {
+      setError('Please specify your religion or belief system');
+      return;
+    }
+
+    const finalReligion = selectedReligion === 'Other' ? customReligion.trim() : selectedReligion;
+    await saveReligion(finalReligion);
   };
 
   return (
@@ -128,7 +134,7 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         Please select your religion or belief system. This information helps us provide better matching and ensures cultural compatibility.
       </p>
-      
+
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Religion Selection */}
         <div className="space-y-4">
@@ -137,8 +143,8 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
           </h3>
           <div className="space-y-3">
             {RELIGIONS.map((religion) => (
-              <label 
-                key={religion} 
+              <label
+                key={religion}
                 className={`flex items-center p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
                   selectedReligion === religion 
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' 

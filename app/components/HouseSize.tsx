@@ -53,8 +53,9 @@ const HouseSize: React.FC = () => {
   }, []);
 
   // Save house size to household profile
-  const saveHouseSize = async () => {
-    if (!selectedSize) {
+  const saveHouseSize = async (size?: string) => {
+    const sizeToSave = size || selectedSize;
+    if (!sizeToSave) {
       setError('Please select a house size');
       return;
     }
@@ -72,7 +73,7 @@ const HouseSize: React.FC = () => {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
-          house_size: selectedSize,
+          house_size: sizeToSave,
           household_notes: additionalDetails.trim() || "",
           _step_metadata: {
             step_id: "housesize",
@@ -88,7 +89,7 @@ const HouseSize: React.FC = () => {
       }
 
       markClean();
-      setSuccess('House size saved successfully!');
+      setSuccess('House size saved automatically!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(handleApiError(err, 'houseSize', 'Failed to save house size. Please try again.'));
@@ -96,6 +97,12 @@ const HouseSize: React.FC = () => {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSizeChange = async (size: string) => {
+    setSelectedSize(size);
+    markDirty();
+    await saveHouseSize(size);
   };
 
   return (
@@ -129,7 +136,7 @@ const HouseSize: React.FC = () => {
                   name="houseSize"
                   value={size}
                   checked={selectedSize === size}
-                  onChange={() => { setSelectedSize(size); markDirty(); }}
+                  onChange={() => handleSizeChange(size)}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 flex-shrink-0 ${

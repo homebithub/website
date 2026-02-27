@@ -108,9 +108,9 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
     const es = new EventSource(url.toString());
     esRef.current = es;
 
-    es.addEventListener('notifications', (ev) => {
+    es.onmessage = (ev) => {
       try {
-        const payload = JSON.parse((ev as MessageEvent).data);
+        const payload = JSON.parse(ev.data);
         const list: NotificationItem[] = payload.notifications || payload.data?.notifications || [];
         if (Array.isArray(list) && list.length) {
           // Reset to latest page (first chunk); infinite scroll can still append beyond this
@@ -121,7 +121,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       } catch {
         // ignore parse errors
       }
-    });
+    };
 
     es.addEventListener('error', () => {
       // keep quiet; periodic polling still runs
