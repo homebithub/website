@@ -1,13 +1,15 @@
 import { Link, useNavigate, useLocation } from "react-router";
 import React, { useEffect, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
-import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon } from "@heroicons/react/20/solid";
+import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
 import { Waitlist } from "~/components/features/Waitlist";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { useProfileSetupStatus } from "~/hooks/useProfileSetupStatus";
+import { useNotifications } from "~/hooks/useNotifications";
+import NotificationsModal from "~/components/notifications/NotificationsModal";
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -25,6 +27,8 @@ export function Navigation() {
     const [inboxCount, setInboxCount] = useState<number>(0);
     const [hireRequestCount, setHireRequestCount] = useState<number>(0);
     const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+    const { unreadCount } = useNotifications({ pollingMs: 30000, pageSize: 20 });
     const [prefillEmail, setPrefillEmail] = useState<string | undefined>(undefined);
     const [prefillFirstName, setPrefillFirstName] = useState<string | undefined>(undefined);
     const [prefillError, setPrefillError] = useState<string | undefined>(undefined);
@@ -345,6 +349,19 @@ export function Navigation() {
                 {/* Right section */}
                 <div className="flex items-center space-x-4 ml-6 relative">
 
+                    {/* Notifications (logged-in only) */}
+                    {user && (
+                        <button
+                            type="button"
+                            onClick={() => setIsNotificationsOpen(true)}
+                            className="relative hidden lg:inline-flex items-center justify-center rounded-xl p-2 hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all"
+                            aria-label="Notifications"
+                        >
+                            <BellIcon className="h-6 w-6 text-primary-700 dark:text-purple-300" />
+                            {renderBadge(unreadCount)}
+                        </button>
+                    )}
+
                     {/* Theme Toggle - Always visible on desktop */}
                     <div className="hidden lg:block">
                         <ThemeToggle size="md" />
@@ -635,6 +652,9 @@ export function Navigation() {
                     </Menu>
                 </div>
             </div>
+
+            {/* Notifications Modal */}
+            <NotificationsModal isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
 
             {/* Waitlist Modal */}
             <Waitlist
