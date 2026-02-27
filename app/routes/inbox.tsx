@@ -215,6 +215,15 @@ export default function InboxPage() {
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [newMessageCount, setNewMessageCount] = useState(0);
   const [isAtBottom, setIsAtBottom] = useState(true);
+  const isAtBottomRef = useRef(true);
+  
+  // Sync state and ref
+  useEffect(() => {
+    isAtBottomRef.current = isAtBottom;
+  }, [isAtBottom]);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const lastScrollTop = useRef(0);
+  const isScrollingUp = useRef(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileModalUrl, setProfileModalUrl] = useState<string | null>(null);
   const [profileModalLoading, setProfileModalLoading] = useState(false);
@@ -666,32 +675,25 @@ export default function InboxPage() {
     };
   }, [activeConversationId, NOTIFICATIONS_BASE, messagesLimit, authLoading, user]);
 
-  // Auto-scroll to bottom when conversation changes or on page reload
+  // Scroll to bottom on conversation load or new message
   useEffect(() => {
     if (messages.length > 0 && activeConversationId) {
-      // Reset new message count when switching conversations
-      setNewMessageCount(0);
-      
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        if (bottomRef.current) {
-          bottomRef.current.scrollIntoView({ behavior: 'smooth' });
-          setIsAtBottom(true);
-        }
-      }, 150);
-    }
-  }, [activeConversationId, messages.length]);
+      const container = messagesContainerRef.current;
+      if (!container) return;
 
-  // Initial scroll to bottom on component mount
-  useEffect(() => {
-    if (messages.length > 0 && activeConversationId) {
-      setTimeout(() => {
-        if (bottomRef.current) {
-          bottomRef.current.scrollIntoView({ behavior: 'auto' });
-          setIsAtBottom(true);
-          setNewMessageCount(0);
-        }
-      }, 300);
+      // If it's the initial load or a small number of messages, scroll to bottom
+      if (messages.length <= messagesLimit || isAtBottomRef.current) {
+        setTimeout(() => {
+          if (bottomRef.current) {
+            bottomRef.current.scrollIntoView({ behavior: isAtBottomRef.current ? 'smooth' : 'auto' });
+            setNewMessageCount(0);
+          }
+        }, 100);
+      } else {
+        // Only increment if it's actually a new incoming message (messages length increased)
+        // and we are NOT at the bottom
+        setNewMessageCount(prev => prev + 1);
+      }
     }
   }, [messages.length, activeConversationId]);
 
@@ -757,6 +759,66 @@ export default function InboxPage() {
     }
   }, [selectedConversation, currentUserProfileType]);
 
+  // Intersection Observer for upward infinite scrolling
+  useEffect(() => {
+    if (!messagesSentinelRef.current || !messagesHasMore || messagesLoading || loadingMore) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          loadMoreMessages();
+        }
+      },
+      { threshold: 1.0, root: messagesContainerRef.current }
+    );
+
+    observer.observe(messagesSentinelRef.current);
+    return () => observer.disconnect();
+  }, [messagesSentinelRef.current, messagesHasMore, messagesLoading, loadingMore, activeConversationId]);
+
+  const loadMoreMessages = async () => {
+    if (!activeConversationId || !messagesHasMore || loadingMore || messagesLoading) return;
+    
+    try {
+      setLoadingMore(true);
+      const container = messagesContainerRef.current;
+      const scrollHeightBefore = container?.scrollHeight || 0;
+      
+      const res = await apiClient.auth(
+        `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${encodeURIComponent(activeConversationId)}/messages?offset=${messagesOffset}&limit=${messagesLimit}`
+      );
+      
+      if (!res.ok) throw new Error("Failed to load more messages");
+      const response = await apiClient.json<any>(res);
+      const newMessages = normalizeMessageList(extractEnvelopeArray<any>(response, 'messages'));
+      
+      if (newMessages.length > 0) {
+        setMessages(prev => {
+          // Combine and sort
+          const combined = [...newMessages, ...prev];
+          const unique = Array.from(new Map(combined.map(m => [m.id, m])).values());
+          return unique.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        });
+        setMessagesOffset(prev => prev + newMessages.length);
+        setMessagesHasMore(newMessages.length === messagesLimit);
+        
+        // Maintain scroll position after loading more
+        setTimeout(() => {
+          if (container) {
+            const scrollHeightAfter = container.scrollHeight;
+            container.scrollTop = scrollHeightAfter - scrollHeightBefore;
+          }
+        }, 0);
+      } else {
+        setMessagesHasMore(false);
+      }
+    } catch (err) {
+      console.error("[Inbox] Failed to load more messages:", err);
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
   const handleMessagesScroll = useCallback(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -767,7 +829,9 @@ export default function InboxPage() {
     setIsAtBottom(atBottom);
     
     // Show/hide scroll to bottom button
-    setShowScrollToBottom(!atBottom);
+    // User must be scrolled up significantly to see the button
+    const isScrolledUp = container.scrollHeight - container.scrollTop - container.clientHeight > 300;
+    setShowScrollToBottom(isScrolledUp);
     
     // Reset new message count when user scrolls to bottom
     if (atBottom) {
@@ -1350,8 +1414,36 @@ export default function InboxPage() {
         </div>
 
         {/* Messages - Scrollable */}
-        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="min-h-0 overflow-y-auto p-4 space-y-2">
-          <div ref={messagesSentinelRef} />
+        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="min-h-0 overflow-y-auto p-4 space-y-2 relative">
+          <div ref={messagesSentinelRef} className="h-4" />
+          
+          {loadingMore && (
+            <div className="flex justify-center py-2">
+              <svg className="animate-spin h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            </div>
+          )}
+
+          {showScrollToBottom && (
+            <button
+              onClick={() => {
+                bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+                setNewMessageCount(0);
+                setIsAtBottom(true);
+              }}
+              className="fixed bottom-24 right-8 z-20 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-all flex items-center gap-2"
+              aria-label="Scroll to bottom"
+            >
+              <ChevronDownIcon className="w-6 h-6" />
+              {newMessageCount > 0 && (
+                <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                  {newMessageCount > 99 ? '99+' : newMessageCount}
+                </span>
+              )}
+            </button>
+          )}
           
           {/* Hire Context Banner */}
           {selectedConversation && (
@@ -1426,6 +1518,10 @@ export default function InboxPage() {
                 const status = m._status || (m.read_at ? 'read' : 'delivered');
                 const replyMsg = m.reply_to_id ? messageById.get(m.reply_to_id) : undefined;
                 const replyFromName = replyMsg ? (replyMsg.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')) : '';
+                
+                // Show sender name in brackets for household chats (multi-member)
+                const showSenderName = !mine && m.sender_name && m.sender_name !== selectedConversation?.participant_name;
+
                 return (
                   <div
                     key={m.id}
@@ -1573,6 +1669,11 @@ export default function InboxPage() {
                       ) : (
                         <>
                           <div className="whitespace-pre-wrap break-words text-sm">
+                            {showSenderName && (
+                              <div className={`text-[10px] font-bold mb-0.5 ${mine ? 'text-white/90' : 'text-purple-600 dark:text-purple-400'}`}>
+                                [{m.sender_name}]
+                              </div>
+                            )}
                             {m.deleted_at ? (
                               <span className="text-xs">
                                 Message deleted
