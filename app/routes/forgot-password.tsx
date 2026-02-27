@@ -127,8 +127,9 @@ export default function ForgotPasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-purple-700 mb-2">Phone Number</label>
+                <label htmlFor="phone" className="block text-sm font-semibold text-purple-700 mb-2">Phone Number</label>
                 <input
+                  id="phone"
                   type="tel"
                   name="phone"
                   value={input}

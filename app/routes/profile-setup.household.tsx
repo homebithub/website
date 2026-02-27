@@ -49,6 +49,36 @@ function HouseholdProfileSetupContent() {
   const { user, loading: authLoading } = useAuth();
   const { saveProfileToBackend, loadProfileFromBackend, updateStepData, saveStepToBackend, lastCompletedStep, profileData, error: setupError, hasUnsavedChanges, markClean } = useProfileSetup();
   
+  const isStepValid = () => {
+    const stepId = STEPS[currentStep].id;
+    const data = profileData;
+
+    switch (stepId) {
+      case 'location':
+        return !!data.location?.place || !!data.location?.name;
+      case 'nannytype':
+        return (data.nannytype?.needsLiveIn || data.nannytype?.needsDayWorker) && !!data.nannytype?.availableFrom;
+      case 'children':
+        // If they have kids or expressly said they don't
+        return (data.children?.has_children === false) || (data.children?.has_children === true && data.children?.kids?.length > 0) || (profileData.has_children !== undefined);
+      case 'housesize':
+        return !!data.housesize || !!data.house_size;
+      case 'chores':
+        return data.chores?.selectedChores?.length > 0;
+      case 'budget':
+        return !!data.budget?.min && !!data.budget?.max;
+      case 'religion':
+        return !!data.religion;
+      case 'bio':
+        return !!data.bio && data.bio.length >= 20;
+      case 'pets':
+      case 'photos':
+        return true; // Skippable/Optional
+      default:
+        return true;
+    }
+  };
+
   const currentStepData = STEPS[currentStep];
 
   const animateToStep = (newStep: number) => {
@@ -73,10 +103,10 @@ function HouseholdProfileSetupContent() {
       mapbox_id: location.mapbox_id,
       feature_type: location.feature_type || 'place',
     };
-    
+
     // Update local state
     updateStepData('location', locationData);
-    
+
     // Also save to backend step tracking
     try {
       // Find the step index for 'location'
@@ -86,10 +116,10 @@ function HouseholdProfileSetupContent() {
       console.error('Failed to save location step data:', error);
     }
   };
-  
+
   // Check if user is editing from profile page using location state (secure, can't be manipulated)
   const isEditMode = location.state?.fromProfile === true;
-  
+
   // Authentication check - redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
@@ -99,7 +129,7 @@ function HouseholdProfileSetupContent() {
       }
     }
   }, [authLoading, user, navigate]);
-  
+
   // Clean up URL on mount - remove any query parameters or hash
   useEffect(() => {
     const currentPath = window.location.pathname;
@@ -108,14 +138,14 @@ function HouseholdProfileSetupContent() {
       window.history.replaceState({}, '', cleanPath);
     }
   }, []);
-  
+
   // Track time spent on each step
   useEffect(() => {
     const startTime = Date.now();
     const interval = setInterval(() => {
       setTimeSpent(prev => prev + 1);
     }, 1000);
-    
+
     return () => {
       clearInterval(interval);
       if (!setupCompleteRef.current) {
@@ -162,7 +192,7 @@ function HouseholdProfileSetupContent() {
     // Save progress before moving to next step
     await saveProgressToBackend(currentStep, timeSpent);
     markClean();
-    
+
     if (currentStep < STEPS.length - 1) {
       animateToStep(currentStep + 1);
       setTimeSpent(0); // Reset timer for new step
@@ -172,12 +202,12 @@ function HouseholdProfileSetupContent() {
       setShowDisclaimer(true);
     }
   };
-  
+
   const handleSkip = async () => {
     // Save that user skipped this step
     await saveProgressToBackend(currentStep, timeSpent, false, true);
     markClean();
-    
+
     if (currentStep < STEPS.length - 1) {
       animateToStep(currentStep + 1);
       setTimeSpent(0);
@@ -187,7 +217,7 @@ function HouseholdProfileSetupContent() {
       setShowDisclaimer(true);
     }
   };
-  
+
   // Auto-save progress every 30 seconds
   useEffect(() => {
     const autoSaveInterval = setInterval(async () => {
@@ -197,10 +227,10 @@ function HouseholdProfileSetupContent() {
       setAutoSaving(false);
       setLastSaved(new Date());
     }, 30000);
-    
+
     return () => clearInterval(autoSaveInterval);
   }, [currentStep, timeSpent]);
-  
+
   const finishSetup = async () => {
     setSaving(true);
     setupCompleteRef.current = true;
@@ -224,7 +254,7 @@ function HouseholdProfileSetupContent() {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      
+
       // Mark ALL steps as completed in profile-setup-steps
       for (let i = 0; i < STEPS.length; i++) {
         await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
@@ -242,7 +272,7 @@ function HouseholdProfileSetupContent() {
           })
         });
       }
-      
+
       // Also update progress tracking to mark as complete
       await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
         method: 'POST',
@@ -265,12 +295,12 @@ function HouseholdProfileSetupContent() {
       console.error('Failed to mark steps as complete:', error);
     }
   };
-  
+
   const highestCompletedStepRef = useRef(0);
 
   const saveProgressToBackend = async (
-    step: number, 
-    timeOnStep: number, 
+    step: number,
+    timeOnStep: number,
     isComplete: boolean = false,
     skipped: boolean = false,
     isAutoSave: boolean = false
@@ -278,7 +308,7 @@ function HouseholdProfileSetupContent() {
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
-      
+
       // Handle case when step is beyond STEPS array (completion)
       const actualStep = Math.min(step, STEPS.length - 1);
       // Backend expects step IDs (strings), not step numbers
@@ -288,7 +318,7 @@ function HouseholdProfileSetupContent() {
       if (!isAutoSave) {
         highestCompletedStepRef.current = Math.max(highestCompletedStepRef.current, actualStep + 1);
       }
-      
+
       // Save progress tracking
       await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
         method: 'POST',
@@ -305,7 +335,7 @@ function HouseholdProfileSetupContent() {
           time_spent_seconds: timeOnStep
         })
       });
-      
+
       // Mark step as completed in profile-setup-steps (required for is_complete check)
       if (isComplete || !isAutoSave) {
         await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
@@ -344,7 +374,7 @@ function HouseholdProfileSetupContent() {
   return (
     <div className="min-h-screen flex flex-col">
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
-      
+
       <main className="flex-1">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
           {/* Header Card - Hide in edit mode */}
@@ -374,15 +404,15 @@ function HouseholdProfileSetupContent() {
                   )}
                 </div>
               </div>
-              
+
               {/* Progress Bar */}
               <div className="w-full bg-purple-100 rounded-full h-2.5 mb-3 shadow-inner">
-                <div 
+                <div
                   className="bg-gradient-to-r from-purple-600 to-pink-600 h-2.5 rounded-full transition-all duration-300 ease-out shadow-md"
                   style={{ width: `${progressPercentage}%` }}
                 ></div>
               </div>
-              
+
               {/* Current Step Title */}
               <div className="flex items-center justify-between">
                 <h2 className="text-sm sm:text-base font-semibold text-purple-700 dark:text-purple-400">
@@ -459,7 +489,7 @@ function HouseholdProfileSetupContent() {
                     />
                   ))}
                 </div>
-                
+
                 {/* Navigation buttons */}
                 <div className="flex justify-between items-center gap-4">
                   <button
@@ -477,9 +507,9 @@ function HouseholdProfileSetupContent() {
 
                   <button
                     onClick={handleNext}
-                    disabled={saving || hasUnsavedChanges}
+                    disabled={saving || hasUnsavedChanges || !isStepValid()}
                     className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
-                      saving || hasUnsavedChanges
+                      saving || hasUnsavedChanges || !isStepValid()
                         ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                         : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                     }`}
@@ -524,9 +554,9 @@ function HouseholdProfileSetupContent() {
 
                 <button
                   onClick={handleNext}
-                  disabled={saving || hasUnsavedChanges}
+                  disabled={saving || hasUnsavedChanges || !isStepValid()}
                   className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
-                    saving || hasUnsavedChanges
+                    saving || hasUnsavedChanges || !isStepValid()
                       ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                       : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                   }`}
@@ -546,7 +576,7 @@ function HouseholdProfileSetupContent() {
           )}
         </div>
       </main>
-      
+
       {/* Disclaimer Modal */}
       {showDisclaimer && (
         <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="disclaimer-title" role="dialog" aria-modal="true">
@@ -604,7 +634,7 @@ function HouseholdProfileSetupContent() {
                 <button
                   onClick={finishSetup}
                   disabled={!disclaimerChecked || saving}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-primary-700 text-white font-bold shadow-lg hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
                 >
                   {saving ? (
                     <>
@@ -644,7 +674,7 @@ function HouseholdProfileSetupContent() {
                   Welcome to Homebit!
                 </p>
               </div>
-              
+
               <div className="bg-white dark:bg-gray-900 px-6 py-8">
                 <div className="space-y-4">
                   <div className="flex items-center justify-center space-x-2">
@@ -655,11 +685,11 @@ function HouseholdProfileSetupContent() {
                       Your profile is complete!
                     </p>
                   </div>
-                  
+
                   <p className="text-base text-gray-600 dark:text-gray-400">
                     You can now start browsing and connecting with qualified househelps in your area.
                   </p>
-                  
+
                   <div className="pt-4">
                     <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
                       <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -675,7 +705,7 @@ function HouseholdProfileSetupContent() {
           </div>
         </div>
       )}
-      
+
       </PurpleThemeWrapper>
     </div>
   );

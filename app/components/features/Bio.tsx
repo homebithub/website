@@ -184,6 +184,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
           </div>
         </div>
 
+        {error && isBioValid && <ErrorAlert message={error} />}
         {success && <SuccessAlert message={success} />}
 
         <button

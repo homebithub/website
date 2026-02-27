@@ -33,7 +33,7 @@ export default function FileUpload({
   documentType,
   isPublic = false,
   maxFiles = 5,
-  maxSizeMB = 10,
+  maxSizeMB = 5,
   accept = isPublic ? 'image/*' : 'image/*,application/pdf',
   onUploadComplete,
   onUploadError,
@@ -144,7 +144,29 @@ export default function FileUpload({
             setUploadProgress({});
           }, 2000);
         } else {
-          throw new Error('Upload failed');
+          // Try to extract backend error message
+          let message = 'Upload failed';
+          try {
+            const parsed = JSON.parse(xhr.responseText);
+            if (parsed && parsed.error) message = parsed.error;
+          } catch (_) {}
+
+          // Friendly message for size limits
+          if (xhr.status === 413 || /exceeds/i.test(message)) {
+            message = `One or more files are too large. Max ${maxSizeMB}MB per file.`;
+          }
+
+          onUploadError?.(message);
+          selectedFiles.forEach(file => {
+            setUploadProgress(prev => ({
+              ...prev,
+              [file.name]: {
+                ...prev[file.name],
+                status: 'error',
+                error: message,
+              },
+            }));
+          });
         }
       });
 

@@ -101,7 +101,6 @@ const EmergencyContact: React.FC = () => {
                   value={emergencyName}
                   onChange={(e) => setEmergencyName(e.target.value)}
                   className="block w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors"
-                  required
                 />
               </div>
               
@@ -115,7 +114,6 @@ const EmergencyContact: React.FC = () => {
                   value={emergencyPhone}
                   onChange={(e) => setEmergencyPhone(e.target.value)}
                   className="block w-full px-4 py-2 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors"
-                  required
                 />
               </div>
               

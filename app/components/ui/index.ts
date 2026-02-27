@@ -1,3 +1,6 @@
+export { Button } from './Button';
+export { Input } from './Input';
+export { BaseModal } from './BaseModal';
 export { default as Loading } from './Loading';
 export { Error } from './Error';
 export { default as ShortlistPlaceholderIcon } from './ShortlistPlaceholderIcon';
