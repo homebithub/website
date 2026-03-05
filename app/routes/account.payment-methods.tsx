@@ -440,7 +440,7 @@ export default function PaymentMethodsPage() {
                           <p className="text-sm font-medium text-gray-900 dark:text-white">M-Pesa</p>
                         </button>
                         <button
-                          onClick={() => setAddForm({ ...addForm, type: 'card' })}
+                          onClick={() => setAddForm({ ...addForm, type: 'card' as any })}
                           disabled
                           className="flex-1 p-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 opacity-50 cursor-not-allowed"
                         >

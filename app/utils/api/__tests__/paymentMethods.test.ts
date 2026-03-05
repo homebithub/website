@@ -205,7 +205,7 @@ describe('paymentMethods API', () => {
         set_as_default: true,
       };
 
-      const result = await addPaymentMethod(request);
+      const result = await addPaymentMethod(request as any);
 
       expect(result).toEqual(mockMethod);
       expect(mockFetch).toHaveBeenCalledWith(
@@ -228,7 +228,7 @@ describe('paymentMethods API', () => {
         nickname: 'My Visa Card',
       };
 
-      await addPaymentMethod(request);
+      await addPaymentMethod(request as any);
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
@@ -245,7 +245,7 @@ describe('paymentMethods API', () => {
       });
 
       await expect(
-        addPaymentMethod({ payment_method_token: 'invalid' })
+        addPaymentMethod({ payment_method_token: 'invalid' } as any)
       ).rejects.toThrow('Invalid payment method token');
     });
   });
@@ -473,7 +473,7 @@ describe('paymentMethods API', () => {
         }),
       });
 
-      const added = await addPaymentMethod({ payment_method_token: 'tok_visa' });
+      const added = await addPaymentMethod({ payment_method_token: 'tok_visa' } as any);
       expect(added.id).toBe('pm-new');
 
       // Set as default

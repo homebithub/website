@@ -870,8 +870,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                                     profilePhotos[househelp.user_id || String(househelp.id)] ||
                                     ''
                                   }
-                                  thumbnailPath={househelp.thumbnail_path}
-                                  mediumPath={househelp.medium_path}
+                                  thumbnailPath={(househelp as any).thumbnail_path}
+                                  mediumPath={(househelp as any).medium_path}
                                   alt={`${househelp.first_name} ${househelp.last_name}`}
                                   className={`w-full h-full object-cover transition-opacity duration-300 ${
                                     imageLoadingStates[househelp.profile_id] === false ? 'opacity-100' : 'opacity-0'

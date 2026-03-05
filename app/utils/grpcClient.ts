@@ -1,6 +1,6 @@
 import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import { API_BASE_URL } from '~/config/api';
-import { RpcMetadata } from '@protobuf-ts/runtime-rpc';
+import type { RpcMetadata } from '@protobuf-ts/runtime-rpc';
 
 /**
  * Unified gRPC-Web client utility for Homebit using @protobuf-ts.

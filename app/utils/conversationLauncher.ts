@@ -77,10 +77,10 @@ async function resolveConversationIdFromList(
 ): Promise<string | undefined> {
   const client = new NotificationsServiceClient(transport);
   try {
-    const request: ListConversationsRequest = { limit: 100, offset: 0 };
+    const request: ListConversationsRequest = { userId: '', limit: 100, offset: 0 };
     const { response } = await client.listConversations(request, { metadata: getGrpcMetadata() });
     
-    const raw = response.data?.fields?.conversations?.listValue?.values || [];
+    const raw = (response.data?.fields?.conversations as any)?.listValue?.values || [];
     const conversations = raw.map((v: any) => {
       const c = v.structValue?.fields || {};
       return {
@@ -94,7 +94,7 @@ async function resolveConversationIdFromList(
 
     // 1. Try matching by profile IDs first
     if (payload.household_profile_id && payload.househelp_profile_id) {
-      const match = conversations.find((c) => 
+      const match = conversations.find((c: any) => 
         c.household_profile_id === payload.household_profile_id && 
         c.househelp_profile_id === payload.househelp_profile_id
       );
@@ -103,7 +103,7 @@ async function resolveConversationIdFromList(
 
     // 2. Try matching by househelp_profile_id + household_user_id
     if (payload.househelp_profile_id) {
-      const match = conversations.find((c) => 
+      const match = conversations.find((c: any) => 
         c.househelp_profile_id === payload.househelp_profile_id && 
         c.household_id === payload.household_user_id
       );
@@ -111,7 +111,7 @@ async function resolveConversationIdFromList(
     }
 
     // 3. Fallback: match by user IDs
-    const match = conversations.find((c) => 
+    const match = conversations.find((c: any) => 
       c.household_id === payload.household_user_id && 
       c.househelp_id === payload.househelp_user_id
     );
@@ -137,12 +137,12 @@ export async function startOrGetConversation(
     const request: StartConversationRequest = {
       householdUserId: payload.household_user_id,
       househelpUserId: payload.househelp_user_id,
-      householdProfileId: payload.household_profile_id,
-      househelpProfileId: payload.househelp_profile_id
+      householdProfileId: payload.household_profile_id || '',
+      househelpProfileId: payload.househelp_profile_id || ''
     };
 
     const { response } = await client.startConversation(request, { metadata: getGrpcMetadata() });
-    const conversationId = response.data?.fields?.id?.stringValue || (response as any).id;
+    const conversationId = (response.data?.fields?.id as any)?.stringValue || (response as any).id;
 
     if (conversationId && UUID_REGEX.test(conversationId)) {
       return conversationId;

@@ -544,11 +544,11 @@ export default function InboxPage() {
         const request: ListConversationsRequest = {
           limit,
           offset
-        };
+        } as any;
 
         const { response } = await notificationsClient.listConversations(request, { metadata: getGrpcMetadata() });
         const fields = response.data?.fields || {};
-        const raw = fields.conversations?.listValue?.values || [];
+        const raw = (fields.conversations as any)?.listValue?.values || [];
 
         const normalizeConversation = (v: any): Conversation => {
           const c = v.structValue?.fields || {};
@@ -569,7 +569,7 @@ export default function InboxPage() {
           };
         };
 
-        let data: Conversation[] = raw.map(normalizeConversation).filter((c) => !!c.id);
+        let data: Conversation[] = raw.map(normalizeConversation).filter((c: any) => !!c.id);
 
         // If we're deep-linking to a conversation that isn't in this page, fetch it explicitly.
         if (offset === 0 && selectedConversationId && !data.some((c) => c.id === selectedConversationId)) {
@@ -637,7 +637,7 @@ export default function InboxPage() {
 
         const { response } = await notificationsClient.listMessages(request, { metadata: getGrpcMetadata() });
         const fields = response.data?.fields || {};
-        const items = fields.messages?.listValue?.values || [];
+        const items = (fields.messages as any)?.listValue?.values || [];
 
         const normalizeMessage = (v: any): Message => {
           const m = v.structValue?.fields || {};
@@ -670,7 +670,7 @@ export default function InboxPage() {
         
         // Mark conversation as read
         try {
-          await notificationsClient.markConversationAsRead({ conversationId }, { metadata: getGrpcMetadata() });
+          await notificationsClient.markConversationAsRead({ conversationId } as any, { metadata: getGrpcMetadata() });
           setItems((prev) => prev.map((conv) => 
             conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
           ));
@@ -819,7 +819,7 @@ export default function InboxPage() {
 
       const { response } = await notificationsClient.listMessages(request, { metadata: getGrpcMetadata() });
       const fields = response.data?.fields || {};
-      const items = fields.messages?.listValue?.values || [];
+      const items = (fields.messages as any)?.listValue?.values || [];
 
       const normalizeMessage = (v: any): Message => {
         const m = v.structValue?.fields || {};
@@ -1033,7 +1033,8 @@ export default function InboxPage() {
       setEditingSaving(true);
       
       const request: EditMessageRequest = {
-        id: msg.id,
+        messageId: msg.id,
+        userId: '',
         body: newBody
       };
 
@@ -1076,7 +1077,7 @@ export default function InboxPage() {
       const request: ToggleReactionRequest = {
         messageId: m.id,
         emoji: emoji
-      };
+      } as any;
 
       const { response } = await notificationsClient.toggleReaction(request, { metadata: getGrpcMetadata() });
       const fields = response.data?.fields || {};
@@ -1154,8 +1155,8 @@ export default function InboxPage() {
       const request: SendMessageRequest = {
         conversationId: activeConversationId,
         body,
-        replyToId: replyToId
-      };
+        replyToId: replyToId || '',
+      } as any;
 
       const { response } = await notificationsClient.sendMessage(request, { metadata: getGrpcMetadata() });
       const fields = response.data?.fields || {};
@@ -1622,7 +1623,7 @@ export default function InboxPage() {
                 const replyFromName = replyMsg ? (replyMsg.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')) : '';
                 
                 // Show sender name in brackets for household chats (multi-member)
-                const showSenderName = !mine && m.sender_name && m.sender_name !== selectedConversation?.participant_name;
+                const showSenderName = !mine && (m as any).sender_name && (m as any).sender_name !== selectedConversation?.participant_name;
 
                 return (
                   <div
@@ -1773,7 +1774,7 @@ export default function InboxPage() {
                           <div className="whitespace-pre-wrap break-words text-sm">
                             {showSenderName && (
                               <div className={`text-[10px] font-bold mb-0.5 ${mine ? 'text-white/90' : 'text-purple-600 dark:text-purple-400'}`}>
-                                [{m.sender_name}]
+                                [{(m as any).sender_name}]
                               </div>
                             )}
                             {m.deleted_at ? (

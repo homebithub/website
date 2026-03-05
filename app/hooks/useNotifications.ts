@@ -57,23 +57,22 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       const request: ListNotificationsByUserRequest = {
         userId: user.id,
         limit: pageSize,
-        offset: 0,
-        search: query
+        offset: 0
       };
 
       const { response } = await client.listNotificationsByUser(request, { metadata: getGrpcMetadata() });
       
       const data = response.data?.fields || {};
-      const notifications = data.notifications?.listValue?.values || [];
+      const notifications = (data.notifications as any)?.listValue?.values || [];
       
       const list: NotificationItem[] = notifications.map((v: any) => mapProtoToNotification(v.structValue?.fields || {}));
 
       setItems(list);
       setHasMore(list.length >= pageSize);
       
-      setTotalCount(data.total_count?.numberValue || list.length);
+      setTotalCount((data.total_count as any)?.numberValue || list.length);
       setShowingCount(list.length);
-      setUnreadCount(data.unread_count?.numberValue || computeUnread(list));
+      setUnreadCount((data.unread_count as any)?.numberValue || computeUnread(list));
     } catch (e) {
       handleGrpcError(e, false);
     } finally {
@@ -92,13 +91,12 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       const request: ListNotificationsByUserRequest = {
         userId: user.id,
         limit: pageSize,
-        offset: items.length,
-        search: search
+        offset: items.length
       };
 
       const { response } = await client.listNotificationsByUser(request, { metadata: getGrpcMetadata() });
       const data = response.data?.fields || {};
-      const notifications = data.notifications?.listValue?.values || [];
+      const notifications = (data.notifications as any)?.listValue?.values || [];
       
       const list: NotificationItem[] = notifications.map((v: any) => mapProtoToNotification(v.structValue?.fields || {}));
 
@@ -188,7 +186,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
 
   const markOneAsRead = async (id: string) => {
     try {
-      const request: MarkNotificationAsClickedRequest = { id };
+      const request: MarkNotificationAsClickedRequest = { notificationId: id, userId: '' };
       await client.markNotificationAsClicked(request, { metadata: getGrpcMetadata() });
       await fetchLatest();
     } catch (e) {

@@ -60,8 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const { response: userResponse } = await authClient.getCurrentUser({}, { metadata: getGrpcMetadata() });
-      const user = userResponse.data?.fields ? userResponse.data.fields : userResponse;
+      const { response: userResponse } = await authClient.getCurrentUser({} as any, { metadata: getGrpcMetadata() });
+      const user = (userResponse as any).data?.fields ? (userResponse as any).data.fields : userResponse;
       
       setUser({ token: localStorage.getItem("token") || "", user } as unknown as LoginResponse);
       localStorage.setItem("user_object", JSON.stringify(user));
@@ -83,7 +83,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const normalizedPhone = normalizeKenyanPhoneNumber(phone);
       const { response: dataResponse } = await authClient.login({ phone: normalizedPhone, password }, { metadata: getGrpcMetadata(false) });
       
-      const data = dataResponse.data?.fields || dataResponse;
+      const data = (dataResponse as any).data?.fields || dataResponse;
       const token = (data as any).token?.stringValue || (data as any).token || "";
       const userData = (data as any).user?.structValue?.fields || (data as any).user || {};
 
@@ -105,11 +105,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileType === "household" || profileType === "househelp") {
         try {
-          const { response: setupData } = await profileSetupClient.getProgress({ userId: (userData.id?.stringValue || userData.id) }, { metadata: { authorization: `Bearer ${token}` } });
+          const { response: setupData } = await profileSetupClient.getProgress({ userId: (userData.id?.stringValue || userData.id) } as any, { metadata: { authorization: `Bearer ${token}` } });
           const progressData = setupData.data?.fields || {};
-          const totalSteps = progressData.total_steps?.numberValue || 0;
-          const lastStep = progressData.last_completed_step?.numberValue || 0;
-          const status = progressData.status?.stringValue || "";
+          const totalSteps = (progressData.total_steps as any)?.numberValue || 0;
+          const lastStep = (progressData.last_completed_step as any)?.numberValue || 0;
+          const status = (progressData.status as any)?.stringValue || "";
           
           const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
 
@@ -151,8 +151,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const { response: signupResponse } = await authClient.signup({ email, password, firstName, lastName }, { metadata: getGrpcMetadata(false) });
-      const data = signupResponse.data?.fields || signupResponse;
+      const { response: signupResponse } = await authClient.signup({ firstName, lastName, phone: email, password, profileType: '', bureauId: '', householdId: '', dateOfBirth: '', signedDate: '' } as any, { metadata: getGrpcMetadata(false) });
+      const data = (signupResponse as any).data?.fields || signupResponse;
       
       const token = (data as any).token?.stringValue || (data as any).token || "";
       const user = (data as any).user?.structValue?.fields || (data as any).user || {};
@@ -178,7 +178,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       try {
-        await authClient.logout({}, { metadata: getGrpcMetadata() });
+        await authClient.logout({} as any, { metadata: getGrpcMetadata() });
       } catch (error) {
         console.log("Server logout failed, but clearing local state");
       }

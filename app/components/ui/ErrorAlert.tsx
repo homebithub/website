@@ -1,9 +1,10 @@
 import React from 'react';
 
-interface ErrorAlertProps {
+export interface ErrorAlertProps {
   message: string;
   title?: string;
   className?: string;
+  onClose?: () => void;
 }
 
 export const ErrorAlert: React.FC<ErrorAlertProps> = ({

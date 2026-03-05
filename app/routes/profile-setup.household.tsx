@@ -60,9 +60,9 @@ function HouseholdProfileSetupContent() {
         return (data.nannytype?.needsLiveIn || data.nannytype?.needsDayWorker) && !!data.nannytype?.availableFrom;
       case 'children':
         // If they have kids or expressly said they don't
-        return (data.children?.has_children === false) || (data.children?.has_children === true && data.children?.kids?.length > 0) || (profileData.has_children !== undefined);
+        return (data.children?.children === false) || (data.children?.children === true && data.children?.kids?.length > 0) || ((profileData as any).has_children !== undefined);
       case 'housesize':
-        return !!data.housesize || !!data.house_size;
+        return !!data.housesize || !!data.housesize;
       case 'chores':
         return data.chores?.selectedChores?.length > 0;
       case 'budget':

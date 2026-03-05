@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { transport, getGrpcMetadata } from '~/utils/grpcClient';
 import { DocumentServiceClient } from '~/proto/auth/auth.client';
-import { ListDocumentsByOwnerRequest } from '~/proto/auth/auth';
+import { GetUserDocumentsReq } from '~/proto/auth/auth';
 
 /**
  * Fetches the first profile_photo document URL for a list of user IDs.
@@ -47,17 +47,17 @@ export function useProfilePhotos(userIds: string[]): Record<string, string> {
     Promise.all(
       toFetch.map(async (userId) => {
         try {
-          const request: ListDocumentsByOwnerRequest = {
+          const request = GetUserDocumentsReq.create({
             ownerId: userId,
             ownerType: 'user',
             documentType: 'profile_photo',
             limit: 1,
             offset: 0
-          };
+          } as any);
 
-          const { response } = await client.listDocumentsByOwner(request, { metadata: getGrpcMetadata() });
+          const { response } = await client.getUserDocuments(request, { metadata: getGrpcMetadata() });
           const fields = response.data?.fields || {};
-          const docs = fields.data?.listValue?.values || [];
+          const docs = (fields.data as any)?.listValue?.values || [];
           
           if (docs.length > 0) {
             const first = docs[0].structValue?.fields || {};

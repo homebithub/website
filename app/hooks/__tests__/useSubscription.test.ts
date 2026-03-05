@@ -528,7 +528,7 @@ describe('useSubscription', () => {
       });
 
       // Change to null
-      rerender({ userId: null });
+      rerender({ userId: null as any });
 
       await waitFor(() => {
         expect(result.current.status).toBe('none');

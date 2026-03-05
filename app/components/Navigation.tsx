@@ -74,7 +74,7 @@ export function Navigation() {
     // Fetch shortlist count
     const fetchShortlistCount = async () => {
         try {
-            const { response } = await shortlistClient.countShortlist({}, { metadata: getGrpcMetadata() });
+            const { response } = await (shortlistClient as any).countShortlist({}, { metadata: getGrpcMetadata() });
             const count = response.data?.fields?.count?.numberValue || 0;
             setShortlistCount(count);
         } catch (error) {
@@ -85,9 +85,9 @@ export function Navigation() {
     // Fetch inbox unread count
     const fetchInboxCount = async () => {
         try {
-            const request: ListConversationsRequest = { limit: 100, offset: 0 };
+            const request: ListConversationsRequest = { limit: 100, offset: 0 } as any;
             const { response } = await notificationsClient.listConversations(request, { metadata: getGrpcMetadata() });
-            const conversations = response.data?.fields?.conversations?.listValue?.values || [];
+            const conversations = (response.data?.fields?.conversations as any)?.listValue?.values || [];
             
             const totalUnread = conversations.reduce((sum: number, v: any) => {
                 const conv = v.structValue?.fields || {};
@@ -108,8 +108,8 @@ export function Navigation() {
 
             if (pt === 'household') {
                 // 1. Count pending/viewed interests from househelps
-                const { response: iData } = await interestClient.listInterestsByHousehold({}, { metadata: getGrpcMetadata() });
-                const interests = iData.data?.fields?.data?.listValue?.values || [];
+                const { response: iData } = await (interestClient as any).listInterestsByHousehold({}, { metadata: getGrpcMetadata() });
+                const interests = (iData.data?.fields?.data as any)?.listValue?.values || [];
                 total += interests.filter((v: any) => {
                     const i = v.structValue?.fields || {};
                     const status = i.status?.stringValue || "";
@@ -117,12 +117,12 @@ export function Navigation() {
                 }).length;
 
                 // 2. Count pending hire requests
-                const { response: hData } = await hireRequestClient.listHireRequests({ status: 'pending', limit: 100, offset: 0 }, { metadata: getGrpcMetadata() });
-                total += hData.data?.fields?.total?.numberValue || hData.data?.fields?.data?.listValue?.values?.length || 0;
+                const { response: hData } = await hireRequestClient.listHireRequests({ status: 'pending', limit: 100, offset: 0 } as any, { metadata: getGrpcMetadata() });
+                total += (hData.data?.fields?.total as any)?.numberValue || (hData.data?.fields?.data as any)?.listValue?.values?.length || 0;
             } else if (pt === 'househelp') {
                 // Count pending hire requests received from households
-                const { response: data } = await hireRequestClient.listHireRequests({ status: 'pending', limit: 100, offset: 0 }, { metadata: getGrpcMetadata() });
-                total = data.data?.fields?.total?.numberValue || data.data?.fields?.data?.listValue?.values?.length || 0;
+                const { response: data } = await hireRequestClient.listHireRequests({ status: 'pending', limit: 100, offset: 0 } as any, { metadata: getGrpcMetadata() });
+                total = (data.data?.fields?.total as any)?.numberValue || (data.data?.fields?.data as any)?.listValue?.values?.length || 0;
             }
 
             setHireRequestCount(total);

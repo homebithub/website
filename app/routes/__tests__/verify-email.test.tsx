@@ -24,7 +24,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       expect(screen.getByRole('heading', { name: /verify your email/i })).toBeInTheDocument();
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
@@ -35,7 +35,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       expect(screen.getByRole('button', { name: /skip for now/i })).toBeInTheDocument();
     });
@@ -44,7 +44,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       expect(emailInput).toHaveAttribute('placeholder', 'Enter your email');
@@ -56,7 +56,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const heading = screen.getByRole('heading', { name: /verify your email/i });
       expect(heading.className).toMatch(/purple|gradient/i);
@@ -66,7 +66,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const button = screen.getByRole('button', { name: /send verification/i });
       expect(button.className).toMatch(/purple|gradient/i);
@@ -77,7 +77,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       expect(emailInput.className).toMatch(/rounded/);
@@ -90,7 +90,7 @@ describe('VerifyEmailPage', () => {
         initialRoute: '/verify-email',
         locationState: { user_id: '123' },
         darkMode: true 
-      });
+      } as any);
       
       expect(document.documentElement.classList.contains('dark')).toBe(true);
     });
@@ -102,7 +102,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       expect(screen.getByRole('heading', { name: /verify your email/i })).toBeVisible();
       expect(screen.getByLabelText(/email address/i)).toBeVisible();
@@ -114,7 +114,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       expect(screen.getByRole('heading', { name: /verify your email/i })).toBeVisible();
     });
@@ -124,7 +124,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       expect(screen.getByRole('heading', { name: /verify your email/i })).toBeVisible();
     });
@@ -134,7 +134,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const button = screen.getByRole('button', { name: /send verification/i });
       expect(button.className).toMatch(/p-|py-|px-/);
@@ -146,7 +146,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
     });
@@ -156,7 +156,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       await user.tab();
       expect(document.activeElement).toBeTruthy();
@@ -166,7 +166,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const submitButton = screen.getByRole('button', { name: /send verification/i });
       const skipButton = screen.getByRole('button', { name: /skip for now/i });
@@ -179,7 +179,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const heading = screen.getByRole('heading', { name: /verify your email/i });
       expect(heading.tagName).toBe('H1');
@@ -192,7 +192,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'invalid-email');
@@ -206,7 +206,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'invalid-email');
@@ -222,7 +222,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'test@example.com');
@@ -238,7 +238,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'test@example.com');
@@ -255,7 +255,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
       await user.type(emailInput, 'test@example.com');
@@ -268,7 +268,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const skipButton = screen.getByRole('button', { name: /skip for now/i });
       expect(skipButton).toBeInTheDocument();
@@ -280,7 +280,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       
@@ -313,7 +313,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'test@example.com');
@@ -334,7 +334,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'test@example.com');
@@ -356,7 +356,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'test@example.com');
@@ -379,7 +379,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'test@example.com');
@@ -404,7 +404,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'test@example.com');
@@ -423,7 +423,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'test@example.com');
@@ -441,7 +441,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
       await user.type(emailInput, 'test+tag@example.co.uk');
@@ -459,7 +459,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
       const longEmail = 'a'.repeat(50) + '@example.com';
@@ -473,7 +473,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i) as HTMLInputElement;
       await user.type(emailInput, 'Test@Example.COM');
@@ -491,7 +491,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'notanemail');
@@ -508,7 +508,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'test@example.com');
@@ -523,7 +523,7 @@ describe('VerifyEmailPage', () => {
       renderWithRouter(<VerifyEmailPage />, { 
         initialRoute: '/verify-email',
         locationState: { user_id: '123' }
-      });
+      } as any);
       
       const emailInput = screen.getByLabelText(/email address/i);
       await user.type(emailInput, 'invalid');

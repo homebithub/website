@@ -57,7 +57,7 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       const request: GetMySubscriptionRequest = { userId: userId || "" };
       const { response: dataResponse } = await client.getMySubscription(request, { metadata: getGrpcMetadata() });
       
-      const fields = dataResponse.data?.fields || {};
+      const fields = (dataResponse as any).data?.fields || {};
       const sub = fields.subscription?.structValue?.fields || dataResponse.subscription || null;
 
       if (!sub || (!sub.id?.stringValue && !sub.id)) {

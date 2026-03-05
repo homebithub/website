@@ -1255,7 +1255,7 @@ export default function SubscriptionsPage() {
         <PauseSubscriptionModal
           isOpen={showPauseModal}
           onClose={() => setShowPauseModal(false)}
-          subscription={subscription}
+          subscription={subscription as any}
           onSuccess={(resumeDate) => {
             setSuccessMessage(`Subscription paused successfully. Will resume on ${formatDate(resumeDate)}`);
             setTimeout(() => setSuccessMessage(''), 5000);
@@ -1269,8 +1269,8 @@ export default function SubscriptionsPage() {
         <CancelSubscriptionFlow
           isOpen={showCancelFlow}
           onClose={() => setShowCancelFlow(false)}
-          subscription={subscription}
-          availablePlans={plans}
+          subscription={subscription as any}
+          availablePlans={plans as any}
           onCancel={handleCancelSubscription}
           onPauseInstead={() => {
             setShowCancelFlow(false);
@@ -1294,8 +1294,8 @@ export default function SubscriptionsPage() {
             setShowChangePlanModal(false);
             setSelectedNewPlan(null);
           }}
-          currentSubscription={subscription}
-          newPlan={selectedNewPlan}
+          currentSubscription={subscription as any}
+          newPlan={selectedNewPlan as any}
           onPreview={handlePreviewProration}
           onConfirm={handleChangePlan}
         />

@@ -10,6 +10,21 @@ const AuthenticatedHome = lazyLoad(() => import("~/components/AuthenticatedHome"
 const HousehelpHome = lazyLoad(() => import("~/components/HousehelpHome"));
 const LandingPage = lazyLoad(() => import("~/routes/landing"));
 
+const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error("profile_setup_timeout")), ms);
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+};
+
 export async function clientLoader() {
   const token = localStorage.getItem('token');
   const userObjRaw = localStorage.getItem('user_object');
@@ -33,13 +48,17 @@ export async function clientLoader() {
   // Check progress
   try {
     const profileSetupClient = new ProfileSetupServiceClient(transport);
-    const request: UserIdRequest = { userId: userObj.id };
-    const { response: setupData } = await profileSetupClient.getProgress(request, { metadata: { authorization: `Bearer ${token}` } });
+    const request: UserIdRequest = { userId: userObj.id } as any;
+    const call = profileSetupClient.getProgress(request, { metadata: { authorization: `Bearer ${token}` } });
+    const setupData = await withTimeout(
+      call.response,
+      4000
+    );
     
     const progressData = setupData.data?.fields || {};
-    const totalSteps = progressData.total_steps?.numberValue || 0;
-    const lastStep = progressData.last_completed_step?.numberValue || 0;
-    const status = progressData.status?.stringValue || "";
+    const totalSteps = (progressData.total_steps as any)?.numberValue || 0;
+    const lastStep = (progressData.last_completed_step as any)?.numberValue || 0;
+    const status = (progressData.status as any)?.stringValue || "";
     
     const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
 
@@ -67,6 +86,14 @@ export async function clientLoader() {
 }
 
 clientLoader.hydrate = true;
+
+export function HydrateFallback() {
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-pulse text-purple-600 dark:text-purple-400 text-lg font-medium">Loading...</div>
+    </div>
+  );
+}
 
 export default function Index() {
   useScrollFadeIn();

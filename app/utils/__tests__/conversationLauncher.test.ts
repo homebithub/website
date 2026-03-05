@@ -85,7 +85,7 @@ describe('conversationLauncher utility', () => {
         
         vi.mocked(apiClient.auth).mockResolvedValueOnce({
           ok: true,
-        });
+        } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           conversations: [
             {
@@ -105,7 +105,7 @@ describe('conversationLauncher utility', () => {
         
         vi.mocked(apiClient.auth).mockResolvedValueOnce({
           ok: true,
-        });
+        } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           conversations: [
             {
@@ -131,7 +131,7 @@ describe('conversationLauncher utility', () => {
         
         vi.mocked(apiClient.auth).mockResolvedValueOnce({
           ok: true,
-        });
+        } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           conversations: [
             {
@@ -154,7 +154,7 @@ describe('conversationLauncher utility', () => {
         
         vi.mocked(apiClient.auth).mockResolvedValueOnce({
           ok: true,
-        });
+        } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           conversations: [
             {
@@ -180,7 +180,7 @@ describe('conversationLauncher utility', () => {
         // First call - list conversations (empty)
         vi.mocked(apiClient.auth).mockResolvedValueOnce({
           ok: true,
-        });
+        } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           conversations: [],
         });
@@ -188,7 +188,7 @@ describe('conversationLauncher utility', () => {
         // Second call - create conversation
         vi.mocked(apiClient.auth).mockResolvedValueOnce({
           ok: true,
-        });
+        } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           id: newConvId,
         });
@@ -199,9 +199,9 @@ describe('conversationLauncher utility', () => {
       });
 
       it('sends correct payload when creating conversation', async () => {
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({ conversations: [] });
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({ id: '723e4567-e89b-12d3-a456-426614174000' });
 
         await startOrGetConversation(notificationsBase, validPayload);
@@ -220,9 +220,9 @@ describe('conversationLauncher utility', () => {
       it('extracts conversation ID from nested data structure', async () => {
         const newConvId = '823e4567-e89b-12d3-a456-426614174000';
         
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({ conversations: [] });
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           data: {
             conversation_id: newConvId,
@@ -236,9 +236,9 @@ describe('conversationLauncher utility', () => {
       it('handles ID field variations', async () => {
         const newConvId = '923e4567-e89b-12d3-a456-426614174000';
         
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({ conversations: [] });
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           ID: newConvId,
         });
@@ -250,9 +250,9 @@ describe('conversationLauncher utility', () => {
 
     describe('Error Handling', () => {
       it('throws error when conversation creation fails', async () => {
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({ conversations: [] });
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: false });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: false } as any);
 
         await expect(
           startOrGetConversation(notificationsBase, validPayload)
@@ -280,13 +280,13 @@ describe('conversationLauncher utility', () => {
       it('retries list fetch after failed creation response parsing', async () => {
         const existingConvId = 'a23e4567-e89b-12d3-a456-426614174000';
         
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({ conversations: [] });
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockRejectedValueOnce(new Error('Parse error'));
         
         // Retry list fetch
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           conversations: [
             {
@@ -305,15 +305,15 @@ describe('conversationLauncher utility', () => {
       });
 
       it('validates UUID format of returned ID', async () => {
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({ conversations: [] });
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           id: 'invalid-uuid-format',
         });
 
         // Should retry list fetch
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({ conversations: [] });
 
         const result = await startOrGetConversation(notificationsBase, validPayload);
@@ -325,7 +325,7 @@ describe('conversationLauncher utility', () => {
       it('handles conversations in data.conversations', async () => {
         const existingConvId = 'b23e4567-e89b-12d3-a456-426614174000';
         
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           data: {
             conversations: [
@@ -348,7 +348,7 @@ describe('conversationLauncher utility', () => {
       it('handles conversations in data.data.conversations', async () => {
         const existingConvId = 'c23e4567-e89b-12d3-a456-426614174000';
         
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           data: {
             data: {
@@ -371,9 +371,9 @@ describe('conversationLauncher utility', () => {
       });
 
       it('handles empty conversations array', async () => {
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({ conversations: [] });
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           id: 'd23e4567-e89b-12d3-a456-426614174000',
         });
@@ -387,7 +387,7 @@ describe('conversationLauncher utility', () => {
       it('trims whitespace from IDs', async () => {
         const existingConvId = 'e23e4567-e89b-12d3-a456-426614174000';
         
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           conversations: [
             {
@@ -406,7 +406,7 @@ describe('conversationLauncher utility', () => {
       });
 
       it('ignores empty string IDs', async () => {
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           conversations: [
             {
@@ -416,7 +416,7 @@ describe('conversationLauncher utility', () => {
             },
           ],
         });
-        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true });
+        vi.mocked(apiClient.auth).mockResolvedValueOnce({ ok: true } as any);
         vi.mocked(apiClient.json).mockResolvedValueOnce({
           id: 'f23e4567-e89b-12d3-a456-426614174000',
         });

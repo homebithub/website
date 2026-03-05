@@ -12,6 +12,37 @@ const normalizeGatewayBaseUrl = (url: string): string => {
     .replace(/\/api(?:\/v1)?$/i, '');
 };
 
+const LOCAL_GATEWAY_PORT = '3005';
+
+const getLocalDevGatewayBaseUrl = (): string | undefined => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return `${window.location.protocol}//${window.location.hostname}:${LOCAL_GATEWAY_PORT}`;
+    }
+    return undefined;
+  }
+
+  if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+    return `http://localhost:${LOCAL_GATEWAY_PORT}`;
+  }
+
+  return undefined;
+};
+
+const getDefaultGatewayBaseUrl = (): string => {
+  return getLocalDevGatewayBaseUrl() || 'https://api.homebit.co.ke';
+};
+
+const getForcedBrowserLocalGatewayBaseUrl = (): string | undefined => {
+  if (typeof window === 'undefined') return undefined;
+  const host = window.location.hostname.toLowerCase();
+  if (host === 'localhost' || host === '127.0.0.1') {
+    return `${window.location.protocol}//${window.location.hostname}:${LOCAL_GATEWAY_PORT}`;
+  }
+  return undefined;
+};
+
 const resolveGatewayBaseCandidate = (url?: string): string | undefined => {
   if (!url) return undefined;
 
@@ -43,6 +74,12 @@ const resolveGatewayBaseCandidate = (url?: string): string | undefined => {
 const getAuthApiBaseUrl = (): string => {
   // Check if running in browser
   if (typeof window !== 'undefined') {
+    const forcedLocalUrl = getForcedBrowserLocalGatewayBaseUrl();
+    if (forcedLocalUrl) {
+      console.log('[API Config] Browser localhost detected, forcing AUTH API base URL:', forcedLocalUrl);
+      return forcedLocalUrl;
+    }
+
     const gatewayUrl = (window as any).ENV?.GATEWAY_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.GATEWAY_API_BASE_URL:', gatewayUrl);
     const resolvedGatewayUrl = resolveGatewayBaseCandidate(gatewayUrl);
@@ -68,9 +105,9 @@ const getAuthApiBaseUrl = (): string => {
     if (resolved) return resolved;
   }
   
-  // Default to production API host
-  console.warn('[API Config] No AUTH_API_BASE_URL environment variable found, using production URL');
-  return 'https://api.homebit.co.ke';
+  const fallback = getDefaultGatewayBaseUrl();
+  console.warn(`[API Config] No AUTH_API_BASE_URL environment variable found, using fallback URL: ${fallback}`);
+  return fallback;
 };
 
 const normalizeNotificationsBaseUrl = (url?: string): string | undefined => {
@@ -88,6 +125,12 @@ const normalizeNotificationsBaseUrl = (url?: string): string | undefined => {
 const getNotificationsApiBaseUrl = (): string => {
   // Check if running in browser
   if (typeof window !== 'undefined') {
+    const forcedLocalUrl = getForcedBrowserLocalGatewayBaseUrl();
+    if (forcedLocalUrl) {
+      console.log('[API Config] Browser localhost detected, forcing NOTIFICATIONS API base URL:', forcedLocalUrl);
+      return forcedLocalUrl;
+    }
+
     const gatewayUrl = (window as any).ENV?.GATEWAY_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.GATEWAY_API_BASE_URL:', gatewayUrl);
     const resolvedGatewayUrl = resolveGatewayBaseCandidate(gatewayUrl);
@@ -112,14 +155,21 @@ const getNotificationsApiBaseUrl = (): string => {
     if (resolved) return resolved;
   }
 
-  // Default to production API host
-  console.warn('[API Config] No NOTIFICATIONS_API_BASE_URL environment variable found, using production /notifications URL');
-  return 'https://api.homebit.co.ke';
+  const fallback = getDefaultGatewayBaseUrl();
+  console.warn(`[API Config] No NOTIFICATIONS_API_BASE_URL environment variable found, using fallback URL: ${fallback}`);
+  return fallback;
 };
 
 const getNotificationsWsBaseUrl = (): string => {
   // Check if running in browser
   if (typeof window !== 'undefined') {
+    const forcedLocalUrl = getForcedBrowserLocalGatewayBaseUrl();
+    if (forcedLocalUrl) {
+      const forcedLocalWsUrl = `${forcedLocalUrl}/ws`;
+      console.log('[API Config] Browser localhost detected, forcing NOTIFICATIONS WS base URL:', forcedLocalWsUrl);
+      return forcedLocalWsUrl;
+    }
+
     const envUrl = (window as any).ENV?.NOTIFICATIONS_WS_BASE_URL;
     console.log('[API Config] Browser - window.ENV.NOTIFICATIONS_WS_BASE_URL:', envUrl);
     const normalizedBrowserUrl = normalizeNotificationsBaseUrl(envUrl);
@@ -133,15 +183,21 @@ const getNotificationsWsBaseUrl = (): string => {
     if (normalizedServerUrl) return normalizedServerUrl;
   }
 
-  // Default to direct WebSocket path for real-time chat
-  console.warn('[API Config] No NOTIFICATIONS_WS_BASE_URL environment variable found, using direct WebSocket URL');
-  return 'https://api.homebit.co.ke/ws';
+  const fallback = `${getDefaultGatewayBaseUrl()}/ws`;
+  console.warn(`[API Config] No NOTIFICATIONS_WS_BASE_URL environment variable found, using fallback WebSocket URL: ${fallback}`);
+  return fallback;
 };
 
 // Get payments service base URL from environment or use default
 const getPaymentsApiBaseUrl = (): string => {
   // Check if running in browser
   if (typeof window !== 'undefined') {
+    const forcedLocalUrl = getForcedBrowserLocalGatewayBaseUrl();
+    if (forcedLocalUrl) {
+      console.log('[API Config] Browser localhost detected, forcing PAYMENTS API base URL:', forcedLocalUrl);
+      return forcedLocalUrl;
+    }
+
     const gatewayUrl = (window as any).ENV?.GATEWAY_API_BASE_URL;
     console.log('[API Config] Browser - window.ENV.GATEWAY_API_BASE_URL:', gatewayUrl);
     const resolvedGatewayUrl = resolveGatewayBaseCandidate(gatewayUrl);
@@ -166,9 +222,9 @@ const getPaymentsApiBaseUrl = (): string => {
     if (resolved) return resolved;
   }
 
-  // Default to production API host
-  console.warn('[API Config] No PAYMENTS_API_BASE_URL environment variable found, using production /payments URL');
-  return 'https://api.homebit.co.ke';
+  const fallback = getDefaultGatewayBaseUrl();
+  console.warn(`[API Config] No PAYMENTS_API_BASE_URL environment variable found, using fallback URL: ${fallback}`);
+  return fallback;
 };
 
 // Base URLs for each service

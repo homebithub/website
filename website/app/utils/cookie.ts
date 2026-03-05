@@ -7,7 +7,7 @@ import cookie from "cookie";
 const TOKEN_COOKIE_NAME = "hb_token";
 const USER_COOKIE_NAME = "hb_user";
 
-export const cookieOptions: cookie.CookieSerializeOptions = {
+export const cookieOptions: cookie.SerializeOptions = {
   path: "/",
   httpOnly: false, // Must be false for client-side access during hydration, but ideally true if using only server actions
   secure: process.env.NODE_ENV === "production",
