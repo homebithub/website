@@ -16,9 +16,33 @@ const app = express();
 // Compress all HTTP responses (gzip/deflate)
 app.use(compression());
 
-// Enable CORS
+// Enable CORS with restricted origins
 app.use(cors({
-    origin: true,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (e.g., mobile apps, Postman)
+        if (!origin) {
+            return callback(null, true);
+        }
+        
+        const allowedOrigins = [
+            "https://homebit.co.ke",
+            "https://www.homebit.co.ke",
+            "https://api.homebit.co.ke"
+        ];
+        
+        // In development, allow localhost
+        if (process.env.NODE_ENV !== "production") {
+            if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
+                return callback(null, true);
+            }
+        }
+        
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
 }));
