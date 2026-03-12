@@ -19,6 +19,7 @@ import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSubscription } from '~/hooks/useSubscription';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
+import { useInboxSSE } from '~/hooks/useInboxSSE';
 
 type Conversation = {
   id: string;
@@ -295,6 +296,109 @@ export default function InboxPage() {
 
   // Use global WebSocket connection
   const { connectionState, addEventListener } = useWebSocketContext();
+  
+  // SSE for real-time inbox updates (redundant with WebSocket for reliability)
+  const { isConnected: sseConnected } = useInboxSSE(
+    // onMessageReceived
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Received new message:', event);
+      try {
+        const msg = normalizeMessage(event.data);
+        if (!msg || !msg.id) {
+          console.warn('[Inbox SSE] Invalid message data:', event.data);
+          return;
+        }
+        
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) {
+            console.log('[Inbox SSE] Message already exists, skipping');
+            return prev;
+          }
+          console.log('[Inbox SSE] Adding new message to chat');
+          return [...prev, msg];
+        });
+        
+        // Auto-scroll if at bottom
+        if (isAtBottom) {
+          setTimeout(() => {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        } else {
+          setNewMessageCount(prev => prev + 1);
+        }
+        
+        // Update conversation list
+        setItems((prev) => {
+          return prev.map((conv) => {
+            if (conv.id === msg.conversation_id) {
+              const isActive = conv.id === activeConversationId;
+              return {
+                ...conv,
+                last_message_at: msg.created_at,
+                last_message_body: msg.body,
+                last_message_sender_id: msg.sender_id,
+                unread_count: isActive ? 0 : (conv.unread_count || 0) + 1,
+              };
+            }
+            return conv;
+          });
+        });
+      } catch (err) {
+        console.error('[Inbox SSE] Failed to handle new message', err);
+      }
+    }, [isAtBottom, activeConversationId]),
+    // onMessageRead
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Message read:', event);
+      try {
+        const { message_id, read_at } = event.data;
+        if (message_id) {
+          setMessages((prev) => prev.map((m) => 
+            m.id === message_id ? { ...m, read_at: read_at || new Date().toISOString() } : m
+          ));
+        }
+      } catch (err) {
+        console.error('[Inbox SSE] Failed to handle message read', err);
+      }
+    }, []),
+    // onMessageDeleted
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Message deleted:', event);
+      try {
+        const { message_id, deleted_at } = event.data;
+        if (message_id) {
+          setMessages((prev) => prev.map((m) => 
+            m.id === message_id ? { ...m, deleted_at: deleted_at || new Date().toISOString() } : m
+          ));
+        }
+      } catch (err) {
+        console.error('[Inbox SSE] Failed to handle message deleted', err);
+      }
+    }, []),
+    // onConversationStarted
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Conversation started:', event);
+      // Refresh conversation list on next load
+    }, []),
+    // onConversationArchived
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Conversation archived:', event);
+      // Refresh conversation list on next load
+    }, []),
+    // onConversationMuted
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Conversation muted/unmuted:', event);
+      // Could update conversation mute status in UI
+    }, []),
+    // onUnreadReminder
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Unread reminder:', event);
+      const { unread_count } = event.data;
+      if (unread_count > 0) {
+        pushToast(`You have ${unread_count} unread messages`, 'success');
+      }
+    }, [pushToast])
+  );
   
   const currentUserId = useMemo(() => {
     try {

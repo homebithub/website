@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { transport, getGrpcMetadata, handleGrpcError } from '~/utils/grpcClient';
 import { PaymentsServiceClient } from '~/proto/payments/payments.client';
 import { GetMySubscriptionRequest } from '~/proto/payments/payments';
+import { useSubscriptionSSE } from './useSubscriptionSSE';
 
 export type SubscriptionStatus = 'loading' | 'active' | 'trial' | 'none' | 'expired' | 'error';
 
@@ -119,6 +120,50 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   useEffect(() => {
     fetchSubscription();
   }, [fetchSubscription]);
+
+  // SSE for real-time subscription updates
+  useSubscriptionSSE(
+    // onActivated
+    useCallback(() => {
+      console.log('[useSubscription SSE] Subscription activated, refetching...');
+      fetchSubscription();
+    }, [fetchSubscription]),
+    // onSuspended
+    useCallback(() => {
+      console.log('[useSubscription SSE] Subscription suspended, refetching...');
+      fetchSubscription();
+    }, [fetchSubscription]),
+    // onReactivated
+    useCallback(() => {
+      console.log('[useSubscription SSE] Subscription reactivated, refetching...');
+      fetchSubscription();
+    }, [fetchSubscription]),
+    // onPastDue
+    useCallback((event: import('./useSubscriptionSSE').SubscriptionSSEEvent) => {
+      console.log('[useSubscription SSE] Subscription past due:', event.data);
+      fetchSubscription();
+    }, [fetchSubscription]),
+    // onTrialStarted
+    useCallback(() => {
+      console.log('[useSubscription SSE] Trial started, refetching...');
+      fetchSubscription();
+    }, [fetchSubscription]),
+    // onExpiryWarning
+    useCallback((event: import('./useSubscriptionSSE').SubscriptionSSEEvent) => {
+      console.log('[useSubscription SSE] Expiry warning:', event.data);
+      // Could show a toast notification here
+    }, []),
+    // onLapsed
+    useCallback(() => {
+      console.log('[useSubscription SSE] Subscription lapsed, refetching...');
+      fetchSubscription();
+    }, [fetchSubscription]),
+    // onCancelled
+    useCallback(() => {
+      console.log('[useSubscription SSE] Subscription cancelled, refetching...');
+      fetchSubscription();
+    }, [fetchSubscription])
+  );
 
   const isActive = status === 'active' || status === 'trial';
   const isEarlyAdopter = !!subscription?.metadata?.early_adopter;
