@@ -83,7 +83,7 @@ export default function HousehelpProfile() {
     // SSE for real-time payment updates
     usePaymentSSE(
       // onPaymentSucceeded
-      React.useCallback((event) => {
+      React.useCallback((event: any) => {
         console.log('[Contact] Payment succeeded:', event.data);
         setPaymentPending(false);
         // Refresh unlocked contact status
@@ -105,13 +105,13 @@ export default function HousehelpProfile() {
         }
       }, [profileId]),
       // onPaymentFailed
-      React.useCallback((event) => {
+      React.useCallback((event: any) => {
         console.log('[Contact] Payment failed:', event.data);
         setPaymentPending(false);
         alert(`Payment failed: ${event.data.reason || 'Unknown error'}`);
       }, []),
       // onPaymentRefunded
-      React.useCallback((event) => {
+      React.useCallback((event: any) => {
         console.log('[Contact] Payment refunded:', event.data);
       }, [])
     );

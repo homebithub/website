@@ -86,8 +86,6 @@ export default function Pricing() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
-  const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -98,8 +96,104 @@ export default function Pricing() {
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [selectedTab, setSelectedTab] = useState(0);
 
+  // Hardcoded pricing plans
+  const plans: SubscriptionPlan[] = [
+    {
+      id: 'household-monthly',
+      name: 'Monthly',
+      description: 'Monthly subscription with 1-month free trial',
+      price_amount: 49900,
+      billing_cycle: 'monthly',
+      profile_type: 'household',
+      trial_days: 30,
+      is_active: true,
+      features: {
+        messaging: true,
+        profile_views: 'unlimited',
+        search_filters: 'advanced',
+        priority_support: true,
+        background_checks: true,
+        verified_profiles: true,
+      },
+    },
+    {
+      id: 'household-quarterly',
+      name: 'Quarterly',
+      description: '3-month subscription - Save 10%! (1-month free trial)',
+      price_amount: 134900,
+      billing_cycle: 'quarterly',
+      profile_type: 'household',
+      trial_days: 30,
+      is_active: true,
+      features: {
+        messaging: true,
+        profile_views: 'unlimited',
+        search_filters: 'advanced',
+        priority_support: true,
+        background_checks: true,
+        verified_profiles: true,
+        savings: 'Save KES 150',
+      },
+    },
+    {
+      id: 'household-semi-annual',
+      name: 'Semi-Annual',
+      description: '6-month subscription - Save 20%! (1-month free trial)',
+      price_amount: 239900,
+      billing_cycle: 'semi-annual',
+      profile_type: 'household',
+      trial_days: 30,
+      is_active: true,
+      features: {
+        messaging: true,
+        profile_views: 'unlimited',
+        search_filters: 'advanced',
+        priority_support: true,
+        background_checks: true,
+        verified_profiles: true,
+        savings: 'Save KES 600',
+      },
+    },
+    {
+      id: 'household-annual',
+      name: 'Annual',
+      description: '1-year subscription - Save 30%! (1-month free trial)',
+      price_amount: 419900,
+      billing_cycle: 'yearly',
+      profile_type: 'household',
+      trial_days: 30,
+      is_active: true,
+      features: {
+        messaging: true,
+        profile_views: 'unlimited',
+        search_filters: 'advanced',
+        priority_support: true,
+        background_checks: true,
+        verified_profiles: true,
+        savings: 'Save KES 1,800',
+      },
+    },
+    {
+      id: 'househelp-annual',
+      name: 'Annual Access',
+      description: 'One-time annual payment with 1-month free trial',
+      price_amount: 99900,
+      billing_cycle: 'yearly',
+      profile_type: 'househelp',
+      trial_days: 30,
+      is_active: true,
+      features: {
+        direct_messaging: true,
+        profile_verification: true,
+        job_applications: 'unlimited',
+        profile_visibility: true,
+        job_alerts: true,
+        application_tracking: true,
+      },
+    },
+  ];
+
   useEffect(() => {
-    fetchPlans();
     if (user?.phone) {
       setPhoneNumber(formatPhoneNumber(user.phone));
     }
@@ -113,25 +207,6 @@ export default function Pricing() {
       }
     };
   }, [pollingInterval]);
-
-  const fetchPlans = async () => {
-    try {
-      const response = await fetch(API_ENDPOINTS.payments.plans, {
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setPlans(data.plans || []);
-      } else {
-        console.error('Failed to fetch plans:', response.status);
-      }
-    } catch (error) {
-      console.error('Failed to fetch plans:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleSelectPlan = (plan: SubscriptionPlan) => {
     if (!user) {
@@ -327,8 +402,8 @@ export default function Pricing() {
   const householdPlans = plans.filter(p => p.is_active && p.profile_type === 'household');
   const househelpPlans = plans.filter(p => p.is_active && p.profile_type === 'househelp');
 
-  if (authLoading || loading) {
-    return <Loading text="Loading plans..." />;
+  if (authLoading) {
+    return <Loading text="Loading..." />;
   }
 
   return (
@@ -483,6 +558,22 @@ export default function Pricing() {
                     </div>
                   ) : (
                     <>
+                      {/* Promotional Banner */}
+                      <div className="text-center mb-6 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-2xl p-6 border-2 border-yellow-400 dark:border-yellow-500 shadow-lg">
+                        <div className="flex items-center justify-center gap-2 mb-2">
+                          <SparklesIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400 animate-pulse" />
+                          <h3 className="text-xl font-bold text-yellow-900 dark:text-yellow-100">
+                            🎉 Limited Time Offer!
+                          </h3>
+                        </div>
+                        <p className="text-yellow-800 dark:text-yellow-200 font-semibold text-lg">
+                          First 1,000 househelps to complete their profile get <span className="text-yellow-600 dark:text-yellow-400 font-bold">FREE access for 1 YEAR!</span>
+                        </p>
+                        <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-2">
+                          Don't miss out on this exclusive opportunity to showcase your skills at no cost.
+                        </p>
+                      </div>
+
                       <div className="text-center mb-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-500/30">
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <SparklesIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />

@@ -394,7 +394,7 @@ export default function InboxPage() {
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       console.log('[Inbox SSE] Unread reminder:', event);
       const { unread_count } = event.data;
-      if (unread_count > 0) {
+      if (unread_count && unread_count > 0) {
         pushToast(`You have ${unread_count} unread messages`, 'success');
       }
     }, [pushToast])
