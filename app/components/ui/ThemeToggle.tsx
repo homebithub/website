@@ -26,18 +26,21 @@ export default function ThemeToggle({
   let themePreference: 'system' | 'light' | 'dark' = 'system';
   let theme: 'light' | 'dark' = 'dark';
   let setThemePreference: (pref: 'system' | 'light' | 'dark') => void = () => {};
+  let hasThemeContext = false;
 
   try {
     const themeContext = useTheme();
     themePreference = themeContext.themePreference;
     theme = themeContext.theme;
     setThemePreference = themeContext.setThemePreference;
+    hasThemeContext = true;
   } catch (error) {
-    return null;
+    hasThemeContext = false;
   }
 
   // Close dropdown on outside click
   useEffect(() => {
+    if (!hasThemeContext) return;
     const handleClickOutside = (e: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
         setOpen(false);
@@ -45,7 +48,11 @@ export default function ThemeToggle({
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [hasThemeContext]);
+
+  if (!hasThemeContext) {
+    return null;
+  }
 
   const current = themeOptions.find(o => o.value === themePreference) || themeOptions[0];
   const CurrentIcon = current.Icon;
