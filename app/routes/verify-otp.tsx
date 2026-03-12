@@ -11,6 +11,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { getAccessTokenFromCookies, setAuthCookies } from '~/utils/cookie';
 
 export default function VerifyOtpPage() {
   // UI state for changing phone
@@ -217,7 +218,7 @@ export default function VerifyOtpPage() {
       
       // Store token and user_object in localStorage
       if (userData.token) {
-        localStorage.setItem('token', userData.token);
+        setAuthCookies(userData.token, userData.refresh_token, flatUser);
         localStorage.setItem('user_object', JSON.stringify(flatUser));
 
         // Persist profile metadata consistently with login flow
@@ -263,7 +264,7 @@ export default function VerifyOtpPage() {
         let path = '/';
         if (profileType === 'household' || profileType === 'househelp') {
           try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (token) {
               const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
                 headers: {
@@ -403,7 +404,7 @@ export default function VerifyOtpPage() {
   // Handle profile completion
   const handleProfileComplete = async (data: any) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
       
       // Save profile data to backend

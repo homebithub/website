@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
+import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -521,7 +522,12 @@ export default function HousehelpHome() {
                       <div className="flex justify-center mb-4">
                         <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden">
                           {r.avatar_url || (r.id && profilePhotos[r.id]) ? (
-                            <img src={r.avatar_url || (r.id && profilePhotos[r.id]) || ''} alt={(r.first_name || 'H') + ' ' + (r.last_name || 'H')} className="w-full h-full object-cover" onError={(e) => { e.currentTarget.style.display = 'none'; }} />
+                            <OptimizedImage
+                              path={r.avatar_url || (r.id && profilePhotos[r.id]) || ''}
+                              alt={(r.first_name || 'H') + ' ' + (r.last_name || 'H')}
+                              className="w-full h-full object-cover"
+                              onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
+                            />
                           ) : (
                             `${r.first_name?.[0] || 'H'}${r.last_name?.[0] || 'H'}`
                           )}

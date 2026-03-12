@@ -16,9 +16,7 @@
     --color-primary-900: #581c87;
   }
 
-/* Emoji Picker React theming (matches app purple/dark theme) */
-@layer base {
-  /* Base overrides */
+  /* Emoji Picker React theming (matches app purple/dark theme) */
   .EmojiPickerReact {
     /* Core colors */
     --epr-bg-color: #13131a; /* panel background */
@@ -49,7 +47,6 @@
     --epr-category-label-bg-color: #0a0a0f;
     --epr-preview-bg-color: #0f0f16;
   }
-}
 
   body {
     @apply text-primary-900;

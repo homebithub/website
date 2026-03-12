@@ -4,7 +4,7 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 import path from 'path';
 
 export default defineConfig({
-  plugins: [react(), tsconfigPaths()],
+  plugins: [react() as any, tsconfigPaths() as any],
   test: {
     globals: true,
     environment: 'jsdom',
@@ -25,10 +25,12 @@ export default defineConfig({
       ],
       include: ['app/**/*.{ts,tsx}'],
       all: true,
-      lines: 70,
-      functions: 70,
-      branches: 70,
-      statements: 70,
+      thresholds: {
+        lines: 70,
+        functions: 70,
+        branches: 70,
+        statements: 70,
+      },
     },
     css: {
       modules: {

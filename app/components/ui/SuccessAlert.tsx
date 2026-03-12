@@ -1,9 +1,10 @@
 import React from 'react';
 
-interface SuccessAlertProps {
+export interface SuccessAlertProps {
   message: string;
   title?: string;
   className?: string;
+  onClose?: () => void;
 }
 
 export const SuccessAlert: React.FC<SuccessAlertProps> = ({

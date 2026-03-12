@@ -275,7 +275,7 @@ describe('Modal Component', () => {
       
       // Focus should be within modal
       const dialog = screen.getByRole('dialog');
-      expect(dialog).toContainElement(document.activeElement);
+      expect(dialog).toContainElement(document.activeElement as any);
     });
 
     it('should have proper heading when title provided', () => {

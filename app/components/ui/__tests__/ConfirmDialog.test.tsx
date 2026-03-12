@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi , beforeEach } from 'vitest';
 import { screen } from '@testing-library/react';
 import { renderWithRouter, userEvent, VIEWPORTS, setViewport, hasThemeButton } from '~/test/utils/test-utils';
-import ConfirmDialog from '../ConfirmDialog';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 describe('ConfirmDialog Component', () => {
   const mockOnConfirm = vi.fn();
@@ -13,6 +13,7 @@ describe('ConfirmDialog Component', () => {
     message: 'Are you sure you want to proceed?',
     onConfirm: mockOnConfirm,
     onCancel: mockOnCancel,
+    onClose: mockOnCancel,
   };
 
   beforeEach(() => {

@@ -103,6 +103,7 @@ const Gender = () => {
                                 checked={gender === 'female'}
                                 onChange={() => setGender('female')}
                                 className="form-radio h-5 w-5 text-primary-600 border-gray-300"
+                                id="gender-female"
                             />
                             <span>Female</span>
                         </label>
@@ -116,6 +117,7 @@ const Gender = () => {
                                 checked={gender === 'male'}
                                 onChange={() => setGender('male')}
                                 className="form-radio h-5 w-5 text-primary-600 border-gray-300"
+                                id="gender-male"
                             />
                             <span>Male</span>
                         </label>
@@ -123,10 +125,11 @@ const Gender = () => {
                 </div>
                 
                 <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
                         Date of Birth <span className="text-red-500">*</span>
                     </label>
                     <input
+                        id="dateOfBirth"
                         type="date"
                         value={dateOfBirth}
                         onChange={handleDateChange}

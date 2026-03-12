@@ -84,7 +84,7 @@ describe('subscriptions API', () => {
         reason: 'vacation',
       };
 
-      const result = await pauseSubscription('sub-123', request);
+      const result = await pauseSubscription('sub-123', request as any);
 
       expect(result).toEqual(mockResponse);
       expect(mockFetch).toHaveBeenCalledWith(
@@ -110,7 +110,7 @@ describe('subscriptions API', () => {
         reason: 'financial',
       };
 
-      await pauseSubscription('sub-456', request);
+      await pauseSubscription('sub-456', request as any);
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
@@ -127,7 +127,7 @@ describe('subscriptions API', () => {
       });
 
       await expect(
-        pauseSubscription('sub-123', { pause_duration_days: 30 })
+        pauseSubscription('sub-123', { pause_duration_days: 30 } as any)
       ).rejects.toThrow('Subscription already paused');
     });
 
@@ -138,7 +138,7 @@ describe('subscriptions API', () => {
         json: async () => ({}),
       });
 
-      await pauseSubscription('sub-123', { pause_duration_days: 30 });
+      await pauseSubscription('sub-123', { pause_duration_days: 30 } as any);
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
@@ -270,7 +270,7 @@ describe('subscriptions API', () => {
         reason: 'not_satisfied',
       };
 
-      const result = await cancelSubscription('sub-123', request);
+      const result = await cancelSubscription('sub-123', request as any);
 
       expect(result).toEqual(mockResponse);
       expect(mockFetch).toHaveBeenCalledWith(
@@ -300,9 +300,9 @@ describe('subscriptions API', () => {
         reason: 'too_expensive',
       };
 
-      const result = await cancelSubscription('sub-123', request);
+      const result = await cancelSubscription('sub-123', request as any);
 
-      expect(result.cancel_at_period_end).toBe(true);
+      expect((result as any).cancel_at_period_end).toBe(true);
     });
 
     it('includes cancellation feedback', async () => {
@@ -317,7 +317,7 @@ describe('subscriptions API', () => {
         feedback: 'Found a better alternative',
       };
 
-      await cancelSubscription('sub-123', request);
+      await cancelSubscription('sub-123', request as any);
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
@@ -334,7 +334,7 @@ describe('subscriptions API', () => {
       });
 
       await expect(
-        cancelSubscription('sub-123', { cancel_immediately: true })
+        cancelSubscription('sub-123', { cancel_immediately: true } as any)
       ).rejects.toThrow('Cannot cancel active subscription');
     });
   });
@@ -471,8 +471,8 @@ describe('subscriptions API', () => {
 
       const result = await previewProration('sub-123', { new_plan_id: 'plan-basic' });
 
-      expect(result.proration_amount).toBeLessThan(0);
-      expect(result.credit_amount).toBeGreaterThan(0);
+      expect((result as any).proration_amount).toBeLessThan(0);
+      expect((result as any).credit_amount).toBeGreaterThan(0);
     });
 
     it('throws error on failure', async () => {
@@ -549,7 +549,7 @@ describe('subscriptions API', () => {
         json: async () => ({}),
       });
 
-      await pauseSubscription('sub-123', { pause_duration_days: 30 });
+      await pauseSubscription('sub-123', { pause_duration_days: 30 } as any);
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
@@ -568,7 +568,7 @@ describe('subscriptions API', () => {
         json: async () => ({}),
       });
 
-      await pauseSubscription('sub-123', { pause_duration_days: 30 });
+      await pauseSubscription('sub-123', { pause_duration_days: 30 } as any);
 
       expect(mockFetch).toHaveBeenCalledWith(
         expect.any(String),
@@ -586,7 +586,7 @@ describe('subscriptions API', () => {
       mockFetch.mockRejectedValue(new Error('Network error'));
 
       await expect(
-        pauseSubscription('sub-123', { pause_duration_days: 30 })
+        pauseSubscription('sub-123', { pause_duration_days: 30 } as any)
       ).rejects.toThrow('Network error');
     });
 
@@ -599,7 +599,7 @@ describe('subscriptions API', () => {
       });
 
       await expect(
-        pauseSubscription('sub-123', { pause_duration_days: 30 })
+        pauseSubscription('sub-123', { pause_duration_days: 30 } as any)
       ).rejects.toThrow();
     });
 
@@ -610,7 +610,7 @@ describe('subscriptions API', () => {
       });
 
       await expect(
-        pauseSubscription('sub-123', { pause_duration_days: 30 })
+        pauseSubscription('sub-123', { pause_duration_days: 30 } as any)
       ).rejects.toThrow('API Error');
     });
   });

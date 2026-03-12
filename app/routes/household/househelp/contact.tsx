@@ -5,6 +5,7 @@ import ReadOnlyUserImageCarousel from "~/components/features/household/househelp
 import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
 import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
 import { formatTimeAgo } from "~/utils/timeAgo";
+import { usePaymentSSE } from '~/hooks/usePaymentSSE';
 
 export default function HousehelpProfile() {
     const [showUnlockModal, setShowUnlockModal] = useState(false);
@@ -76,7 +77,44 @@ export default function HousehelpProfile() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [unlockedContact, setUnlockedContact] = useState<{ phone?: string; email?: string } | null>(null);
+    const [paymentPending, setPaymentPending] = useState(false);
     const navigate = useNavigate();
+
+    // SSE for real-time payment updates
+    usePaymentSSE(
+      // onPaymentSucceeded
+      React.useCallback((event: any) => {
+        console.log('[Contact] Payment succeeded:', event.data);
+        setPaymentPending(false);
+        // Refresh unlocked contact status
+        if (profileId) {
+          const token = localStorage.getItem('token');
+          if (token) {
+            fetch(`${API_ENDPOINTS.shortlists.base}/unlock/${profileId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            .then(res => res.json())
+            .then(data => {
+              if (data.phone || data.email) {
+                setUnlockedContact(data);
+                setShowUnlockModal(false);
+              }
+            })
+            .catch(err => console.error('Failed to fetch unlocked contact:', err));
+          }
+        }
+      }, [profileId]),
+      // onPaymentFailed
+      React.useCallback((event: any) => {
+        console.log('[Contact] Payment failed:', event.data);
+        setPaymentPending(false);
+        alert(`Payment failed: ${event.data.reason || 'Unknown error'}`);
+      }, []),
+      // onPaymentRefunded
+      React.useCallback((event: any) => {
+        console.log('[Contact] Payment refunded:', event.data);
+      }, [])
+    );
 
     useEffect(() => {
         const fetchProfile = async () => {
@@ -243,7 +281,7 @@ export default function HousehelpProfile() {
                   }}
                 >
                   <img src="/assets/mpesa-logo.svg" alt="M-PESA" className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span>Pay with M-PESA</span>
+                  <span>{paymentPending ? 'Processing...' : 'Pay with M-PESA'}</span>
                 </button>
               </div>
             </div>

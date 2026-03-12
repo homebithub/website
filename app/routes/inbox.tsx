@@ -12,10 +12,14 @@ import HireContextBanner from '~/components/hiring/HireContextBanner';
 import { useWebSocketContext } from '~/contexts/WebSocketContext';
 import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved } from '~/types/websocket';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
+import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
+import { NotificationsServiceClient } from "~/proto/notifications/notifications.client";
+import { ListConversationsRequest, ListMessagesRequest, SendMessageRequest, MarkConversationAsReadRequest, EditMessageRequest, DeleteMessageRequest, ToggleReactionRequest } from "~/proto/notifications/notifications";
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSubscription } from '~/hooks/useSubscription';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
+import { useInboxSSE } from '~/hooks/useInboxSSE';
 
 type Conversation = {
   id: string;
@@ -288,8 +292,113 @@ export default function InboxPage() {
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
   const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
   
+  const notificationsClient = useMemo(() => new NotificationsServiceClient(transport), []);
+
   // Use global WebSocket connection
   const { connectionState, addEventListener } = useWebSocketContext();
+  
+  // SSE for real-time inbox updates (redundant with WebSocket for reliability)
+  const { isConnected: sseConnected } = useInboxSSE(
+    // onMessageReceived
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Received new message:', event);
+      try {
+        const msg = normalizeMessage(event.data);
+        if (!msg || !msg.id) {
+          console.warn('[Inbox SSE] Invalid message data:', event.data);
+          return;
+        }
+        
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) {
+            console.log('[Inbox SSE] Message already exists, skipping');
+            return prev;
+          }
+          console.log('[Inbox SSE] Adding new message to chat');
+          return [...prev, msg];
+        });
+        
+        // Auto-scroll if at bottom
+        if (isAtBottom) {
+          setTimeout(() => {
+            bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        } else {
+          setNewMessageCount(prev => prev + 1);
+        }
+        
+        // Update conversation list
+        setItems((prev) => {
+          return prev.map((conv) => {
+            if (conv.id === msg.conversation_id) {
+              const isActive = conv.id === activeConversationId;
+              return {
+                ...conv,
+                last_message_at: msg.created_at,
+                last_message_body: msg.body,
+                last_message_sender_id: msg.sender_id,
+                unread_count: isActive ? 0 : (conv.unread_count || 0) + 1,
+              };
+            }
+            return conv;
+          });
+        });
+      } catch (err) {
+        console.error('[Inbox SSE] Failed to handle new message', err);
+      }
+    }, [isAtBottom, activeConversationId]),
+    // onMessageRead
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Message read:', event);
+      try {
+        const { message_id, read_at } = event.data;
+        if (message_id) {
+          setMessages((prev) => prev.map((m) => 
+            m.id === message_id ? { ...m, read_at: read_at || new Date().toISOString() } : m
+          ));
+        }
+      } catch (err) {
+        console.error('[Inbox SSE] Failed to handle message read', err);
+      }
+    }, []),
+    // onMessageDeleted
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Message deleted:', event);
+      try {
+        const { message_id, deleted_at } = event.data;
+        if (message_id) {
+          setMessages((prev) => prev.map((m) => 
+            m.id === message_id ? { ...m, deleted_at: deleted_at || new Date().toISOString() } : m
+          ));
+        }
+      } catch (err) {
+        console.error('[Inbox SSE] Failed to handle message deleted', err);
+      }
+    }, []),
+    // onConversationStarted
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Conversation started:', event);
+      // Refresh conversation list on next load
+    }, []),
+    // onConversationArchived
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Conversation archived:', event);
+      // Refresh conversation list on next load
+    }, []),
+    // onConversationMuted
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Conversation muted/unmuted:', event);
+      // Could update conversation mute status in UI
+    }, []),
+    // onUnreadReminder
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      console.log('[Inbox SSE] Unread reminder:', event);
+      const { unread_count } = event.data;
+      if (unread_count && unread_count > 0) {
+        pushToast(`You have ${unread_count} unread messages`, 'success');
+      }
+    }, [pushToast])
+  );
   
   const currentUserId = useMemo(() => {
     try {
@@ -535,44 +644,45 @@ export default function InboxPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await apiClient.auth(`${NOTIFICATIONS_BASE}/api/v1/inbox/conversations?offset=${offset}&limit=${limit}`);
-        if (!res.ok) throw new Error("Failed to load conversations");
-        const response = await apiClient.json<any>(res);
-        const raw = extractEnvelopeArray<any>(response, 'conversations');
-        const normalizeConversation = (c: any): Conversation => ({
-          ...c,
-          id: c.id || c.ID,
-          household_id: c.household_user_id || c.household_id || c.householdId || "",
-          househelp_id: c.househelp_user_id || c.househelp_id || c.househelpId || "",
-          household_profile_id: c.household_profile_id || c.householdProfileId || c.household?.id || null,
-          househelp_profile_id: c.househelp_profile_id || c.househelpProfileId || c.househelp?.id || null,
-          last_message_at: c.last_message_at ?? null,
-          participant_name:
-            c.participant_name ||
-            c.participantName ||
-            c.other_participant_name ||
-            c.otherParticipantName ||
-            c.household_name ||
-            c.householdName ||
-            undefined,
-        });
+        
+        const request: ListConversationsRequest = {
+          limit,
+          offset
+        } as any;
 
-        // Normalise field names so the rest of the UI can rely on household_id / househelp_id
-        let data: Conversation[] = raw.map(normalizeConversation).filter((c) => !!c.id);
+        const { response } = await notificationsClient.listConversations(request, { metadata: getGrpcMetadata() });
+        const fields = response.data?.fields || {};
+        const raw = (fields.conversations as any)?.listValue?.values || [];
+
+        const normalizeConversation = (v: any): Conversation => {
+          const c = v.structValue?.fields || {};
+          return {
+            id: c.id?.stringValue || "",
+            household_id: c.household_user_id?.stringValue || c.household_id?.stringValue || "",
+            househelp_id: c.househelp_user_id?.stringValue || c.househelp_id?.stringValue || "",
+            household_profile_id: c.household_profile_id?.stringValue || null,
+            househelp_profile_id: c.househelp_profile_id?.stringValue || null,
+            household_profile_type: c.household_profile_type?.stringValue || "household",
+            househelp_profile_type: c.househelp_profile_type?.stringValue || "househelp",
+            last_message_at: c.last_message_at?.stringValue || null,
+            last_message_body: c.last_message_body?.stringValue || null,
+            last_message_sender_id: c.last_message_sender_id?.stringValue || null,
+            unread_count: c.unread_count?.numberValue || 0,
+            participant_name: c.participant_name?.stringValue || undefined,
+            participant_avatar: c.participant_avatar?.stringValue || undefined,
+          };
+        };
+
+        let data: Conversation[] = raw.map(normalizeConversation).filter((c: any) => !!c.id);
 
         // If we're deep-linking to a conversation that isn't in this page, fetch it explicitly.
         if (offset === 0 && selectedConversationId && !data.some((c) => c.id === selectedConversationId)) {
           try {
-            const detailRes = await apiClient.auth(
-              `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${encodeURIComponent(selectedConversationId)}`,
-            );
-            if (detailRes.ok) {
-              const detailResponse = await apiClient.json<any>(detailRes);
-              const detailRaw = detailResponse?.data?.data || detailResponse?.data || detailResponse;
-              const normalized = normalizeConversation(detailRaw);
-              if (normalized.id) {
-                data = [normalized, ...data];
-              }
+            const { response: detailResponse } = await notificationsClient.getConversation({ id: selectedConversationId }, { metadata: getGrpcMetadata() });
+            const detailFields = detailResponse.data?.fields || {};
+            const normalized = normalizeConversation({ structValue: { fields: detailFields } });
+            if (normalized.id) {
+              data = [normalized, ...data];
             }
           } catch (detailErr) {
             console.warn('[Inbox] Failed to hydrate selected conversation', detailErr);
@@ -588,7 +698,10 @@ export default function InboxPage() {
           setSearchParams({ conversation: data[0].id }, { replace: true });
         }
       } catch (e: any) {
-        if (!cancelled) setError(e?.message || "Failed to load conversations");
+        if (!cancelled) {
+          setError(e?.message || "Failed to load conversations");
+          handleGrpcError(e, false);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -619,42 +732,57 @@ export default function InboxPage() {
         setMessagesLoading(true);
         setMessagesError(null);
         console.log('[Inbox] Loading messages for conversation:', conversationId);
-        const res = await apiClient.auth(
-          `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${encodeURIComponent(conversationId)}/messages?offset=0&limit=${messagesLimit}`
-        );
-        console.log('[Inbox] Messages API response status:', res.status);
-        if (!res.ok) throw new Error("Failed to load messages");
-        const response = await apiClient.json<any>(res);
-        console.log('[Inbox] Messages API response:', response);
-        const data = normalizeMessageList(extractEnvelopeArray<any>(response, 'messages'));
-        console.log('[Inbox] Parsed messages count:', data.length, 'Messages:', data);
+        
+        const request: ListMessagesRequest = {
+          conversationId,
+          limit: messagesLimit,
+          offset: 0
+        };
+
+        const { response } = await notificationsClient.listMessages(request, { metadata: getGrpcMetadata() });
+        const fields = response.data?.fields || {};
+        const items = (fields.messages as any)?.listValue?.values || [];
+
+        const normalizeMessage = (v: any): Message => {
+          const m = v.structValue?.fields || {};
+          return {
+            id: m.id?.stringValue || "",
+            conversation_id: m.conversation_id?.stringValue || "",
+            sender_id: m.sender_id?.stringValue || "",
+            body: m.body?.stringValue || "",
+            read_at: m.read_at?.stringValue || null,
+            created_at: m.created_at?.stringValue || "",
+            deleted_at: m.deleted_at?.stringValue || null,
+            edited_at: m.edited_at?.stringValue || null,
+            reply_to_id: m.reply_to_id?.stringValue || null,
+            reactions: (m.reactions?.listValue?.values || []).map((r: any) => {
+              const rf = r.structValue?.fields || {};
+              return {
+                emoji: rf.emoji?.stringValue || "",
+                user_id: rf.user_id?.stringValue || ""
+              };
+            })
+          };
+        };
+
+        const data: Message[] = items.map(normalizeMessage);
+        
         if (cancelled) return;
         setMessages(data);
         setMessagesOffset(data.length);
         setMessagesHasMore(data.length === messagesLimit);
-        console.log('[Inbox] Messages state updated with', data.length, 'messages');
         
         // Mark conversation as read
         try {
-          const markReadRes = await apiClient.auth(
-            `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${encodeURIComponent(conversationId)}/read`,
-            {
-              method: 'POST',
-            }
-          );
-          if (markReadRes.ok) {
-            console.log('[Inbox] Conversation marked as read');
-            // Update unread count in conversation list
-            setItems((prev) => prev.map((conv) => 
-              conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
-            ));
-          }
+          await notificationsClient.markConversationAsRead({ conversationId } as any, { metadata: getGrpcMetadata() });
+          setItems((prev) => prev.map((conv) => 
+            conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
+          ));
         } catch (err) {
           console.error('[Inbox] Failed to mark conversation as read:', err);
-          // Don't fail the whole operation if marking as read fails
         }
         
-        // Scroll to bottom after loading messages
+        // Scroll to bottom
         setTimeout(() => {
           if (bottomRef.current) {
             bottomRef.current.scrollIntoView({ behavior: 'auto' });
@@ -664,7 +792,10 @@ export default function InboxPage() {
         }, 100);
       } catch (e: any) {
         console.error('[Inbox] Error loading messages:', e);
-        if (!cancelled) setMessagesError(e?.message || "Failed to load messages");
+        if (!cancelled) {
+          setMessagesError(e?.message || "Failed to load messages");
+          handleGrpcError(e, false);
+        }
       } finally {
         if (!cancelled) setMessagesLoading(false);
       }
@@ -784,13 +915,39 @@ export default function InboxPage() {
       const container = messagesContainerRef.current;
       const scrollHeightBefore = container?.scrollHeight || 0;
       
-      const res = await apiClient.auth(
-        `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${encodeURIComponent(activeConversationId)}/messages?offset=${messagesOffset}&limit=${messagesLimit}`
-      );
-      
-      if (!res.ok) throw new Error("Failed to load more messages");
-      const response = await apiClient.json<any>(res);
-      const newMessages = normalizeMessageList(extractEnvelopeArray<any>(response, 'messages'));
+      const request: ListMessagesRequest = {
+        conversationId: activeConversationId,
+        limit: messagesLimit,
+        offset: messagesOffset
+      };
+
+      const { response } = await notificationsClient.listMessages(request, { metadata: getGrpcMetadata() });
+      const fields = response.data?.fields || {};
+      const items = (fields.messages as any)?.listValue?.values || [];
+
+      const normalizeMessage = (v: any): Message => {
+        const m = v.structValue?.fields || {};
+        return {
+          id: m.id?.stringValue || "",
+          conversation_id: m.conversation_id?.stringValue || "",
+          sender_id: m.sender_id?.stringValue || "",
+          body: m.body?.stringValue || "",
+          read_at: m.read_at?.stringValue || null,
+          created_at: m.created_at?.stringValue || "",
+          deleted_at: m.deleted_at?.stringValue || null,
+          edited_at: m.edited_at?.stringValue || null,
+          reply_to_id: m.reply_to_id?.stringValue || null,
+          reactions: (m.reactions?.listValue?.values || []).map((r: any) => {
+            const rf = r.structValue?.fields || {};
+            return {
+              emoji: rf.emoji?.stringValue || "",
+              user_id: rf.user_id?.stringValue || ""
+            };
+          })
+        };
+      };
+
+      const newMessages: Message[] = items.map(normalizeMessage);
       
       if (newMessages.length > 0) {
         setMessages(prev => {
@@ -814,6 +971,7 @@ export default function InboxPage() {
       }
     } catch (err) {
       console.error("[Inbox] Failed to load more messages:", err);
+      handleGrpcError(err, false);
     } finally {
       setLoadingMore(false);
     }
@@ -977,47 +1135,83 @@ export default function InboxPage() {
     if (!newBody) return;
     try {
       setEditingSaving(true);
-      const res = await apiClient.auth(
-        `${NOTIFICATIONS_BASE}/api/v1/inbox/messages/${encodeURIComponent(msg.id)}`,
-        {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ body: newBody }),
-        },
-      );
-      if (!res.ok) throw new Error('Failed to edit message');
-      const updatedResponse = await apiClient.json<any>(res);
-      const updated = normalizeMessage(extractEnvelopeObject(updatedResponse));
-      if (!updated) throw new Error('Invalid message payload from edit API');
+      
+      const request: EditMessageRequest = {
+        messageId: msg.id,
+        userId: '',
+        body: newBody
+      };
+
+      const { response } = await notificationsClient.editMessage(request, { metadata: getGrpcMetadata() });
+      const fields = response.data?.fields || {};
+      
+      const normalizeMessage = (fields: any): Message => ({
+        id: fields.id?.stringValue || "",
+        conversation_id: fields.conversation_id?.stringValue || "",
+        sender_id: fields.sender_id?.stringValue || "",
+        body: fields.body?.stringValue || "",
+        read_at: fields.read_at?.stringValue || null,
+        created_at: fields.created_at?.stringValue || "",
+        deleted_at: fields.deleted_at?.stringValue || null,
+        edited_at: fields.edited_at?.stringValue || null,
+        reply_to_id: fields.reply_to_id?.stringValue || null,
+        reactions: (fields.reactions?.listValue?.values || []).map((r: any) => {
+          const rf = r.structValue?.fields || {};
+          return {
+            emoji: rf.emoji?.stringValue || "",
+            user_id: rf.user_id?.stringValue || ""
+          };
+        })
+      });
+
+      const updated = normalizeMessage(fields);
       setMessages((prev) => prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)));
       cancelEditMessage();
     } catch (err) {
       console.error(err);
       pushToast('Failed to edit message', 'error');
+      handleGrpcError(err, false);
     } finally {
       setEditingSaving(false);
     }
-  }, [editingMessageId, editingDraft, messageById, NOTIFICATIONS_BASE, cancelEditMessage, pushToast]);
+  }, [editingMessageId, editingDraft, messageById, cancelEditMessage, pushToast, notificationsClient]);
 
   const toggleReaction = useCallback(async (m: Message, emoji: string) => {
     try {
-      const res = await apiClient.auth(
-        `${NOTIFICATIONS_BASE}/api/v1/inbox/messages/${encodeURIComponent(m.id)}/reactions`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ emoji }),
-        },
-      );
-      if (!res.ok) return;
-      const updatedResponse = await apiClient.json<any>(res);
-      const updated = normalizeMessage(extractEnvelopeObject(updatedResponse));
-      if (!updated) return;
+      const request: ToggleReactionRequest = {
+        messageId: m.id,
+        emoji: emoji
+      } as any;
+
+      const { response } = await notificationsClient.toggleReaction(request, { metadata: getGrpcMetadata() });
+      const fields = response.data?.fields || {};
+      
+      const normalizeMessage = (fields: any): Message => ({
+        id: fields.id?.stringValue || "",
+        conversation_id: fields.conversation_id?.stringValue || "",
+        sender_id: fields.sender_id?.stringValue || "",
+        body: fields.body?.stringValue || "",
+        read_at: fields.read_at?.stringValue || null,
+        created_at: fields.created_at?.stringValue || "",
+        deleted_at: fields.deleted_at?.stringValue || null,
+        edited_at: fields.edited_at?.stringValue || null,
+        reply_to_id: fields.reply_to_id?.stringValue || null,
+        reactions: (fields.reactions?.listValue?.values || []).map((r: any) => {
+          const rf = r.structValue?.fields || {};
+          return {
+            emoji: rf.emoji?.stringValue || "",
+            user_id: rf.user_id?.stringValue || ""
+          };
+        })
+      });
+
+      const updated = normalizeMessage(fields);
       setMessages((prev) => prev.map((msg) => (msg.id === updated.id ? { ...msg, ...updated } : msg)));
     } catch (err) {
       console.error(err);
+      handleGrpcError(err, false);
     }
-  }, [NOTIFICATIONS_BASE]);
+  }, [notificationsClient]);
 
   const addEmoji = useCallback((emojiData: EmojiClickData) => {
     let emoji = emojiData?.emoji as string | undefined;
@@ -1062,29 +1256,42 @@ export default function InboxPage() {
       setReplyTo(null);
       scrollToBottom();
       
-      const payload: { body: string; reply_to_id?: string } = { body };
-      if (replyToId) {
-        payload.reply_to_id = replyToId;
-      }
+      const request: SendMessageRequest = {
+        conversationId: activeConversationId,
+        body,
+        replyToId: replyToId || '',
+      } as any;
+
+      const { response } = await notificationsClient.sendMessage(request, { metadata: getGrpcMetadata() });
+      const fields = response.data?.fields || {};
       
-      const res = await apiClient.auth(
-        `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${encodeURIComponent(activeConversationId)}/messages`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        },
-      );
-      if (!res.ok) throw new Error('Failed to send message');
-      const savedResponse = await apiClient.json<any>(res);
-      const saved = normalizeMessage(extractEnvelopeObject(savedResponse));
-      if (!saved) throw new Error('Invalid message payload from send API');
+      const normalizeMessage = (fields: any): Message => ({
+        id: fields.id?.stringValue || "",
+        conversation_id: fields.conversation_id?.stringValue || "",
+        sender_id: fields.sender_id?.stringValue || "",
+        body: fields.body?.stringValue || "",
+        read_at: fields.read_at?.stringValue || null,
+        created_at: fields.created_at?.stringValue || "",
+        deleted_at: fields.deleted_at?.stringValue || null,
+        edited_at: fields.edited_at?.stringValue || null,
+        reply_to_id: fields.reply_to_id?.stringValue || null,
+        reactions: (fields.reactions?.listValue?.values || []).map((r: any) => {
+          const rf = r.structValue?.fields || {};
+          return {
+            emoji: rf.emoji?.stringValue || "",
+            user_id: rf.user_id?.stringValue || ""
+          };
+        })
+      });
+
+      const saved = normalizeMessage(fields);
       setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...saved, _status: 'sent' } : m)));
     } catch (err) {
       console.error(err);
       pushToast('Failed to send message', 'error');
+      handleGrpcError(err, false);
     }
-  }, [activeConversationId, input, currentUserId, replyTo, NOTIFICATIONS_BASE, scrollToBottom, pushToast, hasActiveSubscription, subscriptionLoading]);
+  }, [activeConversationId, input, currentUserId, replyTo, scrollToBottom, pushToast, hasActiveSubscription, subscriptionLoading, notificationsClient]);
 
   const handleAcceptHireRequest = useCallback(async () => {
     if (!hireRequestId) return;
@@ -1520,7 +1727,7 @@ export default function InboxPage() {
                 const replyFromName = replyMsg ? (replyMsg.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')) : '';
                 
                 // Show sender name in brackets for household chats (multi-member)
-                const showSenderName = !mine && m.sender_name && m.sender_name !== selectedConversation?.participant_name;
+                const showSenderName = !mine && (m as any).sender_name && (m as any).sender_name !== selectedConversation?.participant_name;
 
                 return (
                   <div
@@ -1671,7 +1878,7 @@ export default function InboxPage() {
                           <div className="whitespace-pre-wrap break-words text-sm">
                             {showSenderName && (
                               <div className={`text-[10px] font-bold mb-0.5 ${mine ? 'text-white/90' : 'text-purple-600 dark:text-purple-400'}`}>
-                                [{m.sender_name}]
+                                [{(m as any).sender_name}]
                               </div>
                             )}
                             {m.deleted_at ? (

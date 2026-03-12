@@ -7,6 +7,7 @@ import { ThemeProvider } from "~/contexts/ThemeContext";
 import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
 import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
 import { WebSocketProvider } from "~/contexts/WebSocketContext";
+import { SSEProvider } from "~/contexts/SSEContext";
 import { AUTH_API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL, PAYMENTS_API_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
@@ -36,18 +37,32 @@ export const headers: Route.HeadersFunction = () => ({
     "Cache-Control": "no-cache, max-age=0, must-revalidate",
 });
 
-export function loader() {
+export function loader({ request }: Route.LoaderArgs) {
+	const requestUrl = new URL(request.url);
+	const requestHost = requestUrl.hostname.toLowerCase();
+	const isLocalRequest = requestHost === "localhost" || requestHost === "127.0.0.1";
+	const localGatewayBaseUrl = `${requestUrl.protocol}//${requestUrl.hostname}:3005`;
+
+	const gatewayBaseUrl = isLocalRequest
+		? localGatewayBaseUrl
+		: process.env.GATEWAY_API_BASE_URL || AUTH_API_BASE_URL;
+	const authBaseUrl = isLocalRequest ? localGatewayBaseUrl : AUTH_API_BASE_URL;
+	const notificationsBaseUrl = isLocalRequest ? localGatewayBaseUrl : NOTIFICATIONS_API_BASE_URL;
+	const paymentsBaseUrl = isLocalRequest ? localGatewayBaseUrl : PAYMENTS_API_BASE_URL;
+	const notificationsWsBaseUrl = isLocalRequest
+		? `${localGatewayBaseUrl}/ws`
+		: process.env.NOTIFICATIONS_WS_BASE_URL || NOTIFICATIONS_WS_BASE_URL;
+
 	return {
 		ENV: {
 			GOOGLE_CLIENT_ID:
 				process.env.GOOGLE_CLIENT_ID ||
 				"180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",
-			// Use canonical API base URLs from config so they are consistently normalized
-			GATEWAY_API_BASE_URL: process.env.GATEWAY_API_BASE_URL || AUTH_API_BASE_URL,
-			AUTH_API_BASE_URL: AUTH_API_BASE_URL,
-			NOTIFICATIONS_API_BASE_URL: NOTIFICATIONS_API_BASE_URL,
-			NOTIFICATIONS_WS_BASE_URL: process.env.NOTIFICATIONS_WS_BASE_URL || NOTIFICATIONS_WS_BASE_URL,
-			PAYMENTS_API_BASE_URL: PAYMENTS_API_BASE_URL,
+			GATEWAY_API_BASE_URL: gatewayBaseUrl,
+			AUTH_API_BASE_URL: authBaseUrl,
+			NOTIFICATIONS_API_BASE_URL: notificationsBaseUrl,
+			NOTIFICATIONS_WS_BASE_URL: notificationsWsBaseUrl,
+			PAYMENTS_API_BASE_URL: paymentsBaseUrl,
 		},
 	};
 }
@@ -67,38 +82,6 @@ export default function App() {
                 <meta name="viewport" content="width=device-width, initial-scale=1"/>
                 <Meta/>
                 <Links/>
-                {/* Blocking script to prevent theme flash - runs before React hydrates */}
-                <script
-                    dangerouslySetInnerHTML={{
-                        __html: `
-                            (function() {
-                                try {
-                                    // Check localStorage for saved theme
-                                    const savedTheme = localStorage.getItem('theme');
-                                    
-                                    // Default to dark theme if no preference exists
-                                    const theme = savedTheme || 'dark';
-                                    
-                                    // Apply theme immediately
-                                    if (theme === 'dark') {
-                                        document.documentElement.classList.add('dark');
-                                    } else {
-                                        document.documentElement.classList.remove('dark');
-                                    }
-                                } catch (e) {
-                                    // Fallback to dark theme on error
-                                    document.documentElement.classList.add('dark');
-                                }
-                            })();
-                        `,
-                    }}
-                />
-                {/* Expose server env to client - in head to prevent visual flash */}
-                <script
-                    dangerouslySetInnerHTML={{
-                        __html: `window.ENV=${JSON.stringify(ENV)}`,
-                    }}
-                />
                 {/* Google Identity Services */}
                 <script src="https://accounts.google.com/gsi/client" async defer></script>
                 <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -158,15 +141,29 @@ export default function App() {
                 <title>Homebit</title>
             </head>
             <body className="min-h-screen bg-white dark:bg-[#0a0a0f] text-slate-900 dark:text-[#e4e4e7] font-sans antialiased transition-colors duration-300" suppressHydrationWarning>
+                {/* Blocking script to prevent theme flash - must be in body, not head (head scripts break React Router CSS injection) */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `(function(){try{var t=localStorage.getItem('theme')||'dark';if(t==='dark'){document.documentElement.classList.add('dark')}else{document.documentElement.classList.remove('dark')}}catch(e){document.documentElement.classList.add('dark')}})()`,
+                    }}
+                />
+                {/* Expose server env to client */}
+                <script
+                    dangerouslySetInnerHTML={{
+                        __html: `window.ENV=${JSON.stringify(ENV)}`,
+                    }}
+                />
                 <ThemeProvider>
                     <AuthProvider>
-                        <WebSocketProvider>
-                            <ProfileSetupProvider>
-                                <ProfileSetupGuard>
-                                    <Outlet/>
-                                </ProfileSetupGuard>
-                            </ProfileSetupProvider>
-                        </WebSocketProvider>
+                        <SSEProvider>
+                            <WebSocketProvider>
+                                <ProfileSetupProvider>
+                                    <ProfileSetupGuard>
+                                        <Outlet/>
+                                    </ProfileSetupGuard>
+                                </ProfileSetupProvider>
+                            </WebSocketProvider>
+                        </SSEProvider>
                     </AuthProvider>
                 </ThemeProvider>
                 <ScrollRestoration/>

@@ -11,7 +11,7 @@ describe('Google Waitlist Callback', () => {
     it('should redirect to homepage with error when code is missing', async () => {
       const request = new Request('https://example.com/google/waitlist/callback');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -29,7 +29,7 @@ describe('Google Waitlist Callback', () => {
       
       const request = new Request('https://example.com/google/waitlist/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -42,7 +42,7 @@ describe('Google Waitlist Callback', () => {
       
       const request = new Request('https://example.com/google/waitlist/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -73,7 +73,7 @@ describe('Google Waitlist Callback', () => {
       }));
       const request = new Request(`https://example.com/google/waitlist/callback?code=test123&state=${state}`);
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -106,7 +106,7 @@ describe('Google Waitlist Callback', () => {
       }));
       const request = new Request(`https://example.com/google/waitlist/callback?code=test123&state=${state}`);
       
-      await loader({ request, params: {}, context: {} });
+      await loader({ request, params: {}, context: {} } as any);
       
       const waitlistCall = mockFetch.mock.calls[1];
       const body = JSON.parse(waitlistCall[1].body);
@@ -133,7 +133,7 @@ describe('Google Waitlist Callback', () => {
       const state = encodeURIComponent(JSON.stringify({ phone: '0712345678' }));
       const request = new Request(`https://example.com/google/waitlist/callback?code=test123&state=${state}`);
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -155,7 +155,7 @@ describe('Google Waitlist Callback', () => {
       
       const request = new Request('https://example.com/google/waitlist/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -179,7 +179,7 @@ describe('Google Waitlist Callback', () => {
       const state = encodeURIComponent(JSON.stringify({ phone: '0712345678' }));
       const request = new Request(`https://example.com/google/waitlist/callback?code=test123&state=${state}`);
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -200,7 +200,7 @@ describe('Google Waitlist Callback', () => {
       const state = encodeURIComponent(JSON.stringify({ phone: '0712345678' }));
       const request = new Request(`https://example.com/google/waitlist/callback?code=test123&state=${state}`);
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -223,7 +223,7 @@ describe('Google Waitlist Callback', () => {
       
       const request = new Request('https://example.com/google/waitlist/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -244,7 +244,7 @@ describe('Google Waitlist Callback', () => {
       
       const request = new Request('https://example.com/google/waitlist/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -265,7 +265,7 @@ describe('Google Waitlist Callback', () => {
       
       const request = new Request('https://example.com/google/waitlist/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -287,7 +287,7 @@ describe('Google Waitlist Callback', () => {
       
       const request = new Request('https://example.com/google/waitlist/callback?code=test123&state=invalid-json');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('/?waitlist=1');
@@ -306,7 +306,7 @@ describe('Google Waitlist Callback', () => {
       
       const request = new Request('https://example.com/google/waitlist/callback?code=test123&state=');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('/?waitlist=1');
@@ -329,7 +329,7 @@ describe('Google Waitlist Callback', () => {
       }));
       const request = new Request(`https://example.com/google/waitlist/callback?code=test123&state=${state}`);
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
     });
@@ -350,7 +350,7 @@ describe('Google Waitlist Callback', () => {
       
       const request = new Request('https://example.com/google/waitlist/callback?code=test123');
       
-      await loader({ request, params: {}, context: {} });
+      await loader({ request, params: {}, context: {} } as any);
       
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/auth/google/signin'),
@@ -386,7 +386,7 @@ describe('Google Waitlist Callback', () => {
       }));
       const request = new Request(`https://example.com/google/waitlist/callback?code=test123&state=${state}`);
       
-      await loader({ request, params: {}, context: {} });
+      await loader({ request, params: {}, context: {} } as any);
       
       expect(mockFetch).toHaveBeenCalledTimes(2);
       const waitlistCall = mockFetch.mock.calls[1];
@@ -419,7 +419,7 @@ describe('Google Waitlist Callback', () => {
       const state = encodeURIComponent(JSON.stringify({ phone: '0712345678' }));
       const request = new Request(`https://example.com/google/waitlist/callback?code=test123&state=${state}`);
       
-      await loader({ request, params: {}, context: {} });
+      await loader({ request, params: {}, context: {} } as any);
       
       const body = JSON.parse(mockFetch.mock.calls[1][1].body);
       expect(body.message).toBe('');
@@ -448,7 +448,7 @@ describe('Google Waitlist Callback', () => {
       const state = encodeURIComponent(JSON.stringify({ phone: 'invalid' }));
       const request = new Request(`https://example.com/google/waitlist/callback?code=test123&state=${state}`);
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -468,7 +468,7 @@ describe('Google Waitlist Callback', () => {
       
       const request = new Request('https://example.com/google/waitlist/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');

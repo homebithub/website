@@ -15,6 +15,7 @@ import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { prepareDeviceRegistration } from '~/utils/deviceFingerprint';
 import { registerDevice } from '~/utils/api/devices';
+import { setAuthCookies } from '~/utils/cookie';
 
 export const meta = () => [
     { title: "Log In — Homebit" },
@@ -85,9 +86,6 @@ export default function LoginPage() {
       setProcessingGoogleLogin(true);
       (async () => {
         try {
-          // Store token immediately so subsequent API calls are authenticated
-          localStorage.setItem('token', token);
-
           // Fetch user profile using the provided token
           const meResp = await fetch(API_ENDPOINTS.auth.me, {
             headers: {
@@ -100,6 +98,7 @@ export default function LoginPage() {
           }
 
           const userData: any = await meResp.json();
+          setAuthCookies(token, null, userData);
           localStorage.setItem('user_object', JSON.stringify(userData));
           const profileType: string = userData.profile_type || '';
           localStorage.setItem('profile_type', profileType);

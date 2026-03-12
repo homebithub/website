@@ -11,7 +11,7 @@ describe('Google Auth Callback', () => {
     it('should redirect to login with error when code is missing', async () => {
       const request = new Request('https://example.com/google/auth/callback');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('/login?error=missing_code');
@@ -27,7 +27,7 @@ describe('Google Auth Callback', () => {
       
       const request = new Request('https://example.com/google/auth/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('/login?error=signin_failed');
@@ -38,7 +38,7 @@ describe('Google Auth Callback', () => {
       
       const request = new Request('https://example.com/google/auth/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('/login?error=network_error');
@@ -60,7 +60,7 @@ describe('Google Auth Callback', () => {
       
       const request = new Request('https://example.com/google/auth/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -83,7 +83,7 @@ describe('Google Auth Callback', () => {
       const state = encodeURIComponent(JSON.stringify({ profile_type: 'household' }));
       const request = new Request(`https://example.com/google/auth/callback?code=test123&state=${state}`);
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('/login');
@@ -108,7 +108,7 @@ describe('Google Auth Callback', () => {
       
       const request = new Request('https://example.com/google/auth/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -136,7 +136,7 @@ describe('Google Auth Callback', () => {
       const state = encodeURIComponent(JSON.stringify({ profile_type: 'household' }));
       const request = new Request(`https://example.com/google/auth/callback?code=test123&state=${state}`);
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -161,7 +161,7 @@ describe('Google Auth Callback', () => {
       }));
       const request = new Request(`https://example.com/google/auth/callback?code=test123&state=${state}`);
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -183,7 +183,7 @@ describe('Google Auth Callback', () => {
       
       const request = new Request('https://example.com/google/auth/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -204,7 +204,7 @@ describe('Google Auth Callback', () => {
       
       const request = new Request('https://example.com/google/auth/callback?code=test123&state=invalid-json');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('/signup');
@@ -224,7 +224,7 @@ describe('Google Auth Callback', () => {
       
       const request = new Request('https://example.com/google/auth/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('/login?error=unexpected_response');
@@ -243,7 +243,7 @@ describe('Google Auth Callback', () => {
       
       const request = new Request('https://example.com/google/auth/callback?code=test123&state=');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       expect(response.headers.get('Location')).toContain('/signup');
@@ -263,7 +263,7 @@ describe('Google Auth Callback', () => {
       
       const request = new Request('https://example.com/google/auth/callback?code=test123');
       
-      const response = await loader({ request, params: {}, context: {} });
+      const response = await loader({ request, params: {}, context: {} } as any);
       
       expect(response.status).toBe(302);
       const location = response.headers.get('Location');
@@ -288,7 +288,7 @@ describe('Google Auth Callback', () => {
       
       const request = new Request('https://example.com/google/auth/callback?code=test123');
       
-      await loader({ request, params: {}, context: {} });
+      await loader({ request, params: {}, context: {} } as any);
       
       expect(mockFetch).toHaveBeenCalledWith(
         expect.stringContaining('/api/v1/auth/google/signin'),
@@ -315,7 +315,7 @@ describe('Google Auth Callback', () => {
       const state = encodeURIComponent(JSON.stringify({ profile_type: 'household' }));
       const request = new Request(`https://example.com/google/auth/callback?code=test123&state=${state}`);
       
-      await loader({ request, params: {}, context: {} });
+      await loader({ request, params: {}, context: {} } as any);
       
       const callBody = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(callBody.state).toBeDefined();

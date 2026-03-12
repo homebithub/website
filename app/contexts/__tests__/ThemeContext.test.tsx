@@ -209,7 +209,7 @@ describe('ThemeContext', () => {
       vi.mocked(isAuthenticated).mockReturnValue(true);
       vi.mocked(fetchPreferences).mockResolvedValue({
         settings: { theme: 'dark' },
-      });
+      } as any);
 
       const { result } = renderHook(() => useTheme(), { wrapper });
 
@@ -286,7 +286,7 @@ describe('ThemeContext', () => {
       vi.mocked(isAuthenticated).mockReturnValue(true);
       vi.mocked(fetchPreferences).mockResolvedValue({
         settings: { theme: 'invalid-theme' as any },
-      });
+      } as any);
 
       const { result } = renderHook(() => useTheme(), { wrapper });
 
@@ -306,7 +306,7 @@ describe('ThemeContext', () => {
       vi.mocked(migratePreferences).mockResolvedValue(true);
       vi.mocked(fetchPreferences).mockResolvedValue({
         settings: { theme: 'dark' },
-      });
+      } as any);
 
       const { result } = renderHook(() => useTheme(), { wrapper });
 

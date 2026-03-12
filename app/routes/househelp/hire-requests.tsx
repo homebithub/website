@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { API_BASE_URL } from '~/config/api';
 import { apiClient } from '~/utils/apiClient';
 import { CheckCircle, XCircle, Briefcase, Calendar, DollarSign, MapPin, Eye } from 'lucide-react';
+import { useHiringSSE } from '~/hooks/useHiringSSE';
 
 interface HireRequest {
   id: string;
@@ -82,6 +83,50 @@ export default function HousehelpHireRequests() {
       setLoading(false);
     }
   };
+
+  // SSE for real-time hire request updates
+  useHiringSSE(
+    // onHireRequestReceived
+    useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
+      console.log('[HireRequests SSE] New hire request received:', event.data);
+      // Show notification
+      if (event.data.household_name) {
+        alert(`New hire request from ${event.data.household_name}!`);
+      }
+      // Refresh list
+      fetchHireRequests();
+    }, []),
+    // onHireRequestAccepted
+    useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
+      console.log('[HireRequests SSE] Hire request accepted:', event.data);
+      fetchHireRequests();
+    }, []),
+    // onHireRequestRejected
+    useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
+      console.log('[HireRequests SSE] Hire request rejected:', event.data);
+      fetchHireRequests();
+    }, []),
+    // onContractSigned
+    useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
+      console.log('[HireRequests SSE] Contract signed:', event.data);
+      if (event.data.signer_name) {
+        alert(`Contract signed by ${event.data.signer_name}!`);
+      }
+    }, []),
+    // onContractExpiring
+    useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
+      console.log('[HireRequests SSE] Contract expiring:', event.data);
+      const days = event.data.days_remaining || 0;
+      if (days <= 7) {
+        alert(`Contract expiring in ${days} days!`);
+      }
+    }, []),
+    // onContractTerminated
+    useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
+      console.log('[HireRequests SSE] Contract terminated:', event.data);
+      alert('A contract has been terminated.');
+    }, [])
+  );
 
   const handleAcceptRequest = async (requestId: string) => {
     if (!confirm('Are you sure you want to accept this hire request?')) return;
