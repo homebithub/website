@@ -18,24 +18,16 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
-          cache-dependency-path: website/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: |
-          cd website
-          npm install
+        run: npm install
 
       - name: Lint
-        run: |
-          cd website
-          npm run lint
+        run: npm run lint
 
       - name: Typecheck
-        run: |
-          cd website
-          npm run typecheck
+        run: npm run typecheck
 
       - name: Test
-        run: |
-          cd website
-          npm run test
+        run: npm run test
