@@ -4,6 +4,7 @@ import type { NotificationItem } from "~/types/notifications";
 import { NotificationsServiceClient } from "~/proto/notifications/notifications.client";
 import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
 import { ListNotificationsByUserRequest, MarkNotificationAsClickedRequest, MarkAllNotificationsAsClickedRequest } from "~/proto/notifications/notifications";
+import { getAccessTokenFromCookies, getAuthFromCookies } from "~/utils/cookie";
 
 interface UseNotificationsOptions {
   pollingMs?: number;
@@ -23,6 +24,21 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
 
   const client = useMemo(() => new NotificationsServiceClient(transport), []);
 
+  const getCurrentUserId = useCallback((): string | null => {
+    const { user } = getAuthFromCookies();
+    if (user?.id) return user.id;
+
+    const userObj = localStorage.getItem('user_object');
+    if (!userObj) return null;
+
+    try {
+      const parsed = JSON.parse(userObj);
+      return parsed?.id || null;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const computeUnread = (list: NotificationItem[]) => list.filter(n => !n.clicked && (n.status?.toLowerCase?.() !== "read")).length;
 
   const mapProtoToNotification = (fields: any): NotificationItem => ({
@@ -40,7 +56,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   const fetchLatest = useCallback(async (query: string = search) => {
     try {
       setLoading(true);
-      const token = typeof window !== 'undefined' ? localStorage.getItem("token") : undefined;
+      const token = typeof window !== 'undefined' ? getAccessTokenFromCookies() : undefined;
       if (!token) {
         setItems([]);
         setUnreadCount(0);
@@ -50,12 +66,11 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
         return;
       }
 
-      const userObj = localStorage.getItem('user_object');
-      if (!userObj) return;
-      const user = JSON.parse(userObj);
+      const userID = getCurrentUserId();
+      if (!userID) return;
 
       const request: ListNotificationsByUserRequest = {
-        userId: user.id,
+        userId: userID,
         limit: pageSize,
         offset: 0
       };
@@ -78,18 +93,17 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
     } finally {
       setLoading(false);
     }
-  }, [client, pageSize, search]);
+  }, [client, getCurrentUserId, pageSize, search]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
     try {
       setLoadingMore(true);
-      const userObj = localStorage.getItem('user_object');
-      if (!userObj) return;
-      const user = JSON.parse(userObj);
+      const userID = getCurrentUserId();
+      if (!userID) return;
       
       const request: ListNotificationsByUserRequest = {
-        userId: user.id,
+        userId: userID,
         limit: pageSize,
         offset: items.length
       };
@@ -129,13 +143,10 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const token = localStorage.getItem('token');
+    const token = getAccessTokenFromCookies();
     if (!token) return;
 
-    const url = new URL(`${API_BASE_URL}/api/v1/notifications/stream`);
-    url.searchParams.set('token', token);
-
-    const es = new EventSource(url.toString());
+    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`);
     esRef.current = es;
 
     es.onmessage = (ev) => {
@@ -172,11 +183,10 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
 
   const markAllAsRead = async () => {
     try {
-      const userObj = localStorage.getItem('user_object');
-      if (!userObj) return;
-      const user = JSON.parse(userObj);
+      const userID = getCurrentUserId();
+      if (!userID) return;
       
-      const request: MarkAllNotificationsAsClickedRequest = { userId: user.id };
+      const request: MarkAllNotificationsAsClickedRequest = { userId: userID };
       await client.markAllNotificationsAsClicked(request, { metadata: getGrpcMetadata() });
       await fetchLatest();
     } catch (e) {

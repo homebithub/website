@@ -1,6 +1,7 @@
 import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import { API_BASE_URL } from '~/config/api';
 import type { RpcMetadata } from '@protobuf-ts/runtime-rpc';
+import { clearAuthCookies, getAuthFromCookies } from '~/utils/cookie';
 
 /**
  * Unified gRPC-Web client utility for Homebit using @protobuf-ts.
@@ -28,15 +29,13 @@ export const getGrpcMetadata = (requireAuth: boolean = true): RpcMetadata => {
   
   if (typeof window === 'undefined') return metadata;
 
-  const token = localStorage.getItem('token');
+  const { token, user } = getAuthFromCookies();
   if (token) {
     metadata['authorization'] = `Bearer ${token}`;
   }
 
-  const userObj = localStorage.getItem('user_object');
-  if (userObj) {
+  if (user) {
     try {
-      const user = JSON.parse(userObj);
       if (user.profile_id) metadata['x-profile-id'] = user.profile_id;
       if (user.profile_type) metadata['x-profile-type'] = user.profile_type;
     } catch (e) {
@@ -56,7 +55,7 @@ export const handleGrpcError = (error: any, requireAuth: boolean = true) => {
   // gRPC status codes: 16 = UNAUTHENTICATED
   if (error.code === 'UNAUTHENTICATED' || error.status === 16 || error.message?.toLowerCase().includes('unauthenticated')) {
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('token');
+      clearAuthCookies();
       localStorage.removeItem('user_object');
       if (requireAuth) {
         const returnTo = encodeURIComponent(window.location.pathname + window.location.search);

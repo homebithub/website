@@ -5,6 +5,7 @@ import { API_BASE_URL } from "~/config/api";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Button } from '~/components/ui/Button';
+import { getAccessTokenFromCookies } from "~/utils/cookie";
 
 export default function JoinHouseholdPage() {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ export default function JoinHouseholdPage() {
 
   useEffect(() => {
     const checkCurrentStatus = async () => {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) {
         setCheckingStatus(false);
         return;
@@ -58,10 +59,10 @@ export default function JoinHouseholdPage() {
   useEffect(() => {
     if (!success || joinStatus !== 'pending') return;
 
-    const token = localStorage.getItem("token");
+    const token = getAccessTokenFromCookies();
     if (!token) return;
 
-    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream?token=${token}`);
+    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`);
 
     eventSource.onmessage = (event: any) => {
       try {
@@ -115,7 +116,7 @@ export default function JoinHouseholdPage() {
     try {
       const res = await fetch(`${API_BASE_URL}/api/v1/households/invitations/validate/${inviteCode.trim()}`, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${getAccessTokenFromCookies() || ""}`,
         },
       });
 
@@ -139,7 +140,7 @@ export default function JoinHouseholdPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) {
         navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
         return;

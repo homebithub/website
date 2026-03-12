@@ -1,5 +1,6 @@
 import { API_BASE_URL, getAuthHeaders } from "~/config/api";
 import { getDeviceId } from "~/utils/deviceFingerprint";
+import { clearAuthCookies, getAccessTokenFromCookies } from "~/utils/cookie";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
@@ -9,8 +10,19 @@ interface RequestOptions extends RequestInit {
 }
 
 function getToken(): string | null {
-  if (typeof localStorage === "undefined") return null;
-  return localStorage.getItem("token");
+  if (typeof window === "undefined") return null;
+  const cookieToken = getAccessTokenFromCookies();
+  if (cookieToken) return cookieToken;
+
+  try {
+    if (typeof localStorage !== "undefined") {
+      return localStorage.getItem("token") || null;
+    }
+  } catch {
+    // Ignore localStorage access issues
+  }
+
+  return null;
 }
 
 async function request(url: string, method: HttpMethod, options: RequestOptions = {}) {
@@ -48,7 +60,11 @@ async function request(url: string, method: HttpMethod, options: RequestOptions 
 
   if (res.status === 401) {
     // Clear invalid token
-    try { localStorage.removeItem("token"); localStorage.removeItem("user_object"); } catch {}
+    try {
+      clearAuthCookies();
+      localStorage.removeItem("token");
+      localStorage.removeItem("user_object");
+    } catch {}
     if (handle401 === "redirect" && typeof window !== "undefined") {
       const returnTo = encodeURIComponent(window.location.pathname + window.location.search);
       window.location.href = `/login?returnTo=${returnTo}`;

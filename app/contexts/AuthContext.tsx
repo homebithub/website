@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router";
 import type { LoginRequest, LoginResponse, LoginErrorResponse } from "~/routes/login";
-import { API_ENDPOINTS, API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
 import { migratePreferences } from '~/utils/preferencesApi';
 import { extractErrorMessage, transformErrorMessage } from '~/utils/errorMessages';
 import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
-import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
-import { AuthServiceClient, ProfileSetupServiceClient } from "~/proto/auth/auth.client";
+import { clearAuthCookies, getAuthFromCookies, setAuthCookies } from "~/utils/cookie";
+import { API_BASE_URL, API_ENDPOINTS } from "~/config/api";
 
 interface User {
   id: string;
@@ -24,9 +23,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const authClient = useMemo(() => new AuthServiceClient(transport), []);
-  const profileSetupClient = useMemo(() => new ProfileSetupServiceClient(transport), []);
-
   // Public routes that don't need auth check
   const isPublicRoute = () => {
     const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies'];
@@ -39,14 +35,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const userObj = localStorage.getItem("user_object");
-      if (userObj) {
-        try {
-          const parsedUser = JSON.parse(userObj);
-          setUser(parsedUser);
-        } catch (e) {
-          console.error("Failed to parse user_object from localStorage:", e);
+      const { token: cookieToken, user: cookieUser } = getAuthFromCookies();
+      const legacyToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = cookieToken || legacyToken;
+
+      if (cookieUser) {
+        setUser({ token: token || "", user: cookieUser } as unknown as LoginResponse);
+        localStorage.setItem("user_object", JSON.stringify(cookieUser));
+      } else {
+        const rawUser = localStorage.getItem("user_object");
+        if (rawUser && token) {
+          try {
+            const parsedUser = JSON.parse(rawUser);
+            setUser({ token, user: parsedUser } as unknown as LoginResponse);
+          } catch {
+            // Ignore malformed cache
+          }
         }
       }
 
@@ -56,18 +60,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!token) {
+        setUser(null);
         setLoading(false);
         return;
       }
 
-      const { response: userResponse } = await authClient.getCurrentUser({} as any, { metadata: getGrpcMetadata() });
-      const user = (userResponse as any).data?.fields ? (userResponse as any).data.fields : userResponse;
+      const meResponse = await fetch(API_ENDPOINTS.auth.me, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!meResponse.ok) {
+        throw new Error("Failed to verify session");
+      }
+
+      const meData = await meResponse.json();
+      const user = meData.data || meData.user || meData;
       
-      setUser({ token: localStorage.getItem("token") || "", user } as unknown as LoginResponse);
+      setUser({ token: token || "", user } as unknown as LoginResponse);
+      setAuthCookies(token || "", null, user);
+      localStorage.setItem("token", token || "");
       localStorage.setItem("user_object", JSON.stringify(user));
     } catch (error) {
       console.error("Error checking auth:", error);
       setUser(null);
+      clearAuthCookies();
       localStorage.removeItem("token");
       localStorage.removeItem("user_object");
     } finally {
@@ -81,12 +99,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       const normalizedPhone = normalizeKenyanPhoneNumber(phone);
-      const { response: dataResponse } = await authClient.login({ phone: normalizedPhone, password }, { metadata: getGrpcMetadata(false) });
+      const loginResponse = await fetch(API_ENDPOINTS.auth.login, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ phone: normalizedPhone, password }),
+      });
+
+      if (!loginResponse.ok) {
+        const errorBody = await loginResponse.json().catch(() => null);
+        throw new Error(extractErrorMessage(errorBody) || "Login failed");
+      }
+
+      const dataResponse = await loginResponse.json();
       
-      const data = (dataResponse as any).data?.fields || dataResponse;
+      const data = (dataResponse as any).data || dataResponse;
       const token = (data as any).token?.stringValue || (data as any).token || "";
+      const refreshToken = (data as any).refresh_token?.stringValue || (data as any).refresh_token || "";
       const userData = (data as any).user?.structValue?.fields || (data as any).user || {};
 
+      setAuthCookies(token, refreshToken, userData);
       localStorage.setItem("token", token);
       localStorage.setItem("user_object", JSON.stringify(userData));
       
@@ -105,27 +138,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileType === "household" || profileType === "househelp") {
         try {
-          const { response: setupData } = await profileSetupClient.getProgress({ userId: (userData.id?.stringValue || userData.id) } as any, { metadata: { authorization: `Bearer ${token}` } });
-          const progressData = setupData.data?.fields || {};
-          const totalSteps = (progressData.total_steps as any)?.numberValue || 0;
-          const lastStep = (progressData.last_completed_step as any)?.numberValue || 0;
-          const status = (progressData.status as any)?.stringValue || "";
-          
-          const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
+          const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
 
-          if (!isComplete) {
-            if (profileType === 'household' && lastStep === 0) {
-              navigate('/household-choice');
+          if (setupResponse.ok) {
+            const setupData = await setupResponse.json();
+            const progressData = setupData.data || {};
+            const totalSteps = progressData.total_steps || 0;
+            const lastStep = progressData.last_completed_step || 0;
+            const status = progressData.status || "";
+          
+            const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
+
+            if (!isComplete) {
+              if (profileType === 'household' && lastStep === 0) {
+                navigate('/household-choice');
+                return;
+              }
+              const setupRoute = profileType === "household" 
+                ? `/profile-setup/household?step=${lastStep + 1}`
+                : `/profile-setup/househelp?step=${lastStep + 1}`;
+              navigate(setupRoute);
               return;
             }
-            const setupRoute = profileType === "household" 
-              ? `/profile-setup/household?step=${lastStep + 1}`
-              : `/profile-setup/househelp?step=${lastStep + 1}`;
-            navigate(setupRoute);
-            return;
-          }
-        } catch (err: any) {
-          if (err.code === 'NOT_FOUND' || err.status === 5) {
+          } else if (setupResponse.status === 404) {
             if (profileType === 'household') {
               navigate('/household-choice');
               return;
@@ -133,6 +172,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             navigate('/profile-setup/househelp?step=1');
             return;
           }
+        } catch (err: any) {
+          console.error('Failed to check profile setup status:', err);
         }
       }
 
@@ -151,15 +192,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const { response: signupResponse } = await authClient.signup({ firstName, lastName, phone: email, password, profileType: '', bureauId: '', householdId: '', dateOfBirth: '', signedDate: '' } as any, { metadata: getGrpcMetadata(false) });
-      const data = (signupResponse as any).data?.fields || signupResponse;
+      const signupResult = await fetch(API_ENDPOINTS.auth.signup, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password, first_name: firstName, last_name: lastName }),
+      });
+
+      if (!signupResult.ok) {
+        const errorBody = await signupResult.json().catch(() => null);
+        throw new Error(extractErrorMessage(errorBody) || "Signup failed");
+      }
+
+      const signupResponse = await signupResult.json();
+      const data = (signupResponse as any).data || signupResponse;
       
       const token = (data as any).token?.stringValue || (data as any).token || "";
+      const refreshToken = (data as any).refresh_token?.stringValue || (data as any).refresh_token || "";
       const user = (data as any).user?.structValue?.fields || (data as any).user || {};
 
+      setAuthCookies(token, refreshToken, user);
       localStorage.setItem("token", token);
       localStorage.setItem("user_object", JSON.stringify(user));
-      setUser(user as any);
+      setUser({ token, user } as unknown as LoginResponse);
       
       migratePreferences().catch(err => console.error("Failed to migrate preferences:", err));
       navigate("/");
@@ -178,11 +234,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       try {
-        await authClient.logout({} as any, { metadata: getGrpcMetadata() });
+        const { token } = getAuthFromCookies();
+        await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
+          method: "POST",
+          headers: token
+            ? {
+                Authorization: `Bearer ${token}`,
+              }
+            : undefined,
+        });
       } catch (error) {
         console.log("Server logout failed, but clearing local state");
       }
 
+      clearAuthCookies();
       localStorage.removeItem("token");
       localStorage.removeItem("user_object");
       localStorage.removeItem("userType");

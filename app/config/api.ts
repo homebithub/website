@@ -5,6 +5,8 @@
  * Update API_BASE_URL to switch between development and production.
  */
 
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+
 const normalizeGatewayBaseUrl = (url: string): string => {
   return url
     .replace(/\/+$/, '')
@@ -417,7 +419,7 @@ export const buildApiUrl = (baseUrl: string, params?: Record<string, string | nu
  * Helper function to get auth headers
  */
 export const getAuthHeaders = (token?: string | null): HeadersInit => {
-  const authToken = token || (typeof localStorage !== 'undefined' ? localStorage.getItem('token') : null);
+  const authToken = token || (typeof window !== 'undefined' ? getAccessTokenFromCookies() : null);
   
   return {
     'Content-Type': 'application/json',

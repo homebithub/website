@@ -5,6 +5,7 @@ import { lazyLoad } from "~/utils/lazyLoad";
 import { transport, getGrpcMetadata } from "~/utils/grpcClient";
 import { ProfileSetupServiceClient } from "~/proto/auth/auth.client";
 import { UserIdRequest } from "~/proto/auth/auth";
+import { getAuthFromCookies } from "~/utils/cookie";
 
 const AuthenticatedHome = lazyLoad(() => import("~/components/AuthenticatedHome"));
 const HousehelpHome = lazyLoad(() => import("~/components/HousehelpHome"));
@@ -26,8 +27,8 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
 };
 
 export async function clientLoader() {
-  const token = localStorage.getItem('token');
-  const userObjRaw = localStorage.getItem('user_object');
+  const { token, user: cookieUser } = getAuthFromCookies();
+  const userObjRaw = cookieUser ? JSON.stringify(cookieUser) : localStorage.getItem('user_object');
   
   if (!token || !userObjRaw) {
     return { isAuthenticated: false, userType: null };

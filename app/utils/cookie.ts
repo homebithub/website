@@ -1,4 +1,59 @@
-import cookie, { type SerializeOptions } from "cookie";
+export interface SerializeOptions {
+  path?: string;
+  httpOnly?: boolean;
+  secure?: boolean;
+  sameSite?: "lax" | "strict" | "none";
+  maxAge?: number;
+}
+
+const normalizeSameSite = (sameSite?: SerializeOptions["sameSite"]) => {
+  if (!sameSite) return undefined;
+  if (sameSite === "lax") return "Lax";
+  if (sameSite === "strict") return "Strict";
+  return "None";
+};
+
+const serializeCookie = (name: string, value: string, options: SerializeOptions = {}) => {
+  const parts = [`${encodeURIComponent(name)}=${encodeURIComponent(value)}`];
+
+  if (typeof options.maxAge === "number") {
+    parts.push(`Max-Age=${Math.floor(options.maxAge)}`);
+  }
+  if (options.path) {
+    parts.push(`Path=${options.path}`);
+  }
+  const sameSite = normalizeSameSite(options.sameSite);
+  if (sameSite) {
+    parts.push(`SameSite=${sameSite}`);
+  }
+  if (options.secure) {
+    parts.push("Secure");
+  }
+  if (options.httpOnly) {
+    // Browsers ignore HttpOnly when set from JS, but keep for API compatibility.
+    parts.push("HttpOnly");
+  }
+
+  return parts.join("; ");
+};
+
+const parseCookies = (raw: string) => {
+  const parsed: Record<string, string> = {};
+  if (!raw) return parsed;
+
+  for (const segment of raw.split(";")) {
+    const part = segment.trim();
+    if (!part) continue;
+    const separatorIndex = part.indexOf("=");
+    if (separatorIndex <= 0) continue;
+
+    const key = decodeURIComponent(part.slice(0, separatorIndex).trim());
+    const value = decodeURIComponent(part.slice(separatorIndex + 1).trim());
+    parsed[key] = value;
+  }
+
+  return parsed;
+};
 
 /**
  * Utility for unified cookie management (client and server).
@@ -38,24 +93,26 @@ export const refreshTokenOptions: SerializeOptions = {
   maxAge: 60 * 60 * 24 * 30, // 30 days
 };
 
-export const setAuthCookies = (token: string, refreshToken: string, user: any) => {
+export const setAuthCookies = (token: string, refreshToken: string | null | undefined, user: any) => {
   if (typeof document !== "undefined") {
-    document.cookie = cookie.serialize(TOKEN_COOKIE_NAME, token, accessTokenOptions);
-    document.cookie = cookie.serialize(REFRESH_TOKEN_COOKIE_NAME, refreshToken, refreshTokenOptions);
-    document.cookie = cookie.serialize(USER_COOKIE_NAME, JSON.stringify(user), cookieOptions);
+    document.cookie = serializeCookie(TOKEN_COOKIE_NAME, token, accessTokenOptions);
+    if (refreshToken) {
+      document.cookie = serializeCookie(REFRESH_TOKEN_COOKIE_NAME, refreshToken, refreshTokenOptions);
+    }
+    document.cookie = serializeCookie(USER_COOKIE_NAME, JSON.stringify(user), cookieOptions);
   }
 };
 
 export const clearAuthCookies = () => {
   if (typeof document !== "undefined") {
-    document.cookie = cookie.serialize(TOKEN_COOKIE_NAME, "", { ...accessTokenOptions, maxAge: 0 });
-    document.cookie = cookie.serialize(REFRESH_TOKEN_COOKIE_NAME, "", { ...refreshTokenOptions, maxAge: 0 });
-    document.cookie = cookie.serialize(USER_COOKIE_NAME, "", { ...cookieOptions, maxAge: 0 });
+    document.cookie = serializeCookie(TOKEN_COOKIE_NAME, "", { ...accessTokenOptions, maxAge: 0 });
+    document.cookie = serializeCookie(REFRESH_TOKEN_COOKIE_NAME, "", { ...refreshTokenOptions, maxAge: 0 });
+    document.cookie = serializeCookie(USER_COOKIE_NAME, "", { ...cookieOptions, maxAge: 0 });
   }
 };
 
 export const getAuthFromCookies = (cookieHeader?: string | null) => {
-  const cookies = cookie.parse(cookieHeader || (typeof document !== "undefined" ? document.cookie : ""));
+  const cookies = parseCookies(cookieHeader || (typeof document !== "undefined" ? document.cookie : ""));
   const token = cookies[TOKEN_COOKIE_NAME];
   const refreshToken = cookies[REFRESH_TOKEN_COOKIE_NAME];
   const userStr = cookies[USER_COOKIE_NAME];
@@ -70,4 +127,8 @@ export const getAuthFromCookies = (cookieHeader?: string | null) => {
   }
 
   return { token, refreshToken, user };
+};
+
+export const getAccessTokenFromCookies = (cookieHeader?: string | null): string | undefined => {
+  return getAuthFromCookies(cookieHeader).token;
 };
