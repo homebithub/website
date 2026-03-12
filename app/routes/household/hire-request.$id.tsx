@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
 import { API_ENDPOINTS } from '~/config/api';
 import { apiClient } from '~/utils/apiClient';
 import NegotiationPanel from '~/components/hiring/NegotiationPanel';
 import { Briefcase, Calendar, DollarSign, FileText, CheckCircle, XCircle, Ban } from 'lucide-react';
+import { useHiringSSE } from '~/hooks/useHiringSSE';
 
 interface HireRequest {
   id: string;
@@ -106,6 +107,37 @@ export default function HireRequestDetail() {
       setLoading(false);
     }
   };
+
+  // SSE for real-time hire request updates
+  useHiringSSE(
+    undefined, // onHireRequestReceived - not relevant for detail page
+    // onHireRequestAccepted
+    useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
+      if (event.data.request_id === id) {
+        console.log('[HireRequestDetail SSE] Request accepted:', event.data);
+        alert('This hire request has been accepted!');
+        fetchHireRequest();
+      }
+    }, [id]),
+    // onHireRequestRejected
+    useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
+      if (event.data.request_id === id) {
+        console.log('[HireRequestDetail SSE] Request rejected:', event.data);
+        alert('This hire request has been rejected.');
+        fetchHireRequest();
+      }
+    }, [id]),
+    // onContractSigned
+    useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
+      console.log('[HireRequestDetail SSE] Contract signed:', event.data);
+      if (event.data.signer_name) {
+        alert(`Contract signed by ${event.data.signer_name}!`);
+      }
+      checkExistingEmploymentContract();
+    }, []),
+    undefined, // onContractExpiring - not relevant for hire request detail
+    undefined  // onContractTerminated - not relevant for hire request detail
+  );
 
   const handleCancelRequest = async () => {
     if (!confirm('Are you sure you want to cancel this hire request?')) {

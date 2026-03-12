@@ -7,6 +7,7 @@ import { ThemeProvider } from "~/contexts/ThemeContext";
 import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
 import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
 import { WebSocketProvider } from "~/contexts/WebSocketContext";
+import { SSEProvider } from "~/contexts/SSEContext";
 import { AUTH_API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL, PAYMENTS_API_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
@@ -154,13 +155,15 @@ export default function App() {
                 />
                 <ThemeProvider>
                     <AuthProvider>
-                        <WebSocketProvider>
-                            <ProfileSetupProvider>
-                                <ProfileSetupGuard>
-                                    <Outlet/>
-                                </ProfileSetupGuard>
-                            </ProfileSetupProvider>
-                        </WebSocketProvider>
+                        <SSEProvider>
+                            <WebSocketProvider>
+                                <ProfileSetupProvider>
+                                    <ProfileSetupGuard>
+                                        <Outlet/>
+                                    </ProfileSetupGuard>
+                                </ProfileSetupProvider>
+                            </WebSocketProvider>
+                        </SSEProvider>
                     </AuthProvider>
                 </ThemeProvider>
                 <ScrollRestoration/>
