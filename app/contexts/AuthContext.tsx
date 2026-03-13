@@ -99,31 +99,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       const normalizedPhone = normalizeKenyanPhoneNumber(phone);
-      const loginResponse = await fetch(API_ENDPOINTS.auth.login, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ phone: normalizedPhone, password }),
-      });
-
-      if (!loginResponse.ok) {
-        const errorBody = await loginResponse.json().catch(() => null);
-        throw new Error(extractErrorMessage(errorBody) || "Login failed");
-      }
-
-      const dataResponse = await loginResponse.json();
       
-      const data = (dataResponse as any).data || dataResponse;
-      const token = (data as any).token?.stringValue || (data as any).token || "";
-      const refreshToken = (data as any).refresh_token?.stringValue || (data as any).refresh_token || "";
-      const userData = (data as any).user?.structValue?.fields || (data as any).user || {};
+      // Use gRPC-Web instead of REST
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const loginResponse = await authService.login(normalizedPhone, password);
+
+      // Extract data from gRPC response
+      const token = loginResponse.getToken();
+      const refreshToken = loginResponse.getRefreshToken();
+      const userProto = loginResponse.getUser();
+      
+      // Convert gRPC User to plain object
+      const userData = {
+        id: userProto?.getId() || "",
+        email: userProto?.getEmail() || "",
+        phone: userProto?.getPhone() || "",
+        first_name: userProto?.getFirstName() || "",
+        last_name: userProto?.getLastName() || "",
+        profile_type: userProto?.getProfileType() || "",
+        is_verified: userProto?.getIsVerified() || false,
+        profile_image: userProto?.getProfileImage() || "",
+      };
 
       setAuthCookies(token, refreshToken, userData);
       localStorage.setItem("token", token);
       localStorage.setItem("user_object", JSON.stringify(userData));
       
-      const profileType = userData.profile_type?.stringValue || userData.profile_type || "";
+      const profileType = userData.profile_type || "";
       localStorage.setItem("profile_type", profileType);
       localStorage.setItem("userType", profileType);
       
