@@ -55,6 +55,10 @@ protoc \
     $PROTO_DIR/events/events.proto
 
 echo -e "${GREEN}✅ TypeScript gRPC-Web clients generated successfully!${NC}"
+
+echo -e "${GREEN}Converting CommonJS to ES modules...${NC}"
+node scripts/fix-grpc-imports.js
+
 echo -e "${GREEN}Output directory: $OUT_DIR${NC}"
 echo -e "${YELLOW}Generated files:${NC}"
 echo -e "${YELLOW}  - *_pb.js (message types)${NC}"

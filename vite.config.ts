@@ -10,6 +10,10 @@ export default defineConfig({
   build: {
     target: "es2022",
     minify: "esbuild",
+    commonjsOptions: {
+      include: [/node_modules/, /app\/grpc\/generated/],
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {
