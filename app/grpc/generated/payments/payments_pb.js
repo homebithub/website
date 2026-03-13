@@ -11,11 +11,11 @@
 /* eslint-disable */
 // @ts-nocheck
 
-var jspb = require('google-protobuf');
-var goog = jspb;
+import * as jspb from 'google-protobuf';
+const goog = jspb;
 var global = globalThis;
 
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
+import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js';
 goog.object.extend(proto, google_protobuf_timestamp_pb);
 goog.exportSymbol('proto.payments.AcceptRetentionOfferRequest', null, global);
 goog.exportSymbol('proto.payments.AcceptRetentionOfferResponse', null, global);
@@ -9580,10 +9580,10 @@ proto.payments.DownloadReceiptResponse.serializeBinaryToWriter = function(messag
 
 /**
  * optional bytes pdf_data = 1;
- * @return {string}
+ * @return {!(string|Uint8Array)}
  */
 proto.payments.DownloadReceiptResponse.prototype.getPdfData = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 

@@ -64,9 +64,30 @@ function convertCommonJSToESM(filePath) {
   );
   
   // Replace module.exports with export
+  // Note: proto.auth.AuthServiceClient (capital A) is the actual class name
   content = content.replace(
-    /module\.exports = proto\.(auth|notifications|payments|events|device);/g,
-    'export default proto.$1;\nexport const { $1ServiceClient, $1ServicePromiseClient } = proto.$1;'
+    /module\.exports = proto\.auth;/g,
+    'export default proto.auth;\nexport const { AuthServiceClient, AuthServicePromiseClient } = proto.auth;'
+  );
+  
+  content = content.replace(
+    /module\.exports = proto\.notifications;/g,
+    'export default proto.notifications;\nexport const { NotificationsServiceClient, NotificationsServicePromiseClient } = proto.notifications;'
+  );
+  
+  content = content.replace(
+    /module\.exports = proto\.payments;/g,
+    'export default proto.payments;\nexport const { PaymentsServiceClient, PaymentsServicePromiseClient } = proto.payments;'
+  );
+  
+  content = content.replace(
+    /module\.exports = proto\.events;/g,
+    'export default proto.events;\nexport const { EventsServiceClient, EventsServicePromiseClient } = proto.events;'
+  );
+  
+  content = content.replace(
+    /module\.exports = proto\.device;/g,
+    'export default proto.device;\nexport const { DeviceServiceClient, DeviceServicePromiseClient } = proto.device;'
   );
   
   // For auth_pb.js files - replace require with import

@@ -11,15 +11,15 @@
 /* eslint-disable */
 // @ts-nocheck
 
-var jspb = require('google-protobuf');
-var goog = jspb;
+import * as jspb from 'google-protobuf';
+const goog = jspb;
 var global = globalThis;
 
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
+import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js';
 goog.object.extend(proto, google_protobuf_timestamp_pb);
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js';
 goog.object.extend(proto, google_protobuf_empty_pb);
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
+import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 goog.object.extend(proto, google_protobuf_struct_pb);
 goog.exportSymbol('proto.auth.AddNegotiationReq', null, global);
 goog.exportSymbol('proto.auth.ApproveRejectReq', null, global);
@@ -20486,10 +20486,10 @@ proto.auth.UploadImagesReq.prototype.setUserId = function(value) {
 
 /**
  * repeated bytes images = 2;
- * @return {!Array<string>}
+ * @return {!(Array<!Uint8Array>|Array<string>)}
  */
 proto.auth.UploadImagesReq.prototype.getImagesList = function() {
-  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 2));
+  return /** @type {!(Array<!Uint8Array>|Array<string>)} */ (jspb.Message.getRepeatedField(this, 2));
 };
 
 
@@ -20793,10 +20793,10 @@ proto.auth.UploadDocumentsReq.prototype.setUserId = function(value) {
 
 /**
  * repeated bytes files = 2;
- * @return {!Array<string>}
+ * @return {!(Array<!Uint8Array>|Array<string>)}
  */
 proto.auth.UploadDocumentsReq.prototype.getFilesList = function() {
-  return /** @type {!Array<string>} */ (jspb.Message.getRepeatedField(this, 2));
+  return /** @type {!(Array<!Uint8Array>|Array<string>)} */ (jspb.Message.getRepeatedField(this, 2));
 };
 
 

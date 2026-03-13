@@ -11,11 +11,11 @@
 /* eslint-disable */
 // @ts-nocheck
 
-var jspb = require('google-protobuf');
-var goog = jspb;
+import * as jspb from 'google-protobuf';
+const goog = jspb;
 var global = globalThis;
 
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
+import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 goog.object.extend(proto, google_protobuf_struct_pb);
 goog.exportSymbol('proto.notifications.BlastActionRequest', null, global);
 goog.exportSymbol('proto.notifications.BlastActionResponse', null, global);
@@ -13887,10 +13887,10 @@ proto.notifications.SendEmailRequest.prototype.hasVariables = function() {
 
 /**
  * optional bytes attachment_data = 7;
- * @return {string}
+ * @return {!(string|Uint8Array)}
  */
 proto.notifications.SendEmailRequest.prototype.getAttachmentData = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
 };
 
 
