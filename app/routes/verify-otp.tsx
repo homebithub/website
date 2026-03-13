@@ -194,31 +194,34 @@ export default function VerifyOtpPage() {
     setSuccess(false);
     setOtpError(null);
     try {
-      // Call your backend OTP verification endpoint here
-      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({  user_id, verification_type: verification.type, otp }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        console.log(err)
-        throw new Error(extractErrorMessage(err) || 'OTP verification failed');
-      }
-      const userData = await res.json();
-      console.log('[VERIFY-OTP] Raw response:', JSON.stringify(userData));
+      // Use gRPC-Web instead of REST
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const verifyResponse = await authService.verifyOTP(user_id, verification.type, otp);
       
-      // Flatten user data: gateway returns { user: { id, profile_type, ... }, token }
-      const userObj = userData.user || {};
+      console.log('[VERIFY-OTP] gRPC response received');
+      
+      // Extract data from gRPC response
+      const token = verifyResponse.getToken();
+      const refreshToken = verifyResponse.getRefreshToken();
+      const userProto = verifyResponse.getUser();
+      
+      // Convert proto User to plain object
       const flatUser = {
-        ...userObj,
-        user_id: userObj.id || userObj.user_id,
-        profile_type: userObj.profile_type || localStorage.getItem('profile_type') || '',
+        user_id: userProto?.getId() || user_id,
+        email: userProto?.getEmail() || '',
+        phone: userProto?.getPhone() || '',
+        first_name: userProto?.getFirstName() || '',
+        last_name: userProto?.getLastName() || '',
+        profile_type: userProto?.getProfileType() || localStorage.getItem('profile_type') || '',
+        is_verified: userProto?.getIsVerified() || false,
+        profile_image: userProto?.getProfileImage() || '',
       };
       
+      console.log('[VERIFY-OTP] Extracted user data:', flatUser);
+      
       // Store token and user_object in localStorage
-      if (userData.token) {
-        setAuthCookies(userData.token, userData.refresh_token, flatUser);
+      if (token) {
+        setAuthCookies(token, refreshToken, flatUser);
         localStorage.setItem('user_object', JSON.stringify(flatUser));
 
         // Persist profile metadata consistently with login flow
