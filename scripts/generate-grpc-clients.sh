@@ -42,10 +42,10 @@ fi
 
 echo -e "${GREEN}Generating TypeScript clients...${NC}"
 
-# Generate JavaScript code with CommonJS imports
+# Generate JavaScript code with ES6 imports for browser compatibility
 protoc \
-    --js_out=import_style=commonjs:$OUT_DIR \
-    --grpc-web_out=import_style=typescript,mode=grpcwebtext:$OUT_DIR \
+    --js_out=import_style=commonjs,binary:$OUT_DIR \
+    --grpc-web_out=import_style=commonjs+dts,mode=grpcwebtext:$OUT_DIR \
     --proto_path=$PROTO_DIR \
     --proto_path=$PROTO_DIR/.. \
     $PROTO_DIR/auth/auth.proto \

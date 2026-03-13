@@ -213,6 +213,16 @@ export default function SignupPage() {
         e.preventDefault();
         
         console.log('[SIGNUP] Form submitted', form);
+        console.log('[SIGNUP] Current field errors:', fieldErrors);
+        console.log('[SIGNUP] Button disabled state:', {
+            formLoading,
+            hasProfileType: !!form.profile_type.trim(),
+            hasFieldErrors: Object.keys(fieldErrors).some(key => fieldErrors[key]),
+            hasFirstName: !!form.first_name.trim(),
+            hasLastName: !!form.last_name.trim(),
+            hasPassword: !!form.password.trim(),
+            hasPhone: !!form.phone.trim()
+        });
         
         // Validate entire form
         const validation = validateForm(signupSchema, form);
@@ -339,14 +349,18 @@ export default function SignupPage() {
                 );
                 
                 // Extract data from gRPC response
-                const userProto = signupResponse.getUser();
+                const userId = signupResponse.getUserId();
+                const token = signupResponse.getToken();
                 const verificationProto = signupResponse.getVerification();
+                
+                console.log('[SIGNUP] gRPC response:', { userId, token, hasVerification: !!verificationProto });
                 
                 data = {
                     user: {
-                        user_id: userProto?.getId() || '',
-                        profile_type: userProto?.getProfileType() || form.profile_type,
+                        user_id: userId,
+                        profile_type: form.profile_type,
                     },
+                    token: token,
                     verification: verificationProto ? {
                         id: verificationProto.getId(),
                         user_id: verificationProto.getUserId(),
@@ -364,7 +378,8 @@ export default function SignupPage() {
                     } : undefined,
                 };
             } catch (err: any) {
-                console.log('[SIGNUP] gRPC error:', err);
+                console.error('[SIGNUP] gRPC error:', err);
+                console.error('[SIGNUP] Error stack:', err.stack);
                 
                 const errorMsg = err.message || 'Signup failed';
                 const lowerMsg = errorMsg.toLowerCase();
@@ -382,11 +397,13 @@ export default function SignupPage() {
                     } else {
                         setError('Account already exists');
                     }
+                    setFormLoading(false);
                     return;
                 }
                 
                 // For all other errors
                 setError(errorMsg);
+                setFormLoading(false);
                 return;
             }
             

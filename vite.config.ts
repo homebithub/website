@@ -49,9 +49,8 @@ export default defineConfig({
       "lucide-react",
       "react-icons/fc",
       "joi",
-      "@protobuf-ts/grpcweb-transport",
-      "@protobuf-ts/runtime-rpc",
-      "@protobuf-ts/runtime",
+      "google-protobuf",
+      "grpc-web",
       "web-vitals",
     ],
     exclude: ["@tinymce/tinymce-react"], // Large library that doesn't need pre-bundling
