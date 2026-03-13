@@ -4,7 +4,7 @@
  * Provides authentication methods using gRPC-Web protocol
  */
 
-import { AuthServiceClient } from '~/grpc/generated/auth/AuthServiceClientPb';
+import { AuthServiceClient } from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb from '~/grpc/generated/auth/auth_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
