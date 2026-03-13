@@ -40,7 +40,7 @@ function convertCommonJSToESM(filePath) {
   
   content = content.replace(
     /const proto = \{\};\nproto\.auth = require\('\.\/auth_pb\.js'\);/g,
-    "import * as auth_pb from './auth_pb.js';\nconst proto = { auth: auth_pb };"
+    "import './auth_pb.js';\nconst proto = globalThis.__proto_auth || {};\nif (!proto.auth) proto.auth = {};"
   );
   
   content = content.replace(

@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Script to generate TypeScript gRPC-Web clients from proto files
-# Uses protoc-gen-grpc-web for browser-compatible gRPC clients
+# Script to generate TypeScript clients using ts-proto
+# This generates proper ES modules that work in browsers
 
 set -e
 
@@ -11,7 +11,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}Generating TypeScript gRPC-Web clients...${NC}"
+echo -e "${GREEN}Generating TypeScript clients with ts-proto...${NC}"
 
 # Directories
 PROTO_DIR="../homebit-pkg/proto"
@@ -33,19 +33,16 @@ if ! command -v protoc &> /dev/null; then
     exit 1
 fi
 
-# Check for protoc-gen-grpc-web
-if ! command -v protoc-gen-grpc-web &> /dev/null; then
-    echo -e "${YELLOW}protoc-gen-grpc-web not found. Installing...${NC}"
-    echo -e "${YELLOW}Run: brew install protoc-gen-grpc-web${NC}"
-    exit 1
-fi
+echo -e "${GREEN}Generating TypeScript clients with ts-proto...${NC}"
 
-echo -e "${GREEN}Generating TypeScript clients...${NC}"
-
-# Generate JavaScript code with ES6 imports for browser compatibility
+# Generate TypeScript code with ts-proto for nice-grpc-web
 protoc \
-    --js_out=import_style=commonjs,binary:$OUT_DIR \
-    --grpc-web_out=import_style=commonjs+dts,mode=grpcwebtext:$OUT_DIR \
+    --plugin=./node_modules/.bin/protoc-gen-ts_proto \
+    --ts_proto_out=$OUT_DIR \
+    --ts_proto_opt=outputServices=nice-grpc,outputServices=generic-definitions,useExactTypes=false \
+    --ts_proto_opt=esModuleInterop=true \
+    --ts_proto_opt=env=browser \
+    --ts_proto_opt=useOptionals=messages \
     --proto_path=$PROTO_DIR \
     --proto_path=$PROTO_DIR/.. \
     $PROTO_DIR/auth/auth.proto \
@@ -54,9 +51,7 @@ protoc \
     $PROTO_DIR/payments/payments.proto \
     $PROTO_DIR/events/events.proto
 
-echo -e "${GREEN}✅ TypeScript gRPC-Web clients generated successfully!${NC}"
+echo -e "${GREEN}✅ TypeScript clients generated successfully!${NC}"
 echo -e "${GREEN}Output directory: $OUT_DIR${NC}"
 echo -e "${YELLOW}Generated files:${NC}"
-echo -e "${YELLOW}  - *_pb.js (message types)${NC}"
-echo -e "${YELLOW}  - *_grpc_web_pb.js (service clients)${NC}"
-echo -e "${YELLOW}  - *ServiceClientPb.ts (TypeScript definitions)${NC}"
+echo -e "${YELLOW}  - *.ts (TypeScript message types and services)${NC}"

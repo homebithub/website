@@ -4,14 +4,30 @@
  * Provides authentication methods using gRPC-Web protocol
  */
 
-import { AuthServiceClient } from '~/grpc/generated/auth/auth_grpc_web_pb';
-import * as auth_pb from '~/grpc/generated/auth/auth_pb';
+import { createChannel, createClientFactory, Metadata } from 'nice-grpc-web';
+import { 
+  AuthServiceDefinition,
+  type AuthServiceClient,
+  type SignupRequest,
+  type SignupResponse,
+  type LoginRequest,
+  type LoginResponse,
+  type SendOTPRequest,
+  type VerifyOTPRequest,
+  type VerifyOTPResponse,
+} from '~/grpc/generated/auth/auth';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 
+// Create gRPC-Web channel
+const channel = createChannel(GRPC_WEB_BASE_URL);
+
+// Create client factory
+const clientFactory = createClientFactory();
+
 // Create singleton client instance
 console.log('[gRPC-Web] Initializing AuthServiceClient with base URL:', GRPC_WEB_BASE_URL);
-const authClient = new AuthServiceClient(GRPC_WEB_BASE_URL, null, null);
+const authClient: AuthServiceClient = clientFactory.create(AuthServiceDefinition, channel);
 
 /**
  * Get metadata with auth token
@@ -40,121 +56,109 @@ export const authService = {
     lastName: string,
     profileType: string,
     bureauId?: string
-  ): Promise<auth_pb.SignupResponse> {
+  ): Promise<SignupResponse> {
     console.log('[gRPC-Web] signup() called with:', { phone, firstName, lastName, profileType, bureauId });
     
-    return new Promise((resolve, reject) => {
-      try {
-        const request = new auth_pb.SignupRequest();
-        request.setPhone(phone);
-        request.setPassword(password);
-        request.setFirstName(firstName);
-        request.setLastName(lastName);
-        request.setProfileType(profileType);
-        
-        if (bureauId) {
-          request.setBureauId(bureauId);
-        }
+    try {
+      const request: SignupRequest = {
+        phone,
+        password,
+        firstName,
+        lastName,
+        profileType,
+        bureauId: bureauId || '',
+        householdId: '',
+        dateOfBirth: '',
+        signedDate: '',
+      };
 
-        console.log('[gRPC-Web] Making signup request to:', GRPC_WEB_BASE_URL);
-        
-        authClient.signup(request, getMetadata(), (err, response) => {
-          if (err) {
-            console.error('[gRPC-Web] signup error:', err);
-            reject(handleGrpcError(err));
-          } else {
-            console.log('[gRPC-Web] signup success:', response);
-            resolve(response);
-          }
-        });
-      } catch (error) {
-        console.error('[gRPC-Web] signup exception:', error);
-        reject(error);
-      }
-    });
+      console.log('[gRPC-Web] Making signup request to:', GRPC_WEB_BASE_URL);
+      
+      const response = await authClient.signup(request, {
+        metadata: Metadata(getMetadata()),
+      });
+      
+      console.log('[gRPC-Web] signup success:', response);
+      return response;
+    } catch (error) {
+      console.error('[gRPC-Web] signup error:', error);
+      throw handleGrpcError(error);
+    }
   },
 
   /**
    * Log in an existing user
    */
-  async login(phone: string, password: string): Promise<auth_pb.LoginResponse> {
-    return new Promise((resolve, reject) => {
-      const request = new auth_pb.LoginRequest();
-      request.setPhone(phone);
-      request.setPassword(password);
+  async login(phone: string, password: string): Promise<LoginResponse> {
+    try {
+      const request: LoginRequest = {
+        phone,
+        password,
+      };
 
-      authClient.login(request, getMetadata(), (err, response) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
-        }
+      const response = await authClient.login(request, {
+        metadata: Metadata(getMetadata()),
       });
-    });
+      
+      return response;
+    } catch (error) {
+      throw handleGrpcError(error);
+    }
   },
 
   /**
-   * Send OTP for verification
-   * @param userId - User ID
-   * @param verificationType - Type of verification (e.g., 'phone', 'email')
-   * @param target - Target phone number or email
+   * Send OTP to user
    */
   async sendOTP(userId: string, verificationType: string, target: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const request = new auth_pb.SendOTPRequest();
-      request.setUserId(userId);
-      request.setVerificationType(verificationType);
-      request.setTarget(target);
+    try {
+      const request: SendOTPRequest = {
+        userId,
+        verificationType,
+        target,
+      };
 
-      authClient.sendOTP(request, getMetadata(), (err) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve();
-        }
+      await authClient.sendOTP(request, {
+        metadata: Metadata(getMetadata()),
       });
-    });
+    } catch (error) {
+      throw handleGrpcError(error);
+    }
   },
 
   /**
    * Verify OTP
-   * @param userId - User ID
-   * @param verificationType - Type of verification
-   * @param otp - OTP code
    */
-  async verifyOTP(userId: string, verificationType: string, otp: string): Promise<auth_pb.VerifyOTPResponse> {
-    return new Promise((resolve, reject) => {
-      const request = new auth_pb.VerifyOTPRequest();
-      request.setUserId(userId);
-      request.setVerificationType(verificationType);
-      request.setOtp(otp);
+  async verifyOTP(userId: string, verificationType: string, otp: string): Promise<VerifyOTPResponse> {
+    try {
+      const request: VerifyOTPRequest = {
+        userId,
+        verificationType,
+        otp,
+      };
 
-      authClient.verifyOTP(request, getMetadata(), (err, response) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
-        }
+      const response = await authClient.verifyOTP(request, {
+        metadata: Metadata(getMetadata()),
       });
-    });
+      
+      return response;
+    } catch (error) {
+      throw handleGrpcError(error);
+    }
   },
 
   /**
-   * Get current authenticated user
+   * Get current user
    */
-  async getCurrentUser(userId: string): Promise<auth_pb.User> {
-    return new Promise((resolve, reject) => {
-      const request = new auth_pb.GetCurrentUserRequest();
-      request.setUserId(userId);
-
-      authClient.getCurrentUser(request, getMetadata(), (err, response) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
-        }
+  async getCurrentUser(): Promise<any> {
+    try {
+      const response = await authClient.getCurrentUser({}, {
+        metadata: Metadata(getMetadata()),
       });
-    });
+      
+      return response;
+    } catch (error) {
+      throw handleGrpcError(error);
+    }
   },
 
   /**
