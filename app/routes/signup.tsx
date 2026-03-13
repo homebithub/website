@@ -322,66 +322,73 @@ export default function SignupPage() {
                 return;
             }
             
-            // Regular signup flow
-            let payload = { ...form };
-            // Normalize phone number to international format
-            payload.phone = normalizeKenyanPhoneNumber(form.phone);
+            // Regular signup flow - use gRPC-Web
+            const normalizedPhone = normalizeKenyanPhoneNumber(form.phone);
             
-            if (form.profile_type === 'househelp' && bureauId) {
-                payload = { ...payload, bureau_id: bureauId };
-            }
-            const res = await fetch(`${base_url}/api/v1/auth/register`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload),
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                console.log('[SIGNUP] Backend error response:', err);
+            let data: any;
+            try {
+                // Use gRPC-Web instead of REST
+                const { default: authService } = await import('~/services/grpc/auth.service');
+                const signupResponse = await authService.signup(
+                    normalizedPhone,
+                    form.password,
+                    form.first_name,
+                    form.last_name,
+                    form.profile_type,
+                    form.profile_type === 'househelp' && bureauId ? bureauId : undefined
+                );
                 
-                // Extract message from any response shape (gateway or legacy)
-                const errorMsg = extractErrorMessage(err);
+                // Extract data from gRPC response
+                const userProto = signupResponse.getUser();
+                const verificationProto = signupResponse.getVerification();
                 
-                // Check if backend returned field-specific errors (legacy shape)
-                if (err.errors && typeof err.errors === 'object') {
-                    const backendErrors: { [key: string]: string } = {};
-                    Object.keys(err.errors).forEach(key => {
-                        backendErrors[key] = err.errors[key];
-                    });
-                    
-                    setFieldErrors(backendErrors);
-                    
-                    const touchedErrorFields = Object.keys(backendErrors).reduce((acc, key) => {
-                        acc[key] = true;
-                        return acc;
-                    }, {} as { [key: string]: boolean });
-                    setTouchedFields(prev => ({ ...prev, ...touchedErrorFields }));
-                    
-                    const errorCount = Object.keys(backendErrors).length;
-                    setError(`Please fix ${errorCount} error${errorCount > 1 ? 's' : ''} in the form`);
-                    return;
-                }
+                data = {
+                    user: {
+                        user_id: userProto?.getId() || '',
+                        profile_type: userProto?.getProfileType() || form.profile_type,
+                    },
+                    verification: verificationProto ? {
+                        id: verificationProto.getId(),
+                        user_id: verificationProto.getUserId(),
+                        type: verificationProto.getType(),
+                        status: verificationProto.getStatus(),
+                        target: verificationProto.getTarget(),
+                        expires_at: verificationProto.getExpiresAt()?.toDate().toISOString() || '',
+                        next_resend_at: verificationProto.getNextResendAt()?.toDate().toISOString() || '',
+                        attempts: verificationProto.getAttempts(),
+                        max_attempts: verificationProto.getMaxAttempts(),
+                        resends: verificationProto.getResends(),
+                        max_resends: verificationProto.getMaxResends(),
+                        created_at: verificationProto.getCreatedAt()?.toDate().toISOString() || '',
+                        updated_at: verificationProto.getUpdatedAt()?.toDate().toISOString() || '',
+                    } : undefined,
+                };
+            } catch (err: any) {
+                console.log('[SIGNUP] gRPC error:', err);
                 
-                // Handle conflict / duplicate errors (409 or message-based)
+                const errorMsg = err.message || 'Signup failed';
                 const lowerMsg = errorMsg.toLowerCase();
-                if (res.status === 409 || lowerMsg.includes('already exists')) {
-                    const friendlyMsg = handleApiError(err, 'signup');
-                    
+                
+                // Handle duplicate phone/email errors
+                if (lowerMsg.includes('already exists')) {
                     if (lowerMsg.includes('phone')) {
-                        setFieldErrors({ phone: friendlyMsg });
+                        setFieldErrors({ phone: 'This phone number is already registered' });
                         setTouchedFields(prev => ({ ...prev, phone: true }));
+                        setError('This phone number is already registered');
                     } else if (lowerMsg.includes('email')) {
-                        setFieldErrors({ email: friendlyMsg });
+                        setFieldErrors({ email: 'This email is already registered' });
                         setTouchedFields(prev => ({ ...prev, email: true }));
+                        setError('This email is already registered');
+                    } else {
+                        setError('Account already exists');
                     }
-                    setError(friendlyMsg);
                     return;
                 }
                 
-                // For all other errors, transform and show
-                throw new Error(errorMsg || 'Signup failed');
+                // For all other errors
+                setError(errorMsg);
+                return;
             }
-            const data = await res.json();
             
             console.log('[SIGNUP] Full response:', JSON.stringify(data));
             
