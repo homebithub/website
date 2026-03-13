@@ -10,6 +10,7 @@ import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 
 // Create singleton client instance
+console.log('[gRPC-Web] Initializing AuthServiceClient with base URL:', GRPC_WEB_BASE_URL);
 const authClient = new AuthServiceClient(GRPC_WEB_BASE_URL, null, null);
 
 /**
@@ -40,25 +41,36 @@ export const authService = {
     profileType: string,
     bureauId?: string
   ): Promise<auth_pb.SignupResponse> {
+    console.log('[gRPC-Web] signup() called with:', { phone, firstName, lastName, profileType, bureauId });
+    
     return new Promise((resolve, reject) => {
-      const request = new auth_pb.SignupRequest();
-      request.setPhone(phone);
-      request.setPassword(password);
-      request.setFirstName(firstName);
-      request.setLastName(lastName);
-      request.setProfileType(profileType);
-      
-      if (bureauId) {
-        request.setBureauId(bureauId);
-      }
-
-      authClient.signup(request, getMetadata(), (err, response) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
+      try {
+        const request = new auth_pb.SignupRequest();
+        request.setPhone(phone);
+        request.setPassword(password);
+        request.setFirstName(firstName);
+        request.setLastName(lastName);
+        request.setProfileType(profileType);
+        
+        if (bureauId) {
+          request.setBureauId(bureauId);
         }
-      });
+
+        console.log('[gRPC-Web] Making signup request to:', GRPC_WEB_BASE_URL);
+        
+        authClient.signup(request, getMetadata(), (err, response) => {
+          if (err) {
+            console.error('[gRPC-Web] signup error:', err);
+            reject(handleGrpcError(err));
+          } else {
+            console.log('[gRPC-Web] signup success:', response);
+            resolve(response);
+          }
+        });
+      } catch (error) {
+        console.error('[gRPC-Web] signup exception:', error);
+        reject(error);
+      }
     });
   },
 
