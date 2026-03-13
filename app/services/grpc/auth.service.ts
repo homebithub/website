@@ -4,12 +4,13 @@
  * Provides authentication methods using gRPC-Web protocol
  */
 
-import protoAuth from '~/grpc/generated/auth/auth_grpc_web_pb';
+import * as protoAuth from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb from '~/grpc/generated/auth/auth_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 
 // Extract AuthServiceClient from the proto namespace
+// @ts-ignore - CommonJS module
 const { AuthServiceClient } = protoAuth;
 
 // Create singleton client instance
