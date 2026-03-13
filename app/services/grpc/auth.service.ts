@@ -15,7 +15,7 @@ const authClient = new AuthServiceClient(GRPC_WEB_BASE_URL, null, null);
 /**
  * Get metadata with auth token
  */
-function getMetadata() {
+function getMetadata(): { [key: string]: string } {
   const token = getAccessTokenFromCookies();
   if (token) {
     return {
@@ -32,15 +32,25 @@ export const authService = {
   /**
    * Sign up a new user
    */
-  async signup(email: string, password: string, phone: string, firstName: string, lastName: string, profileType: string): Promise<auth_pb.SignupResponse> {
+  async signup(
+    phone: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    profileType: string,
+    bureauId?: string
+  ): Promise<auth_pb.SignupResponse> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.SignupRequest();
-      request.setEmail(email);
-      request.setPassword(password);
       request.setPhone(phone);
+      request.setPassword(password);
       request.setFirstName(firstName);
       request.setLastName(lastName);
       request.setProfileType(profileType);
+      
+      if (bureauId) {
+        request.setBureauId(bureauId);
+      }
 
       authClient.signup(request, getMetadata(), (err, response) => {
         if (err) {
@@ -55,10 +65,10 @@ export const authService = {
   /**
    * Log in an existing user
    */
-  async login(email: string, password: string): Promise<auth_pb.LoginResponse> {
+  async login(phone: string, password: string): Promise<auth_pb.LoginResponse> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.LoginRequest();
-      request.setEmail(email);
+      request.setPhone(phone);
       request.setPassword(password);
 
       authClient.login(request, getMetadata(), (err, response) => {
@@ -73,12 +83,16 @@ export const authService = {
 
   /**
    * Send OTP for verification
+   * @param userId - User ID
+   * @param verificationType - Type of verification (e.g., 'phone', 'email')
+   * @param target - Target phone number or email
    */
-  async sendOTP(phone: string, type: string): Promise<void> {
+  async sendOTP(userId: string, verificationType: string, target: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.SendOTPRequest();
-      request.setPhone(phone);
-      request.setType(type);
+      request.setUserId(userId);
+      request.setVerificationType(verificationType);
+      request.setTarget(target);
 
       authClient.sendOTP(request, getMetadata(), (err) => {
         if (err) {
@@ -92,13 +106,16 @@ export const authService = {
 
   /**
    * Verify OTP
+   * @param userId - User ID
+   * @param verificationType - Type of verification
+   * @param otp - OTP code
    */
-  async verifyOTP(phone: string, code: string, type: string): Promise<auth_pb.VerifyOTPResponse> {
+  async verifyOTP(userId: string, verificationType: string, otp: string): Promise<auth_pb.VerifyOTPResponse> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.VerifyOTPRequest();
-      request.setPhone(phone);
-      request.setCode(code);
-      request.setType(type);
+      request.setUserId(userId);
+      request.setVerificationType(verificationType);
+      request.setOtp(otp);
 
       authClient.verifyOTP(request, getMetadata(), (err, response) => {
         if (err) {
