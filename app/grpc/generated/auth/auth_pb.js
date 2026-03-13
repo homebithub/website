@@ -25447,4 +25447,4 @@ proto.auth.ProfileTypeRequest.prototype.setProfileType = function(value) {
 };
 
 
-goog.object.extend(exports, proto.auth);
+export default proto.auth;

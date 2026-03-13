@@ -14153,4 +14153,4 @@ proto.notifications.SendEmailResponse.prototype.setSubject = function(value) {
 };
 
 
-goog.object.extend(exports, proto.notifications);
+export default proto.notifications;

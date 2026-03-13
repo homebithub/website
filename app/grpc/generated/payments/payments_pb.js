@@ -29594,4 +29594,4 @@ proto.payments.PaymentMethod.prototype.setLastUsedAt = function(value) {
 };
 
 
-goog.object.extend(exports, proto.payments);
+export default proto.payments;

@@ -10141,4 +10141,4 @@ proto.events.ContractTerminated.prototype.hasTerminatedAt = function() {
 };
 
 
-goog.object.extend(exports, proto.events);
+export default proto.events;

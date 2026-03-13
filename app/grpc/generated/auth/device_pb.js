@@ -4106,4 +4106,4 @@ proto.auth.UpdateDeviceActivityRequest.prototype.setUserId = function(value) {
 };
 
 
-goog.object.extend(exports, proto.auth);
+export default proto.auth;

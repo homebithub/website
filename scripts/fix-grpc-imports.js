@@ -107,6 +107,32 @@ function convertCommonJSToESM(filePath) {
     'export default proto;'
   );
   
+  // Replace goog.object.extend(exports, proto.X) with export
+  content = content.replace(
+    /goog\.object\.extend\(exports, proto\.auth\);/g,
+    'export default proto.auth;'
+  );
+  
+  content = content.replace(
+    /goog\.object\.extend\(exports, proto\.notifications\);/g,
+    'export default proto.notifications;'
+  );
+  
+  content = content.replace(
+    /goog\.object\.extend\(exports, proto\.payments\);/g,
+    'export default proto.payments;'
+  );
+  
+  content = content.replace(
+    /goog\.object\.extend\(exports, proto\.events\);/g,
+    'export default proto.events;'
+  );
+  
+  content = content.replace(
+    /goog\.object\.extend\(exports, proto\.device\);/g,
+    'export default proto.device;'
+  );
+  
   fs.writeFileSync(filePath, content, 'utf8');
   console.log(`✅ Converted: ${path.basename(filePath)}`);
 }
