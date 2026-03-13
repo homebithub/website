@@ -5,6 +5,7 @@ import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 type PetPreference = 'with_pets' | 'no_pets';
 type PetType = 'dog' | 'cat' | 'bird' | 'fish' | 'reptile' | 'small_mammal' | 'other';
@@ -18,6 +19,7 @@ const validateOtherPets = (input: string): boolean => {
 
 const WorkWithPets = () => {
     const { markDirty, markClean } = useProfileSetup();
+    const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [petPreference, setPetPreference] = useState<PetPreference | null>(null);
     const [selectedPets, setSelectedPets] = useState<PetType[]>([]);
     const [otherPets, setOtherPets] = useState('');
@@ -28,15 +30,10 @@ const WorkWithPets = () => {
     const [showOtherPetsInput, setShowOtherPetsInput] = useState(false);
     const navigate = useNavigate();
 
-    const petTypes = [
-        { value: 'dog' as const, label: 'Dogs' },
-        { value: 'cat' as const, label: 'Cats' },
-        { value: 'bird' as const, label: 'Birds' },
-        { value: 'fish' as const, label: 'Fish' },
-        { value: 'reptile' as const, label: 'Reptiles' },
-        { value: 'small_mammal' as const, label: 'Small Mammals (hamsters, guinea pigs, etc.)' },
-        { value: 'other' as const, label: 'Other Pets' },
-    ];
+    const petTypes = options?.pet_types.map(pt => ({
+        value: pt.name.toLowerCase().replace(/\s+/g, '_') as PetType,
+        label: pt.name
+    })) || [];
 
     const togglePetType = (petType: PetType) => {
         const newSelectedPets = selectedPets.includes(petType)

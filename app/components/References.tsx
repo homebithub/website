@@ -4,6 +4,7 @@ import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 interface Reference {
   name: string;
@@ -13,23 +14,19 @@ interface Reference {
   duration: string;
 }
 
-const RELATIONSHIPS = [
-  'Previous Employer',
-  'Current Employer',
-  'Supervisor',
-  'Family Friend',
-  'Professional Reference',
-  'Other'
-];
+// Relationships are now fetched from backend via context
 
 const References: React.FC = () => {
   const { markDirty, markClean } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [references, setReferences] = useState<Reference[]>([
     { name: '', relationship: '', phone: '', email: '', duration: '' }
   ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const RELATIONSHIPS = options?.reference_relationships.map(r => r.name) || [];
 
   // Load existing data
   useEffect(() => {

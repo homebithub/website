@@ -4,18 +4,9 @@ import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
-const RELIGIONS = [
-  'Christianity',
-  'Islam',
-  'Hinduism',
-  'Buddhism',
-  'Judaism',
-  'African Traditional Religions',
-  'Atheism/Agnosticism',
-  'Other',
-  'Prefer not to say'
-];
+// Religions are now fetched from backend via context
 
 interface ReligionProps {
   userType?: 'househelp' | 'household';
@@ -23,11 +14,14 @@ interface ReligionProps {
 
 const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
   const { markDirty, markClean } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedReligion, setSelectedReligion] = useState<string>('');
   const [customReligion, setCustomReligion] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const RELIGIONS = options?.religions.map(r => r.name) || [];
 
   // Load existing data
   useEffect(() => {

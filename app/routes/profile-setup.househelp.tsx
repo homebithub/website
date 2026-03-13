@@ -4,6 +4,8 @@ import { useAuth } from '~/contexts/useAuth';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { OnboardingOptionsProvider } from '~/contexts/OnboardingOptionsContext';
+import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
 import { API_BASE_URL } from '~/config/api';
 
 // Import all the components
@@ -94,6 +96,27 @@ function HousehelpProfileSetupContent() {
     hasUnsavedChanges,
     markClean 
   } = useProfileSetup();
+  
+  // Resume from where left off
+  const { progress, updateProgress } = useOnboardingProgress(user?.id || '', 'househelp');
+  
+  // Resume to last incomplete step on mount
+  useEffect(() => {
+    if (progress && progress.status !== 'completed' && !isProfileLoaded) {
+      const resumeStep = progress.current_step || 0;
+      if (resumeStep > 0 && resumeStep < STEPS.length) {
+        setCurrentStep(resumeStep);
+        setDisplayedStep(resumeStep);
+      }
+    }
+  }, [progress, isProfileLoaded]);
+  
+  // Redirect if already completed
+  useEffect(() => {
+    if (progress?.status === 'completed' && !location.state?.fromProfile) {
+      navigate('/dashboard');
+    }
+  }, [progress, navigate, location.state]);
 
   const currentStepData = STEPS[currentStep];
 
@@ -767,7 +790,9 @@ function HousehelpProfileSetupContent() {
 export default function HousehelpProfileSetup() {
   return (
     <ProfileSetupProvider>
-      <HousehelpProfileSetupContent />
+      <OnboardingOptionsProvider profileType="househelp">
+        <HousehelpProfileSetupContent />
+      </OnboardingOptionsProvider>
     </ProfileSetupProvider>
   );
 }

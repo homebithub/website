@@ -5,6 +5,7 @@ import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 type WorkPreference = 'with_kids' | 'chores_only';
 type AgeRange = '0-2' | '2-5' | '5-10' | '10+';
@@ -12,6 +13,7 @@ type ChildrenCapacity = '1-2' | '2-4' | '5+';
 
 const WorkWithKids = () => {
     const { markDirty, markClean } = useProfileSetup();
+    const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [workPreference, setWorkPreference] = useState<WorkPreference | null>(null);
     const [selectedAges, setSelectedAges] = useState<AgeRange[]>([]);
     const [selectedCapacities, setSelectedCapacities] = useState<ChildrenCapacity[]>([]);
@@ -56,18 +58,15 @@ const WorkWithKids = () => {
         loadData();
     }, []);
 
-    const ageRanges = [
-        { value: '0-2' as const, label: '0-2 years' },
-        { value: '2-5' as const, label: '2-5 years' },
-        { value: '5-10' as const, label: '5-10 years' },
-        { value: '10+' as const, label: '10+ years' },
-    ];
+    const ageRanges = options?.children_age_ranges.map(r => ({
+        value: r.label as AgeRange,
+        label: `${r.label} years`
+    })) || [];
 
-    const capacities = [
-        { value: '1-2' as const, label: '1-2 children' },
-        { value: '2-4' as const, label: '2-4 children' },
-        { value: '5+' as const, label: '5+ children' },
-    ];
+    const capacities = options?.children_capacities.map(c => ({
+        value: c.label as ChildrenCapacity,
+        label: `${c.label} children`
+    })) || [];
 
     const toggleAgeRange = (age: AgeRange) => {
         setSelectedAges(prev => 

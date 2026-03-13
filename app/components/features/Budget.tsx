@@ -5,42 +5,26 @@ import { handleApiError } from '../../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useSalaryRanges } from '~/hooks/useOnboardingOptions';
 
-type BudgetFrequency = 'Daily' | 'Weekly' | 'Monthly';
+type BudgetFrequency = 'daily' | 'weekly' | 'monthly';
 type BudgetRange = string;
-
-const BUDGET_RANGES: Record<BudgetFrequency, BudgetRange[]> = {
-  Daily: [
-    '500-1,000 KES',
-    '1,000-1,500 KES',
-    '1,500-2,000 KES',
-    '2,000+ KES',
-    'Negotiable'
-  ],
-  Weekly: [
-    '2,000-3,000 KES',
-    '3,000-5,000 KES',
-    '5,000-7,500 KES',
-    '7,500+ KES',
-    'Negotiable'
-  ],
-  Monthly: [
-    '5,000-10,000 KES',
-    '10,000-15,000 KES',
-    '15,000-25,000 KES',
-    '25,000+ KES',
-    'Negotiable'
-  ]
-};
 
 const Budget: React.FC = () => {
   const { markDirty, markClean } = useProfileSetup();
-  const [frequency, setFrequency] = useState<BudgetFrequency>('Monthly');
+  const [frequency, setFrequency] = useState<BudgetFrequency>('monthly');
+  const { ranges: budgetRanges, loading: rangesLoading } = useSalaryRanges(frequency);
   const [selectedRange, setSelectedRange] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const submit = useSubmit();
+  
+  const BUDGET_RANGES: Record<BudgetFrequency, BudgetRange[]> = {
+    daily: budgetRanges.map(r => r.label),
+    weekly: budgetRanges.map(r => r.label),
+    monthly: budgetRanges.map(r => r.label)
+  };
 
   // Load existing data (once on mount)
   useEffect(() => {

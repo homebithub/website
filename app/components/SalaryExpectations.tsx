@@ -5,33 +5,10 @@ import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useSalaryRanges } from '~/hooks/useOnboardingOptions';
 
-type SalaryFrequency = 'Daily' | 'Weekly' | 'Monthly';
+type SalaryFrequency = 'daily' | 'weekly' | 'monthly';
 type SalaryRange = string;
-
-const SALARY_RANGES: Record<SalaryFrequency, SalaryRange[]> = {
-  Daily: [
-    '500-1,000 KES',
-    '1,000-1,500 KES',
-    '1,500-2,000 KES',
-    '2,000+ KES',
-    'Negotiable'
-  ],
-  Weekly: [
-    '2,000-3,000 KES',
-    '3,000-5,000 KES',
-    '5,000-7,500 KES',
-    '7,500+ KES',
-    'Negotiable'
-  ],
-  Monthly: [
-    '5,000-10,000 KES',
-    '10,000-15,000 KES',
-    '15,000-25,000 KES',
-    '25,000+ KES',
-    'Negotiable'
-  ]
-};
 
 function parseSalaryRangeToNumber(range: string): number | null {
   const trimmed = (range || '').trim();
@@ -48,12 +25,19 @@ function parseSalaryRangeToNumber(range: string): number | null {
 
 const SalaryExpectations: React.FC = () => {
   const { markDirty, markClean } = useProfileSetup();
-  const [frequency, setFrequency] = useState<SalaryFrequency>('Daily');
+  const [frequency, setFrequency] = useState<SalaryFrequency>('monthly');
+  const { ranges: salaryRanges, loading: rangesLoading } = useSalaryRanges(frequency);
   const [selectedRange, setSelectedRange] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const submit = useSubmit();
+  
+  const SALARY_RANGES: Record<SalaryFrequency, SalaryRange[]> = {
+    daily: salaryRanges.map(r => r.label),
+    weekly: salaryRanges.map(r => r.label),
+    monthly: salaryRanges.map(r => r.label)
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

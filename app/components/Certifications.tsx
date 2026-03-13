@@ -4,33 +4,13 @@ import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
-const CERTIFICATIONS = [
-  'I have a valid driving license',
-  'I have a Certificate of Good Conduct',
-  'I have a First Aid certificate',
-  'I am a non-smoker',
-  'I have a Diploma in Housekeeping',
-  'I have a Childcare certification',
-  'I have experience with special needs care',
-  'I have a Food Handling certificate'
-];
-
-const HELP_WITH_OPTIONS = [
-  'Homework help',
-  'Grocery shopping',
-  'Cooking',
-  'Household chores',
-  'Laundry and ironing',
-  'Childcare',
-  'Elderly care',
-  'Pet care',
-  'Tutoring',
-  'Running errands'
-];
+// Certifications and skills are now fetched from backend via context
 
 const Certifications: React.FC = () => {
   const { markDirty, markClean } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [selectedHelp, setSelectedHelp] = useState<string[]>([]);
   const [otherCerts, setOtherCerts] = useState<string[]>(['']);
@@ -38,6 +18,10 @@ const Certifications: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Get options from backend
+  const CERTIFICATIONS = options?.certifications.map(c => c.name) || [];
+  const HELP_WITH_OPTIONS = options?.skills.map(s => s.name) || [];
 
   // Load existing data
   useEffect(() => {

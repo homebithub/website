@@ -1,6 +1,7 @@
 import useScrollFadeIn from "~/hooks/useScrollFadeIn";
 import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLoaderData, redirect } from "react-router";
+import type { Route } from "./+types/_index";
 import { lazyLoad } from "~/utils/lazyLoad";
 import { transport, getGrpcMetadata } from "~/utils/grpcClient";
 import { ProfileSetupServiceClient } from "~/proto/auth/auth.client";
@@ -26,9 +27,10 @@ const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {
   });
 };
 
-export async function clientLoader() {
-  const { token, user: cookieUser } = getAuthFromCookies();
-  const userObjRaw = cookieUser ? JSON.stringify(cookieUser) : localStorage.getItem('user_object');
+export async function loader({ request }: Route.LoaderArgs) {
+  const cookieHeader = request.headers.get("Cookie");
+  const { token, user: cookieUser } = getAuthFromCookies(cookieHeader);
+  const userObjRaw = cookieUser ? JSON.stringify(cookieUser) : null;
   
   if (!token || !userObjRaw) {
     return { isAuthenticated: false, userType: null };
@@ -86,19 +88,9 @@ export async function clientLoader() {
   return { isAuthenticated: true, userType: profileType };
 }
 
-clientLoader.hydrate = true;
-
-export function HydrateFallback() {
-  return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-pulse text-purple-600 dark:text-purple-400 text-lg font-medium">Loading...</div>
-    </div>
-  );
-}
-
 export default function Index() {
   useScrollFadeIn();
-  const { isAuthenticated, userType } = useLoaderData<typeof clientLoader>();
+  const { isAuthenticated, userType } = useLoaderData<typeof loader>();
 
   // Show authenticated home for logged-in users based on profile type
   if (isAuthenticated) {

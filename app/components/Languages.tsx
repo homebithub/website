@@ -5,86 +5,13 @@ import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
-// List of languages organized by groups
-const LANGUAGE_GROUPS = {
-    kenyanBantu: [
-        'Kikuyu (Gikuyu)',
-        'Kamba (Kikamba)',
-        'Meru',
-        'Embu',
-        'Mbeere',
-        'Luhya',
-        'Bukusu',
-        'Maragoli',
-        'Banyore',
-        'Isukha',
-        'Kisii (Ekegusii)',
-        'Taita',
-        'Chonyi',
-        'Giriama',
-        'Digo',
-        'Rabai',
-        'Kauma',
-        'Duruma',
-        'Pokomo',
-        'Taveta'
-    ],
-    kenyanNilotic: [
-        'Luo (Dholuo)',
-        'Kalenjin',
-        'Nandi',
-        'Kipsigis',
-        'Tugen',
-        'Keiyo',
-        'Marakwet',
-        'Pokot',
-        'Turkana',
-        'Samburu',
-        'Njemps (Ilchamus)',
-        'Teso (Ateso)'
-    ],
-    kenyanCushitic: [
-        'Somali',
-        'Borana',
-        'Rendille',
-        'Gabra',
-        'Orma'
-    ],
-    international: [
-        'Mandarin Chinese',
-        'Spanish',
-        'Hindi',
-        'Arabic',
-        'Bengali',
-        'Portuguese',
-        'Russian',
-        'Japanese',
-        'Punjabi',
-        'German',
-        'French',
-        'Italian',
-        'Korean',
-        'Vietnamese',
-        'Thai',
-        'Swedish',
-        'Dutch',
-        'Greek',
-        'Hebrew',
-        'Turkish'
-    ]
-};
-
-// Flatten all languages into a single array for search
-const COMMON_LANGUAGES = [
-    ...LANGUAGE_GROUPS.kenyanBantu,
-    ...LANGUAGE_GROUPS.kenyanNilotic,
-    ...LANGUAGE_GROUPS.kenyanCushitic,
-    ...LANGUAGE_GROUPS.international
-].sort((a, b) => a.localeCompare(b));
+// Languages are now fetched from backend via context
 
 const Languages = () => {
     const { markDirty, markClean } = useProfileSetup();
+    const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
     const [showOtherLanguages, setShowOtherLanguages] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
@@ -95,17 +22,23 @@ const Languages = () => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
+    // Get languages from backend options
+    const allLanguages = options?.languages || [];
+    const primaryLanguages = allLanguages.filter(l => l.category === 'international' && l.display_order <= 2);
+    const otherLanguages = allLanguages.filter(l => !(l.category === 'international' && l.display_order <= 2));
+    const commonLanguages = otherLanguages.map(l => l.name).sort((a, b) => a.localeCompare(b));
+
     // Filter languages based on search term
     useEffect(() => {
         if (searchTerm.trim() === '') {
-            setFilteredLanguages(COMMON_LANGUAGES);
+            setFilteredLanguages(commonLanguages);
         } else {
-            const filtered = COMMON_LANGUAGES.filter(lang =>
+            const filtered = commonLanguages.filter(lang =>
                 lang.toLowerCase().includes(searchTerm.toLowerCase())
             );
             setFilteredLanguages(filtered);
         }
-    }, [searchTerm]);
+    }, [searchTerm, commonLanguages]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -134,7 +67,7 @@ const Languages = () => {
         setShowOtherLanguages(!showOtherLanguages);
         if (!showOtherLanguages) {
             setSearchTerm('');
-            setFilteredLanguages(COMMON_LANGUAGES);
+            setFilteredLanguages(commonLanguages);
         }
     };
 
@@ -188,6 +121,15 @@ const Languages = () => {
         }
     };
 
+    if (optionsLoading) {
+        return (
+            <div className="max-w-2xl mx-auto text-center py-8">
+                <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full mx-auto" />
+                <p className="mt-4 text-gray-600 dark:text-gray-400">Loading languages...</p>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-2xl mx-auto">
             <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🗣️ Languages</h2>
@@ -204,41 +146,28 @@ const Languages = () => {
                 <div className="space-y-4">
                     <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">Select languages you're comfortable with</h2>
                     
-                    {/* English */}
-                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-sm font-medium ${
-                        selectedLanguages.includes('English')
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
-                            : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
-                    }`}>
-                        <input
-                            type="checkbox"
-                            checked={selectedLanguages.includes('English')}
-                            onChange={() => toggleLanguage('English')}
-                            className="form-checkbox h-5 w-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                        />
-                        <span className="text-gray-900 dark:text-gray-100">English</span>
-                    </label>
-                    
-                    {/* Swahili */}
-                    <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-sm font-medium ${
-                        selectedLanguages.includes('Swahili')
-                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
-                            : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
-                    }`}>
-                        <input
-                            type="checkbox"
-                            checked={selectedLanguages.includes('Swahili')}
-                            onChange={() => toggleLanguage('Swahili')}
-                            className="form-checkbox h-5 w-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                        />
-                        <span className="text-gray-900 dark:text-gray-100">Swahili</span>
-                    </label>
+                    {/* Primary Languages (English, Swahili) */}
+                    {primaryLanguages.map(lang => (
+                        <label key={lang.id} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-sm font-medium ${
+                            selectedLanguages.includes(lang.name)
+                                ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
+                                : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                        }`}>
+                            <input
+                                type="checkbox"
+                                checked={selectedLanguages.includes(lang.name)}
+                                onChange={() => toggleLanguage(lang.name)}
+                                className="form-checkbox h-5 w-5 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                            />
+                            <span className="text-gray-900 dark:text-gray-100">{lang.name}</span>
+                        </label>
+                    ))}
                     
                     {/* Other Languages */}
                     <div className="relative" ref={dropdownRef}>
                         <div 
                             className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-sm font-medium ${
-                                selectedLanguages.some(lang => !['English', 'Swahili'].includes(lang))
+                                selectedLanguages.some(lang => !primaryLanguages.some(p => p.name === lang))
                                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100'
                                     : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                             }`} 
@@ -309,40 +238,40 @@ const Languages = () => {
                                     ) : (
                                         // Show grouped languages when not searching
                                         <div className="divide-y divide-gray-200">
-                                            {Object.entries(LANGUAGE_GROUPS).map(([group, languages]) => {
-                                                const filtered = languages.filter(lang => 
-                                                    filteredLanguages.includes(lang)
-                                                );
+                                            {['kenyan_bantu', 'kenyan_nilotic', 'kenyan_cushitic', 'international'].map((category) => {
+                                                const categoryLanguages = otherLanguages
+                                                    .filter(l => l.category === category)
+                                                    .filter(l => filteredLanguages.includes(l.name));
                                                 
-                                                if (filtered.length === 0) return null;
+                                                if (categoryLanguages.length === 0) return null;
                                                 
                                                 const groupName = {
-                                                    'kenyanBantu': 'Bantu Languages (Kenya)',
-                                                    'kenyanNilotic': 'Nilotic Languages (Kenya)',
-                                                    'kenyanCushitic': 'Cushitic Languages (Kenya)',
+                                                    'kenyan_bantu': 'Bantu Languages (Kenya)',
+                                                    'kenyan_nilotic': 'Nilotic Languages (Kenya)',
+                                                    'kenyan_cushitic': 'Cushitic Languages (Kenya)',
                                                     'international': 'International Languages'
-                                                }[group as keyof typeof LANGUAGE_GROUPS];
+                                                }[category];
                                                 
                                                 return (
-                                                    <div key={group} className="py-1">
+                                                    <div key={category} className="py-1">
                                                         <div className="px-4 py-1 text-sm font-medium text-gray-500 dark:text-gray-300 bg-gray-50 dark:bg-[#11111a] sticky top-0 z-10">
                                                             {groupName}
                                                         </div>
                                                         <div className="divide-y divide-gray-100">
-                                                            {filtered.map((language) => (
-                                                                <div key={language} className="px-4 py-1 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100">
+                                                            {categoryLanguages.map((lang) => (
+                                                                <div key={lang.id} className="px-4 py-1 hover:bg-purple-50 dark:hover:bg-purple-900/20 cursor-pointer text-gray-900 dark:text-gray-100">
                                                                     <label className={`flex items-center space-x-3 cursor-pointer w-full p-2 rounded ${
-                                                                        selectedLanguages.includes(language)
+                                                                        selectedLanguages.includes(lang.name)
                                                                             ? 'bg-purple-50 dark:bg-purple-900/20'
                                                                             : 'hover:bg-purple-50 dark:hover:bg-purple-900/20'
                                                                     }`}>
                                                                         <input
                                                                             type="checkbox"
-                                                                            checked={selectedLanguages.includes(language)}
-                                                                            onChange={() => toggleLanguage(language)}
+                                                                            checked={selectedLanguages.includes(lang.name)}
+                                                                            onChange={() => toggleLanguage(lang.name)}
                                                                             className="form-checkbox h-4 w-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                                                                         />
-                                                                        <span className="text-gray-900 dark:text-gray-100">{language}</span>
+                                                                        <span className="text-gray-900 dark:text-gray-100">{lang.name}</span>
                                                                     </label>
                                                                 </div>
                                                             ))}
@@ -355,12 +284,12 @@ const Languages = () => {
                                 </div>
                                 
                                 {/* Selected languages */}
-                                {selectedLanguages.some(lang => !['English', 'Swahili'].includes(lang)) && (
+                                {selectedLanguages.some(lang => !primaryLanguages.some(p => p.name === lang)) && (
                                     <div className="border-t border-gray-200 p-3 bg-gray-50 dark:bg-[#13131a]">
                                         <div className="text-xs font-medium text-gray-500 mb-2">SELECTED:</div>
                                         <div className="flex flex-wrap gap-2">
                                             {selectedLanguages
-                                                .filter(lang => !['English', 'Swahili'].includes(lang))
+                                                .filter(lang => !primaryLanguages.some(p => p.name === lang))
                                                 .map(lang => (
                                                     <span key={lang} className="inline-flex items-center gap-2 px-3 py-1 bg-purple-100 dark:bg-purple-800/40 text-purple-800 dark:text-purple-200 rounded-full text-sm font-semibold border border-purple-200 dark:border-purple-500/30">
                                                         {lang}

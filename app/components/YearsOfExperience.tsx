@@ -5,14 +5,18 @@ import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 const YearsOfExperience = () => {
     const { markDirty, markClean } = useProfileSetup();
+    const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [years, setYears] = useState<number>(0);
     const [customYears, setCustomYears] = useState<string>('');
     const [error, setError] = useState<string>('');
     const [success, setSuccess] = useState<string>('');
     const [loading, setLoading] = useState(false);
+
+    const experienceLevels = options?.experience_levels || [];
 
     // Load existing data
     useEffect(() => {

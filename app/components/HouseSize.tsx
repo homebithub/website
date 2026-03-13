@@ -5,20 +5,13 @@ import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 type HouseSizeOption = string;
 
-const HOUSE_SIZE_OPTIONS: HouseSizeOption[] = [
-  'Single room',
-  'Bedsitter',
-  '1 Bedroom',
-  '2 Bedroom',
-  '3 Bedroom',
-  '4+ Bedrooms'
-];
-
 const HouseSize: React.FC = () => {
   const { markDirty, markClean } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [additionalDetails, setAdditionalDetails] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,6 +19,8 @@ const HouseSize: React.FC = () => {
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(true);
   const submit = useSubmit();
+
+  const HOUSE_SIZE_OPTIONS: HouseSizeOption[] = options?.house_sizes.map(h => h.name) || [];
 
   // Load existing data
   useEffect(() => {

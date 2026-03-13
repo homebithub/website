@@ -4,31 +4,34 @@ import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
-const HOUSEHOLD_SIZES = [
-  { value: 'small', label: 'Small (1-2 people)', icon: '👤' },
-  { value: 'medium', label: 'Medium (3-4 people)', icon: '👥' },
-  { value: 'large', label: 'Large (5+ people)', icon: '👨‍👩‍👧‍👦' },
-  { value: 'any', label: 'Any size', icon: '✨' }
-];
+// Icons for preferences
+const sizeIcons: Record<string, string> = {
+  'small': '👤',
+  'medium': '👥',
+  'large': '👨‍👩‍👧‍👦',
+  'any': '✨'
+};
 
-const LOCATION_TYPES = [
-  { value: 'urban', label: 'Urban/City', icon: '🏙️' },
-  { value: 'suburban', label: 'Suburban', icon: '🏘️' },
-  { value: 'rural', label: 'Rural/Countryside', icon: '🌾' },
-  { value: 'any', label: 'Any location', icon: '🌍' }
-];
+const locationIcons: Record<string, string> = {
+  'urban': '🏙️',
+  'suburban': '🏘️',
+  'rural': '🌾',
+  'any': '🌍'
+};
 
-const FAMILY_TYPES = [
-  { value: 'single', label: 'Single person', icon: '👤' },
-  { value: 'couple', label: 'Couple (no kids)', icon: '💑' },
-  { value: 'young_family', label: 'Young family (with kids)', icon: '👨‍👩‍👧' },
-  { value: 'elderly', label: 'Elderly care', icon: '👴' },
-  { value: 'any', label: 'Any family type', icon: '❤️' }
-];
+const familyIcons: Record<string, string> = {
+  'single': '👤',
+  'couple': '💑',
+  'young_family': '👨‍👩‍👧',
+  'elderly': '👴',
+  'any': '❤️'
+};
 
 const PreferredWorkEnvironment: React.FC = () => {
   const { markDirty, markClean } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [householdSize, setHouseholdSize] = useState<string>('');
   const [locationType, setLocationType] = useState<string>('');
   const [familyType, setFamilyType] = useState<string>('');
@@ -36,6 +39,24 @@ const PreferredWorkEnvironment: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const HOUSEHOLD_SIZES = options?.household_size_preferences.map(h => ({
+    value: h.value,
+    label: h.label,
+    icon: sizeIcons[h.value] || '✨'
+  })) || [];
+
+  const LOCATION_TYPES = options?.location_type_preferences.map(l => ({
+    value: l.value,
+    label: l.label,
+    icon: locationIcons[l.value] || '🌍'
+  })) || [];
+
+  const FAMILY_TYPES = options?.family_type_preferences.map(f => ({
+    value: f.value,
+    label: f.label,
+    icon: familyIcons[f.value] || '❤️'
+  })) || [];
 
   // Load existing data
   useEffect(() => {

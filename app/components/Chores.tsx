@@ -3,28 +3,20 @@ import { API_BASE_URL } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
-const CHORES = [
-  "Laundry",
-  "Cooking",
-  "Dishwashing",
-  "Sweeping",
-  "Mopping",
-  "Ironing clothes",
-  "Grocery shopping",
-  "Window cleaning",
-  "Bathroom cleaning",
-  "Pet care",
-  "Other"
-];
+// Chores are now fetched from backend via context
 
 const Chores: React.FC = () => {
   const { markDirty, markClean } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedChores, setSelectedChores] = useState<string[]>([]);
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherChore, setOtherChore] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string>("");
+
+  const CHORES = options?.chores.map(c => c.name) || [];
 
   // Load existing data
   useEffect(() => {
