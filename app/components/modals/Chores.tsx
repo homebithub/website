@@ -1,5 +1,6 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState } from "react";
-import { API_BASE_URL } from '~/config/api';
+import { househelpPreferencesService } from '~/services/grpc/authServices';
 
 const CHORES = [
   "Laundry",
@@ -37,26 +38,11 @@ const Chores: React.FC = () => {
     setMessage("");
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/househelp-preferences/chores`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          chores: selectedChores.map(chore => chore.toLowerCase())
-        }),
+      const token = getAccessTokenFromCookies();
+      await househelpPreferencesService.addChores('', {
+        chores: selectedChores.map(chore => chore.toLowerCase())
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        setMessage("Chores saved successfully!");
-        console.log('Saved chores:', data.chores);
-      } else {
-        const errorData = await response.json();
-        setMessage(errorData.message || "Failed to save chores");
-      }
+      setMessage("Chores saved successfully!");
     } catch (error) {
       console.error('Error saving chores:', error);
       setMessage("An error occurred while saving chores");

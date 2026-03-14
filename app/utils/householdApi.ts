@@ -1,4 +1,5 @@
-import { API_BASE_URL } from '~/config/api';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { householdMemberService } from '~/services/grpc/authServices';
 
 // ============================================================================
 // Types
@@ -80,13 +81,6 @@ export interface JoinHouseholdRequest {
 // API Functions
 // ============================================================================
 
-const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
-  return {
-    'Content-Type': 'application/json',
-    'Authorization': token ? `Bearer ${token}` : '',
-  };
-};
 
 // ============================================================================
 // Invitation Management
@@ -94,59 +88,26 @@ const getAuthHeaders = () => {
 
 export const createInvitation = async (
   householdId: string,
-  data: CreateInvitationRequest
+  _data: CreateInvitationRequest
 ): Promise<HouseholdInvitation> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/${householdId}/invitations`,
-    {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to create invitation');
-  }
-
-  return response.json();
+  const result = await householdMemberService.getOrCreateInvitationCode(householdId);
+  return result;
 };
 
 export const listInvitations = async (
   householdId: string
 ): Promise<HouseholdInvitation[]> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/${householdId}/invitations`,
-    {
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch invitations');
-  }
-
-  return response.json();
+  // Use getOrCreateInvitationCode as a proxy - returns current invitation
+  const result = await householdMemberService.getOrCreateInvitationCode(householdId);
+  return result ? [result] : [];
 };
 
 export const revokeInvitation = async (
-  householdId: string,
-  invitationId: string
+  _householdId: string,
+  _invitationId: string
 ): Promise<void> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/${householdId}/invitations/${invitationId}`,
-    {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to revoke invitation');
-  }
+  // TODO: Add revokeInvitation RPC when available
+  throw new Error('Revoke invitation not yet available via gRPC');
 };
 
 export const validateInviteCode = async (
@@ -158,16 +119,7 @@ export const validateInviteCode = async (
   role: string;
   expires_at: string;
 }> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/invitations/validate/${code}`
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Invalid invite code');
-  }
-
-  return response.json();
+  return householdMemberService.validateInviteCode(code);
 };
 
 // ============================================================================
@@ -177,74 +129,29 @@ export const validateInviteCode = async (
 export const joinHousehold = async (
   data: JoinHouseholdRequest
 ): Promise<{ request_id: string; status: string; message: string }> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/households/join`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to join household');
-  }
-
-  return response.json();
+  return householdMemberService.joinHousehold('', data.invite_code, data.message);
 };
 
 export const listPendingRequests = async (
   householdId: string
 ): Promise<HouseholdMemberRequest[]> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/${householdId}/requests`,
-    {
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch requests');
-  }
-
-  return response.json();
+  const result = await householdMemberService.listPendingRequests(householdId);
+  return result?.requests || result || [];
 };
 
 export const approveRequest = async (
   householdId: string,
   requestId: string
 ): Promise<void> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/${householdId}/requests/${requestId}/approve`,
-    {
-      method: 'POST',
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to approve request');
-  }
+  await householdMemberService.approveRequest(householdId, requestId, '');
 };
 
 export const rejectRequest = async (
   householdId: string,
   requestId: string,
-  reason?: string
+  _reason?: string
 ): Promise<void> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/${householdId}/requests/${requestId}/reject`,
-    {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ reason }),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to reject request');
-  }
+  await householdMemberService.rejectRequest(householdId, requestId, '');
 };
 
 // ============================================================================
@@ -254,102 +161,39 @@ export const rejectRequest = async (
 export const listMembers = async (
   householdId: string
 ): Promise<HouseholdMember[]> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/${householdId}/members`,
-    {
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch members');
-  }
-
-  return response.json();
+  const result = await householdMemberService.listMembers(householdId);
+  return result?.members || result || [];
 };
 
 export const updateMemberRole = async (
-  householdId: string,
-  userId: string,
-  role: 'admin' | 'member'
+  _householdId: string,
+  _userId: string,
+  _role: 'admin' | 'member'
 ): Promise<void> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/${householdId}/members/${userId}`,
-    {
-      method: 'PATCH',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ role }),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to update member role');
-  }
+  // TODO: Add updateMemberRole RPC when available
+  throw new Error('Update member role not yet available via gRPC');
 };
 
 export const removeMember = async (
   householdId: string,
   userId: string
 ): Promise<void> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/${householdId}/members/${userId}`,
-    {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to remove member');
-  }
+  await householdMemberService.removeMember(householdId, userId, '');
 };
 
 export const leaveHousehold = async (householdId: string): Promise<void> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/users/me/households/${householdId}/leave`,
-    {
-      method: 'POST',
-      headers: getAuthHeaders(),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to leave household');
-  }
+  await householdMemberService.leaveHousehold(householdId);
 };
 
 export const getUserHouseholds = async (): Promise<any[]> => {
-  const response = await fetch(`${API_BASE_URL}/api/v1/users/me/households`, {
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch households');
-  }
-
-  return response.json();
+  const result = await householdMemberService.getUserHouseholds('');
+  return result?.households || result || [];
 };
 
 export const transferOwnership = async (
-  householdId: string,
-  newOwnerId: string
+  _householdId: string,
+  _newOwnerId: string
 ): Promise<void> => {
-  const response = await fetch(
-    `${API_BASE_URL}/api/v1/households/${householdId}/transfer-ownership`,
-    {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ new_owner_id: newOwnerId }),
-    }
-  );
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to transfer ownership');
-  }
+  // TODO: Add transferOwnership RPC when available
+  throw new Error('Transfer ownership not yet available via gRPC');
 };

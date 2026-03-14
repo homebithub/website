@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { useSubmit } from 'react-router';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -52,7 +53,7 @@ const SalaryExpectations: React.FC = () => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       const normalizedExpectation = parseSalaryRangeToNumber(selectedRange);
       const updates: Record<string, string | number> = {
         salary_frequency: frequency.toLowerCase(),
@@ -62,25 +63,9 @@ const SalaryExpectations: React.FC = () => {
         updates.salary_expectation = normalizedExpectation;
       }
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          updates,
-          _step_metadata: {
-            step_id: "salary",
-            step_number: 6,
-            is_completed: true
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save salary expectations');
-      }
+      await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
+        { step_id: 'salary', step_number: 6, is_completed: true }
+      );
 
       markClean();
       setSuccess('Salary expectations saved successfully!');

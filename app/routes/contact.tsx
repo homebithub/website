@@ -4,8 +4,8 @@ import { Error as ErrorComponent } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { API_BASE_URL } from '~/config/api';
 import { extractErrorMessage } from '~/utils/errorMessages';
+import { contactService } from '~/services/grpc/authServices';
 import CustomSelect from '~/components/ui/CustomSelect';
 
 export const meta = () => [
@@ -49,20 +49,7 @@ export default function Contact() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/contact`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        const errorMessage = extractErrorMessage(data) || "Failed to send message";
-        setError(errorMessage);
-        return;
-      }
+      await contactService.createContactMessage('', formData);
 
       setSuccess(true);
       setFormData({

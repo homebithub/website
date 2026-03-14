@@ -3,7 +3,9 @@ import {useSearchParams, useNavigate, useLocation} from "react-router";
 import {ArrowLeftIcon, HeartIcon, TrashIcon, LockClosedIcon, LockOpenIcon} from "@heroicons/react/24/outline";
 import ReadOnlyUserImageCarousel from "~/components/features/household/househelp/ReadOnlyUserImageCarousel";
 import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
-import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
+import { API_ENDPOINTS } from '~/config/api';
+import { profileService as grpcProfileService, profileViewService, shortlistService, imageService } from '~/services/grpc/authServices';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { usePaymentSSE } from '~/hooks/usePaymentSSE';
 
@@ -36,29 +38,10 @@ export default function HousehelpProfile() {
         if (!profileId) return;
         setShortlistLoading(true);
         try {
-            const token = localStorage.getItem("token");
-            if (!token) throw new Error("Not authenticated");
-            const res = await fetch(API_ENDPOINTS.shortlists.base, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`,
-                },
-                body: JSON.stringify({
-                    profile_id: profileId,
-                    profile_type: 'househelp',
-                }),
+            await shortlistService.createShortlist('', 'househelp', {
+                profile_id: profileId,
+                profile_type: 'househelp',
             });
-            if (!res.ok) {
-                let errData;
-                try {
-                    errData = await res.json();
-                } catch {
-                    throw new Error('Failed to shortlist');
-                }
-                throw new Error(errData.message || 'Failed to shortlist');
-            }
-            // Optionally, show success or update UI
             setShortlisted(true);
             setShortlistDisabled(true);
             setShortlistDisabledReason('You have already shortlisted this profile.');
@@ -88,7 +71,7 @@ export default function HousehelpProfile() {
         setPaymentPending(false);
         // Refresh unlocked contact status
         if (profileId) {
-          const token = localStorage.getItem('token');
+          const token = getAccessTokenFromCookies();
           if (token) {
             fetch(`${API_ENDPOINTS.shortlists.base}/unlock/${profileId}`, {
               headers: { Authorization: `Bearer ${token}` }
@@ -121,43 +104,31 @@ export default function HousehelpProfile() {
             setLoading(true);
             setError(null);
             try {
-                const token = localStorage.getItem("token");
+                const token = getAccessTokenFromCookies();
                 if (!token) throw new Error("Not authenticated");
                 if (!profileId) throw new Error("No profile ID provided");
                 // Check if already shortlisted
-                const shortlistRes = await fetch(`${API_ENDPOINTS.shortlists.base}/exists/${profileId}`, {
-                    headers: {Authorization: `Bearer ${token}`},
-                });
-                if (shortlistRes.ok) {
-                    const shortlistData = await shortlistRes.json();
-                    setShortlisted(!!shortlistData.exists);
-                    if (shortlistData.exists) {
+                try {
+                    const shortlistData = await shortlistService.shortlistExists('', profileId);
+                    const exists = !!(shortlistData?.getExists?.() ?? shortlistData?.exists);
+                    setShortlisted(exists);
+                    if (exists) {
                         setShortlistDisabled(true);
                         setShortlistDisabledReason('You have already shortlisted this profile.');
                     } else {
                         setShortlistDisabled(false);
                         setShortlistDisabledReason(null);
                     }
+                } catch { /* ignore */ }
+                // Track profile view via gRPC
+                try {
+                    await profileViewService.recordView('', profileId, 'househelp');
+                } catch (err) {
+                    console.warn('Failed to record profile view:', err);
                 }
-                // Track profile view
-                await fetch(API_ENDPOINTS.profileView.record, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`,
-                    },
-                    body: JSON.stringify({
-                        profile_id: profileId,
-                        profile_type: 'househelp',
-                    }),
-                });
-                // Fetch profile
-                const res = await fetch(`${API_BASE_URL}/api/v1/househelps/${profileId}/profile_with_user`, {
-                    headers: {Authorization: `Bearer ${token}`},
-                });
-                if (!res.ok) throw new Error("Failed to fetch househelp profile");
-                const data = await res.json();
-                setData(data.data);
+                // Fetch profile via gRPC
+                const profileData = await grpcProfileService.getHousehelpProfileWithUser(profileId);
+                setData(profileData);
             } catch (err: any) {
                 setError(err.message || "Failed to load profile");
             } finally {
@@ -177,13 +148,12 @@ export default function HousehelpProfile() {
     useEffect(() => {
       if (!data || !data.User || !data.User.id) return;
       async function fetchImages(userId: string) {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_ENDPOINTS.images.user}/${userId}`, { headers: token ? { Authorization: `Bearer ${token}` } : undefined });
-        if (res.ok) {
-          const data = await res.json();
-          setImages(Array.isArray(data.images) ? data.images : []);
+        try {
+          const imgData = await imageService.getImagesByUserID(userId);
+          const imgs = imgData?.images || imgData?.data?.images || imgData?.data || [];
+          setImages(Array.isArray(imgs) ? imgs : []);
           setCarouselIdx(0);
-        } else {
+        } catch {
           setImages([]);
         }
       }
@@ -261,7 +231,7 @@ export default function HousehelpProfile() {
                   className="flex items-center justify-center gap-2 px-4 py-1 text-sm rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold shadow transition-colors"
                   onClick={async () => {
                     try {
-                      const token = localStorage.getItem('token');
+                      const token = getAccessTokenFromCookies();
                       if (!token) throw new Error('Not authenticated');
                       const res = await fetch(`${API_ENDPOINTS.shortlists.base}/unlock`, {
                         method: 'POST',
@@ -315,29 +285,22 @@ export default function HousehelpProfile() {
                   onClick={async () => {
                       setShortlistLoading(true);
                       try {
-                        const token = localStorage.getItem('token');
-                        if (!token) throw new Error('Not authenticated');
-                        const res = await fetch(`${API_ENDPOINTS.shortlists.base}/${profileId}`, {
-                          method: 'DELETE',
-                          headers: { Authorization: `Bearer ${token}` },
-                        });
+                        await shortlistService.deleteShortlist(profileId!);
                         setShortlisted(false);
                         setShortlistDisabled(false);
                         setShortlistDisabledReason(null);
-                        const shortlistRes = await fetch(`${API_ENDPOINTS.shortlists.base}/exists/${profileId}`, {
-                          headers: { Authorization: `Bearer ${token}` },
-                        });
-                        if (shortlistRes.ok) {
-                          const shortlistData = await shortlistRes.json();
-                          setShortlisted(!!shortlistData.exists);
-                          if (shortlistData.exists) {
+                        try {
+                          const shortlistData = await shortlistService.shortlistExists('', profileId!);
+                          const exists = !!(shortlistData?.getExists?.() ?? shortlistData?.exists);
+                          setShortlisted(exists);
+                          if (exists) {
                             setShortlistDisabled(true);
                             setShortlistDisabledReason('You have already shortlisted this profile.');
                           } else {
                             setShortlistDisabled(false);
                             setShortlistDisabledReason(null);
                           }
-                        }
+                        } catch { /* ignore */ }
                       } catch (err: any) {
                         alert(err.message || 'Failed to remove from shortlist');
                       } finally {

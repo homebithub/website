@@ -20,14 +20,51 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
-import {
-  listDevices,
-  revokeDevice,
-  revokeAllDevices,
-} from '~/utils/api/devices';
+import deviceService from '~/services/grpc/device.service';
 import type { Device } from '~/types/devices';
 import { DEVICE_TYPE_ICONS, DEVICE_STATUS_COLORS, DEVICE_STATUS_LABELS } from '~/types/devices';
 import { getDeviceId } from '~/utils/deviceFingerprint';
+
+// Convert proto Device (camelCase) to local Device type (snake_case)
+function protoDeviceToLocal(d: any): Device {
+  const tsToStr = (ts: any) => {
+    if (!ts) return undefined;
+    // proto Timestamp.AsObject has { seconds, nanos }
+    if (ts.seconds) return new Date(ts.seconds * 1000).toISOString();
+    return undefined;
+  };
+  return {
+    id: d.id || '',
+    user_id: d.userId || '',
+    device_id: d.deviceId || '',
+    device_name: d.deviceName || '',
+    device_type: d.deviceType || 'unknown',
+    status: d.status || 'pending',
+    user_agent: d.userAgent || '',
+    browser: d.browser || '',
+    browser_version: d.browserVersion || '',
+    os: d.os || '',
+    os_version: d.osVersion || '',
+    platform: d.platform || '',
+    ip_address: d.ipAddress || '',
+    country: d.country || '',
+    city: d.city || '',
+    region: d.region || '',
+    timezone: d.timezone || '',
+    latitude: d.latitude || 0,
+    longitude: d.longitude || 0,
+    confirmed_at: tsToStr(d.confirmedAt),
+    last_activity_at: tsToStr(d.lastActivityAt),
+    expires_at: tsToStr(d.expiresAt),
+    revoked_at: tsToStr(d.revokedAt),
+    revoked_reason: d.revokedReason || '',
+    is_trusted: d.isTrusted || false,
+    is_current_device: d.isCurrentDevice || false,
+    login_count: d.loginCount || 0,
+    created_at: tsToStr(d.createdAt) || '',
+    updated_at: tsToStr(d.updatedAt) || '',
+  };
+}
 
 export default function DevicesPage() {
   const { user, loading } = useAuth();
@@ -55,11 +92,12 @@ export default function DevicesPage() {
       const deviceId = await getDeviceId();
       setCurrentDeviceId(deviceId);
       
-      const response = await listDevices(deviceId);
-      setDevices(response.devices);
-      setTotalCount(response.total_count);
-      setActiveCount(response.active_count);
-      setPendingCount(response.pending_count);
+      const userId = user?.user_id || user?.id || '';
+      const response = await deviceService.getUserDevices(userId, deviceId);
+      setDevices(response.devices.map(protoDeviceToLocal));
+      setTotalCount(response.totalCount);
+      setActiveCount(response.activeCount);
+      setPendingCount(response.pendingCount);
     } catch (error) {
       console.error('Failed to fetch devices:', error);
       setErrorMessage(error instanceof Error ? error.message : 'Failed to load devices');
@@ -90,9 +128,8 @@ export default function DevicesPage() {
     setSuccessMessage('');
     
     try {
-      await revokeDevice(device.id, {
-        reason: 'Revoked by user',
-      });
+      const userId = user?.user_id || user?.id || '';
+      await deviceService.revokeDevice(device.id, userId, 'Revoked by user');
       
       setSuccessMessage(`Device "${device.device_name || 'Unknown'}" has been revoked successfully`);
       setRevokingDevice(null);
@@ -112,10 +149,9 @@ export default function DevicesPage() {
     setSuccessMessage('');
     
     try {
+      const userId = user?.user_id || user?.id || '';
       const currentDevice = devices.find(d => d.is_current_device);
-      await revokeAllDevices(currentDevice?.id, {
-        reason: 'Logged out all devices',
-      });
+      await deviceService.revokeAllDevices(userId, currentDevice?.device_id, 'Logged out all devices');
       
       setSuccessMessage('All other devices have been logged out successfully');
       setShowRevokeAllModal(false);

@@ -1,3 +1,4 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 // Authentication utilities for route protection
 import { API_ENDPOINTS } from '~/config/api';
 
@@ -28,7 +29,7 @@ export async function checkAuthentication(request?: Request): Promise<AuthUser |
     } else {
       // Client-side: get token from localStorage
       if (typeof window !== 'undefined') {
-        token = localStorage.getItem("token");
+        token = getAccessTokenFromCookies() || null;
       }
     }
 
@@ -71,7 +72,7 @@ export function getCurrentUser(): AuthUser | null {
       return null; // Server-side
     }
     
-    const token = localStorage.getItem("token");
+    const token = getAccessTokenFromCookies();
     const userObject = localStorage.getItem("user_object");
     
     if (!token || !userObject) {

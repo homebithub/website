@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { AUTH_API_BASE_URL, getAuthHeaders } from '~/config/api';
+import { profileSetupService } from '~/services/grpc/profileSetup.service';
 
 export interface OnboardingProgress {
   user_id: string;
@@ -42,26 +42,7 @@ export function useOnboardingProgress(
       setLoading(true);
       setError(null);
 
-      const response = await fetch(
-        `${AUTH_API_BASE_URL}/auth.ProfileSetupService/GetProgress`,
-        {
-          method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/grpc-web+json',
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            profile_type: profileType,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch progress: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await profileSetupService.getProgress(userId);
       setProgress(data);
     } catch (err) {
       console.error('Error fetching onboarding progress:', err);
@@ -75,30 +56,10 @@ export function useOnboardingProgress(
     if (!userId) return;
 
     try {
-      const response = await fetch(
-        `${AUTH_API_BASE_URL}/auth.ProfileSetupService/UpdateProgress`,
-        {
-          method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/grpc-web+json',
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            profile_type: profileType,
-            data: {
-              ...data,
-              profile_type: profileType,
-            },
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to update progress: ${response.statusText}`);
-      }
-
-      const updatedData = await response.json();
+      const updatedData = await profileSetupService.updateProgress(userId, {
+        ...data,
+        profile_type: profileType,
+      });
       setProgress(updatedData);
     } catch (err) {
       console.error('Error updating onboarding progress:', err);
@@ -127,31 +88,12 @@ export function useStepCompletion(userId: string, profileType: 'househelp' | 'ho
     if (!userId) return;
 
     try {
-      const response = await fetch(
-        `${AUTH_API_BASE_URL}/auth.ProfileSetupService/UpdateStep`,
-        {
-          method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/grpc-web+json',
-          },
-          body: JSON.stringify({
-            user_id: userId,
-            profile_type: profileType,
-            data: {
-              step_id: stepId,
-              is_completed: isCompleted,
-              data: stepData,
-            },
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to update step: ${response.statusText}`);
-      }
-
-      return await response.json();
+      return await profileSetupService.updateStep(userId, {
+        step_id: stepId,
+        is_completed: isCompleted,
+        data: stepData,
+        profile_type: profileType,
+      });
     } catch (err) {
       console.error('Error updating step:', err);
       throw err;

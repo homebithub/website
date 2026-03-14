@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
@@ -17,22 +18,14 @@ const Gender = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = getAccessTokenFromCookies();
                 if (!token) return;
 
-                const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.gender) setGender(data.gender);
-                    if (data.date_of_birth) {
-                        const date = new Date(data.date_of_birth);
-                        setDateOfBirth(date.toISOString().split('T')[0]);
-                    }
+                const data = await grpcProfileService.getCurrentHousehelpProfile('');
+                if (data?.gender) setGender(data.gender);
+                if (data?.date_of_birth) {
+                    const date = new Date(data.date_of_birth);
+                    setDateOfBirth(date.toISOString().split('T')[0]);
                 }
             } catch (err) {
                 console.error('Failed to load gender data:', err);
@@ -74,35 +67,15 @@ const Gender = () => {
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) {
                 throw new Error('Authentication token not found');
             }
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    updates: {
-                        gender: gender,
-                        date_of_birth: dateOfBirth
-                    },
-                    _step_metadata: {
-                        step_id: "gender",
-                        step_number: 3,
-                        is_completed: true
-                    }
-                })
-            });
-
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to update profile');
-            }
+            await grpcProfileService.updateHousehelpFields('', 'househelp',
+                { gender: gender, date_of_birth: dateOfBirth },
+                { step_id: 'gender', step_number: 3, is_completed: true }
+            );
             
             markClean();
             setSuccess('Your information has been saved successfully!');

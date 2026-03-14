@@ -1,60 +1,34 @@
 /**
  * Payment Methods API Service
  * 
- * API functions for managing payment methods.
+ * API functions for managing payment methods via gRPC.
  */
 
-import { API_ENDPOINTS, getAuthHeaders } from '~/config/api';
-import { parseErrorResponse } from '~/utils/errors/apiErrors';
+import { paymentsService } from '~/services/grpc/payments.service';
 import type {
   PaymentMethod,
   AddPaymentMethodRequest,
   UpdateNicknameRequest,
-  PaymentMethodsResponse,
-  PaymentMethodResponse,
 } from '~/types/payments';
 
 /**
  * Get all payment methods for the authenticated user
  */
 export const listPaymentMethods = async (): Promise<PaymentMethod[]> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.paymentMethods.list, {
-    method: 'GET',
-    headers: getAuthHeaders(token),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  const data: PaymentMethodsResponse = await response.json();
-  return data.payment_methods || [];
+  const res = await paymentsService.getPaymentMethods('');
+  return (res as any)?.getPaymentMethodsList?.()?.map((m: any) => m.toObject()) ?? res?.payment_methods ?? [];
 };
 
 /**
  * Get the default payment method
  */
 export const getDefaultPaymentMethod = async (): Promise<PaymentMethod | null> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.paymentMethods.default, {
-    method: 'GET',
-    headers: getAuthHeaders(token),
-  });
-  
-  if (!response.ok) {
-    if (response.status === 404) {
-      return null; // No default payment method
-    }
-    const error = await parseErrorResponse(response);
-    throw error;
+  try {
+    const res = await paymentsService.getDefaultPaymentMethod('');
+    return (res as any)?.getPaymentMethod?.()?.toObject() ?? res?.payment_method ?? null;
+  } catch {
+    return null;
   }
-  
-  const data: PaymentMethodResponse = await response.json();
-  return data.payment_method;
 };
 
 /**
@@ -63,38 +37,17 @@ export const getDefaultPaymentMethod = async (): Promise<PaymentMethod | null> =
 export const addPaymentMethod = async (
   request: AddPaymentMethodRequest
 ): Promise<PaymentMethod> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.paymentMethods.add, {
-    method: 'POST',
-    headers: getAuthHeaders(token),
-    body: JSON.stringify(request),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  const data: PaymentMethodResponse = await response.json();
-  return data.payment_method;
+  const res = await paymentsService.addPaymentMethod(
+    '', request.type || 'mpesa', request.phone_number || '', request.nickname || '', request.is_default ?? false
+  );
+  return (res as any)?.getPaymentMethod?.()?.toObject() ?? res;
 };
 
 /**
  * Set a payment method as default
  */
 export const setDefaultPaymentMethod = async (methodId: string): Promise<void> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.paymentMethods.setDefault(methodId), {
-    method: 'PUT',
-    headers: getAuthHeaders(token),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
+  await paymentsService.setDefaultPaymentMethod(methodId, '');
 };
 
 /**
@@ -104,36 +57,13 @@ export const updatePaymentMethodNickname = async (
   methodId: string,
   request: UpdateNicknameRequest
 ): Promise<PaymentMethod> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.paymentMethods.updateNickname(methodId), {
-    method: 'PATCH',
-    headers: getAuthHeaders(token),
-    body: JSON.stringify(request),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  const data: PaymentMethodResponse = await response.json();
-  return data.payment_method;
+  const res = await paymentsService.updatePaymentMethodNickname(methodId, '', request.nickname || '');
+  return (res as any)?.getPaymentMethod?.()?.toObject() ?? res;
 };
 
 /**
  * Delete a payment method
  */
 export const deletePaymentMethod = async (methodId: string): Promise<void> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.paymentMethods.delete(methodId), {
-    method: 'DELETE',
-    headers: getAuthHeaders(token),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
+  await paymentsService.removePaymentMethod(methodId, '');
 };

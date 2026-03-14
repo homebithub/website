@@ -1,6 +1,8 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { API_BASE_URL } from '~/config/api';
+import { bureauService } from '~/services/grpc/authServices';
 
 // Add phone input styles
 const phoneInputStyle = {
@@ -30,14 +32,10 @@ export default function BureauHousehelps() {
     // Fetch bureau profile to get bureau ID
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         if (!token) return;
-        const res = await fetch(`${API_BASE_URL}/api/v1/profile/bureau/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        setBureauId(data.id || data._id || null);
+        const data = await bureauService.getCurrentBureauProfile(token);
+        setBureauId(data?.id || data?._id || null);
       } catch {}
     };
     fetchProfile();

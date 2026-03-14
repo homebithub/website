@@ -1,3 +1,4 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL, getAuthHeaders } from '~/config/api';
@@ -43,7 +44,7 @@ export default function ImageGallery({
     setError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) {
         throw new Error('Not authenticated');
       }
@@ -79,7 +80,7 @@ export default function ImageGallery({
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) return;
 
       const response = await fetch(

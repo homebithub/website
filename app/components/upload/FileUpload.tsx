@@ -1,3 +1,4 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useRef } from 'react';
 import { CloudArrowUpIcon, XMarkIcon, DocumentIcon, PhotoIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL } from '~/config/api';
@@ -68,7 +69,7 @@ export default function FileUpload({
     if (selectedFiles.length === 0) return;
 
     setIsUploading(true);
-    const token = localStorage.getItem('token');
+    const token = getAccessTokenFromCookies();
 
     if (!token) {
       onUploadError?.('Not authenticated');

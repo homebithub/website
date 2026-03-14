@@ -6,7 +6,8 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupContext';
 import { OnboardingOptionsProvider } from '~/contexts/OnboardingOptionsContext';
 import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
-import { API_BASE_URL } from '~/config/api';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { profileSetupService } from '~/services/grpc/profileSetup.service';
 
 // Import all the components
 import Location from '~/components/Location';
@@ -147,7 +148,7 @@ function HouseholdProfileSetupContent() {
   // Authentication check - redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) {
         navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
       }
@@ -276,44 +277,30 @@ function HouseholdProfileSetupContent() {
 
   const markAllStepsComplete = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) return;
 
-      // Mark ALL steps as completed in profile-setup-steps
+      // Mark ALL steps as completed in profile-setup-steps via gRPC
       for (let i = 0; i < STEPS.length; i++) {
-        await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            step_id: STEPS[i].id,
-            step_number: i,
-            is_completed: true,
-            is_skipped: false,
-            data: {}
-          })
+        await profileSetupService.updateStep('', {
+          step_id: STEPS[i].id,
+          step_number: i,
+          is_completed: true,
+          is_skipped: false,
+          data: {}
         });
       }
 
-      // Also update progress tracking to mark as complete
-      await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          current_step: STEPS.length,
-          last_completed_step: STEPS.length,
-          total_steps: STEPS.length,
-          completed_steps: STEPS.map(s => s.id),
-          status: 'completed',
-          completion_percentage: 100,
-          step_id: 'completed',
-          time_spent_seconds: 0
-        })
+      // Also update progress tracking to mark as complete via gRPC
+      await profileSetupService.updateProgress('', {
+        current_step: STEPS.length,
+        last_completed_step: STEPS.length,
+        total_steps: STEPS.length,
+        completed_steps: STEPS.map(s => s.id),
+        status: 'completed',
+        completion_percentage: 100,
+        step_id: 'completed',
+        time_spent_seconds: 0
       });
     } catch (error) {
       console.error('Failed to mark steps as complete:', error);
@@ -330,7 +317,7 @@ function HouseholdProfileSetupContent() {
     isAutoSave: boolean = false
   ) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) return;
 
       // Handle case when step is beyond STEPS array (completion)
@@ -343,38 +330,24 @@ function HouseholdProfileSetupContent() {
         highestCompletedStepRef.current = Math.max(highestCompletedStepRef.current, actualStep + 1);
       }
 
-      // Save progress tracking
-      await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          current_step: actualStep + 1,
-          last_completed_step: highestCompletedStepRef.current,
-          total_steps: STEPS.length,
-          completed_steps: completedSteps,
-          step_id: STEPS[actualStep]?.id || 'completed',
-          time_spent_seconds: timeOnStep
-        })
+      // Save progress tracking via gRPC
+      await profileSetupService.updateProgress('', {
+        current_step: actualStep + 1,
+        last_completed_step: highestCompletedStepRef.current,
+        total_steps: STEPS.length,
+        completed_steps: completedSteps,
+        step_id: STEPS[actualStep]?.id || 'completed',
+        time_spent_seconds: timeOnStep
       });
 
       // Mark step as completed in profile-setup-steps (required for is_complete check)
       if (isComplete || !isAutoSave) {
-        await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            step_id: STEPS[actualStep]?.id || 'completed',
-            step_number: actualStep,
-            is_completed: isComplete || !skipped,
-            is_skipped: skipped,
-            data: {}
-          })
+        await profileSetupService.updateStep('', {
+          step_id: STEPS[actualStep]?.id || 'completed',
+          step_number: actualStep,
+          is_completed: isComplete || !skipped,
+          is_skipped: skipped,
+          data: {}
         });
       }
     } catch (error) {

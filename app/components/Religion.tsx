@@ -1,5 +1,6 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -27,24 +28,16 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.religion) {
-            // Check if it's one of the predefined options
-            if (RELIGIONS.includes(data.religion)) {
-              setSelectedReligion(data.religion);
-            } else {
-              // It's a custom religion
-              setSelectedReligion('Other');
-              setCustomReligion(data.religion);
-            }
+        const data = await grpcProfileService.getCurrentHouseholdProfile('');
+        if (data?.religion) {
+          if (RELIGIONS.includes(data.religion)) {
+            setSelectedReligion(data.religion);
+          } else {
+            setSelectedReligion('Other');
+            setCustomReligion(data.religion);
           }
         }
       } catch (err) {
@@ -71,28 +64,16 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          religion: religionValue,
-          _step_metadata: {
-            step_id: "religion",
-            step_number: 6,
-            is_completed: true
-          }
-        }),
+      await grpcProfileService.updateHouseholdProfile('', 'household', {
+        religion: religionValue,
+        _step_metadata: {
+          step_id: 'religion',
+          step_number: 6,
+          is_completed: true
+        }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to save religion preferences');
-      }
 
       markClean();
       setSuccess('Religion preferences saved automatically!');

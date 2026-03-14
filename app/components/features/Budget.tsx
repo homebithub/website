@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { useSubmit } from 'react-router';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -30,15 +31,11 @@ const Budget: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
         
-        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
+        const data = await grpcProfileService.getCurrentHouseholdProfile('');
+        if (data) {
           let effectiveFreq: BudgetFrequency = frequency;
           if (data.salary_frequency) {
             const freq = data.salary_frequency.charAt(0).toUpperCase() + data.salary_frequency.slice(1);
@@ -46,7 +43,6 @@ const Budget: React.FC = () => {
             effectiveFreq = freq as BudgetFrequency;
           }
           if (data.budget_min || data.budget_max) {
-            // Try to match to a range using the fetched/effective frequency
             const ranges = BUDGET_RANGES[effectiveFreq];
             const matchedRange = ranges.find(range => {
               if (range === 'Negotiable') return data.budget_min === 0 && data.budget_max === 0;
@@ -80,7 +76,7 @@ const Budget: React.FC = () => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       
       // Parse budget range
       let budgetMin = 0;
@@ -97,28 +93,16 @@ const Budget: React.FC = () => {
         }
       }
       
-      const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          budget_min: budgetMin,
-          budget_max: budgetMax,
-          salary_frequency: frequency.toLowerCase(),
-          _step_metadata: {
-            step_id: "budget",
-            step_number: 5,
-            is_completed: true
-          }
-        }),
+      await grpcProfileService.updateHouseholdProfile('', 'household', {
+        budget_min: budgetMin,
+        budget_max: budgetMax,
+        salary_frequency: frequency.toLowerCase(),
+        _step_metadata: {
+          step_id: 'budget',
+          step_number: 5,
+          is_completed: true
+        }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to save budget preferences');
-      }
 
       markClean();
       setSuccess('Budget saved successfully!');

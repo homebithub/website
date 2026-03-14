@@ -1,11 +1,10 @@
 /**
  * Subscription Management API Service
  * 
- * API functions for managing subscriptions (pause, resume, cancel, change plan, etc.).
+ * API functions for managing subscriptions via gRPC.
  */
 
-import { API_ENDPOINTS, getAuthHeaders } from '~/config/api';
-import { parseErrorResponse } from '~/utils/errors/apiErrors';
+import { paymentsService } from '~/services/grpc/payments.service';
 import type {
   PauseSubscriptionRequest,
   PauseSubscriptionResponse,
@@ -27,20 +26,7 @@ export const pauseSubscription = async (
   subscriptionId: string,
   request: PauseSubscriptionRequest
 ): Promise<PauseSubscriptionResponse> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.subscriptions.pause(subscriptionId), {
-    method: 'POST',
-    headers: getAuthHeaders(token),
-    body: JSON.stringify(request),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return response.json();
+  return paymentsService.pauseSubscription(subscriptionId, '', request.reason || '', request.duration_days || 30) as any;
 };
 
 /**
@@ -49,19 +35,7 @@ export const pauseSubscription = async (
 export const resumeSubscription = async (
   subscriptionId: string
 ): Promise<ResumeSubscriptionResponse> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.subscriptions.resume(subscriptionId), {
-    method: 'POST',
-    headers: getAuthHeaders(token),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return response.json();
+  return paymentsService.resumeSubscription(subscriptionId, '') as any;
 };
 
 /**
@@ -70,19 +44,7 @@ export const resumeSubscription = async (
 export const getPauseStatus = async (
   subscriptionId: string
 ): Promise<PauseStatusResponse> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.subscriptions.pauseStatus(subscriptionId), {
-    method: 'GET',
-    headers: getAuthHeaders(token),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return response.json();
+  return paymentsService.getPauseStatus(subscriptionId, '') as any;
 };
 
 /**
@@ -92,20 +54,7 @@ export const cancelSubscription = async (
   subscriptionId: string,
   request: CancelSubscriptionRequest
 ): Promise<CancelSubscriptionResponse> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.subscriptions.cancel(subscriptionId), {
-    method: 'POST',
-    headers: getAuthHeaders(token),
-    body: JSON.stringify(request),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return response.json();
+  return paymentsService.cancelSubscription(subscriptionId, '') as any;
 };
 
 /**
@@ -115,20 +64,7 @@ export const changePlan = async (
   subscriptionId: string,
   request: ChangePlanRequest
 ): Promise<ChangePlanResponse> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.payments.subscriptions.changePlan(subscriptionId), {
-    method: 'POST',
-    headers: getAuthHeaders(token),
-    body: JSON.stringify(request),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return response.json();
+  return paymentsService.changePlan(subscriptionId, request.new_plan_id, '') as any;
 };
 
 /**
@@ -138,23 +74,7 @@ export const previewProration = async (
   subscriptionId: string,
   request: PreviewProrationRequest
 ): Promise<PreviewProrationResponse> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(
-    API_ENDPOINTS.payments.subscriptions.previewProration(subscriptionId),
-    {
-      method: 'POST',
-      headers: getAuthHeaders(token),
-      body: JSON.stringify(request),
-    }
-  );
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return response.json();
+  return paymentsService.previewProration(subscriptionId, request.new_plan_id, '') as any;
 };
 
 /**
@@ -163,20 +83,5 @@ export const previewProration = async (
 export const getCreditBalance = async (
   subscriptionId: string
 ): Promise<CreditBalanceResponse> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(
-    API_ENDPOINTS.payments.subscriptions.creditBalance(subscriptionId),
-    {
-      method: 'GET',
-      headers: getAuthHeaders(token),
-    }
-  );
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return response.json();
+  return paymentsService.getCreditBalance('') as any;
 };

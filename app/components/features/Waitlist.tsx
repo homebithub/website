@@ -3,6 +3,7 @@ import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { FcGoogle } from 'react-icons/fc';
 import { API_ENDPOINTS } from '~/config/api';
+import { waitlistService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface WaitlistProps {
@@ -74,17 +75,9 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
         ...formData,
         phone: normalizeKenyanPhone(formData.phone),
       };
-      const response = await fetch(API_ENDPOINTS.waitlist.join, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
+      const data = await waitlistService.createWaitlist('', payload) as any;
 
-      const data: WaitlistResponse = await response.json().catch(() => ({ success: false } as any));
-
-      if (response.ok && data?.success) {
+      if (data) {
         setShowSuccess(true);
         setFormData({
           phone: '',

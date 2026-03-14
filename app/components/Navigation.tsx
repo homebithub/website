@@ -11,6 +11,7 @@ import { useProfileSetupStatus } from "~/hooks/useProfileSetupStatus";
 import { useNotifications } from "~/hooks/useNotifications";
 import NotificationsModal from "~/components/notifications/NotificationsModal";
 import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { ShortlistServiceClient, HireRequestServiceClient, InterestServiceClient } from "~/proto/auth/auth.client";
 import { ListConversationsRequest } from "~/proto/notifications/notifications";
 import { NotificationsServiceClient } from "~/proto/notifications/notifications.client";
@@ -74,8 +75,9 @@ export function Navigation() {
     // Fetch shortlist count
     const fetchShortlistCount = async () => {
         try {
-            const { response } = await (shortlistClient as any).countShortlist({}, { metadata: getGrpcMetadata() });
-            const count = response.data?.fields?.count?.numberValue || 0;
+            if (!getAccessTokenFromCookies()) return;
+            const { response } = await shortlistClient.getShortlistCount({ userId: '', profileType: '' }, { metadata: getGrpcMetadata() });
+            const count = Number(response.count) || 0;
             setShortlistCount(count);
         } catch (error) {
             console.error("[Shortlist Count] Failed to fetch:", error);
@@ -85,6 +87,7 @@ export function Navigation() {
     // Fetch inbox unread count
     const fetchInboxCount = async () => {
         try {
+            if (!getAccessTokenFromCookies()) return;
             const request: ListConversationsRequest = { limit: 100, offset: 0 } as any;
             const { response } = await notificationsClient.listConversations(request, { metadata: getGrpcMetadata() });
             const conversations = (response.data?.fields?.conversations as any)?.listValue?.values || [];
@@ -103,12 +106,13 @@ export function Navigation() {
     // Fetch hiring badge count: pending items the user has NOT acted upon
     const fetchHireRequestCount = async (overrideProfileType?: string | null) => {
         try {
+            if (!getAccessTokenFromCookies()) return;
             const pt = overrideProfileType ?? profileType;
             let total = 0;
 
             if (pt === 'household') {
                 // 1. Count pending/viewed interests from househelps
-                const { response: iData } = await (interestClient as any).listInterestsByHousehold({}, { metadata: getGrpcMetadata() });
+                const { response: iData } = await interestClient.listByHousehold({ userId: '', profileType: '' }, { metadata: getGrpcMetadata() });
                 const interests = (iData.data?.fields?.data as any)?.listValue?.values || [];
                 total += interests.filter((v: any) => {
                     const i = v.structValue?.fields || {};
@@ -155,10 +159,12 @@ export function Navigation() {
                     console.log('[Navigation] Profile type:', profileType);
                     console.log('[Navigation] Is household?', profileType === "household");
 
-                    // Fetch counts for authenticated users
-                    fetchShortlistCount();
-                    fetchInboxCount();
-                    fetchHireRequestCount(profileType);
+                    // Fetch counts only for authenticated users who finished onboarding
+                    if (!isInSetupMode) {
+                        fetchShortlistCount();
+                        fetchInboxCount();
+                        fetchHireRequestCount(profileType);
+                    }
                 } else {
                     setProfileType(null);
                     setUserName(null);
@@ -173,20 +179,22 @@ export function Navigation() {
             setShortlistCount(0);
             setInboxCount(0);
         }
-    }, [user]);
+    }, [user, isInSetupMode]);
 
-    // Listen for shortlist and inbox updates
+    // Listen for shortlist and inbox updates (only when not in setup mode)
     useEffect(() => {
+        if (isInSetupMode) return;
+
         const handleShortlistUpdate = () => {
-            fetchShortlistCount();
+            if (getAccessTokenFromCookies()) fetchShortlistCount();
         };
 
         const handleInboxUpdate = () => {
-            fetchInboxCount();
+            if (getAccessTokenFromCookies()) fetchInboxCount();
         };
 
         const handleHiringUpdate = () => {
-            fetchHireRequestCount();
+            if (getAccessTokenFromCookies()) fetchHireRequestCount();
         };
 
         window.addEventListener('shortlist-updated', handleShortlistUpdate);
@@ -197,11 +205,11 @@ export function Navigation() {
             window.removeEventListener('inbox-updated', handleInboxUpdate);
             window.removeEventListener('hiring-updated', handleHiringUpdate);
         };
-    }, []);
+    }, [isInSetupMode]);
 
-    // Poll all counts every 60 seconds
+    // Poll all counts every 60 seconds (skip during onboarding)
     useEffect(() => {
-        if (!user || !profileType) return;
+        if (!user || !profileType || isInSetupMode) return;
 
         const pollCounts = () => {
             fetchShortlistCount();
@@ -211,7 +219,7 @@ export function Navigation() {
 
         const intervalId = setInterval(pollCounts, 60_000);
         return () => clearInterval(intervalId);
-    }, [user, profileType]);
+    }, [user, profileType, isInSetupMode]);
 
     // Badge helper: 0 = null (hidden), 1-9 = number, >9 = "9+"
     const renderBadge = (count: number, gradient = 'from-purple-600 to-pink-600', shadow = 'shadow-purple-500/50') => {

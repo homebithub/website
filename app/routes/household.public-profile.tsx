@@ -1,6 +1,8 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
+import { API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService, householdKidsService, petsService, documentService, shortlistService, interestService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -104,30 +106,21 @@ export default function HouseholdPublicProfile() {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         if (!token) throw new Error("Not authenticated");
         if (!resolvedUserId) throw new Error("Missing household user id");
 
-        const profileRes = await fetch(`${API_BASE_URL}/api/v1/profile/household/${resolvedUserId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!profileRes.ok) throw new Error("Failed to fetch profile");
-        const profileRaw = await profileRes.json();
-        const profileData = profileRaw?.data?.data || profileRaw?.data || profileRaw;
+        // Fetch household profile via gRPC
+        const profileData = await grpcProfileService.getHouseholdByUserID(resolvedUserId);
 
-        // Fetch photos from documents table for this household user
+        // Fetch photos from documents table via gRPC
         try {
-          const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents/user/${resolvedUserId}?document_type=profile_photo`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (docsRes.ok) {
-            const docsResponse = await docsRes.json();
-            const docsData = docsResponse.data?.data || docsResponse.data || [];
-            const documentsArray = Array.isArray(docsData) ? docsData : [];
-            const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
-            if (photoUrls.length > 0) {
-              profileData.photos = photoUrls;
-            }
+          const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+          const docs = docsData?.data || docsData?.documents || docsData || [];
+          const documentsArray = Array.isArray(docs) ? docs : [];
+          const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+          if (photoUrls.length > 0) {
+            profileData.photos = photoUrls;
           }
         } catch (err) {
           console.error("Failed to fetch profile photos:", err);
@@ -136,27 +129,17 @@ export default function HouseholdPublicProfile() {
         setProfile(profileData);
 
         try {
-          const petsRes = await fetch(`${API_BASE_URL}/api/v1/pets/user/${resolvedUserId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (petsRes.ok) {
-            const petsRaw = await petsRes.json();
-            const petsData = petsRaw?.data?.data || petsRaw?.data || petsRaw;
-            setPets(Array.isArray(petsData) ? petsData : []);
-          }
+          const petsData = await petsService.listMyPets(resolvedUserId);
+          const petsArray = petsData?.data || petsData;
+          setPets(Array.isArray(petsArray) ? petsArray : []);
         } catch (err) {
           console.error("Failed to fetch pets:", err);
         }
 
         try {
-          const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids/user/${resolvedUserId}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (kidsRes.ok) {
-            const kidsRaw = await kidsRes.json();
-            const kidsData = kidsRaw?.data?.data || kidsRaw?.data || kidsRaw;
-            setKids(Array.isArray(kidsData) ? kidsData : []);
-          }
+          const kidsData = await householdKidsService.listHouseholdKids(resolvedUserId);
+          const kidsArray = kidsData?.data || kidsData;
+          setKids(Array.isArray(kidsArray) ? kidsArray : []);
         } catch (err) {
           console.error("Failed to fetch kids:", err);
         }
@@ -186,14 +169,11 @@ export default function HouseholdPublicProfile() {
     let cancelled = false;
     const checkShortlist = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         if (!token) return;
-        const res = await fetch(`${API_BASE_URL}/api/v1/shortlists`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!cancelled && res.ok) {
-          const raw = await res.json();
-          const items = raw?.data?.data || raw?.data || raw || [];
+        const raw = await shortlistService.listByProfile('', 'househelp');
+        const items = raw?.data || raw || [];
+        if (!cancelled) {
           const ids = new Set(
             (Array.isArray(items) ? items : []).map((s: any) => s.profile_id).filter(Boolean)
           );
@@ -219,14 +199,10 @@ export default function HouseholdPublicProfile() {
     let cancelled = false;
     const checkInterest = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-        const res = await fetch(API_ENDPOINTS.interests.exists(profile.id!), {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!cancelled && res.ok) {
-          const data = await res.json();
-          setHasExpressedInterest(Boolean(data?.exists));
+        const data = await interestService.interestExists('', profile.id!) as any;
+        const exists = !!(data?.getExists?.() ?? data?.exists);
+        if (!cancelled) {
+          setHasExpressedInterest(exists);
         }
       } catch (err) {
         console.error("Failed to check interest status", err);
@@ -278,25 +254,13 @@ export default function HouseholdPublicProfile() {
     if (!profile?.id) return;
     setActionLoading('shortlist');
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error("Not authenticated");
       if (isShortlisted) {
-        const res = await fetch(`${API_BASE_URL}/api/v1/shortlists/${profile.id}`, {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error('Failed to remove from shortlist');
+        await shortlistService.deleteShortlist(profile.id);
         setIsShortlisted(false);
       } else {
-        const res = await fetch(`${API_BASE_URL}/api/v1/shortlists`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ profile_id: profile.id, profile_type: 'household' }),
-        });
-        if (!res.ok) throw new Error('Failed to add to shortlist');
+        await shortlistService.createShortlist('', 'household', { profile_id: profile.id, profile_type: 'household' });
         setIsShortlisted(true);
       }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));

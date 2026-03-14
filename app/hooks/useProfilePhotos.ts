@@ -1,3 +1,4 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { transport, getGrpcMetadata } from '~/utils/grpcClient';
 import { DocumentServiceClient } from '~/proto/auth/auth.client';
@@ -18,7 +19,7 @@ export function useProfilePhotos(userIds: string[]): Record<string, string> {
   useEffect(() => {
     if (!userIds || userIds.length === 0) return;
 
-    const token = localStorage.getItem('token');
+    const token = getAccessTokenFromCookies();
     if (!token) return;
 
     // Filter to IDs we haven't fetched yet

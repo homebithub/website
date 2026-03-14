@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState } from 'react';
 import { handleApiError } from '../../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 
 const Gender = () => {
     const [gender, setGender] = useState<'female' | 'male'>('female');
@@ -40,30 +41,15 @@ const Gender = () => {
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) {
                 throw new Error('Authentication token not found');
             }
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    updates: {
-                        gender: gender,
-                        date_of_birth: dateOfBirth
-                    }
-                })
+            await grpcProfileService.updateHousehelpFields('', 'househelp', {
+                gender: gender,
+                date_of_birth: dateOfBirth
             });
-
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to update profile');
-            }
             
             setSuccess('Your information has been saved successfully!');
             // router.push('/next-step'); // Uncomment and add navigation to next step if needed

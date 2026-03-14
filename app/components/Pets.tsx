@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { petsService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
@@ -64,28 +65,19 @@ const Pets: React.FC = () => {
   useEffect(() => {
     const loadPets = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/v1/pets`, {
-          method: "GET",
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-        
-        if (res.ok) {
-          const petsData = await res.json();
-          if (petsData && petsData.length > 0) {
-            // Map backend response to frontend Pet interface
-            const mappedPets = petsData.map((p: any) => ({
-              id: p.id,
-              type: p.pet_type,
-              requiresCare: p.requires_care,
-              careDetails: p.care_details || "",
-              traits: p.traits || []
-            }));
-            setPets(mappedPets);
-            setHasPet("yes");
-          }
+        const token = getAccessTokenFromCookies();
+        const petsData = await petsService.listMyPets('');
+        const petsList = Array.isArray(petsData) ? petsData : (petsData?.data || []);
+        if (petsList.length > 0) {
+          const mappedPets = petsList.map((p: any) => ({
+            id: p.id,
+            type: p.pet_type,
+            requiresCare: p.requires_care,
+            careDetails: p.care_details || "",
+            traits: p.traits || []
+          }));
+          setPets(mappedPets);
+          setHasPet("yes");
         }
       } catch (err) {
         console.error("Failed to load pets:", err);
@@ -131,28 +123,15 @@ const Pets: React.FC = () => {
     setError("");
     
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       const finalPetType = petType === "Other" ? otherPetType.trim() : petType;
       
-      const response = await fetch(`${API_BASE_URL}/api/v1/pets`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          pet_type: finalPetType.toLowerCase(),
-          requires_care: requiresCare,
-          care_details: requiresCare ? careDetails : "",
-          traits: selectedTraits.map(trait => trait.toLowerCase())
-        })
+      const newPet = await petsService.createPet('', {
+        pet_type: finalPetType.toLowerCase(),
+        requires_care: requiresCare,
+        care_details: requiresCare ? careDetails : "",
+        traits: selectedTraits.map(trait => trait.toLowerCase())
       });
-      
-      if (!response.ok) {
-        throw new Error("Failed to add pet. Please try again.");
-      }
-      
-      const newPet = await response.json();
       
       // Add the pet to local state with the response data
       const petForDisplay: Pet = {
@@ -192,17 +171,8 @@ const Pets: React.FC = () => {
     setDeleteLoading(true);
     
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/v1/pets/${petToDelete.id}`, {
-        method: "DELETE",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to delete pet. Please try again.");
-      }
+      const token = getAccessTokenFromCookies();
+      await petsService.deletePet(petToDelete.id);
       
       // Remove pet from local state
       setPets(prev => prev.filter(pet => pet.id !== petToDelete.id));

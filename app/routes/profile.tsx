@@ -5,7 +5,8 @@ import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
-import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { authService } from '~/services/grpc/auth.service';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -63,23 +64,22 @@ export default function ProfilePage() {
   // Fetch profile from /api/v1/users/me which returns non-sensitive information from the users table
   React.useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) return;
       try {
         setError(null);
         setSuccess(null);
-        const res = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-        if (!res.ok) throw new Error('Failed to fetch profile');
-        const response = await res.json();
-        console.log('Profile response:', response);
-
-        // Extract profile data from nested structure
-        const data = response.data || response;
-        console.log('Extracted profile data:', data);
+        const userData = await authService.getCurrentUser();
+        const data = {
+          id: userData.getId(),
+          email: userData.getEmail(),
+          first_name: userData.getFirstName(),
+          last_name: userData.getLastName(),
+          phone: userData.getPhone(),
+          profile_type: userData.getProfileType(),
+          is_verified: userData.getIsVerified(),
+          profile_image: userData.getProfileImage(),
+        };
 
         setProfile(data);
         setForm({
@@ -134,26 +134,15 @@ export default function ProfilePage() {
     setOtpSuccess(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       // Use the existing update-email endpoint (this might directly update without OTP)
       // If OTP is needed, the backend should handle the OTP sending
-      const res = await fetch(`${API_BASE_URL}/api/v1/auth/update-email`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ email: newEmail }),
-      });
-
-      if (!res.ok) {
-        const errorResponse = await res.json();
-        const errorData = errorResponse.data || errorResponse;
-        throw new Error(extractErrorMessage(errorData) || 'Failed to update email');
-      }
-
-      const response = await res.json();
-      const data = response.data || response;
+      const result = await authService.updateEmail('', newEmail);
+      const data = {
+        verification: result.getVerification ? {
+          id: result.getVerification()?.getId?.() || result.getVerificationId?.(),
+        } : null,
+      };
 
       // If the response contains verification info, show OTP modal
       if (data.verification && data.verification.id) {
@@ -191,26 +180,15 @@ export default function ProfilePage() {
     setOtpSuccess(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       // Use the existing update-phone endpoint (this might directly update without OTP)
       // If OTP is needed, the backend should handle the OTP sending
-      const res = await fetch(`${API_BASE_URL}/api/v1/auth/update-phone`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ phone: newPhone }),
-      });
-
-      if (!res.ok) {
-        const errorResponse = await res.json();
-        const errorData = errorResponse.data || errorResponse;
-        throw new Error(extractErrorMessage(errorData) || 'Failed to update phone');
-      }
-
-      const response = await res.json();
-      const data = response.data || response;
+      const result = await authService.updatePhone('', newPhone);
+      const data = {
+        verification: result.getVerification ? {
+          id: result.getVerification()?.getId?.() || result.getVerificationId?.(),
+        } : null,
+      };
 
       // If the response contains verification info, show OTP modal
       if (data.verification && data.verification.id) {
@@ -247,25 +225,9 @@ export default function ProfilePage() {
     setOtpError(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       // Use the new verify-profile-otp endpoint (requires JWT)
-      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/verify-profile-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          verification_type: currentVerificationType,
-          otp: otpCode,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorResponse = await res.json();
-        const errorData = errorResponse.data || errorResponse;
-        throw new Error(extractErrorMessage(errorData) || 'Failed to verify OTP');
-      }
+      await authService.verifyOTP(currentVerificationId, otpCode, currentVerificationType || '');
 
       // Success - update profile data
       await fetchProfile();
@@ -294,24 +256,9 @@ export default function ProfilePage() {
     setOtpSuccess(null);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       // Use the new resend-profile-otp endpoint (requires JWT)
-      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/resend-profile-otp`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          verification_type: currentVerificationType,
-        }),
-      });
-
-      if (!res.ok) {
-        const errorResponse = await res.json();
-        const errorData = errorResponse.data || errorResponse;
-        throw new Error(extractErrorMessage(errorData) || 'Failed to resend OTP');
-      }
+      await authService.resendOTP(currentVerificationId || '', currentVerificationType || '');
 
       setOtpCode('');
       setResendSeconds(30);
@@ -339,18 +286,21 @@ export default function ProfilePage() {
 
   // Refetch profile function
   const fetchProfile = async () => {
-    const token = localStorage.getItem('token');
+    const token = getAccessTokenFromCookies();
     if (!token) return;
 
-    const res = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    });
-
-    if (res.ok) {
-      const response = await res.json();
-      const data = response.data || response;
+    try {
+      const userData = await authService.getCurrentUser();
+      const data = {
+        id: userData.getId(),
+        email: userData.getEmail(),
+        first_name: userData.getFirstName(),
+        last_name: userData.getLastName(),
+        phone: userData.getPhone(),
+        profile_type: userData.getProfileType(),
+        is_verified: userData.getIsVerified(),
+        profile_image: userData.getProfileImage(),
+      };
       setProfile(data);
       setForm({
         email: data.email || '',
@@ -358,6 +308,8 @@ export default function ProfilePage() {
         last_name: data.last_name || '',
         phone: data.phone || '',
       });
+    } catch (err) {
+      console.error('Failed to refetch profile:', err);
     }
   };
 
@@ -369,22 +321,14 @@ export default function ProfilePage() {
     setError(null);
     setSuccess(null);
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error('No auth token');
-      const res = await fetch(API_ENDPOINTS.auth.me, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: form.email,
-          first_name: form.first_name,
-          last_name: form.last_name,
-          phone: form.phone,
-        }),
+      await authService.updateUser('', {
+        email: form.email,
+        firstName: form.first_name,
+        lastName: form.last_name,
+        phone: form.phone,
       });
-      if (!res.ok) throw new Error('Failed to update profile');
       setSuccess('Profile updated!');
       setEditMode(false);
       setProfile((p: any) => ({ ...p, ...form }));

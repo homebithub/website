@@ -1,7 +1,9 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useCallback, useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import { XMarkIcon, ArrowLeftIcon, ArrowRightIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 
 type ImageFile = {
   id: string;
@@ -149,7 +151,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
     setSuccess('');
     
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       
       // Upload images to image service first
       const formData = new FormData();
@@ -172,50 +174,21 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp' }) => {
       const uploadData = await uploadResponse.json();
       const imageUrls = uploadData.urls || uploadData.images || [];
       
-      // For household, update profile with photos and step metadata
+      // Save image URLs to profile via gRPC
       if (userType === 'household') {
-        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            photos: imageUrls,
-            _step_metadata: {
-              step_id: "photos",
-              step_number: 8,
-              is_completed: true
-            }
-          }),
+        await grpcProfileService.updateHouseholdProfile('', 'household', {
+          photos: imageUrls,
+          _step_metadata: {
+            step_id: 'photos',
+            step_number: 8,
+            is_completed: true
+          }
         });
-        
-        if (!profileResponse.ok) {
-          throw new Error('Failed to save photos to profile');
-        }
       } else {
-        // For househelp, update househelp profile with step tracking
-        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            updates: {
-              photos: imageUrls
-            },
-            _step_metadata: {
-              step_id: "photos",
-              step_number: 15,
-              is_completed: true
-            }
-          }),
-        });
-        
-        if (!profileResponse.ok) {
-          throw new Error('Failed to save photos to profile');
-        }
+        await grpcProfileService.updateHousehelpFields('', 'househelp',
+          { photos: imageUrls },
+          { step_id: 'photos', step_number: 15, is_completed: true }
+        );
       }
       
       setSuccess('Your photos have been uploaded successfully!');

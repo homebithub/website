@@ -1,3 +1,4 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
@@ -6,8 +7,8 @@ import { HeartIcon as HeartIconSolid } from "@heroicons/react/24/solid";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { apiClient } from "~/utils/apiClient";
+import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { formatTimeAgo } from "~/utils/timeAgo";
@@ -27,7 +28,6 @@ type ShortlistItem = {
 };
 
 export default function ShortlistPage() {
-  const API_BASE = useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
   const navigate = useNavigate();
   const [items, setItems] = useState<ShortlistItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,18 +93,12 @@ export default function ShortlistPage() {
     const fetchHouseholdProfileId = async () => {
       if (currentProfileType?.toLowerCase() === 'household' && currentUserId) {
         try {
-          const token = localStorage.getItem("token");
+          const token = getAccessTokenFromCookies();
           if (!token) return;
           
-          const res = await fetch(`${API_BASE}/api/v1/profile/household/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const raw = await res.json();
-            const profile = raw?.data?.data || raw?.data || raw;
-            if (!cancelled) {
-              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
-            }
+          const profile = await grpcProfileService.getCurrentHouseholdProfile('');
+          if (profile && !cancelled) {
+            setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
           }
         } catch (err) {
           console.error('Failed to fetch household profile ID:', err);
@@ -117,7 +111,7 @@ export default function ShortlistPage() {
     return () => {
       cancelled = true;
     };
-  }, [currentProfileType, currentUserId, API_BASE]);
+  }, [currentProfileType, currentUserId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -125,9 +119,7 @@ export default function ShortlistPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/mine?offset=${offset}&limit=${limit}`);
-        if (!res.ok) throw new Error("Failed to load shortlist");
-        const raw = await apiClient.json<any>(res);
+        const raw = await shortlistService.listByHousehold('');
         const data = raw?.data?.data || raw?.data || raw || [];
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
@@ -140,7 +132,7 @@ export default function ShortlistPage() {
     }
     load();
     return () => { cancelled = true; };
-  }, [API_BASE, offset]);
+  }, [offset]);
 
   // Fetch household public profiles for newly loaded shortlist items (househelp's own shortlist)
   useEffect(() => {
@@ -165,11 +157,13 @@ export default function ShortlistPage() {
         setLoadingProfiles(true);
         const results = await Promise.all(
           missing.map(async (profileId) => {
-            const res = await apiClient.auth(`${API_BASE}/api/v1/profile/household/${profileId}`);
-            if (!res.ok) return { profileId, data: null };
-            const raw = await apiClient.json<any>(res);
-            const data = raw?.data?.data || raw?.data || raw;
-            return { profileId, data };
+            try {
+              const raw = await grpcProfileService.getHouseholdByUserID(profileId);
+              const data = raw?.data || raw;
+              return { profileId, data };
+            } catch {
+              return { profileId, data: null };
+            }
           })
         );
         if (cancelled) return;
@@ -189,7 +183,7 @@ export default function ShortlistPage() {
     }
     fetchProfiles();
     return () => { cancelled = true; };
-  }, [items, API_BASE]);
+  }, [items]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -206,8 +200,7 @@ export default function ShortlistPage() {
 
   async function handleRemove(profileId: string) {
     try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/${profileId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to remove from shortlist');
+      await shortlistService.deleteShortlist(profileId);
       setItems((prev) => prev.filter((s) => s.profile_id !== profileId));
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (e) {

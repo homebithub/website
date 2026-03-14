@@ -1,11 +1,12 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useLocation, useNavigate } from "react-router";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { apiClient } from "~/utils/apiClient";
+import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
@@ -110,18 +111,12 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     const fetchHouseholdProfileId = async () => {
       if (currentProfileType?.toLowerCase() === 'household' && currentUserId) {
         try {
-          const token = localStorage.getItem("token");
+          const token = getAccessTokenFromCookies();
           if (!token) return;
           
-          const res = await fetch(`${API_BASE_URL}/api/v1/profile/household/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const raw = await res.json();
-            const profile = raw?.data?.data || raw?.data || raw;
-            if (!cancelled) {
-              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
-            }
+          const profile = await grpcProfileService.getCurrentHouseholdProfile('');
+          if (profile && !cancelled) {
+            setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
           }
         } catch (err) {
           console.error('Failed to fetch household profile ID:', err);
@@ -187,16 +182,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       
       if (isShortlisted) {
         // Remove from shortlist
-        const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}/${profileId}`, {
-          method: 'DELETE',
-        });
-        
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({ message: 'Failed to remove from shortlist' }));
-          console.error('Remove shortlist error:', errorData);
-          alert(errorData.message || 'Failed to remove from shortlist. Please try again.');
-          return;
-        }
+        await shortlistService.deleteShortlist(profileId);
         
         console.log('Successfully removed from shortlist');
         setShortlistedProfiles(prev => {
@@ -206,18 +192,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         });
       } else {
         // Add to shortlist
-        const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profile_id: profileId, profile_type: 'househelp' }),
-        });
-        
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({ message: 'Failed to add to shortlist' }));
-          console.error('Shortlist error:', errorData);
-          alert(errorData.message || 'Failed to add to shortlist. Please try again.');
-          return;
-        }
+        await shortlistService.createShortlist('', 'household', { profile_id: profileId, profile_type: 'househelp' });
         
         console.log('Successfully added to shortlist');
         setShortlistedProfiles(prev => new Set(prev).add(profileId));
@@ -421,13 +396,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     const payload = buildCountPayload(fields);
     countTimerRef.current = setTimeout(async () => {
       try {
-        const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps/search/count`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const data = await apiClient.json<{ count: number }>(res);
-        setTotalCount(typeof data.count === 'number' ? data.count : 0);
+        const count = await grpcProfileService.countHousehelps('', 'household', payload);
+        setTotalCount(typeof count === 'number' ? count : 0);
       } catch (e) {
         setTotalCount(null);
       }
@@ -450,14 +420,10 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         const results = await Promise.all(
           profileIds.map(async (profileId) => {
             try {
-              const res = await apiClient.auth(API_ENDPOINTS.shortlists.exists(profileId));
-              if (!res.ok) {
-                console.log(`Profile ${profileId} not shortlisted (status: ${res.status})`);
-                return { profileId, exists: false };
-              }
-              const data = await apiClient.json<{ exists: boolean }>(res);
-              console.log(`Profile ${profileId} shortlist status:`, data.exists);
-              return { profileId, exists: data.exists };
+              const res = await shortlistService.shortlistExists('', profileId);
+              const exists = res?.getExists?.() ?? res?.exists ?? false;
+              console.log(`Profile ${profileId} shortlist status:`, exists);
+              return { profileId, exists };
             } catch (err) {
               console.error(`Error checking shortlist for ${profileId}:`, err);
               return { profileId, exists: false };
@@ -520,14 +486,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           offset: 0,
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
       );
-      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await apiClient.json<any>(res);
+      const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, 0);
       console.log('Search househelps response:', data);
-      const inner = data?.data;
+      const inner = data?.data || data;
       const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
       setHousehelps(rows);
       setHasMore(rows.length === limit);
@@ -571,13 +532,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           offset: nextOffset,
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
       );
-      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await apiClient.json<any>(res);
-      const inner = data?.data;
+      const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, nextOffset);
+      const inner = data?.data || data;
       const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
       setHousehelps(prev => [...prev, ...rows]);
       setOffset(nextOffset);

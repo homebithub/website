@@ -1,8 +1,9 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../../utils/errorMessages';
 import { UserGroupIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import Kids from "./Kids";
-import { API_BASE_URL } from '~/config/api';
+import { householdKidsService } from '~/services/grpc/authServices';
 
 export interface Child {
   id?: string | number;
@@ -68,21 +69,12 @@ const Children: React.FC = () => {
     setError("");
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          gender,
-          date_of_birth: dob,
-          traits,
-        }),
+      const token = getAccessTokenFromCookies();
+      const saved = await householdKidsService.createHouseholdKid('', {
+        gender,
+        date_of_birth: dob,
+        traits,
       });
-      if (!res.ok) throw new Error("Failed to save child. Please try again.");
-      const saved = await res.json();
       setChildrenList([...childrenList, saved]);
       setShowModal(false);
       setGender("");
@@ -98,23 +90,14 @@ const Children: React.FC = () => {
     console.log("Submitting children data:", childrenList);
     // Handle form submission with childrenList
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(childrenList),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save children data");
+      const token = getAccessTokenFromCookies();
+      // Save each child via gRPC
+      for (const child of childrenList) {
+        if (!child.id) {
+          await householdKidsService.createHouseholdKid('', child);
+        }
       }
-      
-      // Handle successful save
-      const result = await response.json();
-      console.log("Children data saved successfully:", result);
+      console.log("Children data saved successfully");
     } catch (error) {
       console.error("Error saving children data:", error);
     }

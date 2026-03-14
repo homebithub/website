@@ -1,3 +1,4 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
@@ -5,8 +6,8 @@ import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { apiClient } from "~/utils/apiClient";
+import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { fetchPreferences } from "~/utils/preferencesApi";
@@ -27,10 +28,6 @@ type ShortlistItem = {
 
 export default function HouseholdShortlistPage() {
   const navigate = useNavigate();
-  const API_BASE = useMemo(
-    () => (typeof window !== "undefined" && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL,
-    []
-  );
 
   const [items, setItems] = useState<ShortlistItem[]>([]);
   const [loading, setLoading] = useState(false);
@@ -95,18 +92,12 @@ export default function HouseholdShortlistPage() {
     const fetchHouseholdProfileId = async () => {
       if (currentUserId) {
         try {
-          const token = localStorage.getItem("token");
+          const token = getAccessTokenFromCookies();
           if (!token) return;
           
-          const res = await fetch(`${API_BASE}/api/v1/profile/household/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const raw = await res.json();
-            const profile = raw?.data?.data || raw?.data || raw;
-            if (!cancelled) {
-              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
-            }
+          const profile = await grpcProfileService.getCurrentHouseholdProfile('');
+          if (profile && !cancelled) {
+            setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
           }
         } catch (err) {
           console.error('Failed to fetch household profile ID:', err);
@@ -119,7 +110,7 @@ export default function HouseholdShortlistPage() {
     return () => {
       cancelled = true;
     };
-  }, [currentUserId, API_BASE]);
+  }, [currentUserId]);
 
   // Load shortlist entries (mine)
   useEffect(() => {
@@ -128,15 +119,11 @@ export default function HouseholdShortlistPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await apiClient.auth(
-          `${API_BASE}/api/v1/shortlists/mine?offset=${offset}&limit=${limit}`
-        );
-        if (!res.ok) throw new Error("Failed to load shortlist");
-        const response = await apiClient.json<any>(res);
+        const response = await shortlistService.listByHousehold('');
         console.log('Shortlist response:', response);
         
         // Extract shortlist array from nested structure
-        const data = response.data?.data || response.data || response;
+        const data = response?.data?.data || response?.data || response;
         console.log('Extracted shortlist data:', data);
         
         // Ensure it's an array
@@ -157,7 +144,7 @@ export default function HouseholdShortlistPage() {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE, offset]);
+  }, [offset]);
 
   // Load househelp profiles for shortlist entries (only where profile_type === 'househelp')
   useEffect(() => {
@@ -171,13 +158,7 @@ export default function HouseholdShortlistPage() {
     async function loadProfiles() {
       try {
         setLoadingProfiles(true);
-        const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/search_multiple`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ profile_type: "househelp", profile_ids: missingIds }),
-        });
-        if (!res.ok) throw new Error("Failed to fetch profiles");
-        const response = await apiClient.json<any>(res);
+        const response = await grpcProfileService.searchMultipleWithUser('', 'househelp', { profile_ids: missingIds });
         // Gateway responses can be nested as { data: [...] } or { data: { data: [...] } }
         const data = response?.data?.data || response?.data || response;
         const profiles = Array.isArray(data) ? data : [];
@@ -197,12 +178,11 @@ export default function HouseholdShortlistPage() {
     return () => {
       cancelled = true;
     };
-  }, [items, API_BASE, profilesById]);
+  }, [items, profilesById]);
 
   async function handleRemove(profileId: string) {
     try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/${profileId}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Failed to remove from shortlist');
+      await shortlistService.deleteShortlist(profileId);
       setItems((prev) => (prev || []).filter((s) => s.profile_id !== profileId));
       // Trigger event to update badge count in navigation
       window.dispatchEvent(new CustomEvent('shortlist-updated'));

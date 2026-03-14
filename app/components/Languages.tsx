@@ -1,7 +1,8 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
@@ -84,31 +85,16 @@ const Languages = () => {
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) throw new Error('Authentication token not found');
 
             const updates = {
                 languages: selectedLanguages.join(',')
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ 
-                    updates,
-                    _step_metadata: {
-                        step_id: "languages",
-                        step_number: 9,
-                        is_completed: true
-                    }
-                })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
+                { step_id: 'languages', step_number: 9, is_completed: true }
+            );
             
             markClean();
             setSuccess('Your language preferences have been saved successfully!');

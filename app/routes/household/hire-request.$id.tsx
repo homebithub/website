@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router";
-import { API_ENDPOINTS } from '~/config/api';
-import { apiClient } from '~/utils/apiClient';
+import { hireRequestService, hireContractService, employmentContractService } from '~/services/grpc/authServices';
+import { useAuth } from '~/contexts/useAuth';
 import NegotiationPanel from '~/components/hiring/NegotiationPanel';
 import { Briefcase, Calendar, DollarSign, FileText, CheckCircle, XCircle, Ban } from 'lucide-react';
 import { useHiringSSE } from '~/hooks/useHiringSSE';
@@ -44,7 +44,6 @@ export default function HireRequestDetail() {
 
   useEffect(() => {
     fetchHireRequest();
-    fetchCurrentUser();
   }, [id]);
 
   // Check if an employment contract already exists for this hire request's househelp
@@ -56,32 +55,19 @@ export default function HireRequestDetail() {
 
   const checkExistingEmploymentContract = async () => {
     try {
-      const response = await apiClient.auth(
-        `${API_ENDPOINTS.hiring.employmentContracts.base}?limit=1`,
-        { method: 'GET' }
-      );
-      if (response.ok) {
-        const data = await response.json();
-        const contracts = data.data?.data || data.data || [];
-        const match = contracts.find((c: any) => c.househelp_id === hireRequest?.househelp_id);
-        if (match) setExistingEmploymentContract(match.id);
-      }
+      const raw = await employmentContractService.listEmploymentContracts('', undefined, 1, 0);
+      const contracts = raw?.data || raw || [];
+      const match = (Array.isArray(contracts) ? contracts : []).find((c: any) => c.househelp_id === hireRequest?.househelp_id);
+      if (match) setExistingEmploymentContract(match.id);
     } catch (err) {
       // Silently fail - not critical
     }
   };
 
-  const fetchCurrentUser = async () => {
-    try {
-      const response = await apiClient.auth(`${API_ENDPOINTS.auth.me}`, { method: 'GET' });
-      if (response.ok) {
-        const data = await response.json();
-        setCurrentUserId(data.id || data.user_id || '');
-      }
-    } catch (err) {
-      console.error('Failed to fetch current user:', err);
-    }
-  };
+  const { user } = useAuth();
+  useEffect(() => {
+    if (user) setCurrentUserId(user.id || '');
+  }, [user]);
 
   const fetchHireRequest = async () => {
     if (!id) return;
@@ -90,16 +76,7 @@ export default function HireRequestDetail() {
     setError(null);
 
     try {
-      const response = await apiClient.auth(
-        API_ENDPOINTS.hiring.requests.byId(id),
-        { method: 'GET' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch hire request');
-      }
-
-      const data = await response.json();
+      const data = await hireRequestService.getHireRequest(id);
       setHireRequest(data);
     } catch (err: any) {
       setError(err.message || 'Failed to load hire request');
@@ -146,14 +123,7 @@ export default function HireRequestDetail() {
 
     setActionLoading(true);
     try {
-      const response = await apiClient.auth(
-        API_ENDPOINTS.hiring.requests.byId(id!),
-        { method: 'DELETE' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to cancel hire request');
-      }
+      await hireRequestService.cancelHireRequest(id!);
 
       alert('Hire request cancelled successfully');
       navigate('/household/hiring');
@@ -168,24 +138,10 @@ export default function HireRequestDetail() {
     setActionLoading(true);
     try {
       // First create the hire contract to finalize the request
-      const response = await apiClient.auth(
-        API_ENDPOINTS.hiring.contracts.base,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            hire_request_id: id,
-            notes: contractNotes,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create contract');
-      }
-
-      const contract = await response.json();
+      const contract = await hireContractService.createFromHireRequest('', {
+        hire_request_id: id,
+        notes: contractNotes,
+      });
       setShowContractModal(false);
 
       // Navigate to employment contract page pre-filled with hire request data

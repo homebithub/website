@@ -1,6 +1,6 @@
 import React, {useState, useRef, useEffect} from "react";
 import { handleApiError } from '../../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { locationService } from '~/services/grpc/authServices';
 
 interface LocationSuggestion {
     name: string;
@@ -23,21 +23,16 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
     const [submitStatus, setSubmitStatus] = useState<{success: boolean; message: string} | null>(null);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
-    const baseUrl = API_BASE_URL
+
     useEffect(() => {
         if (input.length > 2) {
             setLoading(true);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(() => {
-                const token = localStorage.getItem('token');
-                fetch(`${baseUrl}/api/v1/location?q=${encodeURIComponent(input)}`, {
-                  headers: {
-                    'Authorization': token ? `Bearer ${token}` : '',
-                  },
-                })
-                  .then((res) => res.json())
-                  .then((data: LocationSuggestion[]) => {
-                    setSuggestions(data);
+                locationService.getLocationSuggestions(input)
+                  .then((response: any) => {
+                    const data = response?.data?.data || response?.data || response;
+                    setSuggestions(Array.isArray(data) ? data : []);
                     setShowDropdown(true);
                   })
                   .catch(() => setSuggestions([]))
@@ -50,7 +45,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
-    }, [input, baseUrl]);
+    }, [input]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -110,44 +105,30 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
 
         setSubmitting(true);
         setSubmitStatus(null);
-        const token = localStorage.getItem('token');
 
         try {
-            const response = await fetch(`${baseUrl}/api/v1/location/save-user-location`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token ? `Bearer ${token}` : ''
-                },
-                body: JSON.stringify({
+            await locationService.createLocation('', {
+                mapbox_id: selectedLocation.mapbox_id,
+                town: selectedLocation.name,
+                location: {
+                    place: selectedLocation.name,
+                    name: selectedLocation.name,
                     mapbox_id: selectedLocation.mapbox_id,
-                    town: selectedLocation.name,
-                    location: {
-                        place: selectedLocation.name,
-                        name: selectedLocation.name,
-                        mapbox_id: selectedLocation.mapbox_id,
-                        feature_type: selectedLocation.feature_type,
-                    },
-                    _step_metadata: {
-                        step_id: "location",
-                        step_number: 1,
-                        is_completed: true
-                    }
-                })
+                    feature_type: selectedLocation.feature_type,
+                },
+                _step_metadata: {
+                    step_id: "location",
+                    step_number: 1,
+                    is_completed: true
+                }
             });
 
-            const data = await response.json();
-            
-            if (response.ok) {
-                setSubmitStatus({
-                    success: true,
-                    message: data.message || 'Location saved successfully!'
-                });
-                // Clear the status after 3 seconds
-                setTimeout(() => setSubmitStatus(null), 3000);
-            } else {
-                throw new Error(data.message || 'Failed to save location');
-            }
+            setSubmitStatus({
+                success: true,
+                message: 'Location saved successfully!'
+            });
+            // Clear the status after 3 seconds
+            setTimeout(() => setSubmitStatus(null), 3000);
         } catch (error) {
             console.error('Error saving location:', error);
             setSubmitStatus({

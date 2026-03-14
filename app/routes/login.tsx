@@ -9,12 +9,10 @@ import { FcGoogle } from 'react-icons/fc';
 import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { loginSchema, validateForm, validateField } from '~/utils/validation';
 import { handleApiError } from '~/utils/errorMessages';
-import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { prepareDeviceRegistration } from '~/utils/deviceFingerprint';
-import { registerDevice } from '~/utils/api/devices';
+import { getDeviceId, getDeviceName } from '~/utils/deviceFingerprint';
 import { setAuthCookies } from '~/utils/cookie';
 
 export const meta = () => [
@@ -41,6 +39,7 @@ export type LoginResponse = {
   };
   // Flattened fields — present when AuthContext reconstructs the object
   // from /auth/me or localStorage
+  user_id?: string;
   id?: string;
   role?: string;
   phone?: string;
@@ -86,43 +85,57 @@ export default function LoginPage() {
       setProcessingGoogleLogin(true);
       (async () => {
         try {
-          // Fetch user profile using the provided token
-          const meResp = await fetch(API_ENDPOINTS.auth.me, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          // Set token cookie first so gRPC-Web auth metadata can read it
+          setAuthCookies(token, null, {});
 
-          if (!meResp.ok) {
-            throw new Error('Failed to fetch user after Google login');
-          }
+          // Fetch user profile via gRPC-Web
+          const { default: authService } = await import('~/services/grpc/auth.service');
+          const userProto = await authService.getCurrentUser();
 
-          const userData: any = await meResp.json();
+          const userData: any = {
+            user_id: userProto.getId?.() || '',
+            email: userProto.getEmail?.() || '',
+            phone: userProto.getPhone?.() || '',
+            first_name: userProto.getFirstName?.() || '',
+            last_name: userProto.getLastName?.() || '',
+            profile_type: userProto.getProfileType?.() || '',
+            is_verified: userProto.getIsVerified?.() || false,
+            profile_image: userProto.getProfileImage?.() || '',
+          };
+
+          // Update cookies with full user data
           setAuthCookies(token, null, userData);
           localStorage.setItem('user_object', JSON.stringify(userData));
           const profileType: string = userData.profile_type || '';
           localStorage.setItem('profile_type', profileType);
           try { localStorage.setItem('userType', profileType || ''); } catch {}
 
+          // If user has no phone number, redirect to add-phone page
+          if (!userData.phone) {
+            navigate('/add-phone', {
+              replace: true,
+              state: {
+                user_id: userData.user_id,
+                profileType,
+                redirectTo: redirectUrl || '/',
+              },
+            });
+            return;
+          }
+
           // Mirror the profile-setup redirect logic used in AuthContext.login
           if (profileType === 'household' || profileType === 'househelp') {
             try {
-              const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              });
+              const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
+              const progressData = await profileSetupService.getProgress(userData.user_id);
 
-              if (setupResponse.ok) {
-                const setupData = await setupResponse.json();
-                const progressData = setupData.data || {};
+              if (progressData) {
                 const totalSteps = progressData.total_steps || 0;
                 const lastStep = progressData.last_completed_step || 0;
                 const isComplete = progressData.status === 'completed' ||
                   (totalSteps > 0 && lastStep >= totalSteps);
 
                 if (!isComplete) {
-                  // Household users who haven't started setup go to choice page first
                   if (profileType === 'household' && lastStep === 0) {
                     navigate('/household-choice', { replace: true });
                     return;
@@ -133,19 +146,17 @@ export default function LoginPage() {
                   navigate(setupRoute, { replace: true });
                   return;
                 }
-              } else if (setupResponse.status === 404) {
-                // No profile setup record exists - user hasn't started setup
+              }
+            } catch (err: any) {
+              if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
                 if (profileType === 'household') {
                   navigate('/household-choice', { replace: true });
                   return;
                 }
-                console.log("No profile setup record found, starting from step 1");
                 navigate('/profile-setup/househelp?step=1', { replace: true });
                 return;
               }
-            } catch (err) {
               console.error('Failed to check profile setup status after Google login:', err);
-              // If this fails, fall through to default redirect below
             }
           }
 
@@ -234,21 +245,22 @@ export default function LoginPage() {
     try {
       await login(formData.phone, formData.password);
       
-      // After successful login, register the device
+      // After successful login, register the device via gRPC-Web (non-blocking)
       try {
-        const deviceData = await prepareDeviceRegistration();
-        const response = await registerDevice(deviceData);
-        
-        if (response.requires_confirmation) {
-          // Device needs confirmation - show message
-          console.log('Device registered, confirmation required');
-        } else {
-          // Device already confirmed or trusted
-          console.log('Device already confirmed');
+        const { default: deviceService } = await import('~/services/grpc/device.service');
+        const deviceId = await getDeviceId();
+        const userObj = JSON.parse(localStorage.getItem('user_object') || '{}');
+        const userId = userObj.user_id || '';
+        if (userId) {
+          const result = await deviceService.registerDevice(
+            userId, deviceId, getDeviceName(), navigator.userAgent, ''
+          );
+          if (result.requiresConfirmation) {
+            console.log('[Device] New device registered, confirmation email sent');
+          }
         }
       } catch (deviceError) {
-        // Don't block login if device registration fails
-        console.error('Device registration failed:', deviceError);
+        console.error('[Device] Registration failed:', deviceError);
       }
       
       // Login successful, redirect will be handled by useEffect
@@ -261,10 +273,11 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const res = await fetch(`${API_ENDPOINTS.auth.googleUrl}?flow=auth`);
-      const data = await res.json();
-      if (data?.url) {
-        window.location.href = data.url as string;
+      const { default: authSvc } = await import('~/services/grpc/auth.service');
+      const response = await authSvc.getGoogleAuthURL('auth');
+      const url = response?.getUrl?.() || response?.url;
+      if (url) {
+        window.location.href = url as string;
       }
     } catch (e) {
       /* no-op */

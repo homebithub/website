@@ -1,5 +1,6 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -62,22 +63,14 @@ const PreferredWorkEnvironment: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.preferred_household_size) setHouseholdSize(data.preferred_household_size);
-          if (data.preferred_location_type) setLocationType(data.preferred_location_type);
-          if (data.preferred_family_type) setFamilyType(data.preferred_family_type);
-          if (data.work_environment_notes) setAdditionalPreferences(data.work_environment_notes);
-        }
+        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        if (data?.preferred_household_size) setHouseholdSize(data.preferred_household_size);
+        if (data?.preferred_location_type) setLocationType(data.preferred_location_type);
+        if (data?.preferred_family_type) setFamilyType(data.preferred_family_type);
+        if (data?.work_environment_notes) setAdditionalPreferences(data.work_environment_notes);
       } catch (err) {
         console.error('Failed to load work environment data:', err);
       }
@@ -93,31 +86,13 @@ const PreferredWorkEnvironment: React.FC = () => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          updates: {
-            preferred_household_size: householdSize,
-            preferred_location_type: locationType,
-            preferred_family_type: familyType,
-            work_environment_notes: additionalPreferences,
-          },
-          _step_metadata: {
-            step_id: "workenvironment",
-            step_number: 11,
-            is_completed: true
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save preferences');
-      }
+      const token = getAccessTokenFromCookies();
+      await grpcProfileService.updateHousehelpFields('', 'househelp', {
+        preferred_household_size: householdSize,
+        preferred_location_type: locationType,
+        preferred_family_type: familyType,
+        work_environment_notes: additionalPreferences,
+      }, { step_id: 'workenvironment', step_number: 11, is_completed: true });
 
       markClean();
       setSuccess('Work environment preferences saved successfully!');

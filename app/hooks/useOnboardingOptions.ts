@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { AUTH_API_BASE_URL, getAuthHeaders } from '~/config/api';
+import { onboardingOptionsService } from '~/services/grpc/authServices';
 
 // Type definitions for onboarding options
 export interface Language {
@@ -180,25 +180,7 @@ export function useOnboardingOptions(profileType: 'househelp' | 'household'): Us
       setLoading(true);
       setError(null);
 
-      const response = await fetch(
-        `${AUTH_API_BASE_URL}/auth.OnboardingOptionsService/GetAllOptions`,
-        {
-          method: 'POST',
-          headers: {
-            ...getAuthHeaders(),
-            'Content-Type': 'application/grpc-web+json',
-          },
-          body: JSON.stringify({
-            profile_type: profileType,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch options: ${response.statusText}`);
-      }
-
-      const data = await response.json();
+      const data = await onboardingOptionsService.getAllOptions(profileType);
       setOptions(data);
     } catch (err) {
       console.error('Error fetching onboarding options:', err);
@@ -234,26 +216,8 @@ export function useSalaryRanges(frequency?: 'daily' | 'weekly' | 'monthly') {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(
-          `${AUTH_API_BASE_URL}/auth.OnboardingOptionsService/GetSalaryRanges`,
-          {
-            method: 'POST',
-            headers: {
-              ...getAuthHeaders(),
-              'Content-Type': 'application/grpc-web+json',
-            },
-            body: JSON.stringify({
-              frequency: frequency || '',
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error(`Failed to fetch salary ranges: ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        setRanges(data.data || []);
+        const data = await onboardingOptionsService.getSalaryRanges(frequency || '');
+        setRanges(data?.data || data || []);
       } catch (err) {
         console.error('Error fetching salary ranges:', err);
         setError(err instanceof Error ? err.message : 'Failed to fetch salary ranges');

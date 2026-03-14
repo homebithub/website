@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { API_BASE_URL } from '~/config/api';
+import { profileSetupService } from '~/services/grpc/profileSetup.service';
 import { Loading } from './Loading';
 
 interface ProfileSetupGuardProps {
@@ -56,9 +57,9 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
       return;
     }
 
+    const profileType = localStorage.getItem('profile_type');
     try {
-      const token = localStorage.getItem('token');
-      const profileType = localStorage.getItem('profile_type');
+      const token = getAccessTokenFromCookies();
 
       if (!token || !profileType) {
         // Not logged in, allow navigation (auth guard will handle)
@@ -75,16 +76,9 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
       }
 
       // Check profile setup status
-      const response = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        // Handle response structure: { data: { last_completed_step: ..., status: ... } }
-        const progressData = data.data || {};
+      const data = await profileSetupService.getProgress('');
+      if (data) {
+        const progressData = data.data || data || {};
         const totalSteps = progressData.total_steps || 0;
         const lastStep = progressData.last_completed_step || 0;
         const isComplete = progressData.status === 'completed' ||
@@ -112,8 +106,8 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
         console.log('ProfileSetupGuard - Redirecting to:', setupRoute);
         navigate(setupRoute, { replace: true });
         return;
-      } else if (response.status === 404) {
-        // No profile setup record exists - user hasn't started setup
+      } else {
+        // No data returned - treat as no setup record
         if (profileType === 'household') {
           console.log('ProfileSetupGuard - No setup record, redirecting to household choice');
           navigate('/household-choice', { replace: true });
@@ -122,14 +116,22 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
         console.log("ProfileSetupGuard - No profile setup record found, starting from step 1");
         navigate('/profile-setup/househelp?step=1', { replace: true });
         return;
-      } else {
-        // Error checking, allow navigation (fail open)
-        console.error('ProfileSetupGuard - Error checking setup status:', response.status);
-        setIsSetupComplete(true);
       }
-    } catch (error) {
+    } catch (error: any) {
+      // Handle NOT_FOUND (no profile setup record) - user hasn't started setup
+      if (error?.code === 5 || error?.message?.includes('not found') || error?.message?.includes('NOT_FOUND')) {
+        if (profileType === 'household') {
+          console.log('ProfileSetupGuard - No setup record, redirecting to household choice');
+          navigate('/household-choice', { replace: true });
+        } else {
+          console.log("ProfileSetupGuard - No profile setup record found, starting from step 1");
+          navigate('/profile-setup/househelp?step=1', { replace: true });
+        }
+        setIsChecking(false);
+        return;
+      }
       console.error('ProfileSetupGuard - Error:', error);
-      // On error, allow navigation (fail open)
+      // On other errors, allow navigation (fail open)
       setIsSetupComplete(true);
     } finally {
       setIsChecking(false);

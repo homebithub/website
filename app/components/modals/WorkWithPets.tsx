@@ -1,7 +1,8 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 
 type PetPreference = 'with_pets' | 'no_pets';
 type PetType = 'dog' | 'cat' | 'bird' | 'fish' | 'reptile' | 'small_mammal' | 'other';
@@ -79,7 +80,7 @@ const WorkWithPets = () => {
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) throw new Error('Authentication token not found');
 
             // Prepare the pet types, including the custom 'other' value if provided
@@ -94,17 +95,7 @@ const WorkWithPets = () => {
                 pet_types: petPreference === 'with_pets' ? petTypes.join(',') : '',
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ updates })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
             
             setSuccess('Your pet preferences have been saved successfully!');
             // navigate('/next-step');

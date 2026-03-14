@@ -1,6 +1,6 @@
 import React, {useState, useRef, useEffect} from "react";
 import { handleApiError } from '../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { locationService, profileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
@@ -30,52 +30,40 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
-    const baseUrl = API_BASE_URL
 
     // Load existing location data
     useEffect(() => {
         const loadLocation = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) return;
-
                 const profileType = localStorage.getItem('profile_type');
-                const profileEndpoint = profileType === 'househelp'
-                    ? `${baseUrl}/api/v1/profile/househelp/me`
-                    : `${baseUrl}/api/v1/household/profile`;
-                
-                const response = await fetch(profileEndpoint, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                
-                if (response.ok) {
-                    const responseBody = await response.json();
-                    const data = responseBody?.data || responseBody || {};
+                const raw = profileType === 'househelp'
+                    ? await profileService.getHousehelpProfileWithUser('')
+                    : await profileService.getCurrentHouseholdProfile('');
+                const data = raw?.data || raw || {};
 
-                    const loc = data?.location;
-                    const place = (typeof loc === 'string' ? loc : loc?.place || loc?.name) || data?.town || '';
-                    if (place) {
-                        const mapboxId = (typeof loc === 'object' && loc?.mapbox_id) || '';
-                        const featureType = (typeof loc === 'object' && loc?.feature_type) || 'place';
-                        setInput(place);
-                        setSavedLocation({
-                            name: place,
-                            mapbox_id: mapboxId,
-                            feature_type: featureType
-                        });
-                        setSelectedLocation({
-                            name: place,
-                            mapbox_id: mapboxId,
-                            feature_type: featureType
-                        });
-                    }
+                const loc = data?.location;
+                const place = (typeof loc === 'string' ? loc : loc?.place || loc?.name) || data?.town || '';
+                if (place) {
+                    const mapboxId = (typeof loc === 'object' && loc?.mapbox_id) || '';
+                    const featureType = (typeof loc === 'object' && loc?.feature_type) || 'place';
+                    setInput(place);
+                    setSavedLocation({
+                        name: place,
+                        mapbox_id: mapboxId,
+                        feature_type: featureType
+                    });
+                    setSelectedLocation({
+                        name: place,
+                        mapbox_id: mapboxId,
+                        feature_type: featureType
+                    });
                 }
             } catch (err) {
                 console.error('Failed to load location:', err);
             }
         };
         loadLocation();
-    }, [baseUrl]);
+    }, []);
 
     useEffect(() => {
         // Don't search if we just selected a location or if input is too short
@@ -83,15 +71,9 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
             setLoading(true);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
             timeoutRef.current = setTimeout(() => {
-                const token = localStorage.getItem('token');
-                fetch(`${baseUrl}/api/v1/location?q=${encodeURIComponent(input)}`, {
-                  headers: {
-                    'Authorization': token ? `Bearer ${token}` : '',
-                  },
-                })
-                  .then((res) => res.json())
-                  .then((response) => {
-                    const data = response.data?.data || response.data || response;
+                locationService.getLocationSuggestions(input)
+                  .then((response: any) => {
+                    const data = response?.data?.data || response?.data || response;
                     setSuggestions(Array.isArray(data) ? data : []);
                     setShowDropdown(true);
                   })
@@ -105,7 +87,7 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
-    }, [input, baseUrl]);
+    }, [input]);
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -182,7 +164,6 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
 
         setSubmitting(true);
         setSubmitStatus(null);
-        const token = localStorage.getItem('token');
 
         try {
             const payload = {
@@ -196,36 +177,23 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
                 }
             };
             console.log('Saving location payload:', JSON.stringify(payload, null, 2));
-            const response = await fetch(`${baseUrl}/api/v1/location/save-user-location`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': token ? `Bearer ${token}` : ''
-                },
-                body: JSON.stringify(payload)
+            await locationService.createLocation('', payload);
+
+            setSubmitStatus({
+                success: true,
+                message: 'Location saved successfully!'
             });
-
-            const data = await response.json();
+            markClean();
+            // Save the location to disable button
+            setSavedLocation(selectedLocation);
             
-            if (response.ok) {
-                setSubmitStatus({
-                    success: true,
-                    message: data.message || 'Location saved successfully!'
-                });
-                markClean();
-                // Save the location to disable button
-                setSavedLocation(selectedLocation);
-                
-                // Notify parent that location was saved
-                if (onSaved) {
-                    onSaved(selectedLocation);
-                }
-
-                // Clear the status after 3 seconds
-                setTimeout(() => setSubmitStatus(null), 3000);
-            } else {
-                throw new Error(data.message || 'Failed to save location');
+            // Notify parent that location was saved
+            if (onSaved) {
+                onSaved(selectedLocation);
             }
+
+            // Clear the status after 3 seconds
+            setTimeout(() => setSubmitStatus(null), 3000);
         } catch (error) {
             console.error('Error saving location:', error);
             setSubmitStatus({

@@ -1,6 +1,9 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
+import { API_ENDPOINTS } from '~/config/api';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { profileSetupService } from '~/services/grpc/profileSetup.service';
 
 interface ProfileSetupData {
   // Household fields
@@ -87,46 +90,25 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
     setError(null);
     
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       const profileType = localStorage.getItem('profile_type');
       
       if (!token) {
         throw new Error('No authentication token found');
       }
 
-      // Single call to profile update endpoint - backend handles step tracking
-      const endpoint = profileType === 'househelp' 
-        ? API_ENDPOINTS.profile.househelp.update 
-        : API_ENDPOINTS.profile.household.update;
-
       const stepPayload = transformStepData(stepId, data);
-      
-      // Househelp endpoint expects { updates: {...}, _step_metadata: {...} }
-      // Household endpoint expects flat fields with _step_metadata
       const stepMetadata = {
         step_id: stepId,
         step_number: stepNumber,
         is_completed: true
       };
 
-      const payload = profileType === 'househelp'
-        ? { updates: stepPayload, _step_metadata: stepMetadata }
-        : { ...stepPayload, _step_metadata: stepMetadata };
-
-      const method = profileType === 'househelp' ? 'PATCH' : 'PUT';
-
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save step');
+      // Save via gRPC
+      if (profileType === 'househelp') {
+        await grpcProfileService.updateHousehelpFields('', 'househelp', stepPayload, stepMetadata);
+      } else {
+        await grpcProfileService.updateHouseholdProfile('', 'household', { ...stepPayload, _step_metadata: stepMetadata });
       }
 
       // Update local state
@@ -150,7 +132,7 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
     setError(null);
     
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       const profileType = localStorage.getItem('profile_type');
       
       if (!token) {
@@ -158,36 +140,34 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
         return;
       }
 
-      // Fetch step tracking data from new endpoint
-      const stepsResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      // Fetch step tracking data and progress via gRPC
+      let stepsData: any = null;
+      let progressData: any = null;
+      
+      try {
+        stepsData = await profileSetupService.getSteps('');
+      } catch (err: any) {
+        if (err?.code === 5) { // NOT_FOUND
+          stepsData = null;
+        } else {
+          console.warn('Failed to fetch steps:', err);
         }
-      });
-
-      // Fetch progress tracking data
-      const progressResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      let lastCompleted = 0;
-      if (progressResponse.ok) {
-        const progressResponseBody = await progressResponse.json();
-        const progressData = progressResponseBody?.data || progressResponseBody || {};
-        lastCompleted = progressData.last_completed_step || 0;
       }
 
-      if (stepsResponse.ok) {
-        const responseData = await stepsResponse.json();
-        const steps = Array.isArray(responseData.data?.data) ? responseData.data.data : [];
+      try {
+        progressData = await profileSetupService.getProgress('');
+      } catch (err) {
+        console.warn('Failed to fetch progress:', err);
+      }
+
+      let lastCompleted = progressData?.last_completed_step || 0;
+
+      if (stepsData) {
+        const steps = Array.isArray(stepsData?.data) ? stepsData.data : (Array.isArray(stepsData) ? stepsData : []);
         console.log('Steps tracking data:', steps);
         
-        // Set last completed step from tracking data if available, otherwise use progress
         setLastCompletedStep(lastCompleted);
         
-        // Reconstruct profile data from steps
         const reconstructed: ProfileSetupData = {};
         steps.forEach((step: any) => {
           if (hasData(step.data) && (step.is_completed || step.is_skipped)) {
@@ -200,34 +180,23 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
           lastCompletedStep: lastCompleted,
           profileData: reconstructed 
         });
-      } else if (stepsResponse.status === 404) {
-        // No steps tracked yet, try loading from profile (legacy)
+      } else {
+        // No steps tracked yet, try loading from profile (legacy) via gRPC
         console.log('No steps tracking found, loading from profile');
         
-        const endpoint = profileType === 'househelp' 
-          ? API_ENDPOINTS.profile.househelp.me 
-          : API_ENDPOINTS.profile.household.me;
-
-        const profileResponse = await fetch(endpoint, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (profileResponse.ok) {
-          const profile = await profileResponse.json();
-          console.log('Raw profile from backend:', profile);
+        try {
+          const profile = profileType === 'househelp'
+            ? await grpcProfileService.getCurrentHousehelpProfile('')
+            : await grpcProfileService.getCurrentHouseholdProfile('');
           
-          // Convert backend data back to step format
+          console.log('Raw profile from backend:', profile);
           const reconstructedData = reconstructProfileData(profile);
           console.log('Reconstructed profile data:', reconstructedData);
           
           setProfileData(reconstructedData);
-          
-          // Don't calculate - start from step 0 if no tracking exists
           setLastCompletedStep(0);
           console.log('Profile loaded successfully (legacy mode), starting from step 0');
-        } else {
+        } catch (err) {
           console.log('No existing profile found, starting fresh');
           setLastCompletedStep(0);
         }
@@ -246,43 +215,23 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
     setError(null);
     
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       const profileType = localStorage.getItem('profile_type');
       
       if (!token) {
         throw new Error('No authentication token found');
       }
 
-      // Determine which endpoint to use based on profile type
-      const endpoint = profileType === 'househelp' 
-        ? API_ENDPOINTS.profile.househelp.update 
-        : API_ENDPOINTS.profile.household.update;
-
       // Transform the data to match backend expectations
       const transformed = transformProfileData(profileData);
 
-      // Househelp endpoint expects { updates: {...} }, household expects flat fields
-      const payload = profileType === 'househelp'
-        ? { updates: transformed }
-        : transformed;
-
-      const method = profileType === 'househelp' ? 'PATCH' : 'PUT';
-
-      const response = await fetch(endpoint, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to save profile');
+      // Save via gRPC
+      let savedProfile;
+      if (profileType === 'househelp') {
+        savedProfile = await grpcProfileService.updateHousehelpFields('', 'househelp', transformed);
+      } else {
+        savedProfile = await grpcProfileService.updateHouseholdProfile('', 'household', transformed);
       }
-
-      const savedProfile = await response.json();
       console.log('Profile saved successfully:', savedProfile);
       
       // Clear the local data after successful save

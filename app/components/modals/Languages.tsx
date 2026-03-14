@@ -1,7 +1,8 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 
 // List of languages organized by groups
 const LANGUAGE_GROUPS = {
@@ -146,24 +147,14 @@ const Languages = () => {
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) throw new Error('Authentication token not found');
 
             const updates = {
                 languages: selectedLanguages.join(',')
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ updates })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
             
             setSuccess('Your language preferences have been saved successfully!');
             // navigate('/next-step');

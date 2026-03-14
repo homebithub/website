@@ -11,18 +11,7 @@ interface RequestOptions extends RequestInit {
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
-  const cookieToken = getAccessTokenFromCookies();
-  if (cookieToken) return cookieToken;
-
-  try {
-    if (typeof localStorage !== "undefined") {
-      return localStorage.getItem("token") || null;
-    }
-  } catch {
-    // Ignore localStorage access issues
-  }
-
-  return null;
+  return getAccessTokenFromCookies() || null;
 }
 
 async function request(url: string, method: HttpMethod, options: RequestOptions = {}) {

@@ -4,7 +4,9 @@ import { useAuth } from "~/contexts/useAuth";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { apiClient } from "~/utils/apiClient";
+import { profileService as grpcProfileService, hireRequestService } from '~/services/grpc/authServices';
 import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon } from '@heroicons/react/24/outline';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
@@ -172,7 +174,7 @@ export default function InboxPage() {
   // Authentication check - redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) {
         navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
       }
@@ -495,9 +497,10 @@ export default function InboxPage() {
             let profileResponse: any;
 
             if (househelpUserId) {
-              const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
-              if (res.ok) {
-                profileResponse = await apiClient.json(res);
+              try {
+                profileResponse = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+              } catch {
+                // fallback below
               }
             }
 
@@ -507,12 +510,12 @@ export default function InboxPage() {
                 console.error('[Inbox] Missing househelp user/profile id for conversation:', conv.id);
                 continue;
               }
-              const fallbackRes = await apiClient.auth(`${API_BASE}/api/v1/househelps/${encodeURIComponent(fallbackProfileId)}/profile_with_user`);
-              if (!fallbackRes.ok) {
-                console.error('[Inbox] Failed to fetch househelp profile fallback:', fallbackRes.status);
+              try {
+                profileResponse = await grpcProfileService.getHousehelpByID(fallbackProfileId);
+              } catch {
+                console.error('[Inbox] Failed to fetch househelp profile fallback');
                 continue;
               }
-              profileResponse = await apiClient.json(fallbackRes);
             }
 
             const profileData = extractEnvelopeObject<any>(profileResponse);
@@ -534,9 +537,10 @@ export default function InboxPage() {
             // Househelp user: other participant is a household
             const householdUserId = conv.household_id;
             if (!householdUserId) continue;
-            const res = await apiClient.auth(`${API_BASE}/api/v1/profile/household/${encodeURIComponent(householdUserId)}`);
-            if (!res.ok) continue;
-            const profileResponse: any = await apiClient.json(res);
+            let profileResponse: any;
+            try {
+              profileResponse = await grpcProfileService.getHouseholdByUserID(householdUserId);
+            } catch { continue; }
             const profileData = extractEnvelopeObject<any>(profileResponse);
             
             // Extract household owner's name from the preloaded owner object
@@ -580,11 +584,8 @@ export default function InboxPage() {
       return;
     }
     try {
-      const params = new URLSearchParams({ limit: "50" });
-      const res = await apiClient.auth(`${API_BASE}/api/v1/hire-requests?${params.toString()}`);
-      if (!res.ok) throw new Error('Failed to load hire requests');
-      const payload = await apiClient.json<any>(res);
-      const requests = extractEnvelopeArray<HireRequestSummary>(payload, 'data');
+      const raw = await hireRequestService.listHireRequests('', '');
+      const requests = extractEnvelopeArray<HireRequestSummary>(raw, 'data');
 
       const conversationHouseholdCandidates = [
         normalizeId(conversation.household_profile_id),
@@ -853,14 +854,8 @@ export default function InboxPage() {
         if (!househelpUserId) return;
         
         try {
-          const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
-          if (res.ok) {
-            const profileData: any = await apiClient.json(res);
-            househelpProfileId = profileData.id || profileData.profile_id;
-          } else {
-            pushToast('Failed to load profile information', 'error');
-            return;
-          }
+          const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+          househelpProfileId = profileData?.id || profileData?.profile_id;
         } catch (err) {
           console.error('Failed to fetch househelp profile:', err);
           pushToast('Failed to load profile information', 'error');
@@ -1297,10 +1292,7 @@ export default function InboxPage() {
     if (!hireRequestId) return;
     try {
       setHireActionLoading('accept');
-      const res = await apiClient.auth(`${API_BASE}/api/v1/hire-requests/${encodeURIComponent(hireRequestId)}/accept`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error('Failed to accept hire request');
+      await hireRequestService.acceptHireRequest(hireRequestId);
       setHireRequestStatus('accepted');
     } catch (err) {
       console.error(err);
@@ -1314,10 +1306,7 @@ export default function InboxPage() {
     if (!hireRequestId) return;
     try {
       setHireActionLoading('decline');
-      const res = await apiClient.auth(`${API_BASE}/api/v1/hire-requests/${encodeURIComponent(hireRequestId)}/decline`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error('Failed to decline hire request');
+      await hireRequestService.declineHireRequest(hireRequestId);
       setHireRequestStatus('declined');
     } catch (err) {
       console.error(err);
@@ -1674,14 +1663,9 @@ export default function InboxPage() {
                     setShowHireWizard(true);
                   } else {
                     try {
-                      const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
-                      if (res.ok) {
-                        const profileData: any = await apiClient.json(res);
-                        setHousehelpProfileIdForHire(profileData.id);
-                        setShowHireWizard(true);
-                      } else {
-                        pushToast('Failed to load profile information', 'error');
-                      }
+                      const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+                      setHousehelpProfileIdForHire(profileData?.id || profileData?.profile_id);
+                      setShowHireWizard(true);
                     } catch (err) {
                       console.error('Failed to fetch househelp profile:', err);
                       pushToast('Failed to load profile information', 'error');

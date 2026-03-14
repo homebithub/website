@@ -1,3 +1,4 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from "react";
 import { Form } from "react-router";
 import { Navigation } from "~/components/Navigation";
@@ -7,8 +8,8 @@ import { changePasswordSchema, validateForm, validateField } from '~/utils/valid
 import { useAuth } from "~/contexts/useAuth";
 import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
-import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { extractErrorMessage } from '~/utils/errorMessages';
+import { authService } from '~/services/grpc/auth.service';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -132,35 +133,12 @@ export default function ChangePasswordPage() {
     
     try {
       // Get authentication token
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) {
         throw new Error("You must be logged in to change your password");
       }
       
-      // Add your password change API call here
-      // Use the correct /change-password endpoint as specified in the gateway
-      const res = await fetch(`${API_BASE_URL}/api/v1/auth/change-password`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          current_password: formData.currentPassword,
-          new_password: formData.newPassword,
-        }),
-      });
-      
-      if (!res.ok) {
-        const errorResponse = await res.json();
-        console.log('Change password error response:', errorResponse);
-        
-        // Extract error data from nested structure
-        const err = errorResponse.data || errorResponse;
-        console.log('Extracted error data:', err);
-        
-        throw new Error(extractErrorMessage(err) || "Failed to change password");
-      }
+      await authService.changePassword('', formData.currentPassword, formData.newPassword);
       
       setSuccess(true);
       setFormData({ currentPassword: "", newPassword: "", confirmPassword: "" });

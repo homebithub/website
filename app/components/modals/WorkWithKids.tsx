@@ -1,7 +1,8 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 
 type WorkPreference = 'with_kids' | 'chores_only';
 type AgeRange = '0-2' | '2-5' | '5-10' | '10+';
@@ -64,7 +65,7 @@ const WorkWithKids = () => {
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) throw new Error('Authentication token not found');
 
             const updates = {
@@ -75,17 +76,7 @@ const WorkWithKids = () => {
                     : 0
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ updates })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
             
             setSuccess('Your preferences have been saved successfully!');
             // navigate('/next-step');

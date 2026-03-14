@@ -40,7 +40,7 @@ function convertCommonJSToESM(filePath) {
   
   content = content.replace(
     /const proto = \{\};\nproto\.auth = require\('\.\/auth_pb\.js'\);/g,
-    "import './auth_pb.js';\nconst proto = globalThis.__proto_auth || {};\nif (!proto.auth) proto.auth = {};"
+    "import * as auth_pb from './auth_pb.js';\nconst proto = { auth: auth_pb.default || auth_pb };"
   );
   
   content = content.replace(
@@ -96,10 +96,43 @@ function convertCommonJSToESM(filePath) {
     "import * as jspb from 'google-protobuf';"
   );
   
+  // Initialize proto namespace after goog
   content = content.replace(
-    /var goog = jspb;/g,
-    "const goog = jspb;"
+    /var goog = jspb;\nvar global = globalThis;/g,
+    "const goog = jspb;\nvar global = globalThis;\nconst proto = {};"
   );
+  
+  // Initialize specific proto namespaces based on file content
+  if (content.includes('proto.auth.')) {
+    content = content.replace(
+      /const proto = \{\};/,
+      "const proto = {};\nproto.auth = {};"
+    );
+  }
+  if (content.includes('proto.notifications.')) {
+    content = content.replace(
+      /const proto = \{\};/,
+      "const proto = {};\nproto.notifications = {};"
+    );
+  }
+  if (content.includes('proto.payments.')) {
+    content = content.replace(
+      /const proto = \{\};/,
+      "const proto = {};\nproto.payments = {};"
+    );
+  }
+  if (content.includes('proto.events.')) {
+    content = content.replace(
+      /const proto = \{\};/,
+      "const proto = {};\nproto.events = {};"
+    );
+  }
+  if (content.includes('proto.device.')) {
+    content = content.replace(
+      /const proto = \{\};/,
+      "const proto = {};\nproto.device = {};"
+    );
+  }
   
   // Replace module.exports for pb files
   content = content.replace(

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { apiClient } from '~/utils/apiClient';
-import { API_ENDPOINTS } from '~/config/api';
+import { hireNegotiationService } from '~/services/grpc/authServices';
 import { Send, MessageCircle } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
@@ -47,17 +46,8 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
     setError(null);
 
     try {
-      const response = await apiClient.auth(
-        API_ENDPOINTS.hiring.requests.negotiations(hireRequestId),
-        { method: 'GET' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch negotiations');
-      }
-
-      const data = await response.json();
-      setNegotiations(data.data || []);
+      const data = await hireNegotiationService.listNegotiations(currentUserId, hireRequestId);
+      setNegotiations(data?.data || data || []);
     } catch (err: any) {
       setError(err.message || 'Failed to load messages');
     } finally {
@@ -74,19 +64,10 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
     setError(null);
 
     try {
-      const response = await apiClient.auth(
-        API_ENDPOINTS.hiring.requests.negotiate(hireRequestId),
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: message.trim() }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send message');
-      }
+      await hireNegotiationService.addNegotiationMessage(currentUserId, {
+        hire_request_id: hireRequestId,
+        message: message.trim(),
+      });
 
       setMessage('');
       fetchNegotiations();

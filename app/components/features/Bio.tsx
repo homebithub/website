@@ -1,5 +1,6 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { handleApiError } from '../../utils/errorMessages';
@@ -43,18 +44,12 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
   useEffect(() => {
     const loadBio = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
         
-        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.bio) {
-            setBio(data.bio);
-          }
+        const data = await grpcProfileService.getCurrentHouseholdProfile('');
+        if (data?.bio) {
+          setBio(data.bio);
         }
       } catch (err) {
         console.error('Failed to load bio:', err);
@@ -80,53 +75,22 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       
       if (userType === 'household') {
-        // For household, use household profile PUT with step metadata
-        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            bio,
-            _step_metadata: {
-              step_id: "bio",
-              step_number: 7,
-              is_completed: true
-            }
-          }),
+        await grpcProfileService.updateHouseholdProfile('', 'household', {
+          bio,
+          _step_metadata: {
+            step_id: 'bio',
+            step_number: 7,
+            is_completed: true
+          }
         });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.message || 'Failed to save bio');
-        }
       } else {
-        // For househelp, use the fields endpoint with step tracking
-        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({ 
-            updates: {
-              bio
-            },
-            _step_metadata: {
-              step_id: "bio",
-              step_number: 14,
-              is_completed: true
-            }
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to save bio');
-        }
+        await grpcProfileService.updateHousehelpFields('', 'househelp',
+          { bio },
+          { step_id: 'bio', step_number: 14, is_completed: true }
+        );
       }
 
       markClean();

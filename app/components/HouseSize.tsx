@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { useSubmit } from 'react-router';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -26,18 +27,12 @@ const HouseSize: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
         
-        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.house_size) setSelectedSize(data.house_size);
-          if (data.household_notes) setAdditionalDetails(data.household_notes);
-        }
+        const data = await grpcProfileService.getCurrentHouseholdProfile('');
+        if (data?.house_size) setSelectedSize(data.house_size);
+        if (data?.household_notes) setAdditionalDetails(data.household_notes);
       } catch (err) {
         console.error('Failed to load house size:', err);
       } finally {
@@ -60,28 +55,16 @@ const HouseSize: React.FC = () => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          house_size: sizeToSave,
-          household_notes: additionalDetails.trim() || "",
-          _step_metadata: {
-            step_id: "housesize",
-            step_number: 1,
-            is_completed: true
-          }
-        }),
+      const token = getAccessTokenFromCookies();
+      await grpcProfileService.updateHouseholdProfile('', 'household', {
+        house_size: sizeToSave,
+        household_notes: additionalDetails.trim() || '',
+        _step_metadata: {
+          step_id: 'housesize',
+          step_number: 1,
+          is_completed: true
+        }
       });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to save house size');
-      }
 
       markClean();
       setSuccess('House size saved automatically!');

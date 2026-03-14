@@ -58,6 +58,10 @@ export default defineConfig({
       "web-vitals",
     ],
     exclude: ["@tinymce/tinymce-react"], // Large library that doesn't need pre-bundling
+    // Force Vite to pre-bundle and transform generated gRPC files from CommonJS to ESM
+    entries: [
+      "app/services/grpc/auth.service.ts",
+    ],
   },
   esbuild: {
     target: "es2022",

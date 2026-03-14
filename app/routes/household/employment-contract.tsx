@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { API_ENDPOINTS, API_BASE_URL } from '~/config/api';
+import { API_BASE_URL } from '~/config/api';
 import { apiClient } from '~/utils/apiClient';
+import { employmentContractService, profileService } from '~/services/grpc/authServices';
 import { useAuth } from '~/contexts/useAuth';
 import {
   FileText, CheckCircle, XCircle, Download, Mail, Send,
@@ -144,13 +145,10 @@ export default function EmploymentContractPage() {
       }
       // Fetch househelp profile to get their name
       try {
-        const response = await apiClient.auth(API_ENDPOINTS.profile.househelp.byId(hhId));
-        if (response.ok) {
-          const data = await response.json();
-          const hh = data.data || data;
-          const name = `${hh.first_name || hh.user?.first_name || ''} ${hh.last_name || hh.user?.last_name || ''}`.trim();
-          if (name && !employeeName) setEmployeeName(name);
-        }
+        const hh = await profileService.getHousehelpProfileWithUser(hhId);
+        const profile = hh?.data || hh;
+        const name = `${profile.first_name || profile.user?.first_name || ''} ${profile.last_name || profile.user?.last_name || ''}`.trim();
+        if (name && !employeeName) setEmployeeName(name);
       } catch (err) {
         // Non-critical
       }
@@ -160,11 +158,8 @@ export default function EmploymentContractPage() {
 
   const fetchDefaultClauses = async () => {
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.employmentContracts.clauses);
-      if (response.ok) {
-        const data = await response.json();
-        setClauses(data.data?.clauses || data.clauses || []);
-      }
+      const data = await employmentContractService.getDefaultClauses();
+      setClauses(data?.clauses || []);
     } catch (err) {
       console.error('Failed to fetch default clauses:', err);
     }
@@ -174,10 +169,8 @@ export default function EmploymentContractPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.employmentContracts.byId(id));
-      if (!response.ok) throw new Error('Failed to fetch contract');
-      const data = await response.json();
-      const c = data.data || data;
+      const data = await employmentContractService.getEmploymentContract(id);
+      const c = data?.data || data;
       setContract(c);
       // Populate form fields from existing contract
       setJobTitle(c.job_title || '');
@@ -224,16 +217,8 @@ export default function EmploymentContractPage() {
       if (startDate) body.start_date = new Date(startDate).toISOString();
       if (endDate) body.end_date = new Date(endDate).toISOString();
 
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.employmentContracts.base, {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Failed to create contract');
-      }
-      const data = await response.json();
-      const newContract = data.data || data;
+      const data = await employmentContractService.createEmploymentContract('', body);
+      const newContract = data?.data || data;
       setContract(newContract);
       setViewMode('preview');
       setSuccess('Contract created successfully! Review the preview below.');
@@ -262,13 +247,8 @@ export default function EmploymentContractPage() {
       if (startDate) body.start_date = new Date(startDate).toISOString();
       if (endDate) body.end_date = new Date(endDate).toISOString();
 
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.employmentContracts.byId(contract.id), {
-        method: 'PUT',
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) throw new Error('Failed to update contract');
-      const data = await response.json();
-      setContract(data.data || data);
+      const data = await employmentContractService.updateEmploymentContract(contract.id, '', body);
+      setContract(data?.data || data);
       setViewMode('preview');
       setSuccess('Contract updated successfully!');
     } catch (err: any) {
@@ -293,38 +273,27 @@ export default function EmploymentContractPage() {
       // 1. Save the signer name on the contract (only possible while in draft status)
       if (contract.status === 'draft') {
         const nameField = role === 'household' ? 'household_signer_name' : 'househelp_signer_name';
-        const updateRes = await apiClient.auth(API_ENDPOINTS.hiring.employmentContracts.byId(contract.id), {
-          method: 'PUT',
-          body: JSON.stringify({ [nameField]: name }),
-        });
-        if (!updateRes.ok) {
+        try {
+          await employmentContractService.updateEmploymentContract(contract.id, '', { [nameField]: name });
+        } catch {
           console.warn('Could not save name via PUT (contract may not be in draft)');
         }
       }
 
       // 2. Sign the contract for this party (signer_name is included in the sign request)
-      const endpoint = role === 'household'
-        ? API_ENDPOINTS.hiring.employmentContracts.signHousehold(contract.id)
-        : API_ENDPOINTS.hiring.employmentContracts.signHousehelp(contract.id);
-
-      const signRes = await apiClient.auth(endpoint, {
-        method: 'POST',
-        body: JSON.stringify({ signature: name, signer_name: name }),
-      });
-      if (!signRes.ok) {
-        const err = await signRes.json().catch(() => ({}));
-        throw new Error(err.message || 'Failed to sign contract');
+      if (role === 'household') {
+        await employmentContractService.signByHousehold(contract.id, '', name, name);
+      } else {
+        await employmentContractService.signByHousehelp(contract.id, '', name, name);
       }
 
       // 3. If household just signed, also forward the contract to the househelp
       if (role === 'household') {
-        const fwdRes = await apiClient.auth(API_ENDPOINTS.hiring.employmentContracts.forward(contract.id), {
-          method: 'POST',
-        });
-        if (!fwdRes.ok) {
-          const err = await fwdRes.json().catch(() => ({}));
+        try {
+          await employmentContractService.forwardToHousehelp(contract.id);
+        } catch (fwdErr: any) {
           // Don't throw — signing succeeded, forwarding is secondary
-          console.warn('Forward failed:', err.message);
+          console.warn('Forward failed:', fwdErr.message);
         }
       }
 
@@ -350,23 +319,13 @@ export default function EmploymentContractPage() {
     setSaving(true);
     setError(null);
     try {
-      const endpoint = signingAs === 'household'
-        ? API_ENDPOINTS.hiring.employmentContracts.signHousehold(contract.id)
-        : API_ENDPOINTS.hiring.employmentContracts.signHousehelp(contract.id);
-
-      const response = await apiClient.auth(endpoint, {
-        method: 'POST',
-        body: JSON.stringify({
-          signature: signerName.trim(),
-          signer_name: signerName.trim(),
-        }),
-      });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Failed to sign contract');
+      let data: any;
+      if (signingAs === 'household') {
+        data = await employmentContractService.signByHousehold(contract.id, '', signerName.trim(), signerName.trim());
+      } else {
+        data = await employmentContractService.signByHousehelp(contract.id, '', signerName.trim(), signerName.trim());
       }
-      const data = await response.json();
-      setContract(data.data || data);
+      setContract(data?.data || data);
       setShowSigningModal(false);
       setSuccess(signingAs === 'household'
         ? 'Contract signed! You can now forward it to the househelp.'
@@ -383,13 +342,7 @@ export default function EmploymentContractPage() {
     setSaving(true);
     setError(null);
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.employmentContracts.forward(contract.id), {
-        method: 'POST',
-      });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Failed to forward contract');
-      }
+      await employmentContractService.forwardToHousehelp(contract.id);
       await fetchContract(contract.id);
       setSuccess('Contract forwarded to househelp! They will be notified via SMS and email.');
     } catch (err: any) {

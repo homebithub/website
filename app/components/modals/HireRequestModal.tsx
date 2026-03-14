@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { apiClient } from '~/utils/apiClient';
-import { API_ENDPOINTS } from '~/config/api';
+import { hireRequestService } from '~/services/grpc/authServices';
 import CustomSelect from '~/components/ui/CustomSelect';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -196,25 +195,16 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
     setLoading(true);
 
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.requests.base, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          househelp_id: househelpId,
-          job_type: jobType,
-          start_date: startDate || null,
-          salary_offered: salaryValue,
-          salary_frequency: salaryFrequency,
-          work_schedule: workSchedule,
-          special_requirements: specialRequirements,
-          terms_accepted: true,
-        }),
+      await hireRequestService.createHireRequest('', 'household', {
+        househelp_id: househelpId,
+        job_type: jobType,
+        start_date: startDate || null,
+        salary_offered: salaryValue,
+        salary_frequency: salaryFrequency,
+        work_schedule: workSchedule,
+        special_requirements: specialRequirements,
+        terms_accepted: true,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send hire request');
-      }
 
       setSuccess(true);
       setTimeout(() => {

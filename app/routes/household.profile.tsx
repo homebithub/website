@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { profileService as grpcProfileService, householdKidsService, petsService, documentService, householdMemberService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -82,95 +84,56 @@ export default function HouseholdProfile() {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         if (!token) {
           navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
           return;
         }
         
-        const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!profileRes.ok) throw new Error("Failed to fetch profile");
-        const profileResponse = await profileRes.json();
-        console.log('Profile response:', profileResponse);
-        
-        // Extract profile data from nested structure
-        const profileData = profileResponse.data || profileResponse;
-        console.log('Extracted profile data:', profileData);
-        console.log('Household location field:', profileData?.location);
+        // Fetch household profile via gRPC
+        const profileData = await grpcProfileService.getCurrentHouseholdProfile(token);
+        console.log('Profile data:', profileData);
         setProfile(profileData);
 
         // Load existing invitation code if available
         try {
           const householdId = profileData.id;
           console.log('Household ID:', householdId);
-          const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/invitations/${householdId}/code`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (inviteRes.ok) {
-            const inviteResponse = await inviteRes.json();
-            console.log('Invitation response:', inviteResponse);
-            
-            // Extract invitation data from nested structure
-            const inviteData = inviteResponse.data || inviteResponse;
-            console.log('Extracted invitation data:', inviteData);
-            
-            setInvitationCode(inviteData.invite_code);
-            setInvitationExpiresAt(inviteData.expires_at);
-          }
+          const inviteData = await householdMemberService.getOrCreateInvitationCode(householdId, token);
+          const extracted = inviteData?.data || inviteData;
+          setInvitationCode(extracted.invite_code);
+          setInvitationExpiresAt(extracted.expires_at);
         } catch (err) {
           console.log("No existing invitation code or error loading it:", err);
         }
 
-        const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (kidsRes.ok) {
-          const kidsResponse = await kidsRes.json();
-          console.log('Kids response:', kidsResponse);
-          
-          // Extract kids array from nested structure
-          const kidsData = kidsResponse.data?.data || kidsResponse.data || kidsResponse;
-          console.log('Extracted kids data:', kidsData);
-          
-          // Ensure it's an array
-          const kidsArray = Array.isArray(kidsData) ? kidsData : [];
-          setKids(kidsArray);
+        // Fetch kids via gRPC
+        try {
+          const kidsData = await householdKidsService.listHouseholdKids(token);
+          const kidsArray = Array.isArray(kidsData?.data || kidsData) ? (kidsData?.data || kidsData) : [];
+          setKids(Array.isArray(kidsArray) ? kidsArray : []);
+        } catch (err) {
+          console.log("Error loading kids:", err);
         }
 
-        const petsRes = await fetch(`${API_BASE_URL}/api/v1/pets/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (petsRes.ok) {
-          const petsResponse = await petsRes.json();
-          console.log('Pets response:', petsResponse);
-          
-          // Extract pets array from nested structure
-          const petsData = petsResponse.data?.data || petsResponse.data || petsResponse;
-          console.log('Extracted pets data:', petsData);
-          
-          // Ensure it's an array
-          const petsArray = Array.isArray(petsData) ? petsData : [];
-          setPets(petsArray);
+        // Fetch pets via gRPC
+        try {
+          const petsData = await petsService.listMyPets(token);
+          const petsArray = Array.isArray(petsData?.data || petsData) ? (petsData?.data || petsData) : [];
+          setPets(Array.isArray(petsArray) ? petsArray : []);
+        } catch (err) {
+          console.log("Error loading pets:", err);
         }
 
-        // Fetch photos from documents table
-        const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (docsRes.ok) {
-          const docsResponse = await docsRes.json();
-          console.log('Documents response:', docsResponse);
-          
-          // Extract documents array from nested structure (gRPC bridge returns {data: {data: [...]}})
-          const docsData = docsResponse.data?.data || docsResponse.data?.documents || docsResponse.data || docsResponse;
-          console.log('Extracted documents data:', docsData);
-          
-          // Ensure it's an array before mapping
-          const documentsArray = Array.isArray(docsData) ? docsData : [];
-          const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean) || [];
+        // Fetch photos from documents table via gRPC
+        try {
+          const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+          const docs = docsData?.data || docsData?.documents || docsData || [];
+          const documentsArray = Array.isArray(docs) ? docs : [];
+          const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
           setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
+        } catch (err) {
+          console.log("Error loading photos:", err);
         }
       } catch (err: any) {
         console.error("Error loading profile:", err);
@@ -211,30 +174,15 @@ export default function HouseholdProfile() {
     setInvitationError(null);
     
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error("Not authenticated");
       
-      // Get household ID from profile
-      const householdRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!householdRes.ok) throw new Error("Failed to fetch household");
-      const householdResponse = await householdRes.json();
-      const householdData = householdResponse.data || householdResponse;
-      const householdId = householdData.id;
+      const householdId = profile?.id;
+      if (!householdId) throw new Error("No household ID");
       
-      // Get or create invitation code
-      const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/${householdId}/invitation-code`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (!inviteRes.ok) {
-        const errorData = await inviteRes.json().catch(() => ({ error: "Unknown error" }));
-        console.error("Invitation code error:", errorData);
-        throw new Error(errorData.error || `Failed to fetch invitation code (${inviteRes.status})`);
-      }
-      const inviteData = await inviteRes.json();
-      const extractedInviteData = inviteData.data || inviteData;
+      // Get or create invitation code via gRPC
+      const inviteData = await householdMemberService.getOrCreateInvitationCode(householdId, token);
+      const extractedInviteData = inviteData?.data || inviteData;
       setInvitationCode(extractedInviteData.invite_code);
       setInvitationExpiresAt(extractedInviteData.expires_at);
     } catch (err: any) {
@@ -281,25 +229,13 @@ export default function HouseholdProfile() {
     
     setMembersLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) return;
       
-      const res = await fetch(`${API_BASE_URL}/api/v1/households/${profile.id}/members`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (res.ok) {
-        const response = await res.json();
-        console.log('Members response:', response);
-        
-        // Extract members array from nested structure
-        const membersData = response.data || response.members || response;
-        console.log('Extracted members data:', membersData);
-        
-        // Ensure it's an array
-        const membersArray = Array.isArray(membersData) ? membersData : [];
-        setMembers(membersArray);
-      }
+      const membersData = await householdMemberService.listMembers(profile.id, token);
+      const extracted = membersData?.data || membersData?.members || membersData;
+      const membersArray = Array.isArray(extracted) ? extracted : [];
+      setMembers(membersArray);
     } catch (err) {
       console.error("Error fetching members:", err);
     } finally {
@@ -313,18 +249,10 @@ export default function HouseholdProfile() {
     
     setRemovingMemberId(userId);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error("Not authenticated");
       
-      const res = await fetch(`${API_BASE_URL}/api/v1/households/${profile.id}/members/${userId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: "Failed to remove member" }));
-        throw new Error(errorData.error || "Failed to remove member");
-      }
+      await householdMemberService.removeMember(profile.id, userId, token);
       
       // Refresh members list
       await fetchMembers();
@@ -365,7 +293,7 @@ export default function HouseholdProfile() {
     setUploadProgress(0);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
       // Upload to documents service with progress tracking
@@ -413,16 +341,15 @@ export default function HouseholdProfile() {
 
       if (!imageUrl) throw new Error('No image URL returned');
 
-      // Refetch photos from documents table
-      const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (docsRes.ok) {
-        const docsResponse = await docsRes.json();
-        const docsData = docsResponse.data?.data || docsResponse.data || [];
-        const documentsArray = Array.isArray(docsData) ? docsData : [];
+      // Refetch photos from documents table via gRPC
+      try {
+        const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+        const docs = docsData?.data || docsData?.documents || docsData || [];
+        const documentsArray = Array.isArray(docs) ? docs : [];
         const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
         setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
+      } catch (err) {
+        console.warn('Failed to refetch photos after upload:', err);
       }
       
       // Reset file input
@@ -452,54 +379,39 @@ export default function HouseholdProfile() {
     setDeleteStatus('Finding document...');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
-      // Step 1: Find the document by URL
-      const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!docsRes.ok) {
-        console.warn('Failed to fetch documents, will only remove from profile');
-      } else {
-        const docsResponse = await docsRes.json();
-        console.log('Documents response for deletion:', docsResponse);
-        
-        // Extract documents array from nested structure (gRPC bridge returns {data: {data: [...]}})
-        const allDocs = docsResponse.data?.data || docsResponse.data || [];
+      // Step 1: Find the document by URL via gRPC
+      try {
+        const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+        const allDocs = docsData?.data || docsData?.documents || docsData || [];
         const documentsArray = Array.isArray(allDocs) ? allDocs : [];
         const document = documentsArray.find((doc: any) => (doc.public_url || doc.signed_url || doc.url) === photoUrl);
 
-        // Step 2: Delete from documents table and S3
+        // Step 2: Delete from documents table and S3 via gRPC
         if (document?.id) {
           setDeleteStatus('Deleting from storage...');
-          const deleteRes = await fetch(`${API_BASE_URL}/api/v1/documents/${document.id}`, {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (!deleteRes.ok) {
+          try {
+            await documentService.deleteDocument(document.id, token);
+          } catch (err) {
             console.warn('Failed to delete document from storage, but will remove from profile');
           }
         }
+      } catch (err) {
+        console.warn('Failed to fetch documents, will only remove from profile');
       }
 
-      // Step 3: Refetch photos from documents table
+      // Step 3: Refetch photos from documents table via gRPC
       setDeleteStatus('Refreshing photos...');
-      const refreshRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json();
-        const refreshDocs = refreshData.data?.data || refreshData.data || [];
+      try {
+        const refreshData = await documentService.getUserDocuments(token, 'profile_photo');
+        const refreshDocs = refreshData?.data || refreshData?.documents || refreshData || [];
         const docsArray = Array.isArray(refreshDocs) ? refreshDocs : [];
         const photoUrls = docsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
         setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
+      } catch (err) {
+        console.warn('Failed to refetch photos after delete:', err);
       }
     } catch (err: any) {
       console.error('Error deleting photo:', err);

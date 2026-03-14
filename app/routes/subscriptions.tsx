@@ -22,7 +22,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
-import { API_ENDPOINTS, getAuthHeaders } from '~/config/api';
+import { paymentsService } from '~/services/grpc/payments.service';
 import { PauseSubscriptionModal } from '~/components/subscriptions/PauseSubscriptionModal';
 import { CancelSubscriptionFlow } from '~/components/subscriptions/CancelSubscriptionFlow';
 import { ChangePlanModal } from '~/components/subscriptions/ChangePlanModal';
@@ -117,48 +117,32 @@ export default function SubscriptionsPage() {
   const fetchSubscriptionData = React.useCallback(async () => {
     setDataLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('[Subscriptions] No token found');
-        return;
-      }
-
       console.log('[Subscriptions] Fetching subscription data...');
 
-      const subRes = await fetch(API_ENDPOINTS.payments.subscriptions.mine, {
-        headers: getAuthHeaders(token),
-      });
-      
-      if (subRes.ok) {
-        const subData = await subRes.json();
+      try {
+        const subData = await paymentsService.getMySubscription('') as any;
         console.log('[Subscriptions] Subscription data:', subData);
-        setSubscription(subData);
-      } else {
-        console.warn('[Subscriptions] Failed to fetch subscription:', subRes.status);
+        setSubscription(subData?.toObject?.() ?? subData);
+      } catch (err) {
+        console.warn('[Subscriptions] Failed to fetch subscription:', err);
       }
 
-      const paymentsRes = await fetch(`${API_ENDPOINTS.payments.transactions.list}?limit=10`, {
-        headers: getAuthHeaders(token),
-      });
-      
-      if (paymentsRes.ok) {
-        const paymentsData = await paymentsRes.json();
+      try {
+        const paymentsData = await paymentsService.listMyPayments('', 0, 10) as any;
         console.log('[Subscriptions] Payments data:', paymentsData);
-        setPayments(paymentsData.payments || []);
-      } else {
-        console.warn('[Subscriptions] Failed to fetch payments:', paymentsRes.status);
+        const paymentsList = paymentsData?.toObject?.()?.paymentsList ?? paymentsData?.payments ?? [];
+        setPayments(paymentsList);
+      } catch (err) {
+        console.warn('[Subscriptions] Failed to fetch payments:', err);
       }
 
-      const plansRes = await fetch(API_ENDPOINTS.payments.plans, {
-        headers: getAuthHeaders(token),
-      });
-      
-      if (plansRes.ok) {
-        const plansData = await plansRes.json();
+      try {
+        const plansData = await paymentsService.getPlans() as any;
         console.log('[Subscriptions] Plans data:', plansData);
-        setPlans(plansData.plans || []);
-      } else {
-        console.warn('[Subscriptions] Failed to fetch plans:', plansRes.status);
+        const plansList = plansData?.toObject?.()?.plansList ?? plansData?.plans ?? [];
+        setPlans(plansList);
+      } catch (err) {
+        console.warn('[Subscriptions] Failed to fetch plans:', err);
       }
     } catch (error) {
       console.error('[Subscriptions] Failed to fetch subscription data:', error);
@@ -304,30 +288,11 @@ export default function SubscriptionsPage() {
     setErrorMessage('');
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await fetch(API_ENDPOINTS.payments.transactions.initiate, {
-        method: 'POST',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify({
-          subscription_id: subscription.id,
-          phone_number: formattedPhone,
-          amount: paymentAmount || subscription.plan?.price_amount || 0,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setCurrentPaymentId(data.payment_id);
-        setPaymentStatus('processing');
-        startPollingPaymentStatus(data.payment_id);
-      } else {
-        throw new Error(data.message || data.error || 'Failed to initiate payment');
-      }
+      const data = await paymentsService.initiatePayment('', subscription.id, formattedPhone, paymentAmount || subscription.plan?.price_amount || 0) as any;
+      const result = data?.toObject?.() ?? data;
+      setCurrentPaymentId(result.paymentId || result.payment_id);
+      setPaymentStatus('processing');
+      startPollingPaymentStatus(result.paymentId || result.payment_id);
     } catch (error) {
       console.error('Payment initiation failed:', error);
       setPaymentStatus('failed');
@@ -337,9 +302,6 @@ export default function SubscriptionsPage() {
   };
 
   const startPollingPaymentStatus = (paymentId: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
     let attempts = 0;
     const maxAttempts = 60; // Poll for up to 3 minutes
 
@@ -347,13 +309,10 @@ export default function SubscriptionsPage() {
       attempts++;
 
       try {
-        const response = await fetch(API_ENDPOINTS.payments.transactions.status(paymentId), {
-          headers: getAuthHeaders(token),
-        });
+        const response = await paymentsService.checkPaymentStatus(paymentId, '') as any;
+        const data = response?.toObject?.() ?? response;
 
-        if (response.ok) {
-          const data = await response.json();
-          
+        if (data) {
           if (data.status === 'completed') {
             setPaymentStatus('success');
             clearInterval(interval);
@@ -371,7 +330,7 @@ export default function SubscriptionsPage() {
             }, 2000);
           } else if (data.status === 'failed') {
             setPaymentStatus('failed');
-            setErrorMessage(data.failure_reason || 'Payment failed. Please try again.');
+            setErrorMessage(data.failureReason || data.failure_reason || 'Payment failed. Please try again.');
             clearInterval(interval);
             setPollingInterval(null);
             setProcessingPayment(false);
@@ -437,25 +396,16 @@ export default function SubscriptionsPage() {
     setReceiptMessage(null);
     
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Not authenticated');
+      const response = await paymentsService.downloadReceipt(selectedPayment.id, '') as any;
+      const result = response?.toObject?.() ?? response;
+      const pdfData = result.pdfData || result.pdf_data;
+      const filename = result.filename || `receipt-${selectedPayment.mpesa_receipt_number || selectedPayment.id}.pdf`;
 
-      const response = await fetch(
-        `${API_ENDPOINTS.payments.transactions.byId(selectedPayment.id)}/receipt`,
-        {
-          headers: getAuthHeaders(token),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to download receipt');
-      }
-
-      const blob = await response.blob();
+      const blob = new Blob([pdfData], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `receipt-${selectedPayment.mpesa_receipt_number || selectedPayment.id}.pdf`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -487,22 +437,7 @@ export default function SubscriptionsPage() {
     setReceiptMessage(null);
     
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Not authenticated');
-
-      const response = await fetch(
-        `${API_ENDPOINTS.payments.transactions.byId(selectedPayment.id)}/receipt/email`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(token),
-          body: JSON.stringify({ email: receiptEmail }),
-        }
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to send receipt');
-      }
+      await paymentsService.emailReceipt(selectedPayment.id, '', receiptEmail);
 
       setReceiptMessage({ 
         type: 'success', 

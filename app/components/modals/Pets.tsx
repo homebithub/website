@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { petsService } from '~/services/grpc/authServices';
 
 interface Pet {
   id: string;
@@ -86,26 +87,13 @@ const Pets: React.FC = () => {
     setError("");
     
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/v1/pets`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          pet_type: petType.toLowerCase(),
-          requires_care: requiresCare,
-          care_details: requiresCare ? careDetails : "",
-          traits: selectedTraits.map(trait => trait.toLowerCase())
-        })
+      const token = getAccessTokenFromCookies();
+      const newPet = await petsService.createPet('', {
+        pet_type: petType.toLowerCase(),
+        requires_care: requiresCare,
+        care_details: requiresCare ? careDetails : "",
+        traits: selectedTraits.map(trait => trait.toLowerCase())
       });
-      
-      if (!response.ok) {
-        throw new Error("Failed to add pet. Please try again.");
-      }
-      
-      const newPet = await response.json();
       
       // Add the pet to local state with the response data
       const petForDisplay: Pet = {
@@ -143,17 +131,8 @@ const Pets: React.FC = () => {
     setDeleteLoading(true);
     
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/v1/pets/${petToDelete.id}`, {
-        method: "DELETE",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to delete pet. Please try again.");
-      }
+      const token = getAccessTokenFromCookies();
+      await petsService.deletePet(petToDelete.id);
       
       // Remove pet from local state
       setPets(prev => prev.filter(pet => pet.id !== petToDelete.id));

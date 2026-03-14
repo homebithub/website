@@ -1,3 +1,4 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import Kids from './Kids';
@@ -5,7 +6,7 @@ import type { Child } from './Children';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const MyKids = () => {
@@ -21,28 +22,12 @@ const MyKids = () => {
     useEffect(() => {
         const loadData = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = getAccessTokenFromCookies();
                 if (!token) return;
                 
-                // Load children
-                const kidsRes = await fetch(`${API_BASE_URL}/api/v1/househelp_kids`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                if (kidsRes.ok) {
-                    const kids = await kidsRes.json();
-                    if (kids && kids.length > 0) {
-                        setChildren(kids);
-                    }
-                }
-                
                 // Load profile to get has_kids and needs_accommodation status
-                const profileRes = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                if (profileRes.ok) {
-                    const profile = await profileRes.json();
+                const profile = await grpcProfileService.getCurrentHousehelpProfile('');
+                if (profile) {
                     if (profile.needs_accommodation) {
                         setKidOption('needs_accommodation');
                     } else if (profile.has_kids) {
@@ -76,7 +61,7 @@ const MyKids = () => {
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) throw new Error('Authentication token not found');
 
             const updates = {
@@ -85,24 +70,9 @@ const MyKids = () => {
                 ...(kidOption === 'needs_accommodation' && children.length > 0 ? { children: children } : {})
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ 
-                    updates,
-                    _step_metadata: {
-                        step_id: "mykids",
-                        step_number: 10,
-                        is_completed: true
-                    }
-                })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
+                { step_id: 'mykids', step_number: 10, is_completed: true }
+            );
             
             markClean();
             setSuccess('Your preference has been saved successfully!');

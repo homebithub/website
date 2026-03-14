@@ -5,8 +5,7 @@ import { migratePreferences } from '~/utils/preferencesApi';
 import { extractErrorMessage, transformErrorMessage } from '~/utils/errorMessages';
 import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
-import { clearAuthCookies, getAuthFromCookies, setAuthCookies } from "~/utils/cookie";
-import { API_BASE_URL, API_ENDPOINTS } from "~/config/api";
+import { clearAuthCookies, getAuthFromCookies, getAccessTokenFromCookies, setAuthCookies } from "~/utils/cookie";
 
 interface User {
   id: string;
@@ -36,7 +35,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const checkAuth = async () => {
     try {
       const { token: cookieToken, user: cookieUser } = getAuthFromCookies();
-      const legacyToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const legacyToken = typeof window !== "undefined" ? getAccessTokenFromCookies() : null;
       const token = cookieToken || legacyToken;
 
       if (cookieUser) {
@@ -65,18 +64,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const meResponse = await fetch(API_ENDPOINTS.auth.me, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const userProto = await authService.getCurrentUser();
 
-      if (!meResponse.ok) {
-        throw new Error("Failed to verify session");
-      }
-
-      const meData = await meResponse.json();
-      const user = meData.data || meData.user || meData;
+      const user = {
+        id: userProto?.getId?.() || '',
+        user_id: userProto?.getId?.() || '',
+        email: userProto?.getEmail?.() || '',
+        phone: userProto?.getPhone?.() || '',
+        first_name: userProto?.getFirstName?.() || '',
+        last_name: userProto?.getLastName?.() || '',
+        profile_type: userProto?.getProfileType?.() || '',
+        is_verified: userProto?.getIsVerified?.() || false,
+        profile_image: userProto?.getProfileImage?.() || '',
+      };
       
       setUser({ token: token || "", user } as unknown as LoginResponse);
       setAuthCookies(token || "", null, user);
@@ -133,6 +134,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       migratePreferences().catch(err => console.error("Failed to migrate preferences:", err));
 
+      // If user has no phone number, redirect to add-phone page
+      if (!userData.phone) {
+        navigate('/add-phone', {
+          replace: true,
+          state: {
+            user_id: userData.id,
+            profileType,
+            redirectTo: '/',
+          },
+        });
+        return;
+      }
+
       if (profileType === "bureau") {
         navigate("/");
         return;
@@ -140,20 +154,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileType === "household" || profileType === "househelp") {
         try {
-          const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
+          const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
+          const progressData = await profileSetupService.getProgress(userData.id);
 
-          if (setupResponse.ok) {
-            const setupData = await setupResponse.json();
-            const progressData = setupData.data || {};
+          if (progressData) {
             const totalSteps = progressData.total_steps || 0;
             const lastStep = progressData.last_completed_step || 0;
-            const status = progressData.status || "";
+            const setupStatus = progressData.status || "";
           
-            const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
+            const isComplete = setupStatus === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
 
             if (!isComplete) {
               if (profileType === 'household' && lastStep === 0) {
@@ -166,7 +175,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               navigate(setupRoute);
               return;
             }
-          } else if (setupResponse.status === 404) {
+          }
+        } catch (err: any) {
+          // gRPC NOT_FOUND means no profile setup record
+          if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
             if (profileType === 'household') {
               navigate('/household-choice');
               return;
@@ -174,7 +186,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             navigate('/profile-setup/househelp?step=1');
             return;
           }
-        } catch (err: any) {
           console.error('Failed to check profile setup status:', err);
         }
       }
@@ -194,25 +205,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setLoading(true);
       setError(null);
 
-      const signupResult = await fetch(API_ENDPOINTS.auth.signup, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password, first_name: firstName, last_name: lastName }),
-      });
-
-      if (!signupResult.ok) {
-        const errorBody = await signupResult.json().catch(() => null);
-        throw new Error(extractErrorMessage(errorBody) || "Signup failed");
-      }
-
-      const signupResponse = await signupResult.json();
-      const data = (signupResponse as any).data || signupResponse;
+      const { default: authSvc } = await import('~/services/grpc/auth.service');
+      const signupResponse = await authSvc.signup(email, password, firstName, lastName, 'household');
       
-      const token = (data as any).token?.stringValue || (data as any).token || "";
-      const refreshToken = (data as any).refresh_token?.stringValue || (data as any).refresh_token || "";
-      const user = (data as any).user?.structValue?.fields || (data as any).user || {};
+      const token = signupResponse?.getToken?.() || "";
+      const refreshToken = signupResponse?.getRefreshToken?.() || "";
+      const userProto = signupResponse?.getUser?.();
+      const user = userProto?.toObject?.() || {};
 
       setAuthCookies(token, refreshToken, user);
       localStorage.setItem("token", token);
@@ -236,15 +235,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       try {
-        const { token } = getAuthFromCookies();
-        await fetch(`${API_BASE_URL}/api/v1/auth/logout`, {
-          method: "POST",
-          headers: token
-            ? {
-                Authorization: `Bearer ${token}`,
-              }
-            : undefined,
-        });
+        const { default: authService } = await import('~/services/grpc/auth.service');
+        await authService.logout();
       } catch (error) {
         console.log("Server logout failed, but clearing local state");
       }

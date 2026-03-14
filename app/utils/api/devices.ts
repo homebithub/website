@@ -1,11 +1,10 @@
 /**
  * Device Authentication API Service
  * 
- * API functions for managing device authentication.
+ * API functions for managing device authentication via gRPC.
  */
 
-import { API_ENDPOINTS, getAuthHeaders, buildApiUrl } from '~/config/api';
-import { parseErrorResponse } from '~/utils/errors/apiErrors';
+import { deviceService } from '~/services/grpc/device.service';
 import type {
   Device,
   RegisterDeviceRequest,
@@ -13,7 +12,6 @@ import type {
   ConfirmDeviceRequest,
   ConfirmDeviceResponse,
   GetUserDevicesResponse,
-  DeviceResponse,
   RevokeDeviceRequest,
   RevokeAllDevicesRequest,
   GetDeviceActivityResponse,
@@ -25,20 +23,15 @@ import type {
 export const registerDevice = async (
   request: RegisterDeviceRequest
 ): Promise<RegisterDeviceResponse> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.devices.register, {
-    method: 'POST',
-    headers: getAuthHeaders(token),
-    body: JSON.stringify(request),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return await response.json();
+  return deviceService.registerDevice(
+    '',
+    request.device_id || '',
+    request.device_name || '',
+    request.user_agent || '',
+    request.ip_address || '',
+    request.latitude,
+    request.longitude,
+  ) as any;
 };
 
 /**
@@ -47,63 +40,22 @@ export const registerDevice = async (
 export const confirmDevice = async (
   request: ConfirmDeviceRequest
 ): Promise<ConfirmDeviceResponse> => {
-  const response = await fetch(API_ENDPOINTS.devices.confirm, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return await response.json();
+  return deviceService.confirmDevice(request.token) as any;
 };
 
 /**
  * Get all devices for the authenticated user
  */
 export const listDevices = async (currentDeviceId?: string): Promise<GetUserDevicesResponse> => {
-  const token = localStorage.getItem('token');
-  
-  const url = buildApiUrl(API_ENDPOINTS.devices.list, {
-    current_device_id: currentDeviceId,
-  });
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: getAuthHeaders(token),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return await response.json();
+  return deviceService.getUserDevices('', currentDeviceId) as any;
 };
 
 /**
  * Get a specific device by ID
  */
 export const getDevice = async (deviceId: string): Promise<Device> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.devices.byId(deviceId), {
-    method: 'GET',
-    headers: getAuthHeaders(token),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  const data: DeviceResponse = await response.json();
-  return data.device;
+  const res = await deviceService.getUserDevices('', deviceId);
+  return (res as any)?.devices?.find((d: any) => d.id === deviceId || d.deviceId === deviceId) ?? res;
 };
 
 /**
@@ -113,18 +65,7 @@ export const revokeDevice = async (
   deviceId: string,
   request?: RevokeDeviceRequest
 ): Promise<void> => {
-  const token = localStorage.getItem('token');
-  
-  const response = await fetch(API_ENDPOINTS.devices.revoke(deviceId), {
-    method: 'DELETE',
-    headers: getAuthHeaders(token),
-    body: request ? JSON.stringify(request) : undefined,
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
+  await deviceService.revokeDevice(deviceId, '', request?.reason);
 };
 
 /**
@@ -134,22 +75,7 @@ export const revokeAllDevices = async (
   exceptDeviceId?: string,
   request?: RevokeAllDevicesRequest
 ): Promise<void> => {
-  const token = localStorage.getItem('token');
-  
-  const url = buildApiUrl(API_ENDPOINTS.devices.revokeAll, {
-    except_device_id: exceptDeviceId,
-  });
-  
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: getAuthHeaders(token),
-    body: request ? JSON.stringify(request) : undefined,
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
+  await deviceService.revokeAllDevices('', exceptDeviceId, request?.reason);
 };
 
 /**
@@ -159,21 +85,5 @@ export const getDeviceActivity = async (
   deviceId: string,
   limit?: number
 ): Promise<GetDeviceActivityResponse> => {
-  const token = localStorage.getItem('token');
-  
-  const url = buildApiUrl(API_ENDPOINTS.devices.activity(deviceId), {
-    limit,
-  });
-  
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: getAuthHeaders(token),
-  });
-  
-  if (!response.ok) {
-    const error = await parseErrorResponse(response);
-    throw error;
-  }
-  
-  return await response.json();
+  return deviceService.getDeviceActivity(deviceId, '', limit) as any;
 };

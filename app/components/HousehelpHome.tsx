@@ -1,11 +1,12 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { apiClient } from "~/utils/apiClient";
+import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import HouseholdFilters, { type HouseholdSearchFields } from "~/components/features/HouseholdFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
@@ -84,10 +85,6 @@ export default function HousehelpHome() {
   const [compactView, setCompactView] = useState(false);
   const [accessibilityMode, setAccessibilityMode] = useState(false);
 
-  const API_BASE = useMemo(
-    () => (typeof window !== "undefined" && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL,
-    []
-  );
   const NOTIFICATIONS_BASE = useMemo(
     () => (typeof window !== "undefined" && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL,
     []
@@ -113,18 +110,12 @@ export default function HousehelpHome() {
     const fetchHouseholdProfileId = async () => {
       if (currentProfileType?.toLowerCase() === 'household' && currentUserId) {
         try {
-          const token = localStorage.getItem("token");
+          const token = getAccessTokenFromCookies();
           if (!token) return;
           
-          const res = await fetch(`${API_BASE_URL}/api/v1/profile/household/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const raw = await res.json();
-            const profile = raw?.data?.data || raw?.data || raw;
-            if (!cancelled) {
-              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
-            }
+          const profile = await grpcProfileService.getCurrentHouseholdProfile('');
+          if (profile && !cancelled) {
+            setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
           }
         } catch (err) {
           console.error('Failed to fetch household profile ID:', err);
@@ -233,22 +224,14 @@ export default function HousehelpHome() {
     try {
       const isShortlisted = shortlistedProfiles.has(profileId);
       if (isShortlisted) {
-        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/${profileId}`, {
-          method: 'DELETE',
-        });
-        if (!res.ok) throw new Error('Failed to remove from shortlist');
+        await shortlistService.deleteShortlist(profileId);
         setShortlistedProfiles((prev) => {
           const next = new Set(prev);
           next.delete(profileId);
           return next;
         });
       } else {
-        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profile_id: profileId, profile_type: 'household' }),
-        });
-        if (!res.ok) throw new Error('Failed to add to shortlist');
+        await shortlistService.createShortlist('', 'househelp', { profile_id: profileId, profile_type: 'household' });
         setShortlistedProfiles((prev) => new Set(prev).add(profileId));
       }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
@@ -295,12 +278,7 @@ export default function HousehelpHome() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/households/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(toPayload()),
-      });
-      const raw = await apiClient.json<any>(res);
+      const raw = await grpcProfileService.searchHouseholds('', 'househelp', buildFilters(), 12, 0);
       const data = raw?.data?.data || raw?.data || raw;
       // Ensure data is always an array
       const households = Array.isArray(data) ? data : [];
@@ -323,9 +301,7 @@ export default function HousehelpHome() {
     let cancelled = false;
     const fetchShortlist = async () => {
       try {
-        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists`);
-        if (!res.ok) return;
-        const raw = await apiClient.json<any>(res);
+        const raw = await shortlistService.listByHousehold('');
         const items = raw?.data?.data || raw?.data || raw || [];
         if (cancelled) return;
         const ids = new Set<string>(
@@ -342,7 +318,7 @@ export default function HousehelpHome() {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE]);
+  }, []);
 
   // Debounced count updates on filter changes
   useEffect(() => {
@@ -350,13 +326,8 @@ export default function HousehelpHome() {
     const payload = buildCountPayload();
     countTimerRef.current = setTimeout(async () => {
       try {
-        const res = await apiClient.auth(`${API_BASE}/api/v1/households/search/count`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = await apiClient.json<{ count: number }>(res);
-        setTotalCount(typeof data.count === "number" ? data.count : 0);
+        const count = await grpcProfileService.countHouseholds('', 'househelp', payload);
+        setTotalCount(typeof count === 'number' ? count : 0);
       } catch (e) {
         setTotalCount(null);
       }

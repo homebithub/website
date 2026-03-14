@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { API_BASE_URL } from '~/config/api';
+import { profileService } from '~/services/grpc/authServices';
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 
 // Dropdown-only options (no text inputs)
@@ -35,10 +35,6 @@ export default function HousehelpFindHouseholds() {
   const [hasMore, setHasMore] = useState(true);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const API_BASE = useMemo(
-    () => (typeof window !== "undefined" && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL,
-    []
-  );
 
   const handleSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -69,18 +65,9 @@ export default function HousehelpFindHouseholds() {
     setOffset(0);
     setHasMore(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE}/api/v1/households/search`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(toPayload(0)),
-      });
-      if (!res.ok) throw new Error("Failed to fetch households");
-      const data = await res.json();
-      const rows = data.data || [];
+      const payload = toPayload(0);
+      const data = await profileService.searchHouseholds('', '', payload, payload.limit, payload.offset) as any;
+      const rows = data?.data || [];
       setResults(rows);
       setHasMore(rows.length === limit);
     } catch (err: any) {
@@ -96,19 +83,10 @@ export default function HousehelpFindHouseholds() {
     if (loading || !hasSearched || !hasMore) return;
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
       const nextOffset = offset + limit;
-      const res = await fetch(`${API_BASE}/api/v1/households/search`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(toPayload(nextOffset)),
-      });
-      if (!res.ok) throw new Error("Failed to fetch more results");
-      const data = await res.json();
-      const rows = data.data || [];
+      const payload = toPayload(nextOffset);
+      const data = await profileService.searchHouseholds('', '', payload, payload.limit, payload.offset) as any;
+      const rows = data?.data || [];
       setResults((prev) => [...prev, ...rows]);
       setOffset(nextOffset);
       setHasMore(rows.length === limit);

@@ -1,6 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { profileService as grpcProfileService, documentService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -112,35 +114,25 @@ export default function HousehelpProfile() {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         if (!token) {
           navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
           return;
         }
         
-        const profileRes = await fetch(`${API_BASE_URL}/api/v1/profile/househelp/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!profileRes.ok) throw new Error("Failed to fetch profile");
-        const profileData = await profileRes.json();
+        const profileData = await grpcProfileService.getCurrentHousehelpProfile(token);
         console.log('Raw househelp profile response:', profileData);
-        console.log('Location field:', profileData?.data?.location || profileData?.location);
         const normalized = normalizeHousehelpProfileResponse(profileData);
         console.log('Normalized profile location:', normalized.location);
 
-        // Fetch photos from documents table
+        // Fetch photos from documents table via gRPC
         try {
-          const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (docsRes.ok) {
-            const docsResponse = await docsRes.json();
-            const docsData = docsResponse.data?.data || docsResponse.data || [];
-            const documentsArray = Array.isArray(docsData) ? docsData : [];
-            const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
-            if (photoUrls.length > 0) {
-              normalized.photos = photoUrls;
-            }
+          const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+          const docs = docsData?.data || docsData?.documents || docsData || [];
+          const documentsArray = Array.isArray(docs) ? docs : [];
+          const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+          if (photoUrls.length > 0) {
+            normalized.photos = photoUrls;
           }
         } catch (err) {
           console.error('Failed to fetch profile photos:', err);
@@ -195,7 +187,7 @@ export default function HousehelpProfile() {
     setUploadProgress(0);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
       // Upload to documents service with progress tracking
@@ -243,16 +235,15 @@ export default function HousehelpProfile() {
 
       if (!imageUrl) throw new Error('No image URL returned');
 
-      // Refetch photos from documents table
-      const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (docsRes.ok) {
-        const docsResponse = await docsRes.json();
-        const docsData = docsResponse.data?.data || docsResponse.data || [];
-        const documentsArray = Array.isArray(docsData) ? docsData : [];
+      // Refetch photos from documents table via gRPC
+      try {
+        const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+        const docs = docsData?.data || docsData?.documents || docsData || [];
+        const documentsArray = Array.isArray(docs) ? docs : [];
         const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
         setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
+      } catch (err) {
+        console.warn('Failed to refetch photos after upload:', err);
       }
       
       // Reset file input
@@ -282,58 +273,37 @@ export default function HousehelpProfile() {
     setDeleteStatus('Finding document...');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
-      // Step 1: Find the document by URL
-      const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!docsRes.ok) {
-        console.warn('Failed to fetch documents, will only remove from profile');
-      } else {
-        const docsResponse = await docsRes.json();
-        const allDocs = docsResponse.data?.data || docsResponse.data || [];
+      // Step 1: Find the document by URL via gRPC
+      try {
+        const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+        const allDocs = docsData?.data || docsData?.documents || docsData || [];
         const documentsArray = Array.isArray(allDocs) ? allDocs : [];
         const document = documentsArray.find((doc: any) => (doc.public_url || doc.signed_url || doc.url) === photoUrl);
 
-        // Step 2: Delete from documents table and S3
+        // Step 2: Delete from documents table and S3 via gRPC
         if (document?.id) {
           setDeleteStatus('Deleting from storage...');
-          const deleteRes = await fetch(`${API_BASE_URL}/api/v1/documents/${document.id}`, {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (!deleteRes.ok) {
+          try {
+            await documentService.deleteDocument(document.id, token);
+          } catch (err) {
             console.warn('Failed to delete document from storage, but will remove from profile');
           }
         }
+      } catch (err) {
+        console.warn('Failed to fetch documents, will only remove from profile');
       }
 
-      // Step 3: Remove from profile photos array
+      // Step 3: Update profile photos via gRPC
       setDeleteStatus('Updating profile...');
       const updatedPhotos = (profile?.photos || []).filter(p => p !== photoUrl);
-
-      const updateRes = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          updates: {
-            photos: updatedPhotos,
-          },
-        }),
-      });
-
-      if (!updateRes.ok) throw new Error('Failed to update profile');
+      try {
+        await grpcProfileService.updateHousehelpFields('', 'househelp', { photos: updatedPhotos });
+      } catch (err) {
+        console.warn('Failed to update profile fields via gRPC:', err);
+      }
 
       // Update local state
       setProfile(prev => prev ? { ...prev, photos: updatedPhotos } : null);

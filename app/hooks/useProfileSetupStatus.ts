@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router';
-import { API_BASE_URL } from '~/config/api';
+import { profileSetupService } from '~/services/grpc/profileSetup.service';
 
 interface ProfileSetupStatus {
   isComplete: boolean;
@@ -45,7 +46,7 @@ export function useProfileSetupStatus(): ProfileSetupStatus & { isInSetupMode: b
   const checkStatus = useCallback(async () => {
     if (typeof window === 'undefined') return;
 
-    const token = localStorage.getItem('token');
+    const token = getAccessTokenFromCookies();
     const profileType = localStorage.getItem('profile_type');
 
     if (!token || !profileType) {
@@ -63,29 +64,22 @@ export function useProfileSetupStatus(): ProfileSetupStatus & { isInSetupMode: b
     setStatus(prev => ({ ...prev, isChecking: true, profileType }));
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-        headers: { 'Authorization': `Bearer ${token}` },
-      });
+      const data = await profileSetupService.getProgress('');
+      const progressData = data?.data || data || {};
+      const totalSteps = progressData.total_steps || 0;
+      const lastStep = progressData.last_completed_step || 0;
+      const isComplete = progressData.status === 'completed' ||
+        (totalSteps > 0 && lastStep >= totalSteps);
 
-      if (response.ok) {
-        const data = await response.json();
-        const progressData = data.data || {};
-        const totalSteps = progressData.total_steps || 0;
-        const lastStep = progressData.last_completed_step || 0;
-        const isComplete = progressData.status === 'completed' ||
-          (totalSteps > 0 && lastStep >= totalSteps);
-
-        setStatus({ isComplete, isChecking: false, lastStep, profileType });
-      } else if (response.status === 404) {
-        // No record = hasn't started setup
+      setStatus({ isComplete, isChecking: false, lastStep, profileType });
+    } catch (err: any) {
+      // NOT_FOUND = hasn't started setup
+      if (err?.code === 5 || err?.message?.includes('not found') || err?.message?.includes('NOT_FOUND')) {
         setStatus({ isComplete: false, isChecking: false, lastStep: 0, profileType });
       } else {
-        // Error — fail open (show nav/footer)
+        // Other error — fail open (show nav/footer)
         setStatus({ isComplete: true, isChecking: false, lastStep: 0, profileType });
       }
-    } catch {
-      // Error — fail open
-      setStatus({ isComplete: true, isChecking: false, lastStep: 0, profileType });
     } finally {
       setHasFetched(true);
     }
