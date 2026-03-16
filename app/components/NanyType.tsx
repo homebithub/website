@@ -22,7 +22,7 @@ const initialAvailability: AvailabilityType = DAYS.reduce((acc, day) => {
 }, {} as AvailabilityType);
 
 const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const [needsLiveIn, setNeedsLiveIn] = useState<boolean>(false);
   const [needsDayWorker, setNeedsDayWorker] = useState<boolean>(false);
   const [availableFrom, setAvailableFrom] = useState<string>("");
@@ -32,7 +32,22 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
 
-  // Load existing data
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.nannytype;
+    if (cached) {
+      if (cached.needsLiveIn !== undefined) setNeedsLiveIn(cached.needsLiveIn);
+      else if (cached.needs_live_in !== undefined) setNeedsLiveIn(cached.needs_live_in);
+      else if (cached.offers_live_in !== undefined) setNeedsLiveIn(cached.offers_live_in);
+      if (cached.needsDayWorker !== undefined) setNeedsDayWorker(cached.needsDayWorker);
+      else if (cached.needs_day_worker !== undefined) setNeedsDayWorker(cached.needs_day_worker);
+      else if (cached.offers_day_worker !== undefined) setNeedsDayWorker(cached.offers_day_worker);
+      const af = cached.availableFrom || cached.available_from;
+      if (af) setAvailableFrom(af.split('T')[0]);
+    }
+  }, [profileData.nannytype]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -127,6 +142,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           _step_metadata: stepMeta
         });
         markClean();
+        updateStepData('nannytype', { needsLiveIn, needsDayWorker, availableFrom });
         setSuccess("Service type saved successfully!");
       } else {
         await grpcProfileService.updateHousehelpFields('', 'househelp', {
@@ -137,6 +153,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           available_from: availableFrom,
         }, stepMeta);
         markClean();
+        updateStepData('nannytype', { needsLiveIn: needsLiveIn, needsDayWorker: needsDayWorker, availableFrom });
         setSuccess("Service type saved successfully!");
       }
     } catch (err: any) {

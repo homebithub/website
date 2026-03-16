@@ -10,7 +10,7 @@ import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext
 // Certifications and skills are now fetched from backend via context
 
 const Certifications: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [selectedHelp, setSelectedHelp] = useState<string[]>([]);
@@ -24,7 +24,16 @@ const Certifications: React.FC = () => {
   const CERTIFICATIONS = options?.certifications.map(c => c.name) || [];
   const HELP_WITH_OPTIONS = options?.skills.map(s => s.name) || [];
 
-  // Load existing data
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.certifications;
+    if (cached) {
+      if (cached.certs?.length) setSelectedCerts(cached.certs);
+      if (cached.helpWith?.length) setSelectedHelp(cached.helpWith);
+    }
+  }, [profileData.certifications]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -133,6 +142,7 @@ const Certifications: React.FC = () => {
       }, { step_id: 'certifications', step_number: 5, is_completed: true });
 
       markClean();
+      updateStepData('certifications', { certs: allCerts, helpWith: allHelp });
       setSuccess('Certifications saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'certifications', 'Failed to save your information. Please try again.'));

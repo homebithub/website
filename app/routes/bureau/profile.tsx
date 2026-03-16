@@ -30,7 +30,7 @@ export default function BureauProfile() {
             try {
                 const token = getAccessTokenFromCookies();
                 if (!token) throw new Error("Not authenticated");
-                const data = await bureauService.getCurrentBureauProfile(token);
+                const data = await bureauService.getCurrentBureauProfile('');
                 setProfile(data);
             } catch (err: any) {
                 setError(err.message || "Failed to load profile");

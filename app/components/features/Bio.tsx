@@ -14,7 +14,7 @@ interface BioProps {
 }
 
 const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const [bio, setBio] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -40,7 +40,16 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
 
   const currentContent = content[userType];
 
-  // Load existing bio data
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.bio;
+    if (cached) {
+      const val = typeof cached === 'string' ? cached : cached.bio;
+      if (val) { setBio(val); setCharacterCount(val.length); }
+    }
+  }, [profileData.bio]);
+
+  // Load existing bio data from backend (fallback)
   useEffect(() => {
     const loadBio = async () => {
       try {
@@ -94,6 +103,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
       }
 
       markClean();
+      updateStepData('bio', bio);
       setSuccess('Your bio has been saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'bio', 'Failed to save your bio. Please try again.'));

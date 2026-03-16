@@ -1,5 +1,6 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { handleApiError } from '../utils/errorMessages';
 import { petsService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -292,12 +293,12 @@ const Pets: React.FC = () => {
           onClick={handleAddPet}
           className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
         >
-          ➕ Add Pet
+          + Add Pet
         </button>
       )}
 
       {/* Modal */}
-      {showModal && (
+      {showModal && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 max-h-[90vh] overflow-y-auto">
             <button
@@ -450,11 +451,12 @@ const Pets: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && petToDelete && (
+      {showDeleteConfirm && petToDelete && typeof document !== 'undefined' && createPortal(
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border-2 border-purple-200 dark:border-purple-500/30">
             <div className="flex items-center mb-4">
@@ -493,7 +495,8 @@ const Pets: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

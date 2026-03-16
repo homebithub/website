@@ -31,6 +31,7 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
     '/reset-password',
     '/verify-otp',
     '/verify-email',
+    '/add-phone',
     '/about',
     '/services',
     '/contact',
@@ -38,11 +39,11 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
     '/terms',
     '/privacy',
     '/cookies',
-    '/'
+    '/devices',
   ];
 
   const isExemptRoute = () => {
-    return exemptRoutes.some(route => location.pathname.startsWith(route)) || location.pathname === '/';
+    return location.pathname === '/' || exemptRoutes.some(route => location.pathname.startsWith(route));
   };
 
   useEffect(() => {
@@ -76,7 +77,7 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
       }
 
       // Check profile setup status
-      const data = await profileSetupService.getProgress('');
+      const data = await profileSetupService.getProgress('', profileType);
       if (data) {
         const progressData = data.data || data || {};
         const totalSteps = progressData.total_steps || 0;

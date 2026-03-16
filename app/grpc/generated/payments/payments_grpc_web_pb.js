@@ -22,7 +22,8 @@ const grpc = { web: grpcWeb };
 
 import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js'
 import * as payments_pb from './payments_pb.js';
-const proto = { payments: payments_pb };
+// Normalize CJS imports for Vite SSR compatibility
+const proto = { payments: payments_pb.default || payments_pb };
 
 /**
  * @param {string} hostname

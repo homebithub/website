@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Public routes that don't need auth check
   const isPublicRoute = () => {
-    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies'];
+    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/household-choice', '/join-household', '/profile-setup', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies'];
     return publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === '/';
   };
 
@@ -83,12 +83,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthCookies(token || "", null, user);
       localStorage.setItem("token", token || "");
       localStorage.setItem("user_object", JSON.stringify(user));
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error checking auth:", error);
-      setUser(null);
-      clearAuthCookies();
-      localStorage.removeItem("token");
-      localStorage.removeItem("user_object");
+      // Only clear auth state on explicit UNAUTHENTICATED errors (gRPC code 16).
+      // Transient errors (network, unavailable, internal) should NOT log the user out.
+      const isUnauthenticated = error?.code === 16 ||
+        error?.message?.includes('UNAUTHENTICATED') ||
+        error?.message?.includes('Authentication required');
+      if (isUnauthenticated) {
+        setUser(null);
+        clearAuthCookies();
+        localStorage.removeItem("token");
+        localStorage.removeItem("user_object");
+      }
+      // For transient errors, keep the cached user state from cookies/localStorage
+      // that was set earlier in this function (lines 41-53).
     } finally {
       setLoading(false);
     }
@@ -155,7 +164,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (profileType === "household" || profileType === "househelp") {
         try {
           const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
-          const progressData = await profileSetupService.getProgress(userData.id);
+          const progressData = await profileSetupService.getProgress(userData.id, profileType);
 
           if (progressData) {
             const totalSteps = progressData.total_steps || 0;
@@ -164,17 +173,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
             const isComplete = setupStatus === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
 
-            if (!isComplete) {
-              if (profileType === 'household' && lastStep === 0) {
-                navigate('/household-choice');
-                return;
-              }
-              const setupRoute = profileType === "household" 
-                ? `/profile-setup/household?step=${lastStep + 1}`
-                : `/profile-setup/househelp?step=${lastStep + 1}`;
-              navigate(setupRoute);
+            if (isComplete) {
+              const profileRoute = profileType === 'household' ? '/household/profile' : '/househelp/profile';
+              navigate(profileRoute);
               return;
             }
+
+            if (profileType === 'household' && lastStep === 0) {
+              navigate('/household-choice');
+              return;
+            }
+            const setupRoute = profileType === "household" 
+              ? `/profile-setup/household?step=${lastStep + 1}`
+              : `/profile-setup/househelp?step=${lastStep + 1}`;
+            navigate(setupRoute);
+            return;
           }
         } catch (err: any) {
           // gRPC NOT_FOUND means no profile setup record

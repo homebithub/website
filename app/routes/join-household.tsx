@@ -29,7 +29,7 @@ export default function JoinHouseholdPage() {
       }
 
       try {
-        const data = await householdMemberService.getJoinRequestStatus(token);
+        const data = await householdMemberService.getJoinRequestStatus('');
         const request = data?.data || data;
         if (request && request.status) {
           setJoinStatus(request.status);
@@ -55,7 +55,7 @@ export default function JoinHouseholdPage() {
     const token = getAccessTokenFromCookies();
     if (!token) return;
 
-    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`);
+    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
 
     eventSource.onmessage = (event: any) => {
       try {

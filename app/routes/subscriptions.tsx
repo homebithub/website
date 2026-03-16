@@ -28,15 +28,6 @@ import { CancelSubscriptionFlow } from '~/components/subscriptions/CancelSubscri
 import { ChangePlanModal } from '~/components/subscriptions/ChangePlanModal';
 import { CreditBalanceCard } from '~/components/subscriptions/CreditBalanceCard';
 import { PauseStatusCard } from '~/components/subscriptions/PauseStatusCard';
-import {
-  pauseSubscription,
-  resumeSubscription,
-  getPauseStatus,
-  cancelSubscription,
-  changePlan,
-  previewProration,
-  getCreditBalance,
-} from '~/utils/api/subscriptions';
 import type { PauseStatusResponse, CreditBalanceResponse, PauseReason, CancelReason } from '~/types/payments';
 
 interface SubscriptionPlan {
@@ -157,7 +148,7 @@ export default function SubscriptionsPage() {
     
     setLoadingPauseStatus(true);
     try {
-      const status = await getPauseStatus(subscription.id);
+      const status = await paymentsService.getPauseStatus(subscription.id, '');
       setPauseStatus(status);
     } catch (error) {
       console.error('[Subscriptions] Failed to fetch pause status:', error);
@@ -172,7 +163,7 @@ export default function SubscriptionsPage() {
     
     setLoadingCreditBalance(true);
     try {
-      const balance = await getCreditBalance(subscription.id);
+      const balance = await paymentsService.getCreditBalance('');
       setCreditBalance(balance);
     } catch (error) {
       console.error('[Subscriptions] Failed to fetch credit balance:', error);
@@ -220,7 +211,7 @@ export default function SubscriptionsPage() {
   const handlePauseSubscription = async (reason: PauseReason, durationDays: number) => {
     if (!subscription?.id) return;
     
-    await pauseSubscription(subscription.id, { reason, duration_days: durationDays });
+    await paymentsService.pauseSubscription(subscription.id, '', reason, durationDays);
     await fetchSubscriptionData();
     await fetchPauseStatus();
   };
@@ -231,7 +222,7 @@ export default function SubscriptionsPage() {
     
     setErrorMessage('');
     try {
-      await resumeSubscription(subscription.id);
+      await paymentsService.resumeSubscription(subscription.id, '');
       setSuccessMessage('Subscription resumed successfully');
       await fetchSubscriptionData();
       await fetchPauseStatus();
@@ -245,7 +236,7 @@ export default function SubscriptionsPage() {
   const handleCancelSubscription = async (reason: CancelReason, feedback?: string) => {
     if (!subscription?.id) return;
     
-    await cancelSubscription(subscription.id, { reason, feedback });
+    await paymentsService.cancelSubscription(subscription.id, '');
     setSuccessMessage('Subscription cancelled successfully. Access continues until the end of your billing period.');
     await fetchSubscriptionData();
     setTimeout(() => setSuccessMessage(''), 5000);
@@ -255,7 +246,7 @@ export default function SubscriptionsPage() {
   const handleChangePlan = async (newPlanId: string) => {
     if (!subscription?.id) return;
     
-    await changePlan(subscription.id, { new_plan_id: newPlanId });
+    await paymentsService.changePlan(subscription.id, newPlanId, '');
     setSuccessMessage('Plan changed successfully');
     await fetchSubscriptionData();
     await fetchCreditBalance();
@@ -266,8 +257,8 @@ export default function SubscriptionsPage() {
   const handlePreviewProration = async (newPlanId: string) => {
     if (!subscription?.id) return { unused_credit: 0, prorated_charge: 0, net_amount: 0, days_used: 0, days_remaining: 0, total_days: 0, description: '' };
     
-    const preview = await previewProration(subscription.id, { new_plan_id: newPlanId });
-    return preview.proration;
+    const preview = await paymentsService.previewProration(subscription.id, newPlanId, '');
+    return (preview as any)?.proration || preview;
   };
 
   const initiatePayment = async () => {

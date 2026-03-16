@@ -15,12 +15,31 @@ const device_pb = device_pb_module as any;
 
 const deviceClient = new DeviceServiceClient(GRPC_WEB_BASE_URL, null, null);
 
+function resolveUserId(userId: string): string {
+  if (userId) return userId;
+  try {
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem('user_object');
+      if (raw) {
+        const user = JSON.parse(raw);
+        return user.user_id || user.id || '';
+      }
+    }
+  } catch {}
+  return '';
+}
+
 function getMetadata(): { [key: string]: string } {
+  const md: { [key: string]: string } = {};
   const token = getAccessTokenFromCookies();
-  if (token) {
-    return { authorization: `Bearer ${token}` };
-  }
-  return {};
+  if (token) md['authorization'] = `Bearer ${token}`;
+  try {
+    if (typeof window !== 'undefined') {
+      const profileType = localStorage.getItem('profile_type');
+      if (profileType) md['x-profile-type'] = profileType;
+    }
+  } catch {}
+  return md;
 }
 
 export const deviceService = {
@@ -40,7 +59,7 @@ export const deviceService = {
     return new Promise((resolve, reject) => {
       try {
         const request = new device_pb.RegisterDeviceRequest();
-        request.setUserId(userId);
+        request.setUserId(resolveUserId(userId));
         request.setDeviceId(deviceId);
         request.setDeviceName(deviceName);
         request.setUserAgent(userAgent);
@@ -100,7 +119,7 @@ export const deviceService = {
     return new Promise((resolve, reject) => {
       try {
         const request = new device_pb.GetUserDevicesRequest();
-        request.setUserId(userId);
+        request.setUserId(resolveUserId(userId));
         if (currentDeviceId) request.setCurrentDeviceId(currentDeviceId);
 
         deviceClient.getUserDevices(request, getMetadata(), (err: any, response: any) => {
@@ -129,7 +148,7 @@ export const deviceService = {
       try {
         const request = new device_pb.RevokeDeviceRequest();
         request.setDeviceId(deviceId);
-        request.setUserId(userId);
+        request.setUserId(resolveUserId(userId));
         if (reason) request.setReason(reason);
 
         deviceClient.revokeDevice(request, getMetadata(), (err: any) => {
@@ -152,7 +171,7 @@ export const deviceService = {
     return new Promise((resolve, reject) => {
       try {
         const request = new device_pb.RevokeAllDevicesRequest();
-        request.setUserId(userId);
+        request.setUserId(resolveUserId(userId));
         if (exceptDeviceId) request.setExceptDeviceId(exceptDeviceId);
         if (reason) request.setReason(reason);
 
@@ -181,7 +200,7 @@ export const deviceService = {
       try {
         const request = new device_pb.GetDeviceActivityRequest();
         request.setDeviceId(deviceId);
-        request.setUserId(userId);
+        request.setUserId(resolveUserId(userId));
         if (limit) request.setLimit(limit);
 
         deviceClient.getDeviceActivity(request, getMetadata(), (err: any, response: any) => {

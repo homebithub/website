@@ -1,66 +1,12 @@
 /**
  * gRPC-Web Client Configuration
  * 
- * Provides base configuration and utilities for gRPC-Web clients
+ * Provides base URL and error handling for gRPC-Web clients (google-protobuf style).
  */
 
-import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
-import type { RpcOptions } from '@protobuf-ts/runtime-rpc';
-import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { API_BASE_URL } from '~/config/api';
 
-// Get gRPC-Web endpoint from environment or default to gateway
-const getGrpcWebBaseUrl = (): string => {
-  if (typeof window !== 'undefined') {
-    const host = window.location.hostname.toLowerCase();
-    if (host === 'localhost' || host === '127.0.0.1') {
-      return `${window.location.protocol}//${window.location.hostname}:3005`;
-    }
-  }
-  return 'https://api.homebit.co.ke';
-};
-
-export const GRPC_WEB_BASE_URL = getGrpcWebBaseUrl();
-
-/**
- * Create a gRPC-Web transport with auth interceptor
- */
-export function createGrpcTransport(baseUrl: string = GRPC_WEB_BASE_URL) {
-  return new GrpcWebFetchTransport({
-    baseUrl,
-    // Add auth token to all requests
-    interceptors: [
-      {
-        interceptUnary(next, method, input, options) {
-          const token = getAccessTokenFromCookies();
-          if (token) {
-            options.meta = {
-              ...options.meta,
-              authorization: `Bearer ${token}`,
-            };
-          }
-          return next(method, input, options);
-        },
-      },
-    ],
-  });
-}
-
-/**
- * Default RPC options with timeout and retry
- */
-export const defaultRpcOptions: RpcOptions = {
-  timeout: 30000, // 30 seconds
-};
-
-/**
- * Create RPC options with custom timeout
- */
-export function createRpcOptions(timeout?: number): RpcOptions {
-  return {
-    ...defaultRpcOptions,
-    ...(timeout ? { timeout } : {}),
-  };
-}
+export const GRPC_WEB_BASE_URL = API_BASE_URL;
 
 /**
  * Parse a gRPC error message that may contain JSON from the backend.

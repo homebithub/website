@@ -6,6 +6,7 @@
 
 import { ProfileSetupServiceClient } from '~/grpc/generated/auth/auth_grpc_web_pb';
 import auth_pb_module from '~/grpc/generated/auth/auth_pb';
+import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 
@@ -14,24 +15,39 @@ const auth_pb = auth_pb_module as any;
 
 const profileSetupClient = new ProfileSetupServiceClient(GRPC_WEB_BASE_URL, null, null);
 
+function resolveUserId(userId: string): string {
+  if (userId) return userId;
+  try {
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem('user_object');
+      if (raw) {
+        const user = JSON.parse(raw);
+        return user.user_id || user.id || '';
+      }
+    }
+  } catch {}
+  return '';
+}
+
 function getMetadata(): { [key: string]: string } {
+  const md: { [key: string]: string } = {};
   const token = getAccessTokenFromCookies();
-  if (token) {
-    return { 'authorization': `Bearer ${token}` };
-  }
-  return {};
+  if (token) md['authorization'] = `Bearer ${token}`;
+  try {
+    if (typeof window !== 'undefined') {
+      const profileType = localStorage.getItem('profile_type');
+      if (profileType) md['x-profile-type'] = profileType;
+    }
+  } catch {}
+  return md;
 }
 
 // ── Helper: convert JS object to google.protobuf.Struct ────────────────
 function toStruct(obj: Record<string, any>): any {
-  const Struct = auth_pb.google?.protobuf?.Struct;
-  if (Struct && Struct.fromJavaScript) {
-    return Struct.fromJavaScript(obj);
-  }
   try {
-    const { Struct: PbStruct } = require('google-protobuf/google/protobuf/struct_pb');
-    return PbStruct.fromJavaScript(obj);
-  } catch {
+    return struct_pb.Struct.fromJavaScript(obj);
+  } catch (e) {
+    console.error('toStruct: failed to convert JS object to Struct', e);
     return null;
   }
 }
@@ -58,9 +74,15 @@ export const profileSetupService = {
   /**
    * Get profile setup steps for a user.
    */
-  async getSteps(userId: string): Promise<any> {
+  async getSteps(userId: string, profileType?: string): Promise<any> {
     const request = new auth_pb.UserIdRequest();
-    request.setUserId(userId);
+    request.setUserId(resolveUserId(userId));
+    if (profileType) {
+      request.setProfileType(profileType);
+    } else {
+      const pt = typeof window !== 'undefined' ? localStorage.getItem('profile_type') : null;
+      if (pt) request.setProfileType(pt);
+    }
     const res = await grpcCall((cb) => profileSetupClient.getSteps(request, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
@@ -68,9 +90,15 @@ export const profileSetupService = {
   /**
    * Get profile setup progress for a user.
    */
-  async getProgress(userId: string): Promise<any> {
+  async getProgress(userId: string, profileType?: string): Promise<any> {
     const request = new auth_pb.UserIdRequest();
-    request.setUserId(userId);
+    request.setUserId(resolveUserId(userId));
+    if (profileType) {
+      request.setProfileType(profileType);
+    } else {
+      const pt = typeof window !== 'undefined' ? localStorage.getItem('profile_type') : null;
+      if (pt) request.setProfileType(pt);
+    }
     const res = await grpcCall((cb) => profileSetupClient.getProgress(request, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
@@ -80,7 +108,9 @@ export const profileSetupService = {
    */
   async updateProgress(userId: string, data: Record<string, any>): Promise<any> {
     const request = new auth_pb.JsonPayload();
-    request.setUserId(userId);
+    request.setUserId(resolveUserId(userId));
+    const profileType = data.profile_type || (typeof window !== 'undefined' ? localStorage.getItem('profile_type') : null);
+    if (profileType) request.setProfileType(profileType);
     const struct = toStruct(data);
     if (struct) request.setData(struct);
     const res = await grpcCall((cb) => profileSetupClient.updateProgress(request, getMetadata(), cb));
@@ -92,7 +122,9 @@ export const profileSetupService = {
    */
   async updateStep(userId: string, data: Record<string, any>): Promise<any> {
     const request = new auth_pb.JsonPayload();
-    request.setUserId(userId);
+    request.setUserId(resolveUserId(userId));
+    const profileType = data.profile_type || (typeof window !== 'undefined' ? localStorage.getItem('profile_type') : null);
+    if (profileType) request.setProfileType(profileType);
     const struct = toStruct(data);
     if (struct) request.setData(struct);
     const res = await grpcCall((cb) => profileSetupClient.updateStep(request, getMetadata(), cb));

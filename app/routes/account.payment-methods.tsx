@@ -18,13 +18,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
-import {
-  listPaymentMethods,
-  addPaymentMethod,
-  setDefaultPaymentMethod,
-  updatePaymentMethodNickname,
-  deletePaymentMethod,
-} from '~/utils/api/paymentMethods';
+import { paymentsService } from '~/services/grpc/payments.service';
 import type { PaymentMethod, AddPaymentMethodRequest } from '~/types/payments';
 import { validatePhoneNumber, validateNickname, formatPhoneNumber } from '~/utils/validation/payments';
 import { formatDate } from '~/utils/formatting/currency';
@@ -62,7 +56,8 @@ export default function PaymentMethodsPage() {
     setDataLoading(true);
     setErrorMessage('');
     try {
-      const methods = await listPaymentMethods();
+      const res = await paymentsService.getPaymentMethods('');
+      const methods = (res as any)?.getPaymentMethodsList?.()?.map((m: any) => m.toObject()) ?? (res as any)?.payment_methods ?? [];
       setPaymentMethods(methods);
     } catch (error) {
       console.error('Failed to fetch payment methods:', error);
@@ -116,7 +111,7 @@ export default function PaymentMethodsPage() {
         is_default: addForm.is_default,
       };
       
-      await addPaymentMethod(request);
+      await paymentsService.addPaymentMethod('', request.type || 'mpesa', formatPhoneNumber(addForm.phone_number), addForm.nickname || '', addForm.is_default);
       setSuccessMessage('Payment method added successfully');
       setShowAddModal(false);
       setAddForm({
@@ -144,7 +139,7 @@ export default function PaymentMethodsPage() {
     setErrorMessage('');
     
     try {
-      await setDefaultPaymentMethod(methodId);
+      await paymentsService.setDefaultPaymentMethod(methodId, '');
       setSuccessMessage('Default payment method updated');
       await fetchPaymentMethods();
       
@@ -171,7 +166,7 @@ export default function PaymentMethodsPage() {
     setErrorMessage('');
     
     try {
-      await updatePaymentMethodNickname(editingMethod.id, { nickname: editNickname });
+      await paymentsService.updatePaymentMethodNickname(editingMethod.id, '', editNickname);
       setSuccessMessage('Nickname updated successfully');
       setEditingMethod(null);
       setEditNickname('');
@@ -195,7 +190,7 @@ export default function PaymentMethodsPage() {
     setErrorMessage('');
     
     try {
-      await deletePaymentMethod(deletingMethod.id);
+      await paymentsService.removePaymentMethod(deletingMethod.id, '');
       setSuccessMessage('Payment method removed successfully');
       setDeletingMethod(null);
       await fetchPaymentMethods();

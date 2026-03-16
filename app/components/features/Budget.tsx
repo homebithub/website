@@ -12,7 +12,7 @@ type BudgetFrequency = 'daily' | 'weekly' | 'monthly';
 type BudgetRange = string;
 
 const Budget: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const [frequency, setFrequency] = useState<BudgetFrequency>('monthly');
   const { ranges: budgetRanges, loading: rangesLoading } = useSalaryRanges(frequency);
   const [selectedRange, setSelectedRange] = useState<string>('');
@@ -27,7 +27,21 @@ const Budget: React.FC = () => {
     monthly: budgetRanges.map(r => r.label)
   };
 
-  // Load existing data (once on mount)
+  const currentRanges = BUDGET_RANGES[frequency] || [];
+
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.budget;
+    if (cached) {
+      if (cached.min && cached.max) {
+        setSelectedRange(`${cached.min}-${cached.max}`);
+      }
+      const freq = cached.frequency || cached.salary_frequency;
+      if (freq) setFrequency(freq.toLowerCase() as BudgetFrequency);
+    }
+  }, [profileData.budget]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -38,12 +52,12 @@ const Budget: React.FC = () => {
         if (data) {
           let effectiveFreq: BudgetFrequency = frequency;
           if (data.salary_frequency) {
-            const freq = data.salary_frequency.charAt(0).toUpperCase() + data.salary_frequency.slice(1);
-            setFrequency(freq as BudgetFrequency);
-            effectiveFreq = freq as BudgetFrequency;
+            const freq = data.salary_frequency.toLowerCase() as BudgetFrequency;
+            setFrequency(freq);
+            effectiveFreq = freq;
           }
           if (data.budget_min || data.budget_max) {
-            const ranges = BUDGET_RANGES[effectiveFreq];
+            const ranges = BUDGET_RANGES[effectiveFreq] || [];
             const matchedRange = ranges.find(range => {
               if (range === 'Negotiable') return data.budget_min === 0 && data.budget_max === 0;
               const parts = range.split('-');
@@ -64,9 +78,16 @@ const Budget: React.FC = () => {
     loadData();
   }, []);
 
+  const handleRangeSelect = async (range: string) => {
+    setSelectedRange(range);
+    markDirty();
+    await saveBudget(range);
+  };
+
   // Save budget to household profile
-  const saveBudget = async () => {
-    if (!selectedRange) {
+  const saveBudget = async (rangeToSave?: string) => {
+    const range = rangeToSave || selectedRange;
+    if (!range) {
       setError('Please select a budget range');
       return;
     }
@@ -82,13 +103,13 @@ const Budget: React.FC = () => {
       let budgetMin = 0;
       let budgetMax = 0;
       
-      if (selectedRange !== 'Negotiable') {
-        const parts = selectedRange.split('-');
+      if (range !== 'Negotiable') {
+        const parts = range.split('-');
         if (parts.length === 2) {
           budgetMin = parseInt(parts[0].replace(/,/g, '').replace(/\s+/g, ''));
           budgetMax = parseInt(parts[1].replace(/,/g, '').replace(/\s+/g, '').replace('KES', '').replace('+', ''));
-        } else if (selectedRange.includes('+')) {
-          budgetMin = parseInt(selectedRange.replace(/,/g, '').replace(/\s+/g, '').replace('KES', '').replace('+', ''));
+        } else if (range.includes('+')) {
+          budgetMin = parseInt(range.replace(/,/g, '').replace(/\s+/g, '').replace('KES', '').replace('+', ''));
           budgetMax = budgetMin * 2; // Set max to double for open-ended ranges
         }
       }
@@ -105,6 +126,7 @@ const Budget: React.FC = () => {
       });
 
       markClean();
+      updateStepData('budget', { min: budgetMin, max: budgetMax, frequency });
       setSuccess('Budget saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -138,9 +160,9 @@ const Budget: React.FC = () => {
             }}
             className="block w-full h-10 px-4 py-1.5 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 text-sm font-medium"
           >
-            <option value="Daily">Daily</option>
-            <option value="Weekly">Weekly</option>
-            <option value="Monthly">Monthly</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
           </select>
         </div>
 
@@ -153,7 +175,7 @@ const Budget: React.FC = () => {
             Select the amount you're willing to pay
           </p>
           <div className="space-y-3">
-            {BUDGET_RANGES[frequency].map((range) => (
+            {currentRanges.map((range) => (
               <label 
                 key={range} 
                 className={`flex items-center p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
@@ -167,7 +189,7 @@ const Budget: React.FC = () => {
                   name="budgetRange"
                   value={range}
                   checked={selectedRange === range}
-                  onChange={() => { setSelectedRange(range); markDirty(); }}
+                  onChange={() => handleRangeSelect(range)}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 flex-shrink-0 ${
@@ -189,27 +211,6 @@ const Budget: React.FC = () => {
 
         {success && <SuccessAlert message={success} />}
 
-        {/* Save Button */}
-        <button
-          type="button"
-          onClick={saveBudget}
-          disabled={isSubmitting || !selectedRange}
-          className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Saving...
-            </>
-          ) : (
-            <>
-              💾 Save Budget
-            </>
-          )}
-        </button>
       </div>
     </div>
   );

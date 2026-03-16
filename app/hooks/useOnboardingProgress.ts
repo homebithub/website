@@ -42,7 +42,7 @@ export function useOnboardingProgress(
       setLoading(true);
       setError(null);
 
-      const data = await profileSetupService.getProgress(userId);
+      const data = await profileSetupService.getProgress(userId, profileType);
       setProgress(data);
     } catch (err) {
       console.error('Error fetching onboarding progress:', err);

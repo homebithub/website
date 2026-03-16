@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router";
-import { API_BASE_URL } from '~/config/api';
-import { apiClient } from '~/utils/apiClient';
+import { notificationsService } from '~/services/grpc/notifications.service';
 import { employmentContractService, profileService } from '~/services/grpc/authServices';
 import { useAuth } from '~/contexts/useAuth';
 import {
@@ -378,45 +377,31 @@ export default function EmploymentContractPage() {
         .from(printRef.current)
         .outputPdf('blob');
 
-      // Convert PDF blob to base64
       const arrayBuffer = await pdfBlob.arrayBuffer();
       const uint8Array = new Uint8Array(arrayBuffer);
-      let binary = '';
-      for (let i = 0; i < uint8Array.length; i++) {
-        binary += String.fromCharCode(uint8Array[i]);
-      }
-      const pdfBase64 = btoa(binary);
 
       const userObj = (user as any)?.user || user;
       const firstName = userObj?.first_name || 'there';
       const contractUrl = `${window.location.origin}/household/employment-contract?id=${contract.id}`;
 
-      const response = await apiClient.auth(
-        `${API_BASE_URL}/api/v1/email/send`,
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            to: emailAddress.trim(),
-            subject: `Employment Contract - ${contract.job_title || 'Homebit'}`,
-            template_name: 'employment-contract',
-            variables: {
-              firstName,
-              jobTitle: contract.job_title || 'Employment Position',
-              employerName: contract.household_signer_name || '',
-              employeeName: contract.househelp_signer_name || '',
-              startDate: contract.start_date ? new Date(contract.start_date).toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }) : '',
-              contractUrl,
-            },
-            attachment_data: pdfBase64,
-            attachment_name: `Employment-Contract-${contract.job_title || 'Homebit'}.pdf`,
-            attachment_type: 'application/pdf',
-          }),
-        }
-      );
-      if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || err.message || 'Failed to send email');
-      }
+      await notificationsService.sendEmail({
+        to: emailAddress.trim(),
+        subject: `Employment Contract - ${contract.job_title || 'Homebit'}`,
+        body: '',
+        isHtml: false,
+        templateName: 'employment-contract',
+        variables: {
+          firstName,
+          jobTitle: contract.job_title || 'Employment Position',
+          employerName: contract.household_signer_name || '',
+          employeeName: contract.househelp_signer_name || '',
+          startDate: contract.start_date ? new Date(contract.start_date).toLocaleDateString('en-KE', { year: 'numeric', month: 'long', day: 'numeric' }) : '',
+          contractUrl,
+        },
+        attachmentData: uint8Array,
+        attachmentName: `Employment-Contract-${contract.job_title || 'Homebit'}.pdf`,
+        attachmentType: 'application/pdf',
+      });
       setShowEmailModal(false);
       setSuccess(`Contract emailed to ${emailAddress.trim()} successfully!`);
     } catch (err: any) {

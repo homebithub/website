@@ -25,11 +25,26 @@ const options = [
 ];
 
 const Children: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const [selected, setSelected] = useState<string>("");
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
+
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.children;
+    if (cached) {
+      if (cached.children === true) {
+        setSelected('have_or_expecting');
+        if (cached.kids?.length) setChildrenList(cached.kids);
+      } else if (cached.children === false) {
+        setSelected('no_children');
+      } else if (cached.has_children !== undefined) {
+        setSelected(cached.has_children ? 'have_or_expecting' : 'no_children');
+      }
+    }
+  }, [profileData.children]);
 
   // Load existing children on mount
   useEffect(() => {
@@ -88,6 +103,7 @@ const Children: React.FC = () => {
       });
       
       markClean();
+      updateStepData('children', { children: hasChildren, kids: hasChildren ? childrenList : [] });
       setSaveMessage({ type: 'success', text: 'Preference saved successfully' });
       // Note: Step completion is tracked server-side when kids are added
     } catch (err: any) {
@@ -99,6 +115,10 @@ const Children: React.FC = () => {
 
   const handleChildrenUpdate = (children: Child[]) => {
     setChildrenList(children);
+    if (children.length > 0) {
+      updateStepData('children', { children: true, kids: children });
+      markClean();
+    }
   };
 
   return (

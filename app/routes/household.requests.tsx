@@ -44,12 +44,12 @@ export default function HouseholdRequestsPage() {
       }
 
       // Get household ID first via gRPC
-      const profileData = await grpcProfileService.getCurrentHouseholdProfile(token);
+      const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
       const hId = profileData.id;
       setHouseholdId(hId);
 
       // Fetch pending requests via gRPC
-      const requestsData = await householdMemberService.listPendingRequests(hId, token);
+      const requestsData = await householdMemberService.listPendingRequests(hId);
       const extracted = requestsData?.data || requestsData;
       const requestsArray = Array.isArray(extracted) ? extracted : [];
       setRequests(requestsArray);
@@ -72,7 +72,7 @@ export default function HouseholdRequestsPage() {
         return;
       }
 
-      await householdMemberService.approveRequest(householdId, requestId, token);
+      await householdMemberService.approveRequest(householdId, requestId, '');
 
       // Refresh requests list
       await fetchRequests();
@@ -98,7 +98,7 @@ export default function HouseholdRequestsPage() {
         return;
       }
 
-      await householdMemberService.rejectRequest(householdId, requestId, token);
+      await householdMemberService.rejectRequest(householdId, requestId, '');
 
       // Refresh requests list
       await fetchRequests();

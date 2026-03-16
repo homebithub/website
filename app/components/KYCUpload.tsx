@@ -52,7 +52,7 @@ const validateFile = (file: File): { valid: boolean; message?: string } => {
 };
 
 const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplete }) => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData } = useProfileSetup();
   const [subStep, setSubStep] = useState<number>(SUB_STEPS.ID_TYPE);
   const [idType, setIdType] = useState<IDType | null>(null);
   const [idNumber, setIdNumber] = useState('');
@@ -323,6 +323,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
       );
 
       markClean();
+      updateStepData('kyc', { submitted: true });
       setSuccess('Your KYC documents and photos have been uploaded successfully!');
       if (onComplete) {
         setTimeout(() => onComplete(), 500);

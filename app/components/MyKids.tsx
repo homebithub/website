@@ -10,7 +10,7 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const MyKids = () => {
-    const { markDirty, markClean } = useProfileSetup();
+    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
     const [kidOption, setKidOption] = useState<string>('');
     const [children, setChildren] = useState<Child[]>([]);
     const [error, setError] = useState('');
@@ -18,6 +18,16 @@ const MyKids = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     
+    // Populate from context (instant on back-nav)
+    useEffect(() => {
+        const cached = profileData.mykids;
+        if (cached) {
+            if (cached.kidOption) setKidOption(cached.kidOption);
+            else if (cached.preference) setKidOption(cached.preference);
+            if (cached.children?.length) setChildren(cached.children);
+        }
+    }, [profileData.mykids]);
+
     // Load existing children and profile data on mount
     useEffect(() => {
         const loadData = async () => {
@@ -75,6 +85,7 @@ const MyKids = () => {
             );
             
             markClean();
+            updateStepData('mykids', { kidOption, children });
             setSuccess('Your preference has been saved successfully!');
             // navigate('/next-step');
         } catch (err: any) {

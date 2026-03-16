@@ -84,14 +84,8 @@ export default function HouseholdProfile() {
       setLoading(true);
       setError(null);
       try {
-        const token = getAccessTokenFromCookies();
-        if (!token) {
-          navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
-          return;
-        }
-        
         // Fetch household profile via gRPC
-        const profileData = await grpcProfileService.getCurrentHouseholdProfile(token);
+        const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
         console.log('Profile data:', profileData);
         setProfile(profileData);
 
@@ -99,7 +93,7 @@ export default function HouseholdProfile() {
         try {
           const householdId = profileData.id;
           console.log('Household ID:', householdId);
-          const inviteData = await householdMemberService.getOrCreateInvitationCode(householdId, token);
+          const inviteData = await householdMemberService.getOrCreateInvitationCode(householdId);
           const extracted = inviteData?.data || inviteData;
           setInvitationCode(extracted.invite_code);
           setInvitationExpiresAt(extracted.expires_at);
@@ -109,7 +103,7 @@ export default function HouseholdProfile() {
 
         // Fetch kids via gRPC
         try {
-          const kidsData = await householdKidsService.listHouseholdKids(token);
+          const kidsData = await householdKidsService.listHouseholdKids('');
           const kidsArray = Array.isArray(kidsData?.data || kidsData) ? (kidsData?.data || kidsData) : [];
           setKids(Array.isArray(kidsArray) ? kidsArray : []);
         } catch (err) {
@@ -118,7 +112,7 @@ export default function HouseholdProfile() {
 
         // Fetch pets via gRPC
         try {
-          const petsData = await petsService.listMyPets(token);
+          const petsData = await petsService.listMyPets('');
           const petsArray = Array.isArray(petsData?.data || petsData) ? (petsData?.data || petsData) : [];
           setPets(Array.isArray(petsArray) ? petsArray : []);
         } catch (err) {
@@ -127,7 +121,7 @@ export default function HouseholdProfile() {
 
         // Fetch photos from documents table via gRPC
         try {
-          const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+          const docsData = await documentService.getUserDocuments('', 'profile_photo');
           const docs = docsData?.data || docsData?.documents || docsData || [];
           const documentsArray = Array.isArray(docs) ? docs : [];
           const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
@@ -181,7 +175,7 @@ export default function HouseholdProfile() {
       if (!householdId) throw new Error("No household ID");
       
       // Get or create invitation code via gRPC
-      const inviteData = await householdMemberService.getOrCreateInvitationCode(householdId, token);
+      const inviteData = await householdMemberService.getOrCreateInvitationCode(householdId);
       const extractedInviteData = inviteData?.data || inviteData;
       setInvitationCode(extractedInviteData.invite_code);
       setInvitationExpiresAt(extractedInviteData.expires_at);
@@ -232,7 +226,7 @@ export default function HouseholdProfile() {
       const token = getAccessTokenFromCookies();
       if (!token) return;
       
-      const membersData = await householdMemberService.listMembers(profile.id, token);
+      const membersData = await householdMemberService.listMembers(profile.id);
       const extracted = membersData?.data || membersData?.members || membersData;
       const membersArray = Array.isArray(extracted) ? extracted : [];
       setMembers(membersArray);
@@ -252,7 +246,7 @@ export default function HouseholdProfile() {
       const token = getAccessTokenFromCookies();
       if (!token) throw new Error("Not authenticated");
       
-      await householdMemberService.removeMember(profile.id, userId, token);
+      await householdMemberService.removeMember(profile.id, userId, '');
       
       // Refresh members list
       await fetchMembers();
@@ -343,7 +337,7 @@ export default function HouseholdProfile() {
 
       // Refetch photos from documents table via gRPC
       try {
-        const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+        const docsData = await documentService.getUserDocuments('', 'profile_photo');
         const docs = docsData?.data || docsData?.documents || docsData || [];
         const documentsArray = Array.isArray(docs) ? docs : [];
         const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
@@ -384,7 +378,7 @@ export default function HouseholdProfile() {
 
       // Step 1: Find the document by URL via gRPC
       try {
-        const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+        const docsData = await documentService.getUserDocuments('', 'profile_photo');
         const allDocs = docsData?.data || docsData?.documents || docsData || [];
         const documentsArray = Array.isArray(allDocs) ? allDocs : [];
         const document = documentsArray.find((doc: any) => (doc.public_url || doc.signed_url || doc.url) === photoUrl);
@@ -393,7 +387,7 @@ export default function HouseholdProfile() {
         if (document?.id) {
           setDeleteStatus('Deleting from storage...');
           try {
-            await documentService.deleteDocument(document.id, token);
+            await documentService.deleteDocument(document.id);
           } catch (err) {
             console.warn('Failed to delete document from storage, but will remove from profile');
           }
@@ -405,7 +399,7 @@ export default function HouseholdProfile() {
       // Step 3: Refetch photos from documents table via gRPC
       setDeleteStatus('Refreshing photos...');
       try {
-        const refreshData = await documentService.getUserDocuments(token, 'profile_photo');
+        const refreshData = await documentService.getUserDocuments('', 'profile_photo');
         const refreshDocs = refreshData?.data || refreshData?.documents || refreshData || [];
         const docsArray = Array.isArray(refreshDocs) ? refreshDocs : [];
         const photoUrls = docsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);

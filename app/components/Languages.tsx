@@ -11,7 +11,7 @@ import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext
 // Languages are now fetched from backend via context
 
 const Languages = () => {
-    const { markDirty, markClean } = useProfileSetup();
+    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
     const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
     const [showOtherLanguages, setShowOtherLanguages] = useState(false);
@@ -22,6 +22,16 @@ const Languages = () => {
     const [loading, setLoading] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+
+    // Populate from context (instant on back-nav)
+    useEffect(() => {
+        const cached = profileData.languages;
+        if (cached) {
+            if (cached.languages?.length) setSelectedLanguages(cached.languages);
+            else if (typeof cached === 'string' && cached.length) setSelectedLanguages(cached.split(',').map((l: string) => l.trim()));
+            else if (Array.isArray(cached) && cached.length) setSelectedLanguages(cached);
+        }
+    }, [profileData.languages]);
 
     // Get languages from backend options
     const allLanguages = options?.languages || [];
@@ -55,30 +65,8 @@ const Languages = () => {
         };
     }, []);
 
-    const toggleLanguage = (language: string) => {
-        markDirty();
-        setSelectedLanguages(prev => 
-            prev.includes(language)
-                ? prev.filter(lang => lang !== language)
-                : [...prev, language]
-        );
-    };
-
-    const toggleOtherLanguages = () => {
-        setShowOtherLanguages(!showOtherLanguages);
-        if (!showOtherLanguages) {
-            setSearchTerm('');
-            setFilteredLanguages(commonLanguages);
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        if (selectedLanguages.length === 0) {
-            setError('Please select at least one language');
-            return;
-        }
+    const autoSave = async (langs: string[]) => {
+        if (langs.length === 0) return;
 
         setLoading(true);
         setError('');
@@ -89,7 +77,7 @@ const Languages = () => {
             if (!token) throw new Error('Authentication token not found');
 
             const updates = {
-                languages: selectedLanguages.join(',')
+                languages: langs.join(',')
             };
 
             await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
@@ -97,13 +85,31 @@ const Languages = () => {
             );
             
             markClean();
+            updateStepData('languages', { languages: langs });
             setSuccess('Your language preferences have been saved successfully!');
-            // navigate('/next-step');
+            setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {
             console.error('Error saving information:', err);
             setError(handleApiError(err, 'languages', 'Failed to save your preferences. Please try again.'));
         } finally {
             setLoading(false);
+        }
+    };
+
+    const toggleLanguage = async (language: string) => {
+        const newLangs = selectedLanguages.includes(language)
+            ? selectedLanguages.filter(lang => lang !== language)
+            : [...selectedLanguages, language];
+        setSelectedLanguages(newLangs);
+        markDirty();
+        await autoSave(newLangs);
+    };
+
+    const toggleOtherLanguages = () => {
+        setShowOtherLanguages(!showOtherLanguages);
+        if (!showOtherLanguages) {
+            setSearchTerm('');
+            setFilteredLanguages(commonLanguages);
         }
     };
 
@@ -128,7 +134,7 @@ const Languages = () => {
             
             {success && <SuccessAlert message={success} />}
             
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-6">
                 <div className="space-y-4">
                     <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100">Select languages you're comfortable with</h2>
                     
@@ -302,28 +308,7 @@ const Languages = () => {
                     </div>
                 </div>
                 
-                <div className="pt-2">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                            <>
-                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                💾 Save
-                            </>
-                        )}
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     );
 };

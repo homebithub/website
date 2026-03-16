@@ -17,17 +17,34 @@ const auth_pb = auth_pb_module as any;
 console.log('[gRPC-Web] Initializing AuthServiceClient with base URL:', GRPC_WEB_BASE_URL);
 const authClient = new AuthServiceClient(GRPC_WEB_BASE_URL, null, null);
 
+function resolveUserId(userId: string): string {
+  if (userId) return userId;
+  try {
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem('user_object');
+      if (raw) {
+        const user = JSON.parse(raw);
+        return user.user_id || user.id || '';
+      }
+    }
+  } catch {}
+  return '';
+}
+
 /**
- * Get metadata with auth token
+ * Get metadata with auth token and profile type
  */
 function getMetadata(): { [key: string]: string } {
+  const md: { [key: string]: string } = {};
   const token = getAccessTokenFromCookies();
-  if (token) {
-    return {
-      'authorization': `Bearer ${token}`,
-    };
-  }
-  return {};
+  if (token) md['authorization'] = `Bearer ${token}`;
+  try {
+    if (typeof window !== 'undefined') {
+      const profileType = localStorage.getItem('profile_type');
+      if (profileType) md['x-profile-type'] = profileType;
+    }
+  } catch {}
+  return md;
 }
 
 /**
@@ -103,7 +120,7 @@ export const authService = {
   async sendOTP(userId: string, verificationType: string, target: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.SendOTPRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setVerificationType(verificationType);
       request.setTarget(target);
 
@@ -123,7 +140,7 @@ export const authService = {
   async verifyOTP(userId: string, verificationType: string, otp: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.VerifyOTPRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setVerificationType(verificationType);
       request.setOtp(otp);
 
@@ -160,7 +177,7 @@ export const authService = {
   async updatePhone(userId: string, phone: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.UpdatePhoneRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setPhone(phone);
 
       authClient.updatePhone(request, getMetadata(), (err, response) => {
@@ -197,7 +214,7 @@ export const authService = {
   async updateEmail(userId: string, email: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.UpdateEmailRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setEmail(email);
 
       authClient.updateEmail(request, getMetadata(), (err, response) => {
@@ -216,7 +233,7 @@ export const authService = {
   async resendOTP(userId: string, verificationType: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.ResendOTPRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setVerificationType(verificationType);
 
       authClient.resendOTP(request, getMetadata(), (err, response) => {
@@ -235,7 +252,7 @@ export const authService = {
   async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.ChangePasswordRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setCurrentPassword(currentPassword);
       request.setNewPassword(newPassword);
 
@@ -252,7 +269,7 @@ export const authService = {
   async resetPassword(userId: string, newPassword: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.ResetPasswordRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setNewPassword(newPassword);
 
       authClient.resetPassword(request, getMetadata(), (err: any, response: any) => {
@@ -268,7 +285,7 @@ export const authService = {
   async updateUser(userId: string, fields: { email?: string; firstName?: string; lastName?: string; phone?: string }): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.UpdateUserRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       if (fields.email) request.setEmail(fields.email);
       if (fields.firstName) request.setFirstName(fields.firstName);
       if (fields.lastName) request.setLastName(fields.lastName);

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ProtectedRoute } from '../ProtectedRoute';
+import { ProtectedRoute } from '~/components/ProtectedRoute';
 import { MemoryRouter } from 'react-router';
 
 // Mock dependencies

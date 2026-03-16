@@ -120,14 +120,14 @@ export default function HousehelpProfile() {
           return;
         }
         
-        const profileData = await grpcProfileService.getCurrentHousehelpProfile(token);
+        const profileData = await grpcProfileService.getCurrentHousehelpProfile('');
         console.log('Raw househelp profile response:', profileData);
         const normalized = normalizeHousehelpProfileResponse(profileData);
         console.log('Normalized profile location:', normalized.location);
 
         // Fetch photos from documents table via gRPC
         try {
-          const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+          const docsData = await documentService.getUserDocuments('', 'profile_photo');
           const docs = docsData?.data || docsData?.documents || docsData || [];
           const documentsArray = Array.isArray(docs) ? docs : [];
           const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
@@ -237,7 +237,7 @@ export default function HousehelpProfile() {
 
       // Refetch photos from documents table via gRPC
       try {
-        const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+        const docsData = await documentService.getUserDocuments('', 'profile_photo');
         const docs = docsData?.data || docsData?.documents || docsData || [];
         const documentsArray = Array.isArray(docs) ? docs : [];
         const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
@@ -278,7 +278,7 @@ export default function HousehelpProfile() {
 
       // Step 1: Find the document by URL via gRPC
       try {
-        const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+        const docsData = await documentService.getUserDocuments('', 'profile_photo');
         const allDocs = docsData?.data || docsData?.documents || docsData || [];
         const documentsArray = Array.isArray(allDocs) ? allDocs : [];
         const document = documentsArray.find((doc: any) => (doc.public_url || doc.signed_url || doc.url) === photoUrl);

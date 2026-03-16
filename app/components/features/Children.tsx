@@ -2,7 +2,7 @@ import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../../utils/errorMessages';
 import { UserGroupIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
-import Kids from "./Kids";
+import Kids from "~/components/Kids";
 import { householdKidsService } from '~/services/grpc/authServices';
 
 export interface Child {
@@ -131,7 +131,7 @@ const Children: React.FC = () => {
           ))}
 
           {selected === "have_or_expecting" && (
-            <Kids />
+            <Kids onChildrenUpdate={handleChildrenUpdate} initialChildren={childrenList} />
           )}
         </div>
 

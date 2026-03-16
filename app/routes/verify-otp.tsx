@@ -265,23 +265,26 @@ export default function VerifyOtpPage() {
         if (pt === 'household' || pt === 'househelp') {
           try {
             const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
-            const progressData = await profileSetupService.getProgress(userId);
+            const progressData = await profileSetupService.getProgress(userId, pt);
             if (progressData) {
               const totalSteps = progressData.total_steps || 0;
               const lastStep = progressData.last_completed_step || 0;
               const isComplete = progressData.status === 'completed' ||
                 (totalSteps > 0 && lastStep >= totalSteps);
-              if (!isComplete) {
-                if (pt === 'household' && lastStep === 0) {
-                  navigate('/household-choice', { replace: true });
-                  return;
-                }
-                const setupRoute = pt === 'household'
-                  ? `/profile-setup/household?step=${lastStep + 1}`
-                  : `/profile-setup/househelp?step=${lastStep + 1}`;
-                navigate(setupRoute, { replace: true });
+              if (isComplete) {
+                const profileRoute = pt === 'household' ? '/household/profile' : '/househelp/profile';
+                navigate(profileRoute, { replace: true });
                 return;
               }
+              if (pt === 'household' && lastStep === 0) {
+                navigate('/household-choice', { replace: true });
+                return;
+              }
+              const setupRoute = pt === 'household'
+                ? `/profile-setup/household?step=${lastStep + 1}`
+                : `/profile-setup/househelp?step=${lastStep + 1}`;
+              navigate(setupRoute, { replace: true });
+              return;
             }
           } catch (err: any) {
             if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
@@ -322,7 +325,7 @@ export default function VerifyOtpPage() {
         if (profileType === 'household' || profileType === 'househelp') {
           try {
             const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
-            const progressData = await profileSetupService.getProgress(user_id);
+            const progressData = await profileSetupService.getProgress(user_id, profileType);
 
             if (progressData) {
               const totalSteps = progressData.total_steps || 0;
@@ -330,19 +333,24 @@ export default function VerifyOtpPage() {
               const isComplete = progressData.status === 'completed' ||
                 (totalSteps > 0 && lastStep >= totalSteps);
 
-              if (!isComplete) {
-                if (profileType === 'household' && lastStep === 0) {
-                  console.log('[VERIFY-OTP] Email verified, redirecting to household choice');
-                  navigate('/household-choice');
-                  return;
-                }
-                const setupRoute = profileType === 'household'
-                  ? `/profile-setup/household?step=${lastStep + 1}`
-                  : `/profile-setup/househelp?step=${lastStep + 1}`;
-                console.log('[VERIFY-OTP] Email verified, redirecting to profile setup:', setupRoute);
-                navigate(setupRoute);
+              if (isComplete) {
+                const profileRoute = profileType === 'household' ? '/household/profile' : '/househelp/profile';
+                console.log('[VERIFY-OTP] Email verified, setup complete, redirecting to:', profileRoute);
+                navigate(profileRoute);
                 return;
               }
+
+              if (profileType === 'household' && lastStep === 0) {
+                console.log('[VERIFY-OTP] Email verified, redirecting to household choice');
+                navigate('/household-choice');
+                return;
+              }
+              const setupRoute = profileType === 'household'
+                ? `/profile-setup/household?step=${lastStep + 1}`
+                : `/profile-setup/househelp?step=${lastStep + 1}`;
+              console.log('[VERIFY-OTP] Email verified, redirecting to profile setup:', setupRoute);
+              navigate(setupRoute);
+              return;
             }
           } catch (err: any) {
             if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {

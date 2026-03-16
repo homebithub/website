@@ -31,7 +31,7 @@ const familyIcons: Record<string, string> = {
 };
 
 const PreferredWorkEnvironment: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [householdSize, setHouseholdSize] = useState<string>('');
   const [locationType, setLocationType] = useState<string>('');
@@ -59,7 +59,17 @@ const PreferredWorkEnvironment: React.FC = () => {
     icon: familyIcons[f.value] || '❤️'
   })) || [];
 
-  // Load existing data
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.workenvironment;
+    if (cached) {
+      if (cached.householdSize || cached.preferred_household_size) setHouseholdSize(cached.householdSize || cached.preferred_household_size);
+      if (cached.locationType || cached.preferred_location_type) setLocationType(cached.locationType || cached.preferred_location_type);
+      if (cached.familyType || cached.preferred_family_type) setFamilyType(cached.familyType || cached.preferred_family_type);
+    }
+  }, [profileData.workenvironment]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -95,6 +105,7 @@ const PreferredWorkEnvironment: React.FC = () => {
       }, { step_id: 'workenvironment', step_number: 11, is_completed: true });
 
       markClean();
+      updateStepData('workenvironment', { householdSize, locationType, familyType });
       setSuccess('Work environment preferences saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'workEnvironment', 'Failed to save your preferences. Please try again.'));

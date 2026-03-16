@@ -3,19 +3,23 @@ import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { render } from '@testing-library/react';
 import SearchableTownSelect from '../SearchableTownSelect';
-import { apiClient } from '~/utils/apiClient';
 
-// Mock the apiClient
-vi.mock('~/utils/apiClient', () => ({
-  apiClient: {
-    auth: vi.fn(),
-    json: vi.fn(),
+const mockGetLocationSuggestions = vi.fn();
+
+vi.mock('~/services/grpc/authServices', () => ({
+  locationService: {
+    getLocationSuggestions: (...args: any[]) => mockGetLocationSuggestions(...args),
   },
 }));
 
-const mockTownsResponse = {
-  towns: ['Nairobi', 'Mombasa', 'Kisumu', 'Nakuru', 'Eldoret'],
-  count: 5,
+const mockSuggestionsResponse = {
+  suggestions: [
+    { name: 'Nairobi' },
+    { name: 'Mombasa' },
+    { name: 'Kisumu' },
+    { name: 'Nakuru' },
+    { name: 'Eldoret' },
+  ],
 };
 
 describe('SearchableTownSelect Component', () => {
@@ -32,8 +36,7 @@ describe('SearchableTownSelect Component', () => {
     vi.clearAllMocks();
     
     // Setup default mock responses
-    (apiClient.auth as any).mockResolvedValue({});
-    (apiClient.json as any).mockResolvedValue(mockTownsResponse);
+    mockGetLocationSuggestions.mockResolvedValue(mockSuggestionsResponse);
   });
 
   afterEach(() => {
@@ -144,7 +147,7 @@ describe('SearchableTownSelect Component', () => {
       await user.click(button);
       
       await waitFor(() => {
-        expect(apiClient.auth).toHaveBeenCalled();
+        expect(mockGetLocationSuggestions).toHaveBeenCalled();
       });
     });
 
@@ -162,9 +165,7 @@ describe('SearchableTownSelect Component', () => {
       await user.click(button);
       
       await waitFor(() => {
-        expect(apiClient.auth).toHaveBeenCalledWith(
-          expect.stringContaining('target=households')
-        );
+        expect(mockGetLocationSuggestions).toHaveBeenCalledWith('households');
       });
     });
 
@@ -183,7 +184,7 @@ describe('SearchableTownSelect Component', () => {
 
     it('should show loading state', async () => {
       const user = userEvent.setup();
-      (apiClient.auth as any).mockImplementation(() => new Promise(() => {})); // Never resolves
+      mockGetLocationSuggestions.mockImplementation(() => new Promise(() => {})); // Never resolves
       
       render(<SearchableTownSelect {...defaultProps} onChange={mockOnChange} />);
       
@@ -197,7 +198,7 @@ describe('SearchableTownSelect Component', () => {
 
     it('should show error message on API failure', async () => {
       const user = userEvent.setup();
-      (apiClient.auth as any).mockRejectedValue(new Error('API Error'));
+      mockGetLocationSuggestions.mockRejectedValue(new Error('API Error'));
       
       render(<SearchableTownSelect {...defaultProps} onChange={mockOnChange} />);
       
@@ -252,13 +253,13 @@ describe('SearchableTownSelect Component', () => {
       await user.type(searchInput, 'Nai');
       
       // Should not call immediately
-      expect(apiClient.auth).not.toHaveBeenCalled();
+      expect(mockGetLocationSuggestions).not.toHaveBeenCalled();
       
       // Fast-forward time
       vi.advanceTimersByTime(250);
       
       await waitFor(() => {
-        expect(apiClient.auth).toHaveBeenCalled();
+        expect(mockGetLocationSuggestions).toHaveBeenCalled();
       });
       
       vi.useRealTimers();
@@ -279,9 +280,7 @@ describe('SearchableTownSelect Component', () => {
       vi.advanceTimersByTime(250);
       
       await waitFor(() => {
-        expect(apiClient.auth).toHaveBeenCalledWith(
-          expect.stringContaining('q=Nairobi')
-        );
+        expect(mockGetLocationSuggestions).toHaveBeenCalledWith('Nairobi');
       });
       
       vi.useRealTimers();
@@ -289,7 +288,7 @@ describe('SearchableTownSelect Component', () => {
 
     it('should show "No towns found" when search returns empty', async () => {
       const user = userEvent.setup();
-      (apiClient.json as any).mockResolvedValue({ towns: [], count: 0 });
+      mockGetLocationSuggestions.mockResolvedValue({ suggestions: [] });
       
       render(<SearchableTownSelect {...defaultProps} onChange={mockOnChange} />);
       
@@ -508,10 +507,11 @@ describe('SearchableTownSelect Component', () => {
   describe('8. Edge Cases', () => {
     it('should handle API response with nested data structure', async () => {
       const user = userEvent.setup();
-      (apiClient.json as any).mockResolvedValue({
-        data: {
-          towns: ['Town1', 'Town2'],
-        },
+      mockGetLocationSuggestions.mockResolvedValue({
+        suggestions: [
+          { name: 'Town1' },
+          { name: 'Town2' },
+        ],
       });
       
       render(<SearchableTownSelect {...defaultProps} onChange={mockOnChange} />);
@@ -526,7 +526,7 @@ describe('SearchableTownSelect Component', () => {
 
     it('should handle API response with non-array towns', async () => {
       const user = userEvent.setup();
-      (apiClient.json as any).mockResolvedValue({ towns: null });
+      mockGetLocationSuggestions.mockResolvedValue({ suggestions: null });
       
       render(<SearchableTownSelect {...defaultProps} onChange={mockOnChange} />);
       
@@ -540,9 +540,14 @@ describe('SearchableTownSelect Component', () => {
 
     it('should filter out empty town names', async () => {
       const user = userEvent.setup();
-      (apiClient.json as any).mockResolvedValue({
-        towns: ['Nairobi', '', '  ', null, 'Mombasa'],
-        count: 2,
+      mockGetLocationSuggestions.mockResolvedValue({
+        suggestions: [
+          { name: 'Nairobi' },
+          { name: '' },
+          { name: '  ' },
+          null,
+          { name: 'Mombasa' },
+        ],
       });
       
       render(<SearchableTownSelect {...defaultProps} onChange={mockOnChange} />);
@@ -559,9 +564,8 @@ describe('SearchableTownSelect Component', () => {
     it('should handle very long town names', async () => {
       const user = userEvent.setup();
       const longTownName = 'This is a very long town name that might cause layout issues';
-      (apiClient.json as any).mockResolvedValue({
-        towns: [longTownName],
-        count: 1,
+      mockGetLocationSuggestions.mockResolvedValue({
+        suggestions: [{ name: longTownName }],
       });
       
       render(<SearchableTownSelect {...defaultProps} onChange={mockOnChange} />);
@@ -576,9 +580,11 @@ describe('SearchableTownSelect Component', () => {
 
     it('should handle special characters in town names', async () => {
       const user = userEvent.setup();
-      (apiClient.json as any).mockResolvedValue({
-        towns: ["St. Mary's Town", 'Town & City'],
-        count: 2,
+      mockGetLocationSuggestions.mockResolvedValue({
+        suggestions: [
+          { name: "St. Mary's Town" },
+          { name: 'Town & City' },
+        ],
       });
       
       render(<SearchableTownSelect {...defaultProps} onChange={mockOnChange} />);

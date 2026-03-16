@@ -1,6 +1,6 @@
 import React, {useState, useRef, useEffect} from "react";
 import { handleApiError } from '../utils/errorMessages';
-import { locationService, profileService } from '~/services/grpc/authServices';
+import { locationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
@@ -17,7 +17,7 @@ interface LocationProps {
 }
 
 const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
-    const { markDirty, markClean } = useProfileSetup();
+    const { markDirty, markClean, profileData } = useProfileSetup();
     const [input, setInput] = useState("");
     const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);
@@ -31,14 +31,28 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Load existing location data
+    // Populate from context (instant on back-nav)
+    useEffect(() => {
+        const cached = profileData.location;
+        if (cached) {
+            const place = cached.place || cached.name || cached.town || cached.address || '';
+            if (place) {
+                setInput(place);
+                const loc = { name: place, mapbox_id: cached.mapbox_id || '', feature_type: cached.feature_type || 'place' };
+                setSavedLocation(loc);
+                setSelectedLocation(loc);
+            }
+        }
+    }, [profileData.location]);
+
+    // Load existing location data from backend (fallback)
     useEffect(() => {
         const loadLocation = async () => {
             try {
                 const profileType = localStorage.getItem('profile_type');
                 const raw = profileType === 'househelp'
-                    ? await profileService.getHousehelpProfileWithUser('')
-                    : await profileService.getCurrentHouseholdProfile('');
+                    ? await grpcProfileService.getHousehelpProfileWithUser('')
+                    : await grpcProfileService.getCurrentHouseholdProfile('');
                 const data = raw?.data || raw || {};
 
                 const loc = data?.location;
@@ -166,9 +180,11 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
         setSubmitStatus(null);
 
         try {
+            const profileType = localStorage.getItem('profile_type') || '';
             const payload = {
                 mapbox_id: selectedLocation.mapbox_id,
                 town: selectedLocation.name,
+                profile_type: profileType,
                 location: {
                     place: selectedLocation.name,
                     name: selectedLocation.name,
@@ -178,6 +194,13 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
             };
             console.log('Saving location payload:', JSON.stringify(payload, null, 2));
             await locationService.createLocation('', payload);
+
+            // Also update the profile's location JSONB field so it appears on the profile page
+            try {
+                await grpcProfileService.saveUserLocation('', payload);
+            } catch (profileErr) {
+                console.warn('Failed to update profile location (non-critical):', profileErr);
+            }
 
             setSubmitStatus({
                 success: true,

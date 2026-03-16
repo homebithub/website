@@ -22,7 +22,8 @@ const grpc = { web: grpcWeb };
 
 import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js'
 import * as notifications_pb from './notifications_pb.js';
-const proto = { notifications: notifications_pb };
+// Normalize CJS imports for Vite SSR compatibility
+const proto = { notifications: notifications_pb.default || notifications_pb };
 
 /**
  * @param {string} hostname

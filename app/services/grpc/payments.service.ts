@@ -14,12 +14,31 @@ const payments_pb = payments_pb_module as any;
 
 const paymentsClient = new PaymentsServiceClient(GRPC_WEB_BASE_URL, null, null);
 
+function resolveUserId(userId: string): string {
+  if (userId) return userId;
+  try {
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem('user_object');
+      if (raw) {
+        const user = JSON.parse(raw);
+        return user.user_id || user.id || '';
+      }
+    }
+  } catch {}
+  return '';
+}
+
 function getMetadata(): { [key: string]: string } {
+  const md: { [key: string]: string } = {};
   const token = getAccessTokenFromCookies();
-  if (token) {
-    return { 'authorization': `Bearer ${token}` };
-  }
-  return {};
+  if (token) md['authorization'] = `Bearer ${token}`;
+  try {
+    if (typeof window !== 'undefined') {
+      const profileType = localStorage.getItem('profile_type');
+      if (profileType) md['x-profile-type'] = profileType;
+    }
+  } catch {}
+  return md;
 }
 
 export const paymentsService = {
@@ -49,7 +68,7 @@ export const paymentsService = {
   async getMySubscription(userId: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetMySubscriptionRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.getMySubscription(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -60,7 +79,7 @@ export const paymentsService = {
   async listMySubscriptions(userId: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.ListMySubscriptionsRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.listMySubscriptions(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -72,7 +91,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.CancelSubscriptionRequest();
       request.setSubscriptionId(subscriptionId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.cancelSubscription(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -83,7 +102,7 @@ export const paymentsService = {
   async checkSubscriptionAccess(userId: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.CheckSubscriptionAccessRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.checkSubscriptionAccess(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -96,7 +115,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.PauseSubscriptionRequest();
       request.setSubscriptionId(subscriptionId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setReason(reason);
       request.setDurationDays(durationDays);
       paymentsClient.pauseSubscription(request, getMetadata(), (err: any, response: any) => {
@@ -110,7 +129,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.ResumeSubscriptionRequest();
       request.setSubscriptionId(subscriptionId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.resumeSubscription(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -122,7 +141,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetPauseStatusRequest();
       request.setSubscriptionId(subscriptionId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.getPauseStatus(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -135,7 +154,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.InitiateCancellationRequest();
       request.setSubscriptionId(subscriptionId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setReasonCategory(reasonCategory);
       request.setReasonText(reasonText);
       request.setFeedback(feedback);
@@ -150,7 +169,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.ConfirmCancellationRequest();
       request.setCancellationRequestId(cancellationRequestId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.confirmCancellation(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -162,7 +181,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.UndoCancellationRequest();
       request.setCancellationRequestId(cancellationRequestId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.undoCancellation(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -174,7 +193,7 @@ export const paymentsService = {
   async createSubscriptionCheckout(userId: string, planId: string, phoneNumber: string, profileId: string, profileType: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.CreateSubscriptionCheckoutRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setPlanId(planId);
       request.setPhoneNumber(phoneNumber);
       request.setProfileId(profileId);
@@ -189,7 +208,7 @@ export const paymentsService = {
   async initiatePayment(userId: string, subscriptionId: string, phoneNumber: string, amount: number): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.InitiatePaymentRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setSubscriptionId(subscriptionId);
       request.setPhoneNumber(phoneNumber);
       request.setAmount(amount);
@@ -204,7 +223,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.CheckPaymentStatusRequest();
       request.setPaymentId(paymentId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.checkPaymentStatus(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -215,7 +234,7 @@ export const paymentsService = {
   async listMyPayments(userId: string, offset = 0, limit = 20): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.ListMyPaymentsRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setOffset(offset);
       request.setLimit(limit);
       paymentsClient.listMyPayments(request, getMetadata(), (err: any, response: any) => {
@@ -231,7 +250,7 @@ export const paymentsService = {
       const request = new payments_pb.PreviewProrationRequest();
       request.setSubscriptionId(subscriptionId);
       request.setNewPlanId(newPlanId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.previewProration(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -244,7 +263,7 @@ export const paymentsService = {
       const request = new payments_pb.ChangePlanRequest();
       request.setSubscriptionId(subscriptionId);
       request.setNewPlanId(newPlanId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.changePlan(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -255,7 +274,7 @@ export const paymentsService = {
   async getCreditBalance(userId: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetCreditBalanceRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.getCreditBalance(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -267,7 +286,7 @@ export const paymentsService = {
   async getPaymentMethods(userId: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetPaymentMethodsRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.getPaymentMethods(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -278,7 +297,7 @@ export const paymentsService = {
   async getDefaultPaymentMethod(userId: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.GetDefaultPaymentMethodRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.getDefaultPaymentMethod(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -289,7 +308,7 @@ export const paymentsService = {
   async addPaymentMethod(userId: string, type: string, phoneNumber: string, nickname: string, isDefault: boolean): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.AddPaymentMethodRequest();
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setType(type);
       request.setPhoneNumber(phoneNumber);
       request.setNickname(nickname);
@@ -305,7 +324,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.SetDefaultPaymentMethodRequest();
       request.setMethodId(methodId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.setDefaultPaymentMethod(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -317,7 +336,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.RemovePaymentMethodRequest();
       request.setMethodId(methodId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.removePaymentMethod(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -329,7 +348,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.UpdatePaymentMethodNicknameRequest();
       request.setMethodId(methodId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setNickname(nickname);
       paymentsClient.updatePaymentMethodNickname(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
@@ -343,7 +362,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.DownloadReceiptRequest();
       request.setPaymentId(paymentId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       paymentsClient.downloadReceipt(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
@@ -355,7 +374,7 @@ export const paymentsService = {
     return new Promise((resolve, reject) => {
       const request = new payments_pb.EmailReceiptRequest();
       request.setPaymentId(paymentId);
-      request.setUserId(userId);
+      request.setUserId(resolveUserId(userId));
       request.setEmail(email);
       paymentsClient.emailReceipt(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));

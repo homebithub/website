@@ -1,8 +1,6 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { useEffect, useState, useRef, useMemo } from 'react';
-import { transport, getGrpcMetadata } from '~/utils/grpcClient';
-import { DocumentServiceClient } from '~/proto/auth/auth.client';
-import { GetUserDocumentsReq } from '~/proto/auth/auth';
+import { useEffect, useState, useRef } from 'react';
+import { documentService } from '~/services/grpc/authServices';
 
 /**
  * Fetches the first profile_photo document URL for a list of user IDs.
@@ -14,7 +12,6 @@ const globalCache: Record<string, string> = {};
 export function useProfilePhotos(userIds: string[]): Record<string, string> {
   const [photos, setPhotos] = useState<Record<string, string>>({});
   const fetchedRef = useRef<Set<string>>(new Set());
-  const client = useMemo(() => new DocumentServiceClient(transport), []);
 
   useEffect(() => {
     if (!userIds || userIds.length === 0) return;
@@ -48,21 +45,12 @@ export function useProfilePhotos(userIds: string[]): Record<string, string> {
     Promise.all(
       toFetch.map(async (userId) => {
         try {
-          const request = GetUserDocumentsReq.create({
-            ownerId: userId,
-            ownerType: 'user',
-            documentType: 'profile_photo',
-            limit: 1,
-            offset: 0
-          } as any);
-
-          const { response } = await client.getUserDocuments(request, { metadata: getGrpcMetadata() });
-          const fields = response.data?.fields || {};
-          const docs = (fields.data as any)?.listValue?.values || [];
+          const data = await documentService.getUserDocuments(userId, 'profile_photo');
+          const docs = data?.data || [];
           
-          if (docs.length > 0) {
-            const first = docs[0].structValue?.fields || {};
-            const url = first.public_url?.stringValue || first.signed_url?.stringValue || first.url?.stringValue;
+          if (Array.isArray(docs) && docs.length > 0) {
+            const first = docs[0];
+            const url = first?.public_url || first?.signed_url || first?.url;
             if (url) {
               globalCache[userId] = url;
             }
@@ -78,7 +66,7 @@ export function useProfilePhotos(userIds: string[]): Record<string, string> {
       }
       setPhotos((prev) => ({ ...prev, ...result }));
     });
-  }, [userIds.join(','), client]);
+  }, [userIds.join(',')]);
 
   return photos;
 }

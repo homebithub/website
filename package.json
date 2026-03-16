@@ -21,10 +21,6 @@
   "dependencies": {
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.1.5",
-    "@protobuf-ts/grpcweb-transport": "^2.11.1",
-    "@protobuf-ts/plugin": "^2.11.1",
-    "@protobuf-ts/runtime": "^2.11.1",
-    "@protobuf-ts/runtime-rpc": "^2.11.1",
     "@react-router/dev": "^7.9.5",
     "@react-router/express": "^7.9.5",
     "@react-router/fs-routes": "^7.9.5",

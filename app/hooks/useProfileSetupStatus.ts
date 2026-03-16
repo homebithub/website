@@ -64,7 +64,7 @@ export function useProfileSetupStatus(): ProfileSetupStatus & { isInSetupMode: b
     setStatus(prev => ({ ...prev, isChecking: true, profileType }));
 
     try {
-      const data = await profileSetupService.getProgress('');
+      const data = await profileSetupService.getProgress('', profileType);
       const progressData = data?.data || data || {};
       const totalSteps = progressData.total_steps || 0;
       const lastStep = progressData.last_completed_step || 0;

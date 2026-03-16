@@ -40,7 +40,7 @@ export default function BureauHomeDashboard() {
       try {
         const token = getAccessTokenFromCookies();
         if (!token) return;
-        const data = await bureauService.getCurrentBureauProfile(token);
+        const data = await bureauService.getCurrentBureauProfile('');
         setBureauId(data?.id || data?._id || null);
       } catch {}
     };

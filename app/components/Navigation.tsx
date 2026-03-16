@@ -3,18 +3,15 @@ import React, { useEffect, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
-import { Waitlist } from "~/components/features/Waitlist";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
 import { API_BASE_URL } from "~/config/api";
 import { useProfileSetupStatus } from "~/hooks/useProfileSetupStatus";
 import { useNotifications } from "~/hooks/useNotifications";
 import NotificationsModal from "~/components/notifications/NotificationsModal";
-import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { ShortlistServiceClient, HireRequestServiceClient, InterestServiceClient } from "~/proto/auth/auth.client";
-import { ListConversationsRequest } from "~/proto/notifications/notifications";
-import { NotificationsServiceClient } from "~/proto/notifications/notifications.client";
+import { shortlistService, interestService, hireRequestService } from '~/services/grpc/authServices';
+import { notificationsService } from '~/services/grpc/notifications.service';
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -31,19 +28,11 @@ export function Navigation() {
     const [shortlistCount, setShortlistCount] = useState<number>(0);
     const [inboxCount, setInboxCount] = useState<number>(0);
     const [hireRequestCount, setHireRequestCount] = useState<number>(0);
-    const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const { unreadCount } = useNotifications({ pollingMs: 30000, pageSize: 20 });
-    const [prefillEmail, setPrefillEmail] = useState<string | undefined>(undefined);
-    const [prefillFirstName, setPrefillFirstName] = useState<string | undefined>(undefined);
-    const [prefillError, setPrefillError] = useState<string | undefined>(undefined);
     const navigate = useNavigate();
     const location = useLocation();
 
-    const shortlistClient = React.useMemo(() => new ShortlistServiceClient(transport), []);
-    const hireRequestClient = React.useMemo(() => new HireRequestServiceClient(transport), []);
-    const interestClient = React.useMemo(() => new InterestServiceClient(transport), []);
-    const notificationsClient = React.useMemo(() => new NotificationsServiceClient(transport), []);
 
     // Detect if running on app subdomain
     const isAppHost = React.useMemo(() => {
@@ -76,8 +65,8 @@ export function Navigation() {
     const fetchShortlistCount = async () => {
         try {
             if (!getAccessTokenFromCookies()) return;
-            const { response } = await shortlistClient.getShortlistCount({ userId: '', profileType: '' }, { metadata: getGrpcMetadata() });
-            const count = Number(response.count) || 0;
+            const data = await shortlistService.getShortlistCount('', '');
+            const count = Number(data?.count) || 0;
             setShortlistCount(count);
         } catch (error) {
             console.error("[Shortlist Count] Failed to fetch:", error);
@@ -88,13 +77,11 @@ export function Navigation() {
     const fetchInboxCount = async () => {
         try {
             if (!getAccessTokenFromCookies()) return;
-            const request: ListConversationsRequest = { limit: 100, offset: 0 } as any;
-            const { response } = await notificationsClient.listConversations(request, { metadata: getGrpcMetadata() });
-            const conversations = (response.data?.fields?.conversations as any)?.listValue?.values || [];
+            const data = await notificationsService.listConversations('', 0, 100);
+            const conversations: any[] = data?.conversations || [];
             
-            const totalUnread = conversations.reduce((sum: number, v: any) => {
-                const conv = v.structValue?.fields || {};
-                return sum + (conv.unread_count?.numberValue || 0);
+            const totalUnread = conversations.reduce((sum: number, c: any) => {
+                return sum + (c.unread_count || 0);
             }, 0);
             
             setInboxCount(totalUnread);
@@ -112,21 +99,20 @@ export function Navigation() {
 
             if (pt === 'household') {
                 // 1. Count pending/viewed interests from househelps
-                const { response: iData } = await interestClient.listByHousehold({ userId: '', profileType: '' }, { metadata: getGrpcMetadata() });
-                const interests = (iData.data?.fields?.data as any)?.listValue?.values || [];
-                total += interests.filter((v: any) => {
-                    const i = v.structValue?.fields || {};
-                    const status = i.status?.stringValue || "";
+                const iData = await interestService.listByHousehold('', '');
+                const interests: any[] = iData?.data || [];
+                total += interests.filter((i: any) => {
+                    const status = i.status || "";
                     return status === 'pending' || status === 'viewed';
                 }).length;
 
                 // 2. Count pending hire requests
-                const { response: hData } = await hireRequestClient.listHireRequests({ status: 'pending', limit: 100, offset: 0 } as any, { metadata: getGrpcMetadata() });
-                total += (hData.data?.fields?.total as any)?.numberValue || (hData.data?.fields?.data as any)?.listValue?.values?.length || 0;
+                const hData = await hireRequestService.listHireRequests('', '', 'pending');
+                total += hData?.total || (Array.isArray(hData?.data) ? hData.data.length : 0);
             } else if (pt === 'househelp') {
                 // Count pending hire requests received from households
-                const { response: data } = await hireRequestClient.listHireRequests({ status: 'pending', limit: 100, offset: 0 } as any, { metadata: getGrpcMetadata() });
-                total = (data.data?.fields?.total as any)?.numberValue || (data.data?.fields?.data as any)?.listValue?.values?.length || 0;
+                const data = await hireRequestService.listHireRequests('', '', 'pending');
+                total = data?.total || (Array.isArray(data?.data) ? data.data.length : 0);
             }
 
             setHireRequestCount(total);
@@ -234,21 +220,6 @@ export function Navigation() {
         );
     };
 
-    // Open waitlist modal automatically if URL contains waitlist params (used by OAuth callback)
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const shouldOpen = params.get("waitlist");
-        if (shouldOpen === "1" || shouldOpen === "true") {
-            setIsWaitlistOpen(true);
-            const email = params.get("email") || undefined;
-            const first = params.get("first_name") || undefined;
-            const err = params.get("error") || undefined;
-            setPrefillEmail(email || undefined);
-            setPrefillFirstName(first || undefined);
-            setPrefillError(err || undefined);
-        }
-    }, [location.search]);
-
     const handleLogout = async () => {
         try {
             await logout();
@@ -344,12 +315,6 @@ export function Navigation() {
 
                     {showAuthButtons && (
                         <div className="flex items-center space-x-3">
-                            <button
-  onClick={() => setIsWaitlistOpen(true)}
-  className="hidden lg:block glow-button bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium rounded-xl shadow-lg px-4 py-1 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
->
-  Join Waitlist
-</button>
                             {FEATURE_FLAGS.showAuthButtons && (
                                 <>
                                     <Link
@@ -482,16 +447,6 @@ export function Navigation() {
                                     {/* Mobile Auth Options */}
                                     {showAuthButtons && (
                                         <>
-                                            <Menu.Item>
-  {({ active }) => (
-    <button
-      onClick={() => setIsWaitlistOpen(true)}
-      className={`lg:hidden w-full text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium block px-4 py-1 text-sm rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500`}
-    >
-      Join Waitlist
-    </button>
-  )}
-</Menu.Item>
                                             {FEATURE_FLAGS.showAuthButtons && (
                                                 <>
                                                     <Menu.Item>
@@ -631,20 +586,6 @@ export function Navigation() {
             {/* Notifications Modal */}
             <NotificationsModal isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
 
-            {/* Waitlist Modal */}
-            <Waitlist
-                isOpen={isWaitlistOpen}
-                onClose={() => {
-                    setIsWaitlistOpen(false);
-                    // Clean query params after closing if they were used to open the modal
-                    if (new URLSearchParams(location.search).has("waitlist")) {
-                        navigate(location.pathname, { replace: true });
-                    }
-                }}
-                prefillEmail={prefillEmail}
-                prefillFirstName={prefillFirstName}
-                prefillError={prefillError}
-            />
         </nav>
     );
 }

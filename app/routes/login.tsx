@@ -110,6 +110,22 @@ export default function LoginPage() {
           localStorage.setItem('profile_type', profileType);
           try { localStorage.setItem('userType', profileType || ''); } catch {}
 
+          // Register device after successful Google login (non-blocking)
+          try {
+            const { default: deviceService } = await import('~/services/grpc/device.service');
+            const deviceId = await getDeviceId();
+            if (userData.user_id) {
+              const result = await deviceService.registerDevice(
+                userData.user_id, deviceId, getDeviceName(), navigator.userAgent, ''
+              );
+              if (result.requiresConfirmation) {
+                console.log('[Device] New device registered via Google login, confirmation email sent');
+              }
+            }
+          } catch (deviceError) {
+            console.error('[Device] Registration failed after Google login:', deviceError);
+          }
+
           // If user has no phone number, redirect to add-phone page
           if (!userData.phone) {
             navigate('/add-phone', {
@@ -127,7 +143,7 @@ export default function LoginPage() {
           if (profileType === 'household' || profileType === 'househelp') {
             try {
               const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
-              const progressData = await profileSetupService.getProgress(userData.user_id);
+              const progressData = await profileSetupService.getProgress(userData.user_id, profileType);
 
               if (progressData) {
                 const totalSteps = progressData.total_steps || 0;
@@ -135,17 +151,21 @@ export default function LoginPage() {
                 const isComplete = progressData.status === 'completed' ||
                   (totalSteps > 0 && lastStep >= totalSteps);
 
-                if (!isComplete) {
-                  if (profileType === 'household' && lastStep === 0) {
-                    navigate('/household-choice', { replace: true });
-                    return;
-                  }
-                  const setupRoute = profileType === 'household'
-                    ? `/profile-setup/household?step=${lastStep + 1}`
-                    : `/profile-setup/househelp?step=${lastStep + 1}`;
-                  navigate(setupRoute, { replace: true });
+                if (isComplete) {
+                  const profileRoute = profileType === 'household' ? '/household/profile' : '/househelp/profile';
+                  navigate(profileRoute, { replace: true });
                   return;
                 }
+
+                if (profileType === 'household' && lastStep === 0) {
+                  navigate('/household-choice', { replace: true });
+                  return;
+                }
+                const setupRoute = profileType === 'household'
+                  ? `/profile-setup/household?step=${lastStep + 1}`
+                  : `/profile-setup/househelp?step=${lastStep + 1}`;
+                navigate(setupRoute, { replace: true });
+                return;
               }
             } catch (err: any) {
               if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
@@ -250,7 +270,7 @@ export default function LoginPage() {
         const { default: deviceService } = await import('~/services/grpc/device.service');
         const deviceId = await getDeviceId();
         const userObj = JSON.parse(localStorage.getItem('user_object') || '{}');
-        const userId = userObj.user_id || '';
+        const userId = userObj.user_id || userObj.id || '';
         if (userId) {
           const result = await deviceService.registerDevice(
             userId, deviceId, getDeviceName(), navigator.userAgent, ''

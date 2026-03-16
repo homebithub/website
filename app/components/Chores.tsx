@@ -9,7 +9,7 @@ import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext
 // Chores are now fetched from backend via context
 
 const Chores: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedChores, setSelectedChores] = useState<string[]>([]);
   const [showOtherInput, setShowOtherInput] = useState(false);
@@ -19,7 +19,24 @@ const Chores: React.FC = () => {
 
   const CHORES = options?.chores.map(c => c.name) || [];
 
-  // Load existing data
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.chores;
+    if (cached) {
+      const choresArr = cached.selectedChores || (Array.isArray(cached) ? cached : cached.chores);
+      if (choresArr?.length) {
+        setSelectedChores(choresArr);
+        const hasOther = choresArr.some((c: string) => c.startsWith('Other:'));
+        if (hasOther) {
+          setShowOtherInput(true);
+          const other = choresArr.find((c: string) => c.startsWith('Other:'));
+          if (other) setOtherChore(other.replace('Other: ', ''));
+        }
+      }
+    }
+  }, [profileData.chores]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -101,6 +118,7 @@ const Chores: React.FC = () => {
       });
 
       markClean();
+      updateStepData('chores', { selectedChores });
       setMessage("Chores saved successfully!");
       setTimeout(() => setMessage(""), 3000);
     } catch (error) {

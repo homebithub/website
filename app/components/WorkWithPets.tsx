@@ -19,7 +19,7 @@ const validateOtherPets = (input: string): boolean => {
 };
 
 const WorkWithPets = () => {
-    const { markDirty, markClean } = useProfileSetup();
+    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
     const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [petPreference, setPetPreference] = useState<PetPreference | null>(null);
     const [selectedPets, setSelectedPets] = useState<PetType[]>([]);
@@ -36,7 +36,61 @@ const WorkWithPets = () => {
         label: pt.name
     })) || [];
 
-    const togglePetType = (petType: PetType) => {
+    // Populate from context (instant on back-nav)
+    useEffect(() => {
+        const cached = profileData.workwithpets;
+        if (cached) {
+            if (cached.preference) setPetPreference(cached.preference);
+            else if (cached.can_work !== undefined) setPetPreference(cached.can_work ? 'with_pets' : 'no_pets');
+            else if (cached.can_work_with_pets !== undefined) setPetPreference(cached.can_work_with_pets ? 'with_pets' : 'no_pets');
+            if (cached.pets?.length) setSelectedPets(cached.pets);
+        }
+    }, [profileData.workwithpets]);
+
+    const autoSave = async (pref: PetPreference, pets: PetType[], otherValue?: string) => {
+        setLoading(true);
+        setError('');
+        setSuccess('');
+
+        try {
+            const token = getAccessTokenFromCookies();
+            if (!token) throw new Error('Authentication token not found');
+
+            let petTypesList: (PetType | string)[] = [...pets];
+            if (pets.includes('other') && otherValue?.trim()) {
+                petTypesList = [...pets.filter((p): p is Exclude<PetType, 'other'> => p !== 'other'), otherValue.trim()];
+            }
+            
+            const updates = {
+                can_work_with_pets: pref === 'with_pets',
+                pet_types: pref === 'with_pets' ? petTypesList.join(',') : '',
+            };
+
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
+                { step_id: 'workwithpets', step_number: 8, is_completed: true }
+            );
+            
+            markClean();
+            updateStepData('workwithpets', { preference: pref, pets });
+            setSuccess('Your pet preferences have been saved successfully!');
+            setTimeout(() => setSuccess(''), 3000);
+        } catch (err: any) {
+            console.error('Error saving information:', err);
+            setError(handleApiError(err, 'workWithPets', 'Failed to save your preferences. Please try again.'));
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePreferenceChange = async (pref: PetPreference) => {
+        setPetPreference(pref);
+        markDirty();
+        if (pref === 'no_pets') {
+            await autoSave(pref, []);
+        }
+    };
+
+    const togglePetType = async (petType: PetType) => {
         const newSelectedPets = selectedPets.includes(petType)
             ? selectedPets.filter(p => p !== petType)
             : [...selectedPets, petType];
@@ -52,64 +106,22 @@ const WorkWithPets = () => {
                 setOtherPetsError('');
             }
         }
+
+        // Auto-save if we have pets selected and 'other' is not selected (no text input needed)
+        if (petPreference === 'with_pets' && newSelectedPets.length > 0 && !newSelectedPets.includes('other')) {
+            await autoSave('with_pets', newSelectedPets);
+        }
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         
-        if (petPreference === null) {
-            setError('Please select a pet work preference');
+        if (selectedPets.includes('other') && !validateOtherPets(otherPets)) {
+            setOtherPetsError('Please enter valid pet types (letters, spaces, and hyphens only)');
             return;
         }
-
-        if (petPreference === 'with_pets') {
-            if (selectedPets.length === 0) {
-                setError('Please select at least one type of pet you can work with');
-                return;
-            }
-            
-            // Validate other pets input if 'other' is selected
-            if (selectedPets.includes('other') && !validateOtherPets(otherPets)) {
-                setOtherPetsError('Please enter valid pet types (letters, spaces, and hyphens only)');
-                return;
-            }
-            
-            setOtherPetsError('');
-        }
-
-        setLoading(true);
-        setError('');
-        setSuccess('');
-
-        try {
-            const token = getAccessTokenFromCookies();
-            if (!token) throw new Error('Authentication token not found');
-
-            // Prepare the pet types, including the custom 'other' value if provided
-            let petTypes: (PetType | string)[] = [...selectedPets];
-            if (selectedPets.includes('other') && otherPets.trim()) {
-                // Remove 'other' and add the custom value
-                petTypes = [...selectedPets.filter((p): p is Exclude<PetType, 'other'> => p !== 'other'), otherPets.trim()];
-            }
-            
-            const updates = {
-                can_work_with_pets: petPreference === 'with_pets',
-                pet_types: petPreference === 'with_pets' ? petTypes.join(',') : '',
-            };
-
-            await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
-                { step_id: 'workwithpets', step_number: 8, is_completed: true }
-            );
-            
-            markClean();
-            setSuccess('Your pet preferences have been saved successfully!');
-            // navigate('/next-step');
-        } catch (err: any) {
-            console.error('Error saving information:', err);
-            setError(handleApiError(err, 'workWithPets', 'Failed to save your preferences. Please try again.'));
-        } finally {
-            setLoading(false);
-        }
+        setOtherPetsError('');
+        await autoSave('with_pets', selectedPets, otherPets);
     };
 
     return (
@@ -135,7 +147,7 @@ const WorkWithPets = () => {
                                 type="radio"
                                 name="petPreference"
                                 checked={petPreference === 'with_pets'}
-                                onChange={() => setPetPreference('with_pets')}
+                                onChange={() => handlePreferenceChange('with_pets')}
                                 className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span className="text-gray-900 dark:text-gray-100">I can work with pets</span>
@@ -148,7 +160,7 @@ const WorkWithPets = () => {
                                 type="radio"
                                 name="petPreference"
                                 checked={petPreference === 'no_pets'}
-                                onChange={() => setPetPreference('no_pets')}
+                                onChange={() => handlePreferenceChange('no_pets')}
                                 className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span className="text-gray-900 dark:text-gray-100">I prefer not to work with pets</span>
@@ -204,27 +216,29 @@ const WorkWithPets = () => {
                     </div>
                 )}
 
-                <div className="pt-2">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                            <>
-                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                💾 Save
-                            </>
-                        )}
-                    </button>
-                </div>
+                {showOtherPetsInput && (
+                    <div className="pt-2">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                        >
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    💾 Save
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
             </form>
         </div>
     );

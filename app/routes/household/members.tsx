@@ -30,7 +30,6 @@ export default function HouseholdMembersPage() {
 
   useEffect(() => {
     if (!user) {
-      navigate('/login');
       return;
     }
 

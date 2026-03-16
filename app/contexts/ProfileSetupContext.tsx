@@ -30,6 +30,10 @@ interface ProfileSetupData {
   skills?: any;
   traits?: any;
   availability?: any;
+  workenvironment?: any;
+  references?: any;
+  backgroundcheck?: any;
+  kyc?: any;
 }
 
 interface ProfileSetupContextType {
@@ -145,7 +149,7 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
       let progressData: any = null;
       
       try {
-        stepsData = await profileSetupService.getSteps('');
+        stepsData = await profileSetupService.getSteps('', profileType || undefined);
       } catch (err: any) {
         if (err?.code === 5) { // NOT_FOUND
           stepsData = null;
@@ -155,7 +159,7 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
       }
 
       try {
-        progressData = await profileSetupService.getProgress('');
+        progressData = await profileSetupService.getProgress('', profileType || undefined);
       } catch (err) {
         console.warn('Failed to fetch progress:', err);
       }
@@ -168,15 +172,35 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
         
         setLastCompletedStep(lastCompleted);
         
+        // Steps tracking marks completion but may store empty data.
+        // Also fetch the actual profile so fields are populated on reload.
         const reconstructed: ProfileSetupData = {};
         steps.forEach((step: any) => {
           if (hasData(step.data) && (step.is_completed || step.is_skipped)) {
             reconstructed[step.step_id as keyof ProfileSetupData] = step.data;
           }
         });
+
+        // Merge actual profile data so field values are available for components
+        try {
+          const profile = profileType === 'househelp'
+            ? await grpcProfileService.getCurrentHousehelpProfile('')
+            : await grpcProfileService.getCurrentHouseholdProfile('');
+          if (profile) {
+            const profileFields = reconstructProfileData(profile);
+            // Merge: step tracking data takes priority, profile fills gaps
+            for (const key of Object.keys(profileFields) as (keyof ProfileSetupData)[]) {
+              if (!hasData(reconstructed[key])) {
+                reconstructed[key] = profileFields[key];
+              }
+            }
+          }
+        } catch (err) {
+          console.warn('Could not fetch profile for field values:', err);
+        }
         
         setProfileData(reconstructed);
-        console.log('Profile loaded from steps tracking', { 
+        console.log('Profile loaded from steps tracking + profile merge', { 
           lastCompletedStep: lastCompleted,
           profileData: reconstructed 
         });

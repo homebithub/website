@@ -167,8 +167,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
                 onClick={() => setShowChildModal(true)}
                 className="flex items-center gap-2 px-6 py-1.5 font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 shadow-lg dark:shadow-glow-md hover:scale-105 transition-all"
               >
-                <span className="text-xl">➕</span>
-                Add Child
+                + Add Child
               </button>
               <button
                 type="button"

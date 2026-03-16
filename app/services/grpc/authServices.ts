@@ -33,6 +33,7 @@ import {
   WaitlistServiceClient,
 } from '~/grpc/generated/auth/auth_grpc_web_pb';
 import auth_pb_module from '~/grpc/generated/auth/auth_pb';
+import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 
@@ -40,22 +41,24 @@ import { getAccessTokenFromCookies } from '~/utils/cookie';
 const auth_pb = auth_pb_module as any;
 
 function getMetadata(): { [key: string]: string } {
+  const md: { [key: string]: string } = {};
   const token = getAccessTokenFromCookies();
-  if (token) return { 'authorization': `Bearer ${token}` };
-  return {};
+  if (token) md['authorization'] = `Bearer ${token}`;
+  try {
+    if (typeof window !== 'undefined') {
+      const profileType = localStorage.getItem('profile_type');
+      if (profileType) md['x-profile-type'] = profileType;
+    }
+  } catch {}
+  return md;
 }
 
 // ── Helper: convert JS object to google.protobuf.Struct ────────────────
 function toStruct(obj: Record<string, any>): any {
-  const Struct = auth_pb.google?.protobuf?.Struct;
-  if (Struct && Struct.fromJavaScript) {
-    return Struct.fromJavaScript(obj);
-  }
-  // Fallback: use the protobuf-ts Struct if available
   try {
-    const { Struct: PbStruct } = require('google-protobuf/google/protobuf/struct_pb');
-    return PbStruct.fromJavaScript(obj);
-  } catch {
+    return struct_pb.Struct.fromJavaScript(obj);
+  } catch (e) {
+    console.error('toStruct: failed to convert JS object to Struct', e);
     return null;
   }
 }
@@ -109,24 +112,39 @@ const jobClient = new JobServiceClient(GRPC_WEB_BASE_URL, null, null);
 const bureauClient = new BureauServiceClient(GRPC_WEB_BASE_URL, null, null);
 const waitlistClient = new WaitlistServiceClient(GRPC_WEB_BASE_URL, null, null);
 
+// ── Helper: resolve userId from stored user data when not provided ────
+function resolveUserId(userId: string): string {
+  if (userId) return userId;
+  try {
+    if (typeof window !== 'undefined') {
+      const raw = localStorage.getItem('user_object');
+      if (raw) {
+        const user = JSON.parse(raw);
+        return user.user_id || user.id || '';
+      }
+    }
+  } catch {}
+  return '';
+}
+
 // ── Request builders ───────────────────────────────────────────────────
 function buildIdRequest(id: string, userId?: string): any {
   const req = new auth_pb.IdRequest();
   req.setId(id);
-  if (userId) req.setUserId(userId);
+  if (userId) req.setUserId(resolveUserId(userId));
   return req;
 }
 
 function buildUserIdRequest(userId: string, profileType?: string): any {
   const req = new auth_pb.UserIdRequest();
-  req.setUserId(userId);
+  req.setUserId(resolveUserId(userId));
   if (profileType) req.setProfileType(profileType);
   return req;
 }
 
 function buildJsonPayload(userId: string, data: Record<string, any>, profileType?: string): any {
   const req = new auth_pb.JsonPayload();
-  req.setUserId(userId);
+  req.setUserId(resolveUserId(userId));
   if (profileType) req.setProfileType(profileType);
   const struct = toStruct(data);
   if (struct) req.setData(struct);
@@ -136,7 +154,7 @@ function buildJsonPayload(userId: string, data: Record<string, any>, profileType
 function buildUpdateByIdPayload(id: string, userId: string, data: Record<string, any>): any {
   const req = new auth_pb.UpdateByIdPayload();
   req.setId(id);
-  req.setUserId(userId);
+  req.setUserId(resolveUserId(userId));
   const struct = toStruct(data);
   if (struct) req.setData(struct);
   return req;
@@ -144,7 +162,7 @@ function buildUpdateByIdPayload(id: string, userId: string, data: Record<string,
 
 function buildUpdateProfileRequest(userId: string, profileType: string, data: Record<string, any>): any {
   const req = new auth_pb.UpdateProfileRequest();
-  req.setUserId(userId);
+  req.setUserId(resolveUserId(userId));
   req.setProfileType(profileType);
   const struct = toStruct(data);
   if (struct) req.setData(struct);
@@ -154,7 +172,7 @@ function buildUpdateProfileRequest(userId: string, profileType: string, data: Re
 function buildUpdateProfileFieldRequest(id: string, userId: string, data: Record<string, any>): any {
   const req = new auth_pb.UpdateProfileFieldRequest();
   req.setId(id);
-  req.setUserId(userId);
+  req.setUserId(resolveUserId(userId));
   const struct = toStruct(data);
   if (struct) req.setData(struct);
   return req;
@@ -162,7 +180,7 @@ function buildUpdateProfileFieldRequest(id: string, userId: string, data: Record
 
 function buildSearchRequest(userId: string, profileType: string, filters?: Record<string, any>, limit?: number, offset?: number): any {
   const req = new auth_pb.SearchRequest();
-  req.setUserId(userId);
+  req.setUserId(resolveUserId(userId));
   req.setProfileType(profileType);
   if (filters) {
     const struct = toStruct(filters);
@@ -223,7 +241,7 @@ export const profileService = {
   async getHousehelpsByBureau(bureauId: string, userId?: string): Promise<any> {
     const req = new auth_pb.GetByBureauRequest();
     req.setBureauId(bureauId);
-    if (userId) req.setUserId(userId);
+    if (userId) req.setUserId(resolveUserId(userId));
     const res = await grpcCall((cb) => profileClient.getHousehelpsByBureau(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
@@ -268,7 +286,7 @@ export const profileService = {
   },
   async updateHousehelpFields(userId: string, profileType: string, updates: Record<string, any>, stepMetadata?: Record<string, any>): Promise<any> {
     const req = new auth_pb.UpdateHousehelpFieldsRequest();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setProfileType(profileType);
     const updatesStruct = toStruct(updates);
     if (updatesStruct) req.setUpdates(updatesStruct);
@@ -281,7 +299,7 @@ export const profileService = {
   },
   async saveUserLocation(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.SaveUserLocationRequest();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => profileClient.saveUserLocation(req, getMetadata(), cb));
@@ -289,7 +307,7 @@ export const profileService = {
   },
   async getProfileDocuments(userId: string, profileType: string): Promise<any> {
     const req = new auth_pb.GetProfileDocumentsRequest();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setProfileType(profileType);
     const res = await grpcCall((cb) => profileClient.getProfileDocuments(req, getMetadata(), cb));
     return jsonResponseToJs(res);
@@ -303,7 +321,7 @@ export const profileService = {
 export const shortlistService = {
   async createShortlist(userId: string, profileType: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreateShortlistReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setProfileType(profileType);
     const struct = toStruct(data);
     if (struct) req.setData(struct);
@@ -327,9 +345,14 @@ export const shortlistService = {
   },
   async shortlistExists(userId: string, profileId: string): Promise<any> {
     const req = new auth_pb.ShortlistExistsReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setProfileId(profileId);
     return grpcCall((cb) => shortlistClient.shortlistExists(req, getMetadata(), cb));
+  },
+  async getShortlistCount(userId: string, profileType?: string): Promise<any> {
+    const res = await grpcCall((cb) => shortlistClient.getShortlistCount(buildUserIdRequest(userId, profileType), getMetadata(), cb));
+    // CountResponse has getCount() method
+    return { count: (res as any)?.getCount?.() || 0 };
   },
 };
 
@@ -341,7 +364,7 @@ export const shortlistService = {
 export const interestService = {
   async createInterest(userId: string, profileType: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreateInterestReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setProfileType(profileType);
     const struct = toStruct(data);
     if (struct) req.setData(struct);
@@ -365,7 +388,7 @@ export const interestService = {
   },
   async interestExists(userId: string, householdId: string): Promise<any> {
     const req = new auth_pb.InterestExistsReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setHouseholdId(householdId);
     return grpcCall((cb) => interestClient.interestExists(req, getMetadata(), cb));
   },
@@ -389,7 +412,7 @@ export const interestService = {
 export const reviewService = {
   async createReview(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreateReviewReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => reviewClient.createReview(req, getMetadata(), cb));
@@ -416,7 +439,7 @@ export const reviewService = {
 export const locationService = {
   async createLocation(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreateLocationReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => locationClient.createLocation(req, getMetadata(), cb));
@@ -425,14 +448,14 @@ export const locationService = {
   async getLocationSuggestions(query: string, userId?: string): Promise<any> {
     const req = new auth_pb.LocationQueryReq();
     req.setQuery(query);
-    if (userId) req.setUserId(userId);
+    if (userId) req.setUserId(resolveUserId(userId));
     const res = await grpcCall((cb) => locationClient.getLocationSuggestions(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
   async searchLocations(query: string, userId?: string): Promise<any> {
     const req = new auth_pb.LocationQueryReq();
     req.setQuery(query);
-    if (userId) req.setUserId(userId);
+    if (userId) req.setUserId(resolveUserId(userId));
     const res = await grpcCall((cb) => locationClient.searchLocations(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
@@ -474,7 +497,7 @@ export const imageService = {
 export const documentService = {
   async getUserDocuments(userId: string, documentType?: string): Promise<any> {
     const req = new auth_pb.GetUserDocumentsReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     if (documentType) req.setDocumentType(documentType);
     const res = await grpcCall((cb) => documentClient.getUserDocuments(req, getMetadata(), cb));
     return jsonResponseToJs(res);
@@ -498,7 +521,7 @@ export const documentService = {
 export const petsService = {
   async createPet(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreatePetReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => petsClient.createPet(req, getMetadata(), cb));
@@ -515,7 +538,7 @@ export const petsService = {
   async updatePet(id: string, userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.UpdatePetReq();
     req.setId(id);
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => petsClient.updatePet(req, getMetadata(), cb));
@@ -533,7 +556,7 @@ export const petsService = {
 export const householdKidsService = {
   async createHouseholdKid(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreateHouseholdKidReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => householdKidsClient.createHouseholdKid(req, getMetadata(), cb));
@@ -550,7 +573,7 @@ export const householdKidsService = {
   async updateHouseholdKid(id: string, userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.UpdateHouseholdKidReq();
     req.setId(id);
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => householdKidsClient.updateHouseholdKid(req, getMetadata(), cb));
@@ -606,7 +629,7 @@ export const househelpPreferencesService = {
 export const householdPreferencesService = {
   async updateBudget(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.HouseholdPrefReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => householdPrefsClient.updateBudget(req, getMetadata(), cb));
@@ -614,7 +637,7 @@ export const householdPreferencesService = {
   },
   async updateHouseSize(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.HouseholdPrefReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => householdPrefsClient.updateHouseSize(req, getMetadata(), cb));
@@ -642,7 +665,7 @@ export const householdMemberService = {
   },
   async joinHousehold(userId: string, inviteCode: string, message?: string): Promise<any> {
     const req = new auth_pb.JoinHouseholdReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setInviteCode(inviteCode);
     if (message) req.setMessage(message);
     const res = await grpcCall((cb) => householdMemberClient.joinHousehold(req, getMetadata(), cb));
@@ -660,7 +683,7 @@ export const householdMemberService = {
     const req = new auth_pb.ApproveRejectReq();
     req.setHouseholdId(householdId);
     req.setRequestId(requestId);
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const res = await grpcCall((cb) => householdMemberClient.approveRequest(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
@@ -668,7 +691,7 @@ export const householdMemberService = {
     const req = new auth_pb.ApproveRejectReq();
     req.setHouseholdId(householdId);
     req.setRequestId(requestId);
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const res = await grpcCall((cb) => householdMemberClient.rejectRequest(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
@@ -680,7 +703,7 @@ export const householdMemberService = {
     const req = new auth_pb.RemoveMemberReq();
     req.setHouseholdId(householdId);
     req.setMemberUserId(memberUserId);
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     await grpcCall((cb) => householdMemberClient.removeMember(req, getMetadata(), cb));
   },
   async getUserHouseholds(userId: string): Promise<any> {
@@ -699,7 +722,7 @@ export const householdMemberService = {
 export const profileViewService = {
   async recordView(userId: string, profileId: string, profileType: string): Promise<void> {
     const req = new auth_pb.RecordViewReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setProfileId(profileId);
     req.setProfileType(profileType);
     await grpcCall((cb) => profileViewClient.recordView(req, getMetadata(), cb));
@@ -726,7 +749,7 @@ export const profileViewService = {
 export const preferencesService = {
   async getPreferences(userId: string, sessionId?: string): Promise<any> {
     const req = new auth_pb.PreferencesReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     if (sessionId) req.setSessionId(sessionId);
     const res = await grpcCall((cb) => preferencesClient.getPreferences(req, getMetadata(), cb));
     return jsonResponseToJs(res);
@@ -737,13 +760,13 @@ export const preferencesService = {
   },
   async deletePreferences(userId: string, sessionId?: string): Promise<void> {
     const req = new auth_pb.PreferencesReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     if (sessionId) req.setSessionId(sessionId);
     await grpcCall((cb) => preferencesClient.deletePreferences(req, getMetadata(), cb));
   },
   async migrateAnonymousToUser(userId: string, sessionId: string): Promise<any> {
     const req = new auth_pb.MigratePrefsReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setSessionId(sessionId);
     const res = await grpcCall((cb) => preferencesClient.migrateAnonymousToUser(req, getMetadata(), cb));
     return jsonResponseToJs(res);
@@ -813,7 +836,7 @@ export const kycService = {
 export const hireRequestService = {
   async createHireRequest(userId: string, profileType: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreateHireRequestReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setProfileType(profileType);
     const struct = toStruct(data);
     if (struct) req.setData(struct);
@@ -826,7 +849,7 @@ export const hireRequestService = {
   },
   async listHireRequests(userId: string, profileType: string, status?: string): Promise<any> {
     const req = new auth_pb.ListHireRequestsReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setProfileType(profileType);
     if (status) req.setStatus(status);
     const res = await grpcCall((cb) => hireRequestClient.listHireRequests(req, getMetadata(), cb));
@@ -851,7 +874,7 @@ export const hireRequestService = {
 export const hireContractService = {
   async createFromHireRequest(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreateContractReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => hireContractClient.createFromHireRequest(req, getMetadata(), cb));
@@ -863,7 +886,7 @@ export const hireContractService = {
   },
   async listHireContracts(userId: string, profileType: string, status?: string): Promise<any> {
     const req = new auth_pb.ListHireContractsReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setProfileType(profileType);
     if (status) req.setStatus(status);
     const res = await grpcCall((cb) => hireContractClient.listHireContracts(req, getMetadata(), cb));
@@ -885,7 +908,7 @@ export const hireContractService = {
 export const employmentService = {
   async listByHousehold(userId: string, limit = 20, offset = 0): Promise<any> {
     const req = new auth_pb.PaginatedUserRequest();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setLimit(limit);
     req.setOffset(offset);
     const res = await grpcCall((cb) => employmentClient.listByHousehold(req, getMetadata(), cb));
@@ -893,7 +916,7 @@ export const employmentService = {
   },
   async listByHousehelp(userId: string, limit = 20, offset = 0): Promise<any> {
     const req = new auth_pb.PaginatedUserRequest();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setLimit(limit);
     req.setOffset(offset);
     const res = await grpcCall((cb) => employmentClient.listByHousehelp(req, getMetadata(), cb));
@@ -915,14 +938,14 @@ export const employmentService = {
 export const hireNegotiationService = {
   async addNegotiationMessage(userId: string, data: Record<string, any>): Promise<void> {
     const req = new auth_pb.AddNegotiationReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     await grpcCall((cb) => hireNegotiationClient.addNegotiationMessage(req, getMetadata(), cb));
   },
   async listNegotiations(userId: string, hireRequestId: string): Promise<any> {
     const req = new auth_pb.ListNegotiationsReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setHireRequestId(hireRequestId);
     const res = await grpcCall((cb) => hireNegotiationClient.listNegotiations(req, getMetadata(), cb));
     return jsonResponseToJs(res);
@@ -952,7 +975,7 @@ export const employmentContractService = {
   },
   async listEmploymentContracts(userId: string, status?: string, limit = 20, offset = 0): Promise<any> {
     const req = new auth_pb.ListEmploymentContractsReq();
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     if (status) req.setStatus(status);
     req.setLimit(limit);
     req.setOffset(offset);
@@ -962,7 +985,7 @@ export const employmentContractService = {
   async signByHousehold(id: string, userId: string, signature: string, signerName: string): Promise<any> {
     const req = new auth_pb.SignContractReq();
     req.setId(id);
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setSignature(signature);
     req.setSignerName(signerName);
     const res = await grpcCall((cb) => employmentContractClient.signByHousehold(req, getMetadata(), cb));
@@ -971,7 +994,7 @@ export const employmentContractService = {
   async signByHousehelp(id: string, userId: string, signature: string, signerName: string): Promise<any> {
     const req = new auth_pb.SignContractReq();
     req.setId(id);
-    req.setUserId(userId);
+    req.setUserId(resolveUserId(userId));
     req.setSignature(signature);
     req.setSignerName(signerName);
     const res = await grpcCall((cb) => employmentContractClient.signByHousehelp(req, getMetadata(), cb));

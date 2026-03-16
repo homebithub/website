@@ -194,7 +194,7 @@ export default function HousehelpPublicProfile() {
           const token = getAccessTokenFromCookies();
           if (!token) return;
           
-          const profileData = await grpcProfileService.getCurrentHouseholdProfile(token);
+          const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
           setCurrentHouseholdProfileId(profileData?.id || profileData?.profile_id || null);
         } catch (err) {
           console.error('Failed to fetch household profile ID:', err);
@@ -280,7 +280,7 @@ export default function HousehelpPublicProfile() {
         const targetUserId = rawUser?.id || rawProfile?.user_id;
         if (targetUserId) {
           try {
-            const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+            const docsData = await documentService.getUserDocuments('', 'profile_photo');
             const docs = docsData?.data || docsData?.documents || docsData || [];
             const documentsArray = Array.isArray(docs) ? docs : [];
             const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);

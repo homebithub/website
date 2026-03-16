@@ -115,7 +115,7 @@ export default function HouseholdPublicProfile() {
 
         // Fetch photos from documents table via gRPC
         try {
-          const docsData = await documentService.getUserDocuments(token, 'profile_photo');
+          const docsData = await documentService.getUserDocuments('', 'profile_photo');
           const docs = docsData?.data || docsData?.documents || docsData || [];
           const documentsArray = Array.isArray(docs) ? docs : [];
           const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);

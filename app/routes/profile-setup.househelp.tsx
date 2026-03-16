@@ -119,6 +119,60 @@ function HousehelpProfileSetupContent() {
     }
   }, [progress, navigate, location.state]);
 
+  const isStepValid = () => {
+    const stepId = STEPS[currentStep].id;
+    const data = profileData;
+
+    switch (stepId) {
+      case 'location':
+        return !!data.location?.place || !!data.location?.name || !!data.location?.town || !!data.location?.address;
+      case 'nannytype':
+        // updateStepData: { needsLiveIn, needsDayWorker, availableFrom } | backend: { offers_live_in, ... }
+        return (data.nannytype?.needsLiveIn || data.nannytype?.needsDayWorker ||
+                data.nannytype?.offers_live_in || data.nannytype?.offers_day_worker ||
+                data.nannytype?.type) &&
+               !!(data.nannytype?.availableFrom || data.nannytype?.available_from || data.nannytype?.type);
+      case 'gender':
+        return !!(data.gender?.gender || data.gender?.date_of_birth || data.gender?.dateOfBirth);
+      case 'experience':
+        // updateStepData: { years } | backend: number | legacy: { years_of_experience }
+        return data.experience?.years !== undefined || typeof data.experience === 'number' ||
+               data.experience?.years_of_experience !== undefined;
+      case 'certifications':
+        // updateStepData: { certs, helpWith } | backend: { certifications, can_help_with }
+        return !!(data.certifications?.certs?.length > 0 || data.certifications?.certifications ||
+                  data.certifications?.first_aid !== undefined);
+      case 'salary':
+        // updateStepData: { expectation, frequency } | backend: { salary_expectation, salary_frequency }
+        return !!(data.salary?.expectation || data.salary?.salary_expectation || data.salary?.frequency);
+      case 'workwithkids':
+        // updateStepData: { preference } | backend: { can_work_with_kids }
+        return data.workwithkids?.preference !== undefined || data.workwithkids?.can_work !== undefined ||
+               data.workwithkids?.can_work_with_kids !== undefined;
+      case 'workwithpets':
+        // updateStepData: { preference } | backend: { can_work_with_pets }
+        return data.workwithpets?.preference !== undefined || data.workwithpets?.can_work !== undefined ||
+               data.workwithpets?.can_work_with_pets !== undefined;
+      case 'languages':
+        // updateStepData: { languages: [] } | backend: string | legacy: string[]
+        return (data.languages?.languages?.length > 0) ||
+               (typeof data.languages === 'string' && data.languages.length > 0) ||
+               (Array.isArray(data.languages) && data.languages.length > 0);
+      case 'bio':
+        return (typeof data.bio === 'string' && data.bio.length >= 20) ||
+               (typeof data.bio === 'object' && !!data.bio?.bio && data.bio.bio.length >= 20);
+      // Skippable/Optional steps
+      case 'mykids':
+      case 'workenvironment':
+      case 'references':
+      case 'backgroundcheck':
+      case 'kyc':
+        return true;
+      default:
+        return true;
+    }
+  };
+
   const currentStepData = STEPS[currentStep];
 
   const animateToStep = (newStep: number) => {
@@ -305,6 +359,7 @@ function HousehelpProfileSetupContent() {
       // Mark ALL steps as completed in profile-setup-steps via gRPC
       for (let i = 0; i < STEPS.length; i++) {
         await profileSetupService.updateStep('', {
+          profile_type: 'househelp',
           step_id: STEPS[i].id,
           step_number: i,
           is_completed: true,
@@ -315,6 +370,7 @@ function HousehelpProfileSetupContent() {
       
       // Also update progress tracking to mark as complete via gRPC
       await profileSetupService.updateProgress('', {
+        profile_type: 'househelp',
         current_step: STEPS.length,
         last_completed_step: STEPS.length,
         total_steps: STEPS.length,
@@ -354,6 +410,7 @@ function HousehelpProfileSetupContent() {
       
       // Save progress tracking via gRPC
       await profileSetupService.updateProgress('', {
+        profile_type: 'househelp',
         current_step: actualStep + 1,
         last_completed_step: highestCompletedStepRef.current,
         total_steps: STEPS.length,
@@ -365,6 +422,7 @@ function HousehelpProfileSetupContent() {
       // Mark step as completed in profile-setup-steps (required for is_complete check)
       if (isComplete || !isAutoSave) {
         await profileSetupService.updateStep('', {
+          profile_type: 'househelp',
           step_id: STEPS[actualStep]?.id || 'completed',
           step_number: actualStep,
           is_completed: isComplete || !skipped,
@@ -556,9 +614,9 @@ function HousehelpProfileSetupContent() {
 
                   <button
                     onClick={handleNext}
-                    disabled={isSaving || hasUnsavedChanges}
+                    disabled={isSaving || hasUnsavedChanges || !isStepValid()}
                     className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
-                      isSaving || hasUnsavedChanges
+                      isSaving || hasUnsavedChanges || !isStepValid()
                         ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                         : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                     }`}
@@ -569,8 +627,8 @@ function HousehelpProfileSetupContent() {
                     )}
                   </button>
                 </div>
-                {hasUnsavedChanges && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">Please save your changes before proceeding</p>
+                {(hasUnsavedChanges || !isStepValid()) && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">{hasUnsavedChanges ? 'Please save your changes before proceeding' : 'Please complete this step before proceeding'}</p>
                 )}
               </div>
 
@@ -603,9 +661,9 @@ function HousehelpProfileSetupContent() {
 
                 <button
                   onClick={handleNext}
-                  disabled={isSaving || hasUnsavedChanges}
+                  disabled={isSaving || hasUnsavedChanges || !isStepValid()}
                   className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
-                    isSaving || hasUnsavedChanges
+                    isSaving || hasUnsavedChanges || !isStepValid()
                       ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                       : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                   }`}
@@ -616,8 +674,8 @@ function HousehelpProfileSetupContent() {
                   )}
                 </button>
                 </div>
-                {hasUnsavedChanges && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">Please save your changes before proceeding</p>
+                {(hasUnsavedChanges || !isStepValid()) && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">{hasUnsavedChanges ? 'Please save your changes before proceeding' : 'Please complete this step before proceeding'}</p>
                 )}
               </div>
             </div>

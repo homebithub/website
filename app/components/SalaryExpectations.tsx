@@ -25,7 +25,7 @@ function parseSalaryRangeToNumber(range: string): number | null {
 }
 
 const SalaryExpectations: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const [frequency, setFrequency] = useState<SalaryFrequency>('monthly');
   const { ranges: salaryRanges, loading: rangesLoading } = useSalaryRanges(frequency);
   const [selectedRange, setSelectedRange] = useState<string>('');
@@ -40,13 +40,18 @@ const SalaryExpectations: React.FC = () => {
     monthly: salaryRanges.map(r => r.label)
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!selectedRange) {
-      setError('Please select a salary range');
-      return;
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.salary;
+    if (cached) {
+      if (cached.expectation) setSelectedRange(cached.expectation);
+      if (cached.frequency) setFrequency(cached.frequency as SalaryFrequency);
+      if (cached.salary_frequency) setFrequency(cached.salary_frequency as SalaryFrequency);
     }
+  }, [profileData.salary]);
+
+  const autoSave = async (freq: SalaryFrequency, range: string) => {
+    if (!range) return;
 
     setIsSubmitting(true);
     setError('');
@@ -54,9 +59,9 @@ const SalaryExpectations: React.FC = () => {
 
     try {
       const token = getAccessTokenFromCookies();
-      const normalizedExpectation = parseSalaryRangeToNumber(selectedRange);
+      const normalizedExpectation = parseSalaryRangeToNumber(range);
       const updates: Record<string, string | number> = {
-        salary_frequency: frequency.toLowerCase(),
+        salary_frequency: freq.toLowerCase(),
       };
 
       if (normalizedExpectation !== null) {
@@ -68,14 +73,21 @@ const SalaryExpectations: React.FC = () => {
       );
 
       markClean();
+      updateStepData('salary', { expectation: range, frequency: freq });
       setSuccess('Salary expectations saved successfully!');
-      console.log('Salary expectations saved successfully');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(handleApiError(err, 'salary', 'Failed to save salary expectations. Please try again.'));
       console.error(err);
     } finally{
       setIsSubmitting(false);
     }
+  };
+
+  const handleRangeSelect = async (range: string) => {
+    setSelectedRange(range);
+    markDirty();
+    await autoSave(frequency, range);
   };
 
   return (
@@ -85,7 +97,7 @@ const SalaryExpectations: React.FC = () => {
         What are your salary requirements?
       </p>
       
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-8">
         {/* Salary Frequency Dropdown */}
         <div className="space-y-3">
           <label htmlFor="frequency" className="block text-sm font-semibold text-purple-700 dark:text-purple-400">
@@ -130,7 +142,7 @@ const SalaryExpectations: React.FC = () => {
                   name="salaryRange"
                   value={range}
                   checked={selectedRange === range}
-                  onChange={() => { setSelectedRange(range); markDirty(); }}
+                  onChange={() => handleRangeSelect(range)}
                   className="sr-only"
                 />
                 <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center mr-3 flex-shrink-0 ${
@@ -152,26 +164,7 @@ const SalaryExpectations: React.FC = () => {
 
         {error && <ErrorAlert message={error} />}
 
-        <button
-          type="submit"
-          disabled={isSubmitting || !selectedRange}
-          className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Saving...
-            </>
-          ) : (
-            <>
-              💾 Save
-            </>
-          )}
-        </button>
-      </form>
+      </div>
     </div>
   );
 };

@@ -18,7 +18,7 @@ interface Reference {
 // Relationships are now fetched from backend via context
 
 const References: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [references, setReferences] = useState<Reference[]>([
     { name: '', relationship: '', phone: '', email: '', duration: '' }
@@ -29,7 +29,15 @@ const References: React.FC = () => {
 
   const RELATIONSHIPS = options?.reference_relationships.map(r => r.name) || [];
 
-  // Load existing data
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.references;
+    if (cached?.references?.length) {
+      setReferences(cached.references);
+    }
+  }, [profileData.references]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -118,6 +126,7 @@ const References: React.FC = () => {
       }, { step_id: 'references', step_number: 12, is_completed: true });
 
       markClean();
+      updateStepData('references', { references: validReferences });
       setSuccess('References saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'references', 'Failed to save your references. Please try again.'));

@@ -3,9 +3,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLoaderData, redirect } from "react-router";
 import type { Route } from "./+types/_index";
 import { lazyLoad } from "~/utils/lazyLoad";
-import { transport, getGrpcMetadata } from "~/utils/grpcClient";
-import { ProfileSetupServiceClient } from "~/proto/auth/auth.client";
-import { UserIdRequest } from "~/proto/auth/auth";
+import { profileSetupService } from "~/services/grpc/profileSetup.service";
 import { getAuthFromCookies } from "~/utils/cookie";
 
 const AuthenticatedHome = lazyLoad(() => import("~/components/AuthenticatedHome"));
@@ -50,18 +48,14 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   // Check progress
   try {
-    const profileSetupClient = new ProfileSetupServiceClient(transport);
-    const request: UserIdRequest = { userId: userObj.id } as any;
-    const call = profileSetupClient.getProgress(request, { metadata: { authorization: `Bearer ${token}` } });
-    const setupData = await withTimeout(
-      call.response,
+    const progressData = await withTimeout(
+      profileSetupService.getProgress(userObj.id, profileType),
       4000
     );
     
-    const progressData = setupData.data?.fields || {};
-    const totalSteps = (progressData.total_steps as any)?.numberValue || 0;
-    const lastStep = (progressData.last_completed_step as any)?.numberValue || 0;
-    const status = (progressData.status as any)?.stringValue || "";
+    const totalSteps = progressData?.total_steps || 0;
+    const lastStep = progressData?.last_completed_step || 0;
+    const status = progressData?.status || "";
     
     const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
 
