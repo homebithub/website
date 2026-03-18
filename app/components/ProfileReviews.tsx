@@ -151,8 +151,8 @@ export default function ProfileReviews({
 
   if (error && profileType === 'household' && !isOwnProfile) {
     return (
-      <div className="bg-gray-50 rounded-lg p-8 text-center">
-        <p className="text-gray-600">Household reviews are private</p>
+      <div className="bg-purple-50 dark:bg-purple-900/10 rounded-3xl border-2 border-purple-200 dark:border-purple-500/30 p-8 text-center">
+        <p className="text-gray-700 dark:text-gray-300 font-medium">Household reviews are private</p>
       </div>
     );
   }
@@ -161,33 +161,37 @@ export default function ProfileReviews({
     <div className="space-y-6">
       {/* Review Statistics */}
       {stats && stats.total_reviews > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-xl font-bold mb-4">Review Summary</h3>
+        <div className="bg-white dark:bg-[#13131a] rounded-3xl shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 p-8">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Review Summary</h3>
           
           <div className="grid md:grid-cols-2 gap-6">
             {/* Overall Rating */}
             <div className="text-center">
-              <div className="text-5xl font-bold text-purple-600 mb-2">
-                {stats.average_rating.toFixed(1)}
+              <div className="inline-flex items-center justify-center w-32 h-32 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl shadow-xl mb-4">
+                <div className="text-5xl font-bold text-white">
+                  {stats.average_rating.toFixed(1)}
+                </div>
               </div>
-              {renderStars(Math.round(stats.average_rating), 'lg')}
-              <p className="text-gray-600 mt-2">
+              <div className="flex justify-center mb-3">
+                {renderStars(Math.round(stats.average_rating), 'lg')}
+              </div>
+              <p className="text-gray-600 dark:text-gray-400 font-medium">
                 Based on {stats.total_reviews} {stats.total_reviews === 1 ? 'review' : 'reviews'}
               </p>
             </div>
 
             {/* Rating Breakdown */}
-            <div className="space-y-2">
+            <div className="space-y-3">
               {getRatingBreakdown().map((item) => (
                 <div key={item.stars} className="flex items-center gap-3">
-                  <span className="text-sm font-medium w-12">{item.stars} star</span>
-                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 w-14">{item.stars} star</span>
+                  <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
                     <div
-                      className="bg-yellow-400 h-2 rounded-full transition-all"
+                      className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-3 rounded-full transition-all duration-500 shadow-sm"
                       style={{ width: `${item.percentage}%` }}
                     />
                   </div>
-                  <span className="text-sm text-gray-600 w-12 text-right">
+                  <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 w-12 text-right">
                     {item.count}
                   </span>
                 </div>
@@ -200,34 +204,41 @@ export default function ProfileReviews({
       {/* Reviews List */}
       <div className="space-y-4">
         {isLoading ? (
-          <div className="text-center py-8">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-600 border-t-transparent" />
+          <div className="text-center py-12">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent" />
+            <p className="text-gray-600 dark:text-gray-400 mt-4 font-medium">Loading reviews...</p>
           </div>
         ) : reviews.length === 0 ? (
-          <div className="bg-gray-50 rounded-lg p-8 text-center">
-            <p className="text-gray-600">No reviews yet</p>
+          <div className="bg-purple-50 dark:bg-purple-900/10 rounded-3xl border-2 border-purple-200 dark:border-purple-500/30 p-12 text-center">
+            <Star className="w-16 h-16 text-purple-300 dark:text-purple-600 mx-auto mb-4" />
+            <p className="text-gray-700 dark:text-gray-300 font-semibold text-lg">No reviews yet</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">Be the first to leave a review!</p>
           </div>
         ) : (
           reviews.map((review) => (
-            <div key={review.id} className="bg-white rounded-lg shadow p-6">
+            <div key={review.id} className="bg-white dark:bg-[#13131a] rounded-3xl shadow-xl border-2 border-purple-200 dark:border-purple-500/30 p-6 hover:shadow-2xl transition-all duration-200">
               {/* Review Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     {review.reviewer_profile && (
-                      <div className="flex items-center gap-2">
-                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                          <span className="text-purple-600 font-semibold">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
+                          <span className="text-white font-bold text-lg">
                             {review.reviewer_profile.first_name[0]}
                             {review.reviewer_profile.last_name[0]}
                           </span>
                         </div>
                         <div>
-                          <p className="font-semibold">
+                          <p className="font-bold text-gray-900 dark:text-white">
                             {review.reviewer_profile.first_name} {review.reviewer_profile.last_name}
                           </p>
-                          <p className="text-sm text-gray-500">
-                            {new Date(review.created_at).toLocaleDateString()}
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {new Date(review.created_at).toLocaleDateString('en-US', { 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
                           </p>
                         </div>
                       </div>
@@ -238,18 +249,18 @@ export default function ProfileReviews({
               </div>
 
               {/* Review Content */}
-              <h4 className="font-semibold text-lg mb-2">{review.title}</h4>
-              <p className="text-gray-700 mb-4">{review.content}</p>
+              <h4 className="font-bold text-lg text-gray-900 dark:text-white mb-3">{review.title}</h4>
+              <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">{review.content}</p>
 
               {/* Review Images */}
               {review.images && review.images.length > 0 && (
-                <div className="grid grid-cols-3 gap-2 mb-4">
+                <div className="grid grid-cols-3 gap-3 mb-4">
                   {review.images.map((img, idx) => (
                     <img
                       key={idx}
                       src={img.image_url}
                       alt={img.caption || `Review image ${idx + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
+                      className="w-full h-32 object-cover rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 hover:scale-105 transition-transform duration-200 cursor-pointer"
                     />
                   ))}
                 </div>
@@ -257,27 +268,31 @@ export default function ProfileReviews({
 
               {/* Response */}
               {review.response && (
-                <div className="bg-gray-50 rounded-lg p-4 mt-4 border-l-4 border-purple-500">
-                  <div className="flex items-center gap-2 mb-2">
-                    <MessageSquare className="w-4 h-4 text-purple-600" />
-                    <span className="font-semibold text-sm">Response from owner</span>
+                <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-5 mt-4 border-l-4 border-purple-500">
+                  <div className="flex items-center gap-2 mb-3">
+                    <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    <span className="font-bold text-sm text-purple-700 dark:text-purple-300">Response from owner</span>
                     {review.response_at && (
-                      <span className="text-xs text-gray-500">
-                        {new Date(review.response_at).toLocaleDateString()}
+                      <span className="text-xs text-gray-500 dark:text-gray-400">
+                        {new Date(review.response_at).toLocaleDateString('en-US', { 
+                          month: 'short', 
+                          day: 'numeric', 
+                          year: 'numeric' 
+                        })}
                       </span>
                     )}
                   </div>
-                  <p className="text-gray-700">{review.response}</p>
+                  <p className="text-gray-700 dark:text-gray-300 leading-relaxed">{review.response}</p>
                 </div>
               )}
 
               {/* Actions */}
-              <div className="flex items-center gap-4 mt-4 pt-4 border-t">
+              <div className="flex items-center gap-4 mt-6 pt-4 border-t-2 border-gray-100 dark:border-gray-800">
                 <button
                   onClick={() => handleMarkHelpful(review.id)}
-                  className="flex items-center gap-2 text-gray-600 hover:text-purple-600 transition-colors"
+                  className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
                 >
-                  <ThumbsUp className="w-4 h-4" />
+                  <ThumbsUp className="w-5 h-5" />
                   <span className="text-sm">
                     Helpful ({review.helpful_count})
                   </span>
@@ -290,25 +305,25 @@ export default function ProfileReviews({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-4">
+        <div className="flex items-center justify-center gap-4 mt-8">
           <button
             onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
             disabled={currentPage === 1}
-            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] hover:bg-purple-50 dark:hover:bg-purple-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <ChevronLeft className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           </button>
           
-          <span className="text-sm text-gray-600">
+          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 px-4">
             Page {currentPage} of {totalPages}
           </span>
           
           <button
             onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
             disabled={currentPage === totalPages}
-            className="p-2 rounded-lg border border-gray-300 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="p-3 rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] hover:bg-purple-50 dark:hover:bg-purple-900/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-md hover:shadow-lg"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           </button>
         </div>
       )}

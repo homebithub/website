@@ -114,15 +114,21 @@ export default function ReviewSubmission({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
-      <h2 className="text-2xl font-bold mb-4">
-        Write a Review for {revieweeName}
-      </h2>
+    <div className="bg-white dark:bg-[#13131a] rounded-3xl shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 p-8 max-w-2xl mx-auto">
+      <div className="text-center mb-8">
+        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+          <Star className="h-8 w-8 text-white" />
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Write a Review for {revieweeName}
+        </h2>
+        <p className="text-sm text-gray-600 dark:text-gray-400">Share your experience to help others make informed decisions</p>
+      </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Rating */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-3">
             Rating *
           </label>
           <div className="flex gap-2">
@@ -136,10 +142,10 @@ export default function ReviewSubmission({
                 className="transition-transform hover:scale-110"
               >
                 <Star
-                  className={`w-8 h-8 ${
+                  className={`w-10 h-10 transition-all duration-200 ${
                     star <= (hoveredRating || rating)
-                      ? 'fill-yellow-400 text-yellow-400'
-                      : 'text-gray-300'
+                      ? 'fill-yellow-400 text-yellow-400 drop-shadow-lg'
+                      : 'text-gray-300 dark:text-gray-600'
                   }`}
                 />
               </button>
@@ -149,7 +155,7 @@ export default function ReviewSubmission({
 
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-3">
             Review Title *
           </label>
           <input
@@ -157,18 +163,18 @@ export default function ReviewSubmission({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Summarize your experience"
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl bg-white dark:bg-[#0a0a0f] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200"
             maxLength={100}
             required
           />
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
             {title.length}/100 characters
           </p>
         </div>
 
         {/* Content */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-3">
             Your Review *
           </label>
           <textarea
@@ -176,18 +182,18 @@ export default function ReviewSubmission({
             onChange={(e) => setContent(e.target.value)}
             placeholder="Share details about your experience..."
             rows={6}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl bg-white dark:bg-[#0a0a0f] text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 resize-none"
             maxLength={1000}
             required
           />
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
             {content.length}/1000 characters
           </p>
         </div>
 
         {/* Images */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-3">
             Add Photos (Optional)
           </label>
           <div className="space-y-4">
@@ -198,12 +204,12 @@ export default function ReviewSubmission({
                     <img
                       src={img.url}
                       alt={`Review ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-lg"
+                      className="w-full h-32 object-cover rounded-2xl border-2 border-purple-200 dark:border-purple-500/30"
                     />
                     <button
                       type="button"
                       onClick={() => removeImage(index)}
-                      className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -213,10 +219,10 @@ export default function ReviewSubmission({
             )}
 
             {images.length < 5 && (
-              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:border-purple-500 transition-colors">
+              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-purple-300 dark:border-purple-500/50 rounded-2xl cursor-pointer hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-all duration-200">
                 <div className="flex flex-col items-center">
-                  <ImageIcon className="w-8 h-8 text-gray-400 mb-2" />
-                  <p className="text-sm text-gray-500">
+                  <ImageIcon className="w-8 h-8 text-purple-400 dark:text-purple-500 mb-2" />
+                  <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">
                     Upload photos ({images.length}/5)
                   </p>
                 </div>
@@ -233,25 +239,32 @@ export default function ReviewSubmission({
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+          <div className="bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/50 text-red-700 dark:text-red-400 px-4 py-3 rounded-2xl font-medium">
             {error}
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex gap-4 pt-4">
+        <div className="flex gap-4 pt-6">
           <button
             type="submit"
             disabled={isSubmitting}
-            className="flex-1 bg-purple-600 text-white py-3 rounded-lg font-semibold hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-2xl font-bold hover:from-purple-700 hover:to-pink-700 disabled:from-gray-400 disabled:to-gray-400 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
           >
-            {isSubmitting ? 'Submitting...' : 'Submit Review'}
+            {isSubmitting ? (
+              <span className="flex items-center justify-center gap-2">
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                Submitting...
+              </span>
+            ) : (
+              'Submit Review'
+            )}
           </button>
           <button
             type="button"
             onClick={onCancel}
             disabled={isSubmitting}
-            className="px-6 py-3 border border-gray-300 rounded-lg font-semibold hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            className="px-8 py-4 border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl font-bold text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20 disabled:opacity-50 transition-all duration-200"
           >
             Cancel
           </button>
