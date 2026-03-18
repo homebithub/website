@@ -278,11 +278,22 @@ export default function HousehelpHome() {
     setError(null);
     try {
       const raw = await grpcProfileService.searchHouseholds('', 'househelp', buildFilters(), 12, 0);
-      const data = raw?.data?.data || raw?.data || raw;
+      console.log('[HousehelpHome] Search raw response:', raw);
+      
+      // Try multiple possible response structures
+      let data = raw?.data?.data || raw?.data || raw?.profiles || raw;
+      
+      // If data is an object with a profiles or households property, extract it
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        data = data.profiles || data.households || data.data || [];
+      }
+      
       // Ensure data is always an array
       const households = Array.isArray(data) ? data : [];
+      console.log('[HousehelpHome] Extracted households:', households.length, households);
       setResults(households as HouseholdItem[]);
     } catch (err: any) {
+      console.error('[HousehelpHome] Search error:', err);
       setError(err.message || "Failed to load households");
       setResults([]);
     } finally {
