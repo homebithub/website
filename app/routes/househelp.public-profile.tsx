@@ -142,6 +142,14 @@ function normalizeHousehelpData(raw: any): HousehelpData {
     traits: Array.isArray(raw.traits) ? raw.traits : [],
     off_days: Array.isArray(raw.off_days) ? raw.off_days : [],
     talent_with_kids: Array.isArray(raw.talent_with_kids) ? raw.talent_with_kids : [],
+    availability: (() => {
+      const sched = raw.availability || raw.availability_schedule;
+      if (!sched) return undefined;
+      if (typeof sched === 'string') {
+        try { return JSON.parse(sched); } catch { return undefined; }
+      }
+      return sched;
+    })(),
   };
 }
 

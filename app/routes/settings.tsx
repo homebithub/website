@@ -219,7 +219,7 @@ export default function SettingsPage() {
 						<div className="mt-5 flex justify-end">
 							<button
 								type="button"
-								className="inline-flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+								className="inline-flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:scale-105"
 								onClick={handleSavePreferences}
 								disabled={saving || prefsLoading}
 							>

@@ -442,7 +442,7 @@ export default function HouseholdProfile() {
         if (document?.id) {
           setDeleteStatus('Deleting from storage...');
           try {
-            await documentService.deleteDocument(document.id);
+            await documentService.deleteDocument(document.id, '');
           } catch (err) {
             console.warn('Failed to delete document from storage, but will remove from profile');
           }

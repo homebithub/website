@@ -102,6 +102,14 @@ function normalizeHousehelpProfileResponse(response: any): HousehelpData {
     traits: Array.isArray(raw.traits) ? raw.traits : [],
     off_days: Array.isArray(raw.off_days) ? raw.off_days : [],
     talent_with_kids: Array.isArray(raw.talent_with_kids) ? raw.talent_with_kids : [],
+    availability: (() => {
+      const sched = raw.availability || raw.availability_schedule;
+      if (!sched) return undefined;
+      if (typeof sched === 'string') {
+        try { return JSON.parse(sched); } catch { return undefined; }
+      }
+      return sched;
+    })(),
   };
 }
 
@@ -339,7 +347,7 @@ export default function HousehelpProfile() {
         if (document?.id) {
           setDeleteStatus('Deleting from storage...');
           try {
-            await documentService.deleteDocument(document.id, token);
+            await documentService.deleteDocument(document.id, '');
           } catch (err) {
             console.warn('Failed to delete document from storage, but will remove from profile');
           }

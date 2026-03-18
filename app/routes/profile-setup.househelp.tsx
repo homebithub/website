@@ -744,7 +744,7 @@ function HousehelpProfileSetupContent() {
                 <button
                   onClick={finishSetup}
                   disabled={!disclaimerChecked || isSaving}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-primary-700 text-white font-bold shadow-lg hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
                 >
                   {isSaving ? (
                     <>

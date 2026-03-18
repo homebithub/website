@@ -158,7 +158,8 @@ function resolveUserId(userId: string): string {
 function buildIdRequest(id: string, userId?: string): any {
   const req = new auth_pb.IdRequest();
   req.setId(id);
-  if (userId) req.setUserId(resolveUserId(userId));
+  const resolved = resolveUserId(userId || '');
+  if (resolved) req.setUserId(resolved);
   return req;
 }
 
