@@ -54,6 +54,7 @@ export default defineConfig({
       "react-icons/fc",
       "joi",
       "google-protobuf",
+      "google-protobuf/google/protobuf/struct_pb.js",
       "grpc-web",
       "web-vitals",
     ],

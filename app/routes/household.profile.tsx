@@ -10,6 +10,16 @@ import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import EditSectionModal from '~/components/ui/EditSectionModal';
+import Location from '~/components/Location';
+import Children from '~/components/Children';
+import NannyType from '~/components/NanyType';
+import Chores from '~/components/Chores';
+import Pets from '~/components/Pets';
+import Budget from '~/components/Budget';
+import HouseSize from '~/components/HouseSize';
+import Bio from '~/components/Bio';
+import Religion from '~/components/Religion';
 
 interface HouseholdData {
   id?: string;
@@ -29,6 +39,8 @@ interface HouseholdData {
   bio?: string;
   address?: string;
   location?: any;
+  location_ref?: any;
+  town?: string;
   photos?: string[];
 }
 
@@ -154,11 +166,42 @@ export default function HouseholdProfile() {
     }
   }, [profile]);
 
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+
+  const EDIT_SECTIONS: Record<string, { title: string; component: React.FC }> = {
+    location: { title: '📍 Edit Location', component: Location },
+    housesize: { title: '🏠 Edit House Size', component: HouseSize },
+    nannytype: { title: '👥 Edit Service Type', component: NannyType },
+    children: { title: '👶 Edit Children', component: Children },
+    pets: { title: '🐾 Edit Pets', component: Pets },
+    chores: { title: '🧹 Edit Chores & Duties', component: Chores },
+    budget: { title: '💰 Edit Budget', component: Budget },
+    religion: { title: '🙏 Edit Religion & Beliefs', component: Religion },
+    bio: { title: '✍️ Edit About', component: Bio },
+  };
+
   const handleEditSection = (section: string) => {
-    // Navigate to the specific setup step for editing with state (secure, can't be URL-manipulated)
-    navigate('/profile-setup/household', { 
-      state: { fromProfile: true, editSection: section }
-    });
+    setEditingSection(section);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingSection(null);
+    // Refresh profile data after editing
+    const refresh = async () => {
+      try {
+        const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
+        setProfile(profileData);
+        const kidsData = await householdKidsService.listHouseholdKids('');
+        const kidsArr = kidsData?.data?.data || kidsData?.data || kidsData;
+        setKids(Array.isArray(kidsArr) ? kidsArr : []);
+        const petsData = await petsService.listMyPets('');
+        const petsArr = petsData?.data?.data || petsData?.data || petsData;
+        setPets(Array.isArray(petsArr) ? petsArr : []);
+      } catch (err) {
+        console.error('Failed to refresh profile after edit:', err);
+      }
+    };
+    refresh();
   };
 
   const fetchInvitationCode = async () => {
@@ -505,13 +548,13 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('location')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
           {typeof profile.location === 'string'
-            ? (profile.location || 'Not specified')
-            : (profile.location?.place || profile.location?.name || 'Not specified')}
+            ? (profile.location || profile.town || 'Not specified')
+            : (profile.location?.place || profile.location?.name || profile.location_ref?.place || profile.town || 'Not specified')}
         </p>
       </div>
 
@@ -850,7 +893,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('housesize')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -875,7 +918,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('nannytype')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="space-y-3">
@@ -913,7 +956,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('children')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         {kids.length > 0 ? (
@@ -949,7 +992,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('pets')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         {pets.length > 0 ? (
@@ -982,7 +1025,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('chores')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         {profile.chores && profile.chores.length > 0 ? (
@@ -1006,7 +1049,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('budget')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         {profile.budget_min || profile.budget_max ? (
@@ -1031,7 +1074,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('religion')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
@@ -1045,7 +1088,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('bio')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
@@ -1075,6 +1118,18 @@ export default function HouseholdProfile() {
         onConfirm={handleDeletePhoto}
         onCancel={() => setPhotoToDelete(null)}
       />
+
+      {/* Edit Section Modal */}
+      {editingSection && EDIT_SECTIONS[editingSection] && (
+        <EditSectionModal
+          isOpen={true}
+          onClose={handleCloseEditModal}
+          title={EDIT_SECTIONS[editingSection].title}
+          profileType="household"
+        >
+          {React.createElement(EDIT_SECTIONS[editingSection].component)}
+        </EditSectionModal>
+      )}
     </div>
   );
 }

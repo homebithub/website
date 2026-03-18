@@ -11,7 +11,8 @@ import {
   ClockIcon,
   MapPinIcon,
   ExclamationTriangleIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  ArrowLeftIcon
 } from '@heroicons/react/24/outline';
 import { Navigation } from "~/components/Navigation";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -205,17 +206,25 @@ export default function DevicesPage() {
   }
 
   return (
-    <PurpleThemeWrapper>
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-purple-100 dark:from-gray-900 dark:via-purple-900 dark:to-gray-900">
-        <Navigation />
-        
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
+        <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+          {/* Back link */}
+          <button
+            onClick={() => navigate('/settings')}
+            className="inline-flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium mb-6 transition-colors"
+          >
+            <ArrowLeftIcon className="h-4 w-4" />
+            Back to Settings
+          </button>
+
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-300 mb-1">
               Your Devices
             </h1>
-            <p className="text-gray-600 dark:text-gray-300">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               Manage devices that have access to your account
             </p>
           </div>
@@ -234,39 +243,33 @@ export default function DevicesPage() {
           )}
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
               <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ComputerDesktopIcon className="h-8 w-8 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Total Devices</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalCount}</p>
+                <ComputerDesktopIcon className="h-6 w-6 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Total Devices</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{totalCount}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
               <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <CheckCircleIcon className="h-8 w-8 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{activeCount}</p>
+                <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Active</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{activeCount}</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
               <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <ClockIcon className="h-8 w-8 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Pending</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-white">{pendingCount}</p>
+                <ClockIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+                <div className="ml-3">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Pending</p>
+                  <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{pendingCount}</p>
                 </div>
               </div>
             </div>
@@ -277,7 +280,7 @@ export default function DevicesPage() {
             <div className="mb-6">
               <button
                 onClick={() => setShowRevokeAllModal(true)}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:focus:ring-offset-gray-900"
+                className="inline-flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl text-red-100 bg-red-600 hover:bg-red-700 transition-colors"
               >
                 <ShieldCheckIcon className="h-5 w-5 mr-2" />
                 Log Out All Other Devices
@@ -288,9 +291,9 @@ export default function DevicesPage() {
           {/* Devices List */}
           <div className="space-y-4">
             {devices.length === 0 ? (
-              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-8 text-center">
-                <ComputerDesktopIcon className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No devices</h3>
+              <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-8 text-center">
+                <ComputerDesktopIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" />
+                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No devices</h3>
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                   You don't have any devices registered yet.
                 </p>
@@ -299,48 +302,50 @@ export default function DevicesPage() {
               devices.map((device) => (
                 <div
                   key={device.id}
-                  className={`bg-white dark:bg-gray-800 rounded-lg shadow p-6 ${
-                    device.is_current_device ? 'ring-2 ring-purple-500 dark:ring-purple-400' : ''
+                  className={`bg-white dark:bg-[#13131a] rounded-2xl border p-5 transition-colors ${
+                    device.is_current_device
+                      ? 'border-purple-400 dark:border-purple-500/60'
+                      : 'border-purple-200/40 dark:border-purple-500/30'
                   }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start space-x-4 flex-1">
                       {/* Device Icon */}
-                      <div className="flex-shrink-0 text-gray-600 dark:text-gray-400">
+                      <div className="flex-shrink-0 text-purple-600 dark:text-purple-400">
                         {getDeviceIcon(device.device_type)}
                       </div>
                       
                       {/* Device Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <h3 className="text-lg font-medium text-gray-900 dark:text-white truncate">
+                        <div className="flex items-center flex-wrap gap-2 mb-1">
+                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
                             {device.device_name || 'Unknown Device'}
                           </h3>
                           {device.is_current_device && (
-                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
                               Current Device
                             </span>
                           )}
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${DEVICE_STATUS_COLORS[device.status]}`}>
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${DEVICE_STATUS_COLORS[device.status]}`}>
                             {DEVICE_STATUS_LABELS[device.status]}
                           </span>
                         </div>
                         
-                        <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                        <div className="space-y-0.5 text-xs text-gray-500 dark:text-gray-400">
                           <p>
                             {device.browser} {device.browser_version} on {device.os} {device.os_version}
                           </p>
                           {device.city && device.country && (
                             <p className="flex items-center">
-                              <MapPinIcon className="h-4 w-4 mr-1" />
+                              <MapPinIcon className="h-3.5 w-3.5 mr-1" />
                               {device.city}, {device.country}
                             </p>
                           )}
                           <p className="flex items-center">
-                            <ClockIcon className="h-4 w-4 mr-1" />
+                            <ClockIcon className="h-3.5 w-3.5 mr-1" />
                             Last active: {formatDate(device.last_activity_at)}
                           </p>
-                          <p className="text-xs text-gray-500 dark:text-gray-500">
+                          <p className="text-gray-400 dark:text-gray-500">
                             {device.login_count} login{device.login_count !== 1 ? 's' : ''} • 
                             First login: {formatDate(device.created_at)}
                           </p>
@@ -352,9 +357,9 @@ export default function DevicesPage() {
                     {!device.is_current_device && device.status === 'active' && (
                       <button
                         onClick={() => setRevokingDevice(device)}
-                        className="ml-4 inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800 dark:focus:ring-offset-gray-900"
+                        className="ml-4 inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg text-red-700 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 transition-colors"
                       >
-                        <TrashIcon className="h-4 w-4 mr-1" />
+                        <TrashIcon className="h-3.5 w-3.5 mr-1" />
                         Revoke
                       </button>
                     )}
@@ -363,10 +368,9 @@ export default function DevicesPage() {
               ))
             )}
           </div>
-        </div>
-
-        <Footer />
-      </div>
+        </main>
+      </PurpleThemeWrapper>
+      <Footer />
 
       {/* Revoke Device Modal */}
       <Transition appear show={revokingDevice !== null} as={Fragment}>
@@ -380,7 +384,7 @@ export default function DevicesPage() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-25" />
+            <div className="fixed inset-0 bg-black/50" />
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
@@ -394,16 +398,16 @@ export default function DevicesPage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 p-6 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title
                     as="h3"
-                    className="text-lg font-medium leading-6 text-gray-900 dark:text-white flex items-center"
+                    className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center"
                   >
-                    <ExclamationTriangleIcon className="h-6 w-6 text-red-600 mr-2" />
+                    <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2" />
                     Revoke Device Access
                   </Dialog.Title>
                   <div className="mt-2">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       Are you sure you want to revoke access for "{revokingDevice?.device_name || 'this device'}"? 
                       This device will be logged out and will need to be confirmed again to access your account.
                     </p>
@@ -412,7 +416,7 @@ export default function DevicesPage() {
                   <div className="mt-4 flex space-x-3">
                     <button
                       type="button"
-                      className="flex-1 inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 inline-flex justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       onClick={() => revokingDevice && handleRevokeDevice(revokingDevice)}
                       disabled={processingAction}
                     >
@@ -420,7 +424,7 @@ export default function DevicesPage() {
                     </button>
                     <button
                       type="button"
-                      className="flex-1 inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                      className="flex-1 inline-flex justify-center rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#1a1a24] px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors"
                       onClick={() => setRevokingDevice(null)}
                       disabled={processingAction}
                     >
@@ -446,7 +450,7 @@ export default function DevicesPage() {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-25" />
+            <div className="fixed inset-0 bg-black/50" />
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
@@ -460,19 +464,19 @@ export default function DevicesPage() {
                 leaveFrom="opacity-100 scale-100"
                 leaveTo="opacity-0 scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 p-6 text-left align-middle shadow-xl transition-all">
                   <Dialog.Title
                     as="h3"
-                    className="text-lg font-medium leading-6 text-gray-900 dark:text-white flex items-center"
+                    className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center"
                   >
-                    <ShieldCheckIcon className="h-6 w-6 text-red-600 mr-2" />
+                    <ShieldCheckIcon className="h-5 w-5 text-red-500 mr-2" />
                     Log Out All Other Devices
                   </Dialog.Title>
                   <div className="mt-2">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       This will log you out of all devices except this one. You'll need to log in again on those devices.
                     </p>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
                       This is useful if you've lost a device or want to ensure your account is secure.
                     </p>
                   </div>
@@ -480,7 +484,7 @@ export default function DevicesPage() {
                   <div className="mt-4 flex space-x-3">
                     <button
                       type="button"
-                      className="flex-1 inline-flex justify-center rounded-md border border-transparent bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 inline-flex justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       onClick={handleRevokeAllDevices}
                       disabled={processingAction}
                     >
@@ -488,7 +492,7 @@ export default function DevicesPage() {
                     </button>
                     <button
                       type="button"
-                      className="flex-1 inline-flex justify-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:ring-offset-2"
+                      className="flex-1 inline-flex justify-center rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#1a1a24] px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors"
                       onClick={() => setShowRevokeAllModal(false)}
                       disabled={processingAction}
                     >
@@ -501,6 +505,6 @@ export default function DevicesPage() {
           </div>
         </Dialog>
       </Transition>
-    </PurpleThemeWrapper>
+    </div>
   );
 }

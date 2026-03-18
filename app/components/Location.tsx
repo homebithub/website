@@ -181,25 +181,36 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
 
         try {
             const profileType = localStorage.getItem('profile_type') || '';
-            const payload = {
+
+            // Flat payload for CreateLocation (matches types.Location fields)
+            const createPayload = {
+                place: selectedLocation.name,
                 mapbox_id: selectedLocation.mapbox_id,
-                town: selectedLocation.name,
-                profile_type: profileType,
+            };
+
+            // Rich payload for SaveUserLocation (profile update)
+            const profilePayload = {
+                mapbox_id: selectedLocation.mapbox_id || '',
+                town: selectedLocation.name || '',
+                profile_type: profileType || '',
                 location: {
-                    place: selectedLocation.name,
-                    name: selectedLocation.name,
-                    mapbox_id: selectedLocation.mapbox_id,
-                    feature_type: selectedLocation.feature_type
+                    place: selectedLocation.name || '',
+                    name: selectedLocation.name || '',
+                    mapbox_id: selectedLocation.mapbox_id || '',
+                    feature_type: selectedLocation.feature_type || 'place'
                 }
             };
-            console.log('Saving location payload:', JSON.stringify(payload, null, 2));
-            await locationService.createLocation('', payload);
+
+            console.log('[Location] createPayload:', JSON.stringify(createPayload));
+            console.log('[Location] profilePayload:', JSON.stringify(profilePayload));
+
+            await locationService.createLocation('', createPayload);
 
             // Also update the profile's location JSONB field so it appears on the profile page
             try {
-                await grpcProfileService.saveUserLocation('', payload);
+                await grpcProfileService.saveUserLocation('', profilePayload);
             } catch (profileErr) {
-                console.warn('Failed to update profile location (non-critical):', profileErr);
+                console.warn('[Location] Failed to update profile location:', profileErr);
             }
 
             setSubmitStatus({

@@ -11,7 +11,6 @@ import { getInboxRoute, startOrGetConversation, type StartConversationPayload } 
 import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
-import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
@@ -735,7 +734,23 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                   <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
                 </div>
               ) : error ? (
-                <ErrorAlert message={error} />
+                <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
+                  <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800">
+                    <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-1.053M18 8.25a3 3 0 11-6 0 3 3 0 016 0zM3.75 9.75a2.625 2.625 0 115.25 0 2.625 2.625 0 01-5.25 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Househelps Available</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                    We couldn't load househelp profiles right now. Please try again in a moment.
+                  </p>
+                  <button
+                    onClick={() => handleSearch()}
+                    className="mt-6 inline-flex items-center px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-sm"
+                  >
+                    Try Again
+                  </button>
+                </div>
               ) : !hasSearched ? (
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
                   <div className="mb-4">
@@ -760,12 +775,15 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                   </button>
                 </div>
               ) : househelps.length === 0 ? (
-                <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
-                  <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
-                    No househelps found matching your criteria.
-                  </p>
-                  <p className="text-gray-500 dark:text-gray-500 text-sm">
-                    Try adjusting your filters or search again.
+                <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
+                  <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800">
+                    <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Results Found</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                    No househelps match your current filters. Try adjusting your search criteria or clear filters to see all profiles.
                   </p>
                 </div>
               ) : (

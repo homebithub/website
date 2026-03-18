@@ -33,8 +33,8 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md p-6 relative shadow-2xl border-2 border-purple-200 dark:border-purple-500/30">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[90] p-4">
+      <div className="bg-white dark:bg-[#13131a] rounded-2xl w-full max-w-md p-6 relative shadow-2xl border border-gray-200 dark:border-purple-500/30">
         <button
           type="button"
           onClick={onClose}
@@ -43,17 +43,14 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
           <XMarkIcon className="h-6 w-6" />
         </button>
 
-        <div className="flex items-center gap-2 mb-6">
-          <span className="text-xl">🤰🏿</span>
-          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Expecting a Child</h3>
-        </div>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">🤰 Expecting a Child</h3>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
 
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                 Expected Due Date <span className="text-red-500">*</span>
               </label>
               <input
@@ -61,19 +58,19 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
                 required
                 value={expectedDate}
                 onChange={(e) => setExpectedDate(e.target.value)}
-                className="block w-full border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-sm py-3 px-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                className="block w-full h-10 px-4 py-1.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                 Additional Notes (optional)
               </label>
               <textarea
                 rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="block w-full border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-sm py-3 px-4 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
+                className="block w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
                 placeholder="Any special notes or considerations..."
               />
             </div>
@@ -83,7 +80,7 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-1.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+              className="flex-1 px-6 py-1.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl font-bold text-purple-700 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               Cancel
             </button>

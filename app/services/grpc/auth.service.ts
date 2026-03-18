@@ -160,6 +160,7 @@ export const authService = {
   async getCurrentUser(): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.GetCurrentUserRequest();
+      request.setUserId(resolveUserId(''));
 
       authClient.getCurrentUser(request, getMetadata(), (err, response) => {
         if (err) {
@@ -341,6 +342,7 @@ export const authService = {
   async logout(): Promise<void> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.LogoutRequest();
+      request.setUserId(resolveUserId(''));
 
       authClient.logout(request, getMetadata(), (err) => {
         if (err) {

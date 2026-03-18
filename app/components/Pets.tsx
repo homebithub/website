@@ -299,8 +299,8 @@ const Pets: React.FC = () => {
 
       {/* Modal */}
       {showModal && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[90] p-4">
+          <div className="bg-white dark:bg-[#13131a] rounded-2xl w-full max-w-lg p-6 relative shadow-2xl border border-gray-200 dark:border-purple-500/30 max-h-[90vh] overflow-y-auto">
             <button
               type="button"
               onClick={() => setShowModal(false)}
@@ -419,8 +419,8 @@ const Pets: React.FC = () => {
                         selectedTraits.includes(trait)
                           ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100'
                           : selectedTraits.length >= 3
-                          ? 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400 cursor-not-allowed'
-                          : 'bg-white dark:bg-[#13131a] border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10'
+                          ? 'bg-gray-100 dark:bg-[#13131a] border-gray-300 dark:border-purple-500/20 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                          : 'bg-white dark:bg-[#13131a] border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                       }`}
                     >
                       {trait}
@@ -457,8 +457,8 @@ const Pets: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && petToDelete && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border-2 border-purple-200 dark:border-purple-500/30">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[90] p-4">
+          <div className="bg-white dark:bg-[#13131a] rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-purple-500/30">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="w-6 h-6 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

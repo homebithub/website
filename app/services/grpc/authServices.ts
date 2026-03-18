@@ -54,11 +54,38 @@ function getMetadata(): { [key: string]: string } {
 }
 
 // ── Helper: convert JS object to google.protobuf.Struct ────────────────
+// Resolve the Struct class once — handles both ESM named export and CJS default interop
+const _StructClass: any =
+  struct_pb.Struct ?? (struct_pb as any).default?.Struct ?? null;
+
+// Strip undefined values recursively — Struct.fromJavaScript throws on undefined
+function stripUndefined(obj: any): any {
+  if (obj === null || obj === undefined) return null;
+  if (Array.isArray(obj)) return obj.map(stripUndefined);
+  if (typeof obj === 'object') {
+    const clean: Record<string, any> = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (v !== undefined) clean[k] = stripUndefined(v);
+    }
+    return clean;
+  }
+  return obj;
+}
+
 function toStruct(obj: Record<string, any>): any {
+  if (!obj || typeof obj !== 'object') {
+    console.warn('[toStruct] invalid input:', typeof obj);
+    return null;
+  }
   try {
-    return struct_pb.Struct.fromJavaScript(obj);
+    if (!_StructClass || typeof _StructClass.fromJavaScript !== 'function') {
+      console.error('[toStruct] Struct class not available. struct_pb keys:', Object.keys(struct_pb));
+      return null;
+    }
+    const s = _StructClass.fromJavaScript(stripUndefined(obj));
+    return s;
   } catch (e) {
-    console.error('toStruct: failed to convert JS object to Struct', e);
+    console.error('[toStruct] fromJavaScript threw:', e, 'input keys:', Object.keys(obj));
     return null;
   }
 }

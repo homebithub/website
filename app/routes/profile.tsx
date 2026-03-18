@@ -35,6 +35,7 @@ export default function ProfilePage() {
     last_name: '',
     phone: '',
   });
+  const [profileLoading, setProfileLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string|null>(null);
   const [success, setSuccess] = React.useState<string|null>(null);
@@ -65,7 +66,7 @@ export default function ProfilePage() {
   React.useEffect(() => {
     const fetchProfile = async () => {
       const token = getAccessTokenFromCookies();
-      if (!token) return;
+      if (!token) { setProfileLoading(false); return; }
       try {
         setError(null);
         setSuccess(null);
@@ -90,9 +91,12 @@ export default function ProfilePage() {
         });
       } catch (err: any) {
         setError(err.message || 'Failed to load profile');
+      } finally {
+        setProfileLoading(false);
       }
     };
     if (user) fetchProfile();
+    else setProfileLoading(false);
   }, [user]);
 
   // Countdown timer for OTP resend
@@ -339,7 +343,7 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading || (!profile && user)) {
+  if (loading || profileLoading) {
     return <Loading text="Loading profile..." />;
   }
   if (!user) return null;
@@ -349,9 +353,15 @@ export default function ProfilePage() {
       <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
         <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
-          <div className="w-full max-w-3xl bg-gradient-to-br from-purple-50 to-white dark:from-[#020617] dark:to-[#020617] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 p-8 transition-colors duration-300">
-            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4 text-center">My Profile 👤</h1>
-            <p className="text-center text-gray-600 dark:text-gray-300 mb-6">Manage your profile information. Only email, name and phone are editable.</p>
+          <div className="w-full max-w-3xl">
+            <a href="/settings" className="inline-flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium mb-4 transition-colors">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
+              Back to Settings
+            </a>
+          </div>
+          <div className="w-full max-w-3xl bg-white dark:bg-[#13131a] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-8 transition-colors duration-300">
+            <h1 className="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-300 mb-2 text-center">My Account</h1>
+            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-6">Manage your account information. Only email, name and phone are editable.</p>
 
             {error && <ErrorAlert message={error} className="mb-4" />}
             {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-4 shadow-md mb-4 transition-colors duration-300"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800 dark:text-green-200">{success}</p></div></div>}
@@ -359,14 +369,14 @@ export default function ProfilePage() {
             <form className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold mb-2 text-purple-700">First Name</label>
+                  <label className="block text-xs font-semibold mb-2 text-purple-700 dark:text-purple-400">First Name</label>
                   {editMode ? (
                     <input
                       type="text"
                       name="first_name"
                       value={form.first_name}
                       onChange={handleChange}
-                      className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                      className="w-full h-10 px-4 py-2 rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                       autoComplete="given-name"
                     />
                   ) : (
@@ -376,14 +386,14 @@ export default function ProfilePage() {
                   )}
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-2 text-purple-700">Last Name</label>
+                  <label className="block text-xs font-semibold mb-2 text-purple-700 dark:text-purple-400">Last Name</label>
                   {editMode ? (
                     <input
                       type="text"
                       name="last_name"
                       value={form.last_name}
                       onChange={handleChange}
-                      className="w-full h-12 px-4 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-500/40 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                      className="w-full h-10 px-4 py-2 rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                       autoComplete="family-name"
                     />
                   ) : (
@@ -394,34 +404,34 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div className="relative">
-                <label className="block text-sm font-semibold mb-2 text-purple-700">Email</label>
+                <label className="block text-xs font-semibold mb-2 text-purple-700 dark:text-purple-400">Email</label>
                 <div className="flex items-center">
-                  <div className="flex-1 text-base text-gray-900 dark:text-gray-100 font-medium">
-                    {form.email || <span className="text-gray-400">-</span>}
+                  <div className="flex-1 text-sm text-gray-900 dark:text-gray-100 font-medium">
+                    {form.email || <span className="text-gray-500">-</span>}
                   </div>
                   <button
                     type="button"
-                    className="ml-2 p-2 rounded hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                    className="ml-2 p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
                     aria-label="Edit Email"
                     onClick={() => setShowEmailModal(true)}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 10-4-4l-8 8v3h3z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 10-4-4l-8 8v3h3z" /></svg>
                   </button>
                 </div>
               </div>
               <div className="relative">
-                <label className="block text-sm font-semibold mb-2 text-purple-700">Phone</label>
+                <label className="block text-xs font-semibold mb-2 text-purple-700 dark:text-purple-400">Phone</label>
                 <div className="flex items-center">
-                  <div className="flex-1 text-base text-gray-900 dark:text-gray-100 font-medium">
-                    {form.phone || <span className="text-gray-400">-</span>}
+                  <div className="flex-1 text-sm text-gray-900 dark:text-gray-100 font-medium">
+                    {form.phone || <span className="text-gray-500">-</span>}
                   </div>
                   <button
                     type="button"
-                    className="ml-2 p-2 rounded hover:bg-primary-50 dark:hover:bg-primary-900/20"
+                    className="ml-2 p-2 rounded-lg hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
                     aria-label="Edit Phone"
                     onClick={() => setShowPhoneModal(true)}
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 10-4-4l-8 8v3h3z" /></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536M9 13h3l8-8a2.828 2.828 0 10-4-4l-8 8v3h3z" /></svg>
                   </button>
                 </div>
               </div>
@@ -445,33 +455,24 @@ export default function ProfilePage() {
                   </div>
                 </div>
               )}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                <div>
-                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Profile Type</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.profile_type || '-'}</span>
-                </div>
-                <div>
-                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Status</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.status || '-'}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                <div>
-                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Email Verified</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.is_verified ? 'Yes' : 'No'}</span>
-                </div>
-                <div>
-                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Country</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.country || '-'}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                <div>
-                  <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Member for</span>
-                  <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile?.created_at || '-'}</span>
-                </div>
-                <div>
-                  {/* Empty div to maintain grid layout */}
+              <div className="mt-6 pt-6 border-t border-purple-200/40 dark:border-purple-500/20">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div>
+                    <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Profile Type</span>
+                    <span className="text-sm text-gray-900 dark:text-gray-100 font-medium capitalize">{profile?.profile_type || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Email Verified</span>
+                    <span className={`text-sm font-medium ${profile?.is_verified ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>{profile?.is_verified ? 'Yes' : 'No'}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Country</span>
+                    <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile?.country || '-'}</span>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Member Since</span>
+                    <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile?.created_at || '-'}</span>
+                  </div>
                 </div>
               </div>
               {!editMode && (

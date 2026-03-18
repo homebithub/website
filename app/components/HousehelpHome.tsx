@@ -10,7 +10,6 @@ import { profileService as grpcProfileService, shortlistService } from '~/servic
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import HouseholdFilters, { type HouseholdSearchFields } from "~/components/features/HouseholdFilters";
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
-import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
@@ -448,10 +447,34 @@ export default function HousehelpHome() {
                   <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
                 </div>
               ) : error ? (
-                <ErrorAlert message={getFriendlyErrorMessage(error)} />
+                <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
+                  <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800">
+                    <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 7.5h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Households Available</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                    We couldn't load household profiles right now. Please try again in a moment.
+                  </p>
+                  <button
+                    onClick={search}
+                    className="mt-6 inline-flex items-center px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-sm"
+                  >
+                    Try Again
+                  </button>
+                </div>
               ) : (!results || results.length === 0) ? (
-                <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
-                  <p className="text-gray-600 dark:text-gray-400 text-lg">No households found. Try adjusting filters.</p>
+                <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
+                  <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800">
+                    <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Results Found</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                    No households match your current filters. Try adjusting your search criteria or clear filters to see all profiles.
+                  </p>
                 </div>
               ) : (
                 <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>

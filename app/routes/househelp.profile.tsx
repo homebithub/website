@@ -10,6 +10,18 @@ import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import EditSectionModal from '~/components/ui/EditSectionModal';
+import Location from '~/components/Location';
+import Gender from '~/components/Gender';
+import NannyType from '~/components/NanyType';
+import YearsOfExperience from '~/components/YearsOfExperience';
+import Certifications from '~/components/Certifications';
+import SalaryExpectations from '~/components/SalaryExpectations';
+import WorkWithKids from '~/components/WorkWithKids';
+import WorkWithPets from '~/components/WorkWithPets';
+import MyKids from '~/components/MyKids';
+import PreferredWorkEnvironment from '~/components/PreferredWorkEnvironment';
+import Bio from '~/components/Bio';
 
 interface HousehelpData {
   first_name?: string;
@@ -151,11 +163,38 @@ export default function HousehelpProfile() {
     fetchProfile();
   }, []);
 
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+
+  const EDIT_SECTIONS: Record<string, { title: string; component: React.FC }> = {
+    gender: { title: '👤 Edit Personal Info', component: Gender },
+    location: { title: '📍 Edit Location', component: Location },
+    experience: { title: '💼 Edit Experience', component: YearsOfExperience },
+    certifications: { title: '📜 Edit Certifications', component: Certifications },
+    nannytype: { title: '⚙️ Edit Work Preferences', component: NannyType },
+    salary: { title: '💰 Edit Salary Expectations', component: SalaryExpectations },
+    workwithkids: { title: '👶 Edit Work with Kids', component: WorkWithKids },
+    workwithpets: { title: '🐾 Edit Work with Pets', component: WorkWithPets },
+    mykids: { title: '👤 Edit Personal Preferences', component: MyKids },
+    workenvironment: { title: '🏠 Edit Work Environment', component: PreferredWorkEnvironment },
+    bio: { title: '✍️ Edit Bio', component: Bio },
+  };
+
   const handleEditSection = (section: string) => {
-    // Navigate to the specific setup step for editing
-    navigate('/profile-setup/househelp', { 
-      state: { fromProfile: true, editSection: section }
-    });
+    setEditingSection(section);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingSection(null);
+    // Refresh profile data after editing
+    const refresh = async () => {
+      try {
+        const profileData = await grpcProfileService.getCurrentHousehelpProfile('');
+        setProfile(profileData);
+      } catch (err) {
+        console.error('Failed to refresh profile after edit:', err);
+      }
+    };
+    refresh();
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -535,7 +574,7 @@ export default function HousehelpProfile() {
             onClick={() => handleEditSection('gender')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -568,7 +607,7 @@ export default function HousehelpProfile() {
             onClick={() => handleEditSection('location')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -586,7 +625,7 @@ export default function HousehelpProfile() {
             onClick={() => handleEditSection('experience')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="space-y-4">
@@ -668,7 +707,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('certifications')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -699,7 +738,7 @@ export default function HousehelpProfile() {
             onClick={() => handleEditSection('nannytype')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="space-y-3">
@@ -748,7 +787,7 @@ export default function HousehelpProfile() {
             onClick={() => handleEditSection('salary')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -778,7 +817,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('workwithkids')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <div className="space-y-3">
@@ -825,7 +864,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('workwithpets')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -847,7 +886,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('nannytype')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           {profile.off_days && profile.off_days.length > 0 && (
@@ -906,7 +945,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('mykids')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -947,7 +986,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('workenvironment')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -988,7 +1027,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('references')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           {(() => {
@@ -1069,7 +1108,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('bio')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio}</p>
@@ -1100,6 +1139,18 @@ export default function HousehelpProfile() {
         onConfirm={handleDeletePhoto}
         onCancel={() => setPhotoToDelete(null)}
       />
+
+      {/* Edit Section Modal */}
+      {editingSection && EDIT_SECTIONS[editingSection] && (
+        <EditSectionModal
+          isOpen={true}
+          onClose={handleCloseEditModal}
+          title={EDIT_SECTIONS[editingSection].title}
+          profileType="househelp"
+        >
+          {React.createElement(EDIT_SECTIONS[editingSection].component)}
+        </EditSectionModal>
+      )}
     </div>
   );
 }
