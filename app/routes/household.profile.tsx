@@ -20,6 +20,8 @@ import Budget from '~/components/Budget';
 import HouseSize from '~/components/HouseSize';
 import Bio from '~/components/Bio';
 import Religion from '~/components/Religion';
+import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
+import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 
 interface HouseholdData {
   id?: string;
@@ -56,6 +58,14 @@ export default function HouseholdProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  
+  // Track profile views (own profile)
+  useProfileViewTracking({
+    profileId: profile?.id || '',
+    profileType: 'household',
+    viewerUserId: profile?.user_id,
+    enabled: !!profile?.id,
+  });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -539,6 +549,14 @@ export default function HouseholdProfile() {
           </button>
         </div>
       </div>
+
+      {/* Profile Views Analytics */}
+      {profile?.id && (
+        <ProfileViewsAnalytics 
+          profileId={profile.id} 
+          profileType="household" 
+        />
+      )}
 
       {/* Location */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">

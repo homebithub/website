@@ -22,6 +22,8 @@ import WorkWithPets from '~/components/WorkWithPets';
 import MyKids from '~/components/MyKids';
 import PreferredWorkEnvironment from '~/components/PreferredWorkEnvironment';
 import Bio from '~/components/Bio';
+import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
+import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 
 interface HousehelpData {
   first_name?: string;
@@ -112,6 +114,15 @@ export default function HousehelpProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  
+  // Track profile views (own profile)
+  useProfileViewTracking({
+    profileId: profile?.id || '',
+    profileType: 'househelp',
+    viewerUserId: profile?.user_id,
+    enabled: !!profile?.id,
+  });
+  
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -434,6 +445,14 @@ export default function HousehelpProfile() {
           </button>
         </div>
       </div>
+
+      {/* Profile Views Analytics */}
+      {profile?.id && (
+        <ProfileViewsAnalytics 
+          profileId={profile.id} 
+          profileType="househelp" 
+        />
+      )}
 
       {/* Profile Photos */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
