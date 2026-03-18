@@ -210,12 +210,18 @@ function buildSearchRequest(userId: string, profileType: string, filters?: Recor
   const req = new auth_pb.SearchRequest();
   req.setUserId(resolveUserId(userId));
   req.setProfileType(profileType);
-  if (filters) {
-    const struct = toStruct(filters);
+  
+  // Merge limit and offset into filters
+  const allFilters = {
+    ...(filters || {}),
+    ...(limit !== undefined ? { limit } : {}),
+    ...(offset !== undefined ? { offset } : {}),
+  };
+  
+  if (Object.keys(allFilters).length > 0) {
+    const struct = toStruct(allFilters);
     if (struct) req.setFilters(struct);
   }
-  if (limit !== undefined) req.setLimit(limit);
-  if (offset !== undefined) req.setOffset(offset);
   return req;
 }
 
