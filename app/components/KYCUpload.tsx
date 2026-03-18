@@ -316,9 +316,9 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
         }
       }
 
-      // Mark KYC step as complete
+      // Mark KYC step as complete (KYC data is stored in its own table, not on the profile)
       await grpcProfileService.updateHousehelpFields('', 'househelp',
-        { kyc_submitted: true },
+        {},
         { step_id: 'kyc', step_number: 13, is_completed: true }
       );
 
