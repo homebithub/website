@@ -174,8 +174,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             const isComplete = setupStatus === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
 
             if (isComplete) {
-              const profileRoute = profileType === 'household' ? '/household/profile' : '/househelp/profile';
-              navigate(profileRoute);
+              // Redirect completed users to home page instead of profile
+              navigate('/');
               return;
             }
 

@@ -152,8 +152,8 @@ export default function LoginPage() {
                   (totalSteps > 0 && lastStep >= totalSteps);
 
                 if (isComplete) {
-                  const profileRoute = profileType === 'household' ? '/household/profile' : '/househelp/profile';
-                  navigate(profileRoute, { replace: true });
+                  // Redirect completed users to home page instead of profile
+                  navigate('/', { replace: true });
                   return;
                 }
 

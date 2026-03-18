@@ -272,8 +272,8 @@ export default function VerifyOtpPage() {
               const isComplete = progressData.status === 'completed' ||
                 (totalSteps > 0 && lastStep >= totalSteps);
               if (isComplete) {
-                const profileRoute = pt === 'household' ? '/household/profile' : '/househelp/profile';
-                navigate(profileRoute, { replace: true });
+                // Redirect completed users to home page instead of profile
+                navigate('/', { replace: true });
                 return;
               }
               if (pt === 'household' && lastStep === 0) {
@@ -334,9 +334,9 @@ export default function VerifyOtpPage() {
                 (totalSteps > 0 && lastStep >= totalSteps);
 
               if (isComplete) {
-                const profileRoute = profileType === 'household' ? '/household/profile' : '/househelp/profile';
-                console.log('[VERIFY-OTP] Email verified, setup complete, redirecting to:', profileRoute);
-                navigate(profileRoute);
+                console.log('[VERIFY-OTP] Email verified, setup complete, redirecting to home page');
+                // Redirect completed users to home page instead of profile
+                navigate('/');
                 return;
               }
 
