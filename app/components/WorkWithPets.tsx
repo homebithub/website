@@ -130,7 +130,6 @@ const WorkWithPets = () => {
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                 Are you comfortable working with pets?
             </p>
-            <h1 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">Pet Work Preferences</h1>
             
             {error && <ErrorAlert message={error} />}
             
