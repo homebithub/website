@@ -34,11 +34,7 @@ const SalaryExpectations: React.FC = () => {
   const [success, setSuccess] = useState('');
   const submit = useSubmit();
   
-  const SALARY_RANGES: Record<SalaryFrequency, SalaryRange[]> = {
-    daily: salaryRanges.map(r => r.label),
-    weekly: salaryRanges.map(r => r.label),
-    monthly: salaryRanges.map(r => r.label)
-  };
+  const currentRanges = (salaryRanges || []).map(r => r.label);
 
   // Populate from context (instant on back-nav)
   useEffect(() => {
@@ -113,22 +109,25 @@ const SalaryExpectations: React.FC = () => {
             }}
             className="block w-full h-10 px-4 py-1.5 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 text-sm font-medium"
           >
-            <option value="Daily">Daily</option>
-            <option value="Weekly">Weekly</option>
-            <option value="Monthly">Monthly</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
           </select>
         </div>
 
         {/* Salary Range Radio Group */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">
-            Your {frequency} Salary (KES)
+            Your {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Salary (KES)
           </h3>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
             Select your expected salary range
           </p>
+          {rangesLoading && (
+            <div className="text-xs text-gray-500 dark:text-gray-400 animate-pulse">Loading salary ranges...</div>
+          )}
           <div className="space-y-3">
-            {SALARY_RANGES[frequency].map((range) => (
+            {currentRanges.map((range) => (
               <label 
                 key={range} 
                 className={`flex items-center p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
