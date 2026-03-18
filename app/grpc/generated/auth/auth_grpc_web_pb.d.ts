@@ -184,6 +184,13 @@ export class AuthServiceClient {
                response: google_protobuf_empty_pb.Empty) => void
   ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
+  purgeUserData(
+    request: auth_auth_pb.PurgeUserDataRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.PurgeUserDataResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.PurgeUserDataResponse>;
+
 }
 
 export class BureauServiceClient {
@@ -947,6 +954,13 @@ export class ReviewServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  getReview(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   getHousehelpReviews(
     request: auth_auth_pb.IdRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -955,6 +969,27 @@ export class ReviewServiceClient {
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
   getHouseholdReviews(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getPublicReviews(
+    request: auth_auth_pb.PaginatedRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getMyReviews(
+    request: auth_auth_pb.PaginatedRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getReviewStats(
     request: auth_auth_pb.IdRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
@@ -984,6 +1019,27 @@ export class ReviewServiceClient {
 
   getHousehelpAverageRating(
     request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  markHelpful(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  unmarkHelpful(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  addResponse(
+    request: auth_auth_pb.JsonPayload,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
                response: auth_auth_pb.JsonResponse) => void
@@ -1427,60 +1483,25 @@ export class ProfileViewServiceClient {
     request: auth_auth_pb.RecordViewReq,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: google_protobuf_empty_pb.Empty) => void
-  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+               response: auth_auth_pb.RecordViewResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.RecordViewResponse>;
 
-  getViewCount(
-    request: auth_auth_pb.IdRequest,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: auth_auth_pb.CountResponse) => void
-  ): grpcWeb.ClientReadableStream<auth_auth_pb.CountResponse>;
-
-  getRecentViewers(
-    request: auth_auth_pb.GetRecentViewersReq,
+  getAnalytics(
+    request: auth_auth_pb.GetAnalyticsReq,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
-  countHouseholdViews(
-    request: auth_auth_pb.IdRequest,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: auth_auth_pb.CountResponse) => void
-  ): grpcWeb.ClientReadableStream<auth_auth_pb.CountResponse>;
-
-  getByProfileAndHousehold(
-    request: auth_auth_pb.TwoIdRequest,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: auth_auth_pb.JsonResponse) => void
-  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
-
-  createProfileView(
-    request: auth_auth_pb.JsonPayload,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: auth_auth_pb.JsonResponse) => void
-  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
-
-  updateProfileView(
-    request: auth_auth_pb.JsonPayload,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: auth_auth_pb.JsonResponse) => void
-  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
-
-  deleteExpiredViews(
-    request: google_protobuf_empty_pb.Empty,
+  updateViewDuration(
+    request: auth_auth_pb.UpdateViewDurationReq,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
                response: google_protobuf_empty_pb.Empty) => void
   ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
-  getHouseholdViews(
-    request: auth_auth_pb.IdRequest,
+  getProfileViews(
+    request: auth_auth_pb.GetProfileViewsReq,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
                response: auth_auth_pb.JsonResponse) => void
@@ -2059,6 +2080,11 @@ export class AuthServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<google_protobuf_empty_pb.Empty>;
 
+  purgeUserData(
+    request: auth_auth_pb.PurgeUserDataRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.PurgeUserDataResponse>;
+
 }
 
 export class BureauServicePromiseClient {
@@ -2624,12 +2650,32 @@ export class ReviewServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
+  getReview(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
   getHousehelpReviews(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
   getHouseholdReviews(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getPublicReviews(
+    request: auth_auth_pb.PaginatedRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getMyReviews(
+    request: auth_auth_pb.PaginatedRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getReviewStats(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
@@ -2651,6 +2697,21 @@ export class ReviewServicePromiseClient {
 
   getHousehelpAverageRating(
     request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  markHelpful(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  unmarkHelpful(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  addResponse(
+    request: auth_auth_pb.JsonPayload,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
@@ -2985,45 +3046,20 @@ export class ProfileViewServicePromiseClient {
   recordView(
     request: auth_auth_pb.RecordViewReq,
     metadata?: grpcWeb.Metadata
-  ): Promise<google_protobuf_empty_pb.Empty>;
+  ): Promise<auth_auth_pb.RecordViewResponse>;
 
-  getViewCount(
-    request: auth_auth_pb.IdRequest,
-    metadata?: grpcWeb.Metadata
-  ): Promise<auth_auth_pb.CountResponse>;
-
-  getRecentViewers(
-    request: auth_auth_pb.GetRecentViewersReq,
+  getAnalytics(
+    request: auth_auth_pb.GetAnalyticsReq,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
-  countHouseholdViews(
-    request: auth_auth_pb.IdRequest,
-    metadata?: grpcWeb.Metadata
-  ): Promise<auth_auth_pb.CountResponse>;
-
-  getByProfileAndHousehold(
-    request: auth_auth_pb.TwoIdRequest,
-    metadata?: grpcWeb.Metadata
-  ): Promise<auth_auth_pb.JsonResponse>;
-
-  createProfileView(
-    request: auth_auth_pb.JsonPayload,
-    metadata?: grpcWeb.Metadata
-  ): Promise<auth_auth_pb.JsonResponse>;
-
-  updateProfileView(
-    request: auth_auth_pb.JsonPayload,
-    metadata?: grpcWeb.Metadata
-  ): Promise<auth_auth_pb.JsonResponse>;
-
-  deleteExpiredViews(
-    request: google_protobuf_empty_pb.Empty,
+  updateViewDuration(
+    request: auth_auth_pb.UpdateViewDurationReq,
     metadata?: grpcWeb.Metadata
   ): Promise<google_protobuf_empty_pb.Empty>;
 
-  getHouseholdViews(
-    request: auth_auth_pb.IdRequest,
+  getProfileViews(
+    request: auth_auth_pb.GetProfileViewsReq,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 

@@ -3597,3 +3597,51 @@ export namespace PaymentMethod {
   };
 }
 
+export class PurgeUserDataRequest extends jspb.Message {
+  getUserIdsList(): Array<string>;
+  setUserIdsList(value: Array<string>): PurgeUserDataRequest;
+  clearUserIdsList(): PurgeUserDataRequest;
+  addUserIds(value: string, index?: number): PurgeUserDataRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PurgeUserDataRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: PurgeUserDataRequest): PurgeUserDataRequest.AsObject;
+  static serializeBinaryToWriter(message: PurgeUserDataRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PurgeUserDataRequest;
+  static deserializeBinaryFromReader(message: PurgeUserDataRequest, reader: jspb.BinaryReader): PurgeUserDataRequest;
+}
+
+export namespace PurgeUserDataRequest {
+  export type AsObject = {
+    userIdsList: Array<string>;
+  };
+}
+
+export class PurgeUserDataResponse extends jspb.Message {
+  getMessage(): string;
+  setMessage(value: string): PurgeUserDataResponse;
+
+  getUsersPurged(): number;
+  setUsersPurged(value: number): PurgeUserDataResponse;
+
+  getErrorsList(): Array<string>;
+  setErrorsList(value: Array<string>): PurgeUserDataResponse;
+  clearErrorsList(): PurgeUserDataResponse;
+  addErrors(value: string, index?: number): PurgeUserDataResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PurgeUserDataResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: PurgeUserDataResponse): PurgeUserDataResponse.AsObject;
+  static serializeBinaryToWriter(message: PurgeUserDataResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PurgeUserDataResponse;
+  static deserializeBinaryFromReader(message: PurgeUserDataResponse, reader: jspb.BinaryReader): PurgeUserDataResponse;
+}
+
+export namespace PurgeUserDataResponse {
+  export type AsObject = {
+    message: string;
+    usersPurged: number;
+    errorsList: Array<string>;
+  };
+}
+

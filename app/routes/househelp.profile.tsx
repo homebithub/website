@@ -9,6 +9,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { Eye } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import EditSectionModal from '~/components/ui/EditSectionModal';
 import Location from '~/components/Location';
@@ -175,6 +176,7 @@ export default function HousehelpProfile() {
   }, []);
 
   const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [showViewsModal, setShowViewsModal] = useState(false);
 
   const EDIT_SECTIONS: Record<string, { title: string; component: React.FC }> = {
     gender: { title: '👤 Edit Personal Info', component: Gender },
@@ -437,22 +439,26 @@ export default function HousehelpProfile() {
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mt-2">{profile.first_name} {profile.last_name}</h1>
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your professional information</p>
           </div>
-          <button
-            onClick={() => navigate('/househelp/public-profile')}
-            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg whitespace-nowrap self-start"
-          >
-            View Public Profile
-          </button>
+          <div className="flex items-center gap-2 self-start">
+            {profile?.id && (
+              <button
+                onClick={() => setShowViewsModal(true)}
+                className="h-8 w-8 rounded-xl flex items-center justify-center border border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-500/10 hover:scale-105 transition-all"
+                aria-label="Profile Views"
+                title="Profile Views"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/househelp/public-profile')}
+              className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg whitespace-nowrap"
+            >
+              View Public Profile
+            </button>
+          </div>
         </div>
       </div>
-
-      {/* Profile Views Analytics */}
-      {profile?.id && (
-        <ProfileViewsAnalytics 
-          profileId={profile.id} 
-          profileType="househelp" 
-        />
-      )}
 
       {/* Profile Photos */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
@@ -1169,6 +1175,16 @@ export default function HousehelpProfile() {
         >
           {React.createElement(EDIT_SECTIONS[editingSection].component)}
         </EditSectionModal>
+      )}
+
+      {/* Profile Views Modal */}
+      {profile?.id && (
+        <ProfileViewsAnalytics
+          profileId={profile.id}
+          profileType="househelp"
+          isOpen={showViewsModal}
+          onClose={() => setShowViewsModal(false)}
+        />
       )}
     </div>
   );

@@ -20,11 +20,11 @@ import * as grpcWeb from 'grpc-web';
 const grpc = { web: grpcWeb };
 
 
-import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js'
+import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js'
+const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb;
 
-import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js'
-// Normalize CJS imports for Vite SSR compatibility
-const _empty_pb = google_protobuf_empty_pb.default || google_protobuf_empty_pb;
+import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js'
+const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb;
 import * as device_pb from './device_pb.js';
 const proto = { auth: device_pb.default || device_pb };
 
@@ -334,7 +334,7 @@ const methodDescriptor_DeviceService_RevokeDevice = new grpc.web.MethodDescripto
   '/auth.DeviceService/RevokeDevice',
   grpc.web.MethodType.UNARY,
   proto.auth.RevokeDeviceRequest,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.auth.RevokeDeviceRequest} request
    * @return {!Uint8Array}
@@ -342,7 +342,7 @@ const methodDescriptor_DeviceService_RevokeDevice = new grpc.web.MethodDescripto
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -395,7 +395,7 @@ const methodDescriptor_DeviceService_RevokeAllDevices = new grpc.web.MethodDescr
   '/auth.DeviceService/RevokeAllDevices',
   grpc.web.MethodType.UNARY,
   proto.auth.RevokeAllDevicesRequest,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.auth.RevokeAllDevicesRequest} request
    * @return {!Uint8Array}
@@ -403,7 +403,7 @@ const methodDescriptor_DeviceService_RevokeAllDevices = new grpc.web.MethodDescr
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -517,7 +517,7 @@ const methodDescriptor_DeviceService_UpdateDeviceActivity = new grpc.web.MethodD
   '/auth.DeviceService/UpdateDeviceActivity',
   grpc.web.MethodType.UNARY,
   proto.auth.UpdateDeviceActivityRequest,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.auth.UpdateDeviceActivityRequest} request
    * @return {!Uint8Array}
@@ -525,7 +525,7 @@ const methodDescriptor_DeviceService_UpdateDeviceActivity = new grpc.web.MethodD
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -569,5 +569,7 @@ proto.auth.DeviceServicePromiseClient.prototype.updateDeviceActivity =
 
 
 export default proto.auth;
-export const { DeviceServiceClient, DeviceServicePromiseClient } = proto.auth;
+export const {
+  DeviceServiceClient,
+} = proto.auth;
 

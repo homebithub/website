@@ -353,6 +353,36 @@ export namespace ListRequest {
   };
 }
 
+export class PaginatedRequest extends jspb.Message {
+  getId(): string;
+  setId(value: string): PaginatedRequest;
+
+  getUserId(): string;
+  setUserId(value: string): PaginatedRequest;
+
+  getPage(): number;
+  setPage(value: number): PaginatedRequest;
+
+  getLimit(): number;
+  setLimit(value: number): PaginatedRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PaginatedRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: PaginatedRequest): PaginatedRequest.AsObject;
+  static serializeBinaryToWriter(message: PaginatedRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PaginatedRequest;
+  static deserializeBinaryFromReader(message: PaginatedRequest, reader: jspb.BinaryReader): PaginatedRequest;
+}
+
+export namespace PaginatedRequest {
+  export type AsObject = {
+    id: string;
+    userId: string;
+    page: number;
+    limit: number;
+  };
+}
+
 export class SearchRequest extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): SearchRequest;
@@ -2834,14 +2864,26 @@ export namespace TransferOwnershipReq {
 }
 
 export class RecordViewReq extends jspb.Message {
-  getUserId(): string;
-  setUserId(value: string): RecordViewReq;
-
   getProfileId(): string;
   setProfileId(value: string): RecordViewReq;
 
   getProfileType(): string;
   setProfileType(value: string): RecordViewReq;
+
+  getViewerUserId(): string;
+  setViewerUserId(value: string): RecordViewReq;
+
+  getViewerIp(): string;
+  setViewerIp(value: string): RecordViewReq;
+
+  getViewerDeviceId(): string;
+  setViewerDeviceId(value: string): RecordViewReq;
+
+  getUserAgent(): string;
+  setUserAgent(value: string): RecordViewReq;
+
+  getSessionId(): string;
+  setSessionId(value: string): RecordViewReq;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RecordViewReq.AsObject;
@@ -2853,31 +2895,105 @@ export class RecordViewReq extends jspb.Message {
 
 export namespace RecordViewReq {
   export type AsObject = {
-    userId: string;
+    profileId: string;
+    profileType: string;
+    viewerUserId: string;
+    viewerIp: string;
+    viewerDeviceId: string;
+    userAgent: string;
+    sessionId: string;
+  };
+}
+
+export class RecordViewResponse extends jspb.Message {
+  getViewId(): string;
+  setViewId(value: string): RecordViewResponse;
+
+  getIsUnique(): boolean;
+  setIsUnique(value: boolean): RecordViewResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RecordViewResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: RecordViewResponse): RecordViewResponse.AsObject;
+  static serializeBinaryToWriter(message: RecordViewResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RecordViewResponse;
+  static deserializeBinaryFromReader(message: RecordViewResponse, reader: jspb.BinaryReader): RecordViewResponse;
+}
+
+export namespace RecordViewResponse {
+  export type AsObject = {
+    viewId: string;
+    isUnique: boolean;
+  };
+}
+
+export class GetAnalyticsReq extends jspb.Message {
+  getProfileId(): string;
+  setProfileId(value: string): GetAnalyticsReq;
+
+  getProfileType(): string;
+  setProfileType(value: string): GetAnalyticsReq;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetAnalyticsReq.AsObject;
+  static toObject(includeInstance: boolean, msg: GetAnalyticsReq): GetAnalyticsReq.AsObject;
+  static serializeBinaryToWriter(message: GetAnalyticsReq, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetAnalyticsReq;
+  static deserializeBinaryFromReader(message: GetAnalyticsReq, reader: jspb.BinaryReader): GetAnalyticsReq;
+}
+
+export namespace GetAnalyticsReq {
+  export type AsObject = {
     profileId: string;
     profileType: string;
   };
 }
 
-export class GetRecentViewersReq extends jspb.Message {
-  getProfileId(): string;
-  setProfileId(value: string): GetRecentViewersReq;
+export class UpdateViewDurationReq extends jspb.Message {
+  getViewId(): string;
+  setViewId(value: string): UpdateViewDurationReq;
 
-  getLimit(): number;
-  setLimit(value: number): GetRecentViewersReq;
+  getDuration(): number;
+  setDuration(value: number): UpdateViewDurationReq;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): GetRecentViewersReq.AsObject;
-  static toObject(includeInstance: boolean, msg: GetRecentViewersReq): GetRecentViewersReq.AsObject;
-  static serializeBinaryToWriter(message: GetRecentViewersReq, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): GetRecentViewersReq;
-  static deserializeBinaryFromReader(message: GetRecentViewersReq, reader: jspb.BinaryReader): GetRecentViewersReq;
+  toObject(includeInstance?: boolean): UpdateViewDurationReq.AsObject;
+  static toObject(includeInstance: boolean, msg: UpdateViewDurationReq): UpdateViewDurationReq.AsObject;
+  static serializeBinaryToWriter(message: UpdateViewDurationReq, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): UpdateViewDurationReq;
+  static deserializeBinaryFromReader(message: UpdateViewDurationReq, reader: jspb.BinaryReader): UpdateViewDurationReq;
 }
 
-export namespace GetRecentViewersReq {
+export namespace UpdateViewDurationReq {
+  export type AsObject = {
+    viewId: string;
+    duration: number;
+  };
+}
+
+export class GetProfileViewsReq extends jspb.Message {
+  getProfileId(): string;
+  setProfileId(value: string): GetProfileViewsReq;
+
+  getLimit(): number;
+  setLimit(value: number): GetProfileViewsReq;
+
+  getOffset(): number;
+  setOffset(value: number): GetProfileViewsReq;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetProfileViewsReq.AsObject;
+  static toObject(includeInstance: boolean, msg: GetProfileViewsReq): GetProfileViewsReq.AsObject;
+  static serializeBinaryToWriter(message: GetProfileViewsReq, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetProfileViewsReq;
+  static deserializeBinaryFromReader(message: GetProfileViewsReq, reader: jspb.BinaryReader): GetProfileViewsReq;
+}
+
+export namespace GetProfileViewsReq {
   export type AsObject = {
     profileId: string;
     limit: number;
+    offset: number;
   };
 }
 
@@ -3070,6 +3186,54 @@ export class ProfileTypeRequest extends jspb.Message {
 export namespace ProfileTypeRequest {
   export type AsObject = {
     profileType: string;
+  };
+}
+
+export class PurgeUserDataRequest extends jspb.Message {
+  getUserIdsList(): Array<string>;
+  setUserIdsList(value: Array<string>): PurgeUserDataRequest;
+  clearUserIdsList(): PurgeUserDataRequest;
+  addUserIds(value: string, index?: number): PurgeUserDataRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PurgeUserDataRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: PurgeUserDataRequest): PurgeUserDataRequest.AsObject;
+  static serializeBinaryToWriter(message: PurgeUserDataRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PurgeUserDataRequest;
+  static deserializeBinaryFromReader(message: PurgeUserDataRequest, reader: jspb.BinaryReader): PurgeUserDataRequest;
+}
+
+export namespace PurgeUserDataRequest {
+  export type AsObject = {
+    userIdsList: Array<string>;
+  };
+}
+
+export class PurgeUserDataResponse extends jspb.Message {
+  getMessage(): string;
+  setMessage(value: string): PurgeUserDataResponse;
+
+  getUsersPurged(): number;
+  setUsersPurged(value: number): PurgeUserDataResponse;
+
+  getErrorsList(): Array<string>;
+  setErrorsList(value: Array<string>): PurgeUserDataResponse;
+  clearErrorsList(): PurgeUserDataResponse;
+  addErrors(value: string, index?: number): PurgeUserDataResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PurgeUserDataResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: PurgeUserDataResponse): PurgeUserDataResponse.AsObject;
+  static serializeBinaryToWriter(message: PurgeUserDataResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PurgeUserDataResponse;
+  static deserializeBinaryFromReader(message: PurgeUserDataResponse, reader: jspb.BinaryReader): PurgeUserDataResponse;
+}
+
+export namespace PurgeUserDataResponse {
+  export type AsObject = {
+    message: string;
+    usersPurged: number;
+    errorsList: Array<string>;
   };
 }
 

@@ -20,9 +20,9 @@ import * as grpcWeb from 'grpc-web';
 const grpc = { web: grpcWeb };
 
 
-import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js'
+import * as _google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js'
+const google_protobuf_struct_pb = _google_protobuf_struct_pb.default || _google_protobuf_struct_pb;
 import * as notifications_pb from './notifications_pb.js';
-// Normalize CJS imports for Vite SSR compatibility
 const proto = { notifications: notifications_pb.default || notifications_pb };
 
 /**
@@ -2456,6 +2456,69 @@ proto.notifications.NotificationsServicePromiseClient.prototype.sendEmail =
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.notifications.PurgeUserDataRequest,
+ *   !proto.notifications.PurgeUserDataResponse>}
+ */
+const methodDescriptor_NotificationsService_PurgeUserData = new grpc.web.MethodDescriptor(
+  '/notifications.NotificationsService/PurgeUserData',
+  grpc.web.MethodType.UNARY,
+  proto.notifications.PurgeUserDataRequest,
+  proto.notifications.PurgeUserDataResponse,
+  /**
+   * @param {!proto.notifications.PurgeUserDataRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.notifications.PurgeUserDataResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.notifications.PurgeUserDataRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.notifications.PurgeUserDataResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.notifications.PurgeUserDataResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.notifications.NotificationsServiceClient.prototype.purgeUserData =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/notifications.NotificationsService/PurgeUserData',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_PurgeUserData,
+      callback);
+};
+
+
+/**
+ * @param {!proto.notifications.PurgeUserDataRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.notifications.PurgeUserDataResponse>}
+ *     Promise that resolves to the response
+ */
+proto.notifications.NotificationsServicePromiseClient.prototype.purgeUserData =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/notifications.NotificationsService/PurgeUserData',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_PurgeUserData);
+};
+
+
 export default proto.notifications;
-export const { NotificationsServiceClient, NotificationsServicePromiseClient } = proto.notifications;
+export const {
+  NotificationsServiceClient,
+} = proto.notifications;
 

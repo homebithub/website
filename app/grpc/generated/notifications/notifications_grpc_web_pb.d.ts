@@ -281,6 +281,13 @@ export class NotificationsServiceClient {
                response: notifications_notifications_pb.SendEmailResponse) => void
   ): grpcWeb.ClientReadableStream<notifications_notifications_pb.SendEmailResponse>;
 
+  purgeUserData(
+    request: notifications_notifications_pb.PurgeUserDataRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: notifications_notifications_pb.PurgeUserDataResponse) => void
+  ): grpcWeb.ClientReadableStream<notifications_notifications_pb.PurgeUserDataResponse>;
+
 }
 
 export class NotificationsServicePromiseClient {
@@ -482,6 +489,11 @@ export class NotificationsServicePromiseClient {
     request: notifications_notifications_pb.SendEmailRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<notifications_notifications_pb.SendEmailResponse>;
+
+  purgeUserData(
+    request: notifications_notifications_pb.PurgeUserDataRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<notifications_notifications_pb.PurgeUserDataResponse>;
 
 }
 

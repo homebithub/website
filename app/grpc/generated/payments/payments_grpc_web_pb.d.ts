@@ -358,6 +358,13 @@ export class PaymentsServiceClient {
                response: payments_payments_pb.UpdatePaymentMethodNicknameResponse) => void
   ): grpcWeb.ClientReadableStream<payments_payments_pb.UpdatePaymentMethodNicknameResponse>;
 
+  purgeUserData(
+    request: payments_payments_pb.PurgeUserDataRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: payments_payments_pb.PurgeUserDataResponse) => void
+  ): grpcWeb.ClientReadableStream<payments_payments_pb.PurgeUserDataResponse>;
+
 }
 
 export class PaymentsServicePromiseClient {
@@ -614,6 +621,11 @@ export class PaymentsServicePromiseClient {
     request: payments_payments_pb.UpdatePaymentMethodNicknameRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<payments_payments_pb.UpdatePaymentMethodNicknameResponse>;
+
+  purgeUserData(
+    request: payments_payments_pb.PurgeUserDataRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<payments_payments_pb.PurgeUserDataResponse>;
 
 }
 

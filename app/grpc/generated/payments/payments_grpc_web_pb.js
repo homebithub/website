@@ -20,9 +20,9 @@ import * as grpcWeb from 'grpc-web';
 const grpc = { web: grpcWeb };
 
 
-import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js'
+import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js'
+const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb;
 import * as payments_pb from './payments_pb.js';
-// Normalize CJS imports for Vite SSR compatibility
 const proto = { payments: payments_pb.default || payments_pb };
 
 /**
@@ -3127,6 +3127,69 @@ proto.payments.PaymentsServicePromiseClient.prototype.updatePaymentMethodNicknam
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.payments.PurgeUserDataRequest,
+ *   !proto.payments.PurgeUserDataResponse>}
+ */
+const methodDescriptor_PaymentsService_PurgeUserData = new grpc.web.MethodDescriptor(
+  '/payments.PaymentsService/PurgeUserData',
+  grpc.web.MethodType.UNARY,
+  proto.payments.PurgeUserDataRequest,
+  proto.payments.PurgeUserDataResponse,
+  /**
+   * @param {!proto.payments.PurgeUserDataRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.payments.PurgeUserDataResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.payments.PurgeUserDataRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.payments.PurgeUserDataResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.payments.PurgeUserDataResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.payments.PaymentsServiceClient.prototype.purgeUserData =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/payments.PaymentsService/PurgeUserData',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_PurgeUserData,
+      callback);
+};
+
+
+/**
+ * @param {!proto.payments.PurgeUserDataRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.payments.PurgeUserDataResponse>}
+ *     Promise that resolves to the response
+ */
+proto.payments.PaymentsServicePromiseClient.prototype.purgeUserData =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/payments.PaymentsService/PurgeUserData',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_PurgeUserData);
+};
+
+
 export default proto.payments;
-export const { PaymentsServiceClient, PaymentsServicePromiseClient } = proto.payments;
+export const {
+  PaymentsServiceClient,
+} = proto.payments;
 

@@ -743,29 +743,39 @@ export const householdMemberService = {
 };
 
 // ══════════════════════════════════════════════════════════════════════════
-// Profile View Service (proto: recordView, getViewCount, getRecentViewers,
-//   countHouseholdViews, createProfileView, getHouseholdViews)
+// Profile View Service (proto: recordView, getAnalytics, updateViewDuration, getProfileViews)
 // ══════════════════════════════════════════════════════════════════════════
 export const profileViewService = {
-  async recordView(userId: string, profileId: string, profileType: string): Promise<void> {
+  async recordView(userId: string, profileId: string, profileType: string): Promise<any> {
     const req = new auth_pb.RecordViewReq();
-    req.setUserId(resolveUserId(userId));
+    req.setViewerUserId(resolveUserId(userId));
     req.setProfileId(profileId);
     req.setProfileType(profileType);
-    await grpcCall((cb) => profileViewClient.recordView(req, getMetadata(), cb));
+    const res: any = await grpcCall((cb) => profileViewClient.recordView(req, getMetadata(), cb));
+    return {
+      viewId: res?.getViewId?.() ?? '',
+      isUnique: res?.getIsUnique?.() ?? true,
+    };
   },
-  async getViewCount(id: string, userId?: string): Promise<any> {
-    return grpcCall((cb) => profileViewClient.getViewCount(buildIdRequest(id, userId), getMetadata(), cb));
-  },
-  async getRecentViewers(profileId: string, limit = 10): Promise<any> {
-    const req = new auth_pb.GetRecentViewersReq();
+  async getAnalytics(profileId: string, profileType: string): Promise<any> {
+    const req = new auth_pb.GetAnalyticsReq();
     req.setProfileId(profileId);
-    req.setLimit(limit);
-    const res = await grpcCall((cb) => profileViewClient.getRecentViewers(req, getMetadata(), cb));
+    req.setProfileType(profileType);
+    const res = await grpcCall((cb) => profileViewClient.getAnalytics(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
-  async getHouseholdViews(householdId: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => profileViewClient.getHouseholdViews(buildIdRequest(householdId, userId), getMetadata(), cb));
+  async updateViewDuration(viewId: string, duration: number): Promise<void> {
+    const req = new auth_pb.UpdateViewDurationReq();
+    req.setViewId(viewId);
+    req.setDuration(duration);
+    await grpcCall((cb) => profileViewClient.updateViewDuration(req, getMetadata(), cb));
+  },
+  async getProfileViews(profileId: string, limit = 20, offset = 0): Promise<any> {
+    const req = new auth_pb.GetProfileViewsReq();
+    req.setProfileId(profileId);
+    req.setLimit(limit);
+    req.setOffset(offset);
+    const res = await grpcCall((cb) => profileViewClient.getProfileViews(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
 };
