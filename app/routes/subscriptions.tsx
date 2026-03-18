@@ -914,7 +914,7 @@ export default function SubscriptionsPage() {
 
                               <button
                                 onClick={() => handleSelectCheckoutPlan(plan)}
-                                className="w-full px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                                className="w-full px-4 py-1.5 text-sm font-bold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                               >
                                 Start Free Trial
                               </button>
