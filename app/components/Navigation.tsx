@@ -249,7 +249,10 @@ export function Navigation() {
                 {/* Logo */}
                 <div className="relative flex items-center">
   <Link to="/" prefetch="intent" className="relative font-extrabold text-2xl sm:text-3xl px-3 py-1 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-purple-300/50 hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
-    <span className="logo-shimmer gradient-text">HomeBit</span>
+    <span className="logo-shimmer">
+      <span className="text-white">Home</span>
+      <span className="gradient-text">Bit</span>
+    </span>
   </Link>
 </div>
 
