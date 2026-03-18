@@ -161,8 +161,11 @@ function HousehelpProfileSetupContent() {
       case 'bio':
         return (typeof data.bio === 'string' && data.bio.length >= 20) ||
                (typeof data.bio === 'object' && !!data.bio?.bio && data.bio.bio.length >= 20);
-      // Skippable/Optional steps
       case 'mykids':
+        // Require user to actively select and save an option before Next is enabled
+        return !!(data.mykids?.kidOption || data.mykids?.preference || 
+                  data.mykids?.has_kids !== undefined || data.mykids?.needs_accommodation !== undefined);
+      // Skippable/Optional steps
       case 'workenvironment':
       case 'references':
       case 'backgroundcheck':
