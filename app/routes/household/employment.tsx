@@ -1,9 +1,9 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router";
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import HousehelpFilters, { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
-import { API_BASE_URL } from '~/config/api';
-import { apiClient } from '~/utils/apiClient';
+import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 
 // Option constants now live within HousehelpFilters
 
@@ -43,7 +43,7 @@ export default function HouseholdEmployment() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [hasMore, setHasMore] = useState(true);
 
-  const API_BASE = useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
+  
   const [searchParams, setSearchParams] = useSearchParams();
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<'find' | 'shortlist'>(() => {
@@ -82,16 +82,15 @@ export default function HouseholdEmployment() {
   useEffect(() => {
     const fetchShortlist = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         if (!token) {
           // No token - set empty shortlist for development
           setShortlistCount(0);
           setShortlist([]);
           return;
         }
-        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/household`, { method: 'GET' });
-        if (!res.ok) throw new Error("Failed to fetch shortlist");
-        const data = await apiClient.json<any[]>(res);
+        const raw = await shortlistService.listByHousehold('');
+        const data = raw?.data?.data || raw?.data || raw;
         setShortlistCount(Array.isArray(data) ? data.length : 0);
         setShortlist(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -112,7 +111,7 @@ export default function HouseholdEmployment() {
       }
       setShortlistProfilesLoading(true);
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         const profile_ids = shortlist.map((s) => s.profile_id).filter(Boolean);
         if (!token || profile_ids.length === 0) {
           // No token or no profiles - set empty state
@@ -120,13 +119,8 @@ export default function HouseholdEmployment() {
           setShortlistProfilesLoading(false);
           return;
         }
-        const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/search_multiple`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ profile_type: "househelp", profile_ids }),
-        });
-        if (!res.ok) throw new Error("Failed to fetch profiles");
-        const data = await apiClient.json<any[]>(res);
+        const raw = await grpcProfileService.searchMultipleWithUser('', 'househelp', { profile_ids });
+        const data = raw?.data?.data || raw?.data || raw;
         setShortlistProfiles(Array.isArray(data) ? data : []);
       } catch (err) {
         // Gracefully handle errors - set empty state
@@ -157,7 +151,7 @@ export default function HouseholdEmployment() {
     setHasMore(true);
     try {
       setHasSearched(true);
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       
       // If no token, show a helpful message instead of error
       if (!token) {
@@ -166,31 +160,22 @@ export default function HouseholdEmployment() {
         return;
       }
       
-      const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          Object.fromEntries(
-            Object.entries({
-              ...fields,
-              experience: fields.experience ? Number(fields.experience) : undefined,
-              min_rating: fields.min_rating ? Number(fields.min_rating) : undefined,
-              salary_min: fields.salary_min ? Number(fields.salary_min) : undefined,
-              salary_max: fields.salary_max ? Number(fields.salary_max) : undefined,
-              can_work_with_kids: fields.can_work_with_kids === 'true' ? true : fields.can_work_with_kids === 'false' ? false : undefined,
-              can_work_with_pets: fields.can_work_with_pets === 'true' ? true : fields.can_work_with_pets === 'false' ? false : undefined,
-              offers_live_in: fields.offers_live_in === 'true' ? true : fields.offers_live_in === 'false' ? false : undefined,
-              offers_day_worker: fields.offers_day_worker === 'true' ? true : fields.offers_day_worker === 'false' ? false : undefined,
-              available_from: fields.available_from || undefined,
-              limit,
-              offset: 0,
-            }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
-          )
-        ),
-      });
-      if (!res.ok) throw new Error("Failed to fetch househelps");
-      const data = await apiClient.json<{ data: any[] }>(res);
-      const rows = data.data || [];
+      const payload = Object.fromEntries(
+        Object.entries({
+          ...fields,
+          experience: fields.experience ? Number(fields.experience) : undefined,
+          min_rating: fields.min_rating ? Number(fields.min_rating) : undefined,
+          salary_min: fields.salary_min ? Number(fields.salary_min) : undefined,
+          salary_max: fields.salary_max ? Number(fields.salary_max) : undefined,
+          can_work_with_kids: fields.can_work_with_kids === 'true' ? true : fields.can_work_with_kids === 'false' ? false : undefined,
+          can_work_with_pets: fields.can_work_with_pets === 'true' ? true : fields.can_work_with_pets === 'false' ? false : undefined,
+          offers_live_in: fields.offers_live_in === 'true' ? true : fields.offers_live_in === 'false' ? false : undefined,
+          offers_day_worker: fields.offers_day_worker === 'true' ? true : fields.offers_day_worker === 'false' ? false : undefined,
+          available_from: fields.available_from || undefined,
+        }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
+      );
+      const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, 0);
+      const rows = data?.data || data?.data?.data || [];
       setResults(rows);
       setHasMore(rows.length === limit);
     } catch (err: any) {
@@ -205,33 +190,24 @@ export default function HouseholdEmployment() {
     if (loading || !hasSearched || !hasMore) return;
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       const nextOffset = offset + limit;
-      const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          Object.fromEntries(
-            Object.entries({
-              ...fields,
-              experience: fields.experience ? Number(fields.experience) : undefined,
-              min_rating: fields.min_rating ? Number(fields.min_rating) : undefined,
-              salary_min: fields.salary_min ? Number(fields.salary_min) : undefined,
-              salary_max: fields.salary_max ? Number(fields.salary_max) : undefined,
-              can_work_with_kids: fields.can_work_with_kids === 'true' ? true : fields.can_work_with_kids === 'false' ? false : undefined,
-              can_work_with_pets: fields.can_work_with_pets === 'true' ? true : fields.can_work_with_pets === 'false' ? false : undefined,
-              offers_live_in: fields.offers_live_in === 'true' ? true : fields.offers_live_in === 'false' ? false : undefined,
-              offers_day_worker: fields.offers_day_worker === 'true' ? true : fields.offers_day_worker === 'false' ? false : undefined,
-              available_from: fields.available_from || undefined,
-              limit,
-              offset: nextOffset,
-            }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
-          )
-        ),
-      });
-      if (!res.ok) throw new Error("Failed to fetch more results");
-      const data = await apiClient.json<{ data: any[] }>(res);
-      const rows = data.data || [];
+      const payload = Object.fromEntries(
+        Object.entries({
+          ...fields,
+          experience: fields.experience ? Number(fields.experience) : undefined,
+          min_rating: fields.min_rating ? Number(fields.min_rating) : undefined,
+          salary_min: fields.salary_min ? Number(fields.salary_min) : undefined,
+          salary_max: fields.salary_max ? Number(fields.salary_max) : undefined,
+          can_work_with_kids: fields.can_work_with_kids === 'true' ? true : fields.can_work_with_kids === 'false' ? false : undefined,
+          can_work_with_pets: fields.can_work_with_pets === 'true' ? true : fields.can_work_with_pets === 'false' ? false : undefined,
+          offers_live_in: fields.offers_live_in === 'true' ? true : fields.offers_live_in === 'false' ? false : undefined,
+          offers_day_worker: fields.offers_day_worker === 'true' ? true : fields.offers_day_worker === 'false' ? false : undefined,
+          available_from: fields.available_from || undefined,
+        }).filter(([_, v]) => v !== undefined && v !== null && v !== "")
+      );
+      const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, nextOffset);
+      const rows = data?.data || data?.data?.data || [];
       setResults(prev => [...prev, ...rows]);
       setOffset(nextOffset);
       setHasMore(rows.length === limit);

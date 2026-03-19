@@ -21,6 +21,10 @@ export function useSSEContext() {
   return context;
 }
 
+export function useSSEContextSafe() {
+  return useContext(SSEContext);
+}
+
 interface SSEProviderProps {
   children: React.ReactNode;
 }
@@ -54,7 +58,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
     }
 
     console.log('[SSE] Establishing single EventSource connection...');
-    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`);
+    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
     eventSourceRef.current = es;
 
     es.onopen = () => {

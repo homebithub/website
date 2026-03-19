@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from "react";
 import { handleApiError } from '../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
@@ -21,7 +22,7 @@ const initialAvailability: AvailabilityType = DAYS.reduce((acc, day) => {
 }, {} as AvailabilityType);
 
 const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const [needsLiveIn, setNeedsLiveIn] = useState<boolean>(false);
   const [needsDayWorker, setNeedsDayWorker] = useState<boolean>(false);
   const [availableFrom, setAvailableFrom] = useState<string>("");
@@ -31,25 +32,34 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
   const [error, setError] = useState<string>("");
   const [success, setSuccess] = useState<string>("");
 
-  // Load existing data
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.nannytype;
+    if (cached) {
+      if (cached.needsLiveIn !== undefined) setNeedsLiveIn(cached.needsLiveIn);
+      else if (cached.needs_live_in !== undefined) setNeedsLiveIn(cached.needs_live_in);
+      else if (cached.offers_live_in !== undefined) setNeedsLiveIn(cached.offers_live_in);
+      if (cached.needsDayWorker !== undefined) setNeedsDayWorker(cached.needsDayWorker);
+      else if (cached.needs_day_worker !== undefined) setNeedsDayWorker(cached.needs_day_worker);
+      else if (cached.offers_day_worker !== undefined) setNeedsDayWorker(cached.offers_day_worker);
+      const af = cached.availableFrom || cached.available_from;
+      if (af) setAvailableFrom(af.split('T')[0]);
+    }
+  }, [profileData.nannytype]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
         
-        // Different endpoints based on user type
-        const endpoint = userType === 'household' 
-          ? `${API_BASE_URL}/api/v1/household/profile`
-          : `${API_BASE_URL}/api/v1/househelps/me/fields`;
+        // Load profile via gRPC
+        const data = userType === 'household'
+          ? await grpcProfileService.getCurrentHouseholdProfile('')
+          : await grpcProfileService.getCurrentHousehelpProfile('');
         
-        const response = await fetch(endpoint, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          
+        if (data) {
           if (userType === 'household') {
             if (data.needs_live_in !== undefined) setNeedsLiveIn(data.needs_live_in);
             if (data.needs_day_worker !== undefined) setNeedsDayWorker(data.needs_day_worker);
@@ -118,62 +128,32 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
     }
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       
-      // Different endpoints for household vs househelp
+      const stepMeta = { step_id: 'nannytype', step_number: 2, is_completed: true };
+      // Different payloads for household vs househelp
       if (userType === 'household') {
-        // For household, save to household profile with step metadata
-        const res = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            needs_live_in: needsLiveIn,
-            ...(needsLiveIn && offDays.length > 0 && { live_in_off_days: offDays }),
-            needs_day_worker: needsDayWorker,
-            ...(needsDayWorker && { day_worker_schedule: JSON.stringify(availability) }),
-            available_from: availableFrom,
-            _step_metadata: {
-              step_id: "nannytype",
-              step_number: 2,
-              is_completed: true
-            }
-          }),
+        await grpcProfileService.updateHouseholdProfile('', 'household', {
+          needs_live_in: needsLiveIn,
+          ...(needsLiveIn && offDays.length > 0 && { live_in_off_days: offDays }),
+          needs_day_worker: needsDayWorker,
+          ...(needsDayWorker && { day_worker_schedule: JSON.stringify(availability) }),
+          available_from: availableFrom,
+          _step_metadata: stepMeta
         });
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({}));
-          console.error("Failed to save service type:", errorData);
-          throw new Error(errorData.message || "Failed to save service type. Please try again.");
-        }
         markClean();
+        updateStepData('nannytype', { needsLiveIn, needsDayWorker, availableFrom });
         setSuccess("Service type saved successfully!");
       } else {
-        // For househelp, save to househelps/me/fields
-        const res = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            updates: {
-              offers_live_in: needsLiveIn,
-              ...(needsLiveIn && offDays.length > 0 && { off_days: offDays }),
-              offers_day_worker: needsDayWorker,
-              ...(needsDayWorker && { availability_schedule: JSON.stringify(availability) }),
-              available_from: availableFrom,
-            },
-            _step_metadata: {
-              step_id: "nannytype",
-              step_number: 2,
-              is_completed: true
-            }
-          }),
-        });
-        if (!res.ok) throw new Error("Failed to save availability. Please try again.");
+        await grpcProfileService.updateHousehelpFields('', 'househelp', {
+          offers_live_in: needsLiveIn,
+          ...(needsLiveIn && offDays.length > 0 && { off_days: offDays }),
+          offers_day_worker: needsDayWorker,
+          ...(needsDayWorker && { availability_schedule: JSON.stringify(availability) }),
+          available_from: availableFrom,
+        }, stepMeta);
         markClean();
+        updateStepData('nannytype', { needsLiveIn: needsLiveIn, needsDayWorker: needsDayWorker, availableFrom });
         setSuccess("Service type saved successfully!");
       }
     } catch (err: any) {

@@ -1,13 +1,28 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { profileService as grpcProfileService, householdKidsService, petsService, documentService, householdMemberService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { Eye } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import EditSectionModal from '~/components/ui/EditSectionModal';
+import Location from '~/components/Location';
+import Children from '~/components/Children';
+import NannyType from '~/components/NanyType';
+import Chores from '~/components/Chores';
+import Pets from '~/components/Pets';
+import Budget from '~/components/Budget';
+import HouseSize from '~/components/HouseSize';
+import Bio from '~/components/Bio';
+import Religion from '~/components/Religion';
+import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
+import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 
 interface HouseholdData {
   id?: string;
@@ -27,6 +42,8 @@ interface HouseholdData {
   bio?: string;
   address?: string;
   location?: any;
+  location_ref?: any;
+  town?: string;
   photos?: string[];
 }
 
@@ -42,6 +59,14 @@ export default function HouseholdProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  
+  // Track profile views (own profile)
+  useProfileViewTracking({
+    profileId: profile?.id || '',
+    profileType: 'household',
+    viewerUserId: profile?.user_id,
+    enabled: !!profile?.id,
+  });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -82,95 +107,50 @@ export default function HouseholdProfile() {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
-          return;
-        }
-        
-        const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!profileRes.ok) throw new Error("Failed to fetch profile");
-        const profileResponse = await profileRes.json();
-        console.log('Profile response:', profileResponse);
-        
-        // Extract profile data from nested structure
-        const profileData = profileResponse.data || profileResponse;
-        console.log('Extracted profile data:', profileData);
-        console.log('Household location field:', profileData?.location);
+        // Fetch household profile via gRPC
+        const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
+        console.log('Profile data:', profileData);
         setProfile(profileData);
 
         // Load existing invitation code if available
         try {
           const householdId = profileData.id;
           console.log('Household ID:', householdId);
-          const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/invitations/${householdId}/code`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (inviteRes.ok) {
-            const inviteResponse = await inviteRes.json();
-            console.log('Invitation response:', inviteResponse);
-            
-            // Extract invitation data from nested structure
-            const inviteData = inviteResponse.data || inviteResponse;
-            console.log('Extracted invitation data:', inviteData);
-            
-            setInvitationCode(inviteData.invite_code);
-            setInvitationExpiresAt(inviteData.expires_at);
-          }
+          const inviteData = await householdMemberService.getOrCreateInvitationCode(householdId);
+          const extracted = inviteData?.data || inviteData;
+          setInvitationCode(extracted.invite_code);
+          setInvitationExpiresAt(extracted.expires_at);
         } catch (err) {
           console.log("No existing invitation code or error loading it:", err);
         }
 
-        const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (kidsRes.ok) {
-          const kidsResponse = await kidsRes.json();
-          console.log('Kids response:', kidsResponse);
-          
-          // Extract kids array from nested structure
-          const kidsData = kidsResponse.data?.data || kidsResponse.data || kidsResponse;
-          console.log('Extracted kids data:', kidsData);
-          
-          // Ensure it's an array
-          const kidsArray = Array.isArray(kidsData) ? kidsData : [];
-          setKids(kidsArray);
+        // Fetch kids via gRPC
+        try {
+          const kidsData = await householdKidsService.listHouseholdKids('');
+          const kidsArray = Array.isArray(kidsData?.data || kidsData) ? (kidsData?.data || kidsData) : [];
+          setKids(Array.isArray(kidsArray) ? kidsArray : []);
+        } catch (err) {
+          console.log("Error loading kids:", err);
         }
 
-        const petsRes = await fetch(`${API_BASE_URL}/api/v1/pets/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (petsRes.ok) {
-          const petsResponse = await petsRes.json();
-          console.log('Pets response:', petsResponse);
-          
-          // Extract pets array from nested structure
-          const petsData = petsResponse.data?.data || petsResponse.data || petsResponse;
-          console.log('Extracted pets data:', petsData);
-          
-          // Ensure it's an array
-          const petsArray = Array.isArray(petsData) ? petsData : [];
-          setPets(petsArray);
+        // Fetch pets via gRPC
+        try {
+          const petsData = await petsService.listMyPets('');
+          const petsArray = Array.isArray(petsData?.data || petsData) ? (petsData?.data || petsData) : [];
+          setPets(Array.isArray(petsArray) ? petsArray : []);
+        } catch (err) {
+          console.log("Error loading pets:", err);
         }
 
-        // Fetch photos from documents table
-        const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (docsRes.ok) {
-          const docsResponse = await docsRes.json();
-          console.log('Documents response:', docsResponse);
-          
-          // Extract documents array from nested structure (gRPC bridge returns {data: {data: [...]}})
-          const docsData = docsResponse.data?.data || docsResponse.data?.documents || docsResponse.data || docsResponse;
-          console.log('Extracted documents data:', docsData);
-          
-          // Ensure it's an array before mapping
-          const documentsArray = Array.isArray(docsData) ? docsData : [];
-          const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean) || [];
+        // Fetch photos from documents table via gRPC
+        try {
+          const docsData = await documentService.getUserDocuments('', 'profile_photo');
+          const docs = docsData?.data || docsData?.documents || docsData || [];
+          const documentsArray = Array.isArray(docs) ? docs : [];
+          const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
           setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
+        } catch (err) {
+          console.log("Error loading photos:", err);
         }
       } catch (err: any) {
         console.error("Error loading profile:", err);
@@ -197,11 +177,43 @@ export default function HouseholdProfile() {
     }
   }, [profile]);
 
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [showViewsModal, setShowViewsModal] = useState(false);
+
+  const EDIT_SECTIONS: Record<string, { title: string; component: React.FC }> = {
+    location: { title: '📍 Edit Location', component: Location },
+    housesize: { title: '🏠 Edit House Size', component: HouseSize },
+    nannytype: { title: '👥 Edit Service Type', component: NannyType },
+    children: { title: '👶 Edit Children', component: Children },
+    pets: { title: '🐾 Edit Pets', component: Pets },
+    chores: { title: '🧹 Edit Chores & Duties', component: Chores },
+    budget: { title: '💰 Edit Budget', component: Budget },
+    religion: { title: '🙏 Edit Religion & Beliefs', component: Religion },
+    bio: { title: '✍️ Edit About', component: Bio },
+  };
+
   const handleEditSection = (section: string) => {
-    // Navigate to the specific setup step for editing with state (secure, can't be URL-manipulated)
-    navigate('/profile-setup/household', { 
-      state: { fromProfile: true, editSection: section }
-    });
+    setEditingSection(section);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingSection(null);
+    // Refresh profile data after editing
+    const refresh = async () => {
+      try {
+        const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
+        setProfile(profileData);
+        const kidsData = await householdKidsService.listHouseholdKids('');
+        const kidsArr = kidsData?.data?.data || kidsData?.data || kidsData;
+        setKids(Array.isArray(kidsArr) ? kidsArr : []);
+        const petsData = await petsService.listMyPets('');
+        const petsArr = petsData?.data?.data || petsData?.data || petsData;
+        setPets(Array.isArray(petsArr) ? petsArr : []);
+      } catch (err) {
+        console.error('Failed to refresh profile after edit:', err);
+      }
+    };
+    refresh();
   };
 
   const fetchInvitationCode = async () => {
@@ -211,30 +223,15 @@ export default function HouseholdProfile() {
     setInvitationError(null);
     
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error("Not authenticated");
       
-      // Get household ID from profile
-      const householdRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!householdRes.ok) throw new Error("Failed to fetch household");
-      const householdResponse = await householdRes.json();
-      const householdData = householdResponse.data || householdResponse;
-      const householdId = householdData.id;
+      const householdId = profile?.id;
+      if (!householdId) throw new Error("No household ID");
       
-      // Get or create invitation code
-      const inviteRes = await fetch(`${API_BASE_URL}/api/v1/households/${householdId}/invitation-code`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (!inviteRes.ok) {
-        const errorData = await inviteRes.json().catch(() => ({ error: "Unknown error" }));
-        console.error("Invitation code error:", errorData);
-        throw new Error(errorData.error || `Failed to fetch invitation code (${inviteRes.status})`);
-      }
-      const inviteData = await inviteRes.json();
-      const extractedInviteData = inviteData.data || inviteData;
+      // Get or create invitation code via gRPC
+      const inviteData = await householdMemberService.getOrCreateInvitationCode(householdId);
+      const extractedInviteData = inviteData?.data || inviteData;
       setInvitationCode(extractedInviteData.invite_code);
       setInvitationExpiresAt(extractedInviteData.expires_at);
     } catch (err: any) {
@@ -281,25 +278,13 @@ export default function HouseholdProfile() {
     
     setMembersLoading(true);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) return;
       
-      const res = await fetch(`${API_BASE_URL}/api/v1/households/${profile.id}/members`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (res.ok) {
-        const response = await res.json();
-        console.log('Members response:', response);
-        
-        // Extract members array from nested structure
-        const membersData = response.data || response.members || response;
-        console.log('Extracted members data:', membersData);
-        
-        // Ensure it's an array
-        const membersArray = Array.isArray(membersData) ? membersData : [];
-        setMembers(membersArray);
-      }
+      const membersData = await householdMemberService.listMembers(profile.id);
+      const extracted = membersData?.data || membersData?.members || membersData;
+      const membersArray = Array.isArray(extracted) ? extracted : [];
+      setMembers(membersArray);
     } catch (err) {
       console.error("Error fetching members:", err);
     } finally {
@@ -313,18 +298,10 @@ export default function HouseholdProfile() {
     
     setRemovingMemberId(userId);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error("Not authenticated");
       
-      const res = await fetch(`${API_BASE_URL}/api/v1/households/${profile.id}/members/${userId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: "Failed to remove member" }));
-        throw new Error(errorData.error || "Failed to remove member");
-      }
+      await householdMemberService.removeMember(profile.id, userId, '');
       
       // Refresh members list
       await fetchMembers();
@@ -365,7 +342,7 @@ export default function HouseholdProfile() {
     setUploadProgress(0);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
       // Upload to documents service with progress tracking
@@ -413,16 +390,15 @@ export default function HouseholdProfile() {
 
       if (!imageUrl) throw new Error('No image URL returned');
 
-      // Refetch photos from documents table
-      const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (docsRes.ok) {
-        const docsResponse = await docsRes.json();
-        const docsData = docsResponse.data?.data || docsResponse.data || [];
-        const documentsArray = Array.isArray(docsData) ? docsData : [];
+      // Refetch photos from documents table via gRPC
+      try {
+        const docsData = await documentService.getUserDocuments('', 'profile_photo');
+        const docs = docsData?.data || docsData?.documents || docsData || [];
+        const documentsArray = Array.isArray(docs) ? docs : [];
         const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
         setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
+      } catch (err) {
+        console.warn('Failed to refetch photos after upload:', err);
       }
       
       // Reset file input
@@ -452,54 +428,39 @@ export default function HouseholdProfile() {
     setDeleteStatus('Finding document...');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
-      // Step 1: Find the document by URL
-      const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!docsRes.ok) {
-        console.warn('Failed to fetch documents, will only remove from profile');
-      } else {
-        const docsResponse = await docsRes.json();
-        console.log('Documents response for deletion:', docsResponse);
-        
-        // Extract documents array from nested structure (gRPC bridge returns {data: {data: [...]}})
-        const allDocs = docsResponse.data?.data || docsResponse.data || [];
+      // Step 1: Find the document by URL via gRPC
+      try {
+        const docsData = await documentService.getUserDocuments('', 'profile_photo');
+        const allDocs = docsData?.data || docsData?.documents || docsData || [];
         const documentsArray = Array.isArray(allDocs) ? allDocs : [];
         const document = documentsArray.find((doc: any) => (doc.public_url || doc.signed_url || doc.url) === photoUrl);
 
-        // Step 2: Delete from documents table and S3
+        // Step 2: Delete from documents table and S3 via gRPC
         if (document?.id) {
           setDeleteStatus('Deleting from storage...');
-          const deleteRes = await fetch(`${API_BASE_URL}/api/v1/documents/${document.id}`, {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (!deleteRes.ok) {
+          try {
+            await documentService.deleteDocument(document.id, '');
+          } catch (err) {
             console.warn('Failed to delete document from storage, but will remove from profile');
           }
         }
+      } catch (err) {
+        console.warn('Failed to fetch documents, will only remove from profile');
       }
 
-      // Step 3: Refetch photos from documents table
+      // Step 3: Refetch photos from documents table via gRPC
       setDeleteStatus('Refreshing photos...');
-      const refreshRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (refreshRes.ok) {
-        const refreshData = await refreshRes.json();
-        const refreshDocs = refreshData.data?.data || refreshData.data || [];
+      try {
+        const refreshData = await documentService.getUserDocuments('', 'profile_photo');
+        const refreshDocs = refreshData?.data || refreshData?.documents || refreshData || [];
         const docsArray = Array.isArray(refreshDocs) ? refreshDocs : [];
         const photoUrls = docsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
         setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
+      } catch (err) {
+        console.warn('Failed to refetch photos after delete:', err);
       }
     } catch (err: any) {
       console.error('Error deleting photo:', err);
@@ -581,13 +542,25 @@ export default function HouseholdProfile() {
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">🏠 My Household Profile</h1>
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your household information</p>
           </div>
-          <button
-            onClick={() => navigate(`/household/public-profile?user_id=${profile?.user_id || ''}`)}
-            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg whitespace-nowrap self-start"
-            disabled={!profile?.user_id}
-          >
-            View Public Profile
-          </button>
+          <div className="flex items-center gap-2 self-start">
+            {profile?.id && (
+              <button
+                onClick={() => setShowViewsModal(true)}
+                className="h-8 w-8 rounded-xl flex items-center justify-center border border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-500/10 hover:scale-105 transition-all"
+                aria-label="Profile Views"
+                title="Profile Views"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={() => navigate(`/household/public-profile?user_id=${profile?.user_id || ''}`)}
+              className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg whitespace-nowrap"
+              disabled={!profile?.user_id}
+            >
+              View Public Profile
+            </button>
+          </div>
         </div>
       </div>
 
@@ -599,13 +572,13 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('location')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
           {typeof profile.location === 'string'
-            ? (profile.location || 'Not specified')
-            : (profile.location?.place || profile.location?.name || 'Not specified')}
+            ? (profile.location || profile.town || 'Not specified')
+            : (profile.location?.place || profile.location?.name || profile.location_ref?.place || profile.town || 'Not specified')}
         </p>
       </div>
 
@@ -944,7 +917,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('housesize')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -969,7 +942,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('nannytype')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="space-y-3">
@@ -1007,7 +980,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('children')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         {kids.length > 0 ? (
@@ -1043,7 +1016,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('pets')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         {pets.length > 0 ? (
@@ -1076,7 +1049,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('chores')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         {profile.chores && profile.chores.length > 0 ? (
@@ -1100,7 +1073,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('budget')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         {profile.budget_min || profile.budget_max ? (
@@ -1125,7 +1098,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('religion')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
@@ -1139,7 +1112,7 @@ export default function HouseholdProfile() {
             onClick={() => handleEditSection('bio')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
@@ -1169,6 +1142,28 @@ export default function HouseholdProfile() {
         onConfirm={handleDeletePhoto}
         onCancel={() => setPhotoToDelete(null)}
       />
+
+      {/* Edit Section Modal */}
+      {editingSection && EDIT_SECTIONS[editingSection] && (
+        <EditSectionModal
+          isOpen={true}
+          onClose={handleCloseEditModal}
+          title={EDIT_SECTIONS[editingSection].title}
+          profileType="household"
+        >
+          {React.createElement(EDIT_SECTIONS[editingSection].component)}
+        </EditSectionModal>
+      )}
+
+      {/* Profile Views Modal */}
+      {profile?.id && (
+        <ProfileViewsAnalytics
+          profileId={profile.id}
+          profileType="household"
+          isOpen={showViewsModal}
+          onClose={() => setShowViewsModal(false)}
+        />
+      )}
     </div>
   );
 }

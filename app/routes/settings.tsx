@@ -2,7 +2,7 @@ import { useNavigate, useLocation } from "react-router";
 import React, { useEffect, useState } from "react";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { PurpleCard } from '~/components/ui/PurpleCard';
+
 import { Footer } from "~/components/Footer";
 import { Error } from "~/components/Error";
 import { useAuth } from "~/contexts/useAuth";
@@ -94,43 +94,50 @@ export default function SettingsPage() {
 		<div className="min-h-screen flex flex-col">
 			<Navigation />
 			<PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
-			<main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
-				<div className="w-full max-w-3xl bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 p-8 transition-colors duration-300">
-					<h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
-						⚙️ Settings
-					</h1>
-					<p className="text-lg text-gray-600 dark:text-gray-300 mb-8">Manage your account settings and app preferences.</p>
+			<main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+					<div className="mb-8">
+						<h1 className="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-300 mb-1">
+							Settings
+						</h1>
+						<p className="text-sm text-gray-600 dark:text-gray-400">Manage your account settings and app preferences.</p>
+					</div>
 					
 					{errorMessage && (
-						<div className="mb-4 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/40 dark:border-red-500/40 text-red-700 dark:text-red-200 px-4 py-1.5 text-sm text-left transition-colors duration-300">
+						<div className="mb-6 rounded-xl border border-red-200 bg-red-50 dark:bg-red-950/40 dark:border-red-500/40 text-red-700 dark:text-red-200 px-4 py-2 text-sm">
 							{errorMessage}
 						</div>
 					)}
 					{successMessage && (
-						<div className="mb-4 rounded-xl border border-green-200 bg-green-50 dark:bg-emerald-950/40 dark:border-emerald-500/40 text-green-700 dark:text-green-200 px-4 py-1.5 text-sm text-left transition-colors duration-300">
+						<div className="mb-6 rounded-xl border border-green-200 bg-green-50 dark:bg-emerald-950/40 dark:border-emerald-500/40 text-green-700 dark:text-green-200 px-4 py-2 text-sm">
 							{successMessage}
 						</div>
 					)}
 					
-					<div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-						<div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6 hover:border-purple-200 dark:hover:border-purple-400 transition-colors duration-300">
-							<div className="font-bold text-purple-700 dark:text-purple-300 text-xl mb-2">👤 Account Settings</div>
-							<div className="text-gray-600 dark:text-gray-300 text-sm mb-4">Update your account information and profile details.</div>
-							<a href="/profile" className="inline-block px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all">Edit Account</a>
-						</div>
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+						<a href="/profile" className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5 hover:border-purple-400 dark:hover:border-purple-400 transition-colors block">
+							<div className="text-2xl mb-2">👤</div>
+							<div className="font-semibold text-purple-700 dark:text-purple-300 text-sm mb-0.5">Account</div>
+							<div className="text-gray-500 dark:text-gray-400 text-xs">Edit your name, email and phone number.</div>
+						</a>
 						
-						<div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6 hover:border-purple-200 dark:hover:border-purple-400 transition-colors duration-300">
-							<div className="font-bold text-purple-700 dark:text-purple-300 text-xl mb-2">🔒 Security Settings</div>
-							<div className="text-gray-600 dark:text-gray-300 text-sm mb-4">Change your password and manage security options.</div>
-							<a href="/change-password" className="inline-block px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all">Change Password</a>
-						</div>
+						<a href="/change-password" className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5 hover:border-purple-400 dark:hover:border-purple-400 transition-colors block">
+							<div className="text-2xl mb-2">🔒</div>
+							<div className="font-semibold text-purple-700 dark:text-purple-300 text-sm mb-0.5">Security</div>
+							<div className="text-gray-500 dark:text-gray-400 text-xs">Change your password and security options.</div>
+						</a>
+						
+						<a href="/account/devices" className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5 hover:border-purple-400 dark:hover:border-purple-400 transition-colors block">
+							<div className="text-2xl mb-2">📱</div>
+							<div className="font-semibold text-purple-700 dark:text-purple-300 text-sm mb-0.5">Devices</div>
+							<div className="text-gray-500 dark:text-gray-400 text-xs">View and manage your logged-in devices.</div>
+						</a>
 					</div>
 					
-					<div className="mt-8 bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6 text-left transition-colors duration-300">
-						<div className="flex items-center justify-between mb-4">
+					<div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
+						<div className="flex items-center justify-between mb-5">
 							<div>
-								<div className="font-bold text-purple-700 dark:text-purple-300 text-xl mb-1">🎛 App Preferences</div>
-								<p className="text-gray-600 dark:text-gray-300 text-sm">Control how Homebit looks and behaves for you.</p>
+								<h2 className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-0.5">App Preferences</h2>
+								<p className="text-gray-500 dark:text-gray-400 text-xs">Control how Homebit looks and behaves for you.</p>
 							</div>
 							{prefsLoading && (
 								<span className="text-xs text-gray-500 dark:text-gray-400">Loading preferences...</span>
@@ -140,8 +147,8 @@ export default function SettingsPage() {
 						<div className="space-y-4">
 							<div className="flex items-center justify-between">
 								<div>
-									<div className="font-medium text-gray-900 dark:text-gray-100">Email notifications</div>
-									<p className="text-sm text-gray-500 dark:text-gray-400">Receive important updates about matches and hires.</p>
+									<div className="text-sm font-medium text-gray-900 dark:text-gray-100">Email notifications</div>
+									<p className="text-xs text-gray-500 dark:text-gray-400">Receive important updates about matches and hires.</p>
 								</div>
 								<label className="inline-flex items-center cursor-pointer">
 									<input
@@ -158,8 +165,8 @@ export default function SettingsPage() {
 							
 							<div className="flex items-center justify-between">
 								<div>
-									<div className="font-medium text-gray-900 dark:text-gray-100">Show onboarding tips</div>
-									<p className="text-sm text-gray-500 dark:text-gray-400">Keep helpful guidance visible while you explore.</p>
+									<div className="text-sm font-medium text-gray-900 dark:text-gray-100">Show onboarding tips</div>
+									<p className="text-xs text-gray-500 dark:text-gray-400">Keep helpful guidance visible while you explore.</p>
 								</div>
 								<label className="inline-flex items-center cursor-pointer">
 									<input
@@ -175,8 +182,8 @@ export default function SettingsPage() {
 							</div>
 							<div className="flex items-center justify-between">
 								<div>
-									<div className="font-medium text-gray-900 dark:text-gray-100">Compact view</div>
-									<p className="text-sm text-gray-500 dark:text-gray-400">Use denser layouts and tighter spacing in search results.</p>
+									<div className="text-sm font-medium text-gray-900 dark:text-gray-100">Compact view</div>
+									<p className="text-xs text-gray-500 dark:text-gray-400">Use denser layouts and tighter spacing in search results.</p>
 								</div>
 								<label className="inline-flex items-center cursor-pointer">
 									<input
@@ -192,8 +199,8 @@ export default function SettingsPage() {
 							</div>
 							<div className="flex items-center justify-between">
 								<div>
-									<div className="font-medium text-gray-900 dark:text-gray-100">Accessibility mode</div>
-									<p className="text-sm text-gray-500 dark:text-gray-400">Increase text size and improve contrast in key lists.</p>
+									<div className="text-sm font-medium text-gray-900 dark:text-gray-100">Accessibility mode</div>
+									<p className="text-xs text-gray-500 dark:text-gray-400">Increase text size and improve contrast in key lists.</p>
 								</div>
 								<label className="inline-flex items-center cursor-pointer">
 									<input
@@ -209,10 +216,10 @@ export default function SettingsPage() {
 							</div>
 						</div>
 						
-						<div className="mt-6 flex justify-end">
+						<div className="mt-5 flex justify-end">
 							<button
 								type="button"
-								className="px-6 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all"
+								className="inline-flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg hover:scale-105"
 								onClick={handleSavePreferences}
 								disabled={saving || prefsLoading}
 							>
@@ -220,7 +227,6 @@ export default function SettingsPage() {
 							</button>
 						</div>
 					</div>
-				</div>
 			</main>
 			</PurpleThemeWrapper>
 			<Footer />

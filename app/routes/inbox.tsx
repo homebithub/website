@@ -4,7 +4,8 @@ import { useAuth } from "~/contexts/useAuth";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { apiClient } from "~/utils/apiClient";
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { profileService as grpcProfileService, hireRequestService } from '~/services/grpc/authServices';
 import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon } from '@heroicons/react/24/outline';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
@@ -12,9 +13,7 @@ import HireContextBanner from '~/components/hiring/HireContextBanner';
 import { useWebSocketContext } from '~/contexts/WebSocketContext';
 import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved } from '~/types/websocket';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
-import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
-import { NotificationsServiceClient } from "~/proto/notifications/notifications.client";
-import { ListConversationsRequest, ListMessagesRequest, SendMessageRequest, MarkConversationAsReadRequest, EditMessageRequest, DeleteMessageRequest, ToggleReactionRequest } from "~/proto/notifications/notifications";
+import { notificationsService } from '~/services/grpc/notifications.service';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSubscription } from '~/hooks/useSubscription';
@@ -172,7 +171,7 @@ export default function InboxPage() {
   // Authentication check - redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) {
         navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
       }
@@ -292,7 +291,6 @@ export default function InboxPage() {
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
   const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
   
-  const notificationsClient = useMemo(() => new NotificationsServiceClient(transport), []);
 
   // Use global WebSocket connection
   const { connectionState, addEventListener } = useWebSocketContext();
@@ -495,9 +493,10 @@ export default function InboxPage() {
             let profileResponse: any;
 
             if (househelpUserId) {
-              const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
-              if (res.ok) {
-                profileResponse = await apiClient.json(res);
+              try {
+                profileResponse = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+              } catch {
+                // fallback below
               }
             }
 
@@ -507,12 +506,12 @@ export default function InboxPage() {
                 console.error('[Inbox] Missing househelp user/profile id for conversation:', conv.id);
                 continue;
               }
-              const fallbackRes = await apiClient.auth(`${API_BASE}/api/v1/househelps/${encodeURIComponent(fallbackProfileId)}/profile_with_user`);
-              if (!fallbackRes.ok) {
-                console.error('[Inbox] Failed to fetch househelp profile fallback:', fallbackRes.status);
+              try {
+                profileResponse = await grpcProfileService.getHousehelpByID(fallbackProfileId);
+              } catch {
+                console.error('[Inbox] Failed to fetch househelp profile fallback');
                 continue;
               }
-              profileResponse = await apiClient.json(fallbackRes);
             }
 
             const profileData = extractEnvelopeObject<any>(profileResponse);
@@ -534,9 +533,10 @@ export default function InboxPage() {
             // Househelp user: other participant is a household
             const householdUserId = conv.household_id;
             if (!householdUserId) continue;
-            const res = await apiClient.auth(`${API_BASE}/api/v1/profile/household/${encodeURIComponent(householdUserId)}`);
-            if (!res.ok) continue;
-            const profileResponse: any = await apiClient.json(res);
+            let profileResponse: any;
+            try {
+              profileResponse = await grpcProfileService.getHouseholdByUserID(householdUserId);
+            } catch { continue; }
             const profileData = extractEnvelopeObject<any>(profileResponse);
             
             // Extract household owner's name from the preloaded owner object
@@ -580,11 +580,8 @@ export default function InboxPage() {
       return;
     }
     try {
-      const params = new URLSearchParams({ limit: "50" });
-      const res = await apiClient.auth(`${API_BASE}/api/v1/hire-requests?${params.toString()}`);
-      if (!res.ok) throw new Error('Failed to load hire requests');
-      const payload = await apiClient.json<any>(res);
-      const requests = extractEnvelopeArray<HireRequestSummary>(payload, 'data');
+      const raw = await hireRequestService.listHireRequests('', '');
+      const requests = extractEnvelopeArray<HireRequestSummary>(raw, 'data');
 
       const conversationHouseholdCandidates = [
         normalizeId(conversation.household_profile_id),
@@ -645,44 +642,36 @@ export default function InboxPage() {
         setLoading(true);
         setError(null);
         
-        const request: ListConversationsRequest = {
-          limit,
-          offset
-        } as any;
+        const result = await notificationsService.listConversations('', offset, limit);
+        const raw: any[] = result?.conversations || [];
 
-        const { response } = await notificationsClient.listConversations(request, { metadata: getGrpcMetadata() });
-        const fields = response.data?.fields || {};
-        const raw = (fields.conversations as any)?.listValue?.values || [];
-
-        const normalizeConversation = (v: any): Conversation => {
-          const c = v.structValue?.fields || {};
-          return {
-            id: c.id?.stringValue || "",
-            household_id: c.household_user_id?.stringValue || c.household_id?.stringValue || "",
-            househelp_id: c.househelp_user_id?.stringValue || c.househelp_id?.stringValue || "",
-            household_profile_id: c.household_profile_id?.stringValue || null,
-            househelp_profile_id: c.househelp_profile_id?.stringValue || null,
-            household_profile_type: c.household_profile_type?.stringValue || "household",
-            househelp_profile_type: c.househelp_profile_type?.stringValue || "househelp",
-            last_message_at: c.last_message_at?.stringValue || null,
-            last_message_body: c.last_message_body?.stringValue || null,
-            last_message_sender_id: c.last_message_sender_id?.stringValue || null,
-            unread_count: c.unread_count?.numberValue || 0,
-            participant_name: c.participant_name?.stringValue || undefined,
-            participant_avatar: c.participant_avatar?.stringValue || undefined,
-          };
-        };
+        const normalizeConversation = (c: any): Conversation => ({
+          id: c.id || "",
+          household_id: c.household_user_id || c.household_id || "",
+          househelp_id: c.househelp_user_id || c.househelp_id || "",
+          household_profile_id: c.household_profile_id || null,
+          househelp_profile_id: c.househelp_profile_id || null,
+          household_profile_type: c.household_profile_type || "household",
+          househelp_profile_type: c.househelp_profile_type || "househelp",
+          last_message_at: c.last_message_at || null,
+          last_message_body: c.last_message_body || null,
+          last_message_sender_id: c.last_message_sender_id || null,
+          unread_count: c.unread_count || 0,
+          participant_name: c.participant_name || undefined,
+          participant_avatar: c.participant_avatar || undefined,
+        });
 
         let data: Conversation[] = raw.map(normalizeConversation).filter((c: any) => !!c.id);
 
         // If we're deep-linking to a conversation that isn't in this page, fetch it explicitly.
         if (offset === 0 && selectedConversationId && !data.some((c) => c.id === selectedConversationId)) {
           try {
-            const { response: detailResponse } = await notificationsClient.getConversation({ id: selectedConversationId }, { metadata: getGrpcMetadata() });
-            const detailFields = detailResponse.data?.fields || {};
-            const normalized = normalizeConversation({ structValue: { fields: detailFields } });
-            if (normalized.id) {
-              data = [normalized, ...data];
+            const detail = await notificationsService.getConversation(selectedConversationId);
+            if (detail) {
+              const normalized = normalizeConversation(detail);
+              if (normalized.id) {
+                data = [normalized, ...data];
+              }
             }
           } catch (detailErr) {
             console.warn('[Inbox] Failed to hydrate selected conversation', detailErr);
@@ -700,7 +689,7 @@ export default function InboxPage() {
       } catch (e: any) {
         if (!cancelled) {
           setError(e?.message || "Failed to load conversations");
-          handleGrpcError(e, false);
+          console.error('[Inbox] Load conversations error:', e);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -733,39 +722,26 @@ export default function InboxPage() {
         setMessagesError(null);
         console.log('[Inbox] Loading messages for conversation:', conversationId);
         
-        const request: ListMessagesRequest = {
-          conversationId,
-          limit: messagesLimit,
-          offset: 0
-        };
+        const result = await notificationsService.listMessages(conversationId, 0, messagesLimit);
+        const items: any[] = result?.messages || [];
 
-        const { response } = await notificationsClient.listMessages(request, { metadata: getGrpcMetadata() });
-        const fields = response.data?.fields || {};
-        const items = (fields.messages as any)?.listValue?.values || [];
+        const normalizeMsg = (m: any): Message => ({
+          id: m.id || "",
+          conversation_id: m.conversation_id || "",
+          sender_id: m.sender_id || "",
+          body: m.body || "",
+          read_at: m.read_at || null,
+          created_at: m.created_at || "",
+          deleted_at: m.deleted_at || null,
+          edited_at: m.edited_at || null,
+          reply_to_id: m.reply_to_id || null,
+          reactions: (m.reactions || []).map((r: any) => ({
+            emoji: r.emoji || "",
+            user_id: r.user_id || ""
+          }))
+        });
 
-        const normalizeMessage = (v: any): Message => {
-          const m = v.structValue?.fields || {};
-          return {
-            id: m.id?.stringValue || "",
-            conversation_id: m.conversation_id?.stringValue || "",
-            sender_id: m.sender_id?.stringValue || "",
-            body: m.body?.stringValue || "",
-            read_at: m.read_at?.stringValue || null,
-            created_at: m.created_at?.stringValue || "",
-            deleted_at: m.deleted_at?.stringValue || null,
-            edited_at: m.edited_at?.stringValue || null,
-            reply_to_id: m.reply_to_id?.stringValue || null,
-            reactions: (m.reactions?.listValue?.values || []).map((r: any) => {
-              const rf = r.structValue?.fields || {};
-              return {
-                emoji: rf.emoji?.stringValue || "",
-                user_id: rf.user_id?.stringValue || ""
-              };
-            })
-          };
-        };
-
-        const data: Message[] = items.map(normalizeMessage);
+        const data: Message[] = items.map(normalizeMsg);
         
         if (cancelled) return;
         setMessages(data);
@@ -774,7 +750,7 @@ export default function InboxPage() {
         
         // Mark conversation as read
         try {
-          await notificationsClient.markConversationAsRead({ conversationId } as any, { metadata: getGrpcMetadata() });
+          await notificationsService.markConversationAsRead(conversationId, '');
           setItems((prev) => prev.map((conv) => 
             conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
           ));
@@ -794,7 +770,6 @@ export default function InboxPage() {
         console.error('[Inbox] Error loading messages:', e);
         if (!cancelled) {
           setMessagesError(e?.message || "Failed to load messages");
-          handleGrpcError(e, false);
         }
       } finally {
         if (!cancelled) setMessagesLoading(false);
@@ -853,14 +828,8 @@ export default function InboxPage() {
         if (!househelpUserId) return;
         
         try {
-          const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
-          if (res.ok) {
-            const profileData: any = await apiClient.json(res);
-            househelpProfileId = profileData.id || profileData.profile_id;
-          } else {
-            pushToast('Failed to load profile information', 'error');
-            return;
-          }
+          const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+          househelpProfileId = profileData?.id || profileData?.profile_id;
         } catch (err) {
           console.error('Failed to fetch househelp profile:', err);
           pushToast('Failed to load profile information', 'error');
@@ -915,37 +884,24 @@ export default function InboxPage() {
       const container = messagesContainerRef.current;
       const scrollHeightBefore = container?.scrollHeight || 0;
       
-      const request: ListMessagesRequest = {
-        conversationId: activeConversationId,
-        limit: messagesLimit,
-        offset: messagesOffset
-      };
+      const result = await notificationsService.listMessages(activeConversationId, messagesOffset, messagesLimit);
+      const items: any[] = result?.messages || [];
 
-      const { response } = await notificationsClient.listMessages(request, { metadata: getGrpcMetadata() });
-      const fields = response.data?.fields || {};
-      const items = (fields.messages as any)?.listValue?.values || [];
-
-      const normalizeMessage = (v: any): Message => {
-        const m = v.structValue?.fields || {};
-        return {
-          id: m.id?.stringValue || "",
-          conversation_id: m.conversation_id?.stringValue || "",
-          sender_id: m.sender_id?.stringValue || "",
-          body: m.body?.stringValue || "",
-          read_at: m.read_at?.stringValue || null,
-          created_at: m.created_at?.stringValue || "",
-          deleted_at: m.deleted_at?.stringValue || null,
-          edited_at: m.edited_at?.stringValue || null,
-          reply_to_id: m.reply_to_id?.stringValue || null,
-          reactions: (m.reactions?.listValue?.values || []).map((r: any) => {
-            const rf = r.structValue?.fields || {};
-            return {
-              emoji: rf.emoji?.stringValue || "",
-              user_id: rf.user_id?.stringValue || ""
-            };
-          })
-        };
-      };
+      const normalizeMessage = (m: any): Message => ({
+        id: m.id || "",
+        conversation_id: m.conversation_id || "",
+        sender_id: m.sender_id || "",
+        body: m.body || "",
+        read_at: m.read_at || null,
+        created_at: m.created_at || "",
+        deleted_at: m.deleted_at || null,
+        edited_at: m.edited_at || null,
+        reply_to_id: m.reply_to_id || null,
+        reactions: (m.reactions || []).map((r: any) => ({
+          emoji: r.emoji || "",
+          user_id: r.user_id || ""
+        }))
+      });
 
       const newMessages: Message[] = items.map(normalizeMessage);
       
@@ -971,7 +927,6 @@ export default function InboxPage() {
       }
     } catch (err) {
       console.error("[Inbox] Failed to load more messages:", err);
-      handleGrpcError(err, false);
     } finally {
       setLoadingMore(false);
     }
@@ -1136,82 +1091,59 @@ export default function InboxPage() {
     try {
       setEditingSaving(true);
       
-      const request: EditMessageRequest = {
-        messageId: msg.id,
-        userId: '',
-        body: newBody
+      const data = await notificationsService.editMessage(msg.id, '', newBody);
+      
+      const updated: Message = {
+        id: data?.id || msg.id,
+        conversation_id: data?.conversation_id || msg.conversation_id,
+        sender_id: data?.sender_id || msg.sender_id,
+        body: data?.body || newBody,
+        read_at: data?.read_at || null,
+        created_at: data?.created_at || msg.created_at,
+        deleted_at: data?.deleted_at || null,
+        edited_at: data?.edited_at || new Date().toISOString(),
+        reply_to_id: data?.reply_to_id || null,
+        reactions: (data?.reactions || []).map((r: any) => ({
+          emoji: r.emoji || "",
+          user_id: r.user_id || ""
+        }))
       };
 
-      const { response } = await notificationsClient.editMessage(request, { metadata: getGrpcMetadata() });
-      const fields = response.data?.fields || {};
-      
-      const normalizeMessage = (fields: any): Message => ({
-        id: fields.id?.stringValue || "",
-        conversation_id: fields.conversation_id?.stringValue || "",
-        sender_id: fields.sender_id?.stringValue || "",
-        body: fields.body?.stringValue || "",
-        read_at: fields.read_at?.stringValue || null,
-        created_at: fields.created_at?.stringValue || "",
-        deleted_at: fields.deleted_at?.stringValue || null,
-        edited_at: fields.edited_at?.stringValue || null,
-        reply_to_id: fields.reply_to_id?.stringValue || null,
-        reactions: (fields.reactions?.listValue?.values || []).map((r: any) => {
-          const rf = r.structValue?.fields || {};
-          return {
-            emoji: rf.emoji?.stringValue || "",
-            user_id: rf.user_id?.stringValue || ""
-          };
-        })
-      });
-
-      const updated = normalizeMessage(fields);
       setMessages((prev) => prev.map((m) => (m.id === updated.id ? { ...m, ...updated } : m)));
       cancelEditMessage();
     } catch (err) {
       console.error(err);
       pushToast('Failed to edit message', 'error');
-      handleGrpcError(err, false);
     } finally {
       setEditingSaving(false);
     }
-  }, [editingMessageId, editingDraft, messageById, cancelEditMessage, pushToast, notificationsClient]);
+  }, [editingMessageId, editingDraft, messageById, cancelEditMessage, pushToast]);
 
   const toggleReaction = useCallback(async (m: Message, emoji: string) => {
     try {
-      const request: ToggleReactionRequest = {
-        messageId: m.id,
-        emoji: emoji
-      } as any;
-
-      const { response } = await notificationsClient.toggleReaction(request, { metadata: getGrpcMetadata() });
-      const fields = response.data?.fields || {};
+      const data = await notificationsService.toggleReaction(m.id, '', emoji);
       
-      const normalizeMessage = (fields: any): Message => ({
-        id: fields.id?.stringValue || "",
-        conversation_id: fields.conversation_id?.stringValue || "",
-        sender_id: fields.sender_id?.stringValue || "",
-        body: fields.body?.stringValue || "",
-        read_at: fields.read_at?.stringValue || null,
-        created_at: fields.created_at?.stringValue || "",
-        deleted_at: fields.deleted_at?.stringValue || null,
-        edited_at: fields.edited_at?.stringValue || null,
-        reply_to_id: fields.reply_to_id?.stringValue || null,
-        reactions: (fields.reactions?.listValue?.values || []).map((r: any) => {
-          const rf = r.structValue?.fields || {};
-          return {
-            emoji: rf.emoji?.stringValue || "",
-            user_id: rf.user_id?.stringValue || ""
-          };
-        })
-      });
+      const updated: Message = {
+        id: data?.id || m.id,
+        conversation_id: data?.conversation_id || m.conversation_id,
+        sender_id: data?.sender_id || m.sender_id,
+        body: data?.body || m.body,
+        read_at: data?.read_at || null,
+        created_at: data?.created_at || m.created_at,
+        deleted_at: data?.deleted_at || null,
+        edited_at: data?.edited_at || null,
+        reply_to_id: data?.reply_to_id || null,
+        reactions: (data?.reactions || []).map((r: any) => ({
+          emoji: r.emoji || "",
+          user_id: r.user_id || ""
+        }))
+      };
 
-      const updated = normalizeMessage(fields);
       setMessages((prev) => prev.map((msg) => (msg.id === updated.id ? { ...msg, ...updated } : msg)));
     } catch (err) {
       console.error(err);
-      handleGrpcError(err, false);
     }
-  }, [notificationsClient]);
+  }, []);
 
   const addEmoji = useCallback((emojiData: EmojiClickData) => {
     let emoji = emojiData?.emoji as string | undefined;
@@ -1256,51 +1188,36 @@ export default function InboxPage() {
       setReplyTo(null);
       scrollToBottom();
       
-      const request: SendMessageRequest = {
-        conversationId: activeConversationId,
-        body,
-        replyToId: replyToId || '',
-      } as any;
-
-      const { response } = await notificationsClient.sendMessage(request, { metadata: getGrpcMetadata() });
-      const fields = response.data?.fields || {};
+      const data = await notificationsService.sendMessage(activeConversationId, body, replyToId || '');
       
-      const normalizeMessage = (fields: any): Message => ({
-        id: fields.id?.stringValue || "",
-        conversation_id: fields.conversation_id?.stringValue || "",
-        sender_id: fields.sender_id?.stringValue || "",
-        body: fields.body?.stringValue || "",
-        read_at: fields.read_at?.stringValue || null,
-        created_at: fields.created_at?.stringValue || "",
-        deleted_at: fields.deleted_at?.stringValue || null,
-        edited_at: fields.edited_at?.stringValue || null,
-        reply_to_id: fields.reply_to_id?.stringValue || null,
-        reactions: (fields.reactions?.listValue?.values || []).map((r: any) => {
-          const rf = r.structValue?.fields || {};
-          return {
-            emoji: rf.emoji?.stringValue || "",
-            user_id: rf.user_id?.stringValue || ""
-          };
-        })
-      });
+      const saved: Message = {
+        id: data?.id || tempId,
+        conversation_id: data?.conversation_id || activeConversationId,
+        sender_id: data?.sender_id || currentUserId || '',
+        body: data?.body || body,
+        read_at: data?.read_at || null,
+        created_at: data?.created_at || new Date().toISOString(),
+        deleted_at: data?.deleted_at || null,
+        edited_at: data?.edited_at || null,
+        reply_to_id: data?.reply_to_id || null,
+        reactions: (data?.reactions || []).map((r: any) => ({
+          emoji: r.emoji || "",
+          user_id: r.user_id || ""
+        }))
+      };
 
-      const saved = normalizeMessage(fields);
       setMessages((prev) => prev.map((m) => (m.id === tempId ? { ...saved, _status: 'sent' } : m)));
     } catch (err) {
       console.error(err);
       pushToast('Failed to send message', 'error');
-      handleGrpcError(err, false);
     }
-  }, [activeConversationId, input, currentUserId, replyTo, scrollToBottom, pushToast, hasActiveSubscription, subscriptionLoading, notificationsClient]);
+  }, [activeConversationId, input, currentUserId, replyTo, scrollToBottom, pushToast, hasActiveSubscription, subscriptionLoading]);
 
   const handleAcceptHireRequest = useCallback(async () => {
     if (!hireRequestId) return;
     try {
       setHireActionLoading('accept');
-      const res = await apiClient.auth(`${API_BASE}/api/v1/hire-requests/${encodeURIComponent(hireRequestId)}/accept`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error('Failed to accept hire request');
+      await hireRequestService.acceptHireRequest(hireRequestId);
       setHireRequestStatus('accepted');
     } catch (err) {
       console.error(err);
@@ -1314,10 +1231,7 @@ export default function InboxPage() {
     if (!hireRequestId) return;
     try {
       setHireActionLoading('decline');
-      const res = await apiClient.auth(`${API_BASE}/api/v1/hire-requests/${encodeURIComponent(hireRequestId)}/decline`, {
-        method: 'POST',
-      });
-      if (!res.ok) throw new Error('Failed to decline hire request');
+      await hireRequestService.declineHireRequest(hireRequestId);
       setHireRequestStatus('declined');
     } catch (err) {
       console.error(err);
@@ -1674,14 +1588,9 @@ export default function InboxPage() {
                     setShowHireWizard(true);
                   } else {
                     try {
-                      const res = await apiClient.auth(`${API_BASE}/api/v1/househelps/user/${encodeURIComponent(househelpUserId)}`);
-                      if (res.ok) {
-                        const profileData: any = await apiClient.json(res);
-                        setHousehelpProfileIdForHire(profileData.id);
-                        setShowHireWizard(true);
-                      } else {
-                        pushToast('Failed to load profile information', 'error');
-                      }
+                      const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+                      setHousehelpProfileIdForHire(profileData?.id || profileData?.profile_id);
+                      setShowHireWizard(true);
                     } catch (err) {
                       console.error('Failed to fetch househelp profile:', err);
                       pushToast('Failed to load profile information', 'error');
@@ -2292,9 +2201,10 @@ export default function InboxPage() {
 
       {/* Chat Terms of Use Modal */}
       {showChatTerms && !chatTermsAccepted && (
-        <div className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/60" onClick={() => setShowChatTerms(false)}>
+        <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={() => setShowChatTerms(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <div
-            className="relative w-full max-w-md bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8"
+            className="relative w-full sm:max-w-md bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1 text-center">
@@ -2360,7 +2270,7 @@ export default function InboxPage() {
       {/* Profile Modal */}
       {showProfileModal && profileModalUrl && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60"
+          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center"
           onClick={() => {
             setShowProfileModal(false);
             setProfileModalUrl(null);
@@ -2373,7 +2283,7 @@ export default function InboxPage() {
           }}
         >
           <div
-            className="relative w-full max-w-6xl h-[85vh] rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)]"
+            className="relative w-full sm:max-w-6xl h-[85vh] rounded-t-2xl sm:rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -2438,7 +2348,8 @@ export default function InboxPage() {
       )}
 
       {showHireWizard && selectedConversation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <ConversationHireWizard
             househelpId={
               currentUserProfileType?.toLowerCase() === 'household'
@@ -2456,22 +2367,9 @@ export default function InboxPage() {
               setHireRequestStatus('pending');
               setHireRequestId(newHireRequestId);
               const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
-              apiClient
-                .auth(
-                  `${NOTIFICATIONS_BASE}/api/v1/inbox/conversations/${activeConversationId}/messages`,
-                  {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ body }),
-                  },
-                )
-                .then((res) => {
-                  if (res.ok) {
-                    return apiClient.json<any>(res);
-                  }
-                })
-                .then((responseBody) => {
-                  const msg = normalizeMessage(extractEnvelopeObject(responseBody));
+              notificationsService.sendMessage(activeConversationId!, body)
+                .then((data) => {
+                  const msg = normalizeMessage(data || {});
                   if (msg) {
                     setMessages((prev) => [...prev, msg]);
                     setTimeout(
@@ -2488,9 +2386,10 @@ export default function InboxPage() {
 
       {/* Subscription Gate Modal */}
       {showSubscriptionModal && (
-        <div className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/60" onClick={() => setShowSubscriptionModal(false)}>
+        <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={() => setShowSubscriptionModal(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <div
-            className="relative w-full max-w-md bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8"
+            className="relative w-full sm:max-w-md bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <button

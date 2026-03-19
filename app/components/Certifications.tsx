@@ -1,36 +1,17 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
-const CERTIFICATIONS = [
-  'I have a valid driving license',
-  'I have a Certificate of Good Conduct',
-  'I have a First Aid certificate',
-  'I am a non-smoker',
-  'I have a Diploma in Housekeeping',
-  'I have a Childcare certification',
-  'I have experience with special needs care',
-  'I have a Food Handling certificate'
-];
-
-const HELP_WITH_OPTIONS = [
-  'Homework help',
-  'Grocery shopping',
-  'Cooking',
-  'Household chores',
-  'Laundry and ironing',
-  'Childcare',
-  'Elderly care',
-  'Pet care',
-  'Tutoring',
-  'Running errands'
-];
+// Certifications and skills are now fetched from backend via context
 
 const Certifications: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [selectedHelp, setSelectedHelp] = useState<string[]>([]);
   const [otherCerts, setOtherCerts] = useState<string[]>(['']);
@@ -39,44 +20,49 @@ const Certifications: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Load existing data
+  // Get options from backend
+  const CERTIFICATIONS = options?.certifications.map(c => c.name) || [];
+  const HELP_WITH_OPTIONS = options?.skills.map(s => s.name) || [];
+
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.certifications;
+    if (cached) {
+      if (cached.certs?.length) setSelectedCerts(cached.certs);
+      if (cached.helpWith?.length) setSelectedHelp(cached.helpWith);
+    }
+  }, [profileData.certifications]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
+        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        
+        // Parse certifications
+        if (data?.certifications) {
+          const certs = data.certifications.split(',').map((c: string) => c.trim()).filter(Boolean);
+          const predefined = certs.filter((c: string) => CERTIFICATIONS.includes(c));
+          const custom = certs.filter((c: string) => !CERTIFICATIONS.includes(c));
           
-          // Parse certifications
-          if (data.certifications) {
-            const certs = data.certifications.split(',').map((c: string) => c.trim()).filter(Boolean);
-            const predefined = certs.filter((c: string) => CERTIFICATIONS.includes(c));
-            const custom = certs.filter((c: string) => !CERTIFICATIONS.includes(c));
-            
-            setSelectedCerts(predefined);
-            if (custom.length > 0) {
-              setOtherCerts(custom);
-            }
+          setSelectedCerts(predefined);
+          if (custom.length > 0) {
+            setOtherCerts(custom);
           }
+        }
 
-          // Parse can_help_with
-          if (data.can_help_with) {
-            const help = data.can_help_with.split(',').map((h: string) => h.trim()).filter(Boolean);
-            const predefined = help.filter((h: string) => HELP_WITH_OPTIONS.includes(h));
-            const custom = help.filter((h: string) => !HELP_WITH_OPTIONS.includes(h));
-            
-            setSelectedHelp(predefined);
-            if (custom.length > 0) {
-              setOtherHelp(custom);
-            }
+        // Parse can_help_with
+        if (data?.can_help_with) {
+          const help = data.can_help_with.split(',').map((h: string) => h.trim()).filter(Boolean);
+          const predefined = help.filter((h: string) => HELP_WITH_OPTIONS.includes(h));
+          const custom = help.filter((h: string) => !HELP_WITH_OPTIONS.includes(h));
+          
+          setSelectedHelp(predefined);
+          if (custom.length > 0) {
+            setOtherHelp(custom);
           }
         }
       } catch (err) {
@@ -140,7 +126,7 @@ const Certifications: React.FC = () => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       
       // Filter out empty other certifications and help options
       const validOtherCerts = otherCerts.filter(cert => cert.trim() !== '');
@@ -150,30 +136,13 @@ const Certifications: React.FC = () => {
       const allCerts = [...selectedCerts, ...validOtherCerts];
       const allHelp = [...selectedHelp, ...validOtherHelp];
       
-      const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          updates: {
-            certifications: allCerts.join(','),
-            can_help_with: allHelp.join(','),
-          },
-          _step_metadata: {
-            step_id: "certifications",
-            step_number: 5,
-            is_completed: true
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save certifications');
-      }
+      await grpcProfileService.updateHousehelpFields('', 'househelp', {
+        certifications: allCerts.join(','),
+        can_help_with: allHelp.join(','),
+      }, { step_id: 'certifications', step_number: 5, is_completed: true });
 
       markClean();
+      updateStepData('certifications', { certs: allCerts, helpWith: allHelp });
       setSuccess('Certifications saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'certifications', 'Failed to save your information. Please try again.'));

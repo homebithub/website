@@ -1,7 +1,8 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 
 const YearsOfExperience = () => {
     const [years, setYears] = useState<number | null>(null);
@@ -40,31 +41,16 @@ const YearsOfExperience = () => {
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) {
                 throw new Error('Authentication token not found');
             }
 
             const finalYears = years === 6 ? parseInt(customYears, 10) : years;
             
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    updates: {
-                        years_of_experience: finalYears
-                    }
-                })
+            await grpcProfileService.updateHousehelpFields('', 'househelp', {
+                years_of_experience: finalYears
             });
-
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to update profile');
-            }
             
             setSuccess('Your information has been saved successfully!');
             // Navigate to next step or show success message

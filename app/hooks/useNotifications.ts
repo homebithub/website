@@ -1,9 +1,7 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { API_BASE_URL } from "~/config/api";
 import type { NotificationItem } from "~/types/notifications";
-import { NotificationsServiceClient } from "~/proto/notifications/notifications.client";
-import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
-import { ListNotificationsByUserRequest, MarkNotificationAsClickedRequest, MarkAllNotificationsAsClickedRequest } from "~/proto/notifications/notifications";
+import { notificationsService } from "~/services/grpc/notifications.service";
 import { getAccessTokenFromCookies, getAuthFromCookies } from "~/utils/cookie";
 
 interface UseNotificationsOptions {
@@ -22,8 +20,6 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   const [hasMore, setHasMore] = useState(true);
   const esRef = useRef<EventSource | null>(null);
 
-  const client = useMemo(() => new NotificationsServiceClient(transport), []);
-
   const getCurrentUserId = useCallback((): string | null => {
     const { user } = getAuthFromCookies();
     if (user?.id) return user.id;
@@ -41,16 +37,16 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
 
   const computeUnread = (list: NotificationItem[]) => list.filter(n => !n.clicked && (n.status?.toLowerCase?.() !== "read")).length;
 
-  const mapProtoToNotification = (fields: any): NotificationItem => ({
-    id: fields.id?.stringValue || "",
-    userId: fields.user_id?.stringValue || "",
-    title: fields.title?.stringValue || "",
-    message: fields.message?.stringValue || "",
-    type: fields.type?.stringValue || "",
-    status: fields.status?.stringValue || "",
-    clicked: fields.clicked?.boolValue || false,
-    createdAt: fields.created_at?.stringValue || "",
-    updatedAt: fields.updated_at?.stringValue || "",
+  const mapToNotification = (n: any): NotificationItem => ({
+    id: n.id || "",
+    userId: n.user_id || "",
+    title: n.title || "",
+    message: n.message || "",
+    type: n.type || "",
+    status: n.status || "",
+    clicked: n.clicked || false,
+    createdAt: n.created_at || "",
+    updatedAt: n.updated_at || "",
   });
 
   const fetchLatest = useCallback(async (query: string = search) => {
@@ -69,31 +65,23 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       const userID = getCurrentUserId();
       if (!userID) return;
 
-      const request: ListNotificationsByUserRequest = {
-        userId: userID,
-        limit: pageSize,
-        offset: 0
-      };
-
-      const { response } = await client.listNotificationsByUser(request, { metadata: getGrpcMetadata() });
+      const data = await notificationsService.listNotificationsByUser(userID, pageSize, 0);
+      const notifications = data?.notifications || [];
       
-      const data = response.data?.fields || {};
-      const notifications = (data.notifications as any)?.listValue?.values || [];
-      
-      const list: NotificationItem[] = notifications.map((v: any) => mapProtoToNotification(v.structValue?.fields || {}));
+      const list: NotificationItem[] = notifications.map((n: any) => mapToNotification(n));
 
       setItems(list);
       setHasMore(list.length >= pageSize);
       
-      setTotalCount((data.total_count as any)?.numberValue || list.length);
+      setTotalCount(data?.total_count || list.length);
       setShowingCount(list.length);
-      setUnreadCount((data.unread_count as any)?.numberValue || computeUnread(list));
+      setUnreadCount(data?.unread_count || computeUnread(list));
     } catch (e) {
-      handleGrpcError(e, false);
+      console.error('[useNotifications] Error:', e);
     } finally {
       setLoading(false);
     }
-  }, [client, getCurrentUserId, pageSize, search]);
+  }, [getCurrentUserId, pageSize, search]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -101,18 +89,11 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       setLoadingMore(true);
       const userID = getCurrentUserId();
       if (!userID) return;
-      
-      const request: ListNotificationsByUserRequest = {
-        userId: userID,
-        limit: pageSize,
-        offset: items.length
-      };
 
-      const { response } = await client.listNotificationsByUser(request, { metadata: getGrpcMetadata() });
-      const data = response.data?.fields || {};
-      const notifications = (data.notifications as any)?.listValue?.values || [];
+      const data = await notificationsService.listNotificationsByUser(userID, pageSize, items.length);
+      const notifications = data?.notifications || [];
       
-      const list: NotificationItem[] = notifications.map((v: any) => mapProtoToNotification(v.structValue?.fields || {}));
+      const list: NotificationItem[] = notifications.map((n: any) => mapToNotification(n));
 
       if (list.length > 0) {
         setItems(prev => {
@@ -129,7 +110,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
         setHasMore(false);
       }
     } catch (e) {
-      handleGrpcError(e, false);
+      console.error('[useNotifications] loadMore error:', e);
     } finally {
       setLoadingMore(false);
     }
@@ -146,7 +127,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
     const token = getAccessTokenFromCookies();
     if (!token) return;
 
-    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`);
+    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
     esRef.current = es;
 
     es.onmessage = (ev) => {
@@ -185,22 +166,19 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
     try {
       const userID = getCurrentUserId();
       if (!userID) return;
-      
-      const request: MarkAllNotificationsAsClickedRequest = { userId: userID };
-      await client.markAllNotificationsAsClicked(request, { metadata: getGrpcMetadata() });
+      await notificationsService.markAllNotificationsAsClicked(userID);
       await fetchLatest();
     } catch (e) {
-      handleGrpcError(e);
+      console.error('[useNotifications] markAllAsRead error:', e);
     }
   };
 
   const markOneAsRead = async (id: string) => {
     try {
-      const request: MarkNotificationAsClickedRequest = { notificationId: id, userId: '' };
-      await client.markNotificationAsClicked(request, { metadata: getGrpcMetadata() });
+      await notificationsService.markNotificationAsClicked(id, '');
       await fetchLatest();
     } catch (e) {
-      handleGrpcError(e);
+      console.error('[useNotifications] markOneAsRead error:', e);
     }
   };
 

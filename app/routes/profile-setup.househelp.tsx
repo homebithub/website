@@ -4,7 +4,10 @@ import { useAuth } from '~/contexts/useAuth';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupContext';
-import { API_BASE_URL } from '~/config/api';
+import { OnboardingOptionsProvider } from '~/contexts/OnboardingOptionsContext';
+import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { profileSetupService } from '~/services/grpc/profileSetup.service';
 
 // Import all the components
 import Location from '~/components/Location';
@@ -94,6 +97,84 @@ function HousehelpProfileSetupContent() {
     hasUnsavedChanges,
     markClean 
   } = useProfileSetup();
+  
+  // Resume from where left off
+  const { progress, updateProgress } = useOnboardingProgress(user?.id || '', 'househelp');
+  
+  // Resume to last incomplete step on mount
+  useEffect(() => {
+    if (progress && progress.status !== 'completed' && !isProfileLoaded) {
+      const resumeStep = progress.current_step || 0;
+      if (resumeStep > 0 && resumeStep < STEPS.length) {
+        setCurrentStep(resumeStep);
+        setDisplayedStep(resumeStep);
+      }
+    }
+  }, [progress, isProfileLoaded]);
+  
+  // Redirect if already completed
+  useEffect(() => {
+    if (progress?.status === 'completed' && !location.state?.fromProfile) {
+      navigate('/dashboard');
+    }
+  }, [progress, navigate, location.state]);
+
+  const isStepValid = () => {
+    const stepId = STEPS[currentStep].id;
+    const data = profileData;
+
+    switch (stepId) {
+      case 'location':
+        return !!data.location?.place || !!data.location?.name || !!data.location?.town || !!data.location?.address;
+      case 'nannytype':
+        // updateStepData: { needsLiveIn, needsDayWorker, availableFrom } | backend: { offers_live_in, ... }
+        return (data.nannytype?.needsLiveIn || data.nannytype?.needsDayWorker ||
+                data.nannytype?.offers_live_in || data.nannytype?.offers_day_worker ||
+                data.nannytype?.type) &&
+               !!(data.nannytype?.availableFrom || data.nannytype?.available_from || data.nannytype?.type);
+      case 'gender':
+        return !!(data.gender?.gender || data.gender?.date_of_birth || data.gender?.dateOfBirth);
+      case 'experience':
+        // updateStepData: { years } | backend: number | legacy: { years_of_experience }
+        return data.experience?.years !== undefined || typeof data.experience === 'number' ||
+               data.experience?.years_of_experience !== undefined;
+      case 'certifications':
+        // updateStepData: { certs, helpWith } | backend: { certifications, can_help_with }
+        return !!(data.certifications?.certs?.length > 0 || data.certifications?.certifications ||
+                  data.certifications?.first_aid !== undefined);
+      case 'salary':
+        // updateStepData: { expectation, frequency } | backend: { salary_expectation, salary_frequency }
+        return !!(data.salary?.expectation || data.salary?.salary_expectation || data.salary?.frequency);
+      case 'workwithkids':
+        // updateStepData: { preference } | backend: { can_work_with_kids }
+        return data.workwithkids?.preference !== undefined || data.workwithkids?.can_work !== undefined ||
+               data.workwithkids?.can_work_with_kids !== undefined;
+      case 'workwithpets':
+        // updateStepData: { preference } | backend: { can_work_with_pets }
+        return data.workwithpets?.preference !== undefined || data.workwithpets?.can_work !== undefined ||
+               data.workwithpets?.can_work_with_pets !== undefined;
+      case 'languages':
+        // updateStepData: { languages: [] } | backend: string | legacy: string[]
+        return (data.languages?.languages?.length > 0) ||
+               (typeof data.languages === 'string' && data.languages.length > 0) ||
+               (Array.isArray(data.languages) && data.languages.length > 0);
+      case 'bio':
+        return (typeof data.bio === 'string' && data.bio.length >= 20) ||
+               (typeof data.bio === 'object' && !!data.bio?.bio && data.bio.bio.length >= 20);
+      case 'mykids':
+        // Require user to actively select and save an option before Next is enabled
+        return !!(data.mykids?.kidOption || data.mykids?.preference || 
+                  data.mykids?.has_kids !== undefined || data.mykids?.needs_accommodation !== undefined);
+      // Skippable/Optional steps
+      case 'workenvironment':
+      case 'references':
+      case 'backgroundcheck':
+      case 'kyc':
+        return true;
+      default:
+        return true;
+    }
+  };
 
   const currentStepData = STEPS[currentStep];
 
@@ -144,7 +225,7 @@ function HousehelpProfileSetupContent() {
   // Authentication check - redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) {
         navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
       }
@@ -275,44 +356,32 @@ function HousehelpProfileSetupContent() {
 
   const markAllStepsComplete = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) return;
       
-      // Mark ALL steps as completed in profile-setup-steps
+      // Mark ALL steps as completed in profile-setup-steps via gRPC
       for (let i = 0; i < STEPS.length; i++) {
-        await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            step_id: STEPS[i].id,
-            step_number: i,
-            is_completed: true,
-            is_skipped: false,
-            data: {}
-          })
+        await profileSetupService.updateStep('', {
+          profile_type: 'househelp',
+          step_id: STEPS[i].id,
+          step_number: i,
+          is_completed: true,
+          is_skipped: false,
+          data: {}
         });
       }
       
-      // Also update progress tracking to mark as complete
-      await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          current_step: STEPS.length,
-          last_completed_step: STEPS.length,
-          total_steps: STEPS.length,
-          completed_steps: STEPS.map(s => s.id),
-          status: 'completed',
-          completion_percentage: 100,
-          step_id: 'completed',
-          time_spent_seconds: 0
-        })
+      // Also update progress tracking to mark as complete via gRPC
+      await profileSetupService.updateProgress('', {
+        profile_type: 'househelp',
+        current_step: STEPS.length,
+        last_completed_step: STEPS.length,
+        total_steps: STEPS.length,
+        completed_steps: STEPS.map(s => s.id),
+        status: 'completed',
+        completion_percentage: 100,
+        step_id: 'completed',
+        time_spent_seconds: 0
       });
     } catch (error) {
       console.error('Failed to mark steps as complete:', error);
@@ -329,7 +398,7 @@ function HousehelpProfileSetupContent() {
     isAutoSave: boolean = false
   ) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) return;
       
       // Handle case when step is beyond STEPS array (completion)
@@ -342,38 +411,26 @@ function HousehelpProfileSetupContent() {
         highestCompletedStepRef.current = Math.max(highestCompletedStepRef.current, actualStep + 1);
       }
       
-      // Save progress tracking
-      await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          current_step: actualStep + 1,
-          last_completed_step: highestCompletedStepRef.current,
-          total_steps: STEPS.length,
-          completed_steps: completedSteps,
-          step_id: STEPS[actualStep]?.id || 'completed',
-          time_spent_seconds: timeOnStep
-        })
+      // Save progress tracking via gRPC
+      await profileSetupService.updateProgress('', {
+        profile_type: 'househelp',
+        current_step: actualStep + 1,
+        last_completed_step: highestCompletedStepRef.current,
+        total_steps: STEPS.length,
+        completed_steps: completedSteps,
+        step_id: STEPS[actualStep]?.id || 'completed',
+        time_spent_seconds: timeOnStep
       });
       
       // Mark step as completed in profile-setup-steps (required for is_complete check)
       if (isComplete || !isAutoSave) {
-        await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            step_id: STEPS[actualStep]?.id || 'completed',
-            step_number: actualStep,
-            is_completed: isComplete || !skipped,
-            is_skipped: skipped,
-            data: {}
-          })
+        await profileSetupService.updateStep('', {
+          profile_type: 'househelp',
+          step_id: STEPS[actualStep]?.id || 'completed',
+          step_number: actualStep,
+          is_completed: isComplete || !skipped,
+          is_skipped: skipped,
+          data: {}
         });
       }
     } catch (error) {
@@ -560,9 +617,9 @@ function HousehelpProfileSetupContent() {
 
                   <button
                     onClick={handleNext}
-                    disabled={isSaving || hasUnsavedChanges}
+                    disabled={isSaving || hasUnsavedChanges || !isStepValid()}
                     className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
-                      isSaving || hasUnsavedChanges
+                      isSaving || hasUnsavedChanges || !isStepValid()
                         ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                         : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                     }`}
@@ -573,8 +630,8 @@ function HousehelpProfileSetupContent() {
                     )}
                   </button>
                 </div>
-                {hasUnsavedChanges && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">Please save your changes before proceeding</p>
+                {(hasUnsavedChanges || !isStepValid()) && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">{hasUnsavedChanges ? 'Please save your changes before proceeding' : 'Please complete this step before proceeding'}</p>
                 )}
               </div>
 
@@ -607,9 +664,9 @@ function HousehelpProfileSetupContent() {
 
                 <button
                   onClick={handleNext}
-                  disabled={isSaving || hasUnsavedChanges}
+                  disabled={isSaving || hasUnsavedChanges || !isStepValid()}
                   className={`flex items-center px-6 py-1.5 rounded-xl text-white font-bold shadow-lg transition-all ${
-                    isSaving || hasUnsavedChanges
+                    isSaving || hasUnsavedChanges || !isStepValid()
                       ? 'bg-gray-400 cursor-not-allowed opacity-50' 
                       : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                   }`}
@@ -620,8 +677,8 @@ function HousehelpProfileSetupContent() {
                   )}
                 </button>
                 </div>
-                {hasUnsavedChanges && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">Please save your changes before proceeding</p>
+                {(hasUnsavedChanges || !isStepValid()) && (
+                  <p className="text-xs text-amber-600 dark:text-amber-400 text-center mt-2">{hasUnsavedChanges ? 'Please save your changes before proceeding' : 'Please complete this step before proceeding'}</p>
                 )}
               </div>
             </div>
@@ -687,7 +744,7 @@ function HousehelpProfileSetupContent() {
                 <button
                   onClick={finishSetup}
                   disabled={!disclaimerChecked || isSaving}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-primary-700 text-white font-bold shadow-lg hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold shadow-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
                 >
                   {isSaving ? (
                     <>
@@ -767,7 +824,9 @@ function HousehelpProfileSetupContent() {
 export default function HousehelpProfileSetup() {
   return (
     <ProfileSetupProvider>
-      <HousehelpProfileSetupContent />
+      <OnboardingOptionsProvider profileType="househelp">
+        <HousehelpProfileSetupContent />
+      </OnboardingOptionsProvider>
     </ProfileSetupProvider>
   );
 }

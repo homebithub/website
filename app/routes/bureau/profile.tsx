@@ -1,8 +1,9 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React from "react";
 
 import { useEffect, useState } from "react";
 import { Navigation } from "~/components/Navigation";
-import { API_BASE_URL } from '~/config/api';
+import { bureauService } from '~/services/grpc/authServices';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
@@ -27,13 +28,9 @@ export default function BureauProfile() {
             setLoading(true);
             setError(null);
             try {
-                const token = localStorage.getItem("token");
+                const token = getAccessTokenFromCookies();
                 if (!token) throw new Error("Not authenticated");
-                const res = await fetch(`${API_BASE_URL}/api/v1/profile/bureau/me`, {
-                    headers: { Authorization: `Bearer ${token}` },
-                });
-                if (!res.ok) throw new Error("Failed to fetch profile");
-                const data = await res.json();
+                const data = await bureauService.getCurrentBureauProfile('');
                 setProfile(data);
             } catch (err: any) {
                 setError(err.message || "Failed to load profile");

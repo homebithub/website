@@ -13,7 +13,8 @@ import {
   ExclamationTriangleIcon,
   PauseIcon,
   PlayIcon,
-  XCircleIcon as CancelIcon
+  XCircleIcon as CancelIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import { Navigation } from "~/components/Navigation";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -22,21 +23,12 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { Footer } from "~/components/Footer";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
-import { API_ENDPOINTS, getAuthHeaders } from '~/config/api';
+import { paymentsService } from '~/services/grpc/payments.service';
 import { PauseSubscriptionModal } from '~/components/subscriptions/PauseSubscriptionModal';
 import { CancelSubscriptionFlow } from '~/components/subscriptions/CancelSubscriptionFlow';
 import { ChangePlanModal } from '~/components/subscriptions/ChangePlanModal';
 import { CreditBalanceCard } from '~/components/subscriptions/CreditBalanceCard';
 import { PauseStatusCard } from '~/components/subscriptions/PauseStatusCard';
-import {
-  pauseSubscription,
-  resumeSubscription,
-  getPauseStatus,
-  cancelSubscription,
-  changePlan,
-  previewProration,
-  getCreditBalance,
-} from '~/utils/api/subscriptions';
 import type { PauseStatusResponse, CreditBalanceResponse, PauseReason, CancelReason } from '~/types/payments';
 
 interface SubscriptionPlan {
@@ -45,6 +37,8 @@ interface SubscriptionPlan {
   description: string;
   price_amount: number;
   billing_cycle: string;
+  profile_type?: string;
+  trial_days?: number;
   features: any;
   is_active: boolean;
 }
@@ -113,52 +107,195 @@ export default function SubscriptionsPage() {
   const [loadingPauseStatus, setLoadingPauseStatus] = useState(false);
   const [loadingCreditBalance, setLoadingCreditBalance] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  
+  // Checkout state (for subscribing to a new plan inline)
+  const [selectedCheckoutPlan, setSelectedCheckoutPlan] = useState<SubscriptionPlan | null>(null);
+  const [showCheckoutModal, setShowCheckoutModal] = useState(false);
+  const [checkoutPhone, setCheckoutPhone] = useState('');
+  const [checkoutStatus, setCheckoutStatus] = useState<'idle' | 'initiating' | 'processing' | 'success' | 'failed' | 'timeout'>('idle');
+  const [checkoutProcessing, setCheckoutProcessing] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
+  const [checkoutPolling, setCheckoutPolling] = useState<NodeJS.Timeout | null>(null);
+
+  // Hardcoded pricing plans (same as pricing page)
+  const allPlans: SubscriptionPlan[] = [
+    {
+      id: 'household-monthly', name: 'Monthly',
+      description: 'Monthly subscription with 1-month free trial',
+      price_amount: 49900, billing_cycle: 'monthly', profile_type: 'household',
+      trial_days: 30, is_active: true,
+      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true },
+    },
+    {
+      id: 'household-quarterly', name: 'Quarterly',
+      description: '3-month subscription - Save 10%! (1-month free trial)',
+      price_amount: 134900, billing_cycle: 'quarterly', profile_type: 'household',
+      trial_days: 30, is_active: true,
+      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true, savings: 'Save KES 150' },
+    },
+    {
+      id: 'household-semi-annual', name: 'Semi-Annual',
+      description: '6-month subscription - Save 20%! (1-month free trial)',
+      price_amount: 239900, billing_cycle: 'semi-annual', profile_type: 'household',
+      trial_days: 30, is_active: true,
+      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true, savings: 'Save KES 600' },
+    },
+    {
+      id: 'household-annual', name: 'Annual',
+      description: '1-year subscription - Save 30%! (1-month free trial)',
+      price_amount: 419900, billing_cycle: 'yearly', profile_type: 'household',
+      trial_days: 30, is_active: true,
+      features: { messaging: true, profile_views: 'unlimited', search_filters: 'advanced', priority_support: true, background_checks: true, verified_profiles: true, savings: 'Save KES 1,800' },
+    },
+    {
+      id: 'househelp-annual', name: 'Annual Access',
+      description: 'One-time annual payment with 1-month free trial',
+      price_amount: 99900, billing_cycle: 'yearly', profile_type: 'househelp',
+      trial_days: 30, is_active: true,
+      features: { direct_messaging: true, profile_verification: true, job_applications: 'unlimited', profile_visibility: true, job_alerts: true, application_tracking: true },
+    },
+  ];
+
+  // Filter plans by user's profile type
+  const userObj: any = (user as any)?.user || user;
+  const profileType: string = userObj?.profile_type || localStorage.getItem('profile_type') || '';
+  const relevantPlans = allPlans.filter(p => p.is_active && p.profile_type === profileType);
+
+  const getFeaturesList = (features: any): string[] => {
+    const list: string[] = [];
+    if (!features) return list;
+    if (features.messaging) list.push('Unlimited messaging');
+    if (features.profile_views) list.push(`${features.profile_views === 'unlimited' ? 'Unlimited' : features.profile_views} profile views`);
+    if (features.search_filters) list.push(`${features.search_filters} search filters`);
+    if (features.priority_support) list.push('Priority support');
+    if (features.background_checks) list.push('Background checks');
+    if (features.verified_profiles) list.push('Verified profiles access');
+    if (features.direct_messaging) list.push('Direct messaging');
+    if (features.profile_verification) list.push('Profile verification');
+    if (features.job_applications) list.push(`${features.job_applications === 'unlimited' ? 'Unlimited' : features.job_applications} job applications`);
+    if (features.profile_visibility) list.push('Enhanced profile visibility');
+    if (features.job_alerts) list.push('Job alerts');
+    if (features.application_tracking) list.push('Application tracking');
+    return list;
+  };
+
+  const getBillingCycleLabel = (cycle: string) => {
+    const labels: Record<string, string> = { 'monthly': 'month', 'quarterly': '3 months', 'semi-annual': '6 months', 'yearly': 'year' };
+    return labels[cycle] || cycle;
+  };
+
+  const handleSelectCheckoutPlan = (plan: SubscriptionPlan) => {
+    setSelectedCheckoutPlan(plan);
+    setCheckoutPhone(formatPhoneNumber(userObj?.phone || ''));
+    setCheckoutStatus('idle');
+    setCheckoutError('');
+    setShowCheckoutModal(true);
+  };
+
+  const initiateCheckout = async () => {
+    if (!selectedCheckoutPlan || !checkoutPhone) {
+      setCheckoutError('Please enter your phone number');
+      return;
+    }
+    const formatted = formatPhoneNumber(checkoutPhone);
+    if (!isValidPhoneNumber(formatted)) {
+      setCheckoutError('Please enter a valid Kenyan phone number (e.g., +254712345678)');
+      return;
+    }
+    setCheckoutProcessing(true);
+    setCheckoutStatus('initiating');
+    setCheckoutError('');
+    try {
+      const data = await paymentsService.createSubscriptionCheckout('', selectedCheckoutPlan.id, formatted, '', '') as any;
+      const result = data?.toObject?.() ?? data;
+      setCheckoutStatus('processing');
+      startCheckoutPolling(result.paymentId || result.payment_id);
+    } catch (error) {
+      setCheckoutStatus('failed');
+      setCheckoutError(error instanceof Error ? error.message : 'Failed to initiate payment.');
+      setCheckoutProcessing(false);
+    }
+  };
+
+  const startCheckoutPolling = (paymentId: string) => {
+    let attempts = 0;
+    const interval = setInterval(async () => {
+      attempts++;
+      try {
+        const response = await paymentsService.checkPaymentStatus(paymentId, '') as any;
+        const data = response?.toObject?.() ?? response;
+        if (data?.status === 'completed') {
+          setCheckoutStatus('success');
+          clearInterval(interval);
+          setCheckoutPolling(null);
+          setCheckoutProcessing(false);
+          setTimeout(() => {
+            setShowCheckoutModal(false);
+            fetchSubscriptionData();
+          }, 2000);
+        } else if (data?.status === 'failed') {
+          setCheckoutStatus('failed');
+          setCheckoutError(data.failureReason || data.failure_reason || 'Payment failed.');
+          clearInterval(interval);
+          setCheckoutPolling(null);
+          setCheckoutProcessing(false);
+        }
+      } catch (e) { /* continue polling */ }
+      if (attempts >= 60) {
+        clearInterval(interval);
+        setCheckoutPolling(null);
+        setCheckoutStatus('timeout');
+        setCheckoutError('Payment is taking longer than expected. Check your payment history.');
+        setCheckoutProcessing(false);
+      }
+    }, 3000);
+    setCheckoutPolling(interval);
+  };
+
+  const handleCloseCheckoutModal = () => {
+    if (checkoutProcessing) return;
+    if (checkoutPolling) { clearInterval(checkoutPolling); setCheckoutPolling(null); }
+    setShowCheckoutModal(false);
+    setCheckoutStatus('idle');
+    setCheckoutError('');
+    setSelectedCheckoutPlan(null);
+  };
+
+  const handleCheckoutRetry = () => {
+    setCheckoutStatus('idle');
+    setCheckoutError('');
+    if (checkoutPolling) { clearInterval(checkoutPolling); setCheckoutPolling(null); }
+  };
 
   const fetchSubscriptionData = React.useCallback(async () => {
     setDataLoading(true);
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        console.log('[Subscriptions] No token found');
-        return;
-      }
-
       console.log('[Subscriptions] Fetching subscription data...');
 
-      const subRes = await fetch(API_ENDPOINTS.payments.subscriptions.mine, {
-        headers: getAuthHeaders(token),
-      });
-      
-      if (subRes.ok) {
-        const subData = await subRes.json();
+      try {
+        const subData = await paymentsService.getMySubscription('') as any;
         console.log('[Subscriptions] Subscription data:', subData);
-        setSubscription(subData);
-      } else {
-        console.warn('[Subscriptions] Failed to fetch subscription:', subRes.status);
+        setSubscription(subData?.toObject?.() ?? subData);
+      } catch (err) {
+        console.warn('[Subscriptions] Failed to fetch subscription:', err);
       }
 
-      const paymentsRes = await fetch(`${API_ENDPOINTS.payments.transactions.list}?limit=10`, {
-        headers: getAuthHeaders(token),
-      });
-      
-      if (paymentsRes.ok) {
-        const paymentsData = await paymentsRes.json();
+      try {
+        const paymentsData = await paymentsService.listMyPayments('', 0, 10) as any;
         console.log('[Subscriptions] Payments data:', paymentsData);
-        setPayments(paymentsData.payments || []);
-      } else {
-        console.warn('[Subscriptions] Failed to fetch payments:', paymentsRes.status);
+        const paymentsList = paymentsData?.toObject?.()?.paymentsList ?? paymentsData?.payments ?? [];
+        setPayments(paymentsList);
+      } catch (err) {
+        console.warn('[Subscriptions] Failed to fetch payments:', err);
       }
 
-      const plansRes = await fetch(API_ENDPOINTS.payments.plans, {
-        headers: getAuthHeaders(token),
-      });
-      
-      if (plansRes.ok) {
-        const plansData = await plansRes.json();
+      try {
+        const plansData = await paymentsService.getPlans() as any;
         console.log('[Subscriptions] Plans data:', plansData);
-        setPlans(plansData.plans || []);
-      } else {
-        console.warn('[Subscriptions] Failed to fetch plans:', plansRes.status);
+        const plansList = plansData?.toObject?.()?.plansList ?? plansData?.plans ?? [];
+        setPlans(plansList);
+      } catch (err) {
+        console.warn('[Subscriptions] Failed to fetch plans:', err);
       }
     } catch (error) {
       console.error('[Subscriptions] Failed to fetch subscription data:', error);
@@ -173,7 +310,7 @@ export default function SubscriptionsPage() {
     
     setLoadingPauseStatus(true);
     try {
-      const status = await getPauseStatus(subscription.id);
+      const status = await paymentsService.getPauseStatus(subscription.id, '');
       setPauseStatus(status);
     } catch (error) {
       console.error('[Subscriptions] Failed to fetch pause status:', error);
@@ -188,7 +325,7 @@ export default function SubscriptionsPage() {
     
     setLoadingCreditBalance(true);
     try {
-      const balance = await getCreditBalance(subscription.id);
+      const balance = await paymentsService.getCreditBalance('');
       setCreditBalance(balance);
     } catch (error) {
       console.error('[Subscriptions] Failed to fetch credit balance:', error);
@@ -203,8 +340,11 @@ export default function SubscriptionsPage() {
       if (pollingInterval) {
         clearInterval(pollingInterval);
       }
+      if (checkoutPolling) {
+        clearInterval(checkoutPolling);
+      }
     };
-  }, [pollingInterval]);
+  }, [pollingInterval, checkoutPolling]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -236,7 +376,7 @@ export default function SubscriptionsPage() {
   const handlePauseSubscription = async (reason: PauseReason, durationDays: number) => {
     if (!subscription?.id) return;
     
-    await pauseSubscription(subscription.id, { reason, duration_days: durationDays });
+    await paymentsService.pauseSubscription(subscription.id, '', reason, durationDays);
     await fetchSubscriptionData();
     await fetchPauseStatus();
   };
@@ -247,7 +387,7 @@ export default function SubscriptionsPage() {
     
     setErrorMessage('');
     try {
-      await resumeSubscription(subscription.id);
+      await paymentsService.resumeSubscription(subscription.id, '');
       setSuccessMessage('Subscription resumed successfully');
       await fetchSubscriptionData();
       await fetchPauseStatus();
@@ -261,7 +401,7 @@ export default function SubscriptionsPage() {
   const handleCancelSubscription = async (reason: CancelReason, feedback?: string) => {
     if (!subscription?.id) return;
     
-    await cancelSubscription(subscription.id, { reason, feedback });
+    await paymentsService.cancelSubscription(subscription.id, '');
     setSuccessMessage('Subscription cancelled successfully. Access continues until the end of your billing period.');
     await fetchSubscriptionData();
     setTimeout(() => setSuccessMessage(''), 5000);
@@ -271,7 +411,7 @@ export default function SubscriptionsPage() {
   const handleChangePlan = async (newPlanId: string) => {
     if (!subscription?.id) return;
     
-    await changePlan(subscription.id, { new_plan_id: newPlanId });
+    await paymentsService.changePlan(subscription.id, newPlanId, '');
     setSuccessMessage('Plan changed successfully');
     await fetchSubscriptionData();
     await fetchCreditBalance();
@@ -282,8 +422,8 @@ export default function SubscriptionsPage() {
   const handlePreviewProration = async (newPlanId: string) => {
     if (!subscription?.id) return { unused_credit: 0, prorated_charge: 0, net_amount: 0, days_used: 0, days_remaining: 0, total_days: 0, description: '' };
     
-    const preview = await previewProration(subscription.id, { new_plan_id: newPlanId });
-    return preview.proration;
+    const preview = await paymentsService.previewProration(subscription.id, newPlanId, '');
+    return (preview as any)?.proration || preview;
   };
 
   const initiatePayment = async () => {
@@ -304,30 +444,11 @@ export default function SubscriptionsPage() {
     setErrorMessage('');
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      const response = await fetch(API_ENDPOINTS.payments.transactions.initiate, {
-        method: 'POST',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify({
-          subscription_id: subscription.id,
-          phone_number: formattedPhone,
-          amount: paymentAmount || subscription.plan?.price_amount || 0,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setCurrentPaymentId(data.payment_id);
-        setPaymentStatus('processing');
-        startPollingPaymentStatus(data.payment_id);
-      } else {
-        throw new Error(data.message || data.error || 'Failed to initiate payment');
-      }
+      const data = await paymentsService.initiatePayment('', subscription.id, formattedPhone, paymentAmount || subscription.plan?.price_amount || 0) as any;
+      const result = data?.toObject?.() ?? data;
+      setCurrentPaymentId(result.paymentId || result.payment_id);
+      setPaymentStatus('processing');
+      startPollingPaymentStatus(result.paymentId || result.payment_id);
     } catch (error) {
       console.error('Payment initiation failed:', error);
       setPaymentStatus('failed');
@@ -337,9 +458,6 @@ export default function SubscriptionsPage() {
   };
 
   const startPollingPaymentStatus = (paymentId: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
     let attempts = 0;
     const maxAttempts = 60; // Poll for up to 3 minutes
 
@@ -347,13 +465,10 @@ export default function SubscriptionsPage() {
       attempts++;
 
       try {
-        const response = await fetch(API_ENDPOINTS.payments.transactions.status(paymentId), {
-          headers: getAuthHeaders(token),
-        });
+        const response = await paymentsService.checkPaymentStatus(paymentId, '') as any;
+        const data = response?.toObject?.() ?? response;
 
-        if (response.ok) {
-          const data = await response.json();
-          
+        if (data) {
           if (data.status === 'completed') {
             setPaymentStatus('success');
             clearInterval(interval);
@@ -371,7 +486,7 @@ export default function SubscriptionsPage() {
             }, 2000);
           } else if (data.status === 'failed') {
             setPaymentStatus('failed');
-            setErrorMessage(data.failure_reason || 'Payment failed. Please try again.');
+            setErrorMessage(data.failureReason || data.failure_reason || 'Payment failed. Please try again.');
             clearInterval(interval);
             setPollingInterval(null);
             setProcessingPayment(false);
@@ -437,25 +552,16 @@ export default function SubscriptionsPage() {
     setReceiptMessage(null);
     
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Not authenticated');
+      const response = await paymentsService.downloadReceipt(selectedPayment.id, '') as any;
+      const result = response?.toObject?.() ?? response;
+      const pdfData = result.pdfData || result.pdf_data;
+      const filename = result.filename || `receipt-${selectedPayment.mpesa_receipt_number || selectedPayment.id}.pdf`;
 
-      const response = await fetch(
-        `${API_ENDPOINTS.payments.transactions.byId(selectedPayment.id)}/receipt`,
-        {
-          headers: getAuthHeaders(token),
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to download receipt');
-      }
-
-      const blob = await response.blob();
+      const blob = new Blob([pdfData], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `receipt-${selectedPayment.mpesa_receipt_number || selectedPayment.id}.pdf`;
+      a.download = filename;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -487,22 +593,7 @@ export default function SubscriptionsPage() {
     setReceiptMessage(null);
     
     try {
-      const token = localStorage.getItem('token');
-      if (!token) throw new Error('Not authenticated');
-
-      const response = await fetch(
-        `${API_ENDPOINTS.payments.transactions.byId(selectedPayment.id)}/receipt/email`,
-        {
-          method: 'POST',
-          headers: getAuthHeaders(token),
-          body: JSON.stringify({ email: receiptEmail }),
-        }
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Failed to send receipt');
-      }
+      await paymentsService.emailReceipt(selectedPayment.id, '', receiptEmail);
 
       setReceiptMessage({ 
         type: 'success', 
@@ -583,20 +674,14 @@ export default function SubscriptionsPage() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
-        <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
-          <div className="w-full max-w-5xl bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 p-8 transition-colors duration-300">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl">
-                <WalletIcon className="w-8 h-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Subscriptions & Wallet
-                </h1>
-                <p className="text-lg text-gray-600 dark:text-gray-300">
-                  Manage your subscription and payment history
-                </p>
-              </div>
+        <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+            <div className="mb-8">
+              <h1 className="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-300 mb-1">
+                Subscriptions & Wallet
+              </h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Manage your subscription and payment history
+              </p>
             </div>
 
             {dataLoading ? (
@@ -605,56 +690,15 @@ export default function SubscriptionsPage() {
               </div>
             ) : (
               <div className="space-y-8">
-                {/* Available Plans Section */}
-                {!subscription && plans.length > 0 && (
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-                      Choose Your Plan
-                    </h2>
-                    <p className="text-gray-600 dark:text-gray-300 mb-6">
-                      Select a subscription plan to access premium features
-                    </p>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {plans.filter(p => p.is_active).map((plan) => (
-                        <div
-                          key={plan.id}
-                          className="relative bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6 hover:border-purple-300 dark:hover:border-purple-400 transition-all hover:scale-105"
-                        >
-                          <div className="text-center">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                              {plan.name}
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
-                              {plan.description}
-                            </p>
-                            <div className="mb-4">
-                              <span className="text-xl font-bold text-gray-900 dark:text-white">
-                                {formatCurrency(plan.price_amount)}
-                              </span>
-                              <span className="text-gray-600 dark:text-gray-300 ml-2">/ {plan.billing_cycle}</span>
-                            </div>
-                            <button
-                              onClick={() => navigate(`/pricing?plan=${plan.id}`)}
-                              className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
-                            >
-                              Select Plan
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
                 {subscription ? (
                   <>
-                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-700">
+                    <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
                             {subscription.plan?.name || 'Current Plan'}
                           </h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             {subscription.plan?.description}
                           </p>
                         </div>
@@ -671,25 +715,25 @@ export default function SubscriptionsPage() {
                       <div className="grid grid-cols-2 gap-4 mt-4">
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Amount</p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
+                          <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
                             {formatCurrency(subscription.plan?.price_amount || 0)}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Billing Cycle</p>
-                          <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">
                             {subscription.plan?.billing_cycle}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period Start</p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {formatDate(subscription.current_period_start)}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period End</p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                             {formatDate(subscription.current_period_end)}
                           </p>
                         </div>
@@ -703,7 +747,7 @@ export default function SubscriptionsPage() {
                           console.log('[Subscriptions] Phone number set to:', user?.phone || '');
                           setShowPaymentModal(true);
                         }}
-                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
                       >
                         <CreditCardIcon className="w-5 h-5" />
                         Make Payment Now
@@ -767,11 +811,11 @@ export default function SubscriptionsPage() {
 
                     {/* Change Plan Section */}
                     {plans.length > 0 && (
-                      <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6">
-                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
                           Change Your Plan
                         </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                           Switch to a different billing cycle. Your new plan will take effect after your current subscription expires on <strong>{formatDate(subscription.current_period_end)}</strong>.
                         </p>
                         
@@ -779,27 +823,27 @@ export default function SubscriptionsPage() {
                           {plans.filter(p => p.is_active && p.id !== subscription.plan_id).map((plan) => (
                             <div
                               key={plan.id}
-                              className="relative bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4 border-2 border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-500 transition-all"
+                              className="relative bg-white dark:bg-[#13131a] rounded-xl p-4 border border-purple-200/40 dark:border-purple-500/30 hover:border-purple-400 dark:hover:border-purple-400 transition-colors"
                             >
                               <div className="text-center">
-                                <h5 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                                <h5 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
                                   {plan.name}
                                 </h5>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                                   {plan.description}
                                 </p>
                                 <div className="mb-3">
-                                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                                  <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
                                     {formatCurrency(plan.price_amount)}
                                   </span>
-                                  <span className="text-sm text-gray-600 dark:text-gray-300 ml-1">/ {plan.billing_cycle}</span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">/ {plan.billing_cycle}</span>
                                 </div>
                                 <button
                                   onClick={() => {
                                     setSelectedNewPlan(plan);
                                     setShowChangePlanModal(true);
                                   }}
-                                  className="w-full px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+                                  className="w-full px-4 py-1 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
                                 >
                                   Switch to This Plan
                                 </button>
@@ -817,19 +861,79 @@ export default function SubscriptionsPage() {
                     )}
                   </>
                 ) : (
-                  <div className="text-center py-8 bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6">
-                    <p className="text-gray-500 dark:text-gray-400 mb-4">No active subscription</p>
-                    <button
-                      onClick={() => navigate('/pricing')}
-                      className="inline-flex items-center justify-center px-6 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-xl shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all duration-200"
-                    >
-                      View Plans
-                    </button>
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                      Choose Your Plan
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
+                      All plans include a 30-day free trial. Cancel anytime.
+                    </p>
+
+                    {relevantPlans.length > 0 ? (
+                      <div className={`grid gap-4 ${relevantPlans.length === 1 ? 'max-w-md' : relevantPlans.length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+                        {relevantPlans.map((plan) => {
+                          const features = getFeaturesList(plan.features);
+                          const savings = plan.features?.savings;
+                          return (
+                            <div
+                              key={plan.id}
+                              className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5 hover:border-purple-400 dark:hover:border-purple-400 transition-colors flex flex-col"
+                            >
+                              <div className="flex-1">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
+                                  {plan.name}
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
+                                  {plan.description}
+                                </p>
+
+                                {savings && (
+                                  <div className="mb-3 bg-green-50 dark:bg-green-900/20 rounded-lg px-2 py-1">
+                                    <p className="text-xs font-semibold text-green-700 dark:text-green-400">{savings}</p>
+                                  </div>
+                                )}
+
+                                <div className="mb-4">
+                                  <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                    {formatCurrency(plan.price_amount)}
+                                  </span>
+                                  <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
+                                    / {getBillingCycleLabel(plan.billing_cycle)}
+                                  </span>
+                                </div>
+
+                                <div className="space-y-2 mb-4">
+                                  {features.map((feature, idx) => (
+                                    <div key={idx} className="flex items-start gap-1.5 text-xs text-gray-600 dark:text-gray-400">
+                                      <CheckIcon className="w-3.5 h-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                                      <span>{feature}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <button
+                                onClick={() => handleSelectCheckoutPlan(plan)}
+                                className="w-full px-4 py-1.5 text-sm font-bold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              >
+                                Start Free Trial
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          No plans available for your profile type at the moment.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-6">
-                  <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
+                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <BanknotesIcon className="w-5 h-5" />
                     Payment History
                   </h4>
@@ -840,7 +944,7 @@ export default function SubscriptionsPage() {
                         <button
                           key={payment.id}
                           onClick={() => handleViewTransaction(payment)}
-                          className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer text-left"
+                          className="w-full flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800/50 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer text-left"
                         >
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-1">
@@ -877,7 +981,6 @@ export default function SubscriptionsPage() {
                 </div>
               </div>
             )}
-          </div>
         </main>
       </PurpleThemeWrapper>
       <Footer />
@@ -897,17 +1000,17 @@ export default function SubscriptionsPage() {
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
+            <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
                 leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all">
+                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   {paymentStatus === 'idle' && (
                     <>
                       <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-4">
@@ -953,7 +1056,7 @@ export default function SubscriptionsPage() {
                           <button
                             onClick={initiatePayment}
                             disabled={!phoneNumber || processingPayment}
-                            className="flex-1 px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                            className="flex-1 px-4 py-1 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Pay Now
                           </button>
@@ -1014,7 +1117,7 @@ export default function SubscriptionsPage() {
                       {errorMessage && <ErrorAlert message={errorMessage} title="Reason" className="mb-4" />}
                       <button
                         onClick={handleRetry}
-                        className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg"
+                        className="w-full px-4 py-1.5 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors"
                       >
                         Try Again
                       </button>
@@ -1032,7 +1135,7 @@ export default function SubscriptionsPage() {
                       </p>
                       <button
                         onClick={handleRetry}
-                        className="w-full px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium"
+                        className="w-full px-4 py-1.5 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors"
                       >
                         Try Again
                       </button>
@@ -1061,17 +1164,17 @@ export default function SubscriptionsPage() {
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
+            <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
                 leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="w-full max-w-lg transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all">
+                <Dialog.Panel className="w-full sm:max-w-lg transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <div className="flex items-start justify-between mb-4">
                     <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
                       Transaction Details
@@ -1092,7 +1195,7 @@ export default function SubscriptionsPage() {
                       </div>
 
                       {/* Amount */}
-                      <div className="text-center py-1 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl">
+                      <div className="text-center py-1 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Amount Paid</p>
                         <p className="text-xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(selectedPayment.amount)}
@@ -1170,7 +1273,7 @@ export default function SubscriptionsPage() {
                           <button
                             onClick={handleDownloadReceipt}
                             disabled={downloadingReceipt}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 font-medium shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {downloadingReceipt ? (
                               <>
@@ -1202,7 +1305,7 @@ export default function SubscriptionsPage() {
                             <button
                               onClick={handleEmailReceipt}
                               disabled={sendingReceipt || !receiptEmail}
-                              className="w-full flex items-center justify-center gap-2 px-4 py-1.5 bg-white dark:bg-gray-700 text-purple-600 dark:text-purple-400 border-2 border-purple-600 dark:border-purple-500 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-semibold text-purple-600 dark:text-purple-400 bg-white dark:bg-[#1a1a24] border border-purple-200/40 dark:border-purple-500/30 rounded-xl hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {sendingReceipt ? (
                                 <>
@@ -1300,6 +1403,147 @@ export default function SubscriptionsPage() {
           onConfirm={handleChangePlan}
         />
       )}
+
+      {/* Checkout Modal (new subscription) */}
+      <Transition appear show={showCheckoutModal} as={Fragment}>
+        <Dialog as="div" className="relative z-50" onClose={handleCloseCheckoutModal}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300" enterFrom="opacity-0" enterTo="opacity-100"
+            leave="ease-in duration-200" leaveFrom="opacity-100" leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black/50" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300" enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95" enterTo="opacity-100 translate-y-0 sm:scale-100"
+                leave="ease-in duration-200" leaveFrom="opacity-100 translate-y-0 sm:scale-100" leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              >
+                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+                  {checkoutStatus === 'idle' && selectedCheckoutPlan && (
+                    <>
+                      <Dialog.Title as="h3" className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                        Subscribe to {selectedCheckoutPlan.name}
+                      </Dialog.Title>
+
+                      <div className="space-y-4">
+                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Plan</p>
+                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                            {selectedCheckoutPlan.name} — {selectedCheckoutPlan.description}
+                          </p>
+                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400 mt-1">
+                            {formatCurrency(selectedCheckoutPlan.price_amount)}
+                            <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">
+                              / {getBillingCycleLabel(selectedCheckoutPlan.billing_cycle)}
+                            </span>
+                          </p>
+                          <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                            Includes 30-day free trial
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            M-Pesa Phone Number
+                          </label>
+                          <input
+                            type="tel"
+                            value={checkoutPhone}
+                            onChange={(e) => setCheckoutPhone(e.target.value)}
+                            placeholder="+254712345678"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                          />
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            Enter number in format: +254XXXXXXXXX
+                          </p>
+                        </div>
+
+                        {checkoutError && <ErrorAlert message={checkoutError} />}
+
+                        <div className="flex gap-3 mt-6">
+                          <button
+                            onClick={handleCloseCheckoutModal}
+                            className="flex-1 px-4 py-1.5 text-sm font-semibold rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#1a1a24] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={initiateCheckout}
+                            disabled={!checkoutPhone || checkoutProcessing}
+                            className="flex-1 px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            Start Free Trial
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {checkoutStatus === 'initiating' && (
+                    <div className="text-center py-8">
+                      <ArrowPathIcon className="w-12 h-12 mx-auto mb-4 text-purple-500 animate-spin" />
+                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Initiating payment...</p>
+                    </div>
+                  )}
+
+                  {checkoutStatus === 'processing' && (
+                    <div className="text-center py-8">
+                      <ArrowPathIcon className="w-12 h-12 mx-auto mb-4 text-blue-500 animate-spin" />
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Check your phone</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                        You'll receive a prompt from <strong>Fingo Payment Services</strong>
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Enter your M-Pesa PIN to complete payment
+                      </p>
+                    </div>
+                  )}
+
+                  {checkoutStatus === 'success' && (
+                    <div className="text-center py-8">
+                      <CheckCircleIcon className="w-12 h-12 mx-auto mb-4 text-green-500" />
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Payment Successful!</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Your subscription is now active.</p>
+                    </div>
+                  )}
+
+                  {checkoutStatus === 'failed' && (
+                    <div className="text-center py-8">
+                      <XCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-500" />
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Payment Failed</p>
+                      {checkoutError && <ErrorAlert message={checkoutError} className="mb-4" />}
+                      <button
+                        onClick={handleCheckoutRetry}
+                        className="w-full px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  )}
+
+                  {checkoutStatus === 'timeout' && (
+                    <div className="text-center py-8">
+                      <ClockIcon className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
+                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Payment Pending</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Check payment history for status.</p>
+                      <button
+                        onClick={handleCheckoutRetry}
+                        className="w-full px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                      >
+                        Try Again
+                      </button>
+                    </div>
+                  )}
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 }

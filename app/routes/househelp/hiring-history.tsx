@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { API_ENDPOINTS } from '~/config/api';
-import { apiClient } from '~/utils/apiClient';
+import { hireRequestService, hireContractService, employmentContractService, interestService } from '~/services/grpc/authServices';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { 
@@ -187,15 +186,9 @@ export default function HousehelpHiringHistory() {
   useEffect(() => {
     const fetchPendingCount = async () => {
       try {
-        const response = await apiClient.auth(
-          `${API_ENDPOINTS.hiring.requests.base}?status=pending&limit=1`,
-          { method: 'GET' }
-        );
-        if (response.ok) {
-          const raw = await apiClient.json<any>(response);
-          const items = extractEnvelopeArray(raw);
-          setPendingCount(extractTotal(raw, items.length));
-        }
+        const raw = await hireRequestService.listHireRequests('', 'househelp', 'pending');
+        const items = raw?.data || raw || [];
+        setPendingCount(Array.isArray(items) ? items.length : 0);
       } catch (err) {
         console.error('Failed to fetch pending count:', err);
       }
@@ -219,12 +212,7 @@ export default function HousehelpHiringHistory() {
     setRequestsLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) { navigate('/login'); return; }
-      const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
-      const response = await apiClient.auth(`${API_ENDPOINTS.hiring.requests.base}?${params.toString()}`, { method: 'GET' });
-      if (!response.ok) throw new Error('Failed to fetch hire requests');
-      const raw = await apiClient.json<any>(response);
+      const raw = await hireRequestService.listHireRequests('', 'househelp');
       const items = extractEnvelopeArray<HireRequest>(raw);
       setHireRequests(items);
       setRequestsTotal(extractTotal(raw, items.length));
@@ -239,12 +227,7 @@ export default function HousehelpHiringHistory() {
     setContractsLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) { navigate('/login'); return; }
-      const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
-      const response = await apiClient.auth(`${API_ENDPOINTS.hiring.contracts.base}?${params.toString()}`, { method: 'GET' });
-      if (!response.ok) throw new Error('Failed to fetch work history');
-      const raw = await apiClient.json<any>(response);
+      const raw = await hireContractService.listHireContracts('', 'househelp');
       const items = extractEnvelopeArray<HireContract>(raw);
       setContracts(items);
       setContractsTotal(extractTotal(raw, items.length));
@@ -260,12 +243,7 @@ export default function HousehelpHiringHistory() {
     setEmploymentContractsLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) { navigate('/login'); return; }
-      const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
-      const response = await apiClient.auth(`${API_ENDPOINTS.hiring.employmentContracts.base}?${params.toString()}`, { method: 'GET' });
-      if (!response.ok) throw new Error('Failed to fetch employment contracts');
-      const raw = await apiClient.json<any>(response);
+      const raw = await employmentContractService.listEmploymentContracts('', undefined, limit, offset);
       const items = extractEnvelopeArray<EmploymentContract>(raw);
       setEmploymentContracts(items);
       setEmploymentContractsTotal(extractTotal(raw, items.length));
@@ -280,16 +258,13 @@ export default function HousehelpHiringHistory() {
   useEffect(() => {
     const fetchECMap = async () => {
       try {
-        const response = await apiClient.auth(`${API_ENDPOINTS.hiring.employmentContracts.base}?limit=50`, { method: 'GET' });
-        if (response.ok) {
-          const raw = await apiClient.json<any>(response);
-          const items = extractEnvelopeArray<EmploymentContract>(raw);
-          const map: Record<string, EmploymentContract> = {};
-          for (const ec of items) {
-            map[ec.household_id] = ec;
-          }
-          setEmploymentContractMap(map);
+        const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
+        const items = extractEnvelopeArray<EmploymentContract>(raw);
+        const map: Record<string, EmploymentContract> = {};
+        for (const ec of items) {
+          map[ec.household_id] = ec;
         }
+        setEmploymentContractMap(map);
       } catch (err) {
         // Non-critical
       }
@@ -301,12 +276,7 @@ export default function HousehelpHiringHistory() {
     setInterestsLoading(true);
     setError(null);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) { navigate('/login'); return; }
-      const params = new URLSearchParams({ limit: limit.toString(), offset: offset.toString() });
-      const response = await apiClient.auth(`${API_ENDPOINTS.interests.househelp}?${params.toString()}`, { method: 'GET' });
-      if (!response.ok) throw new Error('Failed to fetch interests');
-      const raw = await apiClient.json<any>(response);
+      const raw = await interestService.listByHousehelp('');
       const items = extractEnvelopeArray<Interest>(raw);
       setInterests(items);
       setInterestsTotal(extractTotal(raw, items.length));
@@ -326,11 +296,7 @@ export default function HousehelpHiringHistory() {
     if (!pendingActionId) return;
     setActionLoading(pendingActionId);
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.requests.accept(pendingActionId), { method: 'POST' });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to accept hire request');
-      }
+      await hireRequestService.acceptHireRequest(pendingActionId);
       fetchHireRequests();
       window.dispatchEvent(new Event('hiring-updated'));
     } catch (err: any) {
@@ -349,14 +315,7 @@ export default function HousehelpHiringHistory() {
     }
     setActionLoading(selectedRequest);
     try {
-      const response = await apiClient.auth(
-        API_ENDPOINTS.hiring.requests.decline(selectedRequest),
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ reason: declineReason }) }
-      );
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to decline hire request');
-      }
+      await hireRequestService.declineHireRequest(selectedRequest);
       fetchHireRequests();
       setShowDeclineModal(false);
       setSelectedRequest(null);
@@ -379,11 +338,7 @@ export default function HousehelpHiringHistory() {
     if (!pendingActionId) return;
     setActionLoading(pendingActionId);
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.interests.byId(pendingActionId), { method: 'DELETE' });
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to withdraw interest');
-      }
+      await interestService.deleteInterest(pendingActionId);
       fetchInterests();
       setShowInterestModal(false);
       setSelectedInterest(null);

@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { apiClient } from '~/utils/apiClient';
-import { API_ENDPOINTS } from '~/config/api';
+import { hireRequestService } from '~/services/grpc/authServices';
 import CustomSelect from '~/components/ui/CustomSelect';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -196,25 +195,16 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
     setLoading(true);
 
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.requests.base, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          househelp_id: househelpId,
-          job_type: jobType,
-          start_date: startDate || null,
-          salary_offered: salaryValue,
-          salary_frequency: salaryFrequency,
-          work_schedule: workSchedule,
-          special_requirements: specialRequirements,
-          terms_accepted: true,
-        }),
+      await hireRequestService.createHireRequest('', 'household', {
+        househelp_id: househelpId,
+        job_type: jobType,
+        start_date: startDate || null,
+        salary_offered: salaryValue,
+        salary_frequency: salaryFrequency,
+        work_schedule: workSchedule,
+        special_requirements: specialRequirements,
+        terms_accepted: true,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send hire request');
-      }
 
       setSuccess(true);
       setTimeout(() => {
@@ -230,16 +220,15 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
   if (!isOpen) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
-        {/* Backdrop */}
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-          onClick={onClose}
-        />
-        
-        {/* Modal */}
-        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-2xl sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
           {/* Header */}
           <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -416,7 +405,6 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
           </form>
         </div>
       </div>
-    </div>
   );
 
   return createPortal(modalContent, document.body);

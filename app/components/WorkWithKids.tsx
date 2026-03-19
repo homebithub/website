@@ -1,17 +1,20 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 type WorkPreference = 'with_kids' | 'chores_only';
 type AgeRange = '0-2' | '2-5' | '5-10' | '10+';
 type ChildrenCapacity = '1-2' | '2-4' | '5+';
 
 const WorkWithKids = () => {
-    const { markDirty, markClean } = useProfileSetup();
+    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+    const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [workPreference, setWorkPreference] = useState<WorkPreference | null>(null);
     const [selectedAges, setSelectedAges] = useState<AgeRange[]>([]);
     const [selectedCapacities, setSelectedCapacities] = useState<ChildrenCapacity[]>([]);
@@ -20,33 +23,37 @@ const WorkWithKids = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // Load existing data
+    // Populate from context (instant on back-nav)
+    useEffect(() => {
+        const cached = profileData.workwithkids;
+        if (cached) {
+            if (cached.preference) setWorkPreference(cached.preference);
+            else if (cached.can_work !== undefined) setWorkPreference(cached.can_work ? 'with_kids' : 'chores_only');
+            else if (cached.can_work_with_kids !== undefined) setWorkPreference(cached.can_work_with_kids ? 'with_kids' : 'chores_only');
+            if (cached.ages?.length) setSelectedAges(cached.ages);
+            else if (cached.age_range) setSelectedAges(cached.age_range.split(',') as AgeRange[]);
+        }
+    }, [profileData.workwithkids]);
+
+    // Load existing data from backend (fallback)
     useEffect(() => {
         const loadData = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = getAccessTokenFromCookies();
                 if (!token) return;
 
-                const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.can_work_with_kids !== undefined) {
-                        setWorkPreference(data.can_work_with_kids ? 'with_kids' : 'chores_only');
-                    }
-                    if (data.children_age_range) {
-                        setSelectedAges(data.children_age_range.split(',') as AgeRange[]);
-                    }
-                    if (data.number_of_concurrent_children) {
-                        const capacity = data.number_of_concurrent_children;
-                        if (capacity <= 2) setSelectedCapacities(['1-2']);
-                        else if (capacity <= 4) setSelectedCapacities(['2-4']);
-                        else setSelectedCapacities(['5+']);
-                    }
+                const data = await grpcProfileService.getCurrentHousehelpProfile('');
+                if (data?.can_work_with_kids !== undefined) {
+                    setWorkPreference(data.can_work_with_kids ? 'with_kids' : 'chores_only');
+                }
+                if (data?.children_age_range) {
+                    setSelectedAges(data.children_age_range.split(',') as AgeRange[]);
+                }
+                if (data?.number_of_concurrent_children) {
+                    const capacity = data.number_of_concurrent_children;
+                    if (capacity <= 2) setSelectedCapacities(['1-2']);
+                    else if (capacity <= 4) setSelectedCapacities(['2-4']);
+                    else setSelectedCapacities(['5+']);
                 }
             } catch (err) {
                 console.error('Failed to load work with kids data:', err);
@@ -56,94 +63,74 @@ const WorkWithKids = () => {
         loadData();
     }, []);
 
-    const ageRanges = [
-        { value: '0-2' as const, label: '0-2 years' },
-        { value: '2-5' as const, label: '2-5 years' },
-        { value: '5-10' as const, label: '5-10 years' },
-        { value: '10+' as const, label: '10+ years' },
-    ];
+    const ageRanges = options?.children_age_ranges.map(r => ({
+        value: r.label as AgeRange,
+        label: `${r.label} years`
+    })) || [];
 
-    const capacities = [
-        { value: '1-2' as const, label: '1-2 children' },
-        { value: '2-4' as const, label: '2-4 children' },
-        { value: '5+' as const, label: '5+ children' },
-    ];
+    const capacities = options?.children_capacities.map(c => ({
+        value: c.label as ChildrenCapacity,
+        label: `${c.label} children`
+    })) || [];
 
-    const toggleAgeRange = (age: AgeRange) => {
-        setSelectedAges(prev => 
-            prev.includes(age) ? prev.filter(a => a !== age) : [...prev, age]
-        );
-        markDirty();
-    };
-
-    const toggleCapacity = (capacity: ChildrenCapacity) => {
-        setSelectedCapacities(prev => 
-            prev.includes(capacity) ? prev.filter(c => c !== capacity) : [...prev, capacity]
-        );
-        markDirty();
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        if (workPreference === null) {
-            setError('Please select a work preference');
-            return;
-        }
-
-        if (workPreference === 'with_kids' && selectedAges.length === 0) {
-            setError('Please select at least one age range');
-            return;
-        }
-
-        if (workPreference === 'with_kids' && selectedCapacities.length === 0) {
-            setError('Please select at least one capacity option');
-            return;
-        }
+    const autoSave = async (pref: WorkPreference, ages: AgeRange[], caps: ChildrenCapacity[]) => {
+        if (pref === 'with_kids' && (ages.length === 0 || caps.length === 0)) return;
 
         setLoading(true);
         setError('');
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) throw new Error('Authentication token not found');
 
             const updates = {
-                can_work_with_kid: workPreference === 'with_kids',
-                children_age_range: workPreference === 'with_kids' ? selectedAges.join(',') : '',
-                number_of_concurrent_children: workPreference === 'with_kids' 
-                    ? Math.max(...selectedCapacities.map(c => c === '5+' ? 5 : parseInt(c.split('-')[1])))
+                can_work_with_kid: pref === 'with_kids',
+                children_age_range: pref === 'with_kids' ? ages.join(',') : '',
+                number_of_concurrent_children: pref === 'with_kids' 
+                    ? Math.max(...caps.map(c => c === '5+' ? 5 : parseInt(c.split('-')[1])))
                     : 0
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ 
-                    updates,
-                    _step_metadata: {
-                        step_id: "workwithkids",
-                        step_number: 7,
-                        is_completed: true
-                    }
-                })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
+                { step_id: 'workwithkids', step_number: 7, is_completed: true }
+            );
             
             markClean();
+            updateStepData('workwithkids', { preference: pref, ages });
             setSuccess('Your preferences have been saved successfully!');
-            // navigate('/next-step');
+            setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {
             console.error('Error saving information:', err);
             setError(handleApiError(err, 'workWithKids', 'Failed to save your preferences. Please try again.'));
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handlePreferenceChange = async (pref: WorkPreference) => {
+        setWorkPreference(pref);
+        markDirty();
+        if (pref === 'chores_only') {
+            await autoSave(pref, [], []);
+        }
+    };
+
+    const toggleAgeRange = async (age: AgeRange) => {
+        const newAges = selectedAges.includes(age) ? selectedAges.filter(a => a !== age) : [...selectedAges, age];
+        setSelectedAges(newAges);
+        markDirty();
+        if (workPreference === 'with_kids' && newAges.length > 0 && selectedCapacities.length > 0) {
+            await autoSave('with_kids', newAges, selectedCapacities);
+        }
+    };
+
+    const toggleCapacity = async (capacity: ChildrenCapacity) => {
+        const newCaps = selectedCapacities.includes(capacity) ? selectedCapacities.filter(c => c !== capacity) : [...selectedCapacities, capacity];
+        setSelectedCapacities(newCaps);
+        markDirty();
+        if (workPreference === 'with_kids' && selectedAges.length > 0 && newCaps.length > 0) {
+            await autoSave('with_kids', selectedAges, newCaps);
         }
     };
 
@@ -157,7 +144,7 @@ const WorkWithKids = () => {
             
             {success && <SuccessAlert message={success} />}
             
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-8">
                 <div>
                     <h2 className="text-sm font-medium text-gray-900 mb-3">Work Preference</h2>
                     <div className="grid grid-cols-2 gap-4">
@@ -168,7 +155,7 @@ const WorkWithKids = () => {
                                 type="radio"
                                 name="workPreference"
                                 checked={workPreference === 'with_kids'}
-                                onChange={() => { setWorkPreference('with_kids'); markDirty(); }}
+                                onChange={() => handlePreferenceChange('with_kids')}
                                 className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span>I can work with / have worked with children</span>
@@ -181,7 +168,7 @@ const WorkWithKids = () => {
                                 type="radio"
                                 name="workPreference"
                                 checked={workPreference === 'chores_only'}
-                                onChange={() => { setWorkPreference('chores_only'); markDirty(); }}
+                                onChange={() => handlePreferenceChange('chores_only')}
                                 className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span>I am only interested in chores</span>
@@ -249,28 +236,7 @@ const WorkWithKids = () => {
                     </>
                 )}
 
-                <div className="pt-2">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                            <>
-                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                💾 Save
-                            </>
-                        )}
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     );
 };

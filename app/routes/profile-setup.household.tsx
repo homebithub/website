@@ -4,7 +4,10 @@ import { useAuth } from '~/contexts/useAuth';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupContext';
-import { API_BASE_URL } from '~/config/api';
+import { OnboardingOptionsProvider } from '~/contexts/OnboardingOptionsContext';
+import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { profileSetupService } from '~/services/grpc/profileSetup.service';
 
 // Import all the components
 import Location from '~/components/Location';
@@ -43,11 +46,33 @@ function HouseholdProfileSetupContent() {
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerChecked, setDisclaimerChecked] = useState(false);
+  const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const setupCompleteRef = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const { saveProfileToBackend, loadProfileFromBackend, updateStepData, saveStepToBackend, lastCompletedStep, profileData, error: setupError, hasUnsavedChanges, markClean } = useProfileSetup();
+  
+  // Resume from where left off
+  const { progress, updateProgress } = useOnboardingProgress(user?.id || '', 'household');
+  
+  // Resume to last incomplete step on mount
+  useEffect(() => {
+    if (progress && progress.status !== 'completed' && !isProfileLoaded) {
+      const resumeStep = progress.current_step || 0;
+      if (resumeStep > 0 && resumeStep < STEPS.length) {
+        setCurrentStep(resumeStep);
+        setDisplayedStep(resumeStep);
+      }
+    }
+  }, [progress, isProfileLoaded]);
+  
+  // Redirect if already completed
+  useEffect(() => {
+    if (progress?.status === 'completed' && !location.state?.fromProfile) {
+      navigate('/dashboard');
+    }
+  }, [progress, navigate, location.state]);
   
   const isStepValid = () => {
     const stepId = STEPS[currentStep].id;
@@ -55,22 +80,37 @@ function HouseholdProfileSetupContent() {
 
     switch (stepId) {
       case 'location':
-        return !!data.location?.place || !!data.location?.name;
+        // updateStepData shape: { place, name } | backend/legacy: { town, area, address } | step tracking: any truthy object
+        return !!data.location?.place || !!data.location?.name || !!data.location?.town || !!data.location?.address;
       case 'nannytype':
-        return (data.nannytype?.needsLiveIn || data.nannytype?.needsDayWorker) && !!data.nannytype?.availableFrom;
+        // updateStepData: { needsLiveIn, needsDayWorker, availableFrom } | legacy: { type, live_in } | step tracking: { needs_live_in, ... }
+        return (data.nannytype?.needsLiveIn || data.nannytype?.needsDayWorker ||
+                data.nannytype?.needs_live_in || data.nannytype?.needs_day_worker ||
+                data.nannytype?.live_in !== undefined || data.nannytype?.type) &&
+               !!(data.nannytype?.availableFrom || data.nannytype?.available_from || data.nannytype?.type);
       case 'children':
-        // If they have kids or expressly said they don't
-        return (data.children?.children === false) || (data.children?.children === true && data.children?.kids?.length > 0) || ((profileData as any).has_children !== undefined);
+        // updateStepData: { children: bool, kids: [] } | legacy: separate | step tracking: { has_children, ... }
+        return (data.children?.children === false) ||
+               (data.children?.children === true && data.children?.kids?.length > 0) ||
+               (data.children?.has_children !== undefined) ||
+               ((profileData as any).has_children !== undefined);
       case 'housesize':
-        return !!data.housesize || !!data.housesize;
+        // updateStepData: { size, notes } | legacy: string | step tracking: { house_size, ... }
+        return !!data.housesize;
       case 'chores':
-        return data.chores?.selectedChores?.length > 0;
+        // updateStepData: { selectedChores: [] } | legacy: string[] directly | step tracking: { chores: [] }
+        return (data.chores?.selectedChores?.length > 0) ||
+               (Array.isArray(data.chores) && data.chores.length > 0) ||
+               (data.chores?.chores?.length > 0);
       case 'budget':
-        return !!data.budget?.min && !!data.budget?.max;
+        // updateStepData: { min, max } | legacy: { min, max } | step tracking: { budget_min, budget_max }
+        return (!!data.budget?.min && !!data.budget?.max) ||
+               (!!data.budget?.budget_min && !!data.budget?.budget_max);
       case 'religion':
         return !!data.religion;
       case 'bio':
-        return !!data.bio && data.bio.length >= 20;
+        return (typeof data.bio === 'string' && data.bio.length >= 20) ||
+               (typeof data.bio === 'object' && !!data.bio?.bio && data.bio.bio.length >= 20);
       case 'pets':
       case 'photos':
         return true; // Skippable/Optional
@@ -123,7 +163,7 @@ function HouseholdProfileSetupContent() {
   // Authentication check - redirect to login if not authenticated
   useEffect(() => {
     if (!authLoading && !user) {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) {
         navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
       }
@@ -160,6 +200,7 @@ function HouseholdProfileSetupContent() {
     // Load existing profile data on mount
     const loadData = async () => {
       await loadProfileFromBackend();
+      setIsProfileLoaded(true);
     };
     loadData();
   }, [loadProfileFromBackend]);
@@ -178,13 +219,8 @@ function HouseholdProfileSetupContent() {
         setCurrentStep(stepIndex);
         setDisplayedStep(stepIndex);
       }
-    } else if (lastCompletedStep > 1) {
-      // Jump to last completed step if returning user has completed more than just step 1
-      // lastCompletedStep is 1-indexed from backend, so >1 means they got past the first step
-      const resumeStep = Math.min(lastCompletedStep, STEPS.length - 1);
-      setCurrentStep(resumeStep);
-      setDisplayedStep(resumeStep);
     }
+    // Resume is handled by useOnboardingProgress (progress.current_step) — no duplicate resume here
   }, [lastCompletedStep, isEditMode, location.state]);
 
   const handleNext = async () => {
@@ -252,44 +288,32 @@ function HouseholdProfileSetupContent() {
 
   const markAllStepsComplete = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) return;
 
-      // Mark ALL steps as completed in profile-setup-steps
+      // Mark ALL steps as completed in profile-setup-steps via gRPC
       for (let i = 0; i < STEPS.length; i++) {
-        await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            step_id: STEPS[i].id,
-            step_number: i,
-            is_completed: true,
-            is_skipped: false,
-            data: {}
-          })
+        await profileSetupService.updateStep('', {
+          profile_type: 'household',
+          step_id: STEPS[i].id,
+          step_number: i,
+          is_completed: true,
+          is_skipped: false,
+          data: {}
         });
       }
 
-      // Also update progress tracking to mark as complete
-      await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          current_step: STEPS.length,
-          last_completed_step: STEPS.length,
-          total_steps: STEPS.length,
-          completed_steps: STEPS.map(s => s.id),
-          status: 'completed',
-          completion_percentage: 100,
-          step_id: 'completed',
-          time_spent_seconds: 0
-        })
+      // Also update progress tracking to mark as complete via gRPC
+      await profileSetupService.updateProgress('', {
+        profile_type: 'household',
+        current_step: STEPS.length,
+        last_completed_step: STEPS.length,
+        total_steps: STEPS.length,
+        completed_steps: STEPS.map(s => s.id),
+        status: 'completed',
+        completion_percentage: 100,
+        step_id: 'completed',
+        time_spent_seconds: 0
       });
     } catch (error) {
       console.error('Failed to mark steps as complete:', error);
@@ -306,7 +330,7 @@ function HouseholdProfileSetupContent() {
     isAutoSave: boolean = false
   ) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) return;
 
       // Handle case when step is beyond STEPS array (completion)
@@ -319,38 +343,26 @@ function HouseholdProfileSetupContent() {
         highestCompletedStepRef.current = Math.max(highestCompletedStepRef.current, actualStep + 1);
       }
 
-      // Save progress tracking
-      await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          current_step: actualStep + 1,
-          last_completed_step: highestCompletedStepRef.current,
-          total_steps: STEPS.length,
-          completed_steps: completedSteps,
-          step_id: STEPS[actualStep]?.id || 'completed',
-          time_spent_seconds: timeOnStep
-        })
+      // Save progress tracking via gRPC
+      await profileSetupService.updateProgress('', {
+        profile_type: 'household',
+        current_step: actualStep + 1,
+        last_completed_step: highestCompletedStepRef.current,
+        total_steps: STEPS.length,
+        completed_steps: completedSteps,
+        step_id: STEPS[actualStep]?.id || 'completed',
+        time_spent_seconds: timeOnStep
       });
 
       // Mark step as completed in profile-setup-steps (required for is_complete check)
       if (isComplete || !isAutoSave) {
-        await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            step_id: STEPS[actualStep]?.id || 'completed',
-            step_number: actualStep,
-            is_completed: isComplete || !skipped,
-            is_skipped: skipped,
-            data: {}
-          })
+        await profileSetupService.updateStep('', {
+          profile_type: 'household',
+          step_id: STEPS[actualStep]?.id || 'completed',
+          step_number: actualStep,
+          is_completed: isComplete || !skipped,
+          is_skipped: skipped,
+          data: {}
         });
       }
     } catch (error) {
@@ -715,7 +727,9 @@ function HouseholdProfileSetupContent() {
 export default function HouseholdProfileSetup() {
   return (
     <ProfileSetupProvider>
-      <HouseholdProfileSetupContent />
+      <OnboardingOptionsProvider profileType="household">
+        <HouseholdProfileSetupContent />
+      </OnboardingOptionsProvider>
     </ProfileSetupProvider>
   );
 }

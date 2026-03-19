@@ -1,5 +1,8 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { profileSetupService } from '~/services/grpc/profileSetup.service';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -49,7 +52,7 @@ const validateFile = (file: File): { valid: boolean; message?: string } => {
 };
 
 const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplete }) => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData } = useProfileSetup();
   const [subStep, setSubStep] = useState<number>(SUB_STEPS.ID_TYPE);
   const [idType, setIdType] = useState<IDType | null>(null);
   const [idNumber, setIdNumber] = useState('');
@@ -88,7 +91,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
   const currentLogicalStep = getLogicalStep(subStep);
 
   const uploadSingleFile = async (file: File, documentType: string): Promise<{ url: string; s3Key: string }> => {
-    const token = localStorage.getItem('token');
+    const token = getAccessTokenFromCookies();
     const formData = new FormData();
     formData.append('files', file);
     formData.append('document_type', documentType);
@@ -230,7 +233,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
     setUploadProgress(0);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
 
       // Upload KYC images
       setIsUploading(true);
@@ -302,46 +305,25 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
           : [];
 
         if (imageUrls.length > 0) {
-          const profileResponse = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            body: JSON.stringify({
-              updates: { photos: imageUrls },
-              _step_metadata: {
-                step_id: 'photos',
-                step_number: 14,
-                is_completed: true,
-              },
-            }),
-          });
-
-          if (!profileResponse.ok) {
+          try {
+            await grpcProfileService.updateHousehelpFields('', 'househelp',
+              { photos: imageUrls },
+              { step_id: 'photos', step_number: 14, is_completed: true }
+            );
+          } catch (err) {
             console.error('Failed to save profile photos, but KYC was submitted successfully');
           }
         }
       }
 
-      // Mark KYC step as complete
-      await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          updates: { kyc_submitted: true },
-          _step_metadata: {
-            step_id: 'kyc',
-            step_number: 13,
-            is_completed: true,
-          },
-        }),
-      });
+      // Mark KYC step as complete (KYC data is stored in its own table, not on the profile)
+      await grpcProfileService.updateHousehelpFields('', 'househelp',
+        {},
+        { step_id: 'kyc', step_number: 13, is_completed: true }
+      );
 
       markClean();
+      updateStepData('kyc', { submitted: true });
       setSuccess('Your KYC documents and photos have been uploaded successfully!');
       if (onComplete) {
         setTimeout(() => onComplete(), 500);
@@ -357,21 +339,14 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
 
   const handleSkip = async () => {
     try {
-      const token = localStorage.getItem('token');
-      // Mark step as skipped
-      await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          step_id: 'kyc',
-          step_number: 13,
-          is_completed: false,
-          is_skipped: true,
-          data: {},
-        }),
+      const token = getAccessTokenFromCookies();
+      // Mark step as skipped via gRPC
+      await profileSetupService.updateStep('', {
+        step_id: 'kyc',
+        step_number: 13,
+        is_completed: false,
+        is_skipped: true,
+        data: {},
       });
       if (onComplete) onComplete();
     } catch (err) {

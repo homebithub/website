@@ -7,6 +7,7 @@ import { useAuth } from '~/contexts/useAuth';
 import { HouseholdCodePrompt } from '~/components/household/HouseholdCodePrompt';
 import { joinHousehold } from '~/utils/householdApi';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 
 export default function HouseholdSetupPage() {
   const { user, loading: authLoading } = useAuth();
@@ -27,7 +28,7 @@ export default function HouseholdSetupPage() {
     }
     
     // Check localStorage first - if we have a token and user_object, we're authenticated
-    const token = localStorage.getItem('token');
+    const token = getAccessTokenFromCookies();
     const userObj = localStorage.getItem('user_object');
     
     console.log('[HOUSEHOLD SETUP] Token exists:', !!token);

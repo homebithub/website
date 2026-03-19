@@ -1,56 +1,55 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
-const RELIGIONS = [
-  'Christianity',
-  'Islam',
-  'Hinduism',
-  'Buddhism',
-  'Judaism',
-  'African Traditional Religions',
-  'Atheism/Agnosticism',
-  'Other',
-  'Prefer not to say'
-];
+// Religions are now fetched from backend via context
 
 interface ReligionProps {
   userType?: 'househelp' | 'household';
 }
 
 const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedReligion, setSelectedReligion] = useState<string>('');
   const [customReligion, setCustomReligion] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Load existing data
+  const RELIGIONS = options?.religions.map(r => r.name) || [];
+
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.religion;
+    if (cached) {
+      const val = typeof cached === 'string' ? cached : cached.religion;
+      if (val) {
+        if (RELIGIONS.includes(val)) { setSelectedReligion(val); }
+        else { setSelectedReligion('Other'); setCustomReligion(val); }
+      }
+    }
+  }, [profileData.religion]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.religion) {
-            // Check if it's one of the predefined options
-            if (RELIGIONS.includes(data.religion)) {
-              setSelectedReligion(data.religion);
-            } else {
-              // It's a custom religion
-              setSelectedReligion('Other');
-              setCustomReligion(data.religion);
-            }
+        const data = await grpcProfileService.getCurrentHouseholdProfile('');
+        if (data?.religion) {
+          if (RELIGIONS.includes(data.religion)) {
+            setSelectedReligion(data.religion);
+          } else {
+            setSelectedReligion('Other');
+            setCustomReligion(data.religion);
           }
         }
       } catch (err) {
@@ -77,30 +76,19 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
 
-      const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          religion: religionValue,
-          _step_metadata: {
-            step_id: "religion",
-            step_number: 6,
-            is_completed: true
-          }
-        }),
+      await grpcProfileService.updateHouseholdProfile('', 'household', {
+        religion: religionValue,
+        _step_metadata: {
+          step_id: 'religion',
+          step_number: 6,
+          is_completed: true
+        }
       });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || 'Failed to save religion preferences');
-      }
-
       markClean();
+      updateStepData('religion', religionValue);
       setSuccess('Religion preferences saved automatically!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
@@ -135,7 +123,7 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
         Please select your religion or belief system. This information helps us provide better matching and ensures cultural compatibility.
       </p>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-8">
         {/* Religion Selection */}
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">
@@ -199,26 +187,30 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
 
         {success && <SuccessAlert message={success} />}
 
-        <button
-          type="submit"
-          disabled={isSubmitting || !selectedReligion || (selectedReligion === 'Other' && !customReligion.trim())}
-          className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-        >
-          {isSubmitting ? (
-            <>
-              <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Saving...
-            </>
-          ) : (
-            <>
-              💾 Save Religion Preferences
-            </>
-          )}
-        </button>
-      </form>
+        {selectedReligion === 'Other' && (
+          <form onSubmit={handleSubmit}>
+            <button
+              type="submit"
+              disabled={isSubmitting || !customReligion.trim()}
+              className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+            >
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (
+                <>
+                  💾 Save Religion Preferences
+                </>
+              )}
+            </button>
+          </form>
+        )}
+      </div>
     </div>
   );
 };

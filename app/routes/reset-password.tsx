@@ -4,8 +4,8 @@ import { Error as ErrorDisplay } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
-import { API_BASE_URL } from '~/config/api';
 import { extractErrorMessage } from '~/utils/errorMessages';
+import { authService } from '~/services/grpc/auth.service';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -79,21 +79,7 @@ export default function ResetPassword() {
     setError(null);
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/reset-password`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token,
-          password: formData.password,
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(extractErrorMessage(data) || "Failed to reset password");
-      }
+      await authService.resetPassword(token, formData.password);
 
       setSuccess(true);
       setTimeout(() => {

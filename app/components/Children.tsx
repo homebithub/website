@@ -1,8 +1,9 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../utils/errorMessages';
 import { UserGroupIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import Kids from "./Kids";
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService, householdKidsService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
@@ -24,53 +25,55 @@ const options = [
 ];
 
 const Children: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const [selected, setSelected] = useState<string>("");
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [saving, setSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState<{type: 'success' | 'error', text: string} | null>(null);
 
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.children;
+    if (cached) {
+      if (cached.children === true) {
+        setSelected('have_or_expecting');
+        if (cached.kids?.length) setChildrenList(cached.kids);
+      } else if (cached.children === false) {
+        setSelected('no_children');
+      } else if (cached.has_children !== undefined) {
+        setSelected(cached.has_children ? 'have_or_expecting' : 'no_children');
+      }
+    }
+  }, [profileData.children]);
+
   // Load existing children on mount
   useEffect(() => {
     const loadChildren = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         
-        // First, check if there are any kids
-        const kidsRes = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-          method: "GET",
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-        
-        if (kidsRes.ok) {
-          const kidsResponse = await kidsRes.json();
-          const kids = kidsResponse.data?.data || [];
-          console.log('Loaded children response:', kidsResponse);
-          console.log('Extracted kids array:', kids);
-          if (kids && kids.length > 0) {
+        // First, check if there are any kids via gRPC
+        try {
+          const kidsData = await householdKidsService.listHouseholdKids('');
+          const kids = kidsData?.data?.data || kidsData?.data || [];
+          console.log('Loaded children:', kids);
+          if (Array.isArray(kids) && kids.length > 0) {
             setChildrenList(kids);
             setSelected("have_or_expecting");
-            return; // Exit early if we have kids
+            return;
           }
+        } catch (err) {
+          console.warn('Failed to load kids:', err);
         }
         
         // If no kids, check if user has progressed beyond this step
-        const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          method: "GET",
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-        
-        if (profileRes.ok) {
-          const profile = await profileRes.json();
-          // If they have data in steps beyond children (like chores, budget, religion, bio)
-          // but no children, assume they selected "no children"
-          if (profile.chores || profile.budget_min || profile.religion || profile.bio) {
+        try {
+          const profile = await grpcProfileService.getCurrentHouseholdProfile('');
+          if (profile?.chores || profile?.budget_min || profile?.religion || profile?.bio) {
             setSelected("no_children");
           }
+        } catch (err) {
+          console.warn('Failed to load profile:', err);
         }
       } catch (err) {
         console.error("Failed to load children:", err);
@@ -94,21 +97,13 @@ const Children: React.FC = () => {
     setSaving(true);
     setSaveMessage(null);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          has_children: hasChildren,
-        }),
+      const token = getAccessTokenFromCookies();
+      await grpcProfileService.updateHouseholdProfile('', 'household', {
+        has_children: hasChildren,
       });
       
-      if (!res.ok) throw new Error("Failed to save preference");
-      
       markClean();
+      updateStepData('children', { children: hasChildren, kids: hasChildren ? childrenList : [] });
       setSaveMessage({ type: 'success', text: 'Preference saved successfully' });
       // Note: Step completion is tracked server-side when kids are added
     } catch (err: any) {
@@ -120,6 +115,10 @@ const Children: React.FC = () => {
 
   const handleChildrenUpdate = (children: Child[]) => {
     setChildrenList(children);
+    if (children.length > 0) {
+      updateStepData('children', { children: true, kids: children });
+      markClean();
+    }
   };
 
   return (

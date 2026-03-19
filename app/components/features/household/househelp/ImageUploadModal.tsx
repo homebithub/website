@@ -43,9 +43,10 @@ export default function ImageUploadModal({ open, onClose, files, setFiles, onUpl
 
   return (
     <div
-      className={`fixed inset-0 z-40 flex items-center justify-center bg-black bg-opacity-50 backdrop-blur-lg ${open ? '' : 'hidden'}`}
+      className={`fixed inset-0 z-40 flex items-end sm:items-center justify-center ${open ? '' : 'hidden'}`}
       aria-modal="true" role="dialog">
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-6 w-full max-w-lg relative">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-lg p-6 w-full sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
         <h3 className="text-xl font-bold mb-4 text-primary dark:text-primary-200">Upload Images</h3>
         <div className="flex flex-col gap-4">
           <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">

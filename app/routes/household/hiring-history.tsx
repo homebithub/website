@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { API_ENDPOINTS } from '~/config/api';
-import { apiClient } from '~/utils/apiClient';
+import { hireRequestService, hireContractService, employmentContractService, interestService, shortlistService } from '~/services/grpc/authServices';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { useSSEContextSafe } from '~/contexts/SSEContext';
 
 interface HireRequest {
   id: string;
@@ -114,6 +114,7 @@ const getHousehelpName = (househelp?: HireRequest['househelp']) => {
 export default function HiringHistory() {
   const navigate = useNavigate();
   const location = useLocation();
+  const sseContext = useSSEContextSafe();
   const [activeTab, setActiveTab] = useState<TabType>('interested');
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
@@ -139,12 +140,8 @@ export default function HiringHistory() {
   const removeHousehelpFromShortlist = async (profileId?: string | null) => {
     if (!profileId) return;
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.shortlists.byId(profileId), {
-        method: 'DELETE',
-      });
-      if (response.ok) {
-        window.dispatchEvent(new CustomEvent('shortlist-updated'));
-      }
+      await shortlistService.deleteShortlist(profileId);
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (err) {
       console.warn('Failed to remove househelp from shortlist:', err);
     }
@@ -154,19 +151,13 @@ export default function HiringHistory() {
   useEffect(() => {
     const fetchECMap = async () => {
       try {
-        const response = await apiClient.auth(
-          `${API_ENDPOINTS.hiring.employmentContracts.base}?limit=50`,
-          { method: 'GET' }
-        );
-        if (response.ok) {
-          const raw = await response.json();
-          const items = extractEnvelopeArray<any>(raw);
-          const map: Record<string, string> = {};
-          for (const ec of items) {
-            if (ec.househelp_id) map[ec.househelp_id] = ec.id;
-          }
-          setEmploymentContractMap(map);
+        const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
+        const items = extractEnvelopeArray<any>(raw);
+        const map: Record<string, string> = {};
+        for (const ec of items) {
+          if (ec.househelp_id) map[ec.househelp_id] = ec.id;
         }
+        setEmploymentContractMap(map);
       } catch (err) {
         // Non-critical
       }
@@ -195,11 +186,9 @@ export default function HiringHistory() {
   useEffect(() => {
     const fetchInterestCount = async () => {
       try {
-        const response = await apiClient.auth(API_ENDPOINTS.interests.count, { method: 'GET' });
-        if (response.ok) {
-          const data = await response.json();
-          setInterestsCount(data.count || 0);
-        }
+        const raw = await interestService.listByHousehold('');
+        const items = raw?.data || raw || [];
+        setInterestsCount(Array.isArray(items) ? items.length : 0);
       } catch (err) {
         console.error('Failed to fetch interest count:', err);
       }
@@ -207,32 +196,24 @@ export default function HiringHistory() {
     fetchInterestCount();
   }, []);
 
+  // SSE: auto-refetch interests when a new interest is received
+  useEffect(() => {
+    if (!sseContext) return;
+    const unsub = sseContext.subscribe('auth.household.updated', (event: any) => {
+      const action = event?.data?.action;
+      if (action === 'interest_received') {
+        console.log('[HiringHistory SSE] Interest received, refetching...');
+        fetchInterests();
+      }
+    });
+    return unsub;
+  }, [sseContext]);
+
   const fetchInterests = async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
-      const params = new URLSearchParams({
-        limit: limit.toString(),
-        offset: offset.toString(),
-      });
-
-      const response = await apiClient.auth(
-        `${API_ENDPOINTS.interests.household}?${params.toString()}`,
-        { method: 'GET' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch interested househelps');
-      }
-
-      const raw = await response.json();
+      const raw = await interestService.listByHousehold('');
       const items = extractEnvelopeArray<Interest>(raw);
       setInterests(items);
       setInterestsTotal(extractTotal(raw, items.length));
@@ -246,33 +227,9 @@ export default function HiringHistory() {
   const fetchHireRequests = async () => {
     setLoading(true);
     setError(null);
-
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
-      const params = new URLSearchParams({
-        limit: limit.toString(),
-        offset: offset.toString(),
-      });
-
-      if (activeTab !== 'all') {
-        params.append('status', activeTab);
-      }
-
-      const response = await apiClient.auth(
-        `${API_ENDPOINTS.hiring.requests.base}?${params.toString()}`,
-        { method: 'GET' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch hire requests');
-      }
-
-      const raw = await response.json();
+      const status = activeTab !== 'all' ? activeTab : undefined;
+      const raw = await hireRequestService.listHireRequests('', 'household', status);
       const items = extractEnvelopeArray<HireRequest>(raw);
       setHireRequests(items);
       setTotal(extractTotal(raw, items.length));
@@ -286,16 +243,7 @@ export default function HiringHistory() {
   const createContract = async (request: HireRequest) => {
     setContractCreating(request.id);
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.contracts.base, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hire_request_id: request.id }),
-      });
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.message || 'Failed to create contract');
-      }
-      const contract = await response.json();
+      const contract = await hireContractService.createFromHireRequest('', { hire_request_id: request.id });
       // Navigate to employment contract page pre-filled with hire request data
       const params = new URLSearchParams({
         househelp_id: request.househelp_id,
@@ -363,18 +311,7 @@ export default function HiringHistory() {
     setCancelError(null);
 
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.requests.byId(cancelRequest.id), {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reason: resolvedReason,
-          message: cancelMessage.trim(),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to cancel hire request');
-      }
+      await hireRequestService.cancelHireRequest(cancelRequest.id);
 
       await removeHousehelpFromShortlist(cancelRequest.househelp?.id || cancelRequest.househelp_id);
       setCancelRequest(null);
@@ -445,7 +382,7 @@ export default function HiringHistory() {
     // Mark as viewed if not already
     if (!interest.viewed_at) {
       try {
-        await apiClient.auth(API_ENDPOINTS.interests.markViewed(interest.id), { method: 'PUT' });
+        await interestService.markViewed(interest.id);
         setInterestsCount(prev => Math.max(0, prev - 1));
       } catch (err) {
         console.error('Failed to mark interest as viewed:', err);
@@ -460,7 +397,7 @@ export default function HiringHistory() {
 
   const handleAcceptInterest = async (interest: Interest) => {
     try {
-      await apiClient.auth(API_ENDPOINTS.interests.accept(interest.id), { method: 'PUT' });
+      await interestService.acceptInterest(interest.id);
       fetchInterests();
       setInterestsCount(prev => Math.max(0, prev - 1));
       window.dispatchEvent(new Event('hiring-updated'));
@@ -471,7 +408,7 @@ export default function HiringHistory() {
 
   const handleDeclineInterest = async (interest: Interest) => {
     try {
-      await apiClient.auth(API_ENDPOINTS.interests.decline(interest.id), { method: 'PUT' });
+      await interestService.declineInterest(interest.id);
       fetchInterests();
       setInterestsCount(prev => Math.max(0, prev - 1));
       window.dispatchEvent(new Event('hiring-updated'));
@@ -654,7 +591,7 @@ export default function HiringHistory() {
                       <Eye className="w-4 h-4" />
                       View Profile
                     </button>
-                    {interest.status === 'pending' && (
+                    {(interest.status === 'pending' || interest.status === 'viewed') && (
                       <>
                         <button
                           onClick={() => handleAcceptInterest(interest)}

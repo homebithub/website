@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState } from "react";
 import { handleApiError } from '../../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { househelpPreferencesService } from '~/services/grpc/authServices';
 
 const DAYS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
 const TIMES = ["morning", "afternoon", "evening"];
@@ -50,20 +51,12 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
     }
     setLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/v1/househelp-preferences/availability`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          availability,
-          available_from: availableFrom,
-          ...(userType === 'household' && selected === 'sleep_in' && { off_days: offDays }),
-        }),
+      const token = getAccessTokenFromCookies();
+      await househelpPreferencesService.updateAvailability('', {
+        availability,
+        available_from: availableFrom,
+        ...(userType === 'household' && selected === 'sleep_in' && { off_days: offDays }),
       });
-      if (!res.ok) throw new Error("Failed to save availability. Please try again.");
       setSuccess("Availability updated successfully!");
     } catch (err: any) {
       setError(handleApiError(err, 'nannyType', 'An error occurred.'));

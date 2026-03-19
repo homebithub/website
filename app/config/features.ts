@@ -8,7 +8,7 @@
 export const FEATURE_FLAGS = {
   /**
    * Show Sign Up and Login buttons in the navbar for non-authenticated users
-   * When false, only the "Join Waitlist" button will be shown
+   * When false, auth buttons will be hidden from the navbar
    */
   showAuthButtons: true,
 } as const;

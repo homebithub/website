@@ -1,34 +1,38 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
-const HOUSEHOLD_SIZES = [
-  { value: 'small', label: 'Small (1-2 people)', icon: '👤' },
-  { value: 'medium', label: 'Medium (3-4 people)', icon: '👥' },
-  { value: 'large', label: 'Large (5+ people)', icon: '👨‍👩‍👧‍👦' },
-  { value: 'any', label: 'Any size', icon: '✨' }
-];
+// Icons for preferences
+const sizeIcons: Record<string, string> = {
+  'small': '👤',
+  'medium': '👥',
+  'large': '👨‍👩‍👧‍👦',
+  'any': '✨'
+};
 
-const LOCATION_TYPES = [
-  { value: 'urban', label: 'Urban/City', icon: '🏙️' },
-  { value: 'suburban', label: 'Suburban', icon: '🏘️' },
-  { value: 'rural', label: 'Rural/Countryside', icon: '🌾' },
-  { value: 'any', label: 'Any location', icon: '🌍' }
-];
+const locationIcons: Record<string, string> = {
+  'urban': '🏙️',
+  'suburban': '🏘️',
+  'rural': '🌾',
+  'any': '🌍'
+};
 
-const FAMILY_TYPES = [
-  { value: 'single', label: 'Single person', icon: '👤' },
-  { value: 'couple', label: 'Couple (no kids)', icon: '💑' },
-  { value: 'young_family', label: 'Young family (with kids)', icon: '👨‍👩‍👧' },
-  { value: 'elderly', label: 'Elderly care', icon: '👴' },
-  { value: 'any', label: 'Any family type', icon: '❤️' }
-];
+const familyIcons: Record<string, string> = {
+  'single': '👤',
+  'couple': '💑',
+  'young_family': '👨‍👩‍👧',
+  'elderly': '👴',
+  'any': '❤️'
+};
 
 const PreferredWorkEnvironment: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [householdSize, setHouseholdSize] = useState<string>('');
   const [locationType, setLocationType] = useState<string>('');
   const [familyType, setFamilyType] = useState<string>('');
@@ -37,26 +41,46 @@ const PreferredWorkEnvironment: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Load existing data
+  const HOUSEHOLD_SIZES = options?.household_size_preferences.map(h => ({
+    value: h.value,
+    label: h.label,
+    icon: sizeIcons[h.value] || '✨'
+  })) || [];
+
+  const LOCATION_TYPES = options?.location_type_preferences.map(l => ({
+    value: l.value,
+    label: l.label,
+    icon: locationIcons[l.value] || '🌍'
+  })) || [];
+
+  const FAMILY_TYPES = options?.family_type_preferences.map(f => ({
+    value: f.value,
+    label: f.label,
+    icon: familyIcons[f.value] || '❤️'
+  })) || [];
+
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.workenvironment;
+    if (cached) {
+      if (cached.householdSize || cached.preferred_household_size) setHouseholdSize(cached.householdSize || cached.preferred_household_size);
+      if (cached.locationType || cached.preferred_location_type) setLocationType(cached.locationType || cached.preferred_location_type);
+      if (cached.familyType || cached.preferred_family_type) setFamilyType(cached.familyType || cached.preferred_family_type);
+    }
+  }, [profileData.workenvironment]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.preferred_household_size) setHouseholdSize(data.preferred_household_size);
-          if (data.preferred_location_type) setLocationType(data.preferred_location_type);
-          if (data.preferred_family_type) setFamilyType(data.preferred_family_type);
-          if (data.work_environment_notes) setAdditionalPreferences(data.work_environment_notes);
-        }
+        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        if (data?.preferred_household_size) setHouseholdSize(data.preferred_household_size);
+        if (data?.preferred_location_type) setLocationType(data.preferred_location_type);
+        if (data?.preferred_family_type) setFamilyType(data.preferred_family_type);
+        if (data?.work_environment_notes) setAdditionalPreferences(data.work_environment_notes);
       } catch (err) {
         console.error('Failed to load work environment data:', err);
       }
@@ -72,33 +96,16 @@ const PreferredWorkEnvironment: React.FC = () => {
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          updates: {
-            preferred_household_size: householdSize,
-            preferred_location_type: locationType,
-            preferred_family_type: familyType,
-            work_environment_notes: additionalPreferences,
-          },
-          _step_metadata: {
-            step_id: "workenvironment",
-            step_number: 11,
-            is_completed: true
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save preferences');
-      }
+      const token = getAccessTokenFromCookies();
+      await grpcProfileService.updateHousehelpFields('', 'househelp', {
+        preferred_household_size: householdSize,
+        preferred_location_type: locationType,
+        preferred_family_type: familyType,
+        work_environment_notes: additionalPreferences,
+      }, { step_id: 'workenvironment', step_number: 11, is_completed: true });
 
       markClean();
+      updateStepData('workenvironment', { householdSize, locationType, familyType });
       setSuccess('Work environment preferences saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'workEnvironment', 'Failed to save your preferences. Please try again.'));

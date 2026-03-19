@@ -53,7 +53,7 @@ export function BaseModal({
         </Transition.Child>
 
         <div className="fixed inset-0 z-10 overflow-y-auto">
-          <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+          <div className="flex min-h-full items-end justify-center text-center sm:items-center sm:p-4">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-300"
@@ -65,10 +65,10 @@ export function BaseModal({
             >
               <Dialog.Panel 
                 className={`
-                  relative transform overflow-hidden rounded-[2.5rem] 
+                  relative transform overflow-hidden rounded-t-2xl sm:rounded-2xl
                   bg-white dark:bg-dark-card 
                   px-6 pb-8 pt-8 text-left shadow-2xl transition-all 
-                  sm:my-8 w-full ${sizeClasses[size]} 
+                  w-full ${sizeClasses[size]} max-h-[90vh] sm:max-h-[85vh] overflow-y-auto
                   border border-purple-100 dark:border-purple-500/20
                 `}
               >

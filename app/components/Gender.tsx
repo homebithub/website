@@ -1,38 +1,44 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const Gender = () => {
-    const { markDirty, markClean } = useProfileSetup();
+    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
     const [gender, setGender] = useState<'female' | 'male'>('female');
     const [dateOfBirth, setDateOfBirth] = useState<string>('');
     const [error, setError] = useState<string>('');
     const [success, setSuccess] = useState<string>('');
     const [loading, setLoading] = useState(false);
 
-    // Load existing data
+    // Populate from context (instant on back-nav, also fires after loadProfileFromBackend)
+    useEffect(() => {
+        const cached = profileData.gender;
+        if (cached) {
+            if (cached.gender) setGender(cached.gender);
+            const dob = cached.dateOfBirth || cached.date_of_birth;
+            if (dob) {
+                const date = new Date(dob);
+                if (!isNaN(date.getTime())) setDateOfBirth(date.toISOString().split('T')[0]);
+            }
+        }
+    }, [profileData.gender]);
+
+    // Load existing data from backend (fallback)
     useEffect(() => {
         const loadData = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = getAccessTokenFromCookies();
                 if (!token) return;
 
-                const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.gender) setGender(data.gender);
-                    if (data.date_of_birth) {
-                        const date = new Date(data.date_of_birth);
-                        setDateOfBirth(date.toISOString().split('T')[0]);
-                    }
+                const data = await grpcProfileService.getCurrentHousehelpProfile('');
+                if (data?.gender) setGender(data.gender);
+                if (data?.date_of_birth) {
+                    const date = new Date(data.date_of_birth);
+                    setDateOfBirth(date.toISOString().split('T')[0]);
                 }
             } catch (err) {
                 console.error('Failed to load gender data:', err);
@@ -48,71 +54,63 @@ const Gender = () => {
         return maxDate.toISOString().split('T')[0];
     };
 
-    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setDateOfBirth(e.target.value);
-        markDirty();
-        if (error) setError('');
+    const isValidDOB = (dob: string): boolean => {
+        if (!dob || isNaN(Date.parse(dob))) return false;
+        const selectedDate = new Date(dob);
+        const maxDate = new Date(calculateMaxDate());
+        return selectedDate <= maxDate;
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        if (!dateOfBirth || isNaN(Date.parse(dateOfBirth))) {
-            setError('Please select your date of birth');
-            return;
-        }
-        
-        const selectedDate = new Date(dateOfBirth);
-        const maxDate = new Date(calculateMaxDate());
-        if (selectedDate > maxDate) {
-            setError('You must be at least 18 years old');
-            return;
-        }
+    const autoSave = async (genderVal: 'female' | 'male', dobVal: string) => {
+        if (!isValidDOB(dobVal)) return;
 
         setLoading(true);
         setError('');
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) {
                 throw new Error('Authentication token not found');
             }
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    updates: {
-                        gender: gender,
-                        date_of_birth: dateOfBirth
-                    },
-                    _step_metadata: {
-                        step_id: "gender",
-                        step_number: 3,
-                        is_completed: true
-                    }
-                })
-            });
-
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to update profile');
-            }
+            await grpcProfileService.updateHousehelpFields('', 'househelp',
+                { gender: genderVal, date_of_birth: dobVal },
+                { step_id: 'gender', step_number: 3, is_completed: true }
+            );
             
             markClean();
+            updateStepData('gender', { gender: genderVal, dateOfBirth: dobVal });
             setSuccess('Your information has been saved successfully!');
-            // router.push('/next-step'); // Uncomment and add navigation to next step if needed
+            setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {
             console.error('Error saving information:', err);
             setError(handleApiError(err, 'gender', 'Failed to save your information. Please try again.'));
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleGenderChange = async (value: 'female' | 'male') => {
+        setGender(value);
+        markDirty();
+        await autoSave(value, dateOfBirth);
+    };
+
+    const handleDateChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const newDob = e.target.value;
+        setDateOfBirth(newDob);
+        markDirty();
+        if (error) setError('');
+        
+        if (!newDob || isNaN(Date.parse(newDob))) return;
+        const selectedDate = new Date(newDob);
+        const maxDate = new Date(calculateMaxDate());
+        if (selectedDate > maxDate) {
+            setError('You must be at least 18 years old');
+            return;
+        }
+        await autoSave(gender, newDob);
     };
 
     return (
@@ -126,7 +124,7 @@ const Gender = () => {
             
             {success && <SuccessAlert message={success} />}
             
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="space-y-8">
                 <div>
                     <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-3">Gender</h3>
                     <div className="grid grid-cols-2 gap-4">
@@ -138,7 +136,7 @@ const Gender = () => {
                                 name="gender"
                                 value="female"
                                 checked={gender === 'female'}
-                                onChange={() => { setGender('female'); markDirty(); }}
+                                onChange={() => handleGenderChange('female')}
                                 className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span>Female</span>
@@ -151,7 +149,7 @@ const Gender = () => {
                                 name="gender"
                                 value="male"
                                 checked={gender === 'male'}
-                                onChange={() => { setGender('male'); markDirty(); }}
+                                onChange={() => handleGenderChange('male')}
                                 className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <span>Male</span>
@@ -177,28 +175,7 @@ const Gender = () => {
                     </p>
                 </div>
                 
-                <div className="pt-2">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                            <>
-                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                💾 Save
-                            </>
-                        )}
-                    </button>
-                </div>
-            </form>
+            </div>
         </div>
     );
 };

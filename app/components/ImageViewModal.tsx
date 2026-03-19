@@ -20,10 +20,11 @@ export default function ImageViewModal({ imageUrl, altText = 'Image', onClose }:
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       onClick={handleBackdropClick}
     >
-      <div className="relative max-w-6xl max-h-[90vh] w-full flex flex-col">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" />
+      <div className="relative max-w-6xl max-h-[90vh] w-full flex flex-col animate-slide-up sm:mx-4 px-4 sm:px-0">
         {/* Close button */}
         <button
           onClick={onClose}

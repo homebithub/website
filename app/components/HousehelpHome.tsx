@@ -1,20 +1,22 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { apiClient } from "~/utils/apiClient";
+import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import HouseholdFilters, { type HouseholdSearchFields } from "~/components/features/HouseholdFilters";
+import { SidePanel } from '~/components/SidePanel';
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
-import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
+import CustomSelect from "~/components/ui/CustomSelect";
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 
 interface HouseholdItem {
@@ -84,10 +86,6 @@ export default function HousehelpHome() {
   const [compactView, setCompactView] = useState(false);
   const [accessibilityMode, setAccessibilityMode] = useState(false);
 
-  const API_BASE = useMemo(
-    () => (typeof window !== "undefined" && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL,
-    []
-  );
   const NOTIFICATIONS_BASE = useMemo(
     () => (typeof window !== "undefined" && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL,
     []
@@ -113,18 +111,12 @@ export default function HousehelpHome() {
     const fetchHouseholdProfileId = async () => {
       if (currentProfileType?.toLowerCase() === 'household' && currentUserId) {
         try {
-          const token = localStorage.getItem("token");
+          const token = getAccessTokenFromCookies();
           if (!token) return;
           
-          const res = await fetch(`${API_BASE_URL}/api/v1/profile/household/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const raw = await res.json();
-            const profile = raw?.data?.data || raw?.data || raw;
-            if (!cancelled) {
-              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
-            }
+          const profile = await grpcProfileService.getCurrentHouseholdProfile('');
+          if (profile && !cancelled) {
+            setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
           }
         } catch (err) {
           console.error('Failed to fetch household profile ID:', err);
@@ -233,22 +225,14 @@ export default function HousehelpHome() {
     try {
       const isShortlisted = shortlistedProfiles.has(profileId);
       if (isShortlisted) {
-        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists/${profileId}`, {
-          method: 'DELETE',
-        });
-        if (!res.ok) throw new Error('Failed to remove from shortlist');
+        await shortlistService.deleteShortlist(profileId);
         setShortlistedProfiles((prev) => {
           const next = new Set(prev);
           next.delete(profileId);
           return next;
         });
       } else {
-        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profile_id: profileId, profile_type: 'household' }),
-        });
-        if (!res.ok) throw new Error('Failed to add to shortlist');
+        await shortlistService.createShortlist('', 'househelp', { profile_id: profileId, profile_type: 'household' });
         setShortlistedProfiles((prev) => new Set(prev).add(profileId));
       }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
@@ -295,17 +279,23 @@ export default function HousehelpHome() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiClient.auth(`${API_BASE}/api/v1/households/search`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(toPayload()),
-      });
-      const raw = await apiClient.json<any>(res);
-      const data = raw?.data?.data || raw?.data || raw;
+      const raw = await grpcProfileService.searchHouseholds('', 'househelp', buildFilters(), 12, 0);
+      console.log('[HousehelpHome] Search raw response:', raw);
+      
+      // Try multiple possible response structures
+      let data = raw?.data?.data || raw?.data || raw?.profiles || raw;
+      
+      // If data is an object with a profiles or households property, extract it
+      if (data && typeof data === 'object' && !Array.isArray(data)) {
+        data = data.profiles || data.households || data.data || [];
+      }
+      
       // Ensure data is always an array
       const households = Array.isArray(data) ? data : [];
+      console.log('[HousehelpHome] Extracted households:', households.length, households);
       setResults(households as HouseholdItem[]);
     } catch (err: any) {
+      console.error('[HousehelpHome] Search error:', err);
       setError(err.message || "Failed to load households");
       setResults([]);
     } finally {
@@ -323,9 +313,7 @@ export default function HousehelpHome() {
     let cancelled = false;
     const fetchShortlist = async () => {
       try {
-        const res = await apiClient.auth(`${API_BASE}/api/v1/shortlists`);
-        if (!res.ok) return;
-        const raw = await apiClient.json<any>(res);
+        const raw = await shortlistService.listByHousehold('');
         const items = raw?.data?.data || raw?.data || raw || [];
         if (cancelled) return;
         const ids = new Set<string>(
@@ -342,7 +330,7 @@ export default function HousehelpHome() {
     return () => {
       cancelled = true;
     };
-  }, [API_BASE]);
+  }, []);
 
   // Debounced count updates on filter changes
   useEffect(() => {
@@ -350,13 +338,8 @@ export default function HousehelpHome() {
     const payload = buildCountPayload();
     countTimerRef.current = setTimeout(async () => {
       try {
-        const res = await apiClient.auth(`${API_BASE}/api/v1/households/search/count`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const data = await apiClient.json<{ count: number }>(res);
-        setTotalCount(typeof data.count === "number" ? data.count : 0);
+        const count = await grpcProfileService.countHouseholds('', 'househelp', payload);
+        setTotalCount(typeof count === 'number' ? count : 0);
       } catch (e) {
         setTotalCount(null);
       }
@@ -396,31 +379,25 @@ export default function HousehelpHome() {
                 </div>
                 <div className="flex flex-col">
                   <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">House Size</label>
-                  <select
-                    name="house_size"
-                    value={filters.house_size}
-                    onChange={handleSelect}
-                    className="w-full h-12 px-4 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    {['', 'bedsitter', '1br', '2br', '3br+', 'mansion'].map((s) => (
-                      <option key={s} value={s}>
-                        {s || 'Any'}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={filters.house_size || ""}
+                    onChange={(val) => setFilters((prev) => ({ ...prev, house_size: val }))}
+                    options={['', 'bedsitter', '1br', '2br', '3br+', 'mansion'].map((s) => ({ value: s, label: s || 'Any' }))}
+                    placeholder="Any"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Has Kids</label>
-                  <select
-                    name="has_kids"
-                    value={filters.has_kids}
-                    onChange={handleSelect}
-                    className="w-full h-12 px-4 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">Any</option>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                  </select>
+                  <CustomSelect
+                    value={filters.has_kids || ""}
+                    onChange={(val) => setFilters((prev) => ({ ...prev, has_kids: val }))}
+                    options={[
+                      { value: "", label: "Any" },
+                      { value: "true", label: "Yes" },
+                      { value: "false", label: "No" },
+                    ]}
+                    placeholder="Any"
+                  />
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
@@ -440,35 +417,18 @@ export default function HousehelpHome() {
             </div>
 
             {/* Slide-over Drawer for full filters */}
-            {showMoreFilters && (
-              <div className="fixed inset-0 z-[70]">
-                <div className="absolute inset-x-0 top-20 sm:top-24 bottom-20 sm:bottom-24 bg-slate-900/20 backdrop-blur-[2px]" onClick={() => setShowMoreFilters(false)} />
-                <div className="absolute right-0 sm:right-4 top-20 sm:top-24 bottom-20 sm:bottom-24 w-full max-w-[460px] bg-[#f3f4f7] dark:bg-gradient-to-br dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] shadow-[0_24px_80px_rgba(15,23,42,0.28)] rounded-[2rem] p-6 sm:p-7 overflow-y-auto border border-[#d6dbe7] dark:border-purple-500/30">
-                  <div className="sticky top-0 z-10 -mx-2 px-2 pb-4 pt-1 bg-[#f3f4f7] dark:bg-[#13131a] flex items-center justify-between mb-2">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">More Filters</h2>
-                    <button
-                      onClick={() => setShowMoreFilters(false)}
-                      className="h-9 w-9 rounded-full border border-[#c7cdd9] dark:border-purple-500/30 text-slate-500 hover:text-slate-700 hover:bg-white/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-purple-500/10 transition-colors"
-                      aria-label="Close more filters"
-                    >
-                      <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  <HouseholdFilters
-                    fields={filters}
-                    onChange={handleFieldChange}
-                    onSearch={() => { setShowMoreFilters(false); search(); }}
-                    onClear={() => setFilters((prev) => ({
-                      ...prev, verified: "", has_kids: "", has_pets: "", type_of_househelp: "",
-                      available_from: "", needs_live_in: "", needs_day_worker: "", budget_min: "",
-                      budget_max: "", salary_frequency: "", religion: "", chore: "", min_rating: "",
-                    }))}
-                  />
-                </div>
-              </div>
-            )}
+            <SidePanel isOpen={showMoreFilters} onClose={() => setShowMoreFilters(false)} title="More Filters">
+              <HouseholdFilters
+                fields={filters}
+                onChange={handleFieldChange}
+                onSearch={() => { setShowMoreFilters(false); search(); }}
+                onClear={() => setFilters((prev) => ({
+                  ...prev, verified: "", has_kids: "", has_pets: "", type_of_househelp: "",
+                  available_from: "", needs_live_in: "", needs_day_worker: "", budget_min: "",
+                  budget_max: "", salary_frequency: "", religion: "", chore: "", min_rating: "",
+                }))}
+              />
+            </SidePanel>
 
             <div className="mt-6 sm:mt-8">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Households</h2>
@@ -477,10 +437,34 @@ export default function HousehelpHome() {
                   <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
                 </div>
               ) : error ? (
-                <ErrorAlert message={getFriendlyErrorMessage(error)} />
+                <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
+                  <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800">
+                    <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 7.5h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Households Available</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                    We couldn't load household profiles right now. Please try again in a moment.
+                  </p>
+                  <button
+                    onClick={search}
+                    className="mt-6 inline-flex items-center px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-sm"
+                  >
+                    Try Again
+                  </button>
+                </div>
               ) : (!results || results.length === 0) ? (
-                <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
-                  <p className="text-gray-600 dark:text-gray-400 text-lg">No households found. Try adjusting filters.</p>
+                <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
+                  <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800">
+                    <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Results Found</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                    No households match your current filters. Try adjusting your search criteria or clear filters to see all profiles.
+                  </p>
                 </div>
               ) : (
                 <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>

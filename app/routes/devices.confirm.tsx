@@ -14,7 +14,7 @@ import {
   ComputerDesktopIcon,
   DeviceTabletIcon,
 } from '@heroicons/react/24/outline';
-import { confirmDevice } from '~/utils/api/devices';
+import deviceService from '~/services/grpc/device.service';
 import type { Device } from '~/types/devices';
 
 export const meta = () => [
@@ -41,8 +41,27 @@ export default function DeviceConfirmPage() {
 
     const confirmDeviceToken = async () => {
       try {
-        const response = await confirmDevice({ token });
-        setDevice(response.device);
+        const response = await deviceService.confirmDevice(token);
+        // Map proto device (camelCase) to local Device type (snake_case)
+        const d = response.device;
+        if (d) {
+          const tsToStr = (ts: any) => ts?.seconds ? new Date(ts.seconds * 1000).toISOString() : undefined;
+          setDevice({
+            id: d.id || '', user_id: d.userId || '', device_id: d.deviceId || '',
+            device_name: d.deviceName || '', device_type: (d.deviceType || 'unknown') as any,
+            status: (d.status || 'active') as any, user_agent: d.userAgent || '',
+            browser: d.browser || '', browser_version: d.browserVersion || '',
+            os: d.os || '', os_version: d.osVersion || '', platform: d.platform || '',
+            ip_address: d.ipAddress || '', country: d.country || '', city: d.city || '',
+            region: d.region || '', timezone: d.timezone || '',
+            latitude: d.latitude || 0, longitude: d.longitude || 0,
+            confirmed_at: tsToStr(d.confirmedAt), last_activity_at: tsToStr(d.lastActivityAt),
+            expires_at: tsToStr(d.expiresAt), revoked_at: tsToStr(d.revokedAt),
+            revoked_reason: d.revokedReason || '', is_trusted: d.isTrusted || false,
+            is_current_device: d.isCurrentDevice || false, login_count: d.loginCount || 0,
+            created_at: tsToStr(d.createdAt) || '', updated_at: tsToStr(d.updatedAt) || '',
+          });
+        }
         setSuccess(true);
         setError(null);
       } catch (err) {

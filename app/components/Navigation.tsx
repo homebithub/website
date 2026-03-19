@@ -3,17 +3,15 @@ import React, { useEffect, useState } from "react";
 import { Menu, Transition } from "@headlessui/react";
 import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon, BellIcon } from "@heroicons/react/20/solid";
 import { useAuth } from "~/contexts/useAuth";
-import { Waitlist } from "~/components/features/Waitlist";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { FEATURE_FLAGS } from "~/config/features";
 import { API_BASE_URL } from "~/config/api";
 import { useProfileSetupStatus } from "~/hooks/useProfileSetupStatus";
 import { useNotifications } from "~/hooks/useNotifications";
 import NotificationsModal from "~/components/notifications/NotificationsModal";
-import { transport, getGrpcMetadata, handleGrpcError } from "~/utils/grpcClient";
-import { ShortlistServiceClient, HireRequestServiceClient, InterestServiceClient } from "~/proto/auth/auth.client";
-import { ListConversationsRequest } from "~/proto/notifications/notifications";
-import { NotificationsServiceClient } from "~/proto/notifications/notifications.client";
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { shortlistService, interestService, hireRequestService } from '~/services/grpc/authServices';
+import { notificationsService } from '~/services/grpc/notifications.service';
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -30,19 +28,11 @@ export function Navigation() {
     const [shortlistCount, setShortlistCount] = useState<number>(0);
     const [inboxCount, setInboxCount] = useState<number>(0);
     const [hireRequestCount, setHireRequestCount] = useState<number>(0);
-    const [isWaitlistOpen, setIsWaitlistOpen] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const { unreadCount } = useNotifications({ pollingMs: 30000, pageSize: 20 });
-    const [prefillEmail, setPrefillEmail] = useState<string | undefined>(undefined);
-    const [prefillFirstName, setPrefillFirstName] = useState<string | undefined>(undefined);
-    const [prefillError, setPrefillError] = useState<string | undefined>(undefined);
     const navigate = useNavigate();
     const location = useLocation();
 
-    const shortlistClient = React.useMemo(() => new ShortlistServiceClient(transport), []);
-    const hireRequestClient = React.useMemo(() => new HireRequestServiceClient(transport), []);
-    const interestClient = React.useMemo(() => new InterestServiceClient(transport), []);
-    const notificationsClient = React.useMemo(() => new NotificationsServiceClient(transport), []);
 
     // Detect if running on app subdomain
     const isAppHost = React.useMemo(() => {
@@ -74,8 +64,9 @@ export function Navigation() {
     // Fetch shortlist count
     const fetchShortlistCount = async () => {
         try {
-            const { response } = await (shortlistClient as any).countShortlist({}, { metadata: getGrpcMetadata() });
-            const count = response.data?.fields?.count?.numberValue || 0;
+            if (!getAccessTokenFromCookies()) return;
+            const data = await shortlistService.getShortlistCount('', '');
+            const count = Number(data?.count) || 0;
             setShortlistCount(count);
         } catch (error) {
             console.error("[Shortlist Count] Failed to fetch:", error);
@@ -85,13 +76,12 @@ export function Navigation() {
     // Fetch inbox unread count
     const fetchInboxCount = async () => {
         try {
-            const request: ListConversationsRequest = { limit: 100, offset: 0 } as any;
-            const { response } = await notificationsClient.listConversations(request, { metadata: getGrpcMetadata() });
-            const conversations = (response.data?.fields?.conversations as any)?.listValue?.values || [];
+            if (!getAccessTokenFromCookies()) return;
+            const data = await notificationsService.listConversations('', 0, 100);
+            const conversations: any[] = data?.conversations || [];
             
-            const totalUnread = conversations.reduce((sum: number, v: any) => {
-                const conv = v.structValue?.fields || {};
-                return sum + (conv.unread_count?.numberValue || 0);
+            const totalUnread = conversations.reduce((sum: number, c: any) => {
+                return sum + (c.unread_count || 0);
             }, 0);
             
             setInboxCount(totalUnread);
@@ -103,26 +93,26 @@ export function Navigation() {
     // Fetch hiring badge count: pending items the user has NOT acted upon
     const fetchHireRequestCount = async (overrideProfileType?: string | null) => {
         try {
+            if (!getAccessTokenFromCookies()) return;
             const pt = overrideProfileType ?? profileType;
             let total = 0;
 
             if (pt === 'household') {
                 // 1. Count pending/viewed interests from househelps
-                const { response: iData } = await (interestClient as any).listInterestsByHousehold({}, { metadata: getGrpcMetadata() });
-                const interests = (iData.data?.fields?.data as any)?.listValue?.values || [];
-                total += interests.filter((v: any) => {
-                    const i = v.structValue?.fields || {};
-                    const status = i.status?.stringValue || "";
+                const iData = await interestService.listByHousehold('', '');
+                const interests: any[] = iData?.data || [];
+                total += interests.filter((i: any) => {
+                    const status = i.status || "";
                     return status === 'pending' || status === 'viewed';
                 }).length;
 
                 // 2. Count pending hire requests
-                const { response: hData } = await hireRequestClient.listHireRequests({ status: 'pending', limit: 100, offset: 0 } as any, { metadata: getGrpcMetadata() });
-                total += (hData.data?.fields?.total as any)?.numberValue || (hData.data?.fields?.data as any)?.listValue?.values?.length || 0;
+                const hData = await hireRequestService.listHireRequests('', '', 'pending');
+                total += hData?.total || (Array.isArray(hData?.data) ? hData.data.length : 0);
             } else if (pt === 'househelp') {
                 // Count pending hire requests received from households
-                const { response: data } = await hireRequestClient.listHireRequests({ status: 'pending', limit: 100, offset: 0 } as any, { metadata: getGrpcMetadata() });
-                total = (data.data?.fields?.total as any)?.numberValue || (data.data?.fields?.data as any)?.listValue?.values?.length || 0;
+                const data = await hireRequestService.listHireRequests('', '', 'pending');
+                total = data?.total || (Array.isArray(data?.data) ? data.data.length : 0);
             }
 
             setHireRequestCount(total);
@@ -155,10 +145,12 @@ export function Navigation() {
                     console.log('[Navigation] Profile type:', profileType);
                     console.log('[Navigation] Is household?', profileType === "household");
 
-                    // Fetch counts for authenticated users
-                    fetchShortlistCount();
-                    fetchInboxCount();
-                    fetchHireRequestCount(profileType);
+                    // Fetch counts only for authenticated users who finished onboarding
+                    if (!isInSetupMode) {
+                        fetchShortlistCount();
+                        fetchInboxCount();
+                        fetchHireRequestCount(profileType);
+                    }
                 } else {
                     setProfileType(null);
                     setUserName(null);
@@ -173,20 +165,22 @@ export function Navigation() {
             setShortlistCount(0);
             setInboxCount(0);
         }
-    }, [user]);
+    }, [user, isInSetupMode]);
 
-    // Listen for shortlist and inbox updates
+    // Listen for shortlist and inbox updates (only when not in setup mode)
     useEffect(() => {
+        if (isInSetupMode) return;
+
         const handleShortlistUpdate = () => {
-            fetchShortlistCount();
+            if (getAccessTokenFromCookies()) fetchShortlistCount();
         };
 
         const handleInboxUpdate = () => {
-            fetchInboxCount();
+            if (getAccessTokenFromCookies()) fetchInboxCount();
         };
 
         const handleHiringUpdate = () => {
-            fetchHireRequestCount();
+            if (getAccessTokenFromCookies()) fetchHireRequestCount();
         };
 
         window.addEventListener('shortlist-updated', handleShortlistUpdate);
@@ -197,11 +191,11 @@ export function Navigation() {
             window.removeEventListener('inbox-updated', handleInboxUpdate);
             window.removeEventListener('hiring-updated', handleHiringUpdate);
         };
-    }, []);
+    }, [isInSetupMode]);
 
-    // Poll all counts every 60 seconds
+    // Poll all counts every 60 seconds (skip during onboarding)
     useEffect(() => {
-        if (!user || !profileType) return;
+        if (!user || !profileType || isInSetupMode) return;
 
         const pollCounts = () => {
             fetchShortlistCount();
@@ -211,7 +205,7 @@ export function Navigation() {
 
         const intervalId = setInterval(pollCounts, 60_000);
         return () => clearInterval(intervalId);
-    }, [user, profileType]);
+    }, [user, profileType, isInSetupMode]);
 
     // Badge helper: 0 = null (hidden), 1-9 = number, >9 = "9+"
     const renderBadge = (count: number, gradient = 'from-purple-600 to-pink-600', shadow = 'shadow-purple-500/50') => {
@@ -219,27 +213,12 @@ export function Navigation() {
         const label = count > 9 ? '9+' : String(count);
         return (
             <span
-                className={`absolute -top-2 -right-3 bg-gradient-to-r ${gradient} text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-lg ${shadow} px-1`}
+                className={`absolute -top-1.5 -right-2 bg-gradient-to-r ${gradient} text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-lg ${shadow} px-1`}
             >
                 {label}
             </span>
         );
     };
-
-    // Open waitlist modal automatically if URL contains waitlist params (used by OAuth callback)
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        const shouldOpen = params.get("waitlist");
-        if (shouldOpen === "1" || shouldOpen === "true") {
-            setIsWaitlistOpen(true);
-            const email = params.get("email") || undefined;
-            const first = params.get("first_name") || undefined;
-            const err = params.get("error") || undefined;
-            setPrefillEmail(email || undefined);
-            setPrefillFirstName(first || undefined);
-            setPrefillError(err || undefined);
-        }
-    }, [location.search]);
 
     const handleLogout = async () => {
         try {
@@ -270,46 +249,55 @@ export function Navigation() {
                 {/* Logo */}
                 <div className="relative flex items-center">
   <Link to="/" prefetch="intent" className="relative font-extrabold text-2xl sm:text-3xl px-3 py-1 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-purple-300/50 hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
-    <span className="logo-shimmer gradient-text">HomeBit</span>
+    <span className="logo-shimmer">
+      <span className="text-gray-900 dark:text-white">Home</span>
+      <span className="gradient-text">Bit</span>
+    </span>
   </Link>
 </div>
 
                 {/* Public Navigation Links - Show on non-app hosts for all users */}
                 {!isAppHost && (
                     <div className="hidden lg:flex items-center space-x-4 ml-auto">
-                        {(user ? authLinks : navigation).map((item) => (
+                        {(user ? authLinks : navigation).map((item) => {
+                            const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+                            return (
                             <Link
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg sm:text-xl font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
+                                className={`link text-lg sm:text-xl font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
                             >
                                 {item.name}
                                 {'count' in item && item.name === 'Shortlist' && renderBadge((item as any).count)}
                                 {'count' in item && item.name === 'Inbox' && renderBadge((item as any).count)}
-                                {'count' in item && item.name === 'Hiring' && renderBadge((item as any).count, 'from-green-600 to-emerald-600', 'shadow-green-500/50')}
+                                {'count' in item && item.name === 'Hiring' && renderBadge((item as any).count)}
                             </Link>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
                 {/* App navigation for authenticated users on app subdomain */}
                 {isAppHost && user && (
                     <div className="hidden lg:flex items-center space-x-3 ml-auto">
-                        {authLinks.map((item) => (
+                        {authLinks.map((item) => {
+                            const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+                            return (
                             <Link
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
+                                className={`link text-lg font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
                                 id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
                                 {item.name === 'Shortlist' && renderBadge(shortlistCount)}
                                 {item.name === 'Inbox' && renderBadge(inboxCount)}
-                                {item.name === 'Hiring' && renderBadge(hireRequestCount, 'from-green-600 to-emerald-600', 'shadow-green-500/50')}
+                                {item.name === 'Hiring' && renderBadge(hireRequestCount)}
                             </Link>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
@@ -336,12 +324,6 @@ export function Navigation() {
 
                     {showAuthButtons && (
                         <div className="flex items-center space-x-3">
-                            <button
-  onClick={() => setIsWaitlistOpen(true)}
-  className="hidden lg:block glow-button bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium rounded-xl shadow-lg px-4 py-1 transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500"
->
-  Join Waitlist
-</button>
                             {FEATURE_FLAGS.showAuthButtons && (
                                 <>
                                     <Link
@@ -455,35 +437,28 @@ export function Navigation() {
                                     {/* Navigation links in mobile menu (non-app host) */}
                                     {!isAppHost && (user ? authLinks : navigation).map((item) => (
                                         <Menu.Item key={item.name}>
-                                            {({ active }) => (
+                                            {({ active }) => {
+                                                const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+                                                return (
                                                 <Link
                                                     to={item.href}
-                                                    className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
+                                                    className={`font-medium ${active || isActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
                                                 >
                                                     <span>{item.name}</span>
                                                     {'count' in item && (item as any).count > 0 && (
-                                                        <span className={`bg-gradient-to-r ${item.name === 'Hiring' ? 'from-green-600 to-emerald-600' : 'from-purple-600 to-pink-600'} text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1`}>
+                                                        <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                                                             {(item as any).count > 9 ? '9+' : (item as any).count}
                                                         </span>
                                                     )}
                                                 </Link>
-                                            )}
+                                                );
+                                            }}
                                         </Menu.Item>
                                     ))}
 
                                     {/* Mobile Auth Options */}
                                     {showAuthButtons && (
                                         <>
-                                            <Menu.Item>
-  {({ active }) => (
-    <button
-      onClick={() => setIsWaitlistOpen(true)}
-      className={`lg:hidden w-full text-left bg-gradient-to-r from-purple-600 to-pink-600 text-white font-medium block px-4 py-1 text-sm rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500`}
-    >
-      Join Waitlist
-    </button>
-  )}
-</Menu.Item>
                                             {FEATURE_FLAGS.showAuthButtons && (
                                                 <>
                                                     <Menu.Item>
@@ -509,6 +484,29 @@ export function Navigation() {
                                                 </>
                                             )}
                                         </>
+                                    )}
+
+                                    {/* Notifications in Mobile Menu */}
+                                    {user && (
+                                        <Menu.Item>
+                                            {({ active }) => (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsNotificationsOpen(true)}
+                                                    className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105 w-[calc(100%-16px)]`}
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        <BellIcon className="h-5 w-5" />
+                                                        Notifications
+                                                    </span>
+                                                    {unreadCount > 0 && (
+                                                        <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                                                            {unreadCount > 9 ? '9+' : unreadCount}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </Menu.Item>
                                     )}
 
                                     {/* Theme Toggle in Mobile Menu */}
@@ -548,7 +546,7 @@ export function Navigation() {
                                                                     </span>
                                                                 )}
                                                                 {item.name === 'Hiring' && hireRequestCount > 0 && (
-                                                                    <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-green-500/40 px-1">
+                                                                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
                                                                         {hireRequestCount > 9 ? '9+' : hireRequestCount}
                                                                     </span>
                                                                 )}
@@ -623,20 +621,6 @@ export function Navigation() {
             {/* Notifications Modal */}
             <NotificationsModal isOpen={isNotificationsOpen} onClose={() => setIsNotificationsOpen(false)} />
 
-            {/* Waitlist Modal */}
-            <Waitlist
-                isOpen={isWaitlistOpen}
-                onClose={() => {
-                    setIsWaitlistOpen(false);
-                    // Clean query params after closing if they were used to open the modal
-                    if (new URLSearchParams(location.search).has("waitlist")) {
-                        navigate(location.pathname, { replace: true });
-                    }
-                }}
-                prefillEmail={prefillEmail}
-                prefillFirstName={prefillFirstName}
-                prefillError={prefillError}
-            />
         </nav>
     );
 }

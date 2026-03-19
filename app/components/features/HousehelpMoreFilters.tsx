@@ -9,6 +9,7 @@ import {
   SKILLS,
 } from "~/constants/profileOptions";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
+import CustomSelect from "~/components/ui/CustomSelect";
 
 export type HousehelpMoreFilterFields = {
   status?: string;
@@ -98,21 +99,21 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Status</label>
-                <select value={fields.status || ""} onChange={(e) => onChange("status", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  {PROFILE_STATUS.map((status) => (
-                    <option key={status} value={status}>{status[0].toUpperCase() + status.slice(1)}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={fields.status || ""}
+                  onChange={(val) => onChange("status", val)}
+                  options={[{ value: "", label: "Any" }, ...PROFILE_STATUS.map((status) => ({ value: status, label: status[0].toUpperCase() + status.slice(1) }))]}
+                  placeholder="Any"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Gender</label>
-                <select value={fields.gender || ""} onChange={(e) => onChange("gender", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  {GENDERS.map((gender) => (
-                    <option key={gender} value={gender.toLowerCase()}>{gender}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={fields.gender || ""}
+                  onChange={(val) => onChange("gender", val)}
+                  options={[{ value: "", label: "Any" }, ...GENDERS.map((gender) => ({ value: gender.toLowerCase(), label: gender }))]}
+                  placeholder="Any"
+                />
               </div>
             </div>
 
@@ -128,11 +129,16 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Type of Househelp</label>
-                <select value={typeValue} onChange={(e) => setType(e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="live_in">Live-in</option>
-                  <option value="day_worker">Day worker</option>
-                </select>
+                <CustomSelect
+                  value={typeValue}
+                  onChange={(val) => setType(val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "live_in", label: "Live-in" },
+                    { value: "day_worker", label: "Day worker" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
             </div>
 
@@ -143,46 +149,49 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Experience</label>
-                <select value={fields.experience || ""} onChange={(e) => onChange("experience", e.target.value)} className={selectCls}>
-                  {EXPERIENCE_OPTIONS.map((option) => (
-                    <option key={option.value || "any"} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={fields.experience || ""}
+                  onChange={(val) => onChange("experience", val)}
+                  options={EXPERIENCE_OPTIONS}
+                  placeholder="Any"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Language</label>
-                <select value={fields.language || ""} onChange={(e) => onChange("language", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  {PRIMARY_LANGUAGES.map((language) => (
-                    <option key={language} value={language}>{language}</option>
-                  ))}
-                  {ALL_LANGUAGES.filter((language) => !PRIMARY_LANGUAGES.includes(language as any)).map((language) => (
-                    <option key={language} value={language}>{language}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={fields.language || ""}
+                  onChange={(val) => onChange("language", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    ...PRIMARY_LANGUAGES.map((language) => ({ value: language, label: language })),
+                    ...ALL_LANGUAGES.filter((language) => !PRIMARY_LANGUAGES.includes(language as any)).map((language) => ({ value: language, label: language })),
+                  ]}
+                  placeholder="Any"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Skills / Can Help With</label>
-                <select value={fields.skill || ""} onChange={(e) => onChange("skill", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  {SKILLS.map((skill) => (
-                    <option key={skill} value={skill.toLowerCase()}>{skill}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={fields.skill || ""}
+                  onChange={(val) => onChange("skill", val)}
+                  options={[{ value: "", label: "Any" }, ...SKILLS.map((skill) => ({ value: skill.toLowerCase(), label: skill }))]}
+                  placeholder="Any"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Trait</label>
-                <select value={fields.traits || ""} onChange={(e) => onChange("traits", e.target.value)} className={selectCls}>
-                  {TRAITS.map((trait) => (
-                    <option key={trait || "any"} value={trait}>{trait ? trait[0].toUpperCase() + trait.slice(1) : "Any"}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={fields.traits || ""}
+                  onChange={(val) => onChange("traits", val)}
+                  options={TRAITS.map((trait) => ({ value: trait, label: trait ? trait[0].toUpperCase() + trait.slice(1) : "Any" }))}
+                  placeholder="Any"
+                />
               </div>
             </div>
           </div>
@@ -203,23 +212,28 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Salary Frequency</label>
-                <select value={fields.salary_frequency || ""} onChange={(e) => onChange("salary_frequency", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  {SALARY_FREQUENCIES.map((frequency) => (
-                    <option key={frequency} value={frequency}>{SALARY_FREQUENCY_LABELS[frequency]}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={fields.salary_frequency || ""}
+                  onChange={(val) => onChange("salary_frequency", val)}
+                  options={[{ value: "", label: "Any" }, ...SALARY_FREQUENCIES.map((frequency) => ({ value: frequency, label: SALARY_FREQUENCY_LABELS[frequency] }))]}
+                  placeholder="Any"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Minimum Rating</label>
-                <select value={fields.min_rating || ""} onChange={(e) => onChange("min_rating", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="4.5">4.5+</option>
-                  <option value="4">4.0+</option>
-                  <option value="3">3.0+</option>
-                  <option value="2">2.0+</option>
-                  <option value="1">1.0+</option>
-                </select>
+                <CustomSelect
+                  value={fields.min_rating || ""}
+                  onChange={(val) => onChange("min_rating", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "4.5", label: "4.5+" },
+                    { value: "4", label: "4.0+" },
+                    { value: "3", label: "3.0+" },
+                    { value: "2", label: "2.0+" },
+                    { value: "1", label: "1.0+" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -250,19 +264,29 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Works with Kids</label>
-                <select value={fields.can_work_with_kids || ""} onChange={(e) => onChange("can_work_with_kids", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
+                <CustomSelect
+                  value={fields.can_work_with_kids || ""}
+                  onChange={(val) => onChange("can_work_with_kids", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "true", label: "Yes" },
+                    { value: "false", label: "No" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Works with Pets</label>
-                <select value={fields.can_work_with_pets || ""} onChange={(e) => onChange("can_work_with_pets", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
+                <CustomSelect
+                  value={fields.can_work_with_pets || ""}
+                  onChange={(val) => onChange("can_work_with_pets", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "true", label: "Yes" },
+                    { value: "false", label: "No" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
             </div>
 

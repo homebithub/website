@@ -18,7 +18,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
-import { API_ENDPOINTS, getAuthHeaders } from '~/config/api';
+import { paymentsService } from '~/services/grpc/payments.service';
 
 export const meta = () => [
     { title: "Pricing & Plans — Homebit Kenya" },
@@ -240,29 +240,11 @@ export default function Pricing() {
     setErrorMessage('');
 
     try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        throw new Error('Not authenticated - please login again');
-      }
-
-      const response = await fetch(API_ENDPOINTS.payments.checkout, {
-        method: 'POST',
-        headers: getAuthHeaders(token),
-        body: JSON.stringify({
-          plan_id: selectedPlan.id,
-          phone_number: formattedPhone,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setCurrentPaymentId(data.payment_id);
-        setPaymentStatus('processing');
-        startPollingPaymentStatus(data.payment_id);
-      } else {
-        throw new Error(data.message || data.error || 'Failed to initiate payment');
-      }
+      const data = await paymentsService.createSubscriptionCheckout('', selectedPlan.id, formattedPhone, '', '') as any;
+      const result = data?.toObject?.() ?? data;
+      setCurrentPaymentId(result.paymentId || result.payment_id);
+      setPaymentStatus('processing');
+      startPollingPaymentStatus(result.paymentId || result.payment_id);
     } catch (error) {
       console.error('Payment initiation failed:', error);
       setPaymentStatus('failed');
@@ -272,9 +254,6 @@ export default function Pricing() {
   };
 
   const startPollingPaymentStatus = (paymentId: string) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
     let attempts = 0;
     const maxAttempts = 60; // Poll for up to 3 minutes (60 * 3 seconds)
 
@@ -282,13 +261,10 @@ export default function Pricing() {
       attempts++;
 
       try {
-        const response = await fetch(API_ENDPOINTS.payments.transactions.status(paymentId), {
-          headers: getAuthHeaders(token),
-        });
+        const response = await paymentsService.checkPaymentStatus(paymentId, '') as any;
+        const data = response?.toObject?.() ?? response;
 
-        if (response.ok) {
-          const data = await response.json();
-          
+        if (data) {
           if (data.status === 'completed') {
             setPaymentStatus('success');
             clearInterval(interval);
@@ -301,7 +277,7 @@ export default function Pricing() {
             }, 2000);
           } else if (data.status === 'failed') {
             setPaymentStatus('failed');
-            setErrorMessage(data.failure_reason || 'Payment failed. Please try again.');
+            setErrorMessage(data.failureReason || data.failure_reason || 'Payment failed. Please try again.');
             clearInterval(interval);
             setPollingInterval(null);
             setProcessingPayment(false);
@@ -668,17 +644,17 @@ export default function Pricing() {
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4">
+            <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
                 leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all">
+                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   {paymentStatus === 'idle' && (
                     <>
                       <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">

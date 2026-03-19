@@ -1,13 +1,30 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { profileService as grpcProfileService, documentService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { Eye } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import EditSectionModal from '~/components/ui/EditSectionModal';
+import Location from '~/components/Location';
+import Gender from '~/components/Gender';
+import NannyType from '~/components/NanyType';
+import YearsOfExperience from '~/components/YearsOfExperience';
+import Certifications from '~/components/Certifications';
+import SalaryExpectations from '~/components/SalaryExpectations';
+import WorkWithKids from '~/components/WorkWithKids';
+import WorkWithPets from '~/components/WorkWithPets';
+import MyKids from '~/components/MyKids';
+import PreferredWorkEnvironment from '~/components/PreferredWorkEnvironment';
+import Bio from '~/components/Bio';
+import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
+import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 
 interface HousehelpData {
   first_name?: string;
@@ -85,6 +102,14 @@ function normalizeHousehelpProfileResponse(response: any): HousehelpData {
     traits: Array.isArray(raw.traits) ? raw.traits : [],
     off_days: Array.isArray(raw.off_days) ? raw.off_days : [],
     talent_with_kids: Array.isArray(raw.talent_with_kids) ? raw.talent_with_kids : [],
+    availability: (() => {
+      const sched = raw.availability || raw.availability_schedule;
+      if (!sched) return undefined;
+      if (typeof sched === 'string') {
+        try { return JSON.parse(sched); } catch { return undefined; }
+      }
+      return sched;
+    })(),
   };
 }
 
@@ -98,6 +123,15 @@ export default function HousehelpProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  
+  // Track profile views (own profile)
+  useProfileViewTracking({
+    profileId: profile?.id || '',
+    profileType: 'househelp',
+    viewerUserId: profile?.user_id,
+    enabled: !!profile?.id,
+  });
+  
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -112,35 +146,25 @@ export default function HousehelpProfile() {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         if (!token) {
           navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
           return;
         }
         
-        const profileRes = await fetch(`${API_BASE_URL}/api/v1/profile/househelp/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!profileRes.ok) throw new Error("Failed to fetch profile");
-        const profileData = await profileRes.json();
+        const profileData = await grpcProfileService.getCurrentHousehelpProfile('');
         console.log('Raw househelp profile response:', profileData);
-        console.log('Location field:', profileData?.data?.location || profileData?.location);
         const normalized = normalizeHousehelpProfileResponse(profileData);
         console.log('Normalized profile location:', normalized.location);
 
-        // Fetch photos from documents table
+        // Fetch photos from documents table via gRPC
         try {
-          const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (docsRes.ok) {
-            const docsResponse = await docsRes.json();
-            const docsData = docsResponse.data?.data || docsResponse.data || [];
-            const documentsArray = Array.isArray(docsData) ? docsData : [];
-            const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
-            if (photoUrls.length > 0) {
-              normalized.photos = photoUrls;
-            }
+          const docsData = await documentService.getUserDocuments('', 'profile_photo');
+          const docs = docsData?.data || docsData?.documents || docsData || [];
+          const documentsArray = Array.isArray(docs) ? docs : [];
+          const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+          if (photoUrls.length > 0) {
+            normalized.photos = photoUrls;
           }
         } catch (err) {
           console.error('Failed to fetch profile photos:', err);
@@ -159,11 +183,39 @@ export default function HousehelpProfile() {
     fetchProfile();
   }, []);
 
+  const [editingSection, setEditingSection] = useState<string | null>(null);
+  const [showViewsModal, setShowViewsModal] = useState(false);
+
+  const EDIT_SECTIONS: Record<string, { title: string; component: React.FC }> = {
+    gender: { title: '👤 Edit Personal Info', component: Gender },
+    location: { title: '📍 Edit Location', component: Location },
+    experience: { title: '💼 Edit Experience', component: YearsOfExperience },
+    certifications: { title: '📜 Edit Certifications', component: Certifications },
+    nannytype: { title: '⚙️ Edit Work Preferences', component: NannyType },
+    salary: { title: '💰 Edit Salary Expectations', component: SalaryExpectations },
+    workwithkids: { title: '👶 Edit Work with Kids', component: WorkWithKids },
+    workwithpets: { title: '🐾 Edit Work with Pets', component: WorkWithPets },
+    mykids: { title: '👤 Edit Personal Preferences', component: MyKids },
+    workenvironment: { title: '🏠 Edit Work Environment', component: PreferredWorkEnvironment },
+    bio: { title: '✍️ Edit Bio', component: Bio },
+  };
+
   const handleEditSection = (section: string) => {
-    // Navigate to the specific setup step for editing
-    navigate('/profile-setup/househelp', { 
-      state: { fromProfile: true, editSection: section }
-    });
+    setEditingSection(section);
+  };
+
+  const handleCloseEditModal = () => {
+    setEditingSection(null);
+    // Refresh profile data after editing
+    const refresh = async () => {
+      try {
+        const profileData = await grpcProfileService.getCurrentHousehelpProfile('');
+        setProfile(profileData);
+      } catch (err) {
+        console.error('Failed to refresh profile after edit:', err);
+      }
+    };
+    refresh();
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,7 +247,7 @@ export default function HousehelpProfile() {
     setUploadProgress(0);
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
       // Upload to documents service with progress tracking
@@ -243,16 +295,15 @@ export default function HousehelpProfile() {
 
       if (!imageUrl) throw new Error('No image URL returned');
 
-      // Refetch photos from documents table
-      const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (docsRes.ok) {
-        const docsResponse = await docsRes.json();
-        const docsData = docsResponse.data?.data || docsResponse.data || [];
-        const documentsArray = Array.isArray(docsData) ? docsData : [];
+      // Refetch photos from documents table via gRPC
+      try {
+        const docsData = await documentService.getUserDocuments('', 'profile_photo');
+        const docs = docsData?.data || docsData?.documents || docsData || [];
+        const documentsArray = Array.isArray(docs) ? docs : [];
         const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
         setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
+      } catch (err) {
+        console.warn('Failed to refetch photos after upload:', err);
       }
       
       // Reset file input
@@ -282,58 +333,37 @@ export default function HousehelpProfile() {
     setDeleteStatus('Finding document...');
 
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
-      // Step 1: Find the document by URL
-      const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents?document_type=profile_photo`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (!docsRes.ok) {
-        console.warn('Failed to fetch documents, will only remove from profile');
-      } else {
-        const docsResponse = await docsRes.json();
-        const allDocs = docsResponse.data?.data || docsResponse.data || [];
+      // Step 1: Find the document by URL via gRPC
+      try {
+        const docsData = await documentService.getUserDocuments('', 'profile_photo');
+        const allDocs = docsData?.data || docsData?.documents || docsData || [];
         const documentsArray = Array.isArray(allDocs) ? allDocs : [];
         const document = documentsArray.find((doc: any) => (doc.public_url || doc.signed_url || doc.url) === photoUrl);
 
-        // Step 2: Delete from documents table and S3
+        // Step 2: Delete from documents table and S3 via gRPC
         if (document?.id) {
           setDeleteStatus('Deleting from storage...');
-          const deleteRes = await fetch(`${API_BASE_URL}/api/v1/documents/${document.id}`, {
-            method: 'DELETE',
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          });
-
-          if (!deleteRes.ok) {
+          try {
+            await documentService.deleteDocument(document.id, '');
+          } catch (err) {
             console.warn('Failed to delete document from storage, but will remove from profile');
           }
         }
+      } catch (err) {
+        console.warn('Failed to fetch documents, will only remove from profile');
       }
 
-      // Step 3: Remove from profile photos array
+      // Step 3: Update profile photos via gRPC
       setDeleteStatus('Updating profile...');
       const updatedPhotos = (profile?.photos || []).filter(p => p !== photoUrl);
-
-      const updateRes = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          updates: {
-            photos: updatedPhotos,
-          },
-        }),
-      });
-
-      if (!updateRes.ok) throw new Error('Failed to update profile');
+      try {
+        await grpcProfileService.updateHousehelpFields('', 'househelp', { photos: updatedPhotos });
+      } catch (err) {
+        console.warn('Failed to update profile fields via gRPC:', err);
+      }
 
       // Update local state
       setProfile(prev => prev ? { ...prev, photos: updatedPhotos } : null);
@@ -417,12 +447,24 @@ export default function HousehelpProfile() {
             <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mt-2">{profile.first_name} {profile.last_name}</h1>
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your professional information</p>
           </div>
-          <button
-            onClick={() => navigate('/househelp/public-profile')}
-            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg whitespace-nowrap self-start"
-          >
-            View Public Profile
-          </button>
+          <div className="flex items-center gap-2 self-start">
+            {profile?.id && (
+              <button
+                onClick={() => setShowViewsModal(true)}
+                className="h-8 w-8 rounded-xl flex items-center justify-center border border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-500/10 hover:scale-105 transition-all"
+                aria-label="Profile Views"
+                title="Profile Views"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/househelp/public-profile')}
+              className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg whitespace-nowrap"
+            >
+              View Public Profile
+            </button>
+          </div>
         </div>
       </div>
 
@@ -565,7 +607,7 @@ export default function HousehelpProfile() {
             onClick={() => handleEditSection('gender')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -598,7 +640,7 @@ export default function HousehelpProfile() {
             onClick={() => handleEditSection('location')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
@@ -616,7 +658,7 @@ export default function HousehelpProfile() {
             onClick={() => handleEditSection('experience')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="space-y-4">
@@ -698,7 +740,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('certifications')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -729,7 +771,7 @@ export default function HousehelpProfile() {
             onClick={() => handleEditSection('nannytype')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="space-y-3">
@@ -778,7 +820,7 @@ export default function HousehelpProfile() {
             onClick={() => handleEditSection('salary')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
-            ✏️ Edit
+            Edit
           </button>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -808,7 +850,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('workwithkids')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <div className="space-y-3">
@@ -855,7 +897,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('workwithpets')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -877,7 +919,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('nannytype')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           {profile.off_days && profile.off_days.length > 0 && (
@@ -936,7 +978,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('mykids')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -977,7 +1019,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('workenvironment')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1018,7 +1060,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('references')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           {(() => {
@@ -1099,7 +1141,7 @@ export default function HousehelpProfile() {
               onClick={() => handleEditSection('bio')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
             >
-              ✏️ Edit
+              Edit
             </button>
           </div>
           <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio}</p>
@@ -1130,6 +1172,28 @@ export default function HousehelpProfile() {
         onConfirm={handleDeletePhoto}
         onCancel={() => setPhotoToDelete(null)}
       />
+
+      {/* Edit Section Modal */}
+      {editingSection && EDIT_SECTIONS[editingSection] && (
+        <EditSectionModal
+          isOpen={true}
+          onClose={handleCloseEditModal}
+          title={EDIT_SECTIONS[editingSection].title}
+          profileType="househelp"
+        >
+          {React.createElement(EDIT_SECTIONS[editingSection].component)}
+        </EditSectionModal>
+      )}
+
+      {/* Profile Views Modal */}
+      {profile?.id && (
+        <ProfileViewsAnalytics
+          profileId={profile.id}
+          profileType="househelp"
+          isOpen={showViewsModal}
+          onClose={() => setShowViewsModal(false)}
+        />
+      )}
     </div>
   );
 }

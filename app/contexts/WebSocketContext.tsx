@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useMemo, useCallback, useState, useEffect } from 'react';
 import { useWebSocket } from '~/hooks/useWebSocket';
 import { NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 
 type WebSocketContextType = {
@@ -19,7 +20,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   const token = useMemo(() => {
     if (typeof window === 'undefined') return null;
-    const storedToken = localStorage.getItem('token');
+    const storedToken = getAccessTokenFromCookies() || null;
     console.log('[WebSocketContext] Token available:', !!storedToken);
     return storedToken;
   }, []);

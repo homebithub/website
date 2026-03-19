@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { API_BASE_URL } from '~/config/api';
-import { apiClient } from '~/utils/apiClient';
+import { hireRequestService } from '~/services/grpc/authServices';
 import { CheckCircle, XCircle, Briefcase, Calendar, DollarSign, MapPin, Eye } from 'lucide-react';
 import { useHiringSSE } from '~/hooks/useHiringSSE';
 
@@ -46,11 +45,6 @@ export default function HousehelpHireRequests() {
   const [declineReason, setDeclineReason] = useState('');
   const limit = 20;
 
-  const API_BASE = useMemo(
-    () => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL,
-    []
-  );
-
   useEffect(() => {
     fetchHireRequests();
   }, [activeTab, offset]);
@@ -59,24 +53,11 @@ export default function HousehelpHireRequests() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        limit: limit.toString(),
-        offset: offset.toString(),
-      });
-      if (activeTab !== 'all') {
-        params.append('status', activeTab);
-      }
-
-      const response = await apiClient.auth(
-        `${API_BASE}/api/v1/hire-requests?${params.toString()}`
-      );
-      if (!response.ok) throw new Error('Failed to fetch hire requests');
-
-      const raw = await response.json();
-      const envelope = raw?.data?.data || raw?.data || raw || {};
-      const items = envelope?.data || [];
+      const status = activeTab !== 'all' ? activeTab : undefined;
+      const raw = await hireRequestService.listHireRequests('', 'househelp', status);
+      const items = raw?.data || raw || [];
       setHireRequests(Array.isArray(items) ? items : []);
-      setTotal(typeof envelope?.total === 'number' ? envelope.total : 0);
+      setTotal(typeof raw?.total === 'number' ? raw.total : (Array.isArray(items) ? items.length : 0));
     } catch (err: any) {
       setError(err.message || 'Failed to load hire requests');
     } finally {
@@ -132,14 +113,7 @@ export default function HousehelpHireRequests() {
     if (!confirm('Are you sure you want to accept this hire request?')) return;
     setActionLoading(requestId);
     try {
-      const response = await apiClient.auth(
-        `${API_BASE}/api/v1/hire-requests/${requestId}/accept`,
-        { method: 'PUT' }
-      );
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData?.message || 'Failed to accept hire request');
-      }
+      await hireRequestService.acceptHireRequest(requestId);
       fetchHireRequests();
     } catch (err: any) {
       alert(err.message || 'Failed to accept hire request');
@@ -152,18 +126,7 @@ export default function HousehelpHireRequests() {
     if (!selectedRequest) return;
     setActionLoading(selectedRequest);
     try {
-      const response = await apiClient.auth(
-        `${API_BASE}/api/v1/hire-requests/${selectedRequest}/decline`,
-        {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ reason: declineReason }),
-        }
-      );
-      if (!response.ok) {
-        const errData = await response.json().catch(() => ({}));
-        throw new Error(errData?.message || 'Failed to decline hire request');
-      }
+      await hireRequestService.declineHireRequest(selectedRequest);
       fetchHireRequests();
       setShowDeclineModal(false);
       setSelectedRequest(null);
@@ -459,9 +422,9 @@ export default function HousehelpHireRequests() {
 
       {/* Decline Modal */}
       {showDeclineModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setShowDeclineModal(false); setDeclineReason(''); }} />
-          <div className="relative bg-white dark:bg-[#1a1a24] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-purple-500/20">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => { setShowDeclineModal(false); setDeclineReason(''); }} />
+          <div className="relative bg-white dark:bg-[#1a1a24] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-6 border border-gray-200 dark:border-purple-500/20 animate-slide-up sm:mx-4">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Decline Hire Request</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Please provide a reason for declining. This helps the household understand your decision.

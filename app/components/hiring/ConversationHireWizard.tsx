@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { apiClient } from '~/utils/apiClient';
-import { API_ENDPOINTS } from '~/config/api';
+import { hireRequestService } from '~/services/grpc/authServices';
 import { ChevronLeft, ChevronRight, Check, Briefcase, DollarSign, Calendar, Clock, FileText } from 'lucide-react';
 import CustomSelect from '~/components/ui/CustomSelect';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -95,28 +94,17 @@ export default function ConversationHireWizard({
     setError('');
 
     try {
-      const response = await apiClient.auth(API_ENDPOINTS.hiring.requests.base, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          househelp_id: househelpId,
-          job_type: jobType,
-          start_date: startDate || null,
-          salary_offered: salaryOffered,
-          salary_frequency: salaryFrequency,
-          work_schedule: workSchedule,
-          special_requirements: specialRequirements,
-          terms_accepted: true,
-        }),
+      const data = await hireRequestService.createHireRequest('', 'household', {
+        househelp_id: househelpId,
+        job_type: jobType,
+        start_date: startDate || null,
+        salary_offered: salaryOffered,
+        salary_frequency: salaryFrequency,
+        work_schedule: workSchedule,
+        special_requirements: specialRequirements,
+        terms_accepted: true,
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to send hire request');
-      }
-
-      const data = await response.json();
-      onSuccess(data.id);
+      onSuccess(data?.id || data?.data?.id);
     } catch (err: any) {
       setError(err.message || 'Failed to send hire request');
     } finally {

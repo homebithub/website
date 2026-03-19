@@ -56,7 +56,7 @@ export function useSubscriptionSSE(
     }
 
     console.log('[SubscriptionSSE] Connecting to SSE stream...');
-    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`);
+    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
     esRef.current = es;
 
     es.onopen = () => {

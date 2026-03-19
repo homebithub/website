@@ -1,3 +1,4 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import Kids from './Kids';
@@ -5,11 +6,11 @@ import type { Child } from './Children';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const MyKids = () => {
-    const { markDirty, markClean } = useProfileSetup();
+    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
     const [kidOption, setKidOption] = useState<string>('');
     const [children, setChildren] = useState<Child[]>([]);
     const [error, setError] = useState('');
@@ -17,32 +18,26 @@ const MyKids = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     
+    // Populate from context (instant on back-nav)
+    useEffect(() => {
+        const cached = profileData.mykids;
+        if (cached) {
+            if (cached.kidOption) setKidOption(cached.kidOption);
+            else if (cached.preference) setKidOption(cached.preference);
+            if (cached.children?.length) setChildren(cached.children);
+        }
+    }, [profileData.mykids]);
+
     // Load existing children and profile data on mount
     useEffect(() => {
         const loadData = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = getAccessTokenFromCookies();
                 if (!token) return;
                 
-                // Load children
-                const kidsRes = await fetch(`${API_BASE_URL}/api/v1/househelp_kids`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                if (kidsRes.ok) {
-                    const kids = await kidsRes.json();
-                    if (kids && kids.length > 0) {
-                        setChildren(kids);
-                    }
-                }
-                
                 // Load profile to get has_kids and needs_accommodation status
-                const profileRes = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                
-                if (profileRes.ok) {
-                    const profile = await profileRes.json();
+                const profile = await grpcProfileService.getCurrentHousehelpProfile('');
+                if (profile) {
                     if (profile.needs_accommodation) {
                         setKidOption('needs_accommodation');
                     } else if (profile.has_kids) {
@@ -63,56 +58,53 @@ const MyKids = () => {
         setChildren(updatedChildren);
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        if (!kidOption) {
-            setError('Please select an option');
-            return;
-        }
-
+    const autoSave = async (option: string, kids: Child[] = []) => {
         setLoading(true);
         setError('');
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) throw new Error('Authentication token not found');
 
             const updates = {
-                has_kids: kidOption === 'has_kids' || kidOption === 'needs_accommodation',
-                needs_accommodation: kidOption === 'needs_accommodation',
-                ...(kidOption === 'needs_accommodation' && children.length > 0 ? { children: children } : {})
+                has_kids: option === 'has_kids' || option === 'needs_accommodation',
+                needs_accommodation: option === 'needs_accommodation',
+                ...(option === 'needs_accommodation' && kids.length > 0 ? { children: kids } : {})
             };
 
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ 
-                    updates,
-                    _step_metadata: {
-                        step_id: "mykids",
-                        step_number: 10,
-                        is_completed: true
-                    }
-                })
-            });
-
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.message || 'Failed to update profile');
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
+                { step_id: 'mykids', step_number: 10, is_completed: true }
+            );
             
             markClean();
+            updateStepData('mykids', { kidOption: option, children: kids });
             setSuccess('Your preference has been saved successfully!');
-            // navigate('/next-step');
+            setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {
             console.error('Error saving information:', err);
             setError(handleApiError(err, 'myKids', 'Failed to save your preference. Please try again.'));
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleOptionChange = async (option: string) => {
+        setKidOption(option);
+        markDirty();
+        // Auto-save for simple options (no sub-form)
+        if (option !== 'needs_accommodation') {
+            await autoSave(option);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!kidOption) {
+            setError('Please select an option');
+            return;
+        }
+        await autoSave(kidOption, children);
     };
 
     return (
@@ -143,7 +135,7 @@ const MyKids = () => {
                                 type="radio"
                                 name="kidOption"
                                 checked={kidOption === 'needs_accommodation'}
-                                onChange={() => { setKidOption('needs_accommodation'); markDirty(); }}
+                                onChange={() => handleOptionChange('needs_accommodation')}
                                 className="mt-1 form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                             />
                             <div className="flex-1">
@@ -175,7 +167,7 @@ const MyKids = () => {
                             type="radio"
                             name="kidOption"
                             checked={kidOption === 'has_kids'}
-                            onChange={() => { setKidOption('has_kids'); markDirty(); }}
+                            onChange={() => handleOptionChange('has_kids')}
                             className="mt-1 form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                         />
                         <span>I do not have kids</span>
@@ -191,7 +183,7 @@ const MyKids = () => {
                             type="radio"
                             name="kidOption"
                             checked={kidOption === 'has_kids_no_accommodation'}
-                            onChange={() => { setKidOption('has_kids_no_accommodation'); markDirty(); }}
+                            onChange={() => handleOptionChange('has_kids_no_accommodation')}
                             className="mt-1 form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                         />
                         <div className="flex-1">
@@ -203,27 +195,29 @@ const MyKids = () => {
                     </label>
                 </div>
                 
-                <div className="pt-2">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                            <>
-                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                💾 Save
-                            </>
-                        )}
-                    </button>
-                </div>
+                {kidOption === 'needs_accommodation' && (
+                    <div className="pt-2">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                        >
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    💾 Save
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
             </form>
         </div>
     );

@@ -1,9 +1,12 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface Reference {
   name: string;
@@ -13,17 +16,11 @@ interface Reference {
   duration: string;
 }
 
-const RELATIONSHIPS = [
-  'Previous Employer',
-  'Current Employer',
-  'Supervisor',
-  'Family Friend',
-  'Professional Reference',
-  'Other'
-];
+// Relationships are now fetched from backend via context
 
 const References: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [references, setReferences] = useState<Reference[]>([
     { name: '', relationship: '', phone: '', email: '', duration: '' }
   ]);
@@ -31,30 +28,32 @@ const References: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Load existing data
+  const RELATIONSHIPS = options?.reference_relationships.map(r => r.name) || [];
+
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.references;
+    if (cached?.references?.length) {
+      setReferences(cached.references);
+    }
+  }, [profileData.references]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.reference) {
-            try {
-              const refs = typeof data.reference === 'string' ? JSON.parse(data.reference) : data.reference;
-              if (Array.isArray(refs) && refs.length > 0) {
-                setReferences(refs.map((r: any) => ({ name: r.referee_name || '', relationship: '', phone: r.referee_tel || '', email: '', duration: '' })));
-              }
-            } catch (e) {
-              console.error('Failed to parse references:', e);
+        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        if (data?.reference) {
+          try {
+            const refs = typeof data.reference === 'string' ? JSON.parse(data.reference) : data.reference;
+            if (Array.isArray(refs) && refs.length > 0) {
+              setReferences(refs.map((r: any) => ({ name: r.referee_name || '', relationship: '', phone: r.referee_tel || '', email: '', duration: '' })));
             }
+          } catch (e) {
+            console.error('Failed to parse references:', e);
           }
         }
       } catch (err) {
@@ -122,30 +121,13 @@ const References: React.FC = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          updates: {
-            references: JSON.stringify(validReferences),
-          },
-          _step_metadata: {
-            step_id: "references",
-            step_number: 12,
-            is_completed: true
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save references');
-      }
+      const token = getAccessTokenFromCookies();
+      await grpcProfileService.updateHousehelpFields('', 'househelp', {
+        references: JSON.stringify(validReferences),
+      }, { step_id: 'references', step_number: 12, is_completed: true });
 
       markClean();
+      updateStepData('references', { references: validReferences });
       setSuccess('References saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'references', 'Failed to save your references. Please try again.'));
@@ -202,16 +184,12 @@ const References: React.FC = () => {
               <label className="block text-sm font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Relationship
               </label>
-              <select
+              <CustomSelect
                 value={reference.relationship}
-                onChange={(e) => updateReference(index, 'relationship', e.target.value)}
-                className="w-full h-12 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
-              >
-                <option value="">Select relationship</option>
-                {RELATIONSHIPS.map((rel) => (
-                  <option key={rel} value={rel}>{rel}</option>
-                ))}
-              </select>
+                onChange={(val) => updateReference(index, 'relationship', val)}
+                options={RELATIONSHIPS.map((rel) => ({ value: rel, label: rel }))}
+                placeholder="Select relationship"
+              />
             </div>
 
             {/* Phone */}

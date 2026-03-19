@@ -1,35 +1,36 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 
 const BackgroundCheckConsent: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
   const [consent, setConsent] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Load existing data
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.backgroundcheck;
+    if (cached?.consent !== undefined) {
+      setConsent(cached.consent);
+    }
+  }, [profileData.backgroundcheck]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.background_check_consent !== undefined) {
-            setConsent(data.background_check_consent);
-          }
+        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        if (data?.background_check_consent !== undefined) {
+          setConsent(data.background_check_consent);
         }
       } catch (err) {
         console.error('Failed to load background check data:', err);
@@ -39,50 +40,34 @@ const BackgroundCheckConsent: React.FC = () => {
     loadData();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (consent === null) {
-      setError('Please select an option');
-      return;
-    }
-
+  const saveConsent = async (value: boolean) => {
     setIsSubmitting(true);
     setError('');
     setSuccess('');
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          updates: {
-            background_check_consent: consent,
-          },
-          _step_metadata: {
-            step_id: "backgroundcheck",
-            step_number: 13,
-            is_completed: true
-          }
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save consent');
-      }
+      const token = getAccessTokenFromCookies();
+      await grpcProfileService.updateHousehelpFields('', 'househelp',
+        { background_check_consent: value },
+        { step_id: 'backgroundcheck', step_number: 13, is_completed: true }
+      );
 
       markClean();
+      updateStepData('backgroundcheck', { consent: value });
       setSuccess('Your preference has been saved successfully!');
+      setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {
       setError(handleApiError(err, 'backgroundCheck', 'Failed to save your preference. Please try again.'));
       console.error(err);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleConsentChange = async (value: boolean) => {
+    setConsent(value);
+    markDirty();
+    await saveConsent(value);
   };
 
   return (
@@ -92,7 +77,7 @@ const BackgroundCheckConsent: React.FC = () => {
         Are you willing to undergo a background verification check? (Optional)
       </p>
       
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-6">
         {/* Information Box */}
         <div className="p-6 rounded-xl bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-500/30">
           <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-2">
@@ -141,7 +126,7 @@ const BackgroundCheckConsent: React.FC = () => {
               name="consent"
               value="yes"
               checked={consent === true}
-              onChange={() => { setConsent(true); markDirty(); }}
+              onChange={() => handleConsentChange(true)}
               className="sr-only"
             />
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
@@ -177,7 +162,7 @@ const BackgroundCheckConsent: React.FC = () => {
               name="consent"
               value="no"
               checked={consent === false}
-              onChange={() => { setConsent(false); markDirty(); }}
+              onChange={() => handleConsentChange(false)}
               className="sr-only"
             />
             <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${
@@ -205,28 +190,7 @@ const BackgroundCheckConsent: React.FC = () => {
 
         {error && <ErrorAlert message={error} />}
 
-        <div className="pt-4">
-          <button
-            type="submit"
-            disabled={isSubmitting || consent === null}
-            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-          >
-            {isSubmitting ? (
-              <>
-                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Saving...
-              </>
-            ) : (
-              <>
-                💾 Save
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
   );
 };

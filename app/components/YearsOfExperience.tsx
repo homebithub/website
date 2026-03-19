@@ -1,42 +1,51 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { handleApiError } from '../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 const YearsOfExperience = () => {
-    const { markDirty, markClean } = useProfileSetup();
+    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+    const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [years, setYears] = useState<number>(0);
     const [customYears, setCustomYears] = useState<string>('');
     const [error, setError] = useState<string>('');
     const [success, setSuccess] = useState<string>('');
     const [loading, setLoading] = useState(false);
 
-    // Load existing data
+    const experienceLevels = options?.experience_levels || [];
+
+    // Populate from context (instant on back-nav)
+    useEffect(() => {
+        const cached = profileData.experience;
+        if (cached) {
+            const yrs = cached.years ?? cached.years_of_experience ?? (typeof cached === 'number' ? cached : undefined);
+            if (yrs !== undefined) {
+                if (yrs > 5) { setYears(6); setCustomYears(yrs.toString()); }
+                else { setYears(Math.floor(yrs)); }
+            }
+        }
+    }, [profileData.experience]);
+
+    // Load existing data from backend (fallback)
     useEffect(() => {
         const loadData = async () => {
             try {
-                const token = localStorage.getItem('token');
+                const token = getAccessTokenFromCookies();
                 if (!token) return;
 
-                const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                    },
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.years_of_experience !== undefined) {
-                        const totalYears = data.years_of_experience;
-                        if (totalYears > 5) {
-                            setYears(6);
-                            setCustomYears(totalYears.toString());
-                        } else {
-                            setYears(Math.floor(totalYears));
-                        }
+                const data = await grpcProfileService.getCurrentHousehelpProfile('');
+                if (data?.years_of_experience !== undefined) {
+                    const totalYears = data.years_of_experience;
+                    if (totalYears > 5) {
+                        setYears(6);
+                        setCustomYears(totalYears.toString());
+                    } else {
+                        setYears(Math.floor(totalYears));
                     }
                 }
             } catch (err) {
@@ -59,66 +68,54 @@ const YearsOfExperience = () => {
         { value: 6, label: 'More than 5 years' },
     ];
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        
-        if (years === null) {
-            setError('Please select your years of experience');
-            return;
-        }
-
-        // If "More than 5 years" is selected but no custom value provided
-        if (years === 6 && !customYears) {
-            setError('Please specify your years of experience');
-            return;
-        }
-
+    const autoSave = async (finalYears: number) => {
         setLoading(true);
         setError('');
         setSuccess('');
 
         try {
-            const token = localStorage.getItem('token');
+            const token = getAccessTokenFromCookies();
             if (!token) {
                 throw new Error('Authentication token not found');
             }
 
-            const finalYears = years === 6 ? parseInt(customYears, 10) : years;
-            
-            const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    updates: {
-                        years_of_experience: finalYears
-                    },
-                    _step_metadata: {
-                        step_id: "experience",
-                        step_number: 4,
-                        is_completed: true
-                    }
-                })
-            });
-
-            const data = await response.json();
-            
-            if (!response.ok) {
-                throw new Error(data.message || 'Failed to update profile');
-            }
+            await grpcProfileService.updateHousehelpFields('', 'househelp',
+                { years_of_experience: finalYears },
+                { step_id: 'experience', step_number: 4, is_completed: true }
+            );
             
             markClean();
+            updateStepData('experience', { years: finalYears });
             setSuccess('Your information has been saved successfully!');
-            // Navigate to next step or show success message
-            // navigate('/next-step');
+            setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {
             console.error('Error saving information:', err);
             setError(handleApiError(err, 'yearsOfExperience', 'Failed to save your information. Please try again.'));
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleYearsChange = async (value: number) => {
+        setYears(value);
+        markDirty();
+        if (value !== 6) {
+            await autoSave(value);
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (years === 6 && !customYears) {
+            setError('Please specify your years of experience');
+            return;
+        }
+        const finalYears = parseInt(customYears, 10);
+        if (isNaN(finalYears) || finalYears < 6) {
+            setError('Please enter a valid number of years (6 or more)');
+            return;
+        }
+        await autoSave(finalYears);
     };
 
     return (
@@ -149,7 +146,7 @@ const YearsOfExperience = () => {
                                     name="yearsOfExperience"
                                     value={option.value}
                                     checked={years === option.value}
-                                    onChange={() => { setYears(option.value); markDirty(); }}
+                                    onChange={() => handleYearsChange(option.value)}
                                     className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
                                 />
                                 <span>{option.label}</span>
@@ -177,27 +174,29 @@ const YearsOfExperience = () => {
                     )}
                 </div>
 
-                <div className="pt-2">
-                    <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
-                    >
-                        {loading ? (
-                            <>
-                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                                Saving...
-                            </>
-                        ) : (
-                            <>
-                                💾 Save
-                            </>
-                        )}
-                    </button>
-                </div>
+                {years === 6 && (
+                    <div className="pt-2">
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                        >
+                            {loading ? (
+                                <>
+                                    <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    💾 Save
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
             </form>
         </div>
     );

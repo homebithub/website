@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL } from "~/config/api";
-import { apiClient } from "~/utils/apiClient";
+import { employmentService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 type Employment = {
@@ -19,7 +18,6 @@ type Employment = {
 };
 
 export default function HiringHistoryPage() {
-  const API_BASE = useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
   const [items, setItems] = useState<Employment[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -28,18 +26,15 @@ export default function HiringHistoryPage() {
   const limit = 20;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const endpoint = useMemo(() => {
-    let userType: string | null = null;
-    if (typeof window !== 'undefined') {
-      try {
-        const stored = localStorage.getItem('user_object');
-        if (stored) userType = JSON.parse(stored)?.profile_type || null;
-      } catch {}
-      if (!userType) userType = localStorage.getItem('userType') || localStorage.getItem('profile_type');
-    }
-    if (userType === 'househelp') return `${API_BASE}/api/v1/employments/history/househelp`;
-    return `${API_BASE}/api/v1/employments/history/household`;
-  }, [API_BASE]);
+  const isHousehelp = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const stored = localStorage.getItem('user_object');
+      if (stored) return JSON.parse(stored)?.profile_type === 'househelp';
+    } catch {}
+    const pt = localStorage.getItem('userType') || localStorage.getItem('profile_type');
+    return pt === 'househelp';
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,10 +42,11 @@ export default function HiringHistoryPage() {
       try {
         setLoading(true);
         setError(null);
-        const res = await apiClient.auth(`${endpoint}?offset=${offset}&limit=${limit}`);
-        if (!res.ok) throw new Error("Failed to load hiring history");
-        const data = await apiClient.json<Employment[]>(res);
+        const raw = isHousehelp
+          ? await employmentService.listByHousehelp('', limit, offset)
+          : await employmentService.listByHousehold('', limit, offset);
         if (cancelled) return;
+        const data = Array.isArray(raw?.data || raw) ? (raw?.data || raw) : [];
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
         setHasMore(data.length === limit);
       } catch (e: any) {
@@ -61,7 +57,7 @@ export default function HiringHistoryPage() {
     }
     load();
     return () => { cancelled = true; };
-  }, [endpoint, offset]);
+  }, [isHousehelp, offset]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;

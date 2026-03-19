@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { API_BASE_URL } from "~/config/api";
-import { apiClient } from "~/utils/apiClient";
+import React, { useEffect, useRef, useState } from "react";
+import { locationService } from "~/services/grpc/authServices";
 
 type SearchTarget = "househelps" | "households";
 
@@ -32,10 +31,6 @@ export default function SearchableTownSelect({
   const containerRef = useRef<HTMLDivElement | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const endpoint = useMemo(() => {
-    return `${API_BASE_URL}/api/v1/towns`;
-  }, [target]);
-
   useEffect(() => {
     const onClickOutside = (event: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
@@ -52,28 +47,21 @@ export default function SearchableTownSelect({
     setError("");
 
     try {
-      const params = new URLSearchParams({
-        target,
-        limit: "12",
-      });
-      if (q.trim()) {
-        params.set("q", q.trim());
-      }
-
-      const response = await apiClient.auth(`${endpoint}?${params.toString()}`);
-      const body = await apiClient.json<any>(response);
-      const towns = Array.isArray(body?.towns)
-        ? body.towns
-        : Array.isArray(body?.data?.towns)
-          ? body.data.towns
-          : [];
+      const result = await locationService.getLocationSuggestions(q.trim() || target);
+      const suggestions = result?.suggestions || result?.data?.suggestions || [];
+      const towns = Array.isArray(suggestions)
+        ? suggestions
+        : [];
 
       const normalized = towns
-        .map((town: any) => String(town || "").trim())
+        .map((item: any) => {
+          const name = typeof item === 'string' ? item : (item?.name || item?.place_name || item?.text || '');
+          return String(name).trim();
+        })
         .filter(Boolean);
 
       setOptions(normalized);
-      setTotalTowns(typeof body?.count === "number" ? body.count : normalized.length);
+      setTotalTowns(normalized.length);
     } catch {
       setOptions([]);
       setTotalTowns(0);

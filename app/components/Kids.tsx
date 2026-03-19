@@ -1,9 +1,10 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 import ChildModal from './modals/ChildModal';
 import ExpectingModal from './ExpectingModal';
 import type { Child } from './Children';
-import { API_BASE_URL } from '~/config/api';
+import { householdKidsService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
 
 // Simple UUID generator function
@@ -37,7 +38,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
   const handleRemoveChild = async (index: number) => {
     try {
       const childId = children[index].id;
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       
       // Safety check: if no ID, just remove from local state
       if (!childId) {
@@ -48,14 +49,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
         return;
       }
       
-      const res = await fetch(`${API_BASE_URL}/api/v1/household_kids/${childId}`, {
-        method: "DELETE",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-      
-      if (!res.ok) throw new Error("Failed to delete child");
+      await householdKidsService.deleteHouseholdKid(String(childId));
       
       const updatedChildren = children.filter((_, i) => i !== index);
       setChildren(updatedChildren);
@@ -76,7 +70,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
 
   const handleSaveChild = async (childData: Omit<Child, 'id'>): Promise<void> => {
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       
       if (editingIndex >= 0) {
         // Update existing child
@@ -86,7 +80,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
         console.log('Child ID:', childId);
         console.log('Child ID type:', typeof childId);
         console.log('Child ID length:', typeof childId === 'string' ? childId.length : (typeof childId === 'number' ? childId.toString().length : 'N/A'));
-        console.log('Constructed URL:', childId ? `${API_BASE_URL}/api/v1/household_kids/${childId}` : 'URL would be undefined');
+        console.log('Child ID for update:', childId);
         
         // Safety check: if no ID, generate one and update
         if (!childId) {
@@ -95,17 +89,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
           console.log('Generated new ID for existing child:', newChildWithId.id);
           
           // Update with generated ID
-          const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            body: JSON.stringify(newChildWithId),
-          });
-          
-          if (!res.ok) throw new Error("Failed to save child");
-          const savedChild = await res.json();
+          const savedChild = await householdKidsService.createHouseholdKid('', newChildWithId);
           console.log('Saved child response:', savedChild);
           console.log('Saved child ID:', savedChild.id);
           console.log('Saved child keys:', Object.keys(savedChild));
@@ -125,17 +109,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
           onChildrenUpdate(updatedChildren);
         } else {
           // Update existing child with valid ID
-          const res = await fetch(`${API_BASE_URL}/api/v1/household_kids/${childId}`, {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            },
-            body: JSON.stringify(childData),
-          });
-          
-          if (!res.ok) throw new Error("Failed to update child");
-          const updatedChild = await res.json();
+          const updatedChild = await householdKidsService.updateHouseholdKid(String(childId), '', childData);
           
           const updatedChildren = [...children];
           updatedChildren[editingIndex] = updatedChild;
@@ -147,17 +121,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
         const newChildWithId = { ...childData, id: generateUUID() };
         console.log('Creating new child with generated ID:', newChildWithId.id);
         
-        const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify(newChildWithId),
-        });
-        
-        if (!res.ok) throw new Error("Failed to save child");
-        const savedChild = await res.json();
+        const savedChild = await householdKidsService.createHouseholdKid('', newChildWithId);
         console.log('New child created response:', savedChild);
         console.log('New child ID:', savedChild.id);
         console.log('New child keys:', Object.keys(savedChild));
@@ -316,26 +280,16 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
         onClose={() => setShowExpectingModal(false)}
         onSave={async (data) => {
           try {
-            const token = localStorage.getItem("token");
+            const token = getAccessTokenFromCookies();
             
-            // Save expecting child to database
-            const res = await fetch(`${API_BASE_URL}/api/v1/household_kids`, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
-              body: JSON.stringify({
-                gender: data.gender,
-                is_expecting: true,
-                expected_date: data.expected_date,
-                notes: data.notes || "",
-                traits: []
-              }),
+            // Save expecting child to database via gRPC
+            const savedChild = await householdKidsService.createHouseholdKid('', {
+              gender: data.gender,
+              is_expecting: true,
+              expected_date: data.expected_date,
+              notes: data.notes || "",
+              traits: []
             });
-            
-            if (!res.ok) throw new Error("Failed to save expecting child");
-            const savedChild = await res.json();
             
             const updatedChildren = [...children, savedChild];
             setChildren(updatedChildren);

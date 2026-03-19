@@ -33,8 +33,9 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-md p-6 relative shadow-2xl border-2 border-purple-200 dark:border-purple-500/30">
+    <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 shadow-2xl border border-gray-200 dark:border-purple-500/30 animate-slide-up sm:mx-4">
         <button
           type="button"
           onClick={onClose}
@@ -43,14 +44,14 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
           <XMarkIcon className="h-6 w-6" />
         </button>
 
-        <h3 className="text-xl font-bold text-purple-700 dark:text-purple-400 mb-6">Expecting a Child</h3>
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">🤰 Expecting a Child</h3>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
 
 
             <div>
-              <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                 Expected Due Date <span className="text-red-500">*</span>
               </label>
               <input
@@ -59,12 +60,12 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
                 value={expectedDate}
                 onChange={(e) => setExpectedDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
-                className="block w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:brightness-110 dark:[&::-webkit-calendar-picker-indicator]:brightness-200 [&::-webkit-calendar-picker-indicator]:sepia-[0.3] [&::-webkit-calendar-picker-indicator]:hue-rotate-[250deg] [&::-webkit-calendar-picker-indicator]:saturate-150"
+                className="block w-full h-10 px-4 py-1.5 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
               />
             </div>
 
             <div>
-              <label className="block text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                 Additional Notes (optional)
               </label>
               <textarea

@@ -1,11 +1,12 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
-import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
+import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService, documentService, shortlistService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
-import { apiClient } from '~/utils/apiClient';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { MessageCircle, Heart, Briefcase } from 'lucide-react';
 import HireRequestModal from '~/components/modals/HireRequestModal';
@@ -141,6 +142,14 @@ function normalizeHousehelpData(raw: any): HousehelpData {
     traits: Array.isArray(raw.traits) ? raw.traits : [],
     off_days: Array.isArray(raw.off_days) ? raw.off_days : [],
     talent_with_kids: Array.isArray(raw.talent_with_kids) ? raw.talent_with_kids : [],
+    availability: (() => {
+      const sched = raw.availability || raw.availability_schedule;
+      if (!sched) return undefined;
+      if (typeof sched === 'string') {
+        try { return JSON.parse(sched); } catch { return undefined; }
+      }
+      return sched;
+    })(),
   };
 }
 
@@ -190,17 +199,11 @@ export default function HousehelpPublicProfile() {
     const fetchHouseholdProfileId = async () => {
       if (currentProfileType?.toLowerCase() === 'household' && currentUserId) {
         try {
-          const token = localStorage.getItem("token");
+          const token = getAccessTokenFromCookies();
           if (!token) return;
           
-          const res = await fetch(`${API_BASE_URL}/api/v1/profile/household/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const raw = await res.json();
-            const profile = raw?.data?.data || raw?.data || raw;
-            setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
-          }
+          const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
+          setCurrentHouseholdProfileId(profileData?.id || profileData?.profile_id || null);
         } catch (err) {
           console.error('Failed to fetch household profile ID:', err);
         }
@@ -241,7 +244,7 @@ export default function HousehelpPublicProfile() {
       setLoading(true);
       setError(null);
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         if (!token) throw new Error("Not authenticated");
         
         // Get profileId from query string (for iframe modal) or navigation state fallback
@@ -251,32 +254,30 @@ export default function HousehelpPublicProfile() {
         setViewingProfileId(profileId || null);
         
         // If profileId is provided, fetch that specific profile, otherwise fetch own profile
-        const endpoint = profileId 
-          ? `${API_BASE_URL}/api/v1/househelps/${profileId}/profile_with_user`
-          : `${API_BASE_URL}/api/v1/profile/househelp/me`;
-        
-        const profileRes = await fetch(endpoint, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!profileRes.ok) throw new Error("Failed to fetch profile");
-        const profileData: ProfileResponse = await profileRes.json();
+        let profileData: any;
+        if (profileId) {
+          profileData = await grpcProfileService.getHousehelpByID(profileId);
+        } else {
+          profileData = await grpcProfileService.getCurrentHousehelpProfile('');
+        }
         
         // Handle nested response structure
         let rawProfile: any;
         let rawUser: UserData | null = null;
         
-        if (profileData.data?.Househelp) {
-          // profile_with_user endpoint: { data: { Househelp: {...}, User: {...} } }
+        if (profileData?.Househelp) {
+          // profile_with_user response: { Househelp: {...}, User: {...} }
+          rawProfile = profileData.Househelp;
+          rawUser = profileData.User || null;
+        } else if (profileData?.data?.Househelp) {
           rawProfile = profileData.data.Househelp;
           rawUser = profileData.data.User || null;
-        } else if (profileData.data && typeof profileData.data === 'object' && !Array.isArray(profileData.data)) {
-          // /me endpoint: { data: { gender: "...", ... } }
-          rawProfile = profileData.data;
-          rawUser = profileData.data.user || profileData.data.User || null;
+        } else if (profileData && typeof profileData === 'object' && !Array.isArray(profileData)) {
+          rawProfile = profileData?.data || profileData;
+          rawUser = profileData?.user || profileData?.User || null;
         } else {
-          // Fallback for direct response format
           rawProfile = profileData;
-          rawUser = profileData.user || null;
+          rawUser = null;
         }
         
         const normalizedProfile = normalizeHousehelpData(rawProfile);
@@ -287,17 +288,12 @@ export default function HousehelpPublicProfile() {
         const targetUserId = rawUser?.id || rawProfile?.user_id;
         if (targetUserId) {
           try {
-            const docsRes = await fetch(`${API_BASE_URL}/api/v1/documents/user/${targetUserId}?document_type=profile_photo`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (docsRes.ok) {
-              const docsResponse = await docsRes.json();
-              const docsData = docsResponse.data?.data || docsResponse.data || [];
-              const documentsArray = Array.isArray(docsData) ? docsData : [];
-              const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
-              if (photoUrls.length > 0) {
-                normalizedProfile.photos = photoUrls;
-              }
+            const docsData = await documentService.getUserDocuments('', 'profile_photo');
+            const docs = docsData?.data || docsData?.documents || docsData || [];
+            const documentsArray = Array.isArray(docs) ? docs : [];
+            const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
+            if (photoUrls.length > 0) {
+              normalizedProfile.photos = photoUrls;
             }
           } catch (err) {
             console.error('Failed to fetch profile photos:', err);
@@ -309,13 +305,9 @@ export default function HousehelpPublicProfile() {
         // Check if profile is shortlisted (only if viewing someone else's profile)
         if (profileId) {
           try {
-            const shortlistRes = await fetch(`${API_ENDPOINTS.shortlists.exists(profileId)}`, {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (shortlistRes.ok) {
-              const shortlistData = await shortlistRes.json();
-              setIsShortlisted(shortlistData.exists || false);
-            }
+            const res = await shortlistService.shortlistExists('', profileId);
+            const exists = res?.getExists?.() ?? res?.exists ?? false;
+            setIsShortlisted(exists);
           } catch (err) {
             console.error('Error checking shortlist status:', err);
           }
@@ -373,26 +365,10 @@ export default function HousehelpPublicProfile() {
     setActionLoading('shortlist');
     try {
       if (isShortlisted) {
-        const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.byId(targetProfileId)}`, {
-          method: 'DELETE',
-        });
-        if (!res.ok) {
-          const errorData = await res.text();
-          console.error('Delete failed:', errorData);
-          throw new Error('Failed to remove from shortlist');
-        }
+        await shortlistService.deleteShortlist(targetProfileId);
         setIsShortlisted(false);
       } else {
-        const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profile_id: targetProfileId, profile_type: 'househelp' }),
-        });
-        if (!res.ok) {
-          const errorData = await res.text();
-          console.error('Add failed:', errorData);
-          throw new Error('Failed to add to shortlist');
-        }
+        await shortlistService.createShortlist('', 'household', { profile_id: targetProfileId, profile_type: 'househelp' });
         setIsShortlisted(true);
       }
     } catch (e) {

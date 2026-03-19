@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
+import { getAccessTokenFromCookies } from "~/utils/cookie";
+import { householdMemberService } from '~/services/grpc/authServices';
 import { API_BASE_URL } from "~/config/api";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Button } from '~/components/ui/Button';
-import { getAccessTokenFromCookies } from "~/utils/cookie";
 
 export default function JoinHouseholdPage() {
   const navigate = useNavigate();
@@ -28,22 +29,14 @@ export default function JoinHouseholdPage() {
       }
 
       try {
-        const res = await fetch(`${API_BASE_URL}/api/v1/households/join/status`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const request = data?.data;
-          if (request) {
-            setJoinStatus(request.status);
-            setSuccess(true);
-            
-            if (request.status === 'approved') {
-              navigate("/household/profile");
-            }
+        const data = await householdMemberService.getJoinRequestStatus('');
+        const request = data?.data || data;
+        if (request && request.status) {
+          setJoinStatus(request.status);
+          setSuccess(true);
+          
+          if (request.status === 'approved') {
+            navigate("/household/profile");
           }
         }
       } catch (err) {
@@ -62,7 +55,7 @@ export default function JoinHouseholdPage() {
     const token = getAccessTokenFromCookies();
     if (!token) return;
 
-    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`);
+    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
 
     eventSource.onmessage = (event: any) => {
       try {
@@ -114,18 +107,7 @@ export default function JoinHouseholdPage() {
     setValidationInfo(null);
 
     try {
-      const res = await fetch(`${API_BASE_URL}/api/v1/households/invitations/validate/${inviteCode.trim()}`, {
-        headers: {
-          Authorization: `Bearer ${getAccessTokenFromCookies() || ""}`,
-        },
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Invalid invitation code");
-      }
-
-      const data = await res.json();
+      const data = await householdMemberService.validateInviteCode(inviteCode.trim());
       setValidationInfo(data);
     } catch (err: any) {
       console.error("Validation error:", err);
@@ -146,24 +128,11 @@ export default function JoinHouseholdPage() {
         return;
       }
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/households/join`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          invite_code: inviteCode.trim(),
-          message: message.trim(),
-        }),
-      });
-
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to join household");
-      }
-
-      const data = await res.json();
+      const data = await householdMemberService.joinHousehold(
+        '', // userId populated by backend from token
+        inviteCode.trim(),
+        message.trim() || undefined
+      );
       const status = data?.data?.status || data?.status || 'pending';
       setJoinStatus(status);
       setSuccess(true);

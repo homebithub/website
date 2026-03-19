@@ -1,6 +1,7 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -99,17 +100,13 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) {
           navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
           return;
         }
 
-        const res = await fetch(`${API_BASE_URL}/api/v1/profile/househelp/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error('Failed to fetch profile');
-        const data = await res.json();
+        const data = await grpcProfileService.getCurrentHousehelpProfile('');
         setProfile(normalizeProfile(data));
       } catch (error) {
         console.error(error);

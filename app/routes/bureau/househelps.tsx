@@ -1,6 +1,8 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
 import { API_BASE_URL } from '~/config/api';
+import { bureauService } from '~/services/grpc/authServices';
 
 // Add phone input styles
 const phoneInputStyle = {
@@ -30,14 +32,10 @@ export default function BureauHousehelps() {
     // Fetch bureau profile to get bureau ID
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
+        const token = getAccessTokenFromCookies();
         if (!token) return;
-        const res = await fetch(`${API_BASE_URL}/api/v1/profile/bureau/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const data = await res.json();
-        setBureauId(data.id || data._id || null);
+        const data = await bureauService.getCurrentBureauProfile('');
+        setBureauId(data?.id || data?._id || null);
       } catch {}
     };
     fetchProfile();
@@ -128,8 +126,9 @@ export default function BureauHousehelps() {
       </div>
       {/* Onboard Modal */}
       {showOnboardModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 w-full max-w-lg shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={handleCloseModal} />
+          <div className="relative bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl p-8 w-full sm:max-w-lg shadow-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4">
             <button
               className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl font-bold"
               onClick={handleCloseModal}

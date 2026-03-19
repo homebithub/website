@@ -44,16 +44,15 @@ export function ConfirmDialog({
   const styles = variantStyles[variant];
 
   return (
-    <div className="fixed inset-0 z-[100] overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
-        {/* Backdrop */}
-        <div 
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
-          onClick={onClose} 
-        />
-        
-        {/* Dialog */}
-        <div className="relative bg-white dark:bg-[#1a1a2e] rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" 
+        onClick={onClose} 
+      />
+      
+      {/* Dialog */}
+      <div className="relative bg-white dark:bg-[#1a1a2e] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md sm:mx-4 overflow-hidden transform transition-all animate-slide-up">
           {/* Close button */}
           <button 
             onClick={onClose}
@@ -106,6 +105,5 @@ export function ConfirmDialog({
           </div>
         </div>
       </div>
-    </div>
   );
 }

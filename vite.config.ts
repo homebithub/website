@@ -10,6 +10,10 @@ export default defineConfig({
   build: {
     target: "es2022",
     minify: "esbuild",
+    commonjsOptions: {
+      include: [/node_modules/, /app\/grpc\/generated/],
+      transformMixedEsModules: true,
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -49,12 +53,16 @@ export default defineConfig({
       "lucide-react",
       "react-icons/fc",
       "joi",
-      "@protobuf-ts/grpcweb-transport",
-      "@protobuf-ts/runtime-rpc",
-      "@protobuf-ts/runtime",
+      "google-protobuf",
+      "google-protobuf/google/protobuf/struct_pb.js",
+      "grpc-web",
       "web-vitals",
     ],
     exclude: ["@tinymce/tinymce-react"], // Large library that doesn't need pre-bundling
+    // Force Vite to pre-bundle and transform generated gRPC files from CommonJS to ESM
+    entries: [
+      "app/services/grpc/auth.service.ts",
+    ],
   },
   esbuild: {
     target: "es2022",

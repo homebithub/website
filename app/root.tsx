@@ -84,7 +84,7 @@ export default function App() {
                 <Links/>
                 {/* Google Identity Services */}
                 <script src="https://accounts.google.com/gsi/client" async defer></script>
-                <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+                <link rel="icon" href="/favicon.ico" type="image/svg+xml" />
                 <link rel="icon" href="/logos/logo-dark.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" />
                 <link rel="icon" href="/logos/logo-light.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" />
                 <link rel="apple-touch-icon" href="/logos/logo-dark.png" />

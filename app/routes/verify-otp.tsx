@@ -6,11 +6,12 @@ import { handleApiError, extractErrorMessage } from '~/utils/errorMessages';
 // Temporarily commented out to debug module loading issue
 // import { HouseholdProfileModal } from '~/components/modals/HouseholdProfileModal';
 import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
-import { API_BASE_URL } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
 import { getAccessTokenFromCookies, setAuthCookies } from '~/utils/cookie';
 
 export default function VerifyOtpPage() {
@@ -50,19 +51,29 @@ export default function VerifyOtpPage() {
     }
     
     try {
-      if(verification.type === 'phone'){
-      const res = await fetch(`${API_BASE_URL}/api/v1/auth/update-phone`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: newPhone, user_id: verification?.user_id }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(extractErrorMessage(err) || 'Failed to update phone');
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      let verificationProto: any = null;
+
+      if (verification.type === 'phone') {
+        const response = await authService.updatePhone(verification?.user_id, newPhone);
+        verificationProto = response.getVerification();
+      } else {
+        const response = await authService.forgotPassword(newPhone);
+        verificationProto = response.getVerification();
       }
-      const data = await res.json();
-      if (data.verification) {
-        setVerification(data.verification);
+
+      if (verificationProto) {
+        setVerification({
+          id: verificationProto.getId(),
+          user_id: verificationProto.getUserId(),
+          type: verificationProto.getType(),
+          status: verificationProto.getStatus(),
+          target: verificationProto.getTarget(),
+          expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
+          max_attempts: verificationProto.getMaxAttempts(),
+          attempts: verificationProto.getAttempts(),
+          next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
+        });
         setShowChangePhone(false);
         setNewPhone('');
         setLocalFailedAttempts(0);
@@ -70,27 +81,6 @@ export default function VerifyOtpPage() {
         setLastTriedOtp('');
         setResendSeconds(30);
       }
-    }else{
-      const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: newPhone,  }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(extractErrorMessage(err) || 'Failed to send OTP');
-      }
-      const data = await res.json();
-      if (data.verification) {
-        setVerification(data.verification);
-        setShowChangePhone(false);
-        setNewPhone('');
-        setLocalFailedAttempts(0);
-        setOtp('');
-        setLastTriedOtp('');
-        setResendSeconds(30);
-      }
-    }
     } catch (err: any) {
       setChangePhoneError(err.message || 'Failed to update phone');
     } finally {
@@ -101,9 +91,10 @@ export default function VerifyOtpPage() {
   const location = useLocation();
   const navigate = useNavigate();
   // Check if state exists
-  const locationState = (location.state || {}) as { verification?: any, bureauId?: string, afterEmailVerification?: boolean, isGoogleSignup?: boolean };
+  const locationState = (location.state || {}) as { verification?: any, bureauId?: string, afterEmailVerification?: boolean, isGoogleSignup?: boolean, afterAddPhone?: boolean, redirectTo?: string, profileType?: string };
   const [verification, setVerification] = useState(locationState.verification);
   const afterEmailVerification = locationState.afterEmailVerification;
+  const afterAddPhone = locationState.afterAddPhone;
   
   // Debug logging
   React.useEffect(() => {
@@ -194,31 +185,34 @@ export default function VerifyOtpPage() {
     setSuccess(false);
     setOtpError(null);
     try {
-      // Call your backend OTP verification endpoint here
-      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/verify-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({  user_id, verification_type: verification.type, otp }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        console.log(err)
-        throw new Error(extractErrorMessage(err) || 'OTP verification failed');
-      }
-      const userData = await res.json();
-      console.log('[VERIFY-OTP] Raw response:', JSON.stringify(userData));
+      // Use gRPC-Web instead of REST
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const verifyResponse = await authService.verifyOTP(user_id, verification.type, otp);
       
-      // Flatten user data: gateway returns { user: { id, profile_type, ... }, token }
-      const userObj = userData.user || {};
+      console.log('[VERIFY-OTP] gRPC response received');
+      
+      // Extract data from gRPC response
+      const token = verifyResponse.getToken();
+      const refreshToken = verifyResponse.getRefreshToken();
+      const userProto = verifyResponse.getUser();
+      
+      // Convert proto User to plain object
       const flatUser = {
-        ...userObj,
-        user_id: userObj.id || userObj.user_id,
-        profile_type: userObj.profile_type || localStorage.getItem('profile_type') || '',
+        user_id: userProto?.getId() || user_id,
+        email: userProto?.getEmail() || '',
+        phone: userProto?.getPhone() || '',
+        first_name: userProto?.getFirstName() || '',
+        last_name: userProto?.getLastName() || '',
+        profile_type: userProto?.getProfileType() || localStorage.getItem('profile_type') || '',
+        is_verified: userProto?.getIsVerified() || false,
+        profile_image: userProto?.getProfileImage() || '',
       };
       
+      console.log('[VERIFY-OTP] Extracted user data:', flatUser);
+      
       // Store token and user_object in localStorage
-      if (userData.token) {
-        setAuthCookies(userData.token, userData.refresh_token, flatUser);
+      if (token) {
+        setAuthCookies(token, refreshToken, flatUser);
         localStorage.setItem('user_object', JSON.stringify(flatUser));
 
         // Persist profile metadata consistently with login flow
@@ -227,6 +221,24 @@ export default function VerifyOtpPage() {
           localStorage.setItem('userType', flatUser.profile_type);
         }
       }
+      // Register device after successful verification via gRPC-Web (non-blocking)
+      try {
+        const { getDeviceId, getDeviceName } = await import('~/utils/deviceFingerprint');
+        const { default: deviceService } = await import('~/services/grpc/device.service');
+        const devId = await getDeviceId();
+        const uid = flatUser.user_id || user_id;
+        if (uid) {
+          const result = await deviceService.registerDevice(
+            uid, devId, getDeviceName(), navigator.userAgent, ''
+          );
+          if (result.requiresConfirmation) {
+            console.log('[Device] New device registered, confirmation email sent');
+          }
+        }
+      } catch (deviceError) {
+        console.error('[Device] Registration failed:', deviceError);
+      }
+
       setSuccess(true);
       setLocalFailedAttempts(0); // reset on success
       setLastTriedOtp('');
@@ -238,6 +250,54 @@ export default function VerifyOtpPage() {
       // If bureauId is present in state, redirect to /bureau/househelps after verification
       if (locationState.bureauId) {
         navigate('/bureau/househelps');
+      } else if (afterAddPhone) {
+        // Coming from /add-phone flow (e.g. Google login user adding phone)
+        // Next: email verification if no email, or profile setup / redirect
+        const pt = profileType || locationState.profileType || '';
+        if (!flatUser.email && (pt === 'household' || pt === 'househelp')) {
+          navigate('/verify-email', {
+            state: { user_id: userId, from: 'add-phone' },
+          });
+          return;
+        }
+        // If they have email already, go to profile setup or redirectTo
+        const redirectTo = locationState.redirectTo || '/';
+        if (pt === 'household' || pt === 'househelp') {
+          try {
+            const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
+            const progressData = await profileSetupService.getProgress(userId, pt);
+            if (progressData) {
+              const totalSteps = progressData.total_steps || 0;
+              const lastStep = progressData.last_completed_step || 0;
+              const isComplete = progressData.status === 'completed' ||
+                (totalSteps > 0 && lastStep >= totalSteps);
+              if (isComplete) {
+                // Redirect completed users to home page instead of profile
+                navigate('/', { replace: true });
+                return;
+              }
+              if (pt === 'household' && lastStep === 0) {
+                navigate('/household-choice', { replace: true });
+                return;
+              }
+              const setupRoute = pt === 'household'
+                ? `/profile-setup/household?step=${lastStep + 1}`
+                : `/profile-setup/househelp?step=${lastStep + 1}`;
+              navigate(setupRoute, { replace: true });
+              return;
+            }
+          } catch (err: any) {
+            if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
+              if (pt === 'household') {
+                navigate('/household-choice', { replace: true });
+                return;
+              }
+              navigate('/profile-setup/househelp?step=1', { replace: true });
+              return;
+            }
+          }
+        }
+        navigate(redirectTo, { replace: true });
       } else {
         // Bureau users should not verify through regular flow
         if (profileType === 'bureau') {
@@ -264,49 +324,45 @@ export default function VerifyOtpPage() {
         let path = '/';
         if (profileType === 'household' || profileType === 'househelp') {
           try {
-            const token = getAccessTokenFromCookies();
-            if (token) {
-              const setupResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-                headers: {
-                  Authorization: `Bearer ${token}`,
-                },
-              });
+            const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
+            const progressData = await profileSetupService.getProgress(user_id, profileType);
 
-              if (setupResponse.ok) {
-                const setupData = await setupResponse.json();
-                const progressData = setupData.data || {};
-                const totalSteps = progressData.total_steps || 0;
-                const lastStep = progressData.last_completed_step || 0;
-                const isComplete = progressData.status === 'completed' ||
-                  (totalSteps > 0 && lastStep >= totalSteps);
+            if (progressData) {
+              const totalSteps = progressData.total_steps || 0;
+              const lastStep = progressData.last_completed_step || 0;
+              const isComplete = progressData.status === 'completed' ||
+                (totalSteps > 0 && lastStep >= totalSteps);
 
-                if (!isComplete) {
-                  // Household users who haven't started setup go to choice page first
-                  if (profileType === 'household' && lastStep === 0) {
-                    console.log('[VERIFY-OTP] Email verified, redirecting to household choice');
-                    navigate('/household-choice');
-                    return;
-                  }
-                  const setupRoute = profileType === 'household'
-                    ? `/profile-setup/household?step=${lastStep + 1}`
-                    : `/profile-setup/househelp?step=${lastStep + 1}`;
-                  console.log('[VERIFY-OTP] Email verified, redirecting to profile setup:', setupRoute);
-                  navigate(setupRoute);
-                  return;
-                }
-              } else if (setupResponse.status === 404) {
-                // No profile setup record exists - user hasn't started setup
-                if (profileType === 'household') {
-                  console.log('[VERIFY-OTP] No profile setup record, redirecting to household choice');
-                  navigate('/household-choice');
-                  return;
-                }
-                console.log("[VERIFY-OTP] No profile setup record found, starting from step 1");
-                navigate('/profile-setup/househelp?step=1');
+              if (isComplete) {
+                console.log('[VERIFY-OTP] Email verified, setup complete, redirecting to home page');
+                // Redirect completed users to home page instead of profile
+                navigate('/');
                 return;
               }
+
+              if (profileType === 'household' && lastStep === 0) {
+                console.log('[VERIFY-OTP] Email verified, redirecting to household choice');
+                navigate('/household-choice');
+                return;
+              }
+              const setupRoute = profileType === 'household'
+                ? `/profile-setup/household?step=${lastStep + 1}`
+                : `/profile-setup/househelp?step=${lastStep + 1}`;
+              console.log('[VERIFY-OTP] Email verified, redirecting to profile setup:', setupRoute);
+              navigate(setupRoute);
+              return;
             }
-          } catch (err) {
+          } catch (err: any) {
+            if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
+              if (profileType === 'household') {
+                console.log('[VERIFY-OTP] No profile setup record, redirecting to household choice');
+                navigate('/household-choice');
+                return;
+              }
+              console.log("[VERIFY-OTP] No profile setup record found, starting from step 1");
+              navigate('/profile-setup/househelp?step=1');
+              return;
+            }
             console.error('[VERIFY-OTP] Failed to check profile setup status:', err);
           }
 
@@ -331,19 +387,21 @@ export default function VerifyOtpPage() {
     setLoading(true);
     setError(null);
     try {
-      // Call your backend resend OTP endpoint here
-      const res = await fetch(`${API_BASE_URL}/api/v1/verifications/resend-otp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ verification_id: verification?.id, user_id, verification_type: "phone" }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(extractErrorMessage(err) || 'Failed to resend OTP');
-      }
-      const data = await res.json();
-      if (data.verification) {
-        setVerification(data.verification);
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const response = await authService.resendOTP(user_id, verification?.type || 'phone');
+      const verificationProto = response.getVerification();
+      if (verificationProto) {
+        setVerification({
+          id: verificationProto.getId(),
+          user_id: verificationProto.getUserId(),
+          type: verificationProto.getType(),
+          status: verificationProto.getStatus(),
+          target: verificationProto.getTarget(),
+          expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
+          max_attempts: verificationProto.getMaxAttempts(),
+          attempts: verificationProto.getAttempts(),
+          next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
+        });
         setLocalFailedAttempts(0);
         setOtp('');
         setLastTriedOtp('');
@@ -407,19 +465,8 @@ export default function VerifyOtpPage() {
       const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
       
-      // Save profile data to backend
-      const res = await fetch(`${API_BASE_URL}/api/v1/profile/household/complete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(data),
-      });
-      
-      if (!res.ok) {
-        throw new Error('Failed to save profile data');
-      }
+      // Save profile data to backend via gRPC
+      await grpcProfileService.updateHouseholdProfile('', 'household', data);
       
       setProfileData(data);
       setShowProfileModal(false);
@@ -461,6 +508,9 @@ export default function VerifyOtpPage() {
                 </div>
               ) : (
                 <p className="mb-4 text-center text-gray-700 dark:text-gray-300">Enter the OTP sent to <span className="font-semibold">{phone || ''}</span></p>
+              )}
+              {(verification.type === 'phone' || verification.type === 'password_reset') && (
+                <SafaricomDisclaimer className="mb-4" />
               )}
             </>
           )}
@@ -557,18 +607,21 @@ export default function VerifyOtpPage() {
                 setChangePhoneError(null);
                 setChangePhoneLoading(true);
                 try {
-                  const res = await fetch(`${API_BASE_URL}/api/v1/auth/update-email`, {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: newPhone, user_id }),
-                  });
-                  if (!res.ok) {
-                    const err = await res.json();
-                    throw new Error(extractErrorMessage(err) || 'Failed to update email');
-                  }
-                  const data = await res.json();
-                  if (data.verification) {
-                    setVerification(data.verification);
+                  const { default: authService } = await import('~/services/grpc/auth.service');
+                  const response = await authService.updateEmail(user_id || '', newPhone);
+                  const verificationProto = response.getVerification();
+                  if (verificationProto) {
+                    setVerification({
+                      id: verificationProto.getId(),
+                      user_id: verificationProto.getUserId(),
+                      type: verificationProto.getType(),
+                      status: verificationProto.getStatus(),
+                      target: verificationProto.getTarget(),
+                      expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
+                      max_attempts: verificationProto.getMaxAttempts(),
+                      attempts: verificationProto.getAttempts(),
+                      next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
+                    });
                     setShowChangePhone(false);
                     setNewPhone('');
                     setLocalFailedAttempts(0);
@@ -590,6 +643,9 @@ export default function VerifyOtpPage() {
                   ? 'Enter new phone number'
                   : 'Enter new email address'}
               </label>
+              {(verification.type === 'phone' || verification.type === 'password_reset') && (
+                <SafaricomDisclaimer className="w-full max-w-xs" />
+              )}
               <input
                 type={verification.type === 'phone' || verification.type === 'password_reset' ? 'tel' : 'email'}
                 name="newPhone"

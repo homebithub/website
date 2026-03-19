@@ -15,9 +15,7 @@ export { default as HouseholdSidebar } from './features/HouseholdSidebar';
 // Feature Components
 export { default as Bio } from './features/Bio';
 export { default as Budget } from './features/Budget';
-export { default as Photos } from './features/Photos';
-export { Waitlist } from './Waitlist';
-export { default as HousehelpSignupFlow } from './HousehelpSignupFlow';
+export { default as Photos } from './Photos';
 export { default as ShortlistPlaceholderIcon } from './features/ShortlistPlaceholderIcon';
 
 // Profile Setup Step Components (Modals)

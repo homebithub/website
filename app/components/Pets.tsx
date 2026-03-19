@@ -1,8 +1,11 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { handleApiError } from '../utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
+import { petsService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface Pet {
   id: string;
@@ -64,28 +67,19 @@ const Pets: React.FC = () => {
   useEffect(() => {
     const loadPets = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/v1/pets`, {
-          method: "GET",
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-        });
-        
-        if (res.ok) {
-          const petsData = await res.json();
-          if (petsData && petsData.length > 0) {
-            // Map backend response to frontend Pet interface
-            const mappedPets = petsData.map((p: any) => ({
-              id: p.id,
-              type: p.pet_type,
-              requiresCare: p.requires_care,
-              careDetails: p.care_details || "",
-              traits: p.traits || []
-            }));
-            setPets(mappedPets);
-            setHasPet("yes");
-          }
+        const token = getAccessTokenFromCookies();
+        const petsData = await petsService.listMyPets('');
+        const petsList = Array.isArray(petsData) ? petsData : (petsData?.data || []);
+        if (petsList.length > 0) {
+          const mappedPets = petsList.map((p: any) => ({
+            id: p.id,
+            type: p.pet_type,
+            requiresCare: p.requires_care,
+            careDetails: p.care_details || "",
+            traits: p.traits || []
+          }));
+          setPets(mappedPets);
+          setHasPet("yes");
         }
       } catch (err) {
         console.error("Failed to load pets:", err);
@@ -131,28 +125,15 @@ const Pets: React.FC = () => {
     setError("");
     
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       const finalPetType = petType === "Other" ? otherPetType.trim() : petType;
       
-      const response = await fetch(`${API_BASE_URL}/api/v1/pets`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          pet_type: finalPetType.toLowerCase(),
-          requires_care: requiresCare,
-          care_details: requiresCare ? careDetails : "",
-          traits: selectedTraits.map(trait => trait.toLowerCase())
-        })
+      const newPet = await petsService.createPet('', {
+        pet_type: finalPetType.toLowerCase(),
+        requires_care: requiresCare,
+        care_details: requiresCare ? careDetails : "",
+        traits: selectedTraits.map(trait => trait.toLowerCase())
       });
-      
-      if (!response.ok) {
-        throw new Error("Failed to add pet. Please try again.");
-      }
-      
-      const newPet = await response.json();
       
       // Add the pet to local state with the response data
       const petForDisplay: Pet = {
@@ -192,17 +173,8 @@ const Pets: React.FC = () => {
     setDeleteLoading(true);
     
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`${API_BASE_URL}/api/v1/pets/${petToDelete.id}`, {
-        method: "DELETE",
-        headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error("Failed to delete pet. Please try again.");
-      }
+      const token = getAccessTokenFromCookies();
+      await petsService.deletePet(petToDelete.id);
       
       // Remove pet from local state
       setPets(prev => prev.filter(pet => pet.id !== petToDelete.id));
@@ -322,14 +294,15 @@ const Pets: React.FC = () => {
           onClick={handleAddPet}
           className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
         >
-          ➕ Add Pet
+          + Add Pet
         </button>
       )}
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-lg p-6 relative shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 max-h-[90vh] overflow-y-auto">
+      {showModal && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 shadow-2xl border border-gray-200 dark:border-purple-500/30 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4">
             <button
               type="button"
               onClick={() => setShowModal(false)}
@@ -351,22 +324,18 @@ const Pets: React.FC = () => {
                 <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                   Pet Type <span className="text-red-500">*</span>
                 </label>
-                <select
+                <CustomSelect
                   value={petType}
-                  onChange={(e) => {
-                    setPetType(e.target.value);
-                    if (e.target.value !== "Other") {
+                  onChange={(val) => {
+                    setPetType(val);
+                    if (val !== "Other") {
                       setOtherPetType("");
                     }
                   }}
-                  className="w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
+                  options={PET_TYPES.map(type => ({ value: type, label: type }))}
+                  placeholder="Select pet type"
                   required
-                >
-                  <option value="">Select pet type</option>
-                  {PET_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
+                />
               </div>
 
               {/* Other Pet Type Input */}
@@ -448,8 +417,8 @@ const Pets: React.FC = () => {
                         selectedTraits.includes(trait)
                           ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100'
                           : selectedTraits.length >= 3
-                          ? 'bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 text-gray-400 cursor-not-allowed'
-                          : 'bg-white dark:bg-[#13131a] border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/10'
+                          ? 'bg-gray-100 dark:bg-[#13131a] border-gray-300 dark:border-purple-500/20 text-gray-400 dark:text-gray-600 cursor-not-allowed'
+                          : 'bg-white dark:bg-[#13131a] border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:border-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                       }`}
                     >
                       {trait}
@@ -480,13 +449,15 @@ const Pets: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && petToDelete && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 w-full max-w-md shadow-2xl border-2 border-purple-200 dark:border-purple-500/30">
+      {showDeleteConfirm && petToDelete && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => { setShowDeleteConfirm(false); setPetToDelete(null); }} />
+          <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md shadow-2xl border border-gray-200 dark:border-purple-500/30 animate-slide-up sm:mx-4">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="w-6 h-6 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -523,7 +494,8 @@ const Pets: React.FC = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

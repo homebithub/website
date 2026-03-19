@@ -5802,10 +5802,10 @@ ts-proto-descriptors@2.1.0:
   dependencies:
     "@bufbuild/protobuf" "^2.0.0"
 
-ts-proto@^2.11.4:
-  version "2.11.4"
-  resolved "https://registry.npmjs.org/ts-proto/-/ts-proto-2.11.4.tgz"
-  integrity sha512-LGf1llYT/YsZRIzz3nzBei5mR8Sq0xmrL0cI36Pdiuok2V4PHiDuXQGP+D9i3NzChuwURPo8KAmGV1HLH0xHyw==
+ts-proto@^2.11.5:
+  version "2.11.5"
+  resolved "https://registry.npmjs.org/ts-proto/-/ts-proto-2.11.5.tgz"
+  integrity sha512-Ua2Mu92MhCkOCQgOTn00jOZaOE51JHW/Zfmf65Gtp7mOe2DxUVjKvaedayjQ0SVrblyCVSKCm2tAX/2FWgiFzQ==
   dependencies:
     "@bufbuild/protobuf" "^2.10.2"
     case-anything "^2.1.13"

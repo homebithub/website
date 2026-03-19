@@ -8,6 +8,7 @@ import { extractErrorMessage } from '~/utils/errorMessages';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
 
 export default function ForgotPasswordPage() {
   const [input, setInput] = useState("");
@@ -74,22 +75,24 @@ export default function ForgotPasswordPage() {
       // Normalize phone number to international format
       const normalizedPhone = normalizeKenyanPhoneNumber(input);
 
-      const res = await fetch(`${API_BASE_URL}/api/v1/auth/forgot-password`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone: normalizedPhone }),
-      });
-      
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(extractErrorMessage(err) || "Failed to send OTP");
-      }
-      
-      const data = await res.json();
-      if (data.verification) {
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const response = await authService.forgotPassword(normalizedPhone);
+      const verificationProto = response.getVerification();
+      if (verificationProto) {
+        const verification = {
+          id: verificationProto.getId(),
+          user_id: verificationProto.getUserId(),
+          type: verificationProto.getType(),
+          status: verificationProto.getStatus(),
+          target: verificationProto.getTarget(),
+          expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
+          max_attempts: verificationProto.getMaxAttempts(),
+          attempts: verificationProto.getAttempts(),
+          next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
+        };
         setSuccess(true);
-        // Navigate to verify-otp page with verification data
-        window.location.href = `/verify-otp?verification=${encodeURIComponent(JSON.stringify(data.verification))}`;
+        // Navigate to verify-otp page with verification data in state
+        window.location.href = `/verify-otp?verification=${encodeURIComponent(JSON.stringify(verification))}`;
       }
     } catch (err: any) {
       setError(err.message || "Failed to send OTP");
@@ -148,6 +151,7 @@ export default function ForgotPasswordPage() {
                 {fieldError && (
                   <p className="text-red-600 text-sm mt-1">{fieldError}</p>
                 )}
+                <SafaricomDisclaimer className="mt-2" />
               </div>
             </div>
             <button

@@ -1,20 +1,22 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, useLocation, useNavigate } from "react-router";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { apiClient } from "~/utils/apiClient";
+import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
+import { SidePanel } from '~/components/SidePanel';
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
-import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
+import CustomSelect from "~/components/ui/CustomSelect";
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 
 interface HousehelpProfile {
@@ -110,18 +112,12 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     const fetchHouseholdProfileId = async () => {
       if (currentProfileType?.toLowerCase() === 'household' && currentUserId) {
         try {
-          const token = localStorage.getItem("token");
+          const token = getAccessTokenFromCookies();
           if (!token) return;
           
-          const res = await fetch(`${API_BASE_URL}/api/v1/profile/household/me`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (res.ok) {
-            const raw = await res.json();
-            const profile = raw?.data?.data || raw?.data || raw;
-            if (!cancelled) {
-              setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
-            }
+          const profile = await grpcProfileService.getCurrentHouseholdProfile('');
+          if (profile && !cancelled) {
+            setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
           }
         } catch (err) {
           console.error('Failed to fetch household profile ID:', err);
@@ -187,16 +183,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       
       if (isShortlisted) {
         // Remove from shortlist
-        const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}/${profileId}`, {
-          method: 'DELETE',
-        });
-        
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({ message: 'Failed to remove from shortlist' }));
-          console.error('Remove shortlist error:', errorData);
-          alert(errorData.message || 'Failed to remove from shortlist. Please try again.');
-          return;
-        }
+        await shortlistService.deleteShortlist(profileId);
         
         console.log('Successfully removed from shortlist');
         setShortlistedProfiles(prev => {
@@ -206,18 +193,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         });
       } else {
         // Add to shortlist
-        const res = await apiClient.auth(`${API_ENDPOINTS.shortlists.base}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ profile_id: profileId, profile_type: 'househelp' }),
-        });
-        
-        if (!res.ok) {
-          const errorData = await res.json().catch(() => ({ message: 'Failed to add to shortlist' }));
-          console.error('Shortlist error:', errorData);
-          alert(errorData.message || 'Failed to add to shortlist. Please try again.');
-          return;
-        }
+        await shortlistService.createShortlist('', 'household', { profile_id: profileId, profile_type: 'househelp' });
         
         console.log('Successfully added to shortlist');
         setShortlistedProfiles(prev => new Set(prev).add(profileId));
@@ -421,13 +397,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     const payload = buildCountPayload(fields);
     countTimerRef.current = setTimeout(async () => {
       try {
-        const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps/search/count`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const data = await apiClient.json<{ count: number }>(res);
-        setTotalCount(typeof data.count === 'number' ? data.count : 0);
+        const count = await grpcProfileService.countHousehelps('', 'household', payload);
+        setTotalCount(typeof count === 'number' ? count : 0);
       } catch (e) {
         setTotalCount(null);
       }
@@ -450,14 +421,10 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         const results = await Promise.all(
           profileIds.map(async (profileId) => {
             try {
-              const res = await apiClient.auth(API_ENDPOINTS.shortlists.exists(profileId));
-              if (!res.ok) {
-                console.log(`Profile ${profileId} not shortlisted (status: ${res.status})`);
-                return { profileId, exists: false };
-              }
-              const data = await apiClient.json<{ exists: boolean }>(res);
-              console.log(`Profile ${profileId} shortlist status:`, data.exists);
-              return { profileId, exists: data.exists };
+              const res = await shortlistService.shortlistExists('', profileId);
+              const exists = res?.getExists?.() ?? res?.exists ?? false;
+              console.log(`Profile ${profileId} shortlist status:`, exists);
+              return { profileId, exists };
             } catch (err) {
               console.error(`Error checking shortlist for ${profileId}:`, err);
               return { profileId, exists: false };
@@ -520,14 +487,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           offset: 0,
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
       );
-      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await apiClient.json<any>(res);
+      const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, 0);
       console.log('Search househelps response:', data);
-      const inner = data?.data;
+      const inner = data?.data || data;
       const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
       setHousehelps(rows);
       setHasMore(rows.length === limit);
@@ -571,13 +533,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           offset: nextOffset,
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
       );
-      const res = await apiClient.auth(`${API_BASE_URL}/api/v1/househelps/search`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await apiClient.json<any>(res);
-      const inner = data?.data;
+      const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, nextOffset);
+      const inner = data?.data || data;
       const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
       setHousehelps(prev => [...prev, ...rows]);
       setOffset(nextOffset);
@@ -694,27 +651,25 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                 </div>
                 <div className="flex flex-col">
                   <label className={quickLabelClass}>Type of Househelp</label>
-                  <select
+                  <CustomSelect
                     value={getTypeValue()}
-                    onChange={(e) => setTypeValue(e.target.value)}
-                    className={quickInputClass}
-                  >
-                    <option value="">Any</option>
-                    <option value="live_in">Live-in</option>
-                    <option value="day_worker">Day worker</option>
-                  </select>
+                    onChange={(val) => setTypeValue(val)}
+                    options={[
+                      { value: "", label: "Any" },
+                      { value: "live_in", label: "Live-in" },
+                      { value: "day_worker", label: "Day worker" },
+                    ]}
+                    placeholder="Any"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <label className={quickLabelClass}>Experience</label>
-                  <select
+                  <CustomSelect
                     value={fields.experience || ""}
-                    onChange={(e) => handleFieldChange('experience', e.target.value)}
-                    className={quickInputClass}
-                  >
-                    {EXPERIENCE_MIN_OPTIONS.map((level) => (
-                      <option key={level.value || "any"} value={level.value}>{level.label}</option>
-                    ))}
-                  </select>
+                    onChange={(val) => handleFieldChange('experience', val)}
+                    options={EXPERIENCE_MIN_OPTIONS}
+                    placeholder="Any"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <label className={quickLabelClass}>Skills / Can Help With</label>
@@ -743,31 +698,14 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
             </div>
 
             {/* Slide-over Drawer for full filters */}
-            {showMoreFilters && (
-              <div className="fixed inset-0 z-[70]">
-                <div className="absolute inset-x-0 top-20 sm:top-24 bottom-20 sm:bottom-24 bg-slate-900/20 backdrop-blur-[2px]" onClick={() => setShowMoreFilters(false)} />
-                <div className="absolute right-0 sm:right-4 top-20 sm:top-24 bottom-20 sm:bottom-24 w-full max-w-[460px] bg-[#f3f4f7] dark:bg-gradient-to-br dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] shadow-[0_24px_80px_rgba(15,23,42,0.28)] rounded-[2rem] p-6 sm:p-7 overflow-y-auto border border-[#d6dbe7] dark:border-purple-500/30">
-                  <div className="sticky top-0 z-10 -mx-2 px-2 pb-4 pt-1 bg-[#f3f4f7] dark:bg-[#13131a] flex items-center justify-between mb-2">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">More Filters</h2>
-                    <button
-                      onClick={() => setShowMoreFilters(false)}
-                      className="h-9 w-9 rounded-full border border-[#c7cdd9] dark:border-purple-500/30 text-slate-500 hover:text-slate-700 hover:bg-white/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-purple-500/10 transition-colors"
-                      aria-label="Close more filters"
-                    >
-                      <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  <HousehelpMoreFilters
-                    fields={fields}
-                    onChange={handleFieldChange}
-                    onSearch={() => { setShowMoreFilters(false); handleSearch(); }}
-                    onClear={handleClear}
-                  />
-                </div>
-              </div>
-            )}
+            <SidePanel isOpen={showMoreFilters} onClose={() => setShowMoreFilters(false)} title="More Filters">
+              <HousehelpMoreFilters
+                fields={fields}
+                onChange={handleFieldChange}
+                onSearch={() => { setShowMoreFilters(false); handleSearch(); }}
+                onClear={handleClear}
+              />
+            </SidePanel>
 
             <div className="mt-6 sm:mt-8">
               <h2 className={`${isHome3 ? 'text-xl' : 'text-2xl'} font-bold text-gray-900 dark:text-white mb-6`}>
@@ -779,7 +717,23 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                   <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
                 </div>
               ) : error ? (
-                <ErrorAlert message={error} />
+                <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
+                  <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800">
+                    <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-1.053M18 8.25a3 3 0 11-6 0 3 3 0 016 0zM3.75 9.75a2.625 2.625 0 115.25 0 2.625 2.625 0 01-5.25 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Househelps Available</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                    We couldn't load househelp profiles right now. Please try again in a moment.
+                  </p>
+                  <button
+                    onClick={() => handleSearch()}
+                    className="mt-6 inline-flex items-center px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-sm"
+                  >
+                    Try Again
+                  </button>
+                </div>
               ) : !hasSearched ? (
                 <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
                   <div className="mb-4">
@@ -804,12 +758,15 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                   </button>
                 </div>
               ) : househelps.length === 0 ? (
-                <div className="bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl p-12 text-center">
-                  <p className="text-gray-600 dark:text-gray-400 text-lg mb-2">
-                    No househelps found matching your criteria.
-                  </p>
-                  <p className="text-gray-500 dark:text-gray-500 text-sm">
-                    Try adjusting your filters or search again.
+                <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
+                  <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800">
+                    <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Results Found</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                    No househelps match your current filters. Try adjusting your search criteria or clear filters to see all profiles.
                   </p>
                 </div>
               ) : (

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
-import { API_ENDPOINTS } from '~/config/api';
-import { apiClient } from '~/utils/apiClient';
+import { hireContractService } from '~/services/grpc/authServices';
 import { FileText, CheckCircle, XCircle, Calendar, DollarSign, Briefcase } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
@@ -50,33 +49,11 @@ export default function HouseholdContracts() {
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        navigate('/login');
-        return;
-      }
-
-      const params = new URLSearchParams({
-        limit: limit.toString(),
-        offset: offset.toString(),
-      });
-
-      if (activeTab !== 'all') {
-        params.append('status', activeTab);
-      }
-
-      const response = await apiClient.auth(
-        `${API_ENDPOINTS.hiring.contracts.base}?${params.toString()}`,
-        { method: 'GET' }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch contracts');
-      }
-
-      const data = await response.json();
-      setContracts(data.data || []);
-      setTotal(data.total || 0);
+      const status = activeTab !== 'all' ? activeTab : undefined;
+      const raw = await hireContractService.listHireContracts('', 'household', status);
+      const items = raw?.data || raw || [];
+      setContracts(Array.isArray(items) ? items : []);
+      setTotal(typeof raw?.total === 'number' ? raw.total : (Array.isArray(items) ? items.length : 0));
     } catch (err: any) {
       setError(err.message || 'Failed to load contracts');
     } finally {

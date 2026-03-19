@@ -1,7 +1,10 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useCallback, useRef } from 'react';
 import type { ChangeEvent } from 'react';
 import { XMarkIcon, ArrowLeftIcon, ArrowRightIcon, XCircleIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { profileSetupService } from '~/services/grpc/profileSetup.service';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -152,97 +155,48 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
     setSuccess('');
     
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       
       // Photos is the last step in both flows:
       // Household: step 10 (0-indexed: 9)
       // Househelp: step 13 (0-indexed: 12)
       const stepNumber = userType === 'household' ? 9 : 12;
       
-      // Update the profile_setup_steps tracking to mark photos as completed
-      // This is what ProfileSetupGuard checks to determine if onboarding is complete
-      const stepsResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-steps`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          step_id: 'photos',
-          step_number: stepNumber,
-          is_completed: true,
-          is_skipped: false
-        }),
+      // Update step tracking via gRPC
+      await profileSetupService.updateStep('', {
+        step_id: 'photos',
+        step_number: stepNumber,
+        is_completed: true,
+        is_skipped: false
       });
-
-      if (!stepsResponse.ok) {
-        console.error('Failed to update step tracking');
-        throw new Error('Failed to mark photos step as complete');
-      }
       
-      // Also update profile_setup_progress for analytics
-      const progressResponse = await fetch(`${API_BASE_URL}/api/v1/profile-setup-progress`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
+      // Update progress tracking via gRPC
+      try {
+        await profileSetupService.updateProgress('', {
           current_step: stepNumber + 1,
           last_completed_step: stepNumber + 1,
           completed_steps: [],
           step_id: 'photos',
           time_spent_seconds: 0
-        }),
-      });
-
-      if (!progressResponse.ok) {
+        });
+      } catch (err) {
         console.error('Failed to update progress tracking');
       }
       
       // Also mark in the profile endpoint for backward compatibility
       if (userType === 'household') {
-        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            _step_metadata: {
-              step_id: "photos",
-              step_number: stepNumber,
-              is_completed: true
-            }
-          }),
+        await grpcProfileService.updateHouseholdProfile('', 'household', {
+          _step_metadata: {
+            step_id: 'photos',
+            step_number: stepNumber,
+            is_completed: true
+          }
         });
-
-        if (!response.ok) {
-          throw new Error('Failed to skip photos');
-        }
       } else {
-        // For househelp
-        const response = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            updates: {
-              photos: []
-            },
-            _step_metadata: {
-              step_id: "photos",
-              step_number: stepNumber,
-              is_completed: true
-            }
-          }),
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to skip photos');
-        }
+        await grpcProfileService.updateHousehelpFields('', 'househelp',
+          { photos: [] },
+          { step_id: 'photos', step_number: stepNumber, is_completed: true }
+        );
       }
 
       setSuccess('Skipped photos. You can add them later from your profile!');
@@ -279,7 +233,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
     setUploadProgress(0);
     
     try {
-      const token = localStorage.getItem('token');
+      const token = getAccessTokenFromCookies();
       
       // Step 1: Upload images to documents service with progress tracking
       const formData = new FormData();
@@ -332,50 +286,21 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
         ? docs.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean)
         : [];
       
-      // Step 2: Save image URLs to profile
+      // Step 2: Save image URLs to profile via gRPC
       if (userType === 'household') {
-        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            photos: imageUrls,
-            _step_metadata: {
-              step_id: "photos",
-              step_number: 8,
-              is_completed: true
-            }
-          }),
+        await grpcProfileService.updateHouseholdProfile('', 'household', {
+          photos: imageUrls,
+          _step_metadata: {
+            step_id: 'photos',
+            step_number: 8,
+            is_completed: true
+          }
         });
-        
-        if (!profileResponse.ok) {
-          throw new Error('Failed to save photos to profile');
-        }
       } else {
-        // For househelp
-        const profileResponse = await fetch(`${API_BASE_URL}/api/v1/househelps/me/fields`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            updates: {
-              photos: imageUrls
-            },
-            _step_metadata: {
-              step_id: "photos",
-              step_number: 12,
-              is_completed: true
-            }
-          }),
-        });
-        
-        if (!profileResponse.ok) {
-          throw new Error('Failed to save photos to profile');
-        }
+        await grpcProfileService.updateHousehelpFields('', 'househelp',
+          { photos: imageUrls },
+          { step_id: 'photos', step_number: 12, is_completed: true }
+        );
       }
 
       markClean();
@@ -637,8 +562,8 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
 
             {/* Modal panel */}
             <div className="fixed inset-0 z-10 overflow-y-auto">
-              <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl">
+              <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
+                <div className="relative transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white text-left shadow-xl transition-all w-full sm:max-w-4xl sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
                   <div className="absolute right-0 top-0 pr-4 pt-4">
                     <button
                       type="button"

@@ -1,3 +1,4 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 /**
  * User Tracking Utilities
  * 
@@ -186,14 +187,14 @@ export const getUserIdentifiers = async (): Promise<{
  * Check if user is authenticated
  */
 export const isAuthenticated = (): boolean => {
-  return !!localStorage.getItem('token');
+  return !!getAccessTokenFromCookies();
 };
 
 /**
  * Get authenticated user ID from token
  */
 export const getAuthenticatedUserId = (): string | null => {
-  const token = localStorage.getItem('token');
+  const token = getAccessTokenFromCookies();
   if (!token) return null;
 
   try {

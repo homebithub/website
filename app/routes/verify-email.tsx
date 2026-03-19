@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate, useLocation } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { handleApiError, extractErrorMessage } from '~/utils/errorMessages';
-import { API_BASE_URL } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -50,25 +49,27 @@ export default function VerifyEmail() {
     setError(null);
     setSuccess(false);
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/auth/update-email`, {
-        method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({ email,user_id }),
-      });
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(extractErrorMessage(data) || "Failed to request email verification");
-      }
-      if (data.verification) {
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const response = await authService.updateEmail(user_id || '', email);
+
+      const verificationProto = response.getVerification();
+      if (verificationProto) {
+        const verification = {
+          id: verificationProto.getId(),
+          user_id: verificationProto.getUserId(),
+          type: verificationProto.getType(),
+          status: verificationProto.getStatus(),
+          target: verificationProto.getTarget(),
+          expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
+          max_attempts: verificationProto.getMaxAttempts(),
+          attempts: verificationProto.getAttempts(),
+          next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
+        };
         // Navigate to verify-otp page with verification object in state
         // After email OTP verification, it will redirect to household setup
         navigate("/verify-otp", { 
           state: { 
-            verification: data.verification,
+            verification,
             afterEmailVerification: true 
           } 
         });

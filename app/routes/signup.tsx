@@ -10,10 +10,10 @@ import { Loading } from '~/components/Loading';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { FcGoogle } from 'react-icons/fc';
 import { Modal } from '~/components/features/Modal';
-import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
@@ -60,7 +60,6 @@ export type SignupResponse = {
     };
 };
 
-const base_url = API_BASE_URL;
 
 // Profile type options - Bureau removed as they should not sign up through regular flow
 const profileOptions = [
@@ -213,6 +212,16 @@ export default function SignupPage() {
         e.preventDefault();
         
         console.log('[SIGNUP] Form submitted', form);
+        console.log('[SIGNUP] Current field errors:', fieldErrors);
+        console.log('[SIGNUP] Button disabled state:', {
+            formLoading,
+            hasProfileType: !!form.profile_type.trim(),
+            hasFieldErrors: Object.keys(fieldErrors).some(key => fieldErrors[key]),
+            hasFirstName: !!form.first_name.trim(),
+            hasLastName: !!form.last_name.trim(),
+            hasPassword: !!form.password.trim(),
+            hasPhone: !!form.phone.trim()
+        });
         
         // Validate entire form
         const validation = validateForm(signupSchema, form);
@@ -256,20 +265,43 @@ export default function SignupPage() {
                     ...(form.profile_type === 'househelp' && bureauId ? { bureau_id: bureauId } : {})
                 };
 
-                const res = await fetch(`${base_url}/api/v1/auth/google/complete`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(googlePayload),
-                });
-
-                if (!res.ok) {
-                    const err = await res.json();
-                    const errorMsg = extractErrorMessage(err);
+                const { default: authSvc } = await import('~/services/grpc/auth.service');
+                let data: any;
+                try {
+                    const response = await authSvc.completeGoogleSignup(
+                        googlePayload.google_id,
+                        googlePayload.email,
+                        googlePayload.first_name,
+                        googlePayload.last_name,
+                        googlePayload.phone,
+                        googlePayload.profile_type,
+                        googlePayload.bureau_id
+                    );
+                    const userId = response?.getUserId?.() || '';
+                    const verificationProto = response?.getVerification?.();
+                    data = {
+                        user: { user_id: userId, profile_type: form.profile_type },
+                        verification: verificationProto ? {
+                            id: verificationProto.getId(),
+                            user_id: verificationProto.getUserId(),
+                            type: verificationProto.getType(),
+                            status: verificationProto.getStatus(),
+                            target: verificationProto.getTarget(),
+                            expires_at: verificationProto.getExpiresAt()?.toDate().toISOString() || '',
+                            next_resend_at: verificationProto.getNextResendAt()?.toDate().toISOString() || '',
+                            attempts: verificationProto.getAttempts(),
+                            max_attempts: verificationProto.getMaxAttempts(),
+                            resends: verificationProto.getResends(),
+                            max_resends: verificationProto.getMaxResends(),
+                            created_at: verificationProto.getCreatedAt()?.toDate().toISOString() || '',
+                            updated_at: verificationProto.getUpdatedAt()?.toDate().toISOString() || '',
+                        } : undefined,
+                    };
+                } catch (err: any) {
+                    const errorMsg = err.message || 'Google signup completion failed';
                     const lowerMsg = errorMsg.toLowerCase();
-                    
-                    // Handle duplicate phone/email for Google signups too
-                    if (res.status === 409 || lowerMsg.includes('already exists')) {
-                        const friendlyMsg = handleApiError(err, 'signup');
+                    if (err.grpcCode === 'ALREADY_EXISTS' || lowerMsg.includes('already')) {
+                        const friendlyMsg = handleApiError({ message: errorMsg }, 'signup');
                         if (lowerMsg.includes('phone')) {
                             setFieldErrors({ phone: friendlyMsg });
                             setTouchedFields(prev => ({ ...prev, phone: true }));
@@ -278,13 +310,8 @@ export default function SignupPage() {
                         setFormLoading(false);
                         return;
                     }
-                    
-                    throw new Error(errorMsg || 'Google signup completion failed');
+                    throw new Error(errorMsg);
                 }
-
-                // google/complete now returns the same shape as regular signup:
-                // { user: { user_id, profile_type }, verification: {...} }
-                const data = await res.json();
                 
                 const userId = data.user?.user_id;
                 const profileType = data.user?.profile_type || form.profile_type;
@@ -322,66 +349,87 @@ export default function SignupPage() {
                 return;
             }
             
-            // Regular signup flow
-            let payload = { ...form };
-            // Normalize phone number to international format
-            payload.phone = normalizeKenyanPhoneNumber(form.phone);
+            // Regular signup flow - use gRPC-Web
+            const normalizedPhone = normalizeKenyanPhoneNumber(form.phone);
             
-            if (form.profile_type === 'househelp' && bureauId) {
-                payload = { ...payload, bureau_id: bureauId };
-            }
-            const res = await fetch(`${base_url}/api/v1/auth/register`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(payload),
-            });
-            if (!res.ok) {
-                const err = await res.json();
-                console.log('[SIGNUP] Backend error response:', err);
+            let data: any;
+            try {
+                // Use gRPC-Web instead of REST
+                const { default: authService } = await import('~/services/grpc/auth.service');
+                const signupResponse = await authService.signup(
+                    normalizedPhone,
+                    form.password,
+                    form.first_name,
+                    form.last_name,
+                    form.profile_type,
+                    form.profile_type === 'househelp' && bureauId ? bureauId : undefined
+                );
                 
-                // Extract message from any response shape (gateway or legacy)
-                const errorMsg = extractErrorMessage(err);
+                // Extract data from gRPC response
+                const userId = signupResponse.getUserId();
+                const token = signupResponse.getToken();
+                const verificationProto = signupResponse.getVerification();
                 
-                // Check if backend returned field-specific errors (legacy shape)
-                if (err.errors && typeof err.errors === 'object') {
-                    const backendErrors: { [key: string]: string } = {};
-                    Object.keys(err.errors).forEach(key => {
-                        backendErrors[key] = err.errors[key];
-                    });
-                    
-                    setFieldErrors(backendErrors);
-                    
-                    const touchedErrorFields = Object.keys(backendErrors).reduce((acc, key) => {
-                        acc[key] = true;
-                        return acc;
-                    }, {} as { [key: string]: boolean });
-                    setTouchedFields(prev => ({ ...prev, ...touchedErrorFields }));
-                    
-                    const errorCount = Object.keys(backendErrors).length;
-                    setError(`Please fix ${errorCount} error${errorCount > 1 ? 's' : ''} in the form`);
-                    return;
-                }
+                console.log('[SIGNUP] gRPC response:', { userId, token, hasVerification: !!verificationProto });
                 
-                // Handle conflict / duplicate errors (409 or message-based)
+                data = {
+                    user: {
+                        user_id: userId,
+                        profile_type: form.profile_type,
+                    },
+                    token: token,
+                    verification: verificationProto ? {
+                        id: verificationProto.getId(),
+                        user_id: verificationProto.getUserId(),
+                        type: verificationProto.getType(),
+                        status: verificationProto.getStatus(),
+                        target: verificationProto.getTarget(),
+                        expires_at: verificationProto.getExpiresAt()?.toDate().toISOString() || '',
+                        next_resend_at: verificationProto.getNextResendAt()?.toDate().toISOString() || '',
+                        attempts: verificationProto.getAttempts(),
+                        max_attempts: verificationProto.getMaxAttempts(),
+                        resends: verificationProto.getResends(),
+                        max_resends: verificationProto.getMaxResends(),
+                        created_at: verificationProto.getCreatedAt()?.toDate().toISOString() || '',
+                        updated_at: verificationProto.getUpdatedAt()?.toDate().toISOString() || '',
+                    } : undefined,
+                };
+            } catch (err: any) {
+                console.error('[SIGNUP] gRPC error:', err);
+                
+                const errorMsg = err.message || 'Signup failed';
+                const grpcCode = err.grpcCode || '';
                 const lowerMsg = errorMsg.toLowerCase();
-                if (res.status === 409 || lowerMsg.includes('already exists')) {
-                    const friendlyMsg = handleApiError(err, 'signup');
-                    
+                
+                // Handle duplicate phone/email errors
+                if (grpcCode === 'ALREADY_EXISTS' || lowerMsg.includes('already')) {
                     if (lowerMsg.includes('phone')) {
-                        setFieldErrors({ phone: friendlyMsg });
+                        setFieldErrors({ phone: 'This phone number is already registered' });
                         setTouchedFields(prev => ({ ...prev, phone: true }));
+                        setError('This phone number is already registered');
                     } else if (lowerMsg.includes('email')) {
-                        setFieldErrors({ email: friendlyMsg });
+                        setFieldErrors({ email: 'This email is already registered' });
                         setTouchedFields(prev => ({ ...prev, email: true }));
+                        setError('This email is already registered');
+                    } else {
+                        setError('Account already exists');
                     }
-                    setError(friendlyMsg);
+                    setFormLoading(false);
                     return;
                 }
                 
-                // For all other errors, transform and show
-                throw new Error(errorMsg || 'Signup failed');
+                // Handle validation errors
+                if (grpcCode === 'INVALID_ARGUMENT') {
+                    setError(errorMsg);
+                    setFormLoading(false);
+                    return;
+                }
+                
+                // For all other errors
+                setError(errorMsg);
+                setFormLoading(false);
+                return;
             }
-            const data = await res.json();
             
             console.log('[SIGNUP] Full response:', JSON.stringify(data));
             
@@ -454,12 +502,13 @@ export default function SignupPage() {
             };
             const state = encodeURIComponent(JSON.stringify(statePayload));
             console.log('[GOOGLE_AUTH] Requesting OAuth URL with state:', statePayload);
-            const res = await fetch(`${API_ENDPOINTS.auth.googleUrl}?flow=${flow}&state=${state}`);
-            const data = await res.json();
-            console.log('[GOOGLE_AUTH] Received response:', data);
-            if (data?.url) {
-                console.log('[GOOGLE_AUTH] Redirecting to:', data.url);
-                window.location.href = data.url as string;
+            const { default: authSvc } = await import('~/services/grpc/auth.service');
+            const response = await authSvc.getGoogleAuthURL(flow, state);
+            const url = response?.getUrl?.() || response?.url;
+            console.log('[GOOGLE_AUTH] Received response, url:', url);
+            if (url) {
+                console.log('[GOOGLE_AUTH] Redirecting to:', url);
+                window.location.href = url as string;
             } else {
                 console.error('[GOOGLE_AUTH] No URL in response');
                 setError('Failed to start Google sign-in. Please try again.');
@@ -750,7 +799,10 @@ export default function SignupPage() {
     {getFieldError('phone') && (
         <p className="text-red-600 text-sm mt-1">{getFieldError('phone')}</p>
     )}
+    <SafaricomDisclaimer className="mt-2" />
 </div>
+
+{error && <ErrorAlert message={error} onClose={() => setError(null)} />}
 
 <button
     type="submit"

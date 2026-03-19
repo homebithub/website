@@ -1,9 +1,10 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL } from "~/config/api";
+import { profileService as grpcProfileService, householdMemberService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface JoinRequest {
@@ -36,43 +37,21 @@ export default function HouseholdRequestsPage() {
     setError(null);
 
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) {
         navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
         return;
       }
 
-      // Get household ID first
-      const profileRes = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!profileRes.ok) throw new Error("Failed to fetch household profile");
-      const profileResponse = await profileRes.json();
-      console.log('Profile response in requests:', profileResponse);
-      
-      // Extract household ID from nested structure
-      const profileData = profileResponse.data || profileResponse;
-      console.log('Extracted profile data in requests:', profileData);
-      
+      // Get household ID first via gRPC
+      const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
       const hId = profileData.id;
-      console.log('Household ID in requests:', hId);
       setHouseholdId(hId);
 
-      // Fetch pending requests
-      const requestsRes = await fetch(`${API_BASE_URL}/api/v1/households/${hId}/requests`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!requestsRes.ok) throw new Error("Failed to fetch requests");
-      const requestsResponse = await requestsRes.json();
-      console.log('Requests response:', requestsResponse);
-      
-      // Extract requests array from nested structure
-      const requestsData = requestsResponse.data?.data || requestsResponse.data || requestsResponse;
-      console.log('Extracted requests data:', requestsData);
-      
-      // Ensure it's an array
-      const requestsArray = Array.isArray(requestsData) ? requestsData : [];
+      // Fetch pending requests via gRPC
+      const requestsData = await householdMemberService.listPendingRequests(hId);
+      const extracted = requestsData?.data || requestsData;
+      const requestsArray = Array.isArray(extracted) ? extracted : [];
       setRequests(requestsArray);
     } catch (err: any) {
       console.error("Error fetching requests:", err);
@@ -87,25 +66,13 @@ export default function HouseholdRequestsPage() {
 
     setActionLoading(requestId);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) {
         navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
         return;
       }
 
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/households/${householdId}/requests/${requestId}/approve`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-
-      if (!res.ok) {
-        const errorResponse = await res.json();
-        const errorData = errorResponse.data || errorResponse;
-        throw new Error(errorData.error || "Failed to approve request");
-      }
+      await householdMemberService.approveRequest(householdId, requestId, '');
 
       // Refresh requests list
       await fetchRequests();
@@ -125,29 +92,13 @@ export default function HouseholdRequestsPage() {
 
     setActionLoading(requestId);
     try {
-      const token = localStorage.getItem("token");
+      const token = getAccessTokenFromCookies();
       if (!token) {
         navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
         return;
       }
 
-      const res = await fetch(
-        `${API_BASE_URL}/api/v1/households/${householdId}/requests/${requestId}/reject`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ reason }),
-        }
-      );
-
-      if (!res.ok) {
-        const errorResponse = await res.json();
-        const errorData = errorResponse.data || errorResponse;
-        throw new Error(errorData.error || "Failed to reject request");
-      }
+      await householdMemberService.rejectRequest(householdId, requestId, '');
 
       // Refresh requests list
       await fetchRequests();

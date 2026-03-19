@@ -1,54 +1,57 @@
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from "react";
-import { API_BASE_URL } from '~/config/api';
+import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
-const CHORES = [
-  "Laundry",
-  "Cooking",
-  "Dishwashing",
-  "Sweeping",
-  "Mopping",
-  "Ironing clothes",
-  "Grocery shopping",
-  "Window cleaning",
-  "Bathroom cleaning",
-  "Pet care",
-  "Other"
-];
+// Chores are now fetched from backend via context
 
 const Chores: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedChores, setSelectedChores] = useState<string[]>([]);
   const [showOtherInput, setShowOtherInput] = useState(false);
   const [otherChore, setOtherChore] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<string>("");
 
-  // Load existing data
+  const CHORES = options?.chores.map(c => c.name) || [];
+
+  // Populate from context (instant on back-nav)
+  useEffect(() => {
+    const cached = profileData.chores;
+    if (cached) {
+      const choresArr = cached.selectedChores || (Array.isArray(cached) ? cached : cached.chores);
+      if (choresArr?.length) {
+        setSelectedChores(choresArr);
+        const hasOther = choresArr.some((c: string) => c.startsWith('Other:'));
+        if (hasOther) {
+          setShowOtherInput(true);
+          const other = choresArr.find((c: string) => c.startsWith('Other:'));
+          if (other) setOtherChore(other.replace('Other: ', ''));
+        }
+      }
+    }
+  }, [profileData.chores]);
+
+  // Load existing data from backend (fallback)
   useEffect(() => {
     const loadData = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = getAccessTokenFromCookies();
         if (!token) return;
         
-        const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.chores && Array.isArray(data.chores)) {
-            setSelectedChores(data.chores);
-            // Check if any chore starts with "Other:"
-            const hasOther = data.chores.some((c: string) => c.startsWith('Other:'));
-            if (hasOther) {
-              setShowOtherInput(true);
-              const otherChore = data.chores.find((c: string) => c.startsWith('Other:'));
-              if (otherChore) {
-                setOtherChore(otherChore.replace('Other: ', ''));
-              }
+        const data = await grpcProfileService.getCurrentHouseholdProfile('');
+        if (data?.chores && Array.isArray(data.chores)) {
+          setSelectedChores(data.chores);
+          const hasOther = data.chores.some((c: string) => c.startsWith('Other:'));
+          if (hasOther) {
+            setShowOtherInput(true);
+            const otherChore = data.chores.find((c: string) => c.startsWith('Other:'));
+            if (otherChore) {
+              setOtherChore(otherChore.replace('Other: ', ''));
             }
           }
         }
@@ -104,31 +107,20 @@ const Chores: React.FC = () => {
     setMessage("");
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${API_BASE_URL}/api/v1/household/profile`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          chores: selectedChores,
-          _step_metadata: {
-            step_id: "chores",
-            step_number: 4,
-            is_completed: true
-          }
-        }),
+      const token = getAccessTokenFromCookies();
+      await grpcProfileService.updateHouseholdProfile('', 'household', {
+        chores: selectedChores,
+        _step_metadata: {
+          step_id: 'chores',
+          step_number: 4,
+          is_completed: true
+        }
       });
 
-      if (response.ok) {
-        markClean();
-        setMessage("Chores saved successfully!");
-        setTimeout(() => setMessage(""), 3000);
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        setMessage(errorData.message || "Failed to save chores");
-      }
+      markClean();
+      updateStepData('chores', { selectedChores });
+      setMessage("Chores saved successfully!");
+      setTimeout(() => setMessage(""), 3000);
     } catch (error) {
       console.error('Error saving chores:', error);
       setMessage("An error occurred while saving chores");

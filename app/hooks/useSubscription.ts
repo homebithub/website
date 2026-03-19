@@ -1,7 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { transport, getGrpcMetadata, handleGrpcError } from '~/utils/grpcClient';
-import { PaymentsServiceClient } from '~/proto/payments/payments.client';
-import { GetMySubscriptionRequest } from '~/proto/payments/payments';
+import { useState, useEffect, useCallback } from 'react';
+import { paymentsService } from '~/services/grpc/payments.service';
+import { handleGrpcError } from '~/services/grpc/client';
 import { useSubscriptionSSE } from './useSubscriptionSSE';
 
 export type SubscriptionStatus = 'loading' | 'active' | 'trial' | 'none' | 'expired' | 'error';
@@ -42,8 +41,6 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const client = useMemo(() => new PaymentsServiceClient(transport), []);
-
   const fetchSubscription = useCallback(async () => {
     if (!userId) {
       setStatus('none');
@@ -55,13 +52,11 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       setLoading(true);
       setError(null);
 
-      const request: GetMySubscriptionRequest = { userId: userId || "" };
-      const { response: dataResponse } = await client.getMySubscription(request, { metadata: getGrpcMetadata() });
-      
-      const fields = (dataResponse as any).data?.fields || {};
-      const sub = fields.subscription?.structValue?.fields || dataResponse.subscription || null;
+      const response = await paymentsService.getMySubscription(userId);
+      const data = response?.getData?.()?.toJavaScript?.() || response;
+      const sub = data?.subscription || null;
 
-      if (!sub || (!sub.id?.stringValue && !sub.id)) {
+      if (!sub || !sub.id) {
         setStatus('none');
         setSubscription(null);
         return;
@@ -69,22 +64,22 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
 
       // Map dynamic fields to SubscriptionData
       const normalizedSub: SubscriptionData = {
-        id: sub.id?.stringValue || sub.id || "",
-        plan_id: sub.plan_id?.stringValue || sub.plan_id || "",
-        status: sub.status?.stringValue || sub.status || "",
-        current_period_start: sub.current_period_start?.stringValue || sub.current_period_start || "",
-        current_period_end: sub.current_period_end?.stringValue || sub.current_period_end || "",
-        trial_start: sub.trial_start?.stringValue || sub.trial_start,
-        trial_end: sub.trial_end?.stringValue || sub.trial_end,
-        is_trial_used: sub.is_trial_used?.boolValue || sub.is_trial_used || false,
-        metadata: sub.metadata?.structValue ? sub.metadata.structValue.fields : {},
-        plan: sub.plan?.structValue?.fields ? {
-          id: sub.plan.structValue.fields.id?.stringValue || "",
-          name: sub.plan.structValue.fields.name?.stringValue || "",
-          description: sub.plan.structValue.fields.description?.stringValue || "",
-          price_amount: sub.plan.structValue.fields.price_amount?.numberValue || 0,
-          billing_cycle: sub.plan.structValue.fields.billing_cycle?.stringValue || "",
-          trial_days: sub.plan.structValue.fields.trial_days?.numberValue || 0,
+        id: sub.id || "",
+        plan_id: sub.plan_id || "",
+        status: sub.status || "",
+        current_period_start: sub.current_period_start || "",
+        current_period_end: sub.current_period_end || "",
+        trial_start: sub.trial_start,
+        trial_end: sub.trial_end,
+        is_trial_used: sub.is_trial_used || false,
+        metadata: sub.metadata || {},
+        plan: sub.plan ? {
+          id: sub.plan.id || "",
+          name: sub.plan.name || "",
+          description: sub.plan.description || "",
+          price_amount: sub.plan.price_amount || 0,
+          billing_cycle: sub.plan.billing_cycle || "",
+          trial_days: sub.plan.trial_days || 0,
         } : undefined
       };
 
@@ -111,11 +106,10 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       console.error('[useSubscription] Error fetching subscription:', err);
       setError(err?.message || 'Failed to check subscription');
       setStatus('error');
-      handleGrpcError(err, false);
     } finally {
       setLoading(false);
     }
-  }, [userId, client]);
+  }, [userId]);
 
   useEffect(() => {
     fetchSubscription();
