@@ -71,6 +71,8 @@ export default function ProfilePage() {
         setError(null);
         setSuccess(null);
         const userData = await authService.getCurrentUser();
+        const createdAtTs = userData.getCreatedAt?.();
+        const createdAtDate = createdAtTs?.toDate?.() ?? (createdAtTs?.getSeconds?.() ? new Date(createdAtTs.getSeconds() * 1000) : null);
         const data = {
           id: userData.getId(),
           email: userData.getEmail(),
@@ -80,6 +82,8 @@ export default function ProfilePage() {
           profile_type: userData.getProfileType(),
           is_verified: userData.getIsVerified(),
           profile_image: userData.getProfileImage(),
+          country: 'Kenya',
+          created_at: createdAtDate ? createdAtDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null,
         };
 
         setProfile(data);
@@ -295,6 +299,8 @@ export default function ProfilePage() {
 
     try {
       const userData = await authService.getCurrentUser();
+      const createdAtTs = userData.getCreatedAt?.();
+      const createdAtDate = createdAtTs?.toDate?.() ?? (createdAtTs?.getSeconds?.() ? new Date(createdAtTs.getSeconds() * 1000) : null);
       const data = {
         id: userData.getId(),
         email: userData.getEmail(),
@@ -304,6 +310,8 @@ export default function ProfilePage() {
         profile_type: userData.getProfileType(),
         is_verified: userData.getIsVerified(),
         profile_image: userData.getProfileImage(),
+        country: 'Kenya',
+        created_at: createdAtDate ? createdAtDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null,
       };
       setProfile(data);
       setForm({
@@ -438,8 +446,9 @@ export default function ProfilePage() {
 
               {/* Email/Phone Modals (placeholders) */}
               {showEmailModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-                  <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 w-full max-w-sm">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowEmailModal(false)} />
+                  <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-lg p-6 w-full sm:max-w-sm sm:mx-4 animate-slide-up">
                     <h3 className="text-lg font-semibold mb-4">Change Email</h3>
                     {/* TODO: User will advise on modal logic here */}
                     <button className="btn-secondary mt-4 w-full" onClick={() => setShowEmailModal(false)}>Close</button>
@@ -447,8 +456,9 @@ export default function ProfilePage() {
                 </div>
               )}
               {showPhoneModal && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-                  <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 w-full max-w-sm">
+                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowPhoneModal(false)} />
+                  <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-lg p-6 w-full sm:max-w-sm sm:mx-4 animate-slide-up">
                     <h3 className="text-lg font-semibold mb-4">Change Phone</h3>
                     {/* TODO: User will advise on modal logic here */}
                     <button className="btn-secondary mt-4 w-full" onClick={() => setShowPhoneModal(false)}>Close</button>

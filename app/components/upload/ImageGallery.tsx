@@ -196,10 +196,11 @@ export default function ImageGallery({
       {/* Image modal */}
       {selectedImage && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 dark:bg-opacity-90 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
           onClick={() => setSelectedImage(null)}
         >
-          <div className="max-w-4xl max-h-full">
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" />
+          <div className="relative max-w-4xl max-h-full animate-slide-up sm:mx-4 px-4 sm:px-0">
             <img
               src={selectedImage.url}
               alt={selectedImage.file_name}

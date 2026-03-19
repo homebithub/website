@@ -422,9 +422,9 @@ export default function HousehelpHireRequests() {
 
       {/* Decline Modal */}
       {showDeclineModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setShowDeclineModal(false); setDeclineReason(''); }} />
-          <div className="relative bg-white dark:bg-[#1a1a24] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-gray-200 dark:border-purple-500/20">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => { setShowDeclineModal(false); setDeclineReason(''); }} />
+          <div className="relative bg-white dark:bg-[#1a1a24] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-6 border border-gray-200 dark:border-purple-500/20 animate-slide-up sm:mx-4">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Decline Hire Request</h3>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
               Please provide a reason for declining. This helps the household understand your decision.

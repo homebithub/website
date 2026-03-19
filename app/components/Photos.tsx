@@ -562,8 +562,8 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
 
             {/* Modal panel */}
             <div className="fixed inset-0 z-10 overflow-y-auto">
-              <div className="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
-                <div className="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl">
+              <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4">
+                <div className="relative transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white text-left shadow-xl transition-all w-full sm:max-w-4xl sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
                   <div className="absolute right-0 top-0 pr-4 pt-4">
                     <button
                       type="button"

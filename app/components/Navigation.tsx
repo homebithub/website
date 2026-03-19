@@ -213,7 +213,7 @@ export function Navigation() {
         const label = count > 9 ? '9+' : String(count);
         return (
             <span
-                className={`absolute -top-2 -right-3 bg-gradient-to-r ${gradient} text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-lg ${shadow} px-1`}
+                className={`absolute -top-1.5 -right-2 bg-gradient-to-r ${gradient} text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-lg ${shadow} px-1`}
             >
                 {label}
             </span>
@@ -259,39 +259,45 @@ export function Navigation() {
                 {/* Public Navigation Links - Show on non-app hosts for all users */}
                 {!isAppHost && (
                     <div className="hidden lg:flex items-center space-x-4 ml-auto">
-                        {(user ? authLinks : navigation).map((item) => (
+                        {(user ? authLinks : navigation).map((item) => {
+                            const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+                            return (
                             <Link
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg sm:text-xl font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
+                                className={`link text-lg sm:text-xl font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
                             >
                                 {item.name}
                                 {'count' in item && item.name === 'Shortlist' && renderBadge((item as any).count)}
                                 {'count' in item && item.name === 'Inbox' && renderBadge((item as any).count)}
-                                {'count' in item && item.name === 'Hiring' && renderBadge((item as any).count, 'from-green-600 to-emerald-600', 'shadow-green-500/50')}
+                                {'count' in item && item.name === 'Hiring' && renderBadge((item as any).count)}
                             </Link>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
                 {/* App navigation for authenticated users on app subdomain */}
                 {isAppHost && user && (
                     <div className="hidden lg:flex items-center space-x-3 ml-auto">
-                        {authLinks.map((item) => (
+                        {authLinks.map((item) => {
+                            const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+                            return (
                             <Link
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className="link text-lg font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110 relative"
+                                className={`link text-lg font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
                                 id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
                                 {item.name === 'Shortlist' && renderBadge(shortlistCount)}
                                 {item.name === 'Inbox' && renderBadge(inboxCount)}
-                                {item.name === 'Hiring' && renderBadge(hireRequestCount, 'from-green-600 to-emerald-600', 'shadow-green-500/50')}
+                                {item.name === 'Hiring' && renderBadge(hireRequestCount)}
                             </Link>
-                        ))}
+                            );
+                        })}
                     </div>
                 )}
 
@@ -431,19 +437,22 @@ export function Navigation() {
                                     {/* Navigation links in mobile menu (non-app host) */}
                                     {!isAppHost && (user ? authLinks : navigation).map((item) => (
                                         <Menu.Item key={item.name}>
-                                            {({ active }) => (
+                                            {({ active }) => {
+                                                const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+                                                return (
                                                 <Link
                                                     to={item.href}
-                                                    className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
+                                                    className={`font-medium ${active || isActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
                                                 >
                                                     <span>{item.name}</span>
                                                     {'count' in item && (item as any).count > 0 && (
-                                                        <span className={`bg-gradient-to-r ${item.name === 'Hiring' ? 'from-green-600 to-emerald-600' : 'from-purple-600 to-pink-600'} text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1`}>
+                                                        <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
                                                             {(item as any).count > 9 ? '9+' : (item as any).count}
                                                         </span>
                                                     )}
                                                 </Link>
-                                            )}
+                                                );
+                                            }}
                                         </Menu.Item>
                                     ))}
 
@@ -475,6 +484,29 @@ export function Navigation() {
                                                 </>
                                             )}
                                         </>
+                                    )}
+
+                                    {/* Notifications in Mobile Menu */}
+                                    {user && (
+                                        <Menu.Item>
+                                            {({ active }) => (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setIsNotificationsOpen(true)}
+                                                    className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105 w-[calc(100%-16px)]`}
+                                                >
+                                                    <span className="flex items-center gap-2">
+                                                        <BellIcon className="h-5 w-5" />
+                                                        Notifications
+                                                    </span>
+                                                    {unreadCount > 0 && (
+                                                        <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                                                            {unreadCount > 9 ? '9+' : unreadCount}
+                                                        </span>
+                                                    )}
+                                                </button>
+                                            )}
+                                        </Menu.Item>
                                     )}
 
                                     {/* Theme Toggle in Mobile Menu */}
@@ -514,7 +546,7 @@ export function Navigation() {
                                                                     </span>
                                                                 )}
                                                                 {item.name === 'Hiring' && hireRequestCount > 0 && (
-                                                                    <span className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-green-500/40 px-1">
+                                                                    <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
                                                                         {hireRequestCount > 9 ? '9+' : hireRequestCount}
                                                                     </span>
                                                                 )}

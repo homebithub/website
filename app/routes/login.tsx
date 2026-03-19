@@ -264,25 +264,7 @@ export default function LoginPage() {
     
     try {
       await login(formData.phone, formData.password);
-      
-      // After successful login, register the device via gRPC-Web (non-blocking)
-      try {
-        const { default: deviceService } = await import('~/services/grpc/device.service');
-        const deviceId = await getDeviceId();
-        const userObj = JSON.parse(localStorage.getItem('user_object') || '{}');
-        const userId = userObj.user_id || userObj.id || '';
-        if (userId) {
-          const result = await deviceService.registerDevice(
-            userId, deviceId, getDeviceName(), navigator.userAgent, ''
-          );
-          if (result.requiresConfirmation) {
-            console.log('[Device] New device registered, confirmation email sent');
-          }
-        }
-      } catch (deviceError) {
-        console.error('[Device] Registration failed:', deviceError);
-      }
-      
+      // Device registration is handled inside AuthContext login() before navigate
       // Login successful, redirect will be handled by useEffect
     } catch (error) {
       // Capture login error and display it

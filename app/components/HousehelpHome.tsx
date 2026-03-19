@@ -9,12 +9,14 @@ import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import HouseholdFilters, { type HouseholdSearchFields } from "~/components/features/HouseholdFilters";
+import { SidePanel } from '~/components/SidePanel';
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
+import CustomSelect from "~/components/ui/CustomSelect";
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 
 interface HouseholdItem {
@@ -377,31 +379,25 @@ export default function HousehelpHome() {
                 </div>
                 <div className="flex flex-col">
                   <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">House Size</label>
-                  <select
-                    name="house_size"
-                    value={filters.house_size}
-                    onChange={handleSelect}
-                    className="w-full h-12 px-4 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    {['', 'bedsitter', '1br', '2br', '3br+', 'mansion'].map((s) => (
-                      <option key={s} value={s}>
-                        {s || 'Any'}
-                      </option>
-                    ))}
-                  </select>
+                  <CustomSelect
+                    value={filters.house_size || ""}
+                    onChange={(val) => setFilters((prev) => ({ ...prev, house_size: val }))}
+                    options={['', 'bedsitter', '1br', '2br', '3br+', 'mansion'].map((s) => ({ value: s, label: s || 'Any' }))}
+                    placeholder="Any"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Has Kids</label>
-                  <select
-                    name="has_kids"
-                    value={filters.has_kids}
-                    onChange={handleSelect}
-                    className="w-full h-12 px-4 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  >
-                    <option value="">Any</option>
-                    <option value="true">Yes</option>
-                    <option value="false">No</option>
-                  </select>
+                  <CustomSelect
+                    value={filters.has_kids || ""}
+                    onChange={(val) => setFilters((prev) => ({ ...prev, has_kids: val }))}
+                    options={[
+                      { value: "", label: "Any" },
+                      { value: "true", label: "Yes" },
+                      { value: "false", label: "No" },
+                    ]}
+                    placeholder="Any"
+                  />
                 </div>
               </div>
               <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
@@ -421,35 +417,18 @@ export default function HousehelpHome() {
             </div>
 
             {/* Slide-over Drawer for full filters */}
-            {showMoreFilters && (
-              <div className="fixed inset-0 z-[70]">
-                <div className="absolute inset-x-0 top-20 sm:top-24 bottom-20 sm:bottom-24 bg-slate-900/20 backdrop-blur-[2px]" onClick={() => setShowMoreFilters(false)} />
-                <div className="absolute right-0 sm:right-4 top-20 sm:top-24 bottom-20 sm:bottom-24 w-full max-w-[460px] bg-[#f3f4f7] dark:bg-gradient-to-br dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] shadow-[0_24px_80px_rgba(15,23,42,0.28)] rounded-[2rem] p-6 sm:p-7 overflow-y-auto border border-[#d6dbe7] dark:border-purple-500/30">
-                  <div className="sticky top-0 z-10 -mx-2 px-2 pb-4 pt-1 bg-[#f3f4f7] dark:bg-[#13131a] flex items-center justify-between mb-2">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">More Filters</h2>
-                    <button
-                      onClick={() => setShowMoreFilters(false)}
-                      className="h-9 w-9 rounded-full border border-[#c7cdd9] dark:border-purple-500/30 text-slate-500 hover:text-slate-700 hover:bg-white/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-purple-500/10 transition-colors"
-                      aria-label="Close more filters"
-                    >
-                      <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  <HouseholdFilters
-                    fields={filters}
-                    onChange={handleFieldChange}
-                    onSearch={() => { setShowMoreFilters(false); search(); }}
-                    onClear={() => setFilters((prev) => ({
-                      ...prev, verified: "", has_kids: "", has_pets: "", type_of_househelp: "",
-                      available_from: "", needs_live_in: "", needs_day_worker: "", budget_min: "",
-                      budget_max: "", salary_frequency: "", religion: "", chore: "", min_rating: "",
-                    }))}
-                  />
-                </div>
-              </div>
-            )}
+            <SidePanel isOpen={showMoreFilters} onClose={() => setShowMoreFilters(false)} title="More Filters">
+              <HouseholdFilters
+                fields={filters}
+                onChange={handleFieldChange}
+                onSearch={() => { setShowMoreFilters(false); search(); }}
+                onClear={() => setFilters((prev) => ({
+                  ...prev, verified: "", has_kids: "", has_pets: "", type_of_househelp: "",
+                  available_from: "", needs_live_in: "", needs_day_worker: "", budget_min: "",
+                  budget_max: "", salary_frequency: "", religion: "", chore: "", min_rating: "",
+                }))}
+              />
+            </SidePanel>
 
             <div className="mt-6 sm:mt-8">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Households</h2>

@@ -1,6 +1,7 @@
 import React from "react";
 import type { HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
+import CustomSelect from "~/components/ui/CustomSelect";
 
 interface Props {
   fields: HousehelpSearchFields;
@@ -28,51 +29,45 @@ export default function HousehelpFiltersCompact({ fields, onChange, onSearch, on
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Status</label>
-          <select className={selectClass} value={fields.status} onChange={(e) => onChange("status", e.target.value)}>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
+          <CustomSelect
+            value={fields.status}
+            onChange={(val) => onChange("status", val)}
+            options={[
+              { value: "active", label: "Active" },
+              { value: "inactive", label: "Inactive" },
+            ]}
+            placeholder="Select status"
+          />
         </div>
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Nanny type</label>
-          <select
-            className={selectClass}
+          <CustomSelect
             value={fields.househelp_type}
-            onChange={(e) => onChange("househelp_type", e.target.value)}
-          >
-            {NANNY_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t || "Any"}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => onChange("househelp_type", val)}
+            options={NANNY_TYPES.map((t) => ({ value: t, label: t || "Any" }))}
+            placeholder="Any"
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Gender</label>
-          <select className={selectClass} value={fields.gender} onChange={(e) => onChange("gender", e.target.value)}>
-            {GENDERS.map((g) => (
-              <option key={g} value={g}>
-                {g || "Any"}
-              </option>
-            ))}
-          </select>
+          <CustomSelect
+            value={fields.gender}
+            onChange={(val) => onChange("gender", val)}
+            options={GENDERS.map((g) => ({ value: g, label: g || "Any" }))}
+            placeholder="Any"
+          />
         </div>
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Experience (min)</label>
-          <select
-            className={selectClass}
+          <CustomSelect
             value={fields.experience}
-            onChange={(e) => onChange("experience", e.target.value)}
-          >
-            {EXPERIENCES.map((y) => (
-              <option key={y} value={y}>
-                {y}
-              </option>
-            ))}
-          </select>
+            onChange={(val) => onChange("experience", val)}
+            options={EXPERIENCES.map((y) => ({ value: y, label: y }))}
+            placeholder="0"
+          />
         </div>
       </div>
 
@@ -88,15 +83,16 @@ export default function HousehelpFiltersCompact({ fields, onChange, onSearch, on
         </div>
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Salary frequency</label>
-          <select
-            className={selectClass}
+          <CustomSelect
             value={fields.salary_frequency}
-            onChange={(e) => onChange("salary_frequency", e.target.value)}
-          >
-            <option value="monthly">Monthly</option>
-            <option value="weekly">Weekly</option>
-            <option value="daily">Daily</option>
-          </select>
+            onChange={(val) => onChange("salary_frequency", val)}
+            options={[
+              { value: "monthly", label: "Monthly" },
+              { value: "weekly", label: "Weekly" },
+              { value: "daily", label: "Daily" },
+            ]}
+            placeholder="Monthly"
+          />
         </div>
       </div>
 
@@ -128,77 +124,79 @@ export default function HousehelpFiltersCompact({ fields, onChange, onSearch, on
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Skill</label>
-          <select className={selectClass} value={fields.skill} onChange={(e) => onChange("skill", e.target.value)}>
-            {SKILLS.map((s) => (
-              <option key={s} value={s}>
-                {s || "Any"}
-              </option>
-            ))}
-          </select>
+          <CustomSelect
+            value={fields.skill}
+            onChange={(val) => onChange("skill", val)}
+            options={SKILLS.map((s) => ({ value: s, label: s || "Any" }))}
+            placeholder="Any"
+          />
         </div>
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Trait</label>
-          <select className={selectClass} value={fields.traits} onChange={(e) => onChange("traits", e.target.value)}>
-            {TRAITS.map((t) => (
-              <option key={t} value={t}>
-                {t || "Any"}
-              </option>
-            ))}
-          </select>
+          <CustomSelect
+            value={fields.traits}
+            onChange={(val) => onChange("traits", val)}
+            options={TRAITS.map((t) => ({ value: t, label: t || "Any" }))}
+            placeholder="Any"
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Works with kids</label>
-          <select
-            className={selectClass}
+          <CustomSelect
             value={fields.can_work_with_kids}
-            onChange={(e) => onChange("can_work_with_kids", e.target.value)}
-          >
-            <option value="">Any</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
+            onChange={(val) => onChange("can_work_with_kids", val)}
+            options={[
+              { value: "", label: "Any" },
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" },
+            ]}
+            placeholder="Any"
+          />
         </div>
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Works with pets</label>
-          <select
-            className={selectClass}
+          <CustomSelect
             value={fields.can_work_with_pets}
-            onChange={(e) => onChange("can_work_with_pets", e.target.value)}
-          >
-            <option value="">Any</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
+            onChange={(val) => onChange("can_work_with_pets", val)}
+            options={[
+              { value: "", label: "Any" },
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" },
+            ]}
+            placeholder="Any"
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Live-in</label>
-          <select
-            className={selectClass}
+          <CustomSelect
             value={fields.offers_live_in}
-            onChange={(e) => onChange("offers_live_in", e.target.value)}
-          >
-            <option value="">Any</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
+            onChange={(val) => onChange("offers_live_in", val)}
+            options={[
+              { value: "", label: "Any" },
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" },
+            ]}
+            placeholder="Any"
+          />
         </div>
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Day worker</label>
-          <select
-            className={selectClass}
+          <CustomSelect
             value={fields.offers_day_worker}
-            onChange={(e) => onChange("offers_day_worker", e.target.value)}
-          >
-            <option value="">Any</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
+            onChange={(val) => onChange("offers_day_worker", val)}
+            options={[
+              { value: "", label: "Any" },
+              { value: "true", label: "Yes" },
+              { value: "false", label: "No" },
+            ]}
+            placeholder="Any"
+          />
         </div>
       </div>
 
@@ -214,13 +212,12 @@ export default function HousehelpFiltersCompact({ fields, onChange, onSearch, on
         </div>
         <div className="flex flex-col">
           <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Min rating</label>
-          <select className={selectClass} value={fields.min_rating} onChange={(e) => onChange("min_rating", e.target.value)}>
-            {["", "5", "4", "3", "2", "1"].map((r) => (
-              <option key={r} value={r}>
-                {r ? `${r}+` : "Any"}
-              </option>
-            ))}
-          </select>
+          <CustomSelect
+            value={fields.min_rating}
+            onChange={(val) => onChange("min_rating", val)}
+            options={["", "5", "4", "3", "2", "1"].map((r) => ({ value: r, label: r ? `${r}+` : "Any" }))}
+            placeholder="Any"
+          />
         </div>
       </div>
 

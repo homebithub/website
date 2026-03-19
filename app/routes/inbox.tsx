@@ -2201,9 +2201,10 @@ export default function InboxPage() {
 
       {/* Chat Terms of Use Modal */}
       {showChatTerms && !chatTermsAccepted && (
-        <div className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/60" onClick={() => setShowChatTerms(false)}>
+        <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={() => setShowChatTerms(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <div
-            className="relative w-full max-w-md bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8"
+            className="relative w-full sm:max-w-md bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1 text-center">
@@ -2269,7 +2270,7 @@ export default function InboxPage() {
       {/* Profile Modal */}
       {showProfileModal && profileModalUrl && (
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-black/60"
+          className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center"
           onClick={() => {
             setShowProfileModal(false);
             setProfileModalUrl(null);
@@ -2282,7 +2283,7 @@ export default function InboxPage() {
           }}
         >
           <div
-            className="relative w-full max-w-6xl h-[85vh] rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)]"
+            className="relative w-full sm:max-w-6xl h-[85vh] rounded-t-2xl sm:rounded-2xl overflow-hidden border-2 border-purple-500/30 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             <button
@@ -2347,7 +2348,8 @@ export default function InboxPage() {
       )}
 
       {showHireWizard && selectedConversation && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <ConversationHireWizard
             househelpId={
               currentUserProfileType?.toLowerCase() === 'household'
@@ -2384,9 +2386,10 @@ export default function InboxPage() {
 
       {/* Subscription Gate Modal */}
       {showSubscriptionModal && (
-        <div className="fixed inset-0 z-[75] flex items-center justify-center p-4 bg-black/60" onClick={() => setShowSubscriptionModal(false)}>
+        <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={() => setShowSubscriptionModal(false)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
           <div
-            className="relative w-full max-w-md bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8"
+            className="relative w-full sm:max-w-md bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4"
             onClick={(e) => e.stopPropagation()}
           >
             <button

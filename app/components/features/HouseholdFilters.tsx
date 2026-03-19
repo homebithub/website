@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
+import CustomSelect from "~/components/ui/CustomSelect";
 
 export type HouseholdSearchFields = {
   town?: string;
@@ -62,11 +63,16 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Verified</label>
-                <select value={fields.verified || ""} onChange={(e) => onChange("verified", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="true">Verified</option>
-                  <option value="false">Not verified</option>
-                </select>
+                <CustomSelect
+                  value={fields.verified || ""}
+                  onChange={(val) => onChange("verified", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "true", label: "Verified" },
+                    { value: "false", label: "Not verified" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Town</label>
@@ -82,11 +88,12 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">House Size</label>
-                <select value={fields.house_size || ""} onChange={(e) => onChange("house_size", e.target.value)} className={selectCls}>
-                  {['', 'bedsitter', '1br', '2br', '3br+', 'mansion'].map((s) => (
-                    <option key={s} value={s}>{s || 'Any'}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={fields.house_size || ""}
+                  onChange={(val) => onChange("house_size", val)}
+                  options={['', 'bedsitter', '1br', '2br', '3br+', 'mansion'].map((s) => ({ value: s, label: s || 'Any' }))}
+                  placeholder="Any"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Available From</label>
@@ -97,39 +104,54 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Needs Live-in</label>
-                <select value={fields.needs_live_in || ""} onChange={(e) => onChange("needs_live_in", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
+                <CustomSelect
+                  value={fields.needs_live_in || ""}
+                  onChange={(val) => onChange("needs_live_in", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "true", label: "Yes" },
+                    { value: "false", label: "No" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Needs Day Worker</label>
-                <select value={fields.needs_day_worker || ""} onChange={(e) => onChange("needs_day_worker", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
+                <CustomSelect
+                  value={fields.needs_day_worker || ""}
+                  onChange={(val) => onChange("needs_day_worker", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "true", label: "Yes" },
+                    { value: "false", label: "No" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Type of Househelp</label>
-                <select value={fields.type_of_househelp || ""} onChange={(e) => onChange("type_of_househelp", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="live_in">Live-in</option>
-                  <option value="day_worker">Day worker</option>
-                </select>
+                <CustomSelect
+                  value={fields.type_of_househelp || ""}
+                  onChange={(val) => onChange("type_of_househelp", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "live_in", label: "Live-in" },
+                    { value: "day_worker", label: "Day worker" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Religion</label>
-                <select value={fields.religion || ""} onChange={(e) => onChange("religion", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  {RELIGIONS.map((r) => (
-                    <option key={r} value={r.toLowerCase()}>{r}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={fields.religion || ""}
+                  onChange={(val) => onChange("religion", val)}
+                  options={[{ value: "", label: "Any" }, ...RELIGIONS.map((r) => ({ value: r.toLowerCase(), label: r }))]}
+                  placeholder="Any"
+                />
               </div>
             </div>
           </div>
@@ -160,24 +182,34 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Salary Frequency</label>
-                <select value={fields.salary_frequency || ""} onChange={(e) => onChange("salary_frequency", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="daily">Daily</option>
-                  <option value="weekly">Weekly</option>
-                  <option value="monthly">Monthly</option>
-                  <option value="yearly">Yearly</option>
-                </select>
+                <CustomSelect
+                  value={fields.salary_frequency || ""}
+                  onChange={(val) => onChange("salary_frequency", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "daily", label: "Daily" },
+                    { value: "weekly", label: "Weekly" },
+                    { value: "monthly", label: "Monthly" },
+                    { value: "yearly", label: "Yearly" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Minimum Rating</label>
-                <select value={fields.min_rating || ""} onChange={(e) => onChange("min_rating", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="4.5">4.5+</option>
-                  <option value="4">4.0+</option>
-                  <option value="3">3.0+</option>
-                  <option value="2">2.0+</option>
-                  <option value="1">1.0+</option>
-                </select>
+                <CustomSelect
+                  value={fields.min_rating || ""}
+                  onChange={(val) => onChange("min_rating", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "4.5", label: "4.5+" },
+                    { value: "4", label: "4.0+" },
+                    { value: "3", label: "3.0+" },
+                    { value: "2", label: "2.0+" },
+                    { value: "1", label: "1.0+" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
             </div>
           </div>
@@ -198,29 +230,39 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Has Kids</label>
-                <select value={fields.has_kids || ""} onChange={(e) => onChange("has_kids", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
+                <CustomSelect
+                  value={fields.has_kids || ""}
+                  onChange={(val) => onChange("has_kids", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "true", label: "Yes" },
+                    { value: "false", label: "No" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
               <div className="flex flex-col">
                 <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Has Pets</label>
-                <select value={fields.has_pets || ""} onChange={(e) => onChange("has_pets", e.target.value)} className={selectCls}>
-                  <option value="">Any</option>
-                  <option value="true">Yes</option>
-                  <option value="false">No</option>
-                </select>
+                <CustomSelect
+                  value={fields.has_pets || ""}
+                  onChange={(val) => onChange("has_pets", val)}
+                  options={[
+                    { value: "", label: "Any" },
+                    { value: "true", label: "Yes" },
+                    { value: "false", label: "No" },
+                  ]}
+                  placeholder="Any"
+                />
               </div>
             </div>
             <div className="flex flex-col">
               <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Chore / Duty Required</label>
-              <select value={fields.chore || ""} onChange={(e) => onChange("chore", e.target.value)} className={selectCls}>
-                <option value="">Any</option>
-                {CHORES.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
+              <CustomSelect
+                value={fields.chore || ""}
+                onChange={(val) => onChange("chore", val)}
+                options={[{ value: "", label: "Any" }, ...CHORES.map((c) => ({ value: c, label: c }))]}
+                placeholder="Any"
+              />
             </div>
           </div>
         )}

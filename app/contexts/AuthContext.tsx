@@ -122,6 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Convert gRPC User to plain object
       const userData = {
         id: userProto?.getId() || "",
+        user_id: userProto?.getId() || "",
         email: userProto?.getEmail() || "",
         phone: userProto?.getPhone() || "",
         first_name: userProto?.getFirstName() || "",
@@ -142,6 +143,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({ token, user: userData } as unknown as LoginResponse);
       
       migratePreferences().catch(err => console.error("Failed to migrate preferences:", err));
+
+      // Register device after successful login (non-blocking, before navigate)
+      try {
+        const { getDeviceId, getDeviceName } = await import('~/utils/deviceFingerprint');
+        const { default: deviceService } = await import('~/services/grpc/device.service');
+        const deviceId = await getDeviceId();
+        const result = await deviceService.registerDevice(
+          userData.user_id, deviceId, getDeviceName(), navigator.userAgent, ''
+        );
+        if (result.requiresConfirmation) {
+          console.log('[Device] New device registered, confirmation email sent');
+        }
+      } catch (deviceError) {
+        console.error('[Device] Registration failed after login:', deviceError);
+      }
 
       // If user has no phone number, redirect to add-phone page
       if (!userData.phone) {
@@ -254,11 +270,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log("Server logout failed, but clearing local state");
       }
 
+      // Remove the current device from the backend (non-blocking)
+      try {
+        const { getDeviceId } = await import('~/utils/deviceFingerprint');
+        const { deviceService } = await import('~/services/grpc/device.service');
+        const deviceId = await getDeviceId();
+        const userObj = JSON.parse(localStorage.getItem('user_object') || '{}');
+        const userId = userObj.user_id || userObj.id || '';
+        if (deviceId && userId) {
+          await deviceService.revokeDevice(deviceId, userId, 'logout');
+        }
+      } catch (deviceError) {
+        console.log('[Device] Removal on logout failed:', deviceError);
+      }
+
       clearAuthCookies();
       localStorage.removeItem("token");
       localStorage.removeItem("user_object");
       localStorage.removeItem("userType");
       localStorage.removeItem("profile_type");
+      localStorage.removeItem("device_id");
 
       setUser(null);
 

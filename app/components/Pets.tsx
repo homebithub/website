@@ -5,6 +5,7 @@ import { handleApiError } from '../utils/errorMessages';
 import { petsService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface Pet {
   id: string;
@@ -299,8 +300,9 @@ const Pets: React.FC = () => {
 
       {/* Modal */}
       {showModal && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[90] p-4">
-          <div className="bg-white dark:bg-[#13131a] rounded-2xl w-full max-w-lg p-6 relative shadow-2xl border border-gray-200 dark:border-purple-500/30 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-lg p-6 shadow-2xl border border-gray-200 dark:border-purple-500/30 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4">
             <button
               type="button"
               onClick={() => setShowModal(false)}
@@ -322,22 +324,18 @@ const Pets: React.FC = () => {
                 <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
                   Pet Type <span className="text-red-500">*</span>
                 </label>
-                <select
+                <CustomSelect
                   value={petType}
-                  onChange={(e) => {
-                    setPetType(e.target.value);
-                    if (e.target.value !== "Other") {
+                  onChange={(val) => {
+                    setPetType(val);
+                    if (val !== "Other") {
                       setOtherPetType("");
                     }
                   }}
-                  className="w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
+                  options={PET_TYPES.map(type => ({ value: type, label: type }))}
+                  placeholder="Select pet type"
                   required
-                >
-                  <option value="">Select pet type</option>
-                  {PET_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
+                />
               </div>
 
               {/* Other Pet Type Input */}
@@ -457,8 +455,9 @@ const Pets: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && petToDelete && typeof document !== 'undefined' && createPortal(
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[90] p-4">
-          <div className="bg-white dark:bg-[#13131a] rounded-2xl p-6 w-full max-w-md shadow-2xl border border-gray-200 dark:border-purple-500/30">
+        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => { setShowDeleteConfirm(false); setPetToDelete(null); }} />
+          <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md shadow-2xl border border-gray-200 dark:border-purple-500/30 animate-slide-up sm:mx-4">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="w-6 h-6 text-red-600 dark:text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

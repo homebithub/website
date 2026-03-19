@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSubmit } from 'react-router';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 type SalaryFrequency = 'Daily' | 'Weekly' | 'Monthly';
 type SalaryRange = string;
@@ -77,19 +78,19 @@ const SalaryExpectations: React.FC = () => {
           <label htmlFor="frequency" className="block text-lg font-medium text-gray-900">
             Salary Frequency
           </label>
-          <select
-            id="frequency"
+          <CustomSelect
             value={frequency}
-            onChange={(e) => {
-              setFrequency(e.target.value as SalaryFrequency);
-              setSelectedRange(''); // Reset selected range when frequency changes
+            onChange={(val) => {
+              setFrequency(val as SalaryFrequency);
+              setSelectedRange('');
             }}
-            className="block w-full px-4 py-3 rounded-lg border-2 border-gray-200 focus:border-primary-500 focus:ring-1 focus:ring-primary-500 focus:outline-none transition-colors text-gray-900"
-          >
-            <option value="Daily">Daily</option>
-            <option value="Weekly">Weekly</option>
-            <option value="Monthly">Monthly</option>
-          </select>
+            options={[
+              { value: 'Daily', label: 'Daily' },
+              { value: 'Weekly', label: 'Weekly' },
+              { value: 'Monthly', label: 'Monthly' },
+            ]}
+            placeholder="Select frequency"
+          />
         </div>
 
         {/* Salary Range Radio Group */}

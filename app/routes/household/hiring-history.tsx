@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { hireRequestService, hireContractService, employmentContractService, interestService, shortlistService } from '~/services/grpc/authServices';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { useSSEContext } from '~/contexts/SSEContext';
 
 interface HireRequest {
   id: string;
@@ -113,6 +114,7 @@ const getHousehelpName = (househelp?: HireRequest['househelp']) => {
 export default function HiringHistory() {
   const navigate = useNavigate();
   const location = useLocation();
+  const sseContext = (() => { try { return useSSEContext(); } catch { return null; } })();
   const [activeTab, setActiveTab] = useState<TabType>('interested');
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
@@ -193,6 +195,19 @@ export default function HiringHistory() {
     };
     fetchInterestCount();
   }, []);
+
+  // SSE: auto-refetch interests when a new interest is received
+  useEffect(() => {
+    if (!sseContext) return;
+    const unsub = sseContext.subscribe('auth.household.updated', (event: any) => {
+      const action = event?.data?.action;
+      if (action === 'interest_received') {
+        console.log('[HiringHistory SSE] Interest received, refetching...');
+        fetchInterests();
+      }
+    });
+    return unsub;
+  }, [sseContext]);
 
   const fetchInterests = async () => {
     setLoading(true);
@@ -576,7 +591,7 @@ export default function HiringHistory() {
                       <Eye className="w-4 h-4" />
                       View Profile
                     </button>
-                    {interest.status === 'pending' && (
+                    {(interest.status === 'pending' || interest.status === 'viewed') && (
                       <>
                         <button
                           onClick={() => handleAcceptInterest(interest)}

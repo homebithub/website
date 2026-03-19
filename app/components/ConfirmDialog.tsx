@@ -52,10 +52,11 @@ export default function ConfirmDialog({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center"
       onClick={handleBackdropClick}
     >
-      <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in duration-200">
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in" />
+      <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md sm:mx-4 p-6 animate-slide-up">
         {/* Close button */}
         <button
           onClick={onCancel}

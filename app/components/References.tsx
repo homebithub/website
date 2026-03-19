@@ -6,6 +6,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface Reference {
   name: string;
@@ -183,16 +184,12 @@ const References: React.FC = () => {
               <label className="block text-sm font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Relationship
               </label>
-              <select
+              <CustomSelect
                 value={reference.relationship}
-                onChange={(e) => updateReference(index, 'relationship', e.target.value)}
-                className="w-full h-12 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
-              >
-                <option value="">Select relationship</option>
-                {RELATIONSHIPS.map((rel) => (
-                  <option key={rel} value={rel}>{rel}</option>
-                ))}
-              </select>
+                onChange={(val) => updateReference(index, 'relationship', val)}
+                options={RELATIONSHIPS.map((rel) => ({ value: rel, label: rel }))}
+                placeholder="Select relationship"
+              />
             </div>
 
             {/* Phone */}

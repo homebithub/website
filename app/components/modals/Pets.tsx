@@ -2,6 +2,7 @@ import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from 'react';
 import { handleApiError } from '../../utils/errorMessages';
 import { petsService } from '~/services/grpc/authServices';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface Pet {
   id: string;
@@ -257,8 +258,9 @@ const Pets: React.FC = () => {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowModal(false)} />
+          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-xl font-bold text-gray-800">Add Pet</h3>
               <button
@@ -277,17 +279,13 @@ const Pets: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Pet Type <span className="text-red-500">*</span>
                 </label>
-                <select
+                <CustomSelect
                   value={petType}
-                  onChange={(e) => setPetType(e.target.value)}
-                  className="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  onChange={(val) => setPetType(val)}
+                  options={PET_TYPES.map(type => ({ value: type, label: type }))}
+                  placeholder="Select pet type"
                   required
-                >
-                  <option value="">Select pet type</option>
-                  {PET_TYPES.map(type => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
-                </select>
+                />
               </div>
 
               {/* Requires Care Checkbox */}
@@ -392,8 +390,9 @@ const Pets: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && petToDelete && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={cancelDelete} />
+          <div className="relative bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md sm:mx-4 animate-slide-up">
             <div className="flex items-center mb-4">
               <div className="flex-shrink-0">
                 <svg className="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

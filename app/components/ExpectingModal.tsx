@@ -33,8 +33,9 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[90] p-4">
-      <div className="bg-white dark:bg-[#13131a] rounded-2xl w-full max-w-md p-6 relative shadow-2xl border border-gray-200 dark:border-purple-500/30">
+    <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
+      <div className="relative bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md p-6 shadow-2xl border border-gray-200 dark:border-purple-500/30 animate-slide-up sm:mx-4">
         <button
           type="button"
           onClick={onClose}

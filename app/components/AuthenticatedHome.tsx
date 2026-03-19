@@ -10,11 +10,13 @@ import { profileService as grpcProfileService, shortlistService } from '~/servic
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
+import { SidePanel } from '~/components/SidePanel';
 import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
+import CustomSelect from "~/components/ui/CustomSelect";
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 
 interface HousehelpProfile {
@@ -649,27 +651,25 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                 </div>
                 <div className="flex flex-col">
                   <label className={quickLabelClass}>Type of Househelp</label>
-                  <select
+                  <CustomSelect
                     value={getTypeValue()}
-                    onChange={(e) => setTypeValue(e.target.value)}
-                    className={quickInputClass}
-                  >
-                    <option value="">Any</option>
-                    <option value="live_in">Live-in</option>
-                    <option value="day_worker">Day worker</option>
-                  </select>
+                    onChange={(val) => setTypeValue(val)}
+                    options={[
+                      { value: "", label: "Any" },
+                      { value: "live_in", label: "Live-in" },
+                      { value: "day_worker", label: "Day worker" },
+                    ]}
+                    placeholder="Any"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <label className={quickLabelClass}>Experience</label>
-                  <select
+                  <CustomSelect
                     value={fields.experience || ""}
-                    onChange={(e) => handleFieldChange('experience', e.target.value)}
-                    className={quickInputClass}
-                  >
-                    {EXPERIENCE_MIN_OPTIONS.map((level) => (
-                      <option key={level.value || "any"} value={level.value}>{level.label}</option>
-                    ))}
-                  </select>
+                    onChange={(val) => handleFieldChange('experience', val)}
+                    options={EXPERIENCE_MIN_OPTIONS}
+                    placeholder="Any"
+                  />
                 </div>
                 <div className="flex flex-col">
                   <label className={quickLabelClass}>Skills / Can Help With</label>
@@ -698,31 +698,14 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
             </div>
 
             {/* Slide-over Drawer for full filters */}
-            {showMoreFilters && (
-              <div className="fixed inset-0 z-[70]">
-                <div className="absolute inset-x-0 top-20 sm:top-24 bottom-20 sm:bottom-24 bg-slate-900/20 backdrop-blur-[2px]" onClick={() => setShowMoreFilters(false)} />
-                <div className="absolute right-0 sm:right-4 top-20 sm:top-24 bottom-20 sm:bottom-24 w-full max-w-[460px] bg-[#f3f4f7] dark:bg-gradient-to-br dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] shadow-[0_24px_80px_rgba(15,23,42,0.28)] rounded-[2rem] p-6 sm:p-7 overflow-y-auto border border-[#d6dbe7] dark:border-purple-500/30">
-                  <div className="sticky top-0 z-10 -mx-2 px-2 pb-4 pt-1 bg-[#f3f4f7] dark:bg-[#13131a] flex items-center justify-between mb-2">
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white">More Filters</h2>
-                    <button
-                      onClick={() => setShowMoreFilters(false)}
-                      className="h-9 w-9 rounded-full border border-[#c7cdd9] dark:border-purple-500/30 text-slate-500 hover:text-slate-700 hover:bg-white/70 dark:text-gray-300 dark:hover:text-white dark:hover:bg-purple-500/10 transition-colors"
-                      aria-label="Close more filters"
-                    >
-                      <svg className="w-5 h-5 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                  <HousehelpMoreFilters
-                    fields={fields}
-                    onChange={handleFieldChange}
-                    onSearch={() => { setShowMoreFilters(false); handleSearch(); }}
-                    onClear={handleClear}
-                  />
-                </div>
-              </div>
-            )}
+            <SidePanel isOpen={showMoreFilters} onClose={() => setShowMoreFilters(false)} title="More Filters">
+              <HousehelpMoreFilters
+                fields={fields}
+                onChange={handleFieldChange}
+                onSearch={() => { setShowMoreFilters(false); handleSearch(); }}
+                onClear={handleClear}
+              />
+            </SidePanel>
 
             <div className="mt-6 sm:mt-8">
               <h2 className={`${isHome3 ? 'text-xl' : 'text-2xl'} font-bold text-gray-900 dark:text-white mb-6`}>

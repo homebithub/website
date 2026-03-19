@@ -18,15 +18,16 @@ export default function ExpandedImageModal({
 }: ExpandedImageModalProps) {
   if (!images || images.length === 0) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-80">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/80 backdrop-blur-sm animate-fade-in" onClick={onClose} />
       <button
-        className="absolute top-4 right-4 text-white bg-black bg-opacity-60 rounded-full p-2 text-2xl"
+        className="absolute top-4 right-4 z-10 text-white bg-black/60 rounded-full p-2 text-2xl"
         onClick={onClose}
         aria-label="Close"
       >
         ×
       </button>
-      <div className="relative w-full max-w-2xl h-[70vh] flex items-center justify-center">
+      <div className="relative w-full sm:max-w-2xl h-[70vh] flex items-center justify-center animate-slide-up sm:mx-4">
         <img
           src={`${API_BASE_URL}/images/${images[currentIdx].path.replace(/^src\//, '/')}`}
           alt={`User image ${currentIdx + 1}`}

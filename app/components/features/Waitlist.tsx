@@ -264,17 +264,17 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
         </Transition.Child>
 
         <div className="fixed inset-0 overflow-y-auto">
-          <div className="flex min-h-full items-center justify-center p-4 text-center">
+          <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4 text-center">
             <Transition.Child
               as={React.Fragment}
               enter="ease-out duration-300"
-              enterFrom="opacity-0 scale-95"
-              enterTo="opacity-100 scale-100"
+              enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+              enterTo="opacity-100 translate-y-0 sm:scale-100"
               leave="ease-in duration-200"
-              leaveFrom="opacity-100 scale-100"
-              leaveTo="opacity-0 scale-95"
+              leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+              leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
             >
-              <Dialog.Panel className="w-full max-w-lg sm:max-w-lg max-w-full transform overflow-hidden rounded-3xl bg-gradient-to-br from-purple-50 to-white dark:from-[#0a0a0f] dark:to-[#13131a] p-6 sm:p-10 text-left align-middle shadow-2xl dark:shadow-glow-lg border-2 border-purple-200 dark:border-purple-500/30 transition-all">
+              <Dialog.Panel className="w-full sm:max-w-lg transform overflow-hidden rounded-t-2xl sm:rounded-3xl bg-gradient-to-br from-purple-50 to-white dark:from-[#0a0a0f] dark:to-[#13131a] p-6 sm:p-10 text-left align-middle shadow-2xl dark:shadow-glow-lg border-2 border-purple-200 dark:border-purple-500/30 transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                 <div className="mb-6">
                   <div className="flex items-center justify-between mb-3">
                     <Dialog.Title

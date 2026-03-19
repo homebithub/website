@@ -500,23 +500,23 @@ export default function HireRequestDetail() {
 
       {/* Create Contract Modal */}
       {showContractModal && (
-  <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+  <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
     {/* Overlay */}
     <div
-      className="fixed inset-0 bg-black/50"
+      className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
       onClick={() => setShowContractModal(false)}
     />
 
     {/* Modal */}
     <div className="
-      relative w-full max-w-[360px] sm:max-w-md
+      relative w-full sm:max-w-md
       bg-white dark:bg-gray-800
-      rounded-lg shadow-xl
+      rounded-t-2xl sm:rounded-2xl shadow-xl
       p-4 sm:p-6
-      mx-auto
-      max-h-[90vh]
+      sm:mx-4
+      max-h-[90vh] sm:max-h-[85vh]
       overflow-y-auto
-      pb-safe
+      animate-slide-up
     ">
       <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
         Create Employment Contract

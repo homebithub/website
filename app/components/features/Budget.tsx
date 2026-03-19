@@ -7,6 +7,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
 import { useSalaryRanges } from '~/hooks/useOnboardingOptions';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 type BudgetFrequency = 'daily' | 'weekly' | 'monthly';
 type BudgetRange = string;
@@ -150,20 +151,20 @@ const Budget: React.FC = () => {
           <label htmlFor="frequency" className="block text-sm font-semibold text-purple-700 dark:text-purple-400">
             📅 Payment Frequency <span className="text-red-500">*</span>
           </label>
-          <select
-            id="frequency"
+          <CustomSelect
             value={frequency}
-            onChange={(e) => {
-              setFrequency(e.target.value as BudgetFrequency);
-              setSelectedRange(''); // Reset selected range when frequency changes
+            onChange={(val) => {
+              setFrequency(val as BudgetFrequency);
+              setSelectedRange('');
               markDirty();
             }}
-            className="block w-full h-10 px-4 py-1.5 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 text-sm font-medium"
-          >
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-          </select>
+            options={[
+              { value: 'daily', label: 'Daily' },
+              { value: 'weekly', label: 'Weekly' },
+              { value: 'monthly', label: 'Monthly' },
+            ]}
+            placeholder="Select frequency"
+          />
         </div>
 
         {/* Budget Range Radio Group */}

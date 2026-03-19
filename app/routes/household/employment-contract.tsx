@@ -895,8 +895,9 @@ export default function EmploymentContractPage() {
 
         {/* ═══ SIGNING MODAL ═══ */}
         {showSigningModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-[#0d0d15] rounded-2xl sm:rounded-3xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 max-w-md w-full p-6 sm:p-8">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={() => setShowSigningModal(false)} />
+            <div className="relative bg-white dark:bg-[#0d0d15] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
               <h3 className="text-lg font-extrabold text-gray-900 dark:text-white mb-2">Sign Contract</h3>
               <p className="text-sm text-gray-600 dark:text-purple-200 mb-4">
                 Enter your full legal name to sign this contract. This serves as your digital signature.
@@ -932,8 +933,9 @@ export default function EmploymentContractPage() {
 
         {/* ═══ EMAIL CONTRACT MODAL ═══ */}
         {showEmailModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-[#0d0d15] rounded-2xl sm:rounded-3xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 max-w-md w-full p-6 sm:p-8">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={() => setShowEmailModal(false)} />
+            <div className="relative bg-white dark:bg-[#0d0d15] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
               <h3 className="text-lg font-extrabold text-gray-900 dark:text-white mb-2">Email Contract</h3>
               <p className="text-sm text-gray-600 dark:text-purple-200 mb-4">
                 We'll send a copy of the signed contract to the email address below.

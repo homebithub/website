@@ -78,16 +78,15 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
   if (!isOpen) return null;
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
-      <div className="flex min-h-screen items-center justify-center p-4">
-        {/* Backdrop */}
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-          onClick={onClose}
-        />
-        
-        {/* Modal */}
-        <div className="relative bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"
+        onClick={onClose}
+      />
+      
+      {/* Modal */}
+      <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
           {/* Header */}
           <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
@@ -234,7 +233,6 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
           </form>
         </div>
       </div>
-    </div>
   );
 
   return createPortal(modalContent, document.body);

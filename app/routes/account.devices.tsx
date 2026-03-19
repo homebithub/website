@@ -93,7 +93,8 @@ export default function DevicesPage() {
       const deviceId = await getDeviceId();
       setCurrentDeviceId(deviceId);
       
-      const userId = user?.user_id || user?.id || '';
+      const userObj = (user as any)?.user || user;
+      const userId = userObj?.user_id || userObj?.id || '';
       const response = await deviceService.getUserDevices(userId, deviceId);
       setDevices(response.devices.map(protoDeviceToLocal));
       setTotalCount(response.totalCount);
@@ -105,7 +106,7 @@ export default function DevicesPage() {
     } finally {
       setDataLoading(false);
     }
-  }, []);
+  }, [user]);
 
   // Auth check
   useEffect(() => {
@@ -129,7 +130,8 @@ export default function DevicesPage() {
     setSuccessMessage('');
     
     try {
-      const userId = user?.user_id || user?.id || '';
+      const userObj = (user as any)?.user || user;
+      const userId = userObj?.user_id || userObj?.id || '';
       await deviceService.revokeDevice(device.id, userId, 'Revoked by user');
       
       setSuccessMessage(`Device "${device.device_name || 'Unknown'}" has been revoked successfully`);
@@ -150,7 +152,8 @@ export default function DevicesPage() {
     setSuccessMessage('');
     
     try {
-      const userId = user?.user_id || user?.id || '';
+      const userObj = (user as any)?.user || user;
+      const userId = userObj?.user_id || userObj?.id || '';
       const currentDevice = devices.find(d => d.is_current_device);
       await deviceService.revokeAllDevices(userId, currentDevice?.device_id, 'Logged out all devices');
       
@@ -275,15 +278,15 @@ export default function DevicesPage() {
             </div>
           </div>
 
-          {/* Log out all button */}
-          {activeCount > 1 && (
+          {/* Remove all other devices button */}
+          {devices.length > 1 && (
             <div className="mb-6">
               <button
                 onClick={() => setShowRevokeAllModal(true)}
                 className="inline-flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl text-red-100 bg-red-600 hover:bg-red-700 transition-colors"
               >
-                <ShieldCheckIcon className="h-5 w-5 mr-2" />
-                Log Out All Other Devices
+                <TrashIcon className="h-5 w-5 mr-2" />
+                Remove All Other Devices
               </button>
             </div>
           )}
@@ -354,13 +357,13 @@ export default function DevicesPage() {
                     </div>
                     
                     {/* Actions */}
-                    {!device.is_current_device && device.status === 'active' && (
+                    {!device.is_current_device && (
                       <button
                         onClick={() => setRevokingDevice(device)}
                         className="ml-4 inline-flex items-center px-3 py-1.5 text-xs font-semibold rounded-lg text-red-700 bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50 transition-colors"
                       >
                         <TrashIcon className="h-3.5 w-3.5 mr-1" />
-                        Revoke
+                        Remove
                       </button>
                     )}
                   </div>
@@ -388,28 +391,28 @@ export default function DevicesPage() {
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4 text-center">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
                 leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 p-6 text-left align-middle shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <Dialog.Title
                     as="h3"
                     className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center"
                   >
                     <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2" />
-                    Revoke Device Access
+                    Remove Device
                   </Dialog.Title>
                   <div className="mt-2">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Are you sure you want to revoke access for "{revokingDevice?.device_name || 'this device'}"? 
-                      This device will be logged out and will need to be confirmed again to access your account.
+                      Are you sure you want to remove "{revokingDevice?.device_name || 'this device'}"? 
+                      This device will be removed from your account.
                     </p>
                   </div>
 
@@ -420,7 +423,7 @@ export default function DevicesPage() {
                       onClick={() => revokingDevice && handleRevokeDevice(revokingDevice)}
                       disabled={processingAction}
                     >
-                      {processingAction ? 'Revoking...' : 'Yes, Revoke'}
+                      {processingAction ? 'Removing...' : 'Yes, Remove'}
                     </button>
                     <button
                       type="button"
@@ -454,30 +457,27 @@ export default function DevicesPage() {
           </Transition.Child>
 
           <div className="fixed inset-0 overflow-y-auto">
-            <div className="flex min-h-full items-center justify-center p-4 text-center">
+            <div className="flex min-h-full items-end justify-center sm:items-center sm:p-4 text-center">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out duration-300"
-                enterFrom="opacity-0 scale-95"
-                enterTo="opacity-100 scale-100"
+                enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                enterTo="opacity-100 translate-y-0 sm:scale-100"
                 leave="ease-in duration-200"
-                leaveFrom="opacity-100 scale-100"
-                leaveTo="opacity-0 scale-95"
+                leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 p-6 text-left align-middle shadow-xl transition-all">
+                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 p-6 text-left align-middle shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <Dialog.Title
                     as="h3"
                     className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center"
                   >
-                    <ShieldCheckIcon className="h-5 w-5 text-red-500 mr-2" />
-                    Log Out All Other Devices
+                    <TrashIcon className="h-5 w-5 text-red-500 mr-2" />
+                    Remove All Other Devices
                   </Dialog.Title>
                   <div className="mt-2">
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      This will log you out of all devices except this one. You'll need to log in again on those devices.
-                    </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                      This is useful if you've lost a device or want to ensure your account is secure.
+                      This will remove all devices except your current one. You'll need to log in again on those devices.
                     </p>
                   </div>
 
@@ -488,7 +488,7 @@ export default function DevicesPage() {
                       onClick={handleRevokeAllDevices}
                       disabled={processingAction}
                     >
-                      {processingAction ? 'Logging Out...' : 'Yes, Log Out All'}
+                      {processingAction ? 'Removing...' : 'Yes, Remove All'}
                     </button>
                     <button
                       type="button"

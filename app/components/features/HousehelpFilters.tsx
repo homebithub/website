@@ -1,5 +1,6 @@
 import React from "react";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
+import CustomSelect from "~/components/ui/CustomSelect";
 
 type ChangeHandler = (name: string, value: string) => void;
 
@@ -43,9 +44,6 @@ interface Props {
 export default function HousehelpFilters({ fields, onChange, onSearch, onClose, onClear }: Props) {
   const inputBase =
     "w-full h-11 px-4 py-2 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all";
-  const selectBase =
-    "w-full h-11 px-4 py-2 rounded-[10px] bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all border-0 dark:bg-[#13131a] dark:text-white";
-  const gradientWrap = "rounded-xl p-[2px] bg-gradient-to-r from-purple-500 to-pink-500 dark:p-0 dark:bg-transparent";
 
   return (
     <aside className="w-full sm:w-72 bg-white dark:bg-[#13131a] border border-purple-200/60 dark:border-purple-500/30 rounded-2xl shadow-lg p-4 sm:p-5 space-y-4">
@@ -69,73 +67,74 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
       {/* Status */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Status</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.status} onChange={(e) => onChange("status", e.target.value)}>
-            <option value="active">Active</option>
-            <option value="inactive">Inactive</option>
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.status}
+          onChange={(val) => onChange("status", val)}
+          options={[
+            { value: "active", label: "Active" },
+            { value: "inactive", label: "Inactive" },
+          ]}
+          placeholder="Select status"
+        />
       </div>
 
       {/* Nanny type */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Nanny type</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.househelp_type} onChange={(e) => onChange("househelp_type", e.target.value)}>
-            {NANNY_TYPES.map((t) => (
-              <option key={t} value={t}>{t || "Any"}</option>
-            ))}
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.househelp_type}
+          onChange={(val) => onChange("househelp_type", val)}
+          options={NANNY_TYPES.map((t) => ({ value: t, label: t || "Any" }))}
+          placeholder="Any"
+        />
       </div>
 
       {/* Gender */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Gender</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.gender} onChange={(e) => onChange("gender", e.target.value)}>
-            {GENDERS.map((g) => (
-              <option key={g} value={g}>{g || "Any"}</option>
-            ))}
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.gender}
+          onChange={(val) => onChange("gender", val)}
+          options={GENDERS.map((g) => ({ value: g, label: g || "Any" }))}
+          placeholder="Any"
+        />
       </div>
 
       {/* Experience */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Experience (min)</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.experience} onChange={(e) => onChange("experience", e.target.value)}>
-            {EXPERIENCES.map((y) => (
-              <option key={y} value={y}>{y}</option>
-            ))}
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.experience}
+          onChange={(val) => onChange("experience", val)}
+          options={EXPERIENCES.map((y) => ({ value: y, label: y }))}
+          placeholder="0"
+        />
       </div>
 
       {/* Town */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Town</label>
-        <div className={gradientWrap}>
-          <SearchableTownSelect
-            value={fields.town}
-            onChange={(value) => onChange("town", value)}
-            target="househelps"
-            buttonClassName={selectBase}
-          />
-        </div>
+        <SearchableTownSelect
+          value={fields.town}
+          onChange={(value) => onChange("town", value)}
+          target="househelps"
+          buttonClassName="w-full h-12 px-4 py-2 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+        />
       </div>
 
       {/* Salary frequency */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Salary frequency</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.salary_frequency} onChange={(e) => onChange("salary_frequency", e.target.value)}>
-            <option value="monthly">Monthly</option>
-            <option value="weekly">Weekly</option>
-            <option value="daily">Daily</option>
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.salary_frequency}
+          onChange={(val) => onChange("salary_frequency", val)}
+          options={[
+            { value: "monthly", label: "Monthly" },
+            { value: "weekly", label: "Weekly" },
+            { value: "daily", label: "Daily" },
+          ]}
+          placeholder="Monthly"
+        />
       </div>
 
       {/* Salary range */}
@@ -167,67 +166,77 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
       {/* Skill */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Skill</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.skill} onChange={(e) => onChange("skill", e.target.value)}>
-            {SKILLS.map((s) => (
-              <option key={s} value={s}>{s || "Any"}</option>
-            ))}
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.skill}
+          onChange={(val) => onChange("skill", val)}
+          options={SKILLS.map((s) => ({ value: s, label: s || "Any" }))}
+          placeholder="Any"
+        />
       </div>
 
       {/* Trait */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Trait</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.traits} onChange={(e) => onChange("traits", e.target.value)}>
-            {TRAITS.map((t) => (
-              <option key={t} value={t}>{t || "Any"}</option>
-            ))}
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.traits}
+          onChange={(val) => onChange("traits", val)}
+          options={TRAITS.map((t) => ({ value: t, label: t || "Any" }))}
+          placeholder="Any"
+        />
       </div>
 
       {/* Compatibility and availability */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Works with kids</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.can_work_with_kids} onChange={(e) => onChange("can_work_with_kids", e.target.value)}>
-            <option value="">Any</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.can_work_with_kids}
+          onChange={(val) => onChange("can_work_with_kids", val)}
+          options={[
+            { value: "", label: "Any" },
+            { value: "true", label: "Yes" },
+            { value: "false", label: "No" },
+          ]}
+          placeholder="Any"
+        />
       </div>
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Works with pets</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.can_work_with_pets} onChange={(e) => onChange("can_work_with_pets", e.target.value)}>
-            <option value="">Any</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.can_work_with_pets}
+          onChange={(val) => onChange("can_work_with_pets", val)}
+          options={[
+            { value: "", label: "Any" },
+            { value: "true", label: "Yes" },
+            { value: "false", label: "No" },
+          ]}
+          placeholder="Any"
+        />
       </div>
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Live-in</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.offers_live_in} onChange={(e) => onChange("offers_live_in", e.target.value)}>
-            <option value="">Any</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.offers_live_in}
+          onChange={(val) => onChange("offers_live_in", val)}
+          options={[
+            { value: "", label: "Any" },
+            { value: "true", label: "Yes" },
+            { value: "false", label: "No" },
+          ]}
+          placeholder="Any"
+        />
       </div>
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Day worker</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.offers_day_worker} onChange={(e) => onChange("offers_day_worker", e.target.value)}>
-            <option value="">Any</option>
-            <option value="true">Yes</option>
-            <option value="false">No</option>
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.offers_day_worker}
+          onChange={(val) => onChange("offers_day_worker", val)}
+          options={[
+            { value: "", label: "Any" },
+            { value: "true", label: "Yes" },
+            { value: "false", label: "No" },
+          ]}
+          placeholder="Any"
+        />
       </div>
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Available from</label>
@@ -242,13 +251,12 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
       {/* Min rating */}
       <div className="flex flex-col">
         <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min rating</label>
-        <div className={gradientWrap}>
-          <select className={selectBase} value={fields.min_rating} onChange={(e) => onChange("min_rating", e.target.value)}>
-            {["", "5", "4", "3", "2", "1"].map((r) => (
-              <option key={r} value={r}>{r ? `${r}+` : "Any"}</option>
-            ))}
-          </select>
-        </div>
+        <CustomSelect
+          value={fields.min_rating}
+          onChange={(val) => onChange("min_rating", val)}
+          options={["", "5", "4", "3", "2", "1"].map((r) => ({ value: r, label: r ? `${r}+` : "Any" }))}
+          placeholder="Any"
+        />
       </div>
 
       <div className="flex items-center gap-2">
