@@ -10,7 +10,6 @@ import device_pb_module from '~/grpc/generated/auth/device_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 
-// @ts-ignore - Generated protobuf code
 const device_pb = device_pb_module as any;
 
 const deviceClient = new DeviceServiceClient(GRPC_WEB_BASE_URL, null, null);

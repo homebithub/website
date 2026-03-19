@@ -1011,8 +1011,7 @@ export class GetBlastStatusRequest extends jspb.Message {
 }
 
 export namespace GetBlastStatusRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class GetBlastStatusResponse extends jspb.Message {
@@ -1083,8 +1082,7 @@ export class GetDeliveryStatsRequest extends jspb.Message {
 }
 
 export namespace GetDeliveryStatsRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class GetDeliveryStatsResponse extends jspb.Message {
@@ -1117,8 +1115,7 @@ export class GetChannelPerformanceRequest extends jspb.Message {
 }
 
 export namespace GetChannelPerformanceRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class GetChannelPerformanceResponse extends jspb.Message {

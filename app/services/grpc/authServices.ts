@@ -37,7 +37,6 @@ import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 
-// @ts-ignore - Generated protobuf code
 const auth_pb = auth_pb_module as any;
 
 function getMetadata(): { [key: string]: string } {

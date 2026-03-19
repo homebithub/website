@@ -21,6 +21,10 @@ export function useSSEContext() {
   return context;
 }
 
+export function useSSEContextSafe() {
+  return useContext(SSEContext);
+}
+
 interface SSEProviderProps {
   children: React.ReactNode;
 }

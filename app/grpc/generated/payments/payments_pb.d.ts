@@ -263,8 +263,7 @@ export class GetPlansRequest extends jspb.Message {
 }
 
 export namespace GetPlansRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class GetPlansResponse extends jspb.Message {
@@ -1911,8 +1910,7 @@ export class GetFraudRulesRequest extends jspb.Message {
 }
 
 export namespace GetFraudRulesRequest {
-  export type AsObject = {
-  };
+  export type AsObject = Record<string, never>;
 }
 
 export class GetFraudRulesResponse extends jspb.Message {

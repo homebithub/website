@@ -4,9 +4,7 @@
  */
 
 // Import the raw generated files
-// @ts-ignore
 import authGrpcWeb from '../generated/auth/auth_grpc_web_pb.js';
-// @ts-ignore  
 import authPb from '../generated/auth/auth_pb.js';
 
 // Re-export with proper types

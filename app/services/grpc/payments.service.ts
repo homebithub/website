@@ -9,7 +9,6 @@ import payments_pb_module from '~/grpc/generated/payments/payments_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 
-// @ts-ignore - Generated protobuf code
 const payments_pb = payments_pb_module as any;
 
 const paymentsClient = new PaymentsServiceClient(GRPC_WEB_BASE_URL, null, null);

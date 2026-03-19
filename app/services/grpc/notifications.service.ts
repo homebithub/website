@@ -10,7 +10,6 @@ import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 
-// @ts-ignore - Generated protobuf code
 const notifications_pb = notifications_pb_module as any;
 
 const notificationsClient = new NotificationsServiceClient(GRPC_WEB_BASE_URL, null, null);

@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router";
 import { hireRequestService, hireContractService, employmentContractService, interestService, shortlistService } from '~/services/grpc/authServices';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { useSSEContext } from '~/contexts/SSEContext';
+import { useSSEContextSafe } from '~/contexts/SSEContext';
 
 interface HireRequest {
   id: string;
@@ -114,7 +114,7 @@ const getHousehelpName = (househelp?: HireRequest['househelp']) => {
 export default function HiringHistory() {
   const navigate = useNavigate();
   const location = useLocation();
-  const sseContext = (() => { try { return useSSEContext(); } catch { return null; } })();
+  const sseContext = useSSEContextSafe();
   const [activeTab, setActiveTab] = useState<TabType>('interested');
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);

@@ -10,7 +10,6 @@ import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 
 // Extract proto.auth from the default export
-// @ts-ignore - Generated protobuf code doesn't have TypeScript definitions
 const auth_pb = auth_pb_module as any;
 
 // Create singleton client instance
