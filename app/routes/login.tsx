@@ -114,6 +114,7 @@ export default function LoginPage() {
           setAuthCookies(token, null, userData);
           localStorage.setItem('token', token);
           localStorage.setItem('user_object', JSON.stringify(userData));
+          localStorage.setItem('auth_provider', 'google');
           const profileType: string = userData.profile_type || '';
           localStorage.setItem('profile_type', profileType);
           try { localStorage.setItem('userType', profileType || ''); } catch {}
