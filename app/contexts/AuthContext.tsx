@@ -138,6 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthCookies(token, refreshToken, userData);
       localStorage.setItem("token", token);
       localStorage.setItem("user_object", JSON.stringify(userData));
+      localStorage.setItem("auth_provider", "password");
       
       const profileType = userData.profile_type || "";
       localStorage.setItem("profile_type", profileType);
@@ -292,6 +293,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("user_object");
       localStorage.removeItem("userType");
       localStorage.removeItem("profile_type");
+      localStorage.removeItem("auth_provider");
       localStorage.removeItem("device_id");
 
       setUser(null);
