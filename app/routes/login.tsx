@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useLocation, useNavigate, Form } from "react-router";
 import { useAuth } from "~/contexts/useAuth";
 import { Error as ErrorComponent } from "~/components/Error";
@@ -63,7 +63,7 @@ export default function LoginPage() {
   const [fieldErrors, setFieldErrors] = useState<{ [key: string]: string }>({});
   const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
   const [loginError, setLoginError] = useState<string | null>(null);
-  const [processingGoogleLogin, setProcessingGoogleLogin] = useState(false);
+  const processingGoogleRef = useRef(false);
   const [showPassword, setShowPassword] = useState(false);
 
   // Get redirect URL from query params
@@ -81,16 +81,23 @@ export default function LoginPage() {
       setLoginError('Google login failed. Please try again or use phone and password.');
     }
 
-    if (googleLogin === 'success' && token && !processingGoogleLogin) {
-      setProcessingGoogleLogin(true);
+    if (googleLogin === 'success' && token && !processingGoogleRef.current) {
+      processingGoogleRef.current = true;
       (async () => {
         try {
           // Set token cookie first so gRPC-Web auth metadata can read it
           setAuthCookies(token, null, {});
 
+          // Decode JWT to extract user_id (needed by getCurrentUser RPC)
+          let tokenUserId = '';
+          try {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            tokenUserId = payload.user_id || '';
+          } catch {}
+
           // Fetch user profile via gRPC-Web
           const { default: authService } = await import('~/services/grpc/auth.service');
-          const userProto = await authService.getCurrentUser();
+          const userProto = await authService.getCurrentUser(tokenUserId);
 
           const userData: any = {
             user_id: userProto.getId?.() || '',
@@ -190,11 +197,11 @@ export default function LoginPage() {
           console.error('Google login completion error:', err);
           setLoginError('Google login failed. Please try again or use phone and password.');
         } finally {
-          setProcessingGoogleLogin(false);
+          processingGoogleRef.current = false;
         }
       })();
     }
-  }, [location.search, redirectUrl, loginError, navigate, processingGoogleLogin]);
+  }, [location.search, redirectUrl, loginError, navigate]);
 
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
