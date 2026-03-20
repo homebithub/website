@@ -156,10 +156,10 @@ export const authService = {
   /**
    * Get current user
    */
-  async getCurrentUser(): Promise<any> {
+  async getCurrentUser(userId?: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.GetCurrentUserRequest();
-      request.setUserId(resolveUserId(''));
+      request.setUserId(resolveUserId(userId || ''));
 
       authClient.getCurrentUser(request, getMetadata(), (err, response) => {
         if (err) {

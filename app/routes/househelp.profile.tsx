@@ -27,6 +27,8 @@ import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 
 interface HousehelpData {
+  id?: string;
+  user_id?: string;
   first_name?: string;
   last_name?: string;
   gender?: string;

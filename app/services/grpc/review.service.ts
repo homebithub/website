@@ -92,9 +92,8 @@ export async function createReview(
         return;
       }
       
-      const jsonStr = response?.getJson() || '{}';
-      const review = JSON.parse(jsonStr);
-      resolve(review);
+      const data = response?.getData()?.toJavaScript() || {};
+      resolve(data as unknown as Review);
     });
   });
 }
@@ -117,9 +116,8 @@ export async function getReview(
         return;
       }
       
-      const jsonStr = response?.getJson() || '{}';
-      const review = JSON.parse(jsonStr);
-      resolve(review);
+      const data = response?.getData()?.toJavaScript() || {};
+      resolve(data as unknown as Review);
     });
   });
 }
@@ -146,9 +144,8 @@ export async function getPublicReviews(
         return;
       }
       
-      const jsonStr = response?.getJson() || '{}';
-      const data = JSON.parse(jsonStr);
-      resolve(data);
+      const data = response?.getData()?.toJavaScript() || {};
+      resolve(data as unknown as PaginatedReviewsResponse);
     });
   });
 }
@@ -173,9 +170,8 @@ export async function getMyReviews(
         return;
       }
       
-      const jsonStr = response?.getJson() || '{}';
-      const data = JSON.parse(jsonStr);
-      resolve(data);
+      const data = response?.getData()?.toJavaScript() || {};
+      resolve(data as unknown as PaginatedReviewsResponse);
     });
   });
 }
@@ -196,9 +192,8 @@ export async function getReviewStats(
         return;
       }
       
-      const jsonStr = response?.getJson() || '{}';
-      const stats = JSON.parse(jsonStr);
-      resolve(stats);
+      const data = response?.getData()?.toJavaScript() || {};
+      resolve(data as unknown as ReviewStats);
     });
   });
 }
