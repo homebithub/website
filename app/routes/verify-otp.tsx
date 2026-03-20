@@ -213,6 +213,7 @@ export default function VerifyOtpPage() {
       // Store token and user_object in localStorage
       if (token) {
         setAuthCookies(token, refreshToken, flatUser);
+        localStorage.setItem('token', token);
         localStorage.setItem('user_object', JSON.stringify(flatUser));
 
         // Persist profile metadata consistently with login flow

@@ -112,6 +112,7 @@ export default function LoginPage() {
 
           // Update cookies with full user data
           setAuthCookies(token, null, userData);
+          localStorage.setItem('token', token);
           localStorage.setItem('user_object', JSON.stringify(userData));
           const profileType: string = userData.profile_type || '';
           localStorage.setItem('profile_type', profileType);
