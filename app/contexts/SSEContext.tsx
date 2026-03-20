@@ -58,7 +58,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
     }
 
     console.log('[SSE] Establishing single EventSource connection...');
-    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
+    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`, { withCredentials: true });
     eventSourceRef.current = es;
 
     es.onopen = () => {
