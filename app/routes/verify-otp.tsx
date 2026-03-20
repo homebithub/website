@@ -307,6 +307,7 @@ export default function VerifyOtpPage() {
         }
 
         // Step 1: After phone OTP, go to email entry page (unless already done or Google signup)
+        console.log('[VERIFY-OTP] Redirect decision - afterEmailVerification:', afterEmailVerification, 'isGoogleSignup:', locationState.isGoogleSignup);
         if (!afterEmailVerification && !locationState.isGoogleSignup) {
           if (profileType === 'household' || profileType === 'househelp') {
             console.log('[VERIFY-OTP] Phone verified, redirecting to verify-email');
@@ -321,11 +322,13 @@ export default function VerifyOtpPage() {
         }
 
         // Step 2: After email OTP, go to next onboarding step
+        console.log('[VERIFY-OTP] Step 2: Checking profile setup for profileType:', profileType);
         let path = '/';
         if (profileType === 'household' || profileType === 'househelp') {
           try {
             const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
             const progressData = await profileSetupService.getProgress(user_id, profileType);
+            console.log('[VERIFY-OTP] GetProgress response:', JSON.stringify(progressData, null, 2));
 
             if (progressData) {
               const totalSteps = progressData.total_steps || 0;
@@ -333,26 +336,31 @@ export default function VerifyOtpPage() {
               const isComplete = progressData.status === 'completed' ||
                 (totalSteps > 0 && lastStep >= totalSteps);
 
+              console.log('[VERIFY-OTP] Progress check - status:', progressData.status, 'totalSteps:', totalSteps, 'lastStep:', lastStep, 'isComplete:', isComplete);
+
               if (isComplete) {
-                console.log('[VERIFY-OTP] Email verified, setup complete, redirecting to home page');
+                console.log('[VERIFY-OTP] Setup complete, redirecting to home page');
                 // Redirect completed users to home page instead of profile
                 navigate('/');
                 return;
               }
 
               if (profileType === 'household' && lastStep === 0) {
-                console.log('[VERIFY-OTP] Email verified, redirecting to household choice');
+                console.log('[VERIFY-OTP] Household user with lastStep=0, redirecting to household choice');
                 navigate('/household-choice');
                 return;
               }
               const setupRoute = profileType === 'household'
                 ? `/profile-setup/household?step=${lastStep + 1}`
                 : `/profile-setup/househelp?step=${lastStep + 1}`;
-              console.log('[VERIFY-OTP] Email verified, redirecting to profile setup:', setupRoute);
+              console.log('[VERIFY-OTP] Redirecting to profile setup:', setupRoute);
               navigate(setupRoute);
               return;
+            } else {
+              console.log('[VERIFY-OTP] progressData is falsy:', progressData);
             }
           } catch (err: any) {
+            console.error('[VERIFY-OTP] GetProgress error:', err);
             if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
               if (profileType === 'household') {
                 console.log('[VERIFY-OTP] No profile setup record, redirecting to household choice');
@@ -369,7 +377,7 @@ export default function VerifyOtpPage() {
           // Fallback
           path = profileType === 'household' ? '/household-choice' : '/profile-setup/househelp?step=1';
         }
-        console.log('[VERIFY-OTP] Redirecting to:', path);
+        console.log('[VERIFY-OTP] Final fallback - Redirecting to:', path);
         navigate(path);
       }
     } catch (err: any) {
