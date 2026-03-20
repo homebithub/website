@@ -130,5 +130,12 @@ export const getAuthFromCookies = (cookieHeader?: string | null) => {
 };
 
 export const getAccessTokenFromCookies = (cookieHeader?: string | null): string | undefined => {
-  return getAuthFromCookies(cookieHeader).token;
+  const token = getAuthFromCookies(cookieHeader).token;
+  if (token) return token;
+  // In production the access-token cookie is httpOnly, so client JS can't read it.
+  // Fall back to localStorage where login / verify-otp / Google flows persist it.
+  if (!cookieHeader && typeof window !== "undefined") {
+    return localStorage.getItem("token") || undefined;
+  }
+  return undefined;
 };
