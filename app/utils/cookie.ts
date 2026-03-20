@@ -1,5 +1,6 @@
 export interface SerializeOptions {
   path?: string;
+  domain?: string;
   httpOnly?: boolean;
   secure?: boolean;
   sameSite?: "lax" | "strict" | "none";
@@ -21,6 +22,9 @@ const serializeCookie = (name: string, value: string, options: SerializeOptions 
   }
   if (options.path) {
     parts.push(`Path=${options.path}`);
+  }
+  if (options.domain) {
+    parts.push(`Domain=${options.domain}`);
   }
   const sameSite = normalizeSameSite(options.sameSite);
   if (sameSite) {
@@ -65,8 +69,12 @@ const USER_COOKIE_NAME = "hb_user";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
+// In production, set domain so cookies are sent to api.homebit.co.ke too.
+const COOKIE_DOMAIN = IS_PROD ? ".homebit.co.ke" : undefined;
+
 export const cookieOptions: SerializeOptions = {
   path: "/",
+  domain: COOKIE_DOMAIN,
   httpOnly: false, // Default to false for client-side hydration
   secure: IS_PROD,
   sameSite: "lax",
@@ -108,6 +116,9 @@ export const clearAuthCookies = () => {
     document.cookie = serializeCookie(TOKEN_COOKIE_NAME, "", { ...accessTokenOptions, maxAge: 0 });
     document.cookie = serializeCookie(REFRESH_TOKEN_COOKIE_NAME, "", { ...refreshTokenOptions, maxAge: 0 });
     document.cookie = serializeCookie(USER_COOKIE_NAME, "", { ...cookieOptions, maxAge: 0 });
+    // Also clear any old cookies that were set without domain attribute
+    document.cookie = serializeCookie(TOKEN_COOKIE_NAME, "", { ...accessTokenOptions, domain: undefined, maxAge: 0 });
+    document.cookie = serializeCookie(USER_COOKIE_NAME, "", { ...cookieOptions, domain: undefined, maxAge: 0 });
   }
 };
 

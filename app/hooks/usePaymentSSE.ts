@@ -46,7 +46,7 @@ export function usePaymentSSE(
     }
 
     console.log('[PaymentSSE] Connecting to SSE stream...');
-    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
+    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`, { withCredentials: true });
     esRef.current = es;
 
     es.onopen = () => {
