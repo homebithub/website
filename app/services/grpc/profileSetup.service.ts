@@ -31,7 +31,11 @@ function resolveUserId(userId: string): string {
 
 function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
-  const token = getAccessTokenFromCookies();
+  // Try cookie first, then localStorage (for production where cookie is httpOnly)
+  let token = getAccessTokenFromCookies();
+  if (!token && typeof window !== 'undefined') {
+    token = localStorage.getItem('token') || undefined;
+  }
   if (token) md['authorization'] = `Bearer ${token}`;
   try {
     if (typeof window !== 'undefined') {

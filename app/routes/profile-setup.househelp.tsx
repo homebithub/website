@@ -105,9 +105,11 @@ function HousehelpProfileSetupContent() {
   useEffect(() => {
     if (progress && progress.status !== 'completed' && !isProfileLoaded) {
       const resumeStep = progress.current_step || 0;
-      if (resumeStep > 0 && resumeStep < STEPS.length) {
-        setCurrentStep(resumeStep);
-        setDisplayedStep(resumeStep);
+      // If current_step is at or beyond total steps, resume to last valid step
+      const validResumeStep = Math.min(resumeStep, STEPS.length - 1);
+      if (validResumeStep > 0) {
+        setCurrentStep(validResumeStep);
+        setDisplayedStep(validResumeStep);
       }
     }
   }, [progress, isProfileLoaded]);
