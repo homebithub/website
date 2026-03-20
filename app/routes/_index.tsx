@@ -5,6 +5,7 @@ import type { Route } from "./+types/_index";
 import { lazyLoad } from "~/utils/lazyLoad";
 import { profileSetupService } from "~/services/grpc/profileSetup.service";
 import { getAuthFromCookies } from "~/utils/cookie";
+import { useAuth } from "~/contexts/useAuth";
 
 const AuthenticatedHome = lazyLoad(() => import("~/components/AuthenticatedHome"));
 const HousehelpHome = lazyLoad(() => import("~/components/HousehelpHome"));
@@ -84,7 +85,26 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function Index() {
   useScrollFadeIn();
-  const { isAuthenticated, userType } = useLoaderData<typeof loader>();
+  const { isAuthenticated: loaderAuth, userType: loaderUserType } = useLoaderData<typeof loader>();
+  const { user } = useAuth();
+
+  // Client-side fallback: SSR loader may not see httpOnly cookies,
+  // but AuthContext reads the token from localStorage.
+  let isAuthenticated = loaderAuth;
+  let userType = loaderUserType;
+
+  if (!isAuthenticated && user) {
+    isAuthenticated = true;
+    try {
+      if (typeof window !== 'undefined') {
+        const obj = localStorage.getItem('user_object');
+        if (obj) {
+          const parsed = JSON.parse(obj);
+          userType = parsed.profile_type || null;
+        }
+      }
+    } catch {}
+  }
 
   // Show authenticated home for logged-in users based on profile type
   if (isAuthenticated) {
