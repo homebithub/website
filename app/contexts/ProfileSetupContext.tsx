@@ -94,7 +94,11 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
     setError(null);
     
     try {
-      const token = getAccessTokenFromCookies();
+      // Try cookie first, then localStorage (for production where cookie is httpOnly)
+      let token = getAccessTokenFromCookies();
+      if (!token && typeof window !== 'undefined') {
+        token = localStorage.getItem('token') || undefined;
+      }
       const profileType = localStorage.getItem('profile_type');
       
       if (!token) {
@@ -136,7 +140,11 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
     setError(null);
     
     try {
-      const token = getAccessTokenFromCookies();
+      // Try cookie first, then localStorage (for production where cookie is httpOnly)
+      let token = getAccessTokenFromCookies();
+      if (!token && typeof window !== 'undefined') {
+        token = localStorage.getItem('token') || undefined;
+      }
       const profileType = localStorage.getItem('profile_type');
       
       if (!token) {
@@ -239,7 +247,11 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
     setError(null);
     
     try {
-      const token = getAccessTokenFromCookies();
+      // Try cookie first, then localStorage (for production where cookie is httpOnly)
+      let token = getAccessTokenFromCookies();
+      if (!token && typeof window !== 'undefined') {
+        token = localStorage.getItem('token') || undefined;
+      }
       const profileType = localStorage.getItem('profile_type');
       
       if (!token) {

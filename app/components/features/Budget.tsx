@@ -42,7 +42,7 @@ const Budget: React.FC = () => {
     }
   }, [profileData.budget]);
 
-  // Load existing data from backend (fallback)
+  // Load existing data from backend
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -57,7 +57,7 @@ const Budget: React.FC = () => {
             setFrequency(freq);
             effectiveFreq = freq;
           }
-          if (data.budget_min || data.budget_max) {
+          if (data.budget_min !== undefined || data.budget_max !== undefined) {
             const ranges = BUDGET_RANGES[effectiveFreq] || [];
             const matchedRange = ranges.find(range => {
               if (range === 'Negotiable') return data.budget_min === 0 && data.budget_max === 0;
@@ -77,7 +77,7 @@ const Budget: React.FC = () => {
       }
     };
     loadData();
-  }, []);
+  }, [frequency, currentRanges.length]);
 
   const handleRangeSelect = async (range: string) => {
     setSelectedRange(range);

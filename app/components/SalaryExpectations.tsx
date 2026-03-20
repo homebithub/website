@@ -47,6 +47,40 @@ const SalaryExpectations: React.FC = () => {
     }
   }, [profileData.salary]);
 
+  // Load existing data from backend
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const token = getAccessTokenFromCookies();
+        if (!token) return;
+        
+        const data = await grpcProfileService.getCurrentHousehelpProfile('');
+        if (data) {
+          let effectiveFreq: SalaryFrequency = frequency;
+          if (data.salary_frequency) {
+            const freq = data.salary_frequency.toLowerCase() as SalaryFrequency;
+            setFrequency(freq);
+            effectiveFreq = freq;
+          }
+          if (data.salary_expectation) {
+            // Find matching range from current ranges
+            const matchedRange = currentRanges.find(range => {
+              if (range === 'Negotiable') return data.salary_expectation === 0;
+              const parsed = parseSalaryRangeToNumber(range);
+              return parsed === data.salary_expectation;
+            });
+            if (matchedRange) {
+              setSelectedRange(matchedRange);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load salary expectations:', err);
+      }
+    };
+    loadData();
+  }, [frequency, currentRanges.length]);
+
   const autoSave = async (freq: SalaryFrequency, range: string) => {
     if (!range) return;
 
