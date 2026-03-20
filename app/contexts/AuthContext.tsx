@@ -36,7 +36,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const { token: cookieToken, user: cookieUser } = getAuthFromCookies();
       const legacyToken = typeof window !== "undefined" ? getAccessTokenFromCookies() : null;
-      const token = cookieToken || legacyToken;
+      // In production the access token cookie is httpOnly, so JS can't read it.
+      // Fall back to localStorage where login/verify-otp/Google flows store it.
+      const lsToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+      const token = cookieToken || legacyToken || lsToken;
 
       if (cookieUser) {
         setUser({ token: token || "", user: cookieUser } as unknown as LoginResponse);
