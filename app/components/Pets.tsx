@@ -193,6 +193,29 @@ const Pets: React.FC = () => {
     setPetToDelete(null);
   };
 
+  const handleNoPetsSelection = async () => {
+    setHasPet("no");
+    
+    try {
+      const token = getAccessTokenFromCookies();
+      // Save to backend that household has no pets
+      // This is done by updating the household profile with has_pets = false
+      const { profileService: grpcProfileService } = await import('~/services/grpc/authServices');
+      await grpcProfileService.updateHouseholdProfile('', 'household', {
+        has_pets: false,
+        _step_metadata: {
+          step_id: 'pets',
+          step_number: 7,
+          is_completed: true
+        }
+      });
+      markClean();
+    } catch (err) {
+      console.error('Failed to save no pets selection:', err);
+      setError(handleApiError(err, 'pets', 'Failed to save your selection. Please try again.'));
+    }
+  };
+
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-8">
       <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🐾 Pets</h2>
@@ -207,7 +230,7 @@ const Pets: React.FC = () => {
             name="hasPet"
             value="no"
             checked={hasPet === "no"}
-            onChange={() => { setHasPet("no"); markClean(); }}
+            onChange={handleNoPetsSelection}
             className="form-radio h-4 w-4 text-purple-600 border-purple-300 focus:ring-purple-500"
           />
           <span className="flex-1">❌ I do not have pets</span>
