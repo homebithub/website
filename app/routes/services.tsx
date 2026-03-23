@@ -55,43 +55,31 @@ function SlideUp({ children, delay = 0, className = "" }: { children: React.Reac
 const services = [
   {
     name: "House Helps",
-    description:
-      "Professional house helps to make your daily chores effortless and keep your home running smoothly.",
     icon: HomeIcon,
     href: "/services/house-helps",
   },
   {
     name: "Child Care (Nannies)",
-    description:
-      "Caring, reliable nannies to nurture and support your children in a safe and loving environment.",
     icon: HeartIcon,
     href: "/services/child-care",
   },
   {
     name: "Home Maintenance & Repairs",
-    description:
-      "Comprehensive care for your home, from routine upkeep to fixing what’s broken. We handle everything so you don’t have to.",
     icon: WrenchScrewdriverIcon,
     href: "/services/maintenance-repairs",
   },
   {
-    name: "Security Systems",
-    description:
-      "Protect your loved ones and property with our advanced home security solutions.",
+    name: "Elder Care",
     icon: ShieldCheckIcon,
     href: "/services/security",
   },
   {
-    name: "Electrical Services",
-    description:
-      "Safe and reliable electrical installations, repairs, and upgrades for your peace of mind.",
+    name: "Laundry and Ironing",
     icon: BoltIcon,
     href: "/services/electrical",
   },
   {
     name: "Plumbing Services",
-    description:
-      "Prompt and professional plumbing solutions for leaks, clogs, and installations.",
     icon: WrenchScrewdriverIcon,
     href: "/services/plumbing",
   },
@@ -147,9 +135,9 @@ export default function Services() {
                                 Coming soon
                               </span>
                             )}
-                            <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                              {service.description}
-                            </p>
+                            {/*<p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">*/}
+                            {/*  {service.description}*/}
+                            {/*</p>*/}
                           </div>
                         </div>
                       </div>

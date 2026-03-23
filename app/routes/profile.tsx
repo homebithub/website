@@ -51,7 +51,7 @@ export default function ProfilePage() {
   const [otpLoading, setOtpLoading] = React.useState(false);
   const [otpError, setOtpError] = React.useState<string | null>(null);
   const [otpSuccess, setOtpSuccess] = React.useState<string | null>(null);
-  const [resendSeconds, setResendSeconds] = React.useState(30);
+  const [resendSeconds, setResendSeconds] = React.useState(60);
   const [canResend, setCanResend] = React.useState(false);
 
   // Redirect if not authenticated
@@ -157,7 +157,7 @@ export default function ProfilePage() {
         setCurrentVerificationId(data.verification.id);
         setCurrentVerificationType('email');
         setShowEmailModal(true);
-        setResendSeconds(30);
+        setResendSeconds(60);
         setCanResend(false);
         setOtpSuccess('OTP sent to your new email address');
       } else {
@@ -203,7 +203,7 @@ export default function ProfilePage() {
         setCurrentVerificationId(data.verification.id);
         setCurrentVerificationType('phone');
         setShowPhoneModal(true);
-        setResendSeconds(30);
+        setResendSeconds(60);
         setCanResend(false);
         setOtpSuccess('OTP sent to your new phone number');
       } else {
@@ -269,7 +269,7 @@ export default function ProfilePage() {
       await authService.resendOTP(currentVerificationId || '', currentVerificationType || '');
 
       setOtpCode('');
-      setResendSeconds(30);
+      setResendSeconds(60);
       setCanResend(false);
       setOtpSuccess('OTP resent successfully');
     } catch (err: any) {
@@ -288,7 +288,7 @@ export default function ProfilePage() {
     setCurrentVerificationId(null);
     setOtpError(null);
     setOtpSuccess(null);
-    setResendSeconds(30);
+    setResendSeconds(60);
     setCanResend(false);
   };
 

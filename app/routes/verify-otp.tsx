@@ -79,7 +79,7 @@ export default function VerifyOtpPage() {
         setLocalFailedAttempts(0);
         setOtp('');
         setLastTriedOtp('');
-        setResendSeconds(30);
+        setResendSeconds(60);
       }
     } catch (err: any) {
       setChangePhoneError(err.message || 'Failed to update phone');
@@ -120,15 +120,15 @@ export default function VerifyOtpPage() {
   const [success, setSuccess] = useState(false);
   const [resent, setResent] = useState(false);
 
-  // Timer state for resend cooldown - always start with 30s on initial load
+  // Timer state for resend cooldown - always start with 60s on initial load
   const [resendSeconds, setResendSeconds] = useState<number>(() => {
     if (verification?.next_resend_at) {
       const nextResend = new Date(verification.next_resend_at).getTime();
       const now = Date.now();
       const diff = Math.floor((nextResend - now) / 1000);
-      return diff > 0 ? diff : 30;
+      return diff > 0 ? diff : 60;
     }
-    return 30;
+    return 60;
   });
 
   // Reset resend timer when verification changes (e.g. after resend/change phone)
@@ -141,9 +141,9 @@ export default function VerifyOtpPage() {
       const nextResend = new Date(verification.next_resend_at).getTime();
       const now = Date.now();
       const diff = Math.floor((nextResend - now) / 1000);
-      setResendSeconds(diff > 0 ? diff : 30);
+      setResendSeconds(diff > 0 ? diff : 60);
     } else {
-      setResendSeconds(30);
+      setResendSeconds(60);
     }
   }, [verification]);
 
@@ -416,7 +416,7 @@ export default function VerifyOtpPage() {
         setOtp('');
         setLastTriedOtp('');
       }
-      setResendSeconds(30);
+      setResendSeconds(60);
       setResent(true);
     } catch (err: any) {
       const errorMessage = handleApiError(err, 'otp');
@@ -637,7 +637,7 @@ export default function VerifyOtpPage() {
                     setLocalFailedAttempts(0);
                     setOtp('');
                     setLastTriedOtp('');
-                    setResendSeconds(30);
+                    setResendSeconds(60);
                   }
                 } catch (err: any) {
                   setChangePhoneError(err.message || 'Failed to update email');
