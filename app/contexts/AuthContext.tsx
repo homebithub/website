@@ -6,6 +6,7 @@ import { extractErrorMessage, transformErrorMessage } from '~/utils/errorMessage
 import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
 import { clearAuthCookies, getAuthFromCookies, getAccessTokenFromCookies, setAuthCookies } from "~/utils/cookie";
+import { householdMemberService } from '~/services/grpc/authServices';
 
 interface User {
   id: string;
@@ -24,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Public routes that don't need auth check
   const isPublicRoute = () => {
-    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/household-choice', '/join-household', '/profile-setup', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies'];
+    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/household-choice', '/join-household', '/pending-approval', '/profile-setup', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies'];
     return publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === '/';
   };
 
@@ -86,6 +87,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setAuthCookies(token || "", null, user);
       localStorage.setItem("token", token || "");
       localStorage.setItem("user_object", JSON.stringify(user));
+
+      // Check for pending household join requests on page load/refresh
+      const profileType = user.profile_type;
+      if (profileType === 'household' && !isPublicRoute()) {
+        try {
+          const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
+          const progressData = await profileSetupService.getProgress(user.id, profileType);
+          const lastStep = progressData?.last_completed_step || 0;
+          const setupStatus = progressData?.status || '';
+          const isComplete = setupStatus === 'completed' || (progressData?.total_steps > 0 && lastStep >= progressData?.total_steps);
+          
+          // Only check for pending requests if profile setup is not complete and user is at step 0
+          if (!isComplete && lastStep === 0) {
+            try {
+              const joinRequestData = await householdMemberService.getJoinRequestStatus('');
+              const request = joinRequestData?.data || joinRequestData;
+              
+              if (request && request.status === 'pending' && location.pathname !== '/pending-approval') {
+                navigate('/pending-approval');
+                return;
+              } else if (request && request.status === 'approved' && location.pathname !== '/household/profile') {
+                navigate('/household/profile');
+                return;
+              }
+            } catch (joinErr: any) {
+              // No pending request found, continue normally
+            }
+          }
+        } catch (err: any) {
+          // Error checking profile setup, continue normally
+        }
+      }
     } catch (error: any) {
       console.error("Error checking auth:", error);
       // Only clear auth state on explicit UNAUTHENTICATED errors (gRPC code 16).
@@ -200,6 +233,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             }
 
             if (profileType === 'household' && lastStep === 0) {
+              // Check if user has a pending household join request
+              try {
+                const joinRequestData = await householdMemberService.getJoinRequestStatus('');
+                const request = joinRequestData?.data || joinRequestData;
+                
+                if (request && request.status === 'pending') {
+                  // User has a pending join request, redirect to pending approval page
+                  navigate('/pending-approval');
+                  return;
+                } else if (request && request.status === 'approved') {
+                  // Request was approved, redirect to household profile
+                  navigate('/household/profile');
+                  return;
+                }
+              } catch (joinErr: any) {
+                // No pending request or error checking, continue to household choice
+                console.log('No pending join request found');
+              }
+              
               navigate('/household-choice');
               return;
             }
@@ -213,6 +265,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // gRPC NOT_FOUND means no profile setup record
           if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
             if (profileType === 'household') {
+              // Check if user has a pending household join request
+              try {
+                const joinRequestData = await householdMemberService.getJoinRequestStatus('');
+                const request = joinRequestData?.data || joinRequestData;
+                
+                if (request && request.status === 'pending') {
+                  navigate('/pending-approval');
+                  return;
+                } else if (request && request.status === 'approved') {
+                  navigate('/household/profile');
+                  return;
+                }
+              } catch (joinErr: any) {
+                // No pending request, continue to household choice
+                console.log('No pending join request found');
+              }
+              
               navigate('/household-choice');
               return;
             }
