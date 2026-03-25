@@ -98,6 +98,7 @@ interface HousehelpData {
   'househelp-type'?: string;
   status?: string;
   verified?: boolean;
+  completed_jobs?: number;
   premium?: boolean;
   rating?: number;
   review_count?: number;
@@ -600,6 +601,14 @@ export default function HousehelpPublicProfile() {
                     {profile.years_of_experience ? `${profile.years_of_experience} years` : 'Not specified'}
                   </p>
                 </div>
+                {profile.completed_jobs !== undefined && profile.completed_jobs > 0 && (
+                  <div>
+                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Jobs Completed</span>
+                    <p className="text-sm font-bold text-purple-900 dark:text-purple-100 mt-1">
+                      ✓ {profile.completed_jobs} job{profile.completed_jobs === 1 ? '' : 's'} completed on Homebit
+                    </p>
+                  </div>
+                )}
                 {profile.certifications && profile.certifications.trim() && (
                   <div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Certifications</span>

@@ -137,11 +137,16 @@ export default function JoinHouseholdPage() {
       setJoinStatus(status);
       setSuccess(true);
       
-      // Only auto-redirect if auto-approved
+      // Redirect based on status
       if (status === 'approved') {
         setTimeout(() => {
           navigate("/household/profile");
         }, 2000);
+      } else if (status === 'pending') {
+        // Redirect to pending approval page
+        setTimeout(() => {
+          navigate("/pending-approval");
+        }, 1500);
       }
     } catch (err: any) {
       console.error("Join error:", err);
@@ -187,19 +192,9 @@ export default function JoinHouseholdPage() {
                     </div>
                   </>
                 ) : (
-                  <>
-                    <SuccessAlert message="Your request has been sent to the household owner for approval. You will be notified once they respond." title="Request Sent!" />
-                    <div className="text-center">
-                      <Button
-                        as={Link}
-                        to="/dashboard"
-                        variant="secondary"
-                        size="lg"
-                      >
-                        Back to Dashboard
-                      </Button>
-                    </div>
-                  </>
+                  <div className="flex justify-center py-12">
+                    <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full" />
+                  </div>
                 )}
               </div>
             ) : (

@@ -304,6 +304,11 @@ export default function HouseholdEmployment() {
                           : 'No salary expectations specified'}
                       </div>
                       <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
+                      {h.completed_jobs > 0 && (
+                        <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                          ✓ {h.completed_jobs} job{h.completed_jobs === 1 ? '' : 's'} completed
+                        </div>
+                      )}
                       <div className="text-xs text-gray-900 dark:text-gray-300 flex items-center gap-2">
                         <span>Joined: {timeAgo(h.created_at)}</span>
                         {isNewHere(h.created_at) && (
@@ -378,6 +383,11 @@ export default function HouseholdEmployment() {
                     : 'No salary expectations specified'}
                 </div>
                 <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
+                {h.completed_jobs > 0 && (
+                  <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                    ✓ {h.completed_jobs} job{h.completed_jobs === 1 ? '' : 's'} completed
+                  </div>
+                )}
               <div className="text-xs text-gray-900 dark:text-gray-300 flex items-center gap-2">
                 <span>Joined: {timeAgo(h.created_at)}</span>
                 {isNewHere(h.created_at) && (

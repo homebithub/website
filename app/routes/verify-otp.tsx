@@ -692,7 +692,7 @@ export default function VerifyOtpPage() {
               )}
               <button
                 type="button"
-                className="w-full max-w-xs mt-2 text-gray-500 hover:underline text-xs"
+                className="w-full max-w-xs mt-2 text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-semibold hover:underline text-sm transition-colors"
                 onClick={() => setShowChangePhone(false)}
               >
                 Cancel
