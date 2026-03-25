@@ -1,5 +1,5 @@
-import { json, type LoaderFunctionArgs, type MetaFunction } from "@remix-run/node";
-import { useLoaderData, Link } from "@remix-run/react";
+import { useLoaderData, Link } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useEffect } from "react";
 import { Calendar, User, Share2, Twitter, Facebook, Linkedin, Link2, MessageCircle } from "lucide-react";
 
@@ -81,7 +81,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     const response = await fetch(`${apiUrl}/api/v1/blog/posts/${slug}`);
     
     if (!response.ok) {
-      return json<LoaderData>({ post: null, relatedPosts: [] }, { status: 404 });
+      return Response.json({ post: null, relatedPosts: [] }, { status: 404 });
     }
 
     const data = await response.json();
@@ -94,10 +94,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     const relatedData = await relatedResponse.json();
     const relatedPosts = (relatedData.posts || []).filter((p: BlogPost) => p.slug !== slug);
 
-    return json<LoaderData>({ post, relatedPosts });
+    return Response.json({ post, relatedPosts });
   } catch (error) {
     console.error("Error loading blog post:", error);
-    return json<LoaderData>({ post: null, relatedPosts: [] }, { status: 500 });
+    return Response.json({ post: null, relatedPosts: [] }, { status: 500 });
   }
 }
 
