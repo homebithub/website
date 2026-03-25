@@ -1,5 +1,5 @@
-import { json, type LoaderFunctionArgs, type MetaFunction } from "@remix-run/node";
-import { useLoaderData, useSearchParams, Form } from "@remix-run/react";
+import { useLoaderData, useSearchParams, Form } from "react-router";
+import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useState, useEffect } from "react";
 import { Search, Filter, Calendar, TrendingUp } from "lucide-react";
 
@@ -64,7 +64,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const categoriesResponse = await fetch(`${apiUrl}/api/v1/blog/categories`);
     const categoriesData = await categoriesResponse.json();
 
-    return json<LoaderData>({
+    return Response.json({
       posts: data.posts || [],
       total: data.total || 0,
       limit: data.limit || limit,
@@ -73,7 +73,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     });
   } catch (error) {
     console.error("Error loading blog posts:", error);
-    return json<LoaderData>({
+    return Response.json({
       posts: [],
       total: 0,
       limit,
