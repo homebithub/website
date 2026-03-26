@@ -2,6 +2,9 @@ import { useLoaderData, Link } from "react-router";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useEffect, useState } from "react";
 import { Calendar, User, Share2, Twitter, Facebook, Linkedin, Link2, MessageCircle, Send } from "lucide-react";
+import { Navigation } from "~/components/Navigation";
+import { Footer } from "~/components/Footer";
+import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 
 interface BlogPost {
   id: string;
@@ -201,325 +204,338 @@ export default function BlogPost() {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Post Not Found
-          </h1>
-          <p className="text-gray-600 dark:text-gray-300 mb-8">
-            The blog post you're looking for doesn't exist or has been removed.
-          </p>
-          <Link
-            to="/blog"
-            className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-          >
-            Back to Blog
-          </Link>
-        </div>
+      <div className="min-h-screen flex flex-col">
+        <Navigation />
+        <PurpleThemeWrapper variant="gradient" bubbles={false} className="flex-1">
+          <div className="flex items-center justify-center py-32">
+            <div className="text-center">
+              <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
+                Post Not Found
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400 mb-8">
+                The blog post you're looking for doesn't exist or has been removed.
+              </p>
+              <Link
+                to="/blog"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200"
+              >
+                Back to Blog
+              </Link>
+            </div>
+          </div>
+        </PurpleThemeWrapper>
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* JSON-LD Structured Data for SEO */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BlogPosting",
-            headline: post.title,
-            description: post.excerpt,
-            image: post.featured_image,
-            datePublished: post.published_at,
-            dateModified: post.updated_at,
-            author: {
-              "@type": "Person",
-              name: post.author_name,
-            },
-            publisher: {
-              "@type": "Organization",
-              name: "Homebit",
-              logo: {
-                "@type": "ImageObject",
-                url: "https://homebit.co.ke/logo.png",
-              },
-            },
-            mainEntityOfPage: {
-              "@type": "WebPage",
-              "@id": `https://homebit.co.ke/blog/${post.slug}`,
-            },
-          }),
-        }}
-      />
-
-      {/* Hero Section with Featured Image */}
-      <div className="relative h-96 bg-gray-900">
-        {post.featured_image ? (
-          <img
-            src={post.featured_image}
-            alt={post.title}
-            className="w-full h-full object-cover opacity-60"
-          />
-        ) : (
-          <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-600 opacity-80" />
-        )}
-        
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            {post.category && (
-              <span className="inline-block px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-full mb-4">
-                {post.category}
-              </span>
-            )}
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-              {post.title}
-            </h1>
-            <div className="flex items-center justify-center gap-6 text-white/90">
-              <div className="flex items-center gap-2">
-                <User className="w-5 h-5" />
-                <span>{post.author_name}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5" />
-                <span>
-                  {new Date(post.published_at).toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 mb-8">
-          {/* Share Buttons */}
-          <div className="flex items-center gap-4 mb-8 pb-8 border-b border-gray-200 dark:border-gray-700">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <Share2 className="w-4 h-4" />
-              Share:
-            </span>
-            <button
-              onClick={() => handleShare("twitter")}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              aria-label="Share on Twitter"
-            >
-              <Twitter className="w-5 h-5 text-blue-400" />
-            </button>
-            <button
-              onClick={() => handleShare("facebook")}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              aria-label="Share on Facebook"
-            >
-              <Facebook className="w-5 h-5 text-blue-600" />
-            </button>
-            <button
-              onClick={() => handleShare("linkedin")}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              aria-label="Share on LinkedIn"
-            >
-              <Linkedin className="w-5 h-5 text-blue-700" />
-            </button>
-            <button
-              onClick={() => handleShare("copy")}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-              aria-label="Copy link"
-            >
-              <Link2 className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-            </button>
-          </div>
-
-          {/* Article Content */}
-          <div 
-            className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-bold prose-a:text-purple-600 dark:prose-a:text-purple-400 prose-img:rounded-lg"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
-
-          {/* Tags */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-sm rounded-full"
-                  >
-                    #{tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Comments Section */}
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
-            <MessageCircle className="w-6 h-6" />
-            Comments {comments.length > 0 && `(${comments.length})`}
-          </h2>
-
-          {/* Comment Form */}
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              if (!commentName.trim() || !commentContent.trim()) return;
-              setSubmittingComment(true);
-              setCommentSuccess(false);
-              try {
-                const res = await fetch("/api/v1/blog/comments", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    post_id: post.id,
-                    user_name: commentName,
-                    content: commentContent,
-                  }),
-                });
-                if (res.ok) {
-                  setCommentContent("");
-                  setCommentSuccess(true);
-                  setTimeout(() => setCommentSuccess(false), 5000);
-                }
-              } catch (error) {
-                console.error("Error submitting comment:", error);
-              } finally {
-                setSubmittingComment(false);
-              }
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <PurpleThemeWrapper variant="gradient" bubbles={false} className="flex-1">
+        <main className="flex-1">
+          {/* JSON-LD Structured Data for SEO */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "BlogPosting",
+                headline: post.title,
+                description: post.excerpt,
+                image: post.featured_image,
+                datePublished: post.published_at,
+                dateModified: post.updated_at,
+                author: {
+                  "@type": "Person",
+                  name: post.author_name,
+                },
+                publisher: {
+                  "@type": "Organization",
+                  name: "Homebit",
+                  logo: {
+                    "@type": "ImageObject",
+                    url: "https://homebit.co.ke/logo.png",
+                  },
+                },
+                mainEntityOfPage: {
+                  "@type": "WebPage",
+                  "@id": `https://homebit.co.ke/blog/${post.slug}`,
+                },
+              }),
             }}
-            className="mb-8 space-y-4"
-          >
-            <input
-              type="text"
-              value={commentName}
-              onChange={(e) => setCommentName(e.target.value)}
-              placeholder="Your name"
-              required
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-            <textarea
-              value={commentContent}
-              onChange={(e) => setCommentContent(e.target.value)}
-              placeholder="Share your thoughts..."
-              required
-              rows={4}
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-            />
-            <div className="flex items-center gap-4">
-              <button
-                type="submit"
-                disabled={submittingComment}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
-              >
-                <Send className="w-4 h-4" />
-                {submittingComment ? "Posting..." : "Post Comment"}
-              </button>
-              {commentSuccess && (
-                <span className="text-green-600 dark:text-green-400 text-sm">
-                  Comment submitted! It will appear after moderation.
+          />
+
+          {/* Hero Section with Featured Image */}
+          <div className="relative h-80 sm:h-96 overflow-hidden">
+            {post.featured_image ? (
+              <img
+                src={post.featured_image}
+                alt={post.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-purple-600 to-pink-600" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent" />
+            
+            <div className="absolute inset-0 flex items-end">
+              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 w-full">
+                {post.category && (
+                  <span className="inline-block px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-full mb-4 shadow-lg">
+                    {post.category}
+                  </span>
+                )}
+                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 drop-shadow-lg">
+                  {post.title}
+                </h1>
+                <div className="flex items-center gap-6 text-white/90">
+                  <div className="flex items-center gap-2">
+                    <User className="w-5 h-5" />
+                    <span className="font-medium">{post.author_name}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    <span>
+                      {new Date(post.published_at).toLocaleDateString("en-US", {
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Main Content */}
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border-2 border-purple-100 dark:border-purple-500/10 p-6 sm:p-8 mb-8">
+              {/* Share Buttons */}
+              <div className="flex items-center gap-3 mb-8 pb-8 border-b border-purple-100 dark:border-purple-500/10">
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                  <Share2 className="w-4 h-4 text-purple-500" />
+                  Share:
                 </span>
+                <button
+                  onClick={() => handleShare("twitter")}
+                  className="p-2 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-xl transition-all"
+                  aria-label="Share on Twitter"
+                >
+                  <Twitter className="w-5 h-5 text-blue-400" />
+                </button>
+                <button
+                  onClick={() => handleShare("facebook")}
+                  className="p-2 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-xl transition-all"
+                  aria-label="Share on Facebook"
+                >
+                  <Facebook className="w-5 h-5 text-blue-600" />
+                </button>
+                <button
+                  onClick={() => handleShare("linkedin")}
+                  className="p-2 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-xl transition-all"
+                  aria-label="Share on LinkedIn"
+                >
+                  <Linkedin className="w-5 h-5 text-blue-700" />
+                </button>
+                <button
+                  onClick={() => handleShare("copy")}
+                  className="p-2 hover:bg-purple-50 dark:hover:bg-purple-500/10 rounded-xl transition-all"
+                  aria-label="Copy link"
+                >
+                  <Link2 className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                </button>
+              </div>
+
+              {/* Article Content */}
+              <div 
+                className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-extrabold prose-a:text-purple-600 dark:prose-a:text-purple-400 prose-img:rounded-2xl"
+                dangerouslySetInnerHTML={{ __html: post.content }}
+              />
+
+              {/* Tags */}
+              {post.tags && post.tags.length > 0 && (
+                <div className="mt-8 pt-8 border-t border-purple-100 dark:border-purple-500/10">
+                  <div className="flex flex-wrap gap-2">
+                    {post.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="px-3 py-1 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-300 text-sm font-medium rounded-full border border-purple-200 dark:border-purple-500/20"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
-          </form>
 
-          {/* Comments List */}
-          {comments.length === 0 ? (
-            <p className="text-gray-500 dark:text-gray-400">
-              No comments yet. Be the first to share your thoughts!
-            </p>
-          ) : (
-            <div className="space-y-6">
-              {comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-0 last:pb-0"
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-                      <span className="text-purple-600 dark:text-purple-300 text-sm font-bold">
-                        {comment.user_name.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="font-medium text-gray-900 dark:text-white">
-                        {comment.user_name}
-                      </span>
-                      <span className="text-gray-500 dark:text-gray-400 text-sm ml-2">
-                        {new Date(comment.created_at).toLocaleDateString("en-US", {
-                          month: "short",
-                          day: "numeric",
-                          year: "numeric",
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-gray-700 dark:text-gray-300 ml-11">
-                    {comment.content}
-                  </p>
+            {/* Comments Section */}
+            <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border-2 border-purple-100 dark:border-purple-500/10 p-6 sm:p-8 mb-8">
+              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+                <MessageCircle className="w-6 h-6 text-purple-500" />
+                Comments {comments.length > 0 && `(${comments.length})`}
+              </h2>
+
+              {/* Comment Form */}
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!commentName.trim() || !commentContent.trim()) return;
+                  setSubmittingComment(true);
+                  setCommentSuccess(false);
+                  try {
+                    const res = await fetch("/api/v1/blog/comments", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        post_id: post.id,
+                        user_name: commentName,
+                        content: commentContent,
+                      }),
+                    });
+                    if (res.ok) {
+                      setCommentContent("");
+                      setCommentSuccess(true);
+                      setTimeout(() => setCommentSuccess(false), 5000);
+                    }
+                  } catch (error) {
+                    console.error("Error submitting comment:", error);
+                  } finally {
+                    setSubmittingComment(false);
+                  }
+                }}
+                className="mb-8 space-y-4"
+              >
+                <input
+                  type="text"
+                  value={commentName}
+                  onChange={(e) => setCommentName(e.target.value)}
+                  placeholder="Your name"
+                  required
+                  className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                />
+                <textarea
+                  value={commentContent}
+                  onChange={(e) => setCommentContent(e.target.value)}
+                  placeholder="Share your thoughts..."
+                  required
+                  rows={4}
+                  className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all"
+                />
+                <div className="flex items-center gap-4">
+                  <button
+                    type="submit"
+                    disabled={submittingComment}
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200"
+                  >
+                    <Send className="w-4 h-4" />
+                    {submittingComment ? "Posting..." : "Post Comment"}
+                  </button>
+                  {commentSuccess && (
+                    <span className="text-green-600 dark:text-green-400 text-sm font-medium">
+                      Comment submitted! It will appear after moderation.
+                    </span>
+                  )}
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </form>
 
-        {/* Related Posts */}
-        {relatedPosts.length > 0 && (
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">
-              Related Articles
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {relatedPosts.map((relatedPost) => (
-                <article
-                  key={relatedPost.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 dark:border-gray-700"
-                >
-                  <Link to={`/blog/${relatedPost.slug}`}>
-                    {relatedPost.featured_image ? (
-                      <img
-                        src={relatedPost.featured_image}
-                        alt={relatedPost.title}
-                        className="w-full h-40 object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-40 bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                        <span className="text-white text-3xl font-bold">
-                          {relatedPost.title.charAt(0)}
-                        </span>
+              {/* Comments List */}
+              {comments.length === 0 ? (
+                <p className="text-gray-500 dark:text-gray-400">
+                  No comments yet. Be the first to share your thoughts!
+                </p>
+              ) : (
+                <div className="space-y-6">
+                  {comments.map((comment) => (
+                    <div
+                      key={comment.id}
+                      className="border-b border-purple-100 dark:border-purple-500/10 pb-6 last:border-0 last:pb-0"
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
+                          <span className="text-white text-sm font-bold">
+                            {comment.user_name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {comment.user_name}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-500 text-sm ml-2">
+                            {new Date(comment.created_at).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                              year: "numeric",
+                            })}
+                          </span>
+                        </div>
                       </div>
-                    )}
-
-                    <div className="p-4">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                        {relatedPost.title}
-                      </h3>
-                      <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-2">
-                        {relatedPost.excerpt}
+                      <p className="text-gray-700 dark:text-gray-300 ml-11">
+                        {comment.content}
                       </p>
                     </div>
-                  </Link>
-                </article>
-              ))}
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Related Posts */}
+            {relatedPosts.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-6">
+                  Related Articles
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {relatedPosts.map((relatedPost) => (
+                    <article
+                      key={relatedPost.id}
+                      className="group bg-white dark:bg-white/5 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden border-2 border-purple-100 dark:border-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 hover:-translate-y-1"
+                    >
+                      <Link to={`/blog/${relatedPost.slug}`}>
+                        {relatedPost.featured_image ? (
+                          <img
+                            src={relatedPost.featured_image}
+                            alt={relatedPost.title}
+                            className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-40 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
+                            <span className="text-white text-3xl font-bold drop-shadow-lg">
+                              {relatedPost.title.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="p-4">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                            {relatedPost.title}
+                          </h3>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">
+                            {relatedPost.excerpt}
+                          </p>
+                        </div>
+                      </Link>
+                    </article>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Back to Blog Link */}
+            <div className="mt-12 text-center">
+              <Link
+                to="/blog"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200"
+              >
+                ← Back to All Posts
+              </Link>
             </div>
           </div>
-        )}
-
-        {/* Back to Blog Link */}
-        <div className="mt-12 text-center">
-          <Link
-            to="/blog"
-            className="inline-block px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-          >
-            ← Back to All Posts
-          </Link>
-        </div>
-      </div>
+        </main>
+      </PurpleThemeWrapper>
+      <Footer />
     </div>
   );
 }
