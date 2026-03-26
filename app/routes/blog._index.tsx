@@ -84,7 +84,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function BlogIndex() {
-  const { posts, total, limit, offset, categories } = useLoaderData<typeof loader>();
+  const { posts, total, limit, offset, categories } = useLoaderData() as LoaderData;
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
 
@@ -92,22 +92,10 @@ export default function BlogIndex() {
   const totalPages = Math.ceil(total / limit);
 
   useEffect(() => {
-    // Track page view
-    const trackView = async () => {
-      try {
-        await fetch("/api/v1/blog/analytics/view", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            post_id: "blog-index",
-            session_id: sessionStorage.getItem("session_id") || crypto.randomUUID(),
-          }),
-        });
-      } catch (error) {
-        console.error("Error tracking view:", error);
-      }
-    };
-    trackView();
+    // Ensure session ID is set for analytics tracking on post pages
+    if (!sessionStorage.getItem("session_id")) {
+      sessionStorage.setItem("session_id", crypto.randomUUID());
+    }
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {

@@ -1,7 +1,7 @@
 import { useLoaderData, Link } from "react-router";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { useEffect } from "react";
-import { Calendar, User, Share2, Twitter, Facebook, Linkedin, Link2, MessageCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Calendar, User, Share2, Twitter, Facebook, Linkedin, Link2, MessageCircle, Send } from "lucide-react";
 
 interface BlogPost {
   id: string;
@@ -25,20 +25,32 @@ interface BlogPost {
   updated_at: string;
 }
 
+interface Comment {
+  id: string;
+  post_id: string;
+  user_id: string;
+  user_name: string;
+  content: string;
+  status: string;
+  created_at: string;
+}
+
 interface LoaderData {
   post: BlogPost | null;
   relatedPosts: BlogPost[];
+  comments: Comment[];
 }
 
-export const meta: MetaFunction<typeof loader> = ({ data }) => {
-  if (!data?.post) {
+export const meta: MetaFunction = ({ data }) => {
+  const loaderData = data as LoaderData | undefined;
+  if (!loaderData?.post) {
     return [
       { title: "Post Not Found - Homebit Blog" },
       { name: "description", content: "The blog post you're looking for could not be found." },
     ];
   }
 
-  const { post } = data;
+  const post = loaderData.post!;
   const title = post.seo_title || post.title;
   const description = post.seo_description || post.excerpt;
   const imageUrl = post.featured_image || "https://homebit.co.ke/og-image.png";
@@ -94,15 +106,34 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     const relatedData = await relatedResponse.json();
     const relatedPosts = (relatedData.posts || []).filter((p: BlogPost) => p.slug !== slug);
 
-    return Response.json({ post, relatedPosts });
+    // Fetch approved comments
+    let comments: Comment[] = [];
+    try {
+      const commentsResponse = await fetch(
+        `${apiUrl}/api/v1/blog/posts/${post.id}/comments?status=approved`
+      );
+      if (commentsResponse.ok) {
+        const commentsData = await commentsResponse.json();
+        comments = commentsData.comments || [];
+      }
+    } catch {
+      // Comments are non-critical, continue without them
+    }
+
+    return Response.json({ post, relatedPosts, comments });
   } catch (error) {
     console.error("Error loading blog post:", error);
-    return Response.json({ post: null, relatedPosts: [] }, { status: 500 });
+    return Response.json({ post: null, relatedPosts: [], comments: [] }, { status: 500 });
   }
 }
 
 export default function BlogPost() {
-  const { post, relatedPosts } = useLoaderData<typeof loader>();
+  const { post, relatedPosts, comments: initialComments } = useLoaderData() as LoaderData;
+  const [comments, setComments] = useState<Comment[]>(initialComments || []);
+  const [commentName, setCommentName] = useState("");
+  const [commentContent, setCommentContent] = useState("");
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [commentSuccess, setCommentSuccess] = useState(false);
 
   useEffect(() => {
     if (!post) return;
@@ -327,15 +358,114 @@ export default function BlogPost() {
           )}
         </div>
 
-        {/* Comments Section Placeholder */}
+        {/* Comments Section */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 mb-8">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
             <MessageCircle className="w-6 h-6" />
-            Comments
+            Comments {comments.length > 0 && `(${comments.length})`}
           </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Comments coming soon! We're working on adding a comment system to engage with our readers.
-          </p>
+
+          {/* Comment Form */}
+          <form
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!commentName.trim() || !commentContent.trim()) return;
+              setSubmittingComment(true);
+              setCommentSuccess(false);
+              try {
+                const res = await fetch("/api/v1/blog/comments", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    post_id: post.id,
+                    user_name: commentName,
+                    content: commentContent,
+                  }),
+                });
+                if (res.ok) {
+                  setCommentContent("");
+                  setCommentSuccess(true);
+                  setTimeout(() => setCommentSuccess(false), 5000);
+                }
+              } catch (error) {
+                console.error("Error submitting comment:", error);
+              } finally {
+                setSubmittingComment(false);
+              }
+            }}
+            className="mb-8 space-y-4"
+          >
+            <input
+              type="text"
+              value={commentName}
+              onChange={(e) => setCommentName(e.target.value)}
+              placeholder="Your name"
+              required
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+            <textarea
+              value={commentContent}
+              onChange={(e) => setCommentContent(e.target.value)}
+              placeholder="Share your thoughts..."
+              required
+              rows={4}
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+            />
+            <div className="flex items-center gap-4">
+              <button
+                type="submit"
+                disabled={submittingComment}
+                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 disabled:opacity-50 text-white rounded-lg font-medium transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                {submittingComment ? "Posting..." : "Post Comment"}
+              </button>
+              {commentSuccess && (
+                <span className="text-green-600 dark:text-green-400 text-sm">
+                  Comment submitted! It will appear after moderation.
+                </span>
+              )}
+            </div>
+          </form>
+
+          {/* Comments List */}
+          {comments.length === 0 ? (
+            <p className="text-gray-500 dark:text-gray-400">
+              No comments yet. Be the first to share your thoughts!
+            </p>
+          ) : (
+            <div className="space-y-6">
+              {comments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className="border-b border-gray-200 dark:border-gray-700 pb-6 last:border-0 last:pb-0"
+                >
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
+                      <span className="text-purple-600 dark:text-purple-300 text-sm font-bold">
+                        {comment.user_name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-900 dark:text-white">
+                        {comment.user_name}
+                      </span>
+                      <span className="text-gray-500 dark:text-gray-400 text-sm ml-2">
+                        {new Date(comment.created_at).toLocaleDateString("en-US", {
+                          month: "short",
+                          day: "numeric",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-gray-700 dark:text-gray-300 ml-11">
+                    {comment.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Related Posts */}

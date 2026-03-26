@@ -15,6 +15,7 @@ import { notificationsService } from '~/services/grpc/notifications.service';
 
 const navigation = [
     { name: "Services", href: "/services" },
+    { name: "Blog", href: "/blog" },
     { name: "About", href: "/about" },
     { name: "Contact", href: "/contact" },
     { name: "Pricing", href: "/pricing" },
