@@ -11,13 +11,11 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import * as jspb from 'google-protobuf';
-const goog = jspb;
+var jspb = require('google-protobuf');
+var goog = jspb;
 var global = globalThis;
-const proto = {};
-proto.notifications = {};
 
-import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 goog.object.extend(proto, google_protobuf_struct_pb);
 goog.exportSymbol('proto.notifications.BlastActionRequest', null, global);
 goog.exportSymbol('proto.notifications.BlastActionResponse', null, global);
@@ -14571,4 +14569,4 @@ proto.notifications.PurgeUserDataResponse.prototype.clearErrorsList = function()
 };
 
 
-export default proto.notifications;
+goog.object.extend(exports, proto.notifications);

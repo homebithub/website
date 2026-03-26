@@ -51,6 +51,7 @@ protoc \
     $PROTO_DIR/auth/auth.proto \
     $PROTO_DIR/auth/device.proto \
     $PROTO_DIR/notifications/notifications.proto \
+    $PROTO_DIR/notifications/blog.proto \
     $PROTO_DIR/payments/payments.proto \
     $PROTO_DIR/events/events.proto
 

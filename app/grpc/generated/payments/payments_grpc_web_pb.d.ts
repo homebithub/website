@@ -365,6 +365,34 @@ export class PaymentsServiceClient {
                response: payments_payments_pb.PurgeUserDataResponse) => void
   ): grpcWeb.ClientReadableStream<payments_payments_pb.PurgeUserDataResponse>;
 
+  addToSubscriptionWhitelist(
+    request: payments_payments_pb.AddToSubscriptionWhitelistRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: payments_payments_pb.AddToSubscriptionWhitelistResponse) => void
+  ): grpcWeb.ClientReadableStream<payments_payments_pb.AddToSubscriptionWhitelistResponse>;
+
+  removeFromSubscriptionWhitelist(
+    request: payments_payments_pb.RemoveFromSubscriptionWhitelistRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: payments_payments_pb.RemoveFromSubscriptionWhitelistResponse) => void
+  ): grpcWeb.ClientReadableStream<payments_payments_pb.RemoveFromSubscriptionWhitelistResponse>;
+
+  listSubscriptionWhitelist(
+    request: payments_payments_pb.ListSubscriptionWhitelistRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: payments_payments_pb.ListSubscriptionWhitelistResponse) => void
+  ): grpcWeb.ClientReadableStream<payments_payments_pb.ListSubscriptionWhitelistResponse>;
+
+  isUserWhitelisted(
+    request: payments_payments_pb.IsUserWhitelistedRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: payments_payments_pb.IsUserWhitelistedResponse) => void
+  ): grpcWeb.ClientReadableStream<payments_payments_pb.IsUserWhitelistedResponse>;
+
 }
 
 export class PaymentsServicePromiseClient {
@@ -626,6 +654,26 @@ export class PaymentsServicePromiseClient {
     request: payments_payments_pb.PurgeUserDataRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<payments_payments_pb.PurgeUserDataResponse>;
+
+  addToSubscriptionWhitelist(
+    request: payments_payments_pb.AddToSubscriptionWhitelistRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<payments_payments_pb.AddToSubscriptionWhitelistResponse>;
+
+  removeFromSubscriptionWhitelist(
+    request: payments_payments_pb.RemoveFromSubscriptionWhitelistRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<payments_payments_pb.RemoveFromSubscriptionWhitelistResponse>;
+
+  listSubscriptionWhitelist(
+    request: payments_payments_pb.ListSubscriptionWhitelistRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<payments_payments_pb.ListSubscriptionWhitelistResponse>;
+
+  isUserWhitelisted(
+    request: payments_payments_pb.IsUserWhitelistedRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<payments_payments_pb.IsUserWhitelistedResponse>;
 
 }
 

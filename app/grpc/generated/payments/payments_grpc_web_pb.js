@@ -16,14 +16,13 @@
 
 
 
-import * as grpcWeb from 'grpc-web';
-const grpc = { web: grpcWeb };
+const grpc = {};
+grpc.web = require('grpc-web');
 
 
-import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js'
-const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb;
-import * as payments_pb from './payments_pb.js';
-const proto = { payments: payments_pb.default || payments_pb };
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js')
+const proto = {};
+proto.payments = require('./payments_pb.js');
 
 /**
  * @param {string} hostname
@@ -3188,8 +3187,249 @@ proto.payments.PaymentsServicePromiseClient.prototype.purgeUserData =
 };
 
 
-export default proto.payments;
-export const {
-  PaymentsServiceClient,
-} = proto.payments;
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.payments.AddToSubscriptionWhitelistRequest,
+ *   !proto.payments.AddToSubscriptionWhitelistResponse>}
+ */
+const methodDescriptor_PaymentsService_AddToSubscriptionWhitelist = new grpc.web.MethodDescriptor(
+  '/payments.PaymentsService/AddToSubscriptionWhitelist',
+  grpc.web.MethodType.UNARY,
+  proto.payments.AddToSubscriptionWhitelistRequest,
+  proto.payments.AddToSubscriptionWhitelistResponse,
+  /**
+   * @param {!proto.payments.AddToSubscriptionWhitelistRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.payments.AddToSubscriptionWhitelistResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.payments.AddToSubscriptionWhitelistRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.payments.AddToSubscriptionWhitelistResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.payments.AddToSubscriptionWhitelistResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.payments.PaymentsServiceClient.prototype.addToSubscriptionWhitelist =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/payments.PaymentsService/AddToSubscriptionWhitelist',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_AddToSubscriptionWhitelist,
+      callback);
+};
+
+
+/**
+ * @param {!proto.payments.AddToSubscriptionWhitelistRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.payments.AddToSubscriptionWhitelistResponse>}
+ *     Promise that resolves to the response
+ */
+proto.payments.PaymentsServicePromiseClient.prototype.addToSubscriptionWhitelist =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/payments.PaymentsService/AddToSubscriptionWhitelist',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_AddToSubscriptionWhitelist);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.payments.RemoveFromSubscriptionWhitelistRequest,
+ *   !proto.payments.RemoveFromSubscriptionWhitelistResponse>}
+ */
+const methodDescriptor_PaymentsService_RemoveFromSubscriptionWhitelist = new grpc.web.MethodDescriptor(
+  '/payments.PaymentsService/RemoveFromSubscriptionWhitelist',
+  grpc.web.MethodType.UNARY,
+  proto.payments.RemoveFromSubscriptionWhitelistRequest,
+  proto.payments.RemoveFromSubscriptionWhitelistResponse,
+  /**
+   * @param {!proto.payments.RemoveFromSubscriptionWhitelistRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.payments.RemoveFromSubscriptionWhitelistResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.payments.RemoveFromSubscriptionWhitelistRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.payments.RemoveFromSubscriptionWhitelistResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.payments.RemoveFromSubscriptionWhitelistResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.payments.PaymentsServiceClient.prototype.removeFromSubscriptionWhitelist =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/payments.PaymentsService/RemoveFromSubscriptionWhitelist',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_RemoveFromSubscriptionWhitelist,
+      callback);
+};
+
+
+/**
+ * @param {!proto.payments.RemoveFromSubscriptionWhitelistRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.payments.RemoveFromSubscriptionWhitelistResponse>}
+ *     Promise that resolves to the response
+ */
+proto.payments.PaymentsServicePromiseClient.prototype.removeFromSubscriptionWhitelist =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/payments.PaymentsService/RemoveFromSubscriptionWhitelist',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_RemoveFromSubscriptionWhitelist);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.payments.ListSubscriptionWhitelistRequest,
+ *   !proto.payments.ListSubscriptionWhitelistResponse>}
+ */
+const methodDescriptor_PaymentsService_ListSubscriptionWhitelist = new grpc.web.MethodDescriptor(
+  '/payments.PaymentsService/ListSubscriptionWhitelist',
+  grpc.web.MethodType.UNARY,
+  proto.payments.ListSubscriptionWhitelistRequest,
+  proto.payments.ListSubscriptionWhitelistResponse,
+  /**
+   * @param {!proto.payments.ListSubscriptionWhitelistRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.payments.ListSubscriptionWhitelistResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.payments.ListSubscriptionWhitelistRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.payments.ListSubscriptionWhitelistResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.payments.ListSubscriptionWhitelistResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.payments.PaymentsServiceClient.prototype.listSubscriptionWhitelist =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/payments.PaymentsService/ListSubscriptionWhitelist',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_ListSubscriptionWhitelist,
+      callback);
+};
+
+
+/**
+ * @param {!proto.payments.ListSubscriptionWhitelistRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.payments.ListSubscriptionWhitelistResponse>}
+ *     Promise that resolves to the response
+ */
+proto.payments.PaymentsServicePromiseClient.prototype.listSubscriptionWhitelist =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/payments.PaymentsService/ListSubscriptionWhitelist',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_ListSubscriptionWhitelist);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.payments.IsUserWhitelistedRequest,
+ *   !proto.payments.IsUserWhitelistedResponse>}
+ */
+const methodDescriptor_PaymentsService_IsUserWhitelisted = new grpc.web.MethodDescriptor(
+  '/payments.PaymentsService/IsUserWhitelisted',
+  grpc.web.MethodType.UNARY,
+  proto.payments.IsUserWhitelistedRequest,
+  proto.payments.IsUserWhitelistedResponse,
+  /**
+   * @param {!proto.payments.IsUserWhitelistedRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.payments.IsUserWhitelistedResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.payments.IsUserWhitelistedRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.payments.IsUserWhitelistedResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.payments.IsUserWhitelistedResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.payments.PaymentsServiceClient.prototype.isUserWhitelisted =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/payments.PaymentsService/IsUserWhitelisted',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_IsUserWhitelisted,
+      callback);
+};
+
+
+/**
+ * @param {!proto.payments.IsUserWhitelistedRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.payments.IsUserWhitelistedResponse>}
+ *     Promise that resolves to the response
+ */
+proto.payments.PaymentsServicePromiseClient.prototype.isUserWhitelisted =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/payments.PaymentsService/IsUserWhitelisted',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_IsUserWhitelisted);
+};
+
+
+module.exports = proto.payments;
 

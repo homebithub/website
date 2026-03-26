@@ -1,7 +1,7 @@
 import { useLoaderData, useSearchParams, Form, Link } from "react-router";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useState, useEffect } from "react";
-import { Search, Filter, Calendar, TrendingUp, BookOpen } from "lucide-react";
+import { Search, Filter, Calendar, TrendingUp, BookOpen, Heart } from "lucide-react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -27,6 +27,7 @@ interface BlogPost {
   tags: string[];
   published_at: string;
   total_views?: number;
+  total_likes?: number;
 }
 
 interface LoaderData {
@@ -272,9 +273,17 @@ export default function BlogIndex() {
                                 })}
                               </span>
                             </div>
-                            {post.total_views && post.total_views > 0 && (
-                              <span>{post.total_views} views</span>
-                            )}
+                            <div className="flex items-center gap-3">
+                              {post.total_likes != null && post.total_likes > 0 && (
+                                <span className="flex items-center gap-1 text-pink-500">
+                                  <Heart className="w-3.5 h-3.5 fill-current" />
+                                  {post.total_likes}
+                                </span>
+                              )}
+                              {post.total_views != null && post.total_views > 0 && (
+                                <span>{post.total_views} views</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </Link>

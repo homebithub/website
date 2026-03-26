@@ -16,20 +16,17 @@
 
 
 
-import * as grpcWeb from 'grpc-web';
-const grpc = { web: grpcWeb };
+const grpc = {};
+grpc.web = require('grpc-web');
 
 
-import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js'
-const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb;
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js')
 
-import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js'
-const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb;
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js')
 
-import * as _google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js'
-const google_protobuf_struct_pb = _google_protobuf_struct_pb.default || _google_protobuf_struct_pb;
-import * as auth_pb from './auth_pb.js';
-const proto = { auth: auth_pb.default || auth_pb };
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js')
+const proto = {};
+proto.auth = require('./auth_pb.js');
 
 /**
  * @param {string} hostname
@@ -16746,34 +16743,5 @@ proto.auth.KYCServicePromiseClient.prototype.listPendingKYC =
 };
 
 
-export default proto.auth;
-export const {
-  AuthServiceClient,
-  BureauServiceClient,
-  ProfileServiceClient,
-  HireRequestServiceClient,
-  HireContractServiceClient,
-  HireNegotiationServiceClient,
-  EmploymentServiceClient,
-  JobServiceClient,
-  ShortlistServiceClient,
-  InterestServiceClient,
-  ReviewServiceClient,
-  LocationServiceClient,
-  ImageServiceClient,
-  DocumentServiceClient,
-  PetsServiceClient,
-  HouseholdKidsServiceClient,
-  HousehelpPreferencesServiceClient,
-  HouseholdPreferencesServiceClient,
-  HouseholdMemberServiceClient,
-  ProfileViewServiceClient,
-  PreferencesServiceClient,
-  ProfileSetupServiceClient,
-  OnboardingOptionsServiceClient,
-  ContactServiceClient,
-  WaitlistServiceClient,
-  EmploymentContractServiceClient,
-  KYCServiceClient,
-} = proto.auth;
+module.exports = proto.auth;
 
