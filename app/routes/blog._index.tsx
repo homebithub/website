@@ -1,7 +1,10 @@
-import { useLoaderData, useSearchParams, Form } from "react-router";
+import { useLoaderData, useSearchParams, Form, Link } from "react-router";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
 import { useState, useEffect } from "react";
-import { Search, Filter, Calendar, TrendingUp } from "lucide-react";
+import { Search, Filter, Calendar, TrendingUp, BookOpen } from "lucide-react";
+import { Navigation } from "~/components/Navigation";
+import { Footer } from "~/components/Footer";
+import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 
 export const meta: MetaFunction = () => {
   return [
@@ -129,180 +132,194 @@ export default function BlogIndex() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <h1 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">
-            Homebit Blog
-          </h1>
-          <p className="text-lg text-gray-600 dark:text-gray-300">
-            Insights, tips, and stories about household management and hiring help
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Search and Filters */}
-        <div className="mb-8 space-y-4">
-          {/* Search Bar */}
-          <Form onSubmit={handleSearch} className="flex gap-2">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search articles..."
-                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              />
-            </div>
-            <button
-              type="submit"
-              className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
-            >
-              Search
-            </button>
-          </Form>
-
-          {/* Filters */}
-          <div className="flex flex-wrap gap-4 items-center">
-            <div className="flex items-center gap-2">
-              <Filter className="w-5 h-5 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
-            </div>
-
-            {/* Category Filter */}
-            <select
-              value={searchParams.get("category") || ""}
-              onChange={(e) => handleCategoryFilter(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-            >
-              <option value="">All Categories</option>
-              {categories.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-
-            {/* Sort */}
-            <div className="flex items-center gap-2 ml-auto">
-              <TrendingUp className="w-5 h-5 text-gray-500" />
-              <select
-                value={searchParams.get("sort") || "newest"}
-                onChange={(e) => handleSort(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white text-sm"
-              >
-                <option value="newest">Newest First</option>
-                <option value="popular">Most Popular</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        {/* Blog Posts Grid */}
-        {posts.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 dark:text-gray-400 text-lg">
-              No blog posts found. Check back soon!
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {posts.map((post) => (
-                <article
-                  key={post.id}
-                  className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow overflow-hidden border border-gray-200 dark:border-gray-700"
-                >
-                  <a href={`/blog/${post.slug}`} className="block">
-                    {post.featured_image ? (
-                      <img
-                        src={post.featured_image}
-                        alt={post.title}
-                        className="w-full h-48 object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-48 bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                        <span className="text-white text-4xl font-bold">
-                          {post.title.charAt(0)}
-                        </span>
-                      </div>
-                    )}
-
-                    <div className="p-6">
-                      {/* Category Badge */}
-                      {post.category && (
-                        <span className="inline-block px-3 py-1 bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 text-xs font-medium rounded-full mb-3">
-                          {post.category}
-                        </span>
-                      )}
-
-                      <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-2">
-                        {post.title}
-                      </h2>
-
-                      <p className="text-gray-600 dark:text-gray-300 mb-4 line-clamp-3">
-                        {post.excerpt}
-                      </p>
-
-                      <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          <span>
-                            {new Date(post.published_at).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                              year: "numeric",
-                            })}
-                          </span>
-                        </div>
-                        {post.total_views && post.total_views > 0 && (
-                          <span>{post.total_views} views</span>
-                        )}
-                      </div>
-                    </div>
-                  </a>
-                </article>
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center gap-2">
-                <button
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams);
-                    params.set("page", String(currentPage - 1));
-                    setSearchParams(params);
-                  }}
-                  disabled={currentPage === 1}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Previous
-                </button>
-
-                <span className="px-4 py-2 text-gray-700 dark:text-gray-300">
-                  Page {currentPage} of {totalPages}
-                </span>
-
-                <button
-                  onClick={() => {
-                    const params = new URLSearchParams(searchParams);
-                    params.set("page", String(currentPage + 1));
-                    setSearchParams(params);
-                  }}
-                  disabled={currentPage === totalPages}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  Next
-                </button>
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <PurpleThemeWrapper variant="gradient" bubbles={false} className="flex-1">
+        <main className="flex-1">
+          {/* Hero Header */}
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 sm:pt-16 pb-8 sm:pb-12">
+            <div className="text-center">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 mb-6">
+                <BookOpen className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">Our Blog</span>
               </div>
+              <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">
+                <span className="text-gray-900 dark:text-white">Homebit </span>
+                <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Blog</span>
+              </h1>
+              <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+                Insights, tips, and stories about household management and hiring help
+              </p>
+            </div>
+          </section>
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+            {/* Search and Filters */}
+            <div className="mb-10 space-y-4">
+              {/* Search Bar */}
+              <Form onSubmit={handleSearch} className="flex gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500 w-5 h-5" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search articles..."
+                    className="w-full pl-12 pr-4 py-3 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 hover:scale-105 transition-all duration-200"
+                >
+                  Search
+                </button>
+              </Form>
+
+              {/* Filters */}
+              <div className="flex flex-wrap gap-4 items-center">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filter:</span>
+                </div>
+
+                {/* Category Filter */}
+                <select
+                  value={searchParams.get("category") || ""}
+                  onChange={(e) => handleCategoryFilter(e.target.value)}
+                  className="px-4 py-2 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer"
+                >
+                  <option value="">All Categories</option>
+                  {categories.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Sort */}
+                <div className="flex items-center gap-2 ml-auto">
+                  <TrendingUp className="w-5 h-5 text-purple-500 dark:text-purple-400" />
+                  <select
+                    value={searchParams.get("sort") || "newest"}
+                    onChange={(e) => handleSort(e.target.value)}
+                    className="px-4 py-2 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer"
+                  >
+                    <option value="newest">Newest First</option>
+                    <option value="popular">Most Popular</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Blog Posts Grid */}
+            {posts.length === 0 ? (
+              <div className="text-center py-20">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-500/10 mb-6">
+                  <BookOpen className="w-8 h-8 text-purple-500 dark:text-purple-400" />
+                </div>
+                <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+                  No blog posts found. Check back soon!
+                </p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+                  {posts.map((post) => (
+                    <article
+                      key={post.id}
+                      className="group bg-white dark:bg-white/5 rounded-2xl shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300 overflow-hidden border-2 border-purple-100 dark:border-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 hover:-translate-y-1"
+                    >
+                      <Link to={`/blog/${post.slug}`} className="block">
+                        {post.featured_image ? (
+                          <img
+                            src={post.featured_image}
+                            alt={post.title}
+                            className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+                          />
+                        ) : (
+                          <div className="w-full h-48 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center group-hover:from-purple-700 group-hover:to-pink-700 transition-all duration-300">
+                            <span className="text-white text-4xl font-bold drop-shadow-lg">
+                              {post.title.charAt(0)}
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="p-6">
+                          {/* Category Badge */}
+                          {post.category && (
+                            <span className="inline-block px-3 py-1 bg-purple-100 dark:bg-purple-500/10 text-purple-600 dark:text-purple-300 text-xs font-semibold rounded-full mb-3 border border-purple-200 dark:border-purple-500/20">
+                              {post.category}
+                            </span>
+                          )}
+
+                          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                            {post.title}
+                          </h2>
+
+                          <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3 text-sm">
+                            {post.excerpt}
+                          </p>
+
+                          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-500">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="w-4 h-4" />
+                              <span>
+                                {new Date(post.published_at).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                })}
+                              </span>
+                            </div>
+                            {post.total_views && post.total_views > 0 && (
+                              <span>{post.total_views} views</span>
+                            )}
+                          </div>
+                        </div>
+                      </Link>
+                    </article>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-3">
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams(searchParams);
+                        params.set("page", String(currentPage - 1));
+                        setSearchParams(params);
+                      }}
+                      disabled={currentPage === 1}
+                      className="px-5 py-2.5 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all"
+                    >
+                      Previous
+                    </button>
+
+                    <span className="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                      Page {currentPage} of {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() => {
+                        const params = new URLSearchParams(searchParams);
+                        params.set("page", String(currentPage + 1));
+                        setSearchParams(params);
+                      }}
+                      disabled={currentPage === totalPages}
+                      className="px-5 py-2.5 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
             )}
-          </>
-        )}
-      </div>
+          </div>
+        </main>
+      </PurpleThemeWrapper>
+      <Footer />
     </div>
   );
 }

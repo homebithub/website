@@ -59,6 +59,7 @@ export function Navigation() {
             { name: 'Shortlist', href: shortlistHref, count: shortlistCount },
             { name: 'Inbox', href: '/inbox', count: inboxCount },
             { name: 'Hiring', href: hiringHistoryHref, count: hireRequestCount },
+            { name: 'Blog', href: '/blog', count: 0 },
         ];
     }, [profileType, shortlistCount, inboxCount, hireRequestCount]);
 
