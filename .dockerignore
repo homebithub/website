@@ -1,3 +1,7 @@
+# Documentation
+docs/
+*.md
+
 # Ignore dependencies from host
 node_modules
 
