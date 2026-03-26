@@ -11,13 +11,11 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import * as jspb from 'google-protobuf';
-const goog = jspb;
+var jspb = require('google-protobuf');
+var goog = jspb;
 var global = globalThis;
-const proto = {};
-proto.events = {};
 
-import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js';
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 goog.object.extend(proto, google_protobuf_timestamp_pb);
 goog.exportSymbol('proto.events.BlastMessage', null, global);
 goog.exportSymbol('proto.events.ContractExpiring', null, global);
@@ -10143,4 +10141,4 @@ proto.events.ContractTerminated.prototype.hasTerminatedAt = function() {
 };
 
 
-export default proto.events;
+goog.object.extend(exports, proto.events);

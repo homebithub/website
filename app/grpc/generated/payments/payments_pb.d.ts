@@ -263,7 +263,8 @@ export class GetPlansRequest extends jspb.Message {
 }
 
 export namespace GetPlansRequest {
-  export type AsObject = Record<string, never>;
+  export type AsObject = {
+  };
 }
 
 export class GetPlansResponse extends jspb.Message {
@@ -1910,7 +1911,8 @@ export class GetFraudRulesRequest extends jspb.Message {
 }
 
 export namespace GetFraudRulesRequest {
-  export type AsObject = Record<string, never>;
+  export type AsObject = {
+  };
 }
 
 export class GetFraudRulesResponse extends jspb.Message {
@@ -3640,6 +3642,198 @@ export namespace PurgeUserDataResponse {
     message: string;
     usersPurged: number;
     errorsList: Array<string>;
+  };
+}
+
+export class AddToSubscriptionWhitelistRequest extends jspb.Message {
+  getUserIdsList(): Array<string>;
+  setUserIdsList(value: Array<string>): AddToSubscriptionWhitelistRequest;
+  clearUserIdsList(): AddToSubscriptionWhitelistRequest;
+  addUserIds(value: string, index?: number): AddToSubscriptionWhitelistRequest;
+
+  getReason(): string;
+  setReason(value: string): AddToSubscriptionWhitelistRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AddToSubscriptionWhitelistRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AddToSubscriptionWhitelistRequest): AddToSubscriptionWhitelistRequest.AsObject;
+  static serializeBinaryToWriter(message: AddToSubscriptionWhitelistRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AddToSubscriptionWhitelistRequest;
+  static deserializeBinaryFromReader(message: AddToSubscriptionWhitelistRequest, reader: jspb.BinaryReader): AddToSubscriptionWhitelistRequest;
+}
+
+export namespace AddToSubscriptionWhitelistRequest {
+  export type AsObject = {
+    userIdsList: Array<string>;
+    reason: string;
+  };
+}
+
+export class AddToSubscriptionWhitelistResponse extends jspb.Message {
+  getMessage(): string;
+  setMessage(value: string): AddToSubscriptionWhitelistResponse;
+
+  getUsersAdded(): number;
+  setUsersAdded(value: number): AddToSubscriptionWhitelistResponse;
+
+  getAlreadyWhitelistedList(): Array<string>;
+  setAlreadyWhitelistedList(value: Array<string>): AddToSubscriptionWhitelistResponse;
+  clearAlreadyWhitelistedList(): AddToSubscriptionWhitelistResponse;
+  addAlreadyWhitelisted(value: string, index?: number): AddToSubscriptionWhitelistResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AddToSubscriptionWhitelistResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AddToSubscriptionWhitelistResponse): AddToSubscriptionWhitelistResponse.AsObject;
+  static serializeBinaryToWriter(message: AddToSubscriptionWhitelistResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AddToSubscriptionWhitelistResponse;
+  static deserializeBinaryFromReader(message: AddToSubscriptionWhitelistResponse, reader: jspb.BinaryReader): AddToSubscriptionWhitelistResponse;
+}
+
+export namespace AddToSubscriptionWhitelistResponse {
+  export type AsObject = {
+    message: string;
+    usersAdded: number;
+    alreadyWhitelistedList: Array<string>;
+  };
+}
+
+export class RemoveFromSubscriptionWhitelistRequest extends jspb.Message {
+  getUserIdsList(): Array<string>;
+  setUserIdsList(value: Array<string>): RemoveFromSubscriptionWhitelistRequest;
+  clearUserIdsList(): RemoveFromSubscriptionWhitelistRequest;
+  addUserIds(value: string, index?: number): RemoveFromSubscriptionWhitelistRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RemoveFromSubscriptionWhitelistRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: RemoveFromSubscriptionWhitelistRequest): RemoveFromSubscriptionWhitelistRequest.AsObject;
+  static serializeBinaryToWriter(message: RemoveFromSubscriptionWhitelistRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RemoveFromSubscriptionWhitelistRequest;
+  static deserializeBinaryFromReader(message: RemoveFromSubscriptionWhitelistRequest, reader: jspb.BinaryReader): RemoveFromSubscriptionWhitelistRequest;
+}
+
+export namespace RemoveFromSubscriptionWhitelistRequest {
+  export type AsObject = {
+    userIdsList: Array<string>;
+  };
+}
+
+export class RemoveFromSubscriptionWhitelistResponse extends jspb.Message {
+  getMessage(): string;
+  setMessage(value: string): RemoveFromSubscriptionWhitelistResponse;
+
+  getUsersRemoved(): number;
+  setUsersRemoved(value: number): RemoveFromSubscriptionWhitelistResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RemoveFromSubscriptionWhitelistResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: RemoveFromSubscriptionWhitelistResponse): RemoveFromSubscriptionWhitelistResponse.AsObject;
+  static serializeBinaryToWriter(message: RemoveFromSubscriptionWhitelistResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RemoveFromSubscriptionWhitelistResponse;
+  static deserializeBinaryFromReader(message: RemoveFromSubscriptionWhitelistResponse, reader: jspb.BinaryReader): RemoveFromSubscriptionWhitelistResponse;
+}
+
+export namespace RemoveFromSubscriptionWhitelistResponse {
+  export type AsObject = {
+    message: string;
+    usersRemoved: number;
+  };
+}
+
+export class ListSubscriptionWhitelistRequest extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListSubscriptionWhitelistRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListSubscriptionWhitelistRequest): ListSubscriptionWhitelistRequest.AsObject;
+  static serializeBinaryToWriter(message: ListSubscriptionWhitelistRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListSubscriptionWhitelistRequest;
+  static deserializeBinaryFromReader(message: ListSubscriptionWhitelistRequest, reader: jspb.BinaryReader): ListSubscriptionWhitelistRequest;
+}
+
+export namespace ListSubscriptionWhitelistRequest {
+  export type AsObject = {
+  };
+}
+
+export class ListSubscriptionWhitelistResponse extends jspb.Message {
+  getUsersList(): Array<WhitelistedUser>;
+  setUsersList(value: Array<WhitelistedUser>): ListSubscriptionWhitelistResponse;
+  clearUsersList(): ListSubscriptionWhitelistResponse;
+  addUsers(value?: WhitelistedUser, index?: number): WhitelistedUser;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListSubscriptionWhitelistResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListSubscriptionWhitelistResponse): ListSubscriptionWhitelistResponse.AsObject;
+  static serializeBinaryToWriter(message: ListSubscriptionWhitelistResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListSubscriptionWhitelistResponse;
+  static deserializeBinaryFromReader(message: ListSubscriptionWhitelistResponse, reader: jspb.BinaryReader): ListSubscriptionWhitelistResponse;
+}
+
+export namespace ListSubscriptionWhitelistResponse {
+  export type AsObject = {
+    usersList: Array<WhitelistedUser.AsObject>;
+  };
+}
+
+export class WhitelistedUser extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): WhitelistedUser;
+
+  getReason(): string;
+  setReason(value: string): WhitelistedUser;
+
+  getWhitelistedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setWhitelistedAt(value?: google_protobuf_timestamp_pb.Timestamp): WhitelistedUser;
+  hasWhitelistedAt(): boolean;
+  clearWhitelistedAt(): WhitelistedUser;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): WhitelistedUser.AsObject;
+  static toObject(includeInstance: boolean, msg: WhitelistedUser): WhitelistedUser.AsObject;
+  static serializeBinaryToWriter(message: WhitelistedUser, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): WhitelistedUser;
+  static deserializeBinaryFromReader(message: WhitelistedUser, reader: jspb.BinaryReader): WhitelistedUser;
+}
+
+export namespace WhitelistedUser {
+  export type AsObject = {
+    userId: string;
+    reason: string;
+    whitelistedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class IsUserWhitelistedRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): IsUserWhitelistedRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): IsUserWhitelistedRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: IsUserWhitelistedRequest): IsUserWhitelistedRequest.AsObject;
+  static serializeBinaryToWriter(message: IsUserWhitelistedRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): IsUserWhitelistedRequest;
+  static deserializeBinaryFromReader(message: IsUserWhitelistedRequest, reader: jspb.BinaryReader): IsUserWhitelistedRequest;
+}
+
+export namespace IsUserWhitelistedRequest {
+  export type AsObject = {
+    userId: string;
+  };
+}
+
+export class IsUserWhitelistedResponse extends jspb.Message {
+  getIsWhitelisted(): boolean;
+  setIsWhitelisted(value: boolean): IsUserWhitelistedResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): IsUserWhitelistedResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: IsUserWhitelistedResponse): IsUserWhitelistedResponse.AsObject;
+  static serializeBinaryToWriter(message: IsUserWhitelistedResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): IsUserWhitelistedResponse;
+  static deserializeBinaryFromReader(message: IsUserWhitelistedResponse, reader: jspb.BinaryReader): IsUserWhitelistedResponse;
+}
+
+export namespace IsUserWhitelistedResponse {
+  export type AsObject = {
+    isWhitelisted: boolean;
   };
 }
 

@@ -11,15 +11,13 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import * as jspb from 'google-protobuf';
-const goog = jspb;
+var jspb = require('google-protobuf');
+var goog = jspb;
 var global = globalThis;
-const proto = {};
-proto.auth = {};
 
-import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js';
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 goog.object.extend(proto, google_protobuf_timestamp_pb);
-import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js';
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
 goog.exportSymbol('proto.auth.ConfirmDeviceRequest', null, global);
 goog.exportSymbol('proto.auth.ConfirmDeviceResponse', null, global);
@@ -4108,4 +4106,4 @@ proto.auth.UpdateDeviceActivityRequest.prototype.setUserId = function(value) {
 };
 
 
-export default proto.auth;
+goog.object.extend(exports, proto.auth);

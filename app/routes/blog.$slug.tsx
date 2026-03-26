@@ -1,10 +1,12 @@
 import { useLoaderData, Link } from "react-router";
 import type { LoaderFunctionArgs, MetaFunction } from "react-router";
-import { useEffect, useState } from "react";
-import { Calendar, User, Share2, Twitter, Facebook, Linkedin, Link2, MessageCircle, Send } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
+import { Calendar, User, Share2, Twitter, Facebook, Linkedin, Link2, MessageCircle, Send, Heart, X } from "lucide-react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
+import { useAuth } from "~/contexts/useAuth";
+import { blogService } from "~/services/grpc/blog.service";
 
 interface BlogPost {
   id: string;
@@ -132,11 +134,66 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 export default function BlogPost() {
   const { post, relatedPosts, comments: initialComments } = useLoaderData() as LoaderData;
+  const { user } = useAuth();
   const [comments, setComments] = useState<Comment[]>(initialComments || []);
   const [commentName, setCommentName] = useState("");
   const [commentContent, setCommentContent] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
   const [commentSuccess, setCommentSuccess] = useState(false);
+  const [liked, setLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [likeLoading, setLikeLoading] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
+  // Get user ID from auth context
+  const getUserId = useCallback(() => {
+    if (!user) return null;
+    const u = user as any;
+    return u.user_id || u.id || u.user?.user_id || null;
+  }, [user]);
+
+  // Fetch like status on mount
+  useEffect(() => {
+    if (!post) return;
+    const fetchLikeStatus = async () => {
+      try {
+        const userId = getUserId();
+        const status = await blogService.getLikeStatus(post.id, userId || undefined);
+        setLikeCount(Number(status.totalLikes) || 0);
+        setLiked(!!status.liked);
+      } catch (err) {
+        console.error("Error fetching like status:", err);
+      }
+    };
+    fetchLikeStatus();
+  }, [post, getUserId]);
+
+  const handleLike = async () => {
+    const userId = getUserId();
+    if (!userId) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (likeLoading || !post) return;
+    setLikeLoading(true);
+    try {
+      if (liked) {
+        // Unlike
+        await blogService.unlikePost(post.id, userId);
+        setLiked(false);
+        setLikeCount((c) => Math.max(0, c - 1));
+      } else {
+        // Like
+        const response = await blogService.likePost(post.id, userId);
+        setLiked(true);
+        setLikeCount(Number(response.totalLikes) ?? likeCount + 1);
+      }
+    } catch (err) {
+      console.error("Error toggling like:", err);
+    } finally {
+      setLikeLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!post) return;
@@ -346,6 +403,23 @@ export default function BlogPost() {
                 >
                   <Link2 className="w-5 h-5 text-gray-500 dark:text-gray-400" />
                 </button>
+
+                {/* Like Button */}
+                <div className="ml-auto flex items-center gap-2">
+                  <button
+                    onClick={handleLike}
+                    disabled={likeLoading}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                      liked
+                        ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/25 hover:shadow-xl hover:shadow-pink-500/30 scale-100"
+                        : "border-2 border-purple-200 dark:border-purple-500/20 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30"
+                    } ${likeLoading ? "opacity-60 cursor-not-allowed" : "hover:scale-105"}`}
+                    aria-label={liked ? "Unlike this post" : "Like this post"}
+                  >
+                    <Heart className={`w-4 h-4 transition-all ${liked ? "fill-current" : ""}`} />
+                    <span>{likeCount}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Article Content */}
@@ -536,6 +610,51 @@ export default function BlogPost() {
         </main>
       </PurpleThemeWrapper>
       <Footer />
+
+      {/* Auth Modal - shown when non-logged-in user tries to like */}
+      {showAuthModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowAuthModal(false)}
+          />
+          <div className="relative bg-white dark:bg-[#1a1a2e] rounded-2xl shadow-2xl border-2 border-purple-200 dark:border-purple-500/20 p-8 max-w-md w-full">
+            <button
+              onClick={() => setShowAuthModal(false)}
+              className="absolute top-4 right-4 p-1 hover:bg-gray-100 dark:hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+            </button>
+
+            <div className="text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 mb-4">
+                <Heart className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mb-2">
+                Like this article?
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mb-6">
+                Sign in or create an account to like posts and engage with our community.
+              </p>
+              <div className="flex flex-col gap-3">
+                <Link
+                  to="/login"
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200 text-center"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  to="/signup"
+                  className="w-full px-6 py-3 border-2 border-purple-200 dark:border-purple-500/20 text-purple-700 dark:text-purple-300 rounded-xl font-semibold hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all text-center"
+                >
+                  Create Account
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

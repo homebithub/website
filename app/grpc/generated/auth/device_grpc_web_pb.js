@@ -16,17 +16,15 @@
 
 
 
-import * as grpcWeb from 'grpc-web';
-const grpc = { web: grpcWeb };
+const grpc = {};
+grpc.web = require('grpc-web');
 
 
-import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js'
-const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb;
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js')
 
-import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js'
-const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb;
-import * as device_pb from './device_pb.js';
-const proto = { auth: device_pb.default || device_pb };
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js')
+const proto = {};
+proto.auth = require('./device_pb.js');
 
 /**
  * @param {string} hostname
@@ -568,8 +566,5 @@ proto.auth.DeviceServicePromiseClient.prototype.updateDeviceActivity =
 };
 
 
-export default proto.auth;
-export const {
-  DeviceServiceClient,
-} = proto.auth;
+module.exports = proto.auth;
 
