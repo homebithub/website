@@ -1,5 +1,5 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSubmit } from 'react-router';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../../utils/errorMessages';
@@ -21,6 +21,7 @@ const Budget: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const submit = useSubmit();
+  const initialLoadDone = useRef(false);
   
   const BUDGET_RANGES: Record<BudgetFrequency, BudgetRange[]> = {
     daily: budgetRanges.map(r => r.label),
@@ -42,8 +43,10 @@ const Budget: React.FC = () => {
     }
   }, [profileData.budget]);
 
-  // Load existing data from backend
+  // Load existing data from backend (only once on mount)
   useEffect(() => {
+    if (initialLoadDone.current) return;
+    
     const loadData = async () => {
       try {
         const token = getAccessTokenFromCookies();
@@ -51,33 +54,30 @@ const Budget: React.FC = () => {
         
         const data = await grpcProfileService.getCurrentHouseholdProfile('');
         if (data) {
-          let effectiveFreq: BudgetFrequency = frequency;
+          let effectiveFreq: BudgetFrequency = 'monthly';
           if (data.salary_frequency) {
-            const freq = data.salary_frequency.toLowerCase() as BudgetFrequency;
-            setFrequency(freq);
-            effectiveFreq = freq;
+            effectiveFreq = data.salary_frequency.toLowerCase() as BudgetFrequency;
+            setFrequency(effectiveFreq);
           }
           if (data.budget_min !== undefined || data.budget_max !== undefined) {
-            const ranges = BUDGET_RANGES[effectiveFreq] || [];
-            const matchedRange = ranges.find(range => {
-              if (range === 'Negotiable') return data.budget_min === 0 && data.budget_max === 0;
-              const parts = range.split('-');
-              if (parts.length === 2) {
-                const min = parseInt(parts[0].replace(/,/g, ''));
-                const max = parseInt(parts[1].replace(/,/g, '').replace('KES', '').replace('+', ''));
-                return data.budget_min === min && data.budget_max === max;
-              }
-              return false;
-            });
-            if (matchedRange) setSelectedRange(matchedRange);
+            // Store the backend values to match against ranges once they load
+            const budgetMin = data.budget_min;
+            const budgetMax = data.budget_max;
+            // We'll set the range directly as a string for now
+            if (budgetMin === 0 && budgetMax === 0) {
+              setSelectedRange('Negotiable');
+            } else if (budgetMin && budgetMax) {
+              setSelectedRange(`${budgetMin.toLocaleString()}-${budgetMax.toLocaleString()} KES`);
+            }
           }
+          initialLoadDone.current = true;
         }
       } catch (err) {
         console.error('Failed to load budget:', err);
       }
     };
     loadData();
-  }, [frequency, currentRanges.length]);
+  }, []);
 
   const handleRangeSelect = async (range: string) => {
     setSelectedRange(range);
