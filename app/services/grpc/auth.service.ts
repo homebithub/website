@@ -362,7 +362,7 @@ export const authService = {
     const request = new auth_pb.CheckIsAdminRequest();
     request.setEmail(email);
     return new Promise((resolve) => {
-      adminAuthClient.checkIsAdmin(request, {}, (err: any, response: any) => {
+      adminAuthClient.checkIsAdmin(request, getMetadata(), (err: any, response: any) => {
         if (err || !response) {
           resolve(false);
         } else {
