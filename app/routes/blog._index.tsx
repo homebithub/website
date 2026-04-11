@@ -5,6 +5,7 @@ import { Search, Filter, Calendar, TrendingUp, BookOpen, Heart } from "lucide-re
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
+import { BlogSubscribeForm } from "~/components/blog/BlogSubscribeForm";
 
 export const meta: MetaFunction = () => {
   return [
@@ -325,6 +326,10 @@ export default function BlogIndex() {
                 )}
               </>
             )}
+          </div>
+          {/* Subscribe Banner */}
+          <div className="mt-12">
+            <BlogSubscribeForm variant="banner" />
           </div>
         </main>
       </PurpleThemeWrapper>

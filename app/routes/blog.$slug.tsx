@@ -5,6 +5,7 @@ import { Calendar, User, Share2, Twitter, Facebook, Linkedin, Link2, MessageCirc
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
+import { BlogSubscribeForm } from "~/components/blog/BlogSubscribeForm";
 import { useAuth } from "~/contexts/useAuth";
 import { blogService } from "~/services/grpc/blog.service";
 
@@ -597,8 +598,11 @@ export default function BlogPost() {
               </div>
             )}
 
+            {/* Subscribe Form */}
+            <BlogSubscribeForm variant="inline" className="mt-10" />
+
             {/* Back to Blog Link */}
-            <div className="mt-12 text-center">
+            <div className="mt-8 text-center">
               <Link
                 to="/blog"
                 className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200"

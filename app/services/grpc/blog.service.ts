@@ -10,6 +10,9 @@ import {
   UnlikePostRequest,
   GetLikeStatusRequest,
   LikeStatusResponse,
+  SubscribeToBlogRequest,
+  SubscribeToBlogResponse,
+  UnsubscribeFromBlogRequest,
 } from '~/grpc/generated/notifications/blog_pb';
 import type { RpcError } from 'grpc-web';
 
@@ -75,6 +78,41 @@ class BlogService {
           });
         } else {
           reject(new Error('No response received'));
+        }
+      });
+    });
+  }
+  async subscribeToBlog(email: string, name?: string): Promise<{ message: string; alreadySubscribed: boolean }> {
+    const request = new SubscribeToBlogRequest();
+    request.setEmail(email);
+    if (name) request.setName(name);
+
+    return new Promise((resolve, reject) => {
+      this.client.subscribeToBlog(request, {}, (err: RpcError, response: SubscribeToBlogResponse) => {
+        if (err) {
+          reject(handleGrpcError(err));
+        } else if (response) {
+          resolve({
+            message: response.getMessage(),
+            alreadySubscribed: response.getAlreadySubscribed(),
+          });
+        } else {
+          reject(new Error('No response received'));
+        }
+      });
+    });
+  }
+
+  async unsubscribeFromBlog(token: string): Promise<void> {
+    const request = new UnsubscribeFromBlogRequest();
+    request.setToken(token);
+
+    return new Promise((resolve, reject) => {
+      this.client.unsubscribeFromBlog(request, {}, (err: RpcError) => {
+        if (err) {
+          reject(handleGrpcError(err));
+        } else {
+          resolve();
         }
       });
     });
