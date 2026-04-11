@@ -55,7 +55,7 @@ export default function JoinHouseholdPage() {
     const token = getAccessTokenFromCookies();
     if (!token) return;
 
-    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
+    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`, { withCredentials: true });
 
     eventSource.onmessage = (event: any) => {
       try {

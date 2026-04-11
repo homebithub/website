@@ -127,7 +127,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
     const token = getAccessTokenFromCookies();
     if (!token) return;
 
-    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
+    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`, { withCredentials: true });
     esRef.current = es;
 
     es.onmessage = (ev) => {
