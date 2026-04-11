@@ -44,7 +44,6 @@ interface Comment {
 interface LoaderData {
   post: BlogPost | null;
   relatedPosts: BlogPost[];
-  comments: Comment[];
 }
 
 export const meta: MetaFunction = ({ data }) => {
@@ -112,31 +111,17 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     const relatedData = await relatedResponse.json();
     const relatedPosts = (relatedData.posts || []).filter((p: BlogPost) => p.slug !== slug);
 
-    // Fetch approved comments
-    let comments: Comment[] = [];
-    try {
-      const commentsResponse = await fetch(
-        `${apiUrl}/api/v1/blog/posts/${post.id}/comments?status=approved`
-      );
-      if (commentsResponse.ok) {
-        const commentsData = await commentsResponse.json();
-        comments = commentsData.comments || [];
-      }
-    } catch {
-      // Comments are non-critical, continue without them
-    }
-
-    return Response.json({ post, relatedPosts, comments });
+    return Response.json({ post, relatedPosts });
   } catch (error) {
     console.error("Error loading blog post:", error);
-    return Response.json({ post: null, relatedPosts: [], comments: [] }, { status: 500 });
+    return Response.json({ post: null, relatedPosts: [] }, { status: 500 });
   }
 }
 
 export default function BlogPost() {
-  const { post, relatedPosts, comments: initialComments } = useLoaderData() as LoaderData;
+  const { post, relatedPosts } = useLoaderData() as LoaderData;
   const { user } = useAuth();
-  const [comments, setComments] = useState<Comment[]>(initialComments || []);
+  const [comments, setComments] = useState<Comment[]>([]);
   const [commentName, setCommentName] = useState("");
   const [commentContent, setCommentContent] = useState("");
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -152,6 +137,12 @@ export default function BlogPost() {
     const u = user as any;
     return u.user_id || u.id || u.user?.user_id || null;
   }, [user]);
+
+  // Load comments client-side via gRPC
+  useEffect(() => {
+    if (!post) return;
+    blogService.listComments(post.id).then(setComments).catch(() => {});
+  }, [post]);
 
   // Fetch like status on mount
   useEffect(() => {
@@ -205,16 +196,12 @@ export default function BlogPost() {
         const sessionId = sessionStorage.getItem("session_id") || crypto.randomUUID();
         sessionStorage.setItem("session_id", sessionId);
 
-        await fetch("/api/v1/blog/analytics/view", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            post_id: post.id,
-            session_id: sessionId,
-            source: document.referrer || "direct",
-            device_type: /Mobile|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
-          }),
-        });
+        await blogService.trackView(
+          post.id,
+          sessionId,
+          document.referrer || "direct",
+          /Mobile|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop"
+        );
       } catch (error) {
         console.error("Error tracking view:", error);
       }
@@ -227,15 +214,11 @@ export default function BlogPost() {
     if (!post) return;
 
     try {
-      await fetch("/api/v1/blog/analytics/share", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          post_id: post.id,
-          platform,
-          session_id: sessionStorage.getItem("session_id"),
-        }),
-      });
+      await blogService.trackShare(
+        post.id,
+        platform,
+        sessionStorage.getItem("session_id") || ""
+      );
     } catch (error) {
       console.error("Error tracking share:", error);
     }
@@ -461,20 +444,10 @@ export default function BlogPost() {
                   setSubmittingComment(true);
                   setCommentSuccess(false);
                   try {
-                    const res = await fetch("/api/v1/blog/comments", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        post_id: post.id,
-                        user_name: commentName,
-                        content: commentContent,
-                      }),
-                    });
-                    if (res.ok) {
-                      setCommentContent("");
-                      setCommentSuccess(true);
-                      setTimeout(() => setCommentSuccess(false), 5000);
-                    }
+                    await blogService.createComment(post.id, commentName, commentContent);
+                    setCommentContent("");
+                    setCommentSuccess(true);
+                    setTimeout(() => setCommentSuccess(false), 5000);
                   } catch (error) {
                     console.error("Error submitting comment:", error);
                   } finally {
