@@ -13,6 +13,12 @@ import {
   SubscribeToBlogRequest,
   SubscribeToBlogResponse,
   UnsubscribeFromBlogRequest,
+  TrackViewRequest,
+  TrackShareRequest,
+  CreateCommentRequest,
+  CommentResponse,
+  ListCommentsRequest,
+  ListCommentsResponse,
 } from '~/grpc/generated/notifications/blog_pb';
 import type { RpcError } from 'grpc-web';
 
@@ -114,6 +120,68 @@ class BlogService {
         } else {
           resolve();
         }
+      });
+    });
+  }
+
+  async trackView(postId: string, sessionId: string, source: string, deviceType: string): Promise<void> {
+    const request = new TrackViewRequest();
+    request.setPostId(postId);
+    request.setSessionId(sessionId);
+    request.setSource(source);
+    request.setDeviceType(deviceType);
+    return new Promise((resolve, reject) => {
+      this.client.trackView(request, {}, (err: RpcError) => {
+        if (err) reject(handleGrpcError(err));
+        else resolve();
+      });
+    });
+  }
+
+  async trackShare(postId: string, platform: string, sessionId: string): Promise<void> {
+    const request = new TrackShareRequest();
+    request.setPostId(postId);
+    request.setPlatform(platform);
+    request.setSessionId(sessionId);
+    return new Promise((resolve, reject) => {
+      this.client.trackShare(request, {}, (err: RpcError) => {
+        if (err) reject(handleGrpcError(err));
+        else resolve();
+      });
+    });
+  }
+
+  async createComment(postId: string, userName: string, content: string, userEmail?: string, userId?: string): Promise<void> {
+    const request = new CreateCommentRequest();
+    request.setPostId(postId);
+    request.setUserName(userName);
+    request.setContent(content);
+    if (userEmail) request.setUserEmail(userEmail);
+    if (userId) request.setUserId(userId);
+    return new Promise<void>((resolve, reject) => {
+      this.client.createComment(request, {}, (err: RpcError, _response: CommentResponse) => {
+        if (err) reject(handleGrpcError(err));
+        else resolve();
+      });
+    });
+  }
+
+  async listComments(postId: string, status = 'approved'): Promise<Array<{ id: string; post_id: string; user_id: string; user_name: string; content: string; status: string; created_at: string }>> {
+    const request = new ListCommentsRequest();
+    request.setPostId(postId);
+    request.setStatus(status);
+    return new Promise((resolve, reject) => {
+      this.client.listComments(request, {}, (err: RpcError, response: ListCommentsResponse) => {
+        if (err) reject(handleGrpcError(err));
+        else resolve(response.getCommentsList().map(c => ({
+          id: c.getId(),
+          post_id: c.getPostId(),
+          user_id: c.getUserId(),
+          user_name: c.getUserName(),
+          content: c.getContent(),
+          status: c.getStatus(),
+          created_at: c.getCreatedAt()?.toDate().toISOString() ?? '',
+        })));
       });
     });
   }
