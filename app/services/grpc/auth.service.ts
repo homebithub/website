@@ -4,7 +4,7 @@
  * Provides authentication methods using gRPC-Web protocol
  */
 
-import { AuthServiceClient } from '~/grpc/generated/auth/auth_grpc_web_pb';
+import { AuthServiceClient, AdminAuthServiceClient } from '~/grpc/generated/auth/auth_grpc_web_pb';
 import auth_pb_module from '~/grpc/generated/auth/auth_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
@@ -15,6 +15,7 @@ const auth_pb = auth_pb_module as any;
 // Create singleton client instance
 console.log('[gRPC-Web] Initializing AuthServiceClient with base URL:', GRPC_WEB_BASE_URL);
 const authClient = new AuthServiceClient(GRPC_WEB_BASE_URL, null, null);
+const adminAuthClient = new AdminAuthServiceClient(GRPC_WEB_BASE_URL, null, null);
 
 function resolveUserId(userId: string): string {
   if (userId) return userId;
@@ -352,6 +353,20 @@ export const authService = {
           reject(handleGrpcError(err));
         } else {
           resolve();
+        }
+      });
+    });
+  },
+
+  checkIsAdmin(email: string): Promise<boolean> {
+    const request = new auth_pb.CheckIsAdminRequest();
+    request.setEmail(email);
+    return new Promise((resolve) => {
+      adminAuthClient.checkIsAdmin(request, {}, (err: any, response: any) => {
+        if (err || !response) {
+          resolve(false);
+        } else {
+          resolve(response.getIsAdmin());
         }
       });
     });

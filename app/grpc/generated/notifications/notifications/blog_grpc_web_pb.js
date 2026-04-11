@@ -21,16 +21,12 @@ grpc.web = require('grpc-web');
 
 
 var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js')
-const _timestamp_pb = google_protobuf_timestamp_pb.default || google_protobuf_timestamp_pb;
 
 var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js')
-const _struct_pb = google_protobuf_struct_pb.default || google_protobuf_struct_pb;
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js')
-const _empty_pb = google_protobuf_empty_pb.default || google_protobuf_empty_pb;
-
-const _blog_pb_module = require('./blog_pb.js');
-const proto = { notifications: _blog_pb_module.default || _blog_pb_module };
+const proto = {};
+proto.notifications = require('./blog_pb.js');
 
 /**
  * @param {string} hostname
@@ -399,7 +395,7 @@ const methodDescriptor_BlogService_DeletePost = new grpc.web.MethodDescriptor(
   '/notifications.BlogService/DeletePost',
   grpc.web.MethodType.UNARY,
   proto.notifications.DeletePostRequest,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.notifications.DeletePostRequest} request
    * @return {!Uint8Array}
@@ -407,7 +403,7 @@ const methodDescriptor_BlogService_DeletePost = new grpc.web.MethodDescriptor(
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -582,7 +578,7 @@ const methodDescriptor_BlogService_TrackView = new grpc.web.MethodDescriptor(
   '/notifications.BlogService/TrackView',
   grpc.web.MethodType.UNARY,
   proto.notifications.TrackViewRequest,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.notifications.TrackViewRequest} request
    * @return {!Uint8Array}
@@ -590,7 +586,7 @@ const methodDescriptor_BlogService_TrackView = new grpc.web.MethodDescriptor(
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -643,7 +639,7 @@ const methodDescriptor_BlogService_TrackShare = new grpc.web.MethodDescriptor(
   '/notifications.BlogService/TrackShare',
   grpc.web.MethodType.UNARY,
   proto.notifications.TrackShareRequest,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.notifications.TrackShareRequest} request
    * @return {!Uint8Array}
@@ -651,7 +647,7 @@ const methodDescriptor_BlogService_TrackShare = new grpc.web.MethodDescriptor(
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -704,7 +700,7 @@ const methodDescriptor_BlogService_TrackClick = new grpc.web.MethodDescriptor(
   '/notifications.BlogService/TrackClick',
   grpc.web.MethodType.UNARY,
   proto.notifications.TrackClickRequest,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.notifications.TrackClickRequest} request
    * @return {!Uint8Array}
@@ -712,7 +708,7 @@ const methodDescriptor_BlogService_TrackClick = new grpc.web.MethodDescriptor(
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -887,7 +883,7 @@ const methodDescriptor_BlogService_TrackConversion = new grpc.web.MethodDescript
   '/notifications.BlogService/TrackConversion',
   grpc.web.MethodType.UNARY,
   proto.notifications.TrackConversionRequest,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.notifications.TrackConversionRequest} request
    * @return {!Uint8Array}
@@ -895,7 +891,7 @@ const methodDescriptor_BlogService_TrackConversion = new grpc.web.MethodDescript
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -1375,7 +1371,7 @@ const methodDescriptor_BlogService_UnlikePost = new grpc.web.MethodDescriptor(
   '/notifications.BlogService/UnlikePost',
   grpc.web.MethodType.UNARY,
   proto.notifications.UnlikePostRequest,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.notifications.UnlikePostRequest} request
    * @return {!Uint8Array}
@@ -1383,7 +1379,7 @@ const methodDescriptor_BlogService_UnlikePost = new grpc.web.MethodDescriptor(
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -1496,7 +1492,7 @@ proto.notifications.BlogServicePromiseClient.prototype.getLikeStatus =
 const methodDescriptor_BlogService_GenerateSitemap = new grpc.web.MethodDescriptor(
   '/notifications.BlogService/GenerateSitemap',
   grpc.web.MethodType.UNARY,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   proto.notifications.SitemapResponse,
   /**
    * @param {!proto.google.protobuf.Empty} request
@@ -1557,8 +1553,8 @@ proto.notifications.BlogServicePromiseClient.prototype.generateSitemap =
 const methodDescriptor_BlogService_RefreshStats = new grpc.web.MethodDescriptor(
   '/notifications.BlogService/RefreshStats',
   grpc.web.MethodType.UNARY,
-  _empty_pb.Empty,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.google.protobuf.Empty} request
    * @return {!Uint8Array}
@@ -1566,7 +1562,7 @@ const methodDescriptor_BlogService_RefreshStats = new grpc.web.MethodDescriptor(
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -1680,7 +1676,7 @@ const methodDescriptor_BlogService_UnsubscribeFromBlog = new grpc.web.MethodDesc
   '/notifications.BlogService/UnsubscribeFromBlog',
   grpc.web.MethodType.UNARY,
   proto.notifications.UnsubscribeFromBlogRequest,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   /**
    * @param {!proto.notifications.UnsubscribeFromBlogRequest} request
    * @return {!Uint8Array}
@@ -1688,7 +1684,7 @@ const methodDescriptor_BlogService_UnsubscribeFromBlog = new grpc.web.MethodDesc
   function(request) {
     return request.serializeBinary();
   },
-  _empty_pb.Empty.deserializeBinary
+  google_protobuf_empty_pb.Empty.deserializeBinary
 );
 
 
@@ -1801,7 +1797,7 @@ proto.notifications.BlogServicePromiseClient.prototype.listBlogSubscribers =
 const methodDescriptor_BlogService_GetBlogSubscriberCount = new grpc.web.MethodDescriptor(
   '/notifications.BlogService/GetBlogSubscriberCount',
   grpc.web.MethodType.UNARY,
-  _empty_pb.Empty,
+  google_protobuf_empty_pb.Empty,
   proto.notifications.BlogSubscriberCountResponse,
   /**
    * @param {!proto.google.protobuf.Empty} request
