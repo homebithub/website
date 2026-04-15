@@ -350,6 +350,12 @@ export function Navigation() {
 
                     {showAuthButtons && (
                         <div className="flex items-center space-x-3">
+                            <Link
+                                to="/waitlist"
+                                className="link hidden lg:block text-sm font-medium rounded-xl transition-all duration-200 px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+                            >
+                                Join Waitlist
+                            </Link>
                             {FEATURE_FLAGS.showAuthButtons && (
                                 <>
                                     <Link
@@ -483,8 +489,18 @@ export function Navigation() {
                                     ))}
 
                                     {/* Mobile Auth Options */}
-                                    {showAuthButtons && (
+                                                    {showAuthButtons && (
                                         <>
+                                            <Menu.Item>
+                                                {({ active }) => (
+                                                    <Link
+                                                        to="/waitlist"
+                                                        className={`font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-4 py-1 text-sm rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
+                                                    >
+                                                        Join Waitlist
+                                                    </Link>
+                                                )}
+                                            </Menu.Item>
                                             {FEATURE_FLAGS.showAuthButtons && (
                                                 <>
                                                     <Menu.Item>
@@ -536,12 +552,10 @@ export function Navigation() {
                                     )}
 
                                     {/* Theme Toggle in Mobile Menu */}
-                                    <Menu.Item>
-                                        <div className="px-5 py-3 flex items-center justify-between">
-                                            <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Theme</span>
-                                            <ThemeToggle size="sm" />
-                                        </div>
-                                    </Menu.Item>
+                                    <div className="px-5 py-3 flex items-center justify-between">
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Theme</span>
+                                        <ThemeToggle size="sm" />
+                                    </div>
 
                                     {/* User Menu Items */}
                                     {user && (

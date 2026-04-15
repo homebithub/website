@@ -38,16 +38,21 @@ export default function ThemeToggle({
     hasThemeContext = false;
   }
 
-  // Close dropdown on outside click
+  // Close dropdown on outside click or touch
   useEffect(() => {
     if (!hasThemeContext) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+    const handleOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e instanceof TouchEvent ? e.touches[0]?.target : (e as MouseEvent).target;
+      if (dropdownRef.current && !dropdownRef.current.contains(target as Node)) {
         setOpen(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mousedown', handleOutside);
+    document.addEventListener('touchstart', handleOutside, { passive: true });
+    return () => {
+      document.removeEventListener('mousedown', handleOutside);
+      document.removeEventListener('touchstart', handleOutside);
+    };
   }, [hasThemeContext]);
 
   if (!hasThemeContext) {
