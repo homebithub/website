@@ -63,7 +63,7 @@ export const meta: MetaFunction = ({ data }) => {
   return [
     { title: `${title} - Homebit Blog` },
     { name: "description", content: description },
-    { name: "keywords", content: post.seo_keywords?.join(", ") || post.tags.join(", ") },
+    { name: "keywords", content: post.seo_keywords?.join(", ") || (post.tags ?? []).join(", ") },
     
     // Open Graph
     { property: "og:title", content: title },
@@ -74,7 +74,7 @@ export const meta: MetaFunction = ({ data }) => {
     { property: "article:published_time", content: post.published_at },
     { property: "article:author", content: post.author_name },
     { property: "article:section", content: post.category },
-    ...(post.tags.map(tag => ({ property: "article:tag", content: tag }))),
+    ...((post.tags ?? []).map(tag => ({ property: "article:tag", content: tag }))),
 
     // Twitter Card
     { name: "twitter:card", content: "summary_large_image" },

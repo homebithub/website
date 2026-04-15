@@ -84,11 +84,11 @@ export default function App() {
                 <Links/>
                 {/* Google Identity Services */}
                 <script src="https://accounts.google.com/gsi/client" async defer></script>
-                <link rel="icon" href="/favicon.ico" type="image/svg+xml" />
+                <link rel="icon" type="image/x-icon" href="/favicon.ico" />
                 <link rel="icon" href="/logos/logo-dark.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: light)" />
                 <link rel="icon" href="/logos/logo-light.png" type="image/png" sizes="32x32" media="(prefers-color-scheme: dark)" />
                 <link rel="apple-touch-icon" href="/logos/logo-dark.png" />
-                <link rel="apple-touch-icon" href="/logo_512x512.png" sizes="180x180" />
+                <link rel="apple-touch-icon" href="/logos/logo-light.png" sizes="180x180" />
 
                 {/* Global font: Plus Jakarta Sans (thinner, modern sans) */}
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
