@@ -92,7 +92,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   try {
-    const apiUrl = process.env.GATEWAY_API_URL || "http://localhost:3005";
+    const apiUrl = process.env.GATEWAY_API_BASE_URL || "http://localhost:3005";
     
     // Fetch the blog post
     const response = await fetch(`${apiUrl}/api/v1/blog/posts/${slug}`);
@@ -121,6 +121,8 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 export default function BlogPost() {
   const { post, relatedPosts } = useLoaderData() as LoaderData;
   const { user } = useAuth();
+  const userEmail: string = (user as any)?.user?.email ?? "";
+  const userName: string = (user as any)?.user?.first_name ?? "";
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentName, setCommentName] = useState("");
   const [commentContent, setCommentContent] = useState("");
@@ -572,7 +574,7 @@ export default function BlogPost() {
             )}
 
             {/* Subscribe Form */}
-            <BlogSubscribeForm variant="inline" className="mt-10" />
+            <BlogSubscribeForm variant="inline" className="mt-10" defaultEmail={userEmail} defaultName={userName} />
 
             {/* Back to Blog Link */}
             <div className="mt-8 text-center">

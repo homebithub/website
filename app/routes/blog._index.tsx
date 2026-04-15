@@ -6,6 +6,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { BlogSubscribeForm } from "~/components/blog/BlogSubscribeForm";
+import { useAuth } from "~/contexts/useAuth";
 
 export const meta: MetaFunction = () => {
   return [
@@ -50,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     // Call gateway API
-    const apiUrl = process.env.GATEWAY_API_URL || "http://localhost:3005";
+    const apiUrl = process.env.GATEWAY_API_BASE_URL || "http://localhost:3005";
     const params = new URLSearchParams({
       limit: limit.toString(),
       offset: offset.toString(),
@@ -92,6 +93,9 @@ export default function BlogIndex() {
   const { posts, total, limit, offset, categories } = useLoaderData() as LoaderData;
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get("search") || "");
+  const { user } = useAuth();
+  const userEmail: string = (user as any)?.user?.email ?? "";
+  const userName: string = (user as any)?.user?.first_name ?? "";
 
   const currentPage = Math.floor(offset / limit) + 1;
   const totalPages = Math.ceil(total / limit);
@@ -329,7 +333,7 @@ export default function BlogIndex() {
           </div>
           {/* Subscribe Banner */}
           <div className="mt-12">
-            <BlogSubscribeForm variant="banner" />
+            <BlogSubscribeForm variant="banner" defaultEmail={userEmail} defaultName={userName} />
           </div>
         </main>
       </PurpleThemeWrapper>

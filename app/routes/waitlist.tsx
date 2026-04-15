@@ -11,12 +11,37 @@ export const meta = () => [
 ];
 
 const HELP_TYPES = [
-  "Nanny", "Househelp", "Cleaner", "Caregiver", "Elder Care",
-  "Overnight Care for New Mothers", "Child Care", "Plumbing", "Pet Care", "Other",
+  "Indoor Cleaning",
+  "Home Deep Cleaning",
+  "Laundry & Ironing",
+  "Overnight Care",
+  "Elderly Care",
+  "Special Needs People Care",
+  "Pet Care",
+  "Plumbing",
+  "Househelp",
+  "Early Childhood Care",
+  "Post Party Cleaning",
+  "Baby Sitter",
+  "Postpartum Doula",
 ];
 
 const WORKER_ROLES = [
-  "Nanny", "Househelp", "Cleaner", "Caregiver", "Cook", "Other",
+  "Full-Time Househelp",
+  "Home Deep Cleaning",
+  "Laundry & Ironing",
+  "Overnight Care for New Mothers",
+  "Elderly Care",
+  "Special Needs People Care",
+  "Pet Care",
+  "Plumbing",
+  "Househelp",
+  "Early Childhood Care",
+  "Post Party Cleaning",
+  "Meal Preps",
+  "Baby Sitter",
+  "NewBorn Care",
+  "New Parents Support",
 ];
 
 const CONCERNS = [
