@@ -64,7 +64,7 @@ function normalizePhone(phone: string): string {
 }
 
 type UserType = "family" | "worker" | "partner" | null;
-type StepId = "hero" | "who" | "family" | "worker" | "contact" | "incentive" | "success";
+type StepId = "hero" | "who" | "family" | "worker" | "contact" | "success";
 
 interface FormData {
   user_type: string;
@@ -199,8 +199,8 @@ export default function WaitlistPage() {
     userType === "partner"
       ? ["hero", "who", "contact", "success"]
       : userType === "family"
-      ? ["hero", "who", "family", "contact", "incentive", "success"]
-      : ["hero", "who", "worker", "contact", "incentive", "success"];
+      ? ["hero", "who", "family", "contact", "success"]
+      : ["hero", "who", "worker", "contact", "success"];
 
   const currentStepIndex = steps.indexOf(step);
   const totalSteps = steps.length - 1;
@@ -259,10 +259,10 @@ export default function WaitlistPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-100 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f]">
+    <div className="min-h-screen flex flex-col bg-gradient-to-br from-primary-100 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f]">
       <Navigation />
 
-      <main className="max-w-2xl mx-auto px-4 py-12">
+      <main className="flex-1 w-full max-w-2xl mx-auto px-4 py-12">
         {/* Hero Step */}
         {step === "hero" && (
           <div className="space-y-8">
@@ -519,7 +519,7 @@ export default function WaitlistPage() {
                 <button
                   type="button"
                   onClick={addLocation}
-                  className="px-4 py-2.5 rounded-xl bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 transition-colors"
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium hover:from-purple-700 hover:to-pink-700 transition-all"
                 >
                   Add
                 </button>
@@ -688,80 +688,13 @@ export default function WaitlistPage() {
               <button type="button" onClick={goBack} className="flex items-center gap-1 px-5 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all">
                 <ChevronLeftIcon className="w-4 h-4" /> Back
               </button>
-              {userType === "partner" ? (
-                <button
-                  type="button"
-                  onClick={handleSubmit}
-                  disabled={!form.first_name || !form.phone || submitting}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {submitting ? "Joining..." : "Join Waitlist"}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={goNext}
-                  disabled={!form.first_name || !form.phone}
-                  className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  Continue
-                </button>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Incentive Step */}
-        {step === "incentive" && (
-          <div className="space-y-6">
-            <ProgressBar current={currentStepIndex} total={totalSteps} />
-            <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Almost there!</p>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {userType === "family"
-                  ? "Get priority access when we launch"
-                  : "Be the first workers families see"}
-              </h2>
-            </div>
-
-            <div className="rounded-2xl bg-gradient-to-br from-purple-600 to-pink-600 p-6 text-white space-y-3">
-              {userType === "family" ? (
-                <>
-                  <p className="font-semibold text-lg">Early access for families</p>
-                  <p className="text-purple-100">
-                    Join now and get early access to vetted profiles when we open in your area.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="font-semibold text-lg">Priority for serious workers</p>
-                  <p className="text-purple-100">
-                    Join now to be among the first considered when families start hiring.
-                  </p>
-                </>
-              )}
-              <p className="text-sm text-purple-200 font-medium">
-                ⚡ Early members get priority onboarding.
-              </p>
-            </div>
-
-            {error && (
-              <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
-                {error}
-              </div>
-            )}
-
-            <div className="flex gap-3 pt-2">
-              <button type="button" onClick={goBack} className="flex items-center gap-1 px-5 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all">
-                <ChevronLeftIcon className="w-4 h-4" /> Back
-              </button>
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={submitting}
-                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!form.first_name || !form.phone || submitting}
+                className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                {submitting ? "Joining..." : "🚀 Join the Waitlist"}
+                {submitting ? "Joining..." : "Join Waitlist"}
               </button>
             </div>
           </div>
