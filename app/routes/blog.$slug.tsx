@@ -92,7 +92,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   try {
-    const apiUrl = process.env.GATEWAY_API_BASE_URL || "http://localhost:3005";
+    const apiUrl = process.env.GATEWAY_API_BASE_URL || process.env.AUTH_API_BASE_URL || "http://localhost:3005";
     
     // Fetch the blog post
     const response = await fetch(`${apiUrl}/api/v1/blog/posts/${slug}`);

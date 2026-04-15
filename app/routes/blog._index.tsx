@@ -51,7 +51,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     // Call gateway API
-    const apiUrl = process.env.GATEWAY_API_BASE_URL || "http://localhost:3005";
+    const apiUrl = process.env.GATEWAY_API_BASE_URL || process.env.AUTH_API_BASE_URL || "http://localhost:3005";
     const params = new URLSearchParams({
       limit: limit.toString(),
       offset: offset.toString(),

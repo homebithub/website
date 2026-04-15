@@ -20,6 +20,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV AUTH_API_BASE_URL=https://api.homebit.co.ke
 ENV NOTIFICATIONS_API_BASE_URL=https://api.homebit.co.ke
+ENV GATEWAY_API_BASE_URL=https://api.homebit.co.ke
 
 # Install only production dependencies
 COPY package*.json ./
