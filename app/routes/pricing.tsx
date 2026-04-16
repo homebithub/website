@@ -95,6 +95,9 @@ export default function Pricing() {
   const [currentPaymentId, setCurrentPaymentId] = useState<string | null>(null);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   const [selectedTab, setSelectedTab] = useState(0);
+  const [planResolving, setPlanResolving] = useState(false);
+  const [planResolveError, setPlanResolveError] = useState<string | null>(null);
+  const [resolvedPlanId, setResolvedPlanId] = useState<string | null>(null);
 
   // Hardcoded pricing plans
   const plans: SubscriptionPlan[] = [
@@ -208,7 +211,15 @@ export default function Pricing() {
     };
   }, [pollingInterval]);
 
-  const handleSelectPlan = (plan: SubscriptionPlan) => {
+  const normalizeCycle = (s: string) => {
+    const v = (s || '').toLowerCase().replace(/[-_\s]/g, '');
+    if (v === 'annual' || v === 'yearly') return 'yearly';
+    if (v === 'semiannual' || v === '6months' || v === 'halfyearly') return 'semiannual';
+    if (v === 'quarterly' || v === '3months' || v === 'quarter') return 'quarterly';
+    return v;
+  };
+
+  const handleSelectPlan = async (plan: SubscriptionPlan) => {
     if (!user) {
       const redirect = encodeURIComponent(location.pathname);
       navigate(`/signup?redirect=${redirect}&plan=${plan.id}`);
@@ -219,7 +230,44 @@ export default function Pricing() {
     setPhoneNumber(formatPhoneNumber(user?.phone || ''));
     setPaymentStatus('idle');
     setErrorMessage('');
+    setResolvedPlanId(null);
+    setPlanResolveError(null);
+    setPlanResolving(true);
     setShowPaymentModal(true);
+
+    try {
+      const plansData = await paymentsService.getPlans() as any;
+      const rawList: any[] = plansData?.toObject?.()?.plansList ?? plansData?.plansList ?? plansData?.plans ?? [];
+
+      const normalize = (s: string) => (s || '').toLowerCase().replace(/[-_\s]/g, '');
+
+      // Primary match: profile_type + billing_cycle
+      let match = rawList.find((p: any) => {
+        const pt = normalize(p.profileType ?? p.profile_type ?? '');
+        const bc = normalizeCycle(p.billingCycle ?? p.billing_cycle ?? '');
+        return pt === normalize(plan.profile_type ?? '') && bc === normalizeCycle(plan.billing_cycle);
+      });
+
+      // Fallback: profile_type + price_amount
+      if (!match) {
+        match = rawList.find((p: any) => {
+          const pt = normalize(p.profileType ?? p.profile_type ?? '');
+          const amt = p.priceAmount ?? p.price_amount ?? 0;
+          return pt === normalize(plan.profile_type ?? '') && amt === plan.price_amount;
+        });
+      }
+
+      if (match) {
+        setResolvedPlanId(match.id ?? match.planId ?? match.plan_id ?? null);
+      } else {
+        setPlanResolveError('Could not match this plan on the server. Please try again or contact support.');
+      }
+    } catch (err) {
+      console.error('[handleSelectPlan] Failed to resolve plan:', err);
+      setPlanResolveError('Failed to load plan details. Please check your connection and try again.');
+    } finally {
+      setPlanResolving(false);
+    }
   };
 
   const initiatePayment = async () => {
@@ -227,20 +275,28 @@ export default function Pricing() {
       setErrorMessage('Please enter your phone number');
       return;
     }
+    if (!resolvedPlanId) {
+      setErrorMessage('Plan could not be loaded. Please close and try again.');
+      return;
+    }
 
     // Validate phone number format
     const formattedPhone = formatPhoneNumber(phoneNumber);
     if (!isValidPhoneNumber(formattedPhone)) {
-      setErrorMessage('Please enter a valid Kenyan phone number (e.g., +254712345678)');
+      setErrorMessage('Please enter a valid Kenyan phone number (e.g., 0712345678)');
       return;
     }
+
+    const profileType = (user as any)?.profile_type ||
+      (typeof window !== 'undefined' ? localStorage.getItem('profile_type') : null) ||
+      selectedPlan.profile_type || '';
 
     setProcessingPayment(true);
     setPaymentStatus('initiating');
     setErrorMessage('');
 
     try {
-      const data = await paymentsService.createSubscriptionCheckout('', selectedPlan.id, formattedPhone, '', '') as any;
+      const data = await paymentsService.createSubscriptionCheckout('', resolvedPlanId, formattedPhone, '', profileType) as any;
       const result = data?.toObject?.() ?? data;
       setCurrentPaymentId(result.paymentId || result.payment_id);
       setPaymentStatus('processing');
@@ -323,6 +379,9 @@ export default function Pricing() {
     setErrorMessage('');
     setCurrentPaymentId(null);
     setProcessingPayment(false);
+    setResolvedPlanId(null);
+    setPlanResolveError(null);
+    setPlanResolving(false);
   };
 
   const formatPhoneNumber = (phone: string) => {
@@ -654,7 +713,7 @@ export default function Pricing() {
                 leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border dark:border-[#1e1e2e] p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   {paymentStatus === 'idle' && (
                     <>
                       <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -681,13 +740,24 @@ export default function Pricing() {
                             type="tel"
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
-                            placeholder="+254712345678"
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white text-lg"
+                            placeholder="0712345678"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-[#2a2a3d] rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-[#0d0d14] dark:text-white text-lg"
                           />
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Enter number in format: +254XXXXXXXXX
+                            07XXXXXXXX or 01XXXXXXXX
                           </p>
                         </div>
+
+                        {planResolving && (
+                          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                            <ArrowPathIcon className="w-4 h-4 animate-spin text-purple-500" />
+                            Verifying plan details...
+                          </div>
+                        )}
+
+                        {planResolveError && (
+                          <ErrorAlert message={planResolveError} />
+                        )}
 
                         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
                           <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-2">
@@ -707,13 +777,13 @@ export default function Pricing() {
                           <button
                             onClick={handleCloseModal}
                             disabled={processingPayment}
-                            className="flex-1 px-4 py-1.5 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 font-medium"
+                            className="flex-1 px-4 py-1.5 border border-gray-300 dark:border-[#2a2a3d] rounded-xl hover:bg-gray-50 dark:hover:bg-[#1e1e2e] transition-colors disabled:opacity-50 font-medium"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={initiatePayment}
-                            disabled={!phoneNumber || processingPayment}
+                            disabled={!phoneNumber || processingPayment || planResolving || !resolvedPlanId}
                             className="flex-1 px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-lg"
                           >
                             Pay Now

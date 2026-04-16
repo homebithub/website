@@ -199,7 +199,7 @@ export default function SubscriptionsPage() {
     }
     const formatted = formatPhoneNumber(checkoutPhone);
     if (!isValidPhoneNumber(formatted)) {
-      setCheckoutError('Please enter a valid Kenyan phone number (e.g., +254712345678)');
+      setCheckoutError('Please enter a valid Kenyan phone number (e.g., 0712345678)');
       return;
     }
     setCheckoutProcessing(true);
@@ -435,7 +435,7 @@ export default function SubscriptionsPage() {
     // Validate phone number
     const formattedPhone = formatPhoneNumber(phoneNumber);
     if (!isValidPhoneNumber(formattedPhone)) {
-      setErrorMessage('Please enter a valid Kenyan phone number (e.g., +254712345678)');
+      setErrorMessage('Please enter a valid Kenyan phone number (e.g., 0712345678)');
       return;
     }
 
@@ -1010,7 +1010,7 @@ export default function SubscriptionsPage() {
                 leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+                <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border dark:border-[#1e1e2e] p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   {paymentStatus === 'idle' && (
                     <>
                       <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-4">
@@ -1035,11 +1035,11 @@ export default function SubscriptionsPage() {
                             type="tel"
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
-                            placeholder="+254712345678"
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="0712345678"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-[#2a2a3d] rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-[#0d0d14] dark:text-white"
                           />
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Enter number in format: +254XXXXXXXXX
+                            07XXXXXXXX or 01XXXXXXXX
                           </p>
                         </div>
 
@@ -1049,7 +1049,7 @@ export default function SubscriptionsPage() {
                           <button
                             onClick={handleCloseModal}
                             disabled={processingPayment}
-                            className="flex-1 px-4 py-1 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors disabled:opacity-50"
+                            className="flex-1 px-4 py-1 border border-gray-300 dark:border-[#2a2a3d] rounded-xl hover:bg-gray-50 dark:hover:bg-[#1e1e2e] transition-colors disabled:opacity-50"
                           >
                             Cancel
                           </button>
@@ -1174,7 +1174,7 @@ export default function SubscriptionsPage() {
                 leaveFrom="opacity-100 translate-y-0 sm:scale-100"
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
-                <Dialog.Panel className="w-full sm:max-w-lg transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
+                <Dialog.Panel className="w-full sm:max-w-lg transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border dark:border-[#1e1e2e] p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <div className="flex items-start justify-between mb-4">
                     <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
                       Transaction Details
@@ -1195,7 +1195,7 @@ export default function SubscriptionsPage() {
                       </div>
 
                       {/* Amount */}
-                      <div className="text-center py-1 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <div className="text-center py-1 bg-gray-50 dark:bg-[#0d0d14] rounded-xl">
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Amount Paid</p>
                         <p className="text-xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(selectedPayment.amount)}
@@ -1203,7 +1203,7 @@ export default function SubscriptionsPage() {
                       </div>
 
                       {/* Transaction Details */}
-                      <div className="space-y-3 bg-gray-50 dark:bg-gray-700 rounded-xl p-4">
+                      <div className="space-y-3 bg-gray-50 dark:bg-[#0d0d14] rounded-xl p-4">
                         <div className="flex justify-between">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Transaction ID</span>
                           <span className="text-sm font-medium text-gray-900 dark:text-white font-mono">
@@ -1430,7 +1430,7 @@ export default function SubscriptionsPage() {
                       </Dialog.Title>
 
                       <div className="space-y-4">
-                        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-xl p-4">
+                        <div className="bg-gray-50 dark:bg-[#0d0d14] rounded-xl p-4">
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Plan</p>
                           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
                             {selectedCheckoutPlan.name} — {selectedCheckoutPlan.description}
@@ -1454,11 +1454,11 @@ export default function SubscriptionsPage() {
                             type="tel"
                             value={checkoutPhone}
                             onChange={(e) => setCheckoutPhone(e.target.value)}
-                            placeholder="+254712345678"
-                            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                            placeholder="0712345678"
+                            className="w-full px-4 py-2 border border-gray-300 dark:border-[#2a2a3d] rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-[#0d0d14] dark:text-white"
                           />
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                            Enter number in format: +254XXXXXXXXX
+                            07XXXXXXXX or 01XXXXXXXX
                           </p>
                         </div>
 

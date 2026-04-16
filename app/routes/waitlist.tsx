@@ -85,6 +85,7 @@ interface FormData {
   phone: string;
   email: string;
   whatsapp_opt_in: boolean;
+  message: string;
 }
 
 const emptyForm: FormData = {
@@ -106,6 +107,7 @@ const emptyForm: FormData = {
   phone: "",
   email: "",
   whatsapp_opt_in: false,
+  message: "",
 };
 
 function ProgressBar({ current, total }: { current: number; total: number }) {
@@ -677,6 +679,19 @@ export default function WaitlistPage() {
                 Send me WhatsApp updates when Homebit opens in my area
               </span>
             </label>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                Any comments or specific requests? <span className="text-gray-400">(optional)</span>
+              </label>
+              <textarea
+                value={form.message}
+                onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
+                rows={3}
+                placeholder="Tell us anything else — your location, specific needs, questions, or feedback..."
+                className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm resize-none"
+              />
+            </div>
 
             {error && (
               <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
