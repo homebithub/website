@@ -73,6 +73,12 @@ export async function startOrGetConversation(
     return resolveConversationIdFromList(payload);
   } catch (err) {
     console.error('[startOrGetConversation] Error:', err);
+    // The backend may have persisted the conversation before erroring (e.g. race / duplicate key).
+    // Try resolving from list before giving up.
+    const recoveredId = await resolveConversationIdFromList(payload);
+    if (recoveredId && UUID_REGEX.test(recoveredId)) {
+      return recoveredId;
+    }
     throw new Error('Failed to start conversation');
   }
 }

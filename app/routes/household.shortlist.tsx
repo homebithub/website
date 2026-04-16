@@ -58,6 +58,7 @@ export default function HouseholdShortlistPage() {
   }, []);
   const currentUserId: string | undefined = currentUser?.id;
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
+  const [chatError, setChatError] = useState<string | null>(null);
 
   // Load UI preferences (compact view, accessibility)
   useEffect(() => {
@@ -207,7 +208,8 @@ export default function HouseholdShortlistPage() {
       navigate(getInboxRoute(convId));
     } catch (e) {
       console.error('Failed to start chat from shortlist (househelp)', e);
-      navigate('/inbox');
+      setChatError('Could not open conversation. Please try again.');
+      setTimeout(() => setChatError(null), 5000);
     }
   }
 
@@ -241,6 +243,7 @@ export default function HouseholdShortlistPage() {
               </div>
             )}
 
+            {chatError && <ErrorAlert message={chatError} className="mb-4" />}
             {error && <ErrorAlert message={error} className="mb-4" />}
 	
             <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>

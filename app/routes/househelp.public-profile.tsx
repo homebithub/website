@@ -356,7 +356,7 @@ export default function HousehelpPublicProfile() {
       navigate(getInboxRoute(convId));
     } catch (e) {
       console.error('Failed to start chat:', e);
-      navigate('/inbox');
+      setError('Could not open conversation. Please try again.');
     } finally {
       setActionLoading(null);
     }

@@ -289,7 +289,7 @@ export default function HouseholdPublicProfile() {
       navigate(getInboxRoute(convId));
     } catch (err) {
       console.error('Failed to start chat', err);
-      navigate('/inbox');
+      setError('Could not open conversation. Please try again.');
     } finally {
       setActionLoading(null);
     }
