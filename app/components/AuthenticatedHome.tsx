@@ -782,8 +782,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            const targetUserId = househelp.user_id || househelp.id;
-                            if (targetUserId && househelp.profile_id) {
+                            const targetUserId = househelp.user_id;
+                            if (targetUserId) {
                               handleStartChat(String(targetUserId), househelp.profile_id);
                             }
                           }}

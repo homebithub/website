@@ -289,7 +289,7 @@ export default function HousehelpPublicProfile() {
         const targetUserId = rawUser?.id || rawProfile?.user_id;
         if (targetUserId) {
           try {
-            const docsData = await documentService.getUserDocuments('', 'profile_photo');
+            const docsData = await documentService.getUserDocuments(targetUserId, 'profile_photo');
             const docs = docsData?.data || docsData?.documents || docsData || [];
             const documentsArray = Array.isArray(docs) ? docs : [];
             const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
@@ -327,16 +327,17 @@ export default function HousehelpPublicProfile() {
   const targetProfileId = viewingProfileId || profile?.profile_id || profile?.id;
 
   const handleChat = async () => {
-    if (!targetProfileId || !currentUserId || !user?.id) return;
+    const househelpUserId = user?.id || profile?.user_id;
+    if (!targetProfileId || !currentUserId || !househelpUserId) return;
     setActionLoading('chat');
     try {
       const profileType = (currentProfileType || '').toLowerCase();
       let householdId = currentUserId;
-      let househelpId = user.id as string;
+      let househelpId = househelpUserId;
 
       // If viewer is househelp and this profile belongs to a household (unlikely here), flip roles
       if (profileType === 'househelp') {
-        householdId = user.id as string;
+        householdId = househelpUserId;
         househelpId = currentUserId;
       }
 
