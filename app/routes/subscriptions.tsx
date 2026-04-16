@@ -186,13 +186,20 @@ export default function SubscriptionsPage() {
 
   const handleSelectCheckoutPlan = async (plan: SubscriptionPlan) => {
     setSelectedCheckoutPlan(plan);
-    let prefillPhone = userObj?.phone || '';
+
+    // 1. localStorage user_object is always the most up-to-date cached source
+    let prefillPhone = '';
+    try {
+      const stored = JSON.parse(localStorage.getItem('user_object') || '{}');
+      prefillPhone = stored?.phone || '';
+    } catch {}
+
+    // 2. Fall back to auth context in-memory user (covers freshly-logged-in session)
     if (!prefillPhone) {
-      try {
-        const stored = JSON.parse(localStorage.getItem('user_object') || '{}');
-        prefillPhone = stored?.phone || '';
-      } catch {}
+      prefillPhone = userObj?.phone || (user as any)?.phone || '';
     }
+
+    // 3. Last resort: query auth service via gateway
     if (!prefillPhone) {
       try {
         const { default: authService } = await import('~/services/grpc/auth.service');
@@ -207,6 +214,7 @@ export default function SubscriptionsPage() {
         }
       } catch {}
     }
+
     setCheckoutPhone(formatPhoneNumber(prefillPhone));
     setCheckoutStatus('idle');
     setCheckoutError('');

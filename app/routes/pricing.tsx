@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, Fragment } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { Dialog, Transition, Tab } from '@headlessui/react';
 import { 
   CheckIcon, 
@@ -86,6 +86,8 @@ export default function Pricing() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
+  const returnTo = searchParams.get('return') || null;
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -327,9 +329,9 @@ export default function Pricing() {
             setPollingInterval(null);
             setProcessingPayment(false);
             
-            // Redirect to subscriptions page after 2 seconds
+            // Redirect back to origin page (or subscriptions) after 2 seconds
             setTimeout(() => {
-              navigate('/subscriptions?payment=success');
+              navigate(returnTo || '/subscriptions?payment=success');
             }, 2000);
           } else if (data.status === 'failed') {
             setPaymentStatus('failed');

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { useSearchParams, useNavigate } from "react-router";
+import { useSearchParams, useNavigate, useLocation } from "react-router";
 import { useAuth } from "~/contexts/useAuth";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -167,6 +167,7 @@ export default function InboxPage() {
   );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Authentication check - redirect to login if not authenticated
   useEffect(() => {
@@ -1581,6 +1582,10 @@ export default function InboxPage() {
                 }
               }}
               onSendHireRequest={async () => {
+                if (!hasActiveSubscription && !subscriptionLoading) {
+                  setShowSubscriptionModal(true);
+                  return;
+                }
                 if (currentUserProfileType?.toLowerCase() === 'household' && selectedConversation) {
                   const househelpUserId = selectedConversation.househelp_id;
                   if (selectedConversation.househelp_profile_id) {
@@ -2445,7 +2450,7 @@ export default function InboxPage() {
               type="button"
               onClick={() => {
                 setShowSubscriptionModal(false);
-                navigate('/pricing');
+                navigate(`/plans?return=${encodeURIComponent(location.pathname + location.search)}`);
               }}
               className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-[1.02] transition-all duration-300"
             >
