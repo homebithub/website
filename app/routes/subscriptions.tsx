@@ -184,9 +184,30 @@ export default function SubscriptionsPage() {
     return labels[cycle] || cycle;
   };
 
-  const handleSelectCheckoutPlan = (plan: SubscriptionPlan) => {
+  const handleSelectCheckoutPlan = async (plan: SubscriptionPlan) => {
     setSelectedCheckoutPlan(plan);
-    setCheckoutPhone(formatPhoneNumber(userObj?.phone || ''));
+    let prefillPhone = userObj?.phone || '';
+    if (!prefillPhone) {
+      try {
+        const stored = JSON.parse(localStorage.getItem('user_object') || '{}');
+        prefillPhone = stored?.phone || '';
+      } catch {}
+    }
+    if (!prefillPhone) {
+      try {
+        const { default: authService } = await import('~/services/grpc/auth.service');
+        const userProto = await authService.getCurrentUser();
+        prefillPhone = userProto?.getPhone?.() || '';
+        if (prefillPhone) {
+          try {
+            const stored = JSON.parse(localStorage.getItem('user_object') || '{}');
+            stored.phone = prefillPhone;
+            localStorage.setItem('user_object', JSON.stringify(stored));
+          } catch {}
+        }
+      } catch {}
+    }
+    setCheckoutPhone(formatPhoneNumber(prefillPhone));
     setCheckoutStatus('idle');
     setCheckoutError('');
     setShowCheckoutModal(true);
