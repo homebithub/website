@@ -124,12 +124,25 @@ class BlogService {
     });
   }
 
-  async trackView(postId: string, sessionId: string, source: string, deviceType: string): Promise<void> {
+  async trackView(
+    postId: string,
+    sessionId: string,
+    source: string,
+    deviceType: string,
+    userId?: string,
+    utmSource?: string,
+    utmMedium?: string,
+    utmCampaign?: string,
+  ): Promise<void> {
     const request = new TrackViewRequest();
     request.setPostId(postId);
     request.setSessionId(sessionId);
     request.setSource(source);
     request.setDeviceType(deviceType);
+    if (userId) request.setUserId(userId);
+    if (utmSource) request.setUtmSource(utmSource);
+    if (utmMedium) request.setUtmMedium(utmMedium);
+    if (utmCampaign) request.setUtmCampaign(utmCampaign);
     return new Promise((resolve, reject) => {
       this.client.trackView(request, {}, (err: RpcError) => {
         if (err) reject(handleGrpcError(err));

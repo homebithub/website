@@ -198,11 +198,16 @@ export default function BlogPost() {
         const sessionId = sessionStorage.getItem("session_id") || crypto.randomUUID();
         sessionStorage.setItem("session_id", sessionId);
 
+        const params = new URLSearchParams(window.location.search);
         await blogService.trackView(
           post.id,
           sessionId,
           document.referrer || "direct",
-          /Mobile|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop"
+          /Mobile|Android|iPhone/i.test(navigator.userAgent) ? "mobile" : "desktop",
+          getUserId() || undefined,
+          params.get("utm_source") || undefined,
+          params.get("utm_medium") || undefined,
+          params.get("utm_campaign") || undefined,
         );
       } catch (error) {
         console.error("Error tracking view:", error);
@@ -210,7 +215,7 @@ export default function BlogPost() {
     };
 
     trackView();
-  }, [post]);
+  }, [post, getUserId]);
 
   const handleShare = async (platform: string) => {
     if (!post) return;
