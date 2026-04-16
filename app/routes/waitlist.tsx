@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { waitlistService } from "~/services/grpc/authServices";
-import { CheckCircleIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon, ChevronLeftIcon, ChevronDownIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router";
+import { ErrorAlert } from "~/components/ui/ErrorAlert";
 
 export const meta = () => [
   { title: "Join the Waitlist — Homebit" },
@@ -121,6 +122,31 @@ function ProgressBar({ current, total }: { current: number; total: number }) {
   );
 }
 
+function SelectInput({
+  value,
+  onChange,
+  children,
+}: {
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="relative">
+      <select
+        value={value}
+        onChange={onChange}
+        className="w-full appearance-none rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 pr-10 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-sm transition-colors cursor-pointer"
+      >
+        {children}
+      </select>
+      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+        <ChevronDownIcon className="w-4 h-4 text-purple-400" />
+      </div>
+    </div>
+  );
+}
+
 function ToggleChip({
   label,
   selected,
@@ -196,6 +222,7 @@ export default function WaitlistPage() {
   const [locationInput, setLocationInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [stepError, setStepError] = useState<string | null>(null);
 
   const steps: StepId[] =
     userType === "partner"
@@ -251,11 +278,45 @@ export default function WaitlistPage() {
   }
 
   function goNext() {
+    if (step === "family") {
+      if (form.help_types.length === 0) {
+        setStepError("Please select at least one type of help.");
+        return;
+      }
+      if (!form.location_county) {
+        setStepError("Please select your county.");
+        return;
+      }
+      if (!form.urgency) {
+        setStepError("Please tell us when you need help.");
+        return;
+      }
+      if (!form.employment_type) {
+        setStepError("Please select an employment type.");
+        return;
+      }
+    }
+    if (step === "worker") {
+      if (form.roles_sought.length === 0) {
+        setStepError("Please select at least one role you're seeking.");
+        return;
+      }
+      if (!form.work_preference) {
+        setStepError("Please select your work preference.");
+        return;
+      }
+      if (form.has_references === null) {
+        setStepError("Please indicate whether you have references.");
+        return;
+      }
+    }
+    setStepError(null);
     const nextIndex = currentStepIndex + 1;
     if (nextIndex < steps.length) setStep(steps[nextIndex]);
   }
 
   function goBack() {
+    setStepError(null);
     const prevIndex = currentStepIndex - 1;
     if (prevIndex >= 0) setStep(steps[prevIndex]);
   }
@@ -406,15 +467,14 @@ export default function WaitlistPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">County</label>
-                <select
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">County *</label>
+                <SelectInput
                   value={form.location_county}
                   onChange={(e) => setForm((f) => ({ ...f, location_county: e.target.value }))}
-                  className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm"
                 >
                   <option value="">Select county</option>
                   {KENYAN_COUNTIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+                </SelectInput>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Area / Estate</label>
@@ -470,6 +530,8 @@ export default function WaitlistPage() {
               </div>
             </div>
 
+            {stepError && <ErrorAlert message={stepError} />}
+
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={goBack} className="flex items-center gap-1 px-5 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all">
                 <ChevronLeftIcon className="w-4 h-4" /> Back
@@ -481,7 +543,7 @@ export default function WaitlistPage() {
           </div>
         )}
 
-        {/* Worker Step */}
+        {/* Worker Step */
         {step === "worker" && (
           <div className="space-y-6">
             <ProgressBar current={currentStepIndex} total={totalSteps} />
@@ -560,17 +622,16 @@ export default function WaitlistPage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Years of experience</label>
-              <select
+              <SelectInput
                 value={form.years_experience}
                 onChange={(e) => setForm((f) => ({ ...f, years_experience: e.target.value }))}
-                className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm"
               >
                 <option value="">Select years</option>
                 <option value="Less than 1 year">Less than 1 year</option>
                 <option value="1-2 years">1–2 years</option>
                 <option value="3-5 years">3–5 years</option>
                 <option value="More than 5 years">More than 5 years</option>
-              </select>
+              </SelectInput>
             </div>
 
             <div>
@@ -600,6 +661,8 @@ export default function WaitlistPage() {
               </div>
             </div>
 
+            {stepError && <ErrorAlert message={stepError} />}
+
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={goBack} className="flex items-center gap-1 px-5 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all">
                 <ChevronLeftIcon className="w-4 h-4" /> Back
@@ -611,7 +674,7 @@ export default function WaitlistPage() {
           </div>
         )}
 
-        {/* Contact Step */}
+        {/* Contact Step */
         {step === "contact" && (
           <div className="space-y-6">
             <ProgressBar current={currentStepIndex} total={totalSteps} />
@@ -693,11 +756,7 @@ export default function WaitlistPage() {
               />
             </div>
 
-            {error && (
-              <div className="rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 px-4 py-3 text-sm text-red-700 dark:text-red-400">
-                {error}
-              </div>
-            )}
+            {error && <ErrorAlert message={error} />}
 
             <div className="flex gap-3 pt-2">
               <button type="button" onClick={goBack} className="flex items-center gap-1 px-5 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all">
