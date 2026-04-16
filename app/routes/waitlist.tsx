@@ -543,7 +543,7 @@ export default function WaitlistPage() {
           </div>
         )}
 
-        {/* Worker Step */
+        {/* Worker Step */}
         {step === "worker" && (
           <div className="space-y-6">
             <ProgressBar current={currentStepIndex} total={totalSteps} />
@@ -674,7 +674,7 @@ export default function WaitlistPage() {
           </div>
         )}
 
-        {/* Contact Step */
+        {/* Contact Step */}
         {step === "contact" && (
           <div className="space-y-6">
             <ProgressBar current={currentStepIndex} total={totalSteps} />
