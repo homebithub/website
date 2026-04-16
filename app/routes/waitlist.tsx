@@ -6,8 +6,8 @@ import { CheckCircleIcon, ChevronLeftIcon } from "@heroicons/react/24/outline";
 import { Link } from "react-router";
 
 export const meta = () => [
-  { title: "Join the Waitlist — Homexpert by Homebit" },
-  { name: "description", content: "Join the Homexpert waitlist for early access to vetted nannies, househelps, cleaners, and caregivers in Kenya." },
+  { title: "Join the Waitlist — Homebit" },
+  { name: "description", content: "Join the Homebit waitlist for early access to vetted nannies, househelps, cleaners, and caregivers in Kenya." },
 ];
 
 const HELP_TYPES = [
@@ -268,7 +268,7 @@ export default function WaitlistPage() {
           <div className="space-y-8">
             <div className="text-center space-y-4">
               <span className="inline-flex items-center gap-2 rounded-full border border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20 px-4 py-1.5 text-sm font-medium text-purple-700 dark:text-purple-300">
-                ✨ Homexpert by Homebit — Early Access
+                ✨ Homebit — Early Access
               </span>
               <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white leading-tight">
                 Find trusted home help in Kenya without the usual guesswork.
@@ -674,7 +674,7 @@ export default function WaitlistPage() {
                 className="mt-0.5 w-4 h-4 accent-purple-600"
               />
               <span className="text-sm text-gray-600 dark:text-gray-400">
-                Send me WhatsApp updates when Homexpert opens in my area
+                Send me WhatsApp updates when Homebit opens in my area
               </span>
             </label>
 
@@ -711,21 +711,21 @@ export default function WaitlistPage() {
             <div className="space-y-2">
               <h2 className="text-3xl font-bold text-gray-900 dark:text-white">You're on the list.</h2>
               <p className="text-gray-600 dark:text-gray-300 max-w-sm mx-auto">
-                We'll notify you as soon as Homexpert opens access in your area.
+                We'll notify you as soon as Homebit opens access in your area.
               </p>
             </div>
 
             <div className="rounded-2xl bg-white dark:bg-[#13131a] border border-purple-100 dark:border-purple-900/30 p-6 text-left shadow-sm space-y-3">
               <p className="font-semibold text-gray-900 dark:text-white">Know someone who needs this?</p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                Share Homexpert with friends and family — early members get priority onboarding when we launch.
+                Share Homebit with friends and family — early members get priority onboarding when we launch.
               </p>
               <button
                 type="button"
                 onClick={() => {
                   if (typeof window !== "undefined" && navigator.share) {
                     navigator.share({
-                      title: "Homexpert — Trusted Home Help in Kenya",
+                      title: "Homebit — Trusted Home Help in Kenya",
                       text: "Find vetted nannies, househelps, and caregivers in Kenya. Join the waitlist!",
                       url: window.location.origin + "/waitlist",
                     });
@@ -733,7 +733,7 @@ export default function WaitlistPage() {
                 }}
                 className="w-full py-3 rounded-xl border-2 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 font-semibold hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
               >
-                Share Homexpert
+                Share Homebit
               </button>
             </div>
 

@@ -45,7 +45,7 @@ echo ""
 echo "📝 Updating .env.production..."
 if [ -f .env.production ]; then
   if ! grep -q "NOTIFICATIONS_API_BASE_URL" .env.production; then
-    echo "NOTIFICATIONS_API_BASE_URL=https://api.homexpert.co.ke/notifications" >> .env.production
+    echo "NOTIFICATIONS_API_BASE_URL=https://api.homebit.co.ke/notifications" >> .env.production
     echo -e "${GREEN}✓${NC} Added NOTIFICATIONS_API_BASE_URL to .env.production"
   else
     echo -e "${YELLOW}⚠${NC}  NOTIFICATIONS_API_BASE_URL already exists in .env.production"

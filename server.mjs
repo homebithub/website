@@ -27,10 +27,7 @@ app.use(cors({
         const allowedOrigins = [
             "https://homebit.co.ke",
             "https://www.homebit.co.ke",
-            "https://api.homebit.co.ke",
-            "https://homexpert.co.ke",
-            "https://www.homexpert.co.ke",
-            "https://api.homexpert.co.ke"
+            "https://api.homebit.co.ke"
         ];
         
         // In development, allow localhost
