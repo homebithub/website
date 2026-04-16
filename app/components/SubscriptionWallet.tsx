@@ -160,12 +160,16 @@ export function SubscriptionWallet() {
     return `KES ${(amount / 100).toLocaleString('en-KE', { minimumFractionDigits: 2 })}`;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-KE', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+  const formatDate = (dateVal: any): string => {
+    if (!dateVal) return '\u2014';
+    let d: Date;
+    if (typeof dateVal === 'object' && 'seconds' in dateVal) {
+      d = new Date(Number(dateVal.seconds) * 1000);
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) return '\u2014';
+    return d.toLocaleDateString('en-KE', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const getStatusBadge = (status: string) => {

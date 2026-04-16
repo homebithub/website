@@ -659,12 +659,16 @@ export default function SubscriptionsPage() {
     return `KES ${(amount / 100).toLocaleString('en-KE', { minimumFractionDigits: 2 })}`;
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-KE', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    });
+  const formatDate = (dateVal: any): string => {
+    if (!dateVal) return '—';
+    let d: Date;
+    if (typeof dateVal === 'object' && 'seconds' in dateVal) {
+      d = new Date(Number(dateVal.seconds) * 1000);
+    } else {
+      d = new Date(dateVal);
+    }
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-KE', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const getStatusBadge = (status: string) => {
@@ -776,7 +780,7 @@ export default function SubscriptionsPage() {
                           console.log('[Subscriptions] Phone number set to:', user?.phone || '');
                           setShowPaymentModal(true);
                         }}
-                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg"
                       >
                         <CreditCardIcon className="w-5 h-5" />
                         Make Payment Now
