@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Star, ThumbsUp, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { reviewService } from '~/services/grpc/review.service';
 
 interface Review {
   id: string;
@@ -58,16 +59,11 @@ export default function ProfileReviews({
   useEffect(() => {
     loadReviewStats();
     loadReviews(currentPage);
-  }, [profileId, currentPage]);
+  }, [profileId, profileType, isOwnProfile, currentPage]);
 
   const loadReviewStats = async () => {
     try {
-      const response = await fetch(`/api/v1/reviews/stats/${profileId}`, {
-        credentials: 'include',
-      });
-
-      if (!response.ok) throw new Error('Failed to load review stats');
-      const data = await response.json();
+      const data = await reviewService.getReviewStats(profileId);
       setStats(data);
     } catch (err) {
       console.error('Error loading review stats:', err);
@@ -79,27 +75,16 @@ export default function ProfileReviews({
     setError('');
 
     try {
-      const response = await fetch(
-        `/api/v1/reviews/public?id=${profileId}&page=${page}&limit=${reviewsPerPage}`,
-        {
-          credentials: 'include',
-        }
-      );
-
-      if (!response.ok) {
-        if (response.status === 403 && profileType === 'household' && !isOwnProfile) {
-          setError('Household reviews are private');
-          setIsLoading(false);
-          return;
-        }
-        throw new Error('Failed to load reviews');
-      }
-
-      const data = await response.json();
+      const data = await reviewService.getPublicReviews(profileId, undefined, page, reviewsPerPage);
       setReviews(data.reviews || []);
       setTotalReviews(data.total || 0);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load reviews');
+      const message = err instanceof Error ? err.message : 'Failed to load reviews';
+      if (profileType === 'household' && !isOwnProfile && /private|permission|forbidden/i.test(message)) {
+        setError('Household reviews are private');
+      } else {
+        setError(message);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -107,15 +92,8 @@ export default function ProfileReviews({
 
   const handleMarkHelpful = async (reviewId: string) => {
     try {
-      const response = await fetch(`/api/v1/reviews/${reviewId}/helpful`, {
-        method: 'POST',
-        credentials: 'include',
-      });
-
-      if (!response.ok) throw new Error('Failed to mark review as helpful');
-      
-      // Reload reviews to get updated helpful count
-      loadReviews(currentPage);
+      await reviewService.markReviewHelpful(reviewId);
+      await loadReviews(currentPage);
     } catch (err) {
       console.error('Error marking review as helpful:', err);
     }

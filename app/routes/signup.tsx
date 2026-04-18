@@ -14,6 +14,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
+import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorage';
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
@@ -246,10 +247,8 @@ export default function SignupPage() {
         setSuccess(null);
         
         // Clear any existing auth data before signup
-        localStorage.removeItem('token');
-        localStorage.removeItem('user_object');
+        clearStoredAuthSession();
         localStorage.removeItem('user_id');
-        localStorage.removeItem('profile_type');
         
         try {
             // Check if this is a Google signup completion
@@ -324,7 +323,7 @@ export default function SignupPage() {
                 
                 // Store user data temporarily (before verification)
                 localStorage.setItem('user_id', userId);
-                localStorage.setItem('profile_type', profileType);
+                setStoredProfileType(profileType);
                 
                 // Redirect to OTP verification (same as regular signup)
                 if (data.verification) {
@@ -445,7 +444,7 @@ export default function SignupPage() {
             
             // Store user data temporarily (before verification)
             localStorage.setItem('user_id', userId);
-            localStorage.setItem('profile_type', profileType);
+            setStoredProfileType(profileType);
             
             // DO NOT store token yet - wait until after OTP verification
             // The token will be stored after successful OTP verification in verify-otp.tsx

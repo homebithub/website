@@ -1,6 +1,6 @@
-import { useEffect, useRef, useCallback } from 'react';
-import { API_BASE_URL } from '~/config/api';
-import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { useMemo } from 'react';
+import { useSSEContext } from '~/contexts/SSEContext';
+import { useSSESubscriptions } from '~/hooks/useSSESubscription';
 
 export type PaymentSSEEvent = {
   event_type: string;
@@ -25,98 +25,22 @@ export function usePaymentSSE(
   onPaymentFailed?: PaymentSSEHandler,
   onPaymentRefunded?: PaymentSSEHandler
 ) {
-  const esRef = useRef<EventSource | null>(null);
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
-  const baseReconnectDelay = 1000;
+  const { isConnected, reconnect } = useSSEContext();
 
-  const connect = useCallback(() => {
-    if (typeof window === 'undefined') return;
-    
-    const token = getAccessTokenFromCookies();
-    if (!token) {
-      console.log('[PaymentSSE] No auth token, skipping SSE connection');
-      return;
-    }
+  const subscriptions = useMemo(
+    () =>
+      [
+        onPaymentSucceeded && { eventType: 'payments.payment.succeeded', handler: onPaymentSucceeded as (event: any) => void },
+        onPaymentFailed && { eventType: 'payments.payment.failed', handler: onPaymentFailed as (event: any) => void },
+        onPaymentRefunded && { eventType: 'payments.payment.refunded', handler: onPaymentRefunded as (event: any) => void },
+      ].filter(Boolean) as Array<{ eventType: string; handler: (event: any) => void }>,
+    [onPaymentFailed, onPaymentRefunded, onPaymentSucceeded]
+  );
 
-    if (esRef.current) {
-      esRef.current.close();
-      esRef.current = null;
-    }
-
-    console.log('[PaymentSSE] Connecting to SSE stream...');
-    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`, { withCredentials: true });
-    esRef.current = es;
-
-    es.onopen = () => {
-      console.log('[PaymentSSE] Connected successfully');
-      reconnectAttemptsRef.current = 0;
-    };
-
-    es.onmessage = (ev) => {
-      try {
-        const payload = JSON.parse(ev.data);
-        const eventType = payload.event_type;
-        
-        console.log('[PaymentSSE] Received event:', eventType);
-
-        switch (eventType) {
-          case 'payments.payment.succeeded':
-            onPaymentSucceeded?.(payload);
-            break;
-          case 'payments.payment.failed':
-            onPaymentFailed?.(payload);
-            break;
-          case 'payments.payment.refunded':
-            onPaymentRefunded?.(payload);
-            break;
-          default:
-            // Ignore other event types
-            break;
-        }
-      } catch (err) {
-        console.error('[PaymentSSE] Failed to parse event:', err);
-      }
-    };
-
-    es.onerror = (err) => {
-      console.error('[PaymentSSE] Connection error:', err);
-      es.close();
-      esRef.current = null;
-
-      if (reconnectAttemptsRef.current < maxReconnectAttempts) {
-        const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
-        console.log(`[PaymentSSE] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
-        
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnectAttemptsRef.current++;
-          connect();
-        }, delay);
-      } else {
-        console.error('[PaymentSSE] Max reconnection attempts reached');
-      }
-    };
-  }, [onPaymentSucceeded, onPaymentFailed, onPaymentRefunded]);
-
-  useEffect(() => {
-    connect();
-
-    return () => {
-      console.log('[PaymentSSE] Cleaning up SSE connection');
-      if (esRef.current) {
-        esRef.current.close();
-        esRef.current = null;
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
-    };
-  }, [connect]);
+  useSSESubscriptions(subscriptions, subscriptions.length > 0);
 
   return {
-    isConnected: esRef.current?.readyState === EventSource.OPEN,
-    reconnect: connect
+    isConnected,
+    reconnect,
   };
 }

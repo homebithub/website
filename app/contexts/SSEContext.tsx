@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE_URL } from '~/config/api';
-import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { useAuth } from '~/contexts/useAuth';
 
 export type SSEEventHandler = (event: any) => void;
 
@@ -30,6 +30,7 @@ interface SSEProviderProps {
 }
 
 export function SSEProvider({ children }: SSEProviderProps) {
+  const { user } = useAuth();
   const [isConnected, setIsConnected] = useState(false);
   const [connectionUptime, setConnectionUptime] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -42,12 +43,31 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000;
 
+  const disconnect = useCallback(() => {
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+    if (uptimeIntervalRef.current) {
+      clearInterval(uptimeIntervalRef.current);
+      uptimeIntervalRef.current = null;
+    }
+    connectionStartTimeRef.current = 0;
+    setIsConnected(false);
+    setConnectionUptime(0);
+  }, []);
+
   const connect = useCallback(() => {
     if (typeof window === 'undefined') return;
-    
-    const token = getAccessTokenFromCookies();
-    if (!token) {
-      console.log('[SSE] No auth token, skipping connection');
+
+    const currentUserId = (user as any)?.user?.id || (user as any)?.id;
+    if (!currentUserId) {
+      console.log('[SSE] No authenticated user, skipping connection');
+      disconnect();
       return;
     }
 
@@ -58,7 +78,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
     }
 
     console.log('[SSE] Establishing single EventSource connection...');
-    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`, { withCredentials: true });
+    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
     eventSourceRef.current = es;
 
     es.onopen = () => {
@@ -108,16 +128,16 @@ export function SSEProvider({ children }: SSEProviderProps) {
       es.close();
       eventSourceRef.current = null;
       
-      // Clear uptime tracking
-      if (uptimeIntervalRef.current) {
-        clearInterval(uptimeIntervalRef.current);
-        uptimeIntervalRef.current = null;
-      }
-      connectionStartTimeRef.current = 0;
-      setConnectionUptime(0);
+	      // Clear uptime tracking
+        if (uptimeIntervalRef.current) {
+          clearInterval(uptimeIntervalRef.current);
+          uptimeIntervalRef.current = null;
+        }
+        connectionStartTimeRef.current = 0;
+        setConnectionUptime(0);
 
-      // Attempt reconnection with exponential backoff
-      if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+	      // Attempt reconnection with exponential backoff
+	      if (reconnectAttemptsRef.current < maxReconnectAttempts) {
         const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
         console.log(`[SSE] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
         
@@ -129,7 +149,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
         console.error('[SSE] Max reconnection attempts reached');
       }
     };
-  }, []);
+	  }, [disconnect, user]);
 
   const reconnect = useCallback(() => {
     console.log('[SSE] Manual reconnect triggered');
@@ -159,26 +179,22 @@ export function SSEProvider({ children }: SSEProviderProps) {
     };
   }, []);
 
-  // Initialize connection on mount
+  // Reconnect whenever auth state changes so login/logout updates the shared stream.
   useEffect(() => {
-    connect();
+    const currentUserId = (user as any)?.user?.id || (user as any)?.id;
+    reconnectAttemptsRef.current = 0;
+
+    if (currentUserId) {
+      connect();
+    } else {
+      disconnect();
+    }
 
     return () => {
       console.log('[SSE] Cleaning up SSE connection');
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
-      if (uptimeIntervalRef.current) {
-        clearInterval(uptimeIntervalRef.current);
-        uptimeIntervalRef.current = null;
-      }
+      disconnect();
     };
-  }, [connect]);
+  }, [connect, disconnect, user]);
 
   const value: SSEContextValue = {
     isConnected,

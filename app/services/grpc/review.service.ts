@@ -1,16 +1,13 @@
-// NOTE: Proto files need to be regenerated from homebit-pkg v0.26.0
-// Run: cd homebit-pkg/proto && make web
-// Then copy generated files to website/app/grpc/generated/
-
 import { ReviewServiceClient } from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb from '~/grpc/generated/auth/auth_pb';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
+import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import {
+  getStoredAccessToken,
+  getStoredUserId,
+} from '~/utils/authStorage';
 
-const client = new ReviewServiceClient(
-  import.meta.env.VITE_AUTH_API_BASE_URL || 'http://localhost:3005',
-  null,
-  null
-);
+const client = new ReviewServiceClient(GRPC_WEB_BASE_URL, null, null);
 
 export interface ReviewFormData {
   hiring_id: string;
@@ -69,6 +66,24 @@ export interface PaginatedReviewsResponse {
   limit: number;
 }
 
+function resolveUserId(userId?: string): string {
+  if (userId) return userId;
+  return getStoredUserId();
+}
+
+function getMetadata(): { [key: string]: string } {
+  const md: { [key: string]: string } = {};
+  const token = getStoredAccessToken();
+  if (token) {
+    md.authorization = `Bearer ${token}`;
+  }
+  return md;
+}
+
+function jsonResponseToJs(response: any): any {
+  return response?.getData?.()?.toJavaScript?.() || {};
+}
+
 /**
  * Create a new review with optional images
  */
@@ -77,23 +92,22 @@ export async function createReview(
   data: ReviewFormData
 ): Promise<Review> {
   const request = new auth_pb.CreateReviewReq();
-  request.setUserId(userId);
+  request.setUserId(resolveUserId(userId));
   
   const reviewData = struct_pb.Struct.fromJavaScript({
     ...data,
-    reviewer_id: userId,
+    reviewer_id: resolveUserId(userId),
   });
   request.setData(reviewData);
 
   return new Promise((resolve, reject) => {
-    client.createReview(request, {}, (err, response) => {
+    client.createReview(request, getMetadata(), (err, response) => {
       if (err) {
-        reject(err);
+        reject(handleGrpcError(err));
         return;
       }
-      
-      const data = response?.getData()?.toJavaScript() || {};
-      resolve(data as unknown as Review);
+
+      resolve(jsonResponseToJs(response) as Review);
     });
   });
 }
@@ -103,21 +117,20 @@ export async function createReview(
  */
 export async function getReview(
   reviewId: string,
-  userId: string
+  userId?: string
 ): Promise<Review> {
   const request = new auth_pb.IdRequest();
   request.setId(reviewId);
-  request.setUserId(userId);
+  request.setUserId(resolveUserId(userId));
 
   return new Promise((resolve, reject) => {
-    client.getReview(request, {}, (err, response) => {
+    client.getReview(request, getMetadata(), (err, response) => {
       if (err) {
-        reject(err);
+        reject(handleGrpcError(err));
         return;
       }
-      
-      const data = response?.getData()?.toJavaScript() || {};
-      resolve(data as unknown as Review);
+
+      resolve(jsonResponseToJs(response) as Review);
     });
   });
 }
@@ -127,25 +140,24 @@ export async function getReview(
  */
 export async function getPublicReviews(
   revieweeId: string,
-  userId: string,
+  userId?: string,
   page: number = 1,
   limit: number = 10
 ): Promise<PaginatedReviewsResponse> {
   const request = new auth_pb.PaginatedRequest();
   request.setId(revieweeId);
-  request.setUserId(userId);
+  request.setUserId(resolveUserId(userId));
   request.setPage(page);
   request.setLimit(limit);
 
   return new Promise((resolve, reject) => {
-    client.getPublicReviews(request, {}, (err, response) => {
+    client.getPublicReviews(request, getMetadata(), (err, response) => {
       if (err) {
-        reject(err);
+        reject(handleGrpcError(err));
         return;
       }
-      
-      const data = response?.getData()?.toJavaScript() || {};
-      resolve(data as unknown as PaginatedReviewsResponse);
+
+      resolve(jsonResponseToJs(response) as PaginatedReviewsResponse);
     });
   });
 }
@@ -154,24 +166,23 @@ export async function getPublicReviews(
  * Get reviews written by the current user
  */
 export async function getMyReviews(
-  userId: string,
+  userId?: string,
   page: number = 1,
   limit: number = 10
 ): Promise<PaginatedReviewsResponse> {
   const request = new auth_pb.PaginatedRequest();
-  request.setUserId(userId);
+  request.setUserId(resolveUserId(userId));
   request.setPage(page);
   request.setLimit(limit);
 
   return new Promise((resolve, reject) => {
-    client.getMyReviews(request, {}, (err, response) => {
+    client.getMyReviews(request, getMetadata(), (err, response) => {
       if (err) {
-        reject(err);
+        reject(handleGrpcError(err));
         return;
       }
-      
-      const data = response?.getData()?.toJavaScript() || {};
-      resolve(data as unknown as PaginatedReviewsResponse);
+
+      resolve(jsonResponseToJs(response) as PaginatedReviewsResponse);
     });
   });
 }
@@ -184,16 +195,16 @@ export async function getReviewStats(
 ): Promise<ReviewStats> {
   const request = new auth_pb.IdRequest();
   request.setId(revieweeId);
+  request.setUserId(resolveUserId());
 
   return new Promise((resolve, reject) => {
-    client.getReviewStats(request, {}, (err, response) => {
+    client.getReviewStats(request, getMetadata(), (err, response) => {
       if (err) {
-        reject(err);
+        reject(handleGrpcError(err));
         return;
       }
-      
-      const data = response?.getData()?.toJavaScript() || {};
-      resolve(data as unknown as ReviewStats);
+
+      resolve(jsonResponseToJs(response) as ReviewStats);
     });
   });
 }
@@ -203,16 +214,16 @@ export async function getReviewStats(
  */
 export async function markReviewHelpful(
   reviewId: string,
-  userId: string
+  userId?: string
 ): Promise<void> {
   const request = new auth_pb.IdRequest();
   request.setId(reviewId);
-  request.setUserId(userId);
+  request.setUserId(resolveUserId(userId));
 
   return new Promise((resolve, reject) => {
-    client.markHelpful(request, {}, (err) => {
+    client.markHelpful(request, getMetadata(), (err) => {
       if (err) {
-        reject(err);
+        reject(handleGrpcError(err));
         return;
       }
       resolve();
@@ -225,16 +236,16 @@ export async function markReviewHelpful(
  */
 export async function unmarkReviewHelpful(
   reviewId: string,
-  userId: string
+  userId?: string
 ): Promise<void> {
   const request = new auth_pb.IdRequest();
   request.setId(reviewId);
-  request.setUserId(userId);
+  request.setUserId(resolveUserId(userId));
 
   return new Promise((resolve, reject) => {
-    client.unmarkHelpful(request, {}, (err) => {
+    client.unmarkHelpful(request, getMetadata(), (err) => {
       if (err) {
-        reject(err);
+        reject(handleGrpcError(err));
         return;
       }
       resolve();
@@ -251,7 +262,7 @@ export async function addReviewResponse(
   response: string
 ): Promise<void> {
   const request = new auth_pb.JsonPayload();
-  request.setUserId(userId);
+  request.setUserId(resolveUserId(userId));
   
   const data = struct_pb.Struct.fromJavaScript({
     review_id: reviewId,
@@ -260,9 +271,9 @@ export async function addReviewResponse(
   request.setData(data);
 
   return new Promise((resolve, reject) => {
-    client.addResponse(request, {}, (err) => {
+    client.addResponse(request, getMetadata(), (err) => {
       if (err) {
-        reject(err);
+        reject(handleGrpcError(err));
         return;
       }
       resolve();

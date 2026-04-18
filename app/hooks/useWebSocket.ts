@@ -4,6 +4,7 @@ import type { WSConnectionState, WSMessage, MessageEvent, WSHookReturn } from '~
 interface UseWebSocketOptions {
   url: string;
   token: string | null;
+  enabled?: boolean;
   onMessage?: (event: MessageEvent) => void;
   reconnectInterval?: number;
   maxReconnectAttempts?: number;
@@ -13,6 +14,7 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
   const {
     url,
     token,
+    enabled = true,
     onMessage,
     reconnectInterval = 3000,
     maxReconnectAttempts = 10,
@@ -26,8 +28,9 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
   const shouldReconnectRef = useRef(true);
 
   const connect = useCallback(() => {
-    if (!token) {
-      console.log('[WebSocket] No token available, skipping connection');
+    if (!enabled) {
+      console.log('[WebSocket] Connection disabled, skipping connection');
+      setConnectionState('disconnected');
       return;
     }
 
@@ -38,7 +41,7 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
 
     try {
       setConnectionState('connecting');
-      const wsUrl = `${url}?token=${encodeURIComponent(token)}`;
+      const wsUrl = token ? `${url}?token=${encodeURIComponent(token)}` : url;
       console.log('[WebSocket] Connecting to:', url);
       
       const ws = new WebSocket(wsUrl);
@@ -123,7 +126,7 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
       console.error('[WebSocket] Connection error:', error);
       setConnectionState('error');
     }
-  }, [url, token, onMessage, reconnectInterval, maxReconnectAttempts]);
+  }, [enabled, maxReconnectAttempts, onMessage, reconnectInterval, token, url]);
 
   const disconnect = useCallback(() => {
     shouldReconnectRef.current = false;
@@ -168,12 +171,16 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
   // Connect on mount, disconnect on unmount
   useEffect(() => {
     shouldReconnectRef.current = true;
-    connect();
+    if (enabled) {
+      connect();
+    } else {
+      disconnect();
+    }
 
     return () => {
       disconnect();
     };
-  }, [connect, disconnect]);
+  }, [connect, disconnect, enabled]);
 
   return {
     connectionState,

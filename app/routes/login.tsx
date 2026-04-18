@@ -13,7 +13,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { getDeviceId, getDeviceName } from '~/utils/deviceFingerprint';
-import { setAuthCookies } from '~/utils/cookie';
+import { cacheAuthSession, getStoredAccessToken } from '~/utils/authStorage';
 
 export const meta = () => [
     { title: "Log In — Homebit" },
@@ -74,7 +74,7 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const googleLogin = params.get('google_login');
-    const token = params.get('token');
+    const token = params.get('token') || getStoredAccessToken() || null;
     const errorParam = params.get('error');
 
     if (errorParam && !loginError) {
@@ -86,7 +86,7 @@ export default function LoginPage() {
       (async () => {
         try {
           // Set token cookie first so gRPC-Web auth metadata can read it
-          setAuthCookies(token, null, {});
+          cacheAuthSession({ token, provider: "google" });
 
           // Decode JWT to extract user_id (needed by getCurrentUser RPC)
           let tokenUserId = '';
@@ -111,13 +111,12 @@ export default function LoginPage() {
           };
 
           // Update cookies with full user data
-          setAuthCookies(token, null, userData);
-          localStorage.setItem('token', token);
-          localStorage.setItem('user_object', JSON.stringify(userData));
-          localStorage.setItem('auth_provider', 'google');
+          cacheAuthSession({
+            token,
+            user: userData,
+            provider: "google",
+          });
           const profileType: string = userData.profile_type || '';
-          localStorage.setItem('profile_type', profileType);
-          try { localStorage.setItem('userType', profileType || ''); } catch {}
 
           // Register device after successful Google login (non-blocking)
           try {

@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { getAccessTokenFromCookies } from "~/utils/cookie";
 import { householdMemberService } from '~/services/grpc/authServices';
-import { API_BASE_URL } from "~/config/api";
 import { Button } from '~/components/ui/Button';
+import { useSSESubscription } from '~/hooks/useSSESubscription';
 
 export default function PendingApprovalPage() {
   const navigate = useNavigate();
@@ -12,89 +12,49 @@ export default function PendingApprovalPage() {
   const [requestStatus, setRequestStatus] = useState<'pending' | 'approved' | 'rejected' | null>(null);
   const [householdName, setHouseholdName] = useState<string>("");
 
-  useEffect(() => {
-    const checkRequestStatus = async () => {
-      const token = getAccessTokenFromCookies();
-      if (!token) {
-        navigate("/login");
+  const checkRequestStatus = useCallback(async () => {
+    const token = getAccessTokenFromCookies();
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      const data = await householdMemberService.getJoinRequestStatus('');
+      const request = data?.data || data;
+
+      if (!request || !request.status) {
+        navigate("/household-choice");
         return;
       }
 
-      try {
-        const data = await householdMemberService.getJoinRequestStatus('');
-        const request = data?.data || data;
-        
-        if (!request || !request.status) {
-          // No pending request found, redirect to household choice
-          navigate("/household-choice");
-          return;
-        }
+      setRequestStatus(request.status);
+      setHouseholdName(request.household_name || "the household");
 
-        setRequestStatus(request.status);
-        setHouseholdName(request.household_name || "the household");
-
-        // If already approved, redirect to household profile
-        if (request.status === 'approved') {
-          navigate("/household/profile");
-          return;
-        }
-
-        // If rejected, stay on page to show rejection message
-      } catch (err) {
-        console.error("Error checking join status:", err);
-        // If error checking status, redirect to household choice
-        navigate("/household-choice");
-      } finally {
-        setLoading(false);
+      if (request.status === 'approved') {
+        navigate("/household/profile");
       }
-    };
-
-    checkRequestStatus();
+    } catch (err) {
+      console.error("Error checking join status:", err);
+      navigate("/household-choice");
+    } finally {
+      setLoading(false);
+    }
   }, [navigate]);
 
-  // Listen for real-time status updates via SSE
   useEffect(() => {
-    if (requestStatus !== 'pending') return;
+    void checkRequestStatus();
+  }, [checkRequestStatus]);
 
-    const token = getAccessTokenFromCookies();
-    if (!token) return;
+  const refreshPendingStatus = useCallback(() => {
+    if (requestStatus === 'pending') {
+      void checkRequestStatus();
+    }
+  }, [checkRequestStatus, requestStatus]);
 
-    const eventSource = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`, { withCredentials: true });
-
-    eventSource.onmessage = (event: any) => {
-      try {
-        const data = JSON.parse(event.data);
-        const notifications = data.notifications || [];
-        
-        const list = Array.isArray(notifications) ? notifications : 
-                     (data.data?.notifications || []);
-        
-        for (const n of list) {
-          if (n.type === 'household_join_approved') {
-            setRequestStatus('approved');
-            setTimeout(() => navigate("/household/profile"), 2000);
-            eventSource.close();
-            break;
-          } else if (n.type === 'household_join_rejected') {
-            setRequestStatus('rejected');
-            eventSource.close();
-            break;
-          }
-        }
-      } catch (err) {
-        console.error("SSE error:", err);
-      }
-    };
-
-    eventSource.onerror = (err) => {
-      console.error("EventSource failed:", err);
-      eventSource.close();
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, [requestStatus, navigate]);
+  useSSESubscription('notifications.snapshot', refreshPendingStatus, requestStatus === 'pending');
+  useSSESubscription('notifications.created', refreshPendingStatus, requestStatus === 'pending');
+  useSSESubscription('auth.household.updated', refreshPendingStatus, requestStatus === 'pending');
 
   if (loading) {
     return (

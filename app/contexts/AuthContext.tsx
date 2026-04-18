@@ -5,8 +5,13 @@ import { migratePreferences } from '~/utils/preferencesApi';
 import { extractErrorMessage, transformErrorMessage } from '~/utils/errorMessages';
 import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
-import { clearAuthCookies, getAuthFromCookies, getAccessTokenFromCookies, setAuthCookies } from "~/utils/cookie";
 import { householdMemberService } from '~/services/grpc/authServices';
+import {
+  cacheAuthSession,
+  clearStoredAuthSession,
+  getStoredAccessToken,
+  getStoredUser,
+} from "~/utils/authStorage";
 
 interface User {
   id: string;
@@ -35,26 +40,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuth = async () => {
     try {
-      const { token: cookieToken, user: cookieUser } = getAuthFromCookies();
-      const legacyToken = typeof window !== "undefined" ? getAccessTokenFromCookies() : null;
-      // In production the access token cookie is httpOnly, so JS can't read it.
-      // Fall back to localStorage where login/verify-otp/Google flows store it.
-      const lsToken = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-      const token = cookieToken || legacyToken || lsToken;
+      const token = getStoredAccessToken() || null;
+      const cachedUser = getStoredUser();
 
-      if (cookieUser) {
-        setUser({ token: token || "", user: cookieUser } as unknown as LoginResponse);
-        localStorage.setItem("user_object", JSON.stringify(cookieUser));
-      } else {
-        const rawUser = localStorage.getItem("user_object");
-        if (rawUser && token) {
-          try {
-            const parsedUser = JSON.parse(rawUser);
-            setUser({ token, user: parsedUser } as unknown as LoginResponse);
-          } catch {
-            // Ignore malformed cache
-          }
-        }
+      if (cachedUser && token) {
+        setUser({ token, user: cachedUser } as unknown as LoginResponse);
       }
 
       if (isPublicRoute()) {
@@ -84,9 +74,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       
       setUser({ token: token || "", user } as unknown as LoginResponse);
-      setAuthCookies(token || "", null, user);
-      localStorage.setItem("token", token || "");
-      localStorage.setItem("user_object", JSON.stringify(user));
+      cacheAuthSession({ token: token || "", user });
 
       // Check for pending household join requests on page load/refresh
       const profileType = user.profile_type;
@@ -128,9 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         error?.message?.includes('Authentication required');
       if (isUnauthenticated) {
         setUser(null);
-        clearAuthCookies();
-        localStorage.removeItem("token");
-        localStorage.removeItem("user_object");
+        clearStoredAuthSession();
       }
       // For transient errors, keep the cached user state from cookies/localStorage
       // that was set earlier in this function (lines 41-53).
@@ -167,15 +153,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         is_verified: userProto?.getIsVerified() || false,
         profile_image: userProto?.getProfileImage() || "",
       };
-
-      setAuthCookies(token, refreshToken, userData);
-      localStorage.setItem("token", token);
-      localStorage.setItem("user_object", JSON.stringify(userData));
-      localStorage.setItem("auth_provider", "password");
+      cacheAuthSession({
+        token,
+        refreshToken,
+        user: userData,
+        provider: "password",
+      });
       
       const profileType = userData.profile_type || "";
-      localStorage.setItem("profile_type", profileType);
-      localStorage.setItem("userType", profileType);
       
       setUser({ token, user: userData } as unknown as LoginResponse);
       
@@ -315,9 +300,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userProto = signupResponse?.getUser?.();
       const user = userProto?.toObject?.() || {};
 
-      setAuthCookies(token, refreshToken, user);
-      localStorage.setItem("token", token);
-      localStorage.setItem("user_object", JSON.stringify(user));
+      cacheAuthSession({ token, refreshToken, user });
       setUser({ token, user } as unknown as LoginResponse);
       
       migratePreferences().catch(err => console.error("Failed to migrate preferences:", err));
@@ -357,12 +340,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.log('[Device] Removal on logout failed:', deviceError);
       }
 
-      clearAuthCookies();
-      localStorage.removeItem("token");
-      localStorage.removeItem("user_object");
-      localStorage.removeItem("userType");
-      localStorage.removeItem("profile_type");
-      localStorage.removeItem("auth_provider");
+      clearStoredAuthSession();
       localStorage.removeItem("device_id");
 
       setUser(null);

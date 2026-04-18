@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { API_BASE_URL } from '~/config/api';
+import { bureauService, profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { getStoredAccessToken } from '~/utils/authStorage';
 
 interface Househelp {
   id: string;
@@ -12,6 +13,7 @@ interface Househelp {
   verified: boolean;
   skills: string[] | null;
   experience: number;
+  years_of_experience?: number;
   hourly_rate: number;
   languages: string[] | null;
   specialities: string[] | null;
@@ -87,25 +89,21 @@ const HousehelpsTable = () => {
   useEffect(() => {
     const fetchHousehelps = async () => {
       try {
-        // You should replace this with your actual JWT token
-        const token = 'your_jwt_token';
-        localStorage.setItem('jwt', token);
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/v1/househelps/bureau/e0eabd6e-491f-4dea-92ea-e27a198a47f9?limit=20&offset=0`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch data');
+        const token = getStoredAccessToken();
+        if (!token) {
+          setHousehelps([]);
+          return;
         }
 
-        const data = await response.json();
-        setHousehelps(data.data);
+        const bureau = await bureauService.getCurrentBureauProfile('');
+        const bureauId = bureau?.id || bureau?._id;
+        if (!bureauId) {
+          setHousehelps([]);
+          return;
+        }
+
+        const data = await grpcProfileService.getHousehelpsByBureau(bureauId, 20, 0);
+        setHousehelps(Array.isArray(data?.data) ? data.data : []);
       } catch (err: any) {
         setError(err.message);
       } finally {
@@ -145,8 +143,8 @@ const HousehelpsTable = () => {
                   <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{`${item.User.first_name} ${item.User.last_name}`}</td>
                   <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{item.User.phone}</td>
                   <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{item.Househelp.current_location}</td>
-                  <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{item.Househelp.experience} years</td>
-                  <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{new Date(item.Househelp.availability).toLocaleDateString()}</td>
+                  <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{item.Househelp.experience ?? item.Househelp.years_of_experience ?? '-'} years</td>
+                  <td className="py-3 px-4 text-sm text-gray-700 dark:text-gray-300">{item.Househelp.availability ? new Date(item.Househelp.availability).toLocaleDateString() : '-'}</td>
                 </tr>
               ))
             ) : (

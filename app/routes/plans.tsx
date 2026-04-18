@@ -17,6 +17,7 @@ import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { paymentsService } from "~/services/grpc/payments.service";
+import { getStoredProfileType } from "~/utils/authStorage";
 
 export const meta = () => [
   { title: "Choose a Plan — Homebit" },
@@ -203,7 +204,8 @@ export default function PlansPage() {
   const userObj: any = (user as any)?.user ?? user;
   const profileType: string =
     userObj?.profile_type ||
-    (typeof window !== "undefined" ? localStorage.getItem("profile_type") || "" : "");
+    getStoredProfileType() ||
+    "";
 
   // ── Load plans from backend ────────────────────────────────────────────────
   useEffect(() => {
@@ -325,7 +327,7 @@ export default function PlansPage() {
 
     const pt =
       userObj?.profile_type ||
-      (typeof window !== "undefined" ? localStorage.getItem("profile_type") : null) ||
+      getStoredProfileType() ||
       selectedPlan.profile_type ||
       "";
 

@@ -1,8 +1,7 @@
-import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router";
-import { API_BASE_URL } from '~/config/api';
-import { bureauService } from '~/services/grpc/authServices';
+import { bureauService, profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { getStoredAccessToken } from '~/utils/authStorage';
 
 // Add phone input styles
 const phoneInputStyle = {
@@ -15,6 +14,9 @@ const phoneInputStyle = {
 };
 
 export default function BureauHousehelps() {
+  const [househelps, setHousehelps] = useState<any[]>([]);
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState("");
   // State for Onboard modal and OTP
   const [showOnboardModal, setShowOnboardModal] = useState(false);
   const [showOtpModal, setShowOtpModal] = useState(false);
@@ -32,11 +34,21 @@ export default function BureauHousehelps() {
     // Fetch bureau profile to get bureau ID
     const fetchProfile = async () => {
       try {
-        const token = getAccessTokenFromCookies();
+        const token = getStoredAccessToken();
         if (!token) return;
         const data = await bureauService.getCurrentBureauProfile('');
-        setBureauId(data?.id || data?._id || null);
+        const resolvedBureauId = data?.id || data?._id || null;
+        setBureauId(resolvedBureauId);
+
+        if (resolvedBureauId) {
+          setListLoading(true);
+          const result = await grpcProfileService.getHousehelpsByBureau(resolvedBureauId, 20, 0);
+          setHousehelps(Array.isArray(result?.data) ? result.data : []);
+        }
       } catch {}
+      finally {
+        setListLoading(false);
+      }
     };
     fetchProfile();
   }, []);
@@ -46,12 +58,8 @@ export default function BureauHousehelps() {
     setSearching(true);
     setSearchError("");
     setHousehelpInfo(null);
-    // TODO: Replace with real API endpoint
     try {
-      // Simulate API call
-      const res = await fetch(`${API_BASE_URL}/api/v1/househelp/lookup?phone=${encodeURIComponent(phone)}`);
-      if (!res.ok) throw new Error("No househelp found with this number");
-      const data = await res.json();
+      const data = await grpcProfileService.searchHousehelpByPhone(phone);
       setHousehelpInfo(data);
     } catch (err: any) {
       setSearchError(err.message || "No househelp found with this number");
@@ -120,9 +128,39 @@ export default function BureauHousehelps() {
           </button>
         </div>
       </div>
-      {/* Placeholder for househelp list */}
       <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl shadow-lg border-2 border-purple-200 p-6 text-gray-600">
-        List of househelps will appear here.
+        {listLoading ? (
+          <div>Loading bureau househelps...</div>
+        ) : listError ? (
+          <div className="text-red-600">{listError}</div>
+        ) : househelps.length === 0 ? (
+          <div>No househelps are currently linked to this bureau.</div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr className="border-b border-purple-200 text-left text-gray-700">
+                  <th className="py-2 pr-4">Name</th>
+                  <th className="py-2 pr-4">Phone</th>
+                  <th className="py-2 pr-4">Location</th>
+                  <th className="py-2 pr-4">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {househelps.map((item: any) => (
+                  <tr key={item?.Househelp?.id || item?.User?.id} className="border-b border-purple-100 last:border-b-0">
+                    <td className="py-2 pr-4 font-medium text-gray-900">
+                      {[item?.User?.first_name, item?.User?.last_name].filter(Boolean).join(' ') || 'Unnamed househelp'}
+                    </td>
+                    <td className="py-2 pr-4">{item?.User?.phone || '-'}</td>
+                    <td className="py-2 pr-4">{item?.Househelp?.current_location || item?.Househelp?.location || '-'}</td>
+                    <td className="py-2 pr-4">{item?.User?.status || item?.Househelp?.profile_status || '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
       {/* Onboard Modal */}
       {showOnboardModal && (
@@ -162,8 +200,8 @@ export default function BureauHousehelps() {
                 {househelpInfo && (
                   <div className="mb-4 p-4 rounded bg-primary-50 dark:bg-primary-900/20 text-primary-800 dark:text-primary-200">
                     <div className="font-semibold">Househelp Found:</div>
-                    <div>Name: {househelpInfo.name || househelpInfo.first_name || "-"}</div>
-                    <div>Phone: {househelpInfo.phone}</div>
+                    <div>Name: {[househelpInfo?.User?.first_name, househelpInfo?.User?.last_name].filter(Boolean).join(' ') || househelpInfo.name || househelpInfo.first_name || "-"}</div>
+                    <div>Phone: {househelpInfo?.User?.phone || househelpInfo.phone || '-'}</div>
                   </div>
                 )}
                 {househelpInfo && (

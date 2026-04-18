@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { API_ENDPOINTS } from '~/config/api';
-import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { profileSetupService } from '~/services/grpc/profileSetup.service';
+import {
+  getStoredAccessToken,
+  getStoredProfileType,
+} from '~/utils/authStorage';
 
 interface ProfileSetupData {
   // Household fields
@@ -94,12 +96,8 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
     setError(null);
     
     try {
-      // Try cookie first, then localStorage (for production where cookie is httpOnly)
-      let token = getAccessTokenFromCookies();
-      if (!token && typeof window !== 'undefined') {
-        token = localStorage.getItem('token') || undefined;
-      }
-      const profileType = localStorage.getItem('profile_type');
+      const token = getStoredAccessToken();
+      const profileType = getStoredProfileType();
       
       if (!token) {
         throw new Error('No authentication token found');
@@ -140,12 +138,8 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
     setError(null);
     
     try {
-      // Try cookie first, then localStorage (for production where cookie is httpOnly)
-      let token = getAccessTokenFromCookies();
-      if (!token && typeof window !== 'undefined') {
-        token = localStorage.getItem('token') || undefined;
-      }
-      const profileType = localStorage.getItem('profile_type');
+      const token = getStoredAccessToken();
+      const profileType = getStoredProfileType();
       
       if (!token) {
         console.log('No token found, skipping profile load');
@@ -247,12 +241,8 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
     setError(null);
     
     try {
-      // Try cookie first, then localStorage (for production where cookie is httpOnly)
-      let token = getAccessTokenFromCookies();
-      if (!token && typeof window !== 'undefined') {
-        token = localStorage.getItem('token') || undefined;
-      }
-      const profileType = localStorage.getItem('profile_type');
+      const token = getStoredAccessToken();
+      const profileType = getStoredProfileType();
       
       if (!token) {
         throw new Error('No authentication token found');
@@ -325,7 +315,7 @@ export const useProfileSetup = () => {
 function transformProfileData(data: ProfileSetupData): any {
   // This transforms the step data into the format your backend expects
   const transformed: any = {};
-  const profileType = localStorage.getItem('profile_type');
+  const profileType = getStoredProfileType();
 
   // Common fields
   // Location
@@ -476,7 +466,7 @@ function transformStepData(stepId: string, data: any): any {
 // Reconstruct profile data from backend format
 function reconstructProfileData(profile: any): ProfileSetupData {
   const data: ProfileSetupData = {};
-  const profileType = localStorage.getItem('profile_type');
+  const profileType = getStoredProfileType();
 
   // Common fields
   // Location
@@ -637,7 +627,7 @@ function hasData(value: any): boolean {
 
 // Calculate which step was last completed based on available data
 function calculateLastCompletedStep(data: ProfileSetupData): number {
-  const profileType = localStorage.getItem('profile_type');
+  const profileType = getStoredProfileType();
   
   // Household step order
   const householdStepOrder = [

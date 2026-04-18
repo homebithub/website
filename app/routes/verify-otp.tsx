@@ -12,7 +12,8 @@ import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
-import { getAccessTokenFromCookies, setAuthCookies } from '~/utils/cookie';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { cacheAuthSession, getStoredProfileType } from '~/utils/authStorage';
 
 export default function VerifyOtpPage() {
   // UI state for changing phone
@@ -203,7 +204,7 @@ export default function VerifyOtpPage() {
         phone: userProto?.getPhone() || '',
         first_name: userProto?.getFirstName() || '',
         last_name: userProto?.getLastName() || '',
-        profile_type: userProto?.getProfileType() || localStorage.getItem('profile_type') || '',
+        profile_type: userProto?.getProfileType() || getStoredProfileType() || '',
         is_verified: userProto?.getIsVerified() || false,
         profile_image: userProto?.getProfileImage() || '',
       };
@@ -212,16 +213,12 @@ export default function VerifyOtpPage() {
       
       // Store token and user_object in localStorage
       if (token) {
-        setAuthCookies(token, refreshToken, flatUser);
-        localStorage.setItem('token', token);
-        localStorage.setItem('user_object', JSON.stringify(flatUser));
-        localStorage.setItem('auth_provider', 'password');
-
-        // Persist profile metadata consistently with login flow
-        if (flatUser.profile_type) {
-          localStorage.setItem('profile_type', flatUser.profile_type);
-          localStorage.setItem('userType', flatUser.profile_type);
-        }
+        cacheAuthSession({
+          token,
+          refreshToken,
+          user: flatUser,
+          provider: 'password',
+        });
       }
       // Register device after successful verification via gRPC-Web (non-blocking)
       try {

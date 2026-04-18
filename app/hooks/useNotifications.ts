@@ -1,8 +1,12 @@
-import { useEffect, useRef, useState, useCallback } from "react";
-import { API_BASE_URL } from "~/config/api";
+import { useEffect, useState, useCallback } from "react";
 import type { NotificationItem } from "~/types/notifications";
 import { notificationsService } from "~/services/grpc/notifications.service";
-import { getAccessTokenFromCookies, getAuthFromCookies } from "~/utils/cookie";
+import { useSSESubscription } from "~/hooks/useSSESubscription";
+import {
+  getStoredAccessToken,
+  getStoredUser,
+  getStoredUserId,
+} from "~/utils/authStorage";
 
 interface UseNotificationsOptions {
   pollingMs?: number;
@@ -18,21 +22,13 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const esRef = useRef<EventSource | null>(null);
 
   const getCurrentUserId = useCallback((): string | null => {
-    const { user } = getAuthFromCookies();
+    const user = getStoredUser();
     if (user?.id) return user.id;
 
-    const userObj = localStorage.getItem('user_object');
-    if (!userObj) return null;
-
-    try {
-      const parsed = JSON.parse(userObj);
-      return parsed?.id || null;
-    } catch {
-      return null;
-    }
+    const userId = getStoredUserId();
+    return userId || null;
   }, []);
 
   const computeUnread = (list: NotificationItem[]) => list.filter(n => !n.clicked && (n.status?.toLowerCase?.() !== "read")).length;
@@ -52,7 +48,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   const fetchLatest = useCallback(async (query: string = search) => {
     try {
       setLoading(true);
-      const token = typeof window !== 'undefined' ? getAccessTokenFromCookies() : undefined;
+      const token = typeof window !== 'undefined' ? getStoredAccessToken() : undefined;
       if (!token) {
         setItems([]);
         setUnreadCount(0);
@@ -122,45 +118,14 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
     return () => clearInterval(id);
   }, [fetchLatest, pollingMs, search]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const token = getAccessTokenFromCookies();
-    if (!token) return;
+  const refreshFromRealtime = useCallback(() => {
+    void fetchLatest(search);
+  }, [fetchLatest, search]);
 
-    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`, { withCredentials: true });
-    esRef.current = es;
-
-    es.onmessage = (ev) => {
-      try {
-        const payload = JSON.parse(ev.data);
-        const notifications = payload.notifications || payload.data?.notifications || [];
-        if (Array.isArray(notifications) && notifications.length) {
-          const list: NotificationItem[] = notifications.map((n: any) => ({
-            id: n.id,
-            userId: n.user_id,
-            title: n.title,
-            message: n.message,
-            type: n.type,
-            status: n.status,
-            clicked: n.clicked,
-            createdAt: n.created_at,
-            updatedAt: n.updated_at,
-          }));
-          
-          setItems(list);
-          setHasMore(list.length === pageSize);
-          setUnreadCount(typeof payload.unread_count === 'number' ? payload.unread_count : computeUnread(list));
-        }
-      } catch {
-        // ignore
-      }
-    };
-
-    return () => {
-      es.close();
-      esRef.current = null;
-    };
-  }, [pageSize]);
+  useSSESubscription('notifications.snapshot', refreshFromRealtime);
+  useSSESubscription('notifications.created', refreshFromRealtime);
+  useSSESubscription('notifications.blast', refreshFromRealtime);
+  useSSESubscription('notifications.system.alert', refreshFromRealtime);
 
   const markAllAsRead = async () => {
     try {

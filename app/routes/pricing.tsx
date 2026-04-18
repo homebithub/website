@@ -19,6 +19,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { paymentsService } from '~/services/grpc/payments.service';
+import { getStoredProfileType } from "~/utils/authStorage";
 
 export const meta = () => [
     { title: "Pricing & Plans — Homebit Kenya" },
@@ -290,7 +291,7 @@ export default function Pricing() {
     }
 
     const profileType = (user as any)?.profile_type ||
-      (typeof window !== 'undefined' ? localStorage.getItem('profile_type') : null) ||
+      getStoredProfileType() ||
       selectedPlan.profile_type || '';
 
     setProcessingPayment(true);

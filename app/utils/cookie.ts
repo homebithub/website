@@ -14,7 +14,7 @@ const normalizeSameSite = (sameSite?: SerializeOptions["sameSite"]) => {
   return "None";
 };
 
-const serializeCookie = (name: string, value: string, options: SerializeOptions = {}) => {
+export const serializeCookie = (name: string, value: string, options: SerializeOptions = {}) => {
   const parts = [`${encodeURIComponent(name)}=${encodeURIComponent(value)}`];
 
   if (typeof options.maxAge === "number") {
@@ -63,7 +63,7 @@ const parseCookies = (raw: string) => {
  * Utility for unified cookie management (client and server).
  */
 
-const TOKEN_COOKIE_NAME = "hb_token";
+export const TOKEN_COOKIE_NAME = "hb_token";
 const REFRESH_TOKEN_COOKIE_NAME = "hb_refresh_token";
 const USER_COOKIE_NAME = "hb_user";
 

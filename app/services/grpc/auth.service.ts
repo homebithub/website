@@ -7,7 +7,11 @@
 import { AuthServiceClient, AdminAuthServiceClient } from '~/grpc/generated/auth/auth_grpc_web_pb';
 import auth_pb_module from '~/grpc/generated/auth/auth_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
-import { getAccessTokenFromCookies } from '~/utils/cookie';
+import {
+  getStoredAccessToken,
+  getStoredProfileType,
+  getStoredUserId,
+} from '~/utils/authStorage';
 
 // Extract proto.auth from the default export
 const auth_pb = auth_pb_module as any;
@@ -19,16 +23,7 @@ const adminAuthClient = new AdminAuthServiceClient(GRPC_WEB_BASE_URL, null, null
 
 function resolveUserId(userId: string): string {
   if (userId) return userId;
-  try {
-    if (typeof window !== 'undefined') {
-      const raw = localStorage.getItem('user_object');
-      if (raw) {
-        const user = JSON.parse(raw);
-        return user.user_id || user.id || '';
-      }
-    }
-  } catch {}
-  return '';
+  return getStoredUserId();
 }
 
 /**
@@ -36,18 +31,10 @@ function resolveUserId(userId: string): string {
  */
 function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
-  // Try cookie first, then localStorage (for production where cookie is httpOnly)
-  let token = getAccessTokenFromCookies();
-  if (!token && typeof window !== 'undefined') {
-    token = localStorage.getItem('token') || undefined;
-  }
+  const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  try {
-    if (typeof window !== 'undefined') {
-      const profileType = localStorage.getItem('profile_type');
-      if (profileType) md['x-profile-type'] = profileType;
-    }
-  } catch {}
+  const profileType = getStoredProfileType();
+  if (profileType) md['x-profile-type'] = profileType;
   return md;
 }
 

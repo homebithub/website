@@ -1,5 +1,6 @@
 import type { LoaderFunctionArgs } from "react-router";
 import { AUTH_API_BASE_URL } from "~/config/api";
+import { cookieOptions, serializeCookie, TOKEN_COOKIE_NAME } from "~/utils/cookie";
 
 // Google OAuth authentication callback
 // Receives `code` from Google, exchanges it with the Auth API for login/signup
@@ -41,12 +42,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     // Check if user already exists (login)
     if (!data.requires_signup && data.token) {
-      // Existing user - redirect to appropriate dashboard with token
-      const params = new URLSearchParams({
-        token: data.token,
-        google_login: "success",
+      const headers = new Headers();
+      headers.set("Location", `${origin}/login?google_login=success`);
+      headers.append(
+        "Set-Cookie",
+        serializeCookie(TOKEN_COOKIE_NAME, data.token, cookieOptions),
+      );
+      headers.set("Cache-Control", "no-store");
+      return new Response(null, {
+        status: 302,
+        headers,
       });
-      return Response.redirect(`${origin}/login?${params.toString()}`);
     }
 
     // New user - redirect to signup with Google data prefilled

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useMemo, useCallback, useState, useEffect } from 'react';
 import { useWebSocket } from '~/hooks/useWebSocket';
 import { NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
-import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { useAuth } from '~/contexts/useAuth';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 
 type WebSocketContextType = {
@@ -16,14 +16,9 @@ type WebSocketContextType = {
 const WebSocketContext = createContext<WebSocketContextType | null>(null);
 
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-
-  const token = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    const storedToken = getAccessTokenFromCookies() || null;
-    console.log('[WebSocketContext] Token available:', !!storedToken);
-    return storedToken;
-  }, []);
+  const currentUserId = (user as any)?.user?.id || (user as any)?.id || null;
 
   const wsUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -35,7 +30,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
   const { connectionState, addEventListener } = useWebSocket({
     url: wsUrl,
-    token,
+    token: null,
+    enabled: !!currentUserId,
     reconnectInterval: 3000,
     maxReconnectAttempts: 10,
   });
@@ -57,10 +53,16 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     setUnreadCount(0);
   }, []);
 
+  useEffect(() => {
+    if (!currentUserId) {
+      setUnreadCount(0);
+    }
+  }, [currentUserId]);
+
   // Listen for new messages to update unread count
   useEffect(() => {
     const unsubscribe = addEventListener('new_message', (event) => {
-      const currentUserId = (() => {
+      const eventUserId = currentUserId || (() => {
         try {
           const str = localStorage.getItem("user_object");
           if (!str) return null;
@@ -73,13 +75,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
       // Only increment if the message is not from the current user
       const eventData = event as any;
-      if (eventData.data?.user_id && eventData.data.user_id !== currentUserId) {
+      if (eventData.data?.user_id && eventData.data.user_id !== eventUserId) {
         incrementUnreadCount();
       }
     });
 
     return unsubscribe;
-  }, [addEventListener, incrementUnreadCount]);
+  }, [addEventListener, currentUserId, incrementUnreadCount]);
 
   const value = useMemo(
     () => ({

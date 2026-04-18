@@ -5,7 +5,7 @@
  * payments) are accessed through the same gateway.
  */
 
-import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { getStoredAccessToken } from '~/utils/authStorage';
 
 const LOCAL_GATEWAY_PORT = '3005';
 const PRODUCTION_GATEWAY = 'https://api.homebit.co.ke';
@@ -71,7 +71,6 @@ export const NOTIFICATIONS_WS_BASE_URL = `${API_BASE_URL}/ws`;
 // ── REST endpoints still in use (file uploads, SSR loaders, etc.) ───────
 export const API_ENDPOINTS = {
   auth: {
-    me: `${API_BASE_URL}/api/v1/auth/me`,
     googleUrl: `${API_BASE_URL}/api/v1/auth/google/url`,
   },
   shortlists: {
@@ -86,7 +85,7 @@ export const API_ENDPOINTS = {
  * Helper function to get auth headers for REST fetch calls
  */
 export const getAuthHeaders = (token?: string | null): HeadersInit => {
-  const authToken = token || (typeof window !== 'undefined' ? getAccessTokenFromCookies() : null);
+  const authToken = token || (typeof window !== 'undefined' ? getStoredAccessToken() : null);
 
   return {
     'Content-Type': 'application/json',

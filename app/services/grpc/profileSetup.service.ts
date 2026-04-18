@@ -8,7 +8,11 @@ import { ProfileSetupServiceClient } from '~/grpc/generated/auth/auth_grpc_web_p
 import auth_pb_module from '~/grpc/generated/auth/auth_pb';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
-import { getAccessTokenFromCookies } from '~/utils/cookie';
+import {
+  getStoredAccessToken,
+  getStoredProfileType,
+  getStoredUserId,
+} from '~/utils/authStorage';
 
 // @ts-ignore - Generated protobuf code
 const auth_pb = auth_pb_module as any;
@@ -17,32 +21,15 @@ const profileSetupClient = new ProfileSetupServiceClient(GRPC_WEB_BASE_URL, null
 
 function resolveUserId(userId: string): string {
   if (userId) return userId;
-  try {
-    if (typeof window !== 'undefined') {
-      const raw = localStorage.getItem('user_object');
-      if (raw) {
-        const user = JSON.parse(raw);
-        return user.user_id || user.id || '';
-      }
-    }
-  } catch {}
-  return '';
+  return getStoredUserId();
 }
 
 function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
-  // Try cookie first, then localStorage (for production where cookie is httpOnly)
-  let token = getAccessTokenFromCookies();
-  if (!token && typeof window !== 'undefined') {
-    token = localStorage.getItem('token') || undefined;
-  }
+  const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
-  try {
-    if (typeof window !== 'undefined') {
-      const profileType = localStorage.getItem('profile_type');
-      if (profileType) md['x-profile-type'] = profileType;
-    }
-  } catch {}
+  const profileType = getStoredProfileType();
+  if (profileType) md['x-profile-type'] = profileType;
   return md;
 }
 
@@ -106,7 +93,7 @@ export const profileSetupService = {
     if (profileType) {
       request.setProfileType(profileType);
     } else {
-      const pt = typeof window !== 'undefined' ? localStorage.getItem('profile_type') : null;
+      const pt = getStoredProfileType();
       if (pt) request.setProfileType(pt);
     }
     const res = await grpcCall((cb) => profileSetupClient.getSteps(request, getMetadata(), cb));
@@ -122,7 +109,7 @@ export const profileSetupService = {
     if (profileType) {
       request.setProfileType(profileType);
     } else {
-      const pt = typeof window !== 'undefined' ? localStorage.getItem('profile_type') : null;
+      const pt = getStoredProfileType();
       if (pt) request.setProfileType(pt);
     }
     const res = await grpcCall((cb) => profileSetupClient.getProgress(request, getMetadata(), cb));
@@ -135,7 +122,7 @@ export const profileSetupService = {
   async updateProgress(userId: string, data: Record<string, any>): Promise<any> {
     const request = new auth_pb.JsonPayload();
     request.setUserId(resolveUserId(userId));
-    const profileType = data.profile_type || (typeof window !== 'undefined' ? localStorage.getItem('profile_type') : null);
+    const profileType = data.profile_type || getStoredProfileType();
     if (profileType) request.setProfileType(profileType);
     const struct = toStruct(data);
     if (struct) request.setData(struct);
@@ -149,7 +136,7 @@ export const profileSetupService = {
   async updateStep(userId: string, data: Record<string, any>): Promise<any> {
     const request = new auth_pb.JsonPayload();
     request.setUserId(resolveUserId(userId));
-    const profileType = data.profile_type || (typeof window !== 'undefined' ? localStorage.getItem('profile_type') : null);
+    const profileType = data.profile_type || getStoredProfileType();
     if (profileType) request.setProfileType(profileType);
     const struct = toStruct(data);
     if (struct) request.setData(struct);
