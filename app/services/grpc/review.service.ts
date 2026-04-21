@@ -1,4 +1,4 @@
-import { ReviewServiceClient } from '~/grpc/generated/auth/auth_grpc_web_pb';
+import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb from '~/grpc/generated/auth/auth_pb';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
@@ -7,6 +7,7 @@ import {
   getStoredUserId,
 } from '~/utils/authStorage';
 
+const { ReviewServiceClient } = auth_grpc_web_module as any;
 const client = new ReviewServiceClient(GRPC_WEB_BASE_URL, null, null);
 
 export interface ReviewFormData {
@@ -101,7 +102,7 @@ export async function createReview(
   request.setData(reviewData);
 
   return new Promise((resolve, reject) => {
-    client.createReview(request, getMetadata(), (err, response) => {
+    client.createReview(request, getMetadata(), (err: any, response: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -124,7 +125,7 @@ export async function getReview(
   request.setUserId(resolveUserId(userId));
 
   return new Promise((resolve, reject) => {
-    client.getReview(request, getMetadata(), (err, response) => {
+    client.getReview(request, getMetadata(), (err: any, response: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -151,7 +152,7 @@ export async function getPublicReviews(
   request.setLimit(limit);
 
   return new Promise((resolve, reject) => {
-    client.getPublicReviews(request, getMetadata(), (err, response) => {
+    client.getPublicReviews(request, getMetadata(), (err: any, response: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -176,7 +177,7 @@ export async function getMyReviews(
   request.setLimit(limit);
 
   return new Promise((resolve, reject) => {
-    client.getMyReviews(request, getMetadata(), (err, response) => {
+    client.getMyReviews(request, getMetadata(), (err: any, response: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -198,7 +199,7 @@ export async function getReviewStats(
   request.setUserId(resolveUserId());
 
   return new Promise((resolve, reject) => {
-    client.getReviewStats(request, getMetadata(), (err, response) => {
+    client.getReviewStats(request, getMetadata(), (err: any, response: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -221,7 +222,7 @@ export async function markReviewHelpful(
   request.setUserId(resolveUserId(userId));
 
   return new Promise((resolve, reject) => {
-    client.markHelpful(request, getMetadata(), (err) => {
+    client.markHelpful(request, getMetadata(), (err: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -243,7 +244,7 @@ export async function unmarkReviewHelpful(
   request.setUserId(resolveUserId(userId));
 
   return new Promise((resolve, reject) => {
-    client.unmarkHelpful(request, getMetadata(), (err) => {
+    client.unmarkHelpful(request, getMetadata(), (err: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;
@@ -271,7 +272,7 @@ export async function addReviewResponse(
   request.setData(data);
 
   return new Promise((resolve, reject) => {
-    client.addResponse(request, getMetadata(), (err) => {
+    client.addResponse(request, getMetadata(), (err: any) => {
       if (err) {
         reject(handleGrpcError(err));
         return;

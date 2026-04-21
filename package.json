@@ -6,13 +6,17 @@
   "type": "module",
   "scripts": {
     "build": "react-router build",
-    "dev": "rimraf build public/build .cache node_modules/.cache .react-router && react-router dev --force",
+    "dev": "rimraf build public/build .cache node_modules/.cache node_modules/.vite .react-router && react-router dev --force",
     "dev:host": "cross-env NODE_ENV=development HOST=0.0.0.0 react-router dev",
     "dev:server": "cross-env NODE_ENV=development react-router dev -c \"node server.mjs\"",
     "lint": "eslint --ignore-path .gitignore --cache --cache-location ./node_modules/.cache/eslint .",
     "start": "node server.mjs",
     "typecheck": "react-router typegen && tsc --noEmit",
-    "clean": "rimraf build public/build .cache node_modules/.cache .react-router"
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed --project=chromium",
+    "dev:test": "react-router dev --port 4173",
+    "start:test": "npm run build && cross-env PORT=4173 node server.mjs",
+    "clean": "rimraf build public/build .cache node_modules/.cache node_modules/.vite .react-router"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.0",
@@ -63,6 +67,7 @@
     "web-vitals": "^5.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/typography": "^0.5.16",
     "@types/canvas-confetti": "^1.9.0",
     "@types/dompurify": "^3.0.5",

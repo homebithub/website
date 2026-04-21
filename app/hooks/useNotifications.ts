@@ -1,7 +1,8 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import type { NotificationItem } from "~/types/notifications";
 import { notificationsService } from "~/services/grpc/notifications.service";
 import { useSSESubscription } from "~/hooks/useSSESubscription";
+import { shouldSilenceGatewayError } from "~/services/grpc/client";
 import {
   getStoredAccessToken,
   getStoredUser,
@@ -22,6 +23,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   const [loading, setLoading] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const unavailableUntilRef = useRef(0);
 
   const getCurrentUserId = useCallback((): string | null => {
     const user = getStoredUser();
@@ -47,6 +49,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
 
   const fetchLatest = useCallback(async (query: string = search) => {
     try {
+      if (Date.now() < unavailableUntilRef.current) return;
       setLoading(true);
       const token = typeof window !== 'undefined' ? getStoredAccessToken() : undefined;
       if (!token) {
@@ -73,6 +76,10 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       setShowingCount(list.length);
       setUnreadCount(data?.unread_count || computeUnread(list));
     } catch (e) {
+      if (shouldSilenceGatewayError(e)) {
+        unavailableUntilRef.current = Date.now() + 60_000;
+        return;
+      }
       console.error('[useNotifications] Error:', e);
     } finally {
       setLoading(false);
@@ -82,6 +89,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
     try {
+      if (Date.now() < unavailableUntilRef.current) return;
       setLoadingMore(true);
       const userID = getCurrentUserId();
       if (!userID) return;
@@ -106,6 +114,10 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
         setHasMore(false);
       }
     } catch (e) {
+      if (shouldSilenceGatewayError(e)) {
+        unavailableUntilRef.current = Date.now() + 60_000;
+        return;
+      }
       console.error('[useNotifications] loadMore error:', e);
     } finally {
       setLoadingMore(false);
@@ -119,6 +131,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   }, [fetchLatest, pollingMs, search]);
 
   const refreshFromRealtime = useCallback(() => {
+    unavailableUntilRef.current = 0;
     void fetchLatest(search);
   }, [fetchLatest, search]);
 
@@ -132,18 +145,24 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       const userID = getCurrentUserId();
       if (!userID) return;
       await notificationsService.markAllNotificationsAsClicked(userID);
+      unavailableUntilRef.current = 0;
       await fetchLatest();
     } catch (e) {
-      console.error('[useNotifications] markAllAsRead error:', e);
+      if (!shouldSilenceGatewayError(e)) {
+        console.error('[useNotifications] markAllAsRead error:', e);
+      }
     }
   };
 
   const markOneAsRead = async (id: string) => {
     try {
       await notificationsService.markNotificationAsClicked(id, '');
+      unavailableUntilRef.current = 0;
       await fetchLatest();
     } catch (e) {
-      console.error('[useNotifications] markOneAsRead error:', e);
+      if (!shouldSilenceGatewayError(e)) {
+        console.error('[useNotifications] markOneAsRead error:', e);
+      }
     }
   };
 

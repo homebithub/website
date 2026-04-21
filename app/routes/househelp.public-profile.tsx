@@ -672,14 +672,14 @@ export default function HousehelpPublicProfile() {
               <div className="space-y-4">
                 <div>
                   <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Years of Experience</span>
-                  <p className="text-xs font-bold text-purple-900 dark:text-purple-100 mt-1">
+                  <p className="text-xs font-medium text-purple-900 dark:text-purple-100 mt-1">
                     {profile.years_of_experience ? `${profile.years_of_experience} years` : 'Not specified'}
                   </p>
                 </div>
                 {profile.completed_jobs !== undefined && profile.completed_jobs > 0 && (
                   <div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Jobs Completed</span>
-                    <p className="text-xs font-bold text-purple-900 dark:text-purple-100 mt-1">
+                    <p className="text-xs font-medium text-purple-900 dark:text-purple-100 mt-1">
                       ✓ {profile.completed_jobs} job{profile.completed_jobs === 1 ? '' : 's'} completed on Homebit
                     </p>
                   </div>
@@ -689,7 +689,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Certifications</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.certifications.split(',').map((cert, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-xl font-medium">
+                        <span key={idx} className="px-2.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-full text-xs font-medium">
                           ✓ {cert.trim()}
                         </span>
                       ))}
@@ -701,7 +701,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Languages</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.languages.map((lang, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 rounded-xl font-medium">
+                        <span key={idx} className="px-2.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 rounded-full text-xs font-medium">
                           🗣️ {lang}
                         </span>
                       ))}
@@ -713,7 +713,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Skills</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.skills.map((skill, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 rounded-xl font-medium">
+                        <span key={idx} className="px-2.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 rounded-full text-xs font-medium">
                           ⭐ {skill}
                         </span>
                       ))}
@@ -725,7 +725,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Personal Traits</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.traits.map((trait, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-pink-100 dark:bg-pink-900/30 text-pink-900 dark:text-pink-100 rounded-xl font-medium">
+                        <span key={idx} className="px-2.5 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-900 dark:text-pink-100 rounded-full text-xs font-medium">
                           💫 {trait}
                         </span>
                       ))}
@@ -737,7 +737,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Can Help With</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.can_help_with.split(',').map((item, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 rounded-xl font-medium">
+                        <span key={idx} className="px-2.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 rounded-full text-xs font-medium">
                           🛠️ {item.trim()}
                         </span>
                       ))}
@@ -753,18 +753,18 @@ export default function HousehelpPublicProfile() {
                 <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📜 Certifications & Abilities</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {profile.first_aid_certificate && (
-                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
-                      <p className="font-semibold text-green-900 dark:text-green-100">✅ First Aid Certificate</p>
+                    <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
+                      <p className="text-xs font-semibold text-green-900 dark:text-green-100">✅ First Aid Certificate</p>
                     </div>
                   )}
                   {profile.certificate_of_good_conduct && (
-                    <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
-                      <p className="font-semibold text-green-900 dark:text-green-100">✅ Certificate of Good Conduct</p>
+                    <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
+                      <p className="text-xs font-semibold text-green-900 dark:text-green-100">✅ Certificate of Good Conduct</p>
                     </div>
                   )}
                   {profile.can_drive && (
-                    <div className="p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500">
-                      <p className="font-semibold text-blue-900 dark:text-blue-100">✅ Can Drive</p>
+                    <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500">
+                      <p className="text-xs font-semibold text-blue-900 dark:text-blue-100">✅ Can Drive</p>
                     </div>
                   )}
                 </div>
@@ -799,7 +799,7 @@ export default function HousehelpPublicProfile() {
                       <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Special Talents with Kids</span>
                       <div className="flex flex-wrap gap-2">
                         {profile.talent_with_kids.map((talent, idx) => (
-                          <span key={idx} className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100 rounded-xl font-medium">
+                          <span key={idx} className="px-2.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100 rounded-full text-xs font-medium">
                             🌟 {talent}
                           </span>
                         ))}
@@ -818,7 +818,7 @@ export default function HousehelpPublicProfile() {
                   <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Comfortable with</span>
                   <div className="flex flex-wrap gap-2">
                     {profile.pet_types.split(',').map((pet, idx) => (
-                      <span key={idx} className="px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 rounded-xl font-medium">
+                      <span key={idx} className="px-2.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 rounded-full text-xs font-medium">
                         🐕 {pet.trim()}
                       </span>
                     ))}

@@ -4,8 +4,8 @@
  * Provides profile setup progress methods using gRPC-Web protocol
  */
 
-import { ProfileSetupServiceClient } from '~/grpc/generated/auth/auth_grpc_web_pb';
-import auth_pb_module from '~/grpc/generated/auth/auth_pb';
+import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
+import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
@@ -16,6 +16,7 @@ import {
 
 // @ts-ignore - Generated protobuf code
 const auth_pb = auth_pb_module as any;
+const { ProfileSetupServiceClient } = auth_grpc_web_module as any;
 
 const profileSetupClient = new ProfileSetupServiceClient(GRPC_WEB_BASE_URL, null, null);
 

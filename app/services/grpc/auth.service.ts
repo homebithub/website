@@ -4,8 +4,8 @@
  * Provides authentication methods using gRPC-Web protocol
  */
 
-import { AuthServiceClient, AdminAuthServiceClient } from '~/grpc/generated/auth/auth_grpc_web_pb';
-import auth_pb_module from '~/grpc/generated/auth/auth_pb';
+import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
+import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
   getStoredAccessToken,
@@ -15,6 +15,7 @@ import {
 
 // Extract proto.auth from the default export
 const auth_pb = auth_pb_module as any;
+const { AuthServiceClient, AdminAuthServiceClient } = auth_grpc_web_module as any;
 
 const authClient = new AuthServiceClient(GRPC_WEB_BASE_URL, null, null);
 const adminAuthClient = new AdminAuthServiceClient(GRPC_WEB_BASE_URL, null, null);
@@ -64,7 +65,7 @@ export const authService = {
           request.setBureauId(bureauId);
         }
 
-        authClient.signup(request, getMetadata(), (err, response) => {
+        authClient.signup(request, getMetadata(), (err: any, response: any) => {
           if (err) {
             console.error('[gRPC-Web] signup error:', err);
             reject(handleGrpcError(err));
@@ -88,7 +89,7 @@ export const authService = {
       request.setPhone(phone);
       request.setPassword(password);
 
-      authClient.login(request, getMetadata(), (err, response) => {
+      authClient.login(request, getMetadata(), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -108,7 +109,7 @@ export const authService = {
       request.setVerificationType(verificationType);
       request.setTarget(target);
 
-      authClient.sendOTP(request, getMetadata(), (err) => {
+      authClient.sendOTP(request, getMetadata(), (err: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -128,7 +129,7 @@ export const authService = {
       request.setVerificationType(verificationType);
       request.setOtp(otp);
 
-      authClient.verifyOTP(request, getMetadata(), (err, response) => {
+      authClient.verifyOTP(request, getMetadata(), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -146,7 +147,7 @@ export const authService = {
       const request = new auth_pb.GetCurrentUserRequest();
       request.setUserId(resolveUserId(userId || ''));
 
-      authClient.getCurrentUser(request, getMetadata(), (err, response) => {
+      authClient.getCurrentUser(request, getMetadata(), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -165,7 +166,7 @@ export const authService = {
       request.setUserId(resolveUserId(userId));
       request.setPhone(phone);
 
-      authClient.updatePhone(request, getMetadata(), (err, response) => {
+      authClient.updatePhone(request, getMetadata(), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -183,7 +184,7 @@ export const authService = {
       const request = new auth_pb.ForgotPasswordRequest();
       request.setPhone(phone);
 
-      authClient.forgotPassword(request, getMetadata(), (err, response) => {
+      authClient.forgotPassword(request, getMetadata(), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -202,7 +203,7 @@ export const authService = {
       request.setUserId(resolveUserId(userId));
       request.setEmail(email);
 
-      authClient.updateEmail(request, getMetadata(), (err, response) => {
+      authClient.updateEmail(request, getMetadata(), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -221,7 +222,7 @@ export const authService = {
       request.setUserId(resolveUserId(userId));
       request.setVerificationType(verificationType);
 
-      authClient.resendOTP(request, getMetadata(), (err, response) => {
+      authClient.resendOTP(request, getMetadata(), (err: any, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -328,7 +329,7 @@ export const authService = {
       const request = new auth_pb.LogoutRequest();
       request.setUserId(resolveUserId(''));
 
-      authClient.logout(request, getMetadata(), (err) => {
+      authClient.logout(request, getMetadata(), (err: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {

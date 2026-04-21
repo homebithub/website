@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { paymentsService } from '~/services/grpc/payments.service';
-import { handleGrpcError } from '~/services/grpc/client';
+import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { useSubscriptionSSE } from './useSubscriptionSSE';
 
 export type SubscriptionStatus = 'loading' | 'active' | 'trial' | 'none' | 'expired' | 'error';
@@ -101,6 +101,12 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       if (err.code === 'NOT_FOUND' || err.status === 5) {
         setStatus('none');
         setSubscription(null);
+        return;
+      }
+      if (shouldSilenceGatewayError(err)) {
+        setStatus('none');
+        setSubscription(null);
+        setError(null);
         return;
       }
       console.error('[useSubscription] Error fetching subscription:', err);

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE_URL } from '~/config/api';
 import { useAuth } from '~/contexts/useAuth';
+import { isLocalGatewayUrl } from '~/services/grpc/client';
 
 export type SSEEventHandler = (event: any) => void;
 
@@ -9,6 +10,7 @@ interface SSEContextValue {
   subscribe: (eventType: string, handler: SSEEventHandler) => () => void;
   reconnect: () => void;
   connectionUptime: number;
+  hasActiveConnection: () => boolean;
 }
 
 const SSEContext = createContext<SSEContextValue | null>(null);
@@ -39,6 +41,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const reconnectAttemptsRef = useRef(0);
   const connectionStartTimeRef = useRef<number>(0);
   const uptimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasConnectedRef = useRef(false);
   
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000;
@@ -59,6 +62,20 @@ export function SSEProvider({ children }: SSEProviderProps) {
     connectionStartTimeRef.current = 0;
     setIsConnected(false);
     setConnectionUptime(0);
+  }, []);
+
+  const dispatchMessage = useCallback((eventType: string | undefined, payload: any) => {
+    if (!eventType) return;
+    const handlers = listenersRef.current.get(eventType);
+    if (handlers && handlers.size > 0) {
+      handlers.forEach(handler => {
+        try {
+          handler(payload);
+        } catch (err) {
+          console.error(`[SSE] Error in handler for ${eventType}:`, err);
+        }
+      });
+    }
   }, []);
 
   const connect = useCallback(() => {
@@ -83,6 +100,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
       setIsConnected(true);
       reconnectAttemptsRef.current = 0;
       connectionStartTimeRef.current = Date.now();
+      hasConnectedRef.current = true;
       
       // Start uptime tracking
       if (uptimeIntervalRef.current) {
@@ -100,25 +118,17 @@ export function SSEProvider({ children }: SSEProviderProps) {
       try {
         const payload = JSON.parse(ev.data);
         const eventType = payload.event_type;
-
-        // Route event to all registered handlers for this event type
-        const handlers = listenersRef.current.get(eventType);
-        if (handlers && handlers.size > 0) {
-          handlers.forEach(handler => {
-            try {
-              handler(payload);
-            } catch (err) {
-              console.error(`[SSE] Error in handler for ${eventType}:`, err);
-            }
-          });
-        }
+        dispatchMessage(eventType, payload);
       } catch (err) {
         console.error('[SSE] Failed to parse event:', err);
       }
     };
 
     es.onerror = (err) => {
-      console.error('[SSE] Connection error:', err);
+      const suppressLocalRetry = isLocalGatewayUrl(API_BASE_URL) && !hasConnectedRef.current;
+      if (!suppressLocalRetry) {
+        console.error('[SSE] Connection error:', err);
+      }
       setIsConnected(false);
       es.close();
       eventSourceRef.current = null;
@@ -132,14 +142,14 @@ export function SSEProvider({ children }: SSEProviderProps) {
         setConnectionUptime(0);
 
 	      // Attempt reconnection with exponential backoff
-	      if (reconnectAttemptsRef.current < maxReconnectAttempts) {
+	      if (!suppressLocalRetry && reconnectAttemptsRef.current < maxReconnectAttempts) {
         const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
         
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnectAttemptsRef.current++;
           connect();
         }, delay);
-      } else {
+      } else if (!suppressLocalRetry) {
         console.error('[SSE] Max reconnection attempts reached');
       }
     };
@@ -175,8 +185,10 @@ export function SSEProvider({ children }: SSEProviderProps) {
     reconnectAttemptsRef.current = 0;
 
     if (currentUserId) {
+      hasConnectedRef.current = false;
       connect();
     } else {
+      hasConnectedRef.current = false;
       disconnect();
     }
 
@@ -185,14 +197,47 @@ export function SSEProvider({ children }: SSEProviderProps) {
     };
   }, [connect, disconnect, user]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const debugInjector = (payload: any) => {
+      if (!payload || typeof payload !== 'object') {
+        console.warn('[SSE] Debug injector received invalid payload');
+        return;
+      }
+      const eventType = payload.event_type ?? payload.eventType;
+      if (!eventType) {
+        console.warn('[SSE] Debug injector payload missing event_type');
+        return;
+      }
+      dispatchMessage(eventType, payload);
+    };
+
+    (window as any).__HOME_BIT_SSE_DEBUG__ = debugInjector;
+
+    return () => {
+      if ((window as any).__HOME_BIT_SSE_DEBUG__ === debugInjector) {
+        delete (window as any).__HOME_BIT_SSE_DEBUG__;
+      }
+    };
+  }, [dispatchMessage]);
+
   const value: SSEContextValue = {
     isConnected,
     subscribe,
     reconnect,
     connectionUptime,
+    hasActiveConnection: () => isConnected && !!eventSourceRef.current,
   };
 
   return <SSEContext.Provider value={value}>{children}</SSEContext.Provider>;
 }
 
 export default SSEProvider;
+
+declare global {
+  // eslint-disable-next-line no-unused-vars
+  interface Window {
+    __HOME_BIT_SSE_DEBUG__?: (payload: any) => void;
+  }
+}

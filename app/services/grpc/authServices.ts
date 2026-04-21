@@ -5,7 +5,18 @@
  * Method names match the proto RPC definitions in auth.proto exactly (camelCase).
  */
 
+import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
+import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
+import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
+import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
+  getStoredAccessToken,
+  getStoredProfileType,
+  getStoredUserId,
+} from '~/utils/authStorage';
+
+const auth_pb = auth_pb_module as any;
+const {
   ProfileServiceClient,
   ShortlistServiceClient,
   InterestServiceClient,
@@ -31,17 +42,7 @@ import {
   JobServiceClient,
   BureauServiceClient,
   WaitlistServiceClient,
-} from '~/grpc/generated/auth/auth_grpc_web_pb';
-import auth_pb_module from '~/grpc/generated/auth/auth_pb';
-import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
-import {
-  getStoredAccessToken,
-  getStoredProfileType,
-  getStoredUserId,
-} from '~/utils/authStorage';
-
-const auth_pb = auth_pb_module as any;
+} = auth_grpc_web_module as any;
 
 function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};

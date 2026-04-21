@@ -8,6 +8,50 @@ import { API_BASE_URL } from '~/config/api';
 
 export const GRPC_WEB_BASE_URL = API_BASE_URL;
 
+export function getGrpcErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message || '';
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object' && typeof (error as any).message === 'string') {
+    return (error as any).message;
+  }
+  return '';
+}
+
+export function isLocalGatewayUrl(url: string = API_BASE_URL): boolean {
+  try {
+    const parsed = new URL(url);
+    return parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1';
+  } catch {
+    return url.includes('localhost') || url.includes('127.0.0.1');
+  }
+}
+
+export function isGatewayUnavailableError(error: unknown): boolean {
+  const message = getGrpcErrorMessage(error).toLowerCase();
+  const code = Number((error as any)?.code);
+  const status = Number((error as any)?.status);
+  const grpcCode = Number((error as any)?.grpcCode);
+
+  return (
+    code === 0 ||
+    code === 14 ||
+    status === 0 ||
+    status === 14 ||
+    grpcCode === 14 ||
+    message.includes('http status code: 0') ||
+    message.includes('connection refused') ||
+    message.includes('err_connection_refused') ||
+    message.includes('failed to fetch') ||
+    message.includes('network error') ||
+    message.includes('networkerror') ||
+    message.includes('service temporarily unavailable')
+  );
+}
+
+export function shouldSilenceGatewayError(error: unknown): boolean {
+  return isLocalGatewayUrl() && isGatewayUnavailableError(error);
+}
+
 /**
  * Parse a gRPC error message that may contain JSON from the backend.
  * Backend errors look like: {"code":"ALREADY_EXISTS","message":"This phone number is already in use"}

@@ -36,7 +36,28 @@ npm run test:ui
 
 # Run tests with coverage
 npm run test:coverage
+
+# Run Playwright end-to-end suite (headless Chromium)
+npm run test:e2e
+
+# Run a single Playwright project in headed mode
+npm run test:e2e:headed -- --project=chromium
+
+# Filter Playwright specs by title (grep)
+npm run test:e2e -- --grep "Device approval"
 ```
+
+---
+
+## 3. Playwright Browser Setup
+
+Playwright downloads browser binaries on first run. If you see a prompt about missing executables, run:
+
+```bash
+npx playwright install --with-deps
+```
+
+The E2E suite boots the SSR dev server via `npm run start:test`, which builds the app and serves it on port `4173`. You can reuse an existing server between test runs by setting `CI=1`.
 
 ---
 

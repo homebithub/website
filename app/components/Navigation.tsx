@@ -5,6 +5,8 @@ import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon
 import { useAuth } from "~/contexts/useAuth";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { API_BASE_URL } from "~/config/api";
+import DeviceApprovalBanner from '~/components/notifications/DeviceApprovalBanner';
+import { useDeviceAuthPendingApprovals } from '~/hooks/useDeviceAuthPendingApprovals';
 import { useProfileSetupStatus } from "~/hooks/useProfileSetupStatus";
 import { useNotifications } from "~/hooks/useNotifications";
 import NotificationsModal from "~/components/notifications/NotificationsModal";
@@ -13,6 +15,7 @@ import { shortlistService, interestService, hireRequestService } from '~/service
 import { notificationsService } from '~/services/grpc/notifications.service';
 import authService from '~/services/grpc/auth.service';
 import { getStoredUser } from '~/utils/authStorage';
+import { shouldSilenceGatewayError } from '~/services/grpc/client';
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -36,8 +39,10 @@ export function Navigation() {
     const [isAdmin, setIsAdmin] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const { unreadCount } = useNotifications({ pollingMs: 30000, pageSize: 20 });
+    const { approvals, newestApproval, dismiss, clearAll } = useDeviceAuthPendingApprovals(!isInSetupMode && !!user);
     const navigate = useNavigate();
     const location = useLocation();
+    const pendingDeviceApprovals = approvals.length;
 
 
     // Detect if running on app subdomain
@@ -76,7 +81,9 @@ export function Navigation() {
             const count = Number(data?.count) || 0;
             setShortlistCount(count);
         } catch (error) {
-            console.error("[Shortlist Count] Failed to fetch:", error);
+            if (!shouldSilenceGatewayError(error)) {
+                console.error("[Shortlist Count] Failed to fetch:", error);
+            }
         }
     };
 
@@ -93,7 +100,10 @@ export function Navigation() {
             
             setInboxCount(totalUnread);
         } catch (error) {
-            console.error("Failed to fetch inbox count:", error);
+            setInboxCount(0);
+            if (!shouldSilenceGatewayError(error)) {
+                console.error("Failed to fetch inbox count:", error);
+            }
         }
     };
 
@@ -124,7 +134,10 @@ export function Navigation() {
 
             setHireRequestCount(total);
         } catch (error) {
-            console.error("Failed to fetch hire request count:", error);
+            setHireRequestCount(0);
+            if (!shouldSilenceGatewayError(error)) {
+                console.error("Failed to fetch hire request count:", error);
+            }
         }
     };
 
@@ -254,6 +267,7 @@ export function Navigation() {
 
     return (
         <nav className="sticky top-0 z-40 shadow-xl shadow-purple-200/50 bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f]  overflow-visible border-b border-primary-200/60 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
+            <DeviceApprovalBanner approval={newestApproval} onDismiss={dismiss} onClearAll={clearAll} />
             <div className="flex justify-between items-center px-8 sm:px-16 lg:px-32 min-h-[64px] sm:min-h-[72px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
@@ -323,6 +337,14 @@ export function Navigation() {
                         >
                             <BellIcon className="h-6 w-6 text-purple-700 dark:text-purple-200" />
                             {renderBadge(unreadCount)}
+                            {pendingDeviceApprovals > 0 && (
+                                <span
+                                    className="absolute -bottom-1.5 -right-1.5 min-w-[22px] px-1.5 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-semibold shadow-lg shadow-amber-400/60"
+                                    data-testid="device-approval-count"
+                                >
+                                    {pendingDeviceApprovals > 9 ? '9+' : pendingDeviceApprovals}
+                                </span>
+                            )}
                         </button>
                     )}
 
@@ -434,7 +456,10 @@ export function Navigation() {
 
                     {/* Menu Dropdown - Only show on mobile */}
                     <Menu as="div" className="relative inline-block text-left lg:hidden">
-                        <Menu.Button className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 dark:from-purple-600 dark:to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 dark:shadow-glow-sm hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-glow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200">
+                        <Menu.Button
+                            className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 dark:from-purple-600 dark:to-pink-600 p-2 text-white shadow-md shadow-purple-400/40 dark:shadow-glow-sm hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:shadow-purple-500/50 dark:hover:shadow-glow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 transition-all duration-200"
+                            aria-label="Open navigation menu"
+                        >
                             <Bars3Icon className="h-7 w-7" />
                         </Menu.Button>
 
@@ -498,11 +523,18 @@ export function Navigation() {
                                                         <BellIcon className="h-5 w-5" />
                                                         Notifications
                                                     </span>
-                                                    {unreadCount > 0 && (
-                                                        <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
-                                                            {unreadCount > 9 ? '9+' : unreadCount}
-                                                        </span>
-                                                    )}
+                                                    <span className="flex items-center gap-2">
+                                                        {unreadCount > 0 && (
+                                                            <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1">
+                                                                {unreadCount > 9 ? '9+' : unreadCount}
+                                                            </span>
+                                                        )}
+                                                        {pendingDeviceApprovals > 0 && (
+                                                            <span className="bg-amber-500/90 text-white text-[10px] font-bold rounded-full min-w-[20px] h-[18px] flex items-center justify-center px-1" data-testid="device-approval-count-mobile">
+                                                                {pendingDeviceApprovals > 9 ? '9+' : pendingDeviceApprovals}
+                                                            </span>
+                                                        )}
+                                                    </span>
                                                 </button>
                                             )}
                                         </Menu.Item>

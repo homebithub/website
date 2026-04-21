@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import type { WSConnectionState, WSMessage, MessageEvent, WSHookReturn } from '~/types/websocket';
+import { isLocalGatewayUrl } from '~/services/grpc/client';
 
 interface UseWebSocketOptions {
   url: string;
@@ -26,6 +27,7 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const eventHandlersRef = useRef<Map<string, Set<(event: MessageEvent) => void>>>(new Map());
   const shouldReconnectRef = useRef(true);
+  const hasConnectedRef = useRef(false);
 
   const connect = useCallback(() => {
     if (!enabled) {
@@ -47,6 +49,7 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
       ws.onopen = () => {
         setConnectionState('connected');
         reconnectAttemptsRef.current = 0;
+        hasConnectedRef.current = true;
         
         // Send ping to keep connection alive
         const pingInterval = setInterval(() => {
@@ -91,28 +94,33 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
       };
 
       ws.onerror = (error) => {
-        console.error('[WebSocket] Error:', error);
+        if (!(isLocalGatewayUrl(url) && !hasConnectedRef.current)) {
+          console.error('[WebSocket] Error:', error);
+        }
         setConnectionState('error');
       };
 
       ws.onclose = (event) => {
         setConnectionState('disconnected');
         wsRef.current = null;
+        const suppressLocalRetry = isLocalGatewayUrl(url) && !hasConnectedRef.current;
 
         // Attempt to reconnect
-        if (shouldReconnectRef.current && reconnectAttemptsRef.current < maxReconnectAttempts) {
+        if (!suppressLocalRetry && shouldReconnectRef.current && reconnectAttemptsRef.current < maxReconnectAttempts) {
           reconnectAttemptsRef.current++;
           const delay = Math.min(reconnectInterval * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();
           }, delay);
-        } else if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+        } else if (!suppressLocalRetry && reconnectAttemptsRef.current >= maxReconnectAttempts) {
           console.error('[WebSocket] Max reconnect attempts reached');
         }
       };
     } catch (error) {
-      console.error('[WebSocket] Connection error:', error);
+      if (!(isLocalGatewayUrl(url) && !hasConnectedRef.current)) {
+        console.error('[WebSocket] Connection error:', error);
+      }
       setConnectionState('error');
     }
   }, [enabled, maxReconnectAttempts, onMessage, reconnectInterval, token, url]);
@@ -160,6 +168,7 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
   // Connect on mount, disconnect on unmount
   useEffect(() => {
     shouldReconnectRef.current = true;
+    hasConnectedRef.current = false;
     if (enabled) {
       connect();
     } else {
