@@ -15,6 +15,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { getDeviceId, getDeviceName } from '~/utils/deviceFingerprint';
 import { cacheAuthSession, getStoredAccessToken } from '~/utils/authStorage';
 import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
+import { API_ENDPOINTS } from '~/config/api';
 
 export const meta = () => [
     { title: "Log In — Homebit" },
@@ -261,14 +262,22 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     try {
-      const { default: authSvc } = await import('~/services/grpc/auth.service');
-      const response = await authSvc.getGoogleAuthURL('auth');
-      const url = response?.getUrl?.() || response?.url;
+      const response = await fetch(`${API_ENDPOINTS.auth.googleUrl}?flow=auth`, {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+        },
+      });
+      if (!response.ok) {
+        throw new Error(`google_auth_url_failed:${response.status}`);
+      }
+      const payload = await response.json();
+      const url = payload?.url;
       if (url) {
         window.location.href = url as string;
       }
     } catch (e) {
-      /* no-op */
+      setLoginError('Google login failed. Please try again or use phone and password.');
     }
   };
 

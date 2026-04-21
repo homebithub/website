@@ -1,6 +1,6 @@
 import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import type { JsonObject } from '@protobuf-ts/runtime';
-import { AuthServiceClient, HouseholdMemberServiceClient, ProfileSetupServiceClient, WaitlistServiceClient } from '~/proto/auth/auth.client';
+import { HouseholdMemberServiceClient, ProfileSetupServiceClient, WaitlistServiceClient } from '~/proto/auth/auth.client';
 import { Struct } from '~/proto/google/protobuf/struct';
 import { AUTH_API_BASE_URL } from '~/config/api';
 
@@ -35,6 +35,10 @@ function resolveGrpcBaseUrl(requestUrl: string): string {
   return process.env.GATEWAY_API_BASE_URL || AUTH_API_BASE_URL;
 }
 
+function resolveRestBaseUrl(requestUrl: string): string {
+  return resolveGrpcBaseUrl(requestUrl);
+}
+
 function createTransport(requestUrl: string) {
   return new GrpcWebFetchTransport({
     baseUrl: resolveGrpcBaseUrl(requestUrl),
@@ -62,9 +66,20 @@ export async function googleSignInOnServer(
   requestUrl: string,
   input: { code: string; flow: string },
 ) {
-  const client = new AuthServiceClient(createTransport(requestUrl));
-  const { response } = await client.googleSignIn(input);
-  return response;
+  const response = await fetch(`${resolveRestBaseUrl(requestUrl)}/api/v1/auth/google/signin`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(input),
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => '');
+    throw new Error(body || `google_signin_failed:${response.status}`);
+  }
+
+  return response.json();
 }
 
 export async function createWaitlistOnServer(

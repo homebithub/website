@@ -15,6 +15,7 @@ import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
 import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorage';
+import { API_ENDPOINTS } from '~/config/api';
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
@@ -249,42 +250,30 @@ export default function SignupPage() {
                     ...(form.profile_type === 'househelp' && bureauId ? { bureau_id: bureauId } : {})
                 };
 
-                const { default: authSvc } = await import('~/services/grpc/auth.service');
                 let data: any;
                 try {
-                    const response = await authSvc.completeGoogleSignup(
-                        googlePayload.google_id,
-                        googlePayload.email,
-                        googlePayload.first_name,
-                        googlePayload.last_name,
-                        googlePayload.phone,
-                        googlePayload.profile_type,
-                        googlePayload.bureau_id
-                    );
-                    const userId = response?.getUserId?.() || '';
-                    const verificationProto = response?.getVerification?.();
+                    const response = await fetch(API_ENDPOINTS.auth.googleComplete, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Accept: 'application/json',
+                        },
+                        body: JSON.stringify(googlePayload),
+                    });
+
+                    const payload = await response.json().catch(() => ({}));
+                    if (!response.ok) {
+                        throw new Error(payload?.error || `google_complete_signup_failed:${response.status}`);
+                    }
+
                     data = {
-                        user: { user_id: userId, profile_type: form.profile_type },
-                        verification: verificationProto ? {
-                            id: verificationProto.getId(),
-                            user_id: verificationProto.getUserId(),
-                            type: verificationProto.getType(),
-                            status: verificationProto.getStatus(),
-                            target: verificationProto.getTarget(),
-                            expires_at: verificationProto.getExpiresAt()?.toDate().toISOString() || '',
-                            next_resend_at: verificationProto.getNextResendAt()?.toDate().toISOString() || '',
-                            attempts: verificationProto.getAttempts(),
-                            max_attempts: verificationProto.getMaxAttempts(),
-                            resends: verificationProto.getResends(),
-                            max_resends: verificationProto.getMaxResends(),
-                            created_at: verificationProto.getCreatedAt()?.toDate().toISOString() || '',
-                            updated_at: verificationProto.getUpdatedAt()?.toDate().toISOString() || '',
-                        } : undefined,
+                        user: { user_id: payload.user_id || '', profile_type: form.profile_type },
+                        verification: payload.verification,
                     };
                 } catch (err: any) {
                     const errorMsg = err.message || 'Google signup completion failed';
                     const lowerMsg = errorMsg.toLowerCase();
-                    if (err.grpcCode === 'ALREADY_EXISTS' || lowerMsg.includes('already')) {
+                    if (lowerMsg.includes('already')) {
                         const friendlyMsg = handleApiError({ message: errorMsg }, 'signup');
                         if (lowerMsg.includes('phone')) {
                             setFieldErrors({ phone: friendlyMsg });
@@ -477,9 +466,14 @@ export default function SignupPage() {
                 bureau_id: bureauId || undefined
             };
             const state = encodeURIComponent(JSON.stringify(statePayload));
-            const { default: authSvc } = await import('~/services/grpc/auth.service');
-            const response = await authSvc.getGoogleAuthURL(flow, state);
-            const url = response?.getUrl?.() || response?.url;
+            const response = await fetch(`${API_ENDPOINTS.auth.googleUrl}?flow=${encodeURIComponent(flow)}&state=${encodeURIComponent(state)}`, {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                },
+            });
+            const payload = await response.json().catch(() => ({}));
+            const url = payload?.url;
             if (url) {
                 window.location.href = url as string;
             } else {

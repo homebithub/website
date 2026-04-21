@@ -72,6 +72,7 @@ export const NOTIFICATIONS_WS_BASE_URL = `${API_BASE_URL}/ws`;
 export const API_ENDPOINTS = {
   auth: {
     googleUrl: `${API_BASE_URL}/api/v1/auth/google/url`,
+    googleComplete: `${API_BASE_URL}/api/v1/auth/google/complete`,
   },
   shortlists: {
     base: `${API_BASE_URL}/api/v1/shortlists`,
