@@ -357,15 +357,17 @@ export default function HouseholdMembersPage() {
                     <div className="flex gap-2 ml-4">
                       <button
                         onClick={() => setPendingRequestAction({ type: 'approve', requestId: request.id })}
-                        className="px-4 py-1 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all focus:outline-none focus:ring-2 focus:ring-green-500"
+                        disabled={actionLoading === `approve-${request.id}`}
+                        className="px-4 py-1 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all focus:outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        ✅ Approve
+                        {actionLoading === `approve-${request.id}` ? 'Approving...' : '✅ Approve'}
                       </button>
                       <button
                         onClick={() => setPendingRequestAction({ type: 'reject', requestId: request.id })}
-                        className="px-4 py-1 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+                        disabled={actionLoading === `reject-${request.id}`}
+                        className="px-4 py-1 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        ❌ Reject
+                        {actionLoading === `reject-${request.id}` ? 'Rejecting...' : '❌ Reject'}
                       </button>
                     </div>
                   </div>
@@ -489,7 +491,8 @@ export default function HouseholdMembersPage() {
                             userId: member.user_id,
                             userName: `${member.user?.first_name} ${member.user?.last_name}`.trim() || 'this member',
                           })}
-                          className="px-4 py-1 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
+                          disabled={actionLoading === `remove-${member.user_id}`}
+                          className="px-4 py-1 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-60 disabled:cursor-not-allowed"
                           title="Remove member"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

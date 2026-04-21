@@ -2,7 +2,6 @@ import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useSubscription } from '~/hooks/useSubscription';
-import { CheckCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { householdKidsService, petsService, documentService, shortlistService, interestService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
@@ -16,6 +15,7 @@ import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/au
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { resolveHouseholdOwnerUserId, resolveHouseholdProfile } from '~/utils/householdProfiles';
+import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 
 interface HouseholdData {
   id?: string;
@@ -335,6 +335,10 @@ export default function HouseholdPublicProfile() {
 
   const handleStartChat = async () => {
     if (!profileOwnerUserId || !currentUserId) return;
+    if (!hasActiveSubscription && !subscriptionLoading) {
+      setShowSubscriptionModal(true);
+      return;
+    }
     setActionLoading('chat');
     try {
       // In this view, the current user is typically a househelp viewing a household profile.
@@ -775,57 +779,13 @@ export default function HouseholdPublicProfile() {
       )}
 
       {/* Subscription Gate Modal */}
-      {showSubscriptionModal && (
-        <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={() => setShowSubscriptionModal(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <div
-            className="relative w-full sm:max-w-md bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto sm:mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition"
-              onClick={() => setShowSubscriptionModal(false)}
-            >
-              <XMarkIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            </button>
-            <div className="text-center mb-6">
-              <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Subscription Required</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {subscriptionStatus === 'expired'
-                  ? 'Your subscription has expired. Renew your plan to continue.'
-                  : 'You need an active subscription or free trial to show interest. Choose a plan to get started!'}
-              </p>
-            </div>
-            <div className="space-y-3 mb-6">
-              {[{title: 'Unlimited messaging', desc: 'Send and receive messages with households and househelps'}, {title: 'Full platform access', desc: 'Browse profiles, send hire requests, and manage contracts'}, {title: 'Free trial available', desc: 'Start with a free trial — no payment required upfront'}].map((item) => (
-                <div key={item.title} className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
-                  <CheckCircleIcon className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{item.title}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.desc}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <button
-              type="button"
-              onClick={() => { setShowSubscriptionModal(false); navigate('/plans'); }}
-              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all"
-            >
-              View Plans &amp; Pricing
-            </button>
-            <button type="button" onClick={() => setShowSubscriptionModal(false)} className="w-full mt-3 text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 py-2 transition-colors">
-              Maybe later
-            </button>
-          </div>
-        </div>
-      )}
+      <SubscriptionRequiredModal
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        status={subscriptionStatus}
+        actionLabel="message households or show interest"
+        plansHref="/plans"
+      />
 
       {/* Show Interest Modal */}
       {canInteract && profile && (

@@ -21,6 +21,7 @@ import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { useInboxSSE } from '~/hooks/useInboxSSE';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { resolveHouseholdProfile } from '~/utils/householdProfiles';
+import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 
 type Conversation = {
   id: string;
@@ -2357,84 +2358,13 @@ export default function InboxPage() {
         </div>
       )}
 
-      {/* Subscription Gate Modal */}
-      {showSubscriptionModal && (
-        <div className="fixed inset-0 z-[75] flex items-end sm:items-center justify-center" onClick={() => setShowSubscriptionModal(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
-          <div
-            className="relative w-full sm:max-w-md bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="absolute top-3 right-3 p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800 transition"
-              onClick={() => setShowSubscriptionModal(false)}
-              aria-label="Close"
-            >
-              <XMarkIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            </button>
-
-            <div className="text-center mb-6">
-              <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center mb-4">
-                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
-              </div>
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                Subscription Required
-              </h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {subscriptionStatus === 'expired'
-                  ? 'Your subscription has expired. Renew your plan to continue messaging.'
-                  : 'You need an active subscription to send and receive messages. Choose a plan to get started!'}
-              </p>
-            </div>
-
-            <div className="space-y-3 mb-6">
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
-                <CheckCircleIcon className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Unlimited messaging</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Send and receive messages with households and househelps</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
-                <CheckCircleIcon className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Full platform access</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Browse profiles, send hire requests, and manage contracts</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
-                <CheckCircleIcon className="w-5 h-5 text-purple-500 mt-0.5 flex-shrink-0" />
-                <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Free trial available</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Start with a free trial — no payment required upfront</p>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setShowSubscriptionModal(false);
-                navigate(`/plans?return=${encodeURIComponent(location.pathname + location.search)}`);
-              }}
-              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-3 text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-[1.02] transition-all duration-300"
-            >
-              View Plans & Pricing
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setShowSubscriptionModal(false)}
-              className="w-full mt-2 rounded-xl px-6 py-2 text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
-            >
-              Maybe later
-            </button>
-          </div>
-        </div>
-      )}
+      <SubscriptionRequiredModal
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        status={subscriptionStatus}
+        actionLabel="message users or send hire requests"
+        plansHref={`/plans?return=${encodeURIComponent(location.pathname + location.search)}`}
+      />
     </div>
   );
 }

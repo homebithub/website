@@ -20,6 +20,8 @@ import CustomSelect from "~/components/ui/CustomSelect";
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { useSubscription } from '~/hooks/useSubscription';
+import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 
 interface HousehelpProfile {
   id: number | string;
@@ -97,7 +99,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
   const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
+  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Fetch household profile ID if current user is a household
   useEffect(() => {
@@ -135,6 +139,10 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
 
   const handleStartChat = async (targetUserId?: string, househelpProfileId?: string) => {
     if (!targetUserId || !currentUserId) return;
+    if (!hasActiveSubscription && !subscriptionLoading) {
+      setShowSubscriptionModal(true);
+      return;
+    }
     try {
       const profileType = (currentProfileType || '').toLowerCase();
       let householdId = currentUserId;
@@ -925,6 +933,13 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           </div>
         </main>
       </PurpleThemeWrapper>
+      <SubscriptionRequiredModal
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        status={subscriptionStatus}
+        actionLabel="message househelps"
+        plansHref="/plans"
+      />
       <Footer />
     </div>
   );

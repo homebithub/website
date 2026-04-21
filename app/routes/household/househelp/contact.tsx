@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from "react";
 import { useLocation, useSearchParams, useNavigate } from "react-router";
-import {ArrowLeftIcon, HeartIcon, TrashIcon, LockClosedIcon, LockOpenIcon} from "@heroicons/react/24/outline";
+import {ArrowLeftIcon, HeartIcon, TrashIcon} from "@heroicons/react/24/outline";
 import ReadOnlyUserImageCarousel from "~/components/features/household/househelp/ReadOnlyUserImageCarousel";
 import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
 import { profileService as grpcProfileService, profileViewService, shortlistService, imageService } from '~/services/grpc/authServices';
@@ -9,7 +9,6 @@ import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 
 export default function HousehelpProfile() {
-    const [showUnlockModal, setShowUnlockModal] = useState(false);
     const [shortlistLoading, setShortlistLoading] = useState(false);
     const [shortlistDisabled, setShortlistDisabled] = useState(false);
     const [shortlistDisabledReason, setShortlistDisabledReason] = useState<string | null>(null);
@@ -54,7 +53,6 @@ export default function HousehelpProfile() {
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [unlockedContact, setUnlockedContact] = useState<{ phone?: string; email?: string } | null>(null);
     const [retryKey, setRetryKey] = useState(0);
     const navigate = useNavigate();
     const backTo =
@@ -94,16 +92,6 @@ export default function HousehelpProfile() {
       });
     }, [location.state, locationState.backLabel, locationState.backTo, locationState.profileId, navigate, searchParams]);
 
-    const refreshUnlockedContact = React.useCallback(async () => {
-      if (!profileId) return;
-      const contact = await shortlistService.getUnlockedContact('', profileId);
-      if (contact.unlocked && (contact.phone || contact.email)) {
-        setUnlockedContact(contact);
-        return;
-      }
-      setUnlockedContact(null);
-    }, [profileId]);
-
     useEffect(() => {
         const fetchProfile = async () => {
             setLoading(true);
@@ -123,11 +111,6 @@ export default function HousehelpProfile() {
                         setShortlistDisabledReason(null);
                     }
                 } catch { /* ignore */ }
-                try {
-                    await refreshUnlockedContact();
-                } catch (err) {
-                    console.warn('Failed to fetch unlocked contact:', err);
-                }
                 // Track profile view via gRPC
                 try {
                     await profileViewService.recordView('', profileId, 'househelp');
@@ -144,7 +127,7 @@ export default function HousehelpProfile() {
             }
         };
         fetchProfile();
-    }, [profileId, refreshUnlockedContact, retryKey]);
+    }, [profileId, retryKey]);
 
     // Carousel state (must be above any early returns)
     const [images, setImages] = useState<any[]>([]);
@@ -217,56 +200,13 @@ export default function HousehelpProfile() {
     }
 
     const {User, Househelp} = data;
+    const contactDetails = {
+      phone: User?.phone || undefined,
+      email: User?.email || undefined,
+    };
 
     return (
       <>
-        {showUnlockModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex min-h-screen items-center justify-center p-3 sm:p-4">
-              <div 
-                className="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-md"
-                onClick={() => setShowUnlockModal(false)}
-              />
-              <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 w-full max-w-[calc(100%-1.5rem)] sm:max-w-md">
-              <h2 className="text-base sm:text-lg font-bold mb-2 text-center text-primary-700 dark:text-primary-300">Unlock Contact</h2>
-              <p className="mb-3 text-xs sm:text-sm text-gray-700 dark:text-gray-200 text-center">
-                You can keep up to 3 profiles unlocked at the same time. Unlock this shortlisted profile to reveal the latest phone number and email for a limited period.
-              </p>
-              <div className="mb-4 text-xs text-gray-500 dark:text-gray-400 text-center">
-                This only works for profiles already in your shortlist.
-              </div>
-
-              <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
-                <button
-                  className="px-4 py-1 text-sm rounded-xl bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-                  onClick={() => setShowUnlockModal(false)}
-                >
-                  Cancel
-                </button>
-                <button
-                  className="flex items-center justify-center gap-2 px-4 py-1 text-sm rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold shadow transition-colors"
-                  onClick={async () => {
-                    try {
-                      if (!profileId) throw new Error('No profile selected');
-                      const data = await shortlistService.unlockShortlist('', profileId);
-                      if (!data.unlocked) throw new Error('Contact is still locked');
-                      setUnlockedContact(data);
-                      setShowUnlockModal(false);
-                      setActionError(null);
-                      setSuccessMessage('Contact unlocked successfully.');
-                    } catch (err: any) {
-                      setActionError(err.message || 'Failed to unlock contact');
-                    }
-                  }}
-                >
-                  <span>Unlock Contact</span>
-                </button>
-              </div>
-            </div>
-            </div>
-          </div>
-        )}
-
         {/* User Information Section */}
         <div className="bg-white  rounded-2xl shadow-lg border border-gray-100  p-8 sm:p-12 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-4xl flex flex-col items-center mb-8">
           {successMessage && <SuccessAlert message={successMessage} className="w-full mb-4" />}
@@ -318,19 +258,6 @@ export default function HousehelpProfile() {
                   >
                     <span>{shortlistLoading ? 'Removing...' : 'Reject'}</span>
                     <TrashIcon className="w-4 h-4 ml-1" />
-                  </button>
-                  <button
-                    className="flex items-center justify-center gap-1 px-4 py-1 min-w-[130px] rounded-full font-semibold shadow transition bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-400 text-xs"
-                    aria-label="Unlock Contact"
-                    onClick={() => setShowUnlockModal(true)}
-                    tabIndex={0}
-                  >
-                    <span>View Contact</span>
-                    {unlockedContact ? (
-                      <LockOpenIcon className="w-4 h-4 ml-1" />
-                    ) : (
-                      <LockClosedIcon className="w-4 h-4 ml-1" />
-                    )}
                   </button>
                 </>
               ) : (
@@ -402,12 +329,12 @@ export default function HousehelpProfile() {
             <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs">{User.country}</span>
           </div>
 
-          {/* Unlocked contact info */}
-          {unlockedContact && (
+          {/* Contact info */}
+          {(contactDetails.phone || contactDetails.email) && (
             <div className="mt-2 flex flex-col items-center">
-              <div className="text-lg font-bold text-purple-600">Phone: {unlockedContact.phone}</div>
-              {unlockedContact.email && (
-                <div className="text-lg font-bold text-purple-600">Email: {unlockedContact.email}</div>
+              {contactDetails.phone && <div className="text-lg font-bold text-purple-600">Phone: {contactDetails.phone}</div>}
+              {contactDetails.email && (
+                <div className="text-lg font-bold text-purple-600">Email: {contactDetails.email}</div>
               )}
             </div>
           )}
@@ -426,11 +353,11 @@ export default function HousehelpProfile() {
               </div>
               <div>
                 <div className="text-gray-400 ">Email</div>
-                <div className="text-sm text-slate-900  font-medium">{unlockedContact?.email || 'Unlock to view'}</div>
+                <div className="text-sm text-slate-900  font-medium">{contactDetails.email || '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Phone</div>
-                <div className="text-sm text-slate-900  font-medium">{unlockedContact?.phone || 'Unlock to view'}</div>
+                <div className="text-sm text-slate-900  font-medium">{contactDetails.phone || '-'}</div>
               </div>
 
 

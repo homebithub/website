@@ -26,7 +26,7 @@ export interface Household extends BaseUser {
   };
   subscriptionStatus: 'none' | 'basic' | 'premium';
   subscriptionValidUntil?: string;
-  unlockedProfiles: string[]; // IDs of unlocked househelp profiles
+  unlockedProfiles: string[]; // Legacy shortlist-lock field retained for compatibility
 }
 
 export interface Househelp extends BaseUser {

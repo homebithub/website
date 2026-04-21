@@ -21,6 +21,8 @@ import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { useSubscription } from '~/hooks/useSubscription';
+import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 
 interface HouseholdItem {
   id?: string; // household user id
@@ -99,7 +101,9 @@ export default function HousehelpHome() {
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
   const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
+  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   // Fetch household profile ID if current user is a household
   useEffect(() => {
@@ -195,6 +199,10 @@ export default function HousehelpHome() {
     try {
       if (!householdUserId) throw new Error('Missing household user id');
       if (!currentUserId) throw new Error('Missing current user id');
+      if (!hasActiveSubscription && !subscriptionLoading) {
+        setShowSubscriptionModal(true);
+        return;
+      }
 
       const profileType = (currentProfileType || '').toLowerCase();
       let householdId = householdUserId;
@@ -566,6 +574,13 @@ export default function HousehelpHome() {
           
         </main>
       </PurpleThemeWrapper>
+      <SubscriptionRequiredModal
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        status={subscriptionStatus}
+        actionLabel="message households"
+        plansHref="/plans"
+      />
       <Footer />
     </div>
   );

@@ -13,6 +13,8 @@ import HireRequestModal from '~/components/modals/HireRequestModal';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { useSubscription } from '~/hooks/useSubscription';
+import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 
 interface UserData {
   id?: string;
@@ -180,6 +182,7 @@ export default function HousehelpPublicProfile() {
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
   const [isHireModalOpen, setIsHireModalOpen] = useState(false);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [viewerProfileType, setViewerProfileType] = useState<string | null>(null);
   const navigationState = (location.state ?? {}) as {
     profileId?: string;
@@ -224,6 +227,7 @@ export default function HousehelpPublicProfile() {
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
   const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
+  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -383,6 +387,10 @@ export default function HousehelpPublicProfile() {
   const handleChat = async () => {
     const househelpUserId = user?.user_id || user?.id || profile?.user_id;
     if (!targetProfileId || !currentUserId || !househelpUserId) return;
+    if (!hasActiveSubscription && !subscriptionLoading) {
+      setShowSubscriptionModal(true);
+      return;
+    }
     setActionLoading('chat');
     try {
       const profileType = (currentProfileType || '').toLowerCase();
@@ -526,7 +534,13 @@ export default function HousehelpPublicProfile() {
                         <MessageCircle className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => setIsHireModalOpen(true)}
+                        onClick={() => {
+                          if (!hasActiveSubscription && !subscriptionLoading) {
+                            setShowSubscriptionModal(true);
+                            return;
+                          }
+                          setIsHireModalOpen(true);
+                        }}
                         className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg flex items-center gap-2"
                       >
                         <Briefcase className="w-4 h-4" />
@@ -1052,6 +1066,14 @@ export default function HousehelpPublicProfile() {
           onClose={() => setSelectedImage(null)}
         />
       )}
+
+      <SubscriptionRequiredModal
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        status={subscriptionStatus}
+        actionLabel="message househelps or send hire requests"
+        plansHref="/plans"
+      />
 
       {isViewingOther && profile && (
         <HireRequestModal

@@ -70,8 +70,7 @@ export default function Terms() {
             <h2>5. Payments and Fees</h2>
             <ul>
               <li>Househelps pay a listing fee upon profile submission.</li>
-              <li>Households may view limited profile information for free. To access full profiles and contact information, 
-              they must either purchase unlock credits or subscribe.</li>
+              <li>Users may browse profiles and manage shortlists freely. Active subscription access, including free trials, is required for messaging, sending hire requests, and expressing interest.</li>
               <li>All payments are processed through integrated third-party providers (e.g., M-Pesa, bank transfer).</li>
               <li>No commissions are charged on job placements.</li>
             </ul>

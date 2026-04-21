@@ -18,7 +18,7 @@ export interface SubscriptionPlan {
     period: 'one-time' | 'weekly' | 'monthly' | 'yearly';
   };
   features: SubscriptionFeature[];
-  profileUnlocks: number; // Number of profiles that can be unlocked
+  profileUnlocks: number; // Legacy field from older shortlist-lock pricing; no longer used for access control
   instantSupport: boolean;
   priorityMatching: boolean;
   backgroundCheckAccess: boolean;
@@ -33,7 +33,7 @@ export interface UserSubscription {
   startDate: string;
   endDate: string;
   autoRenew: boolean;
-  remainingUnlocks: number;
+  remainingUnlocks: number; // Legacy field from older shortlist-lock pricing; no longer used for access control
   paymentHistory: {
     id: string;
     amount: number;
