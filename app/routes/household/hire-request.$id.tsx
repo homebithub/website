@@ -256,7 +256,7 @@ export default function HireRequestDetail() {
     const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
     return (
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
         {days.map(day => {
           const daySchedule = schedule[day];
           const isActive = daySchedule && (daySchedule.morning || daySchedule.afternoon || daySchedule.evening);
@@ -328,11 +328,11 @@ export default function HireRequestDetail() {
           </button>
           {feedbackMessage && <SuccessAlert message={feedbackMessage} className="mb-4" />}
           {error && <ErrorAlert message={error} className="mb-4" />}
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white">
               Hire Request Details
             </h1>
-            <span className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-sm font-medium ${getStatusColor(hireRequest.status)}`}>
+            <span className={`inline-flex items-center gap-2 px-4 py-1 rounded-full text-xs font-medium ${getStatusColor(hireRequest.status)}`}>
               {getStatusIcon(hireRequest.status)}
               {hireRequest.status.charAt(0).toUpperCase() + hireRequest.status.slice(1)}
             </span>
@@ -344,10 +344,10 @@ export default function HireRequestDetail() {
           <div className="lg:col-span-2 space-y-6">
             {/* Househelp Info */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Househelp Information
               </h2>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                 <div className="w-20 h-20 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400">
                   {hireRequest.househelp?.avatar_url || hireRequest.househelp?.photos?.[0] ? (
                     <img
@@ -356,20 +356,20 @@ export default function HireRequestDetail() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+                    <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
                       {hireRequest.househelp?.first_name?.[0]}{hireRequest.househelp?.last_name?.[0]}
                     </div>
                   )}
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                     {hireRequest.househelp?.first_name} {hireRequest.househelp?.last_name}
                   </h3>
                   <button
                     onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(hireRequest.househelp_id)}&from=hiring&backTo=${encodeURIComponent(detailPath)}&backLabel=${encodeURIComponent('Back to Hire Request')}`, {
                       state: { profileId: hireRequest.househelp_id, backTo: detailPath, backLabel: 'Back to Hire Request' }
                     })}
-                    className="text-sm text-purple-600 dark:text-purple-400 hover:underline"
+                    className="text-xs text-purple-600 dark:text-purple-400 hover:underline"
                   >
                     View Full Profile →
                   </button>
@@ -379,14 +379,14 @@ export default function HireRequestDetail() {
 
             {/* Job Details */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Job Details
               </h2>
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="flex items-start gap-3">
                   <Briefcase className="w-5 h-5 text-gray-400 mt-1" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Job Type</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Job Type</p>
                     <p className="font-medium text-gray-900 dark:text-white capitalize">
                       {hireRequest.job_type.replace('-', ' ')}
                     </p>
@@ -396,7 +396,7 @@ export default function HireRequestDetail() {
                 <div className="flex items-start gap-3">
                   <DollarSign className="w-5 h-5 text-gray-400 mt-1" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Salary Offered</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Salary Offered</p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {formatSalary(hireRequest.salary_offered, hireRequest.salary_frequency)}
                     </p>
@@ -411,7 +411,7 @@ export default function HireRequestDetail() {
                 <div className="flex items-start gap-3">
                   <Calendar className="w-5 h-5 text-gray-400 mt-1" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Start Date</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Start Date</p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {hireRequest.start_date ? formatDate(hireRequest.start_date) : 'Flexible'}
                     </p>
@@ -421,7 +421,7 @@ export default function HireRequestDetail() {
                 <div className="flex items-start gap-3">
                   <FileText className="w-5 h-5 text-gray-400 mt-1" />
                   <div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Request Date</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Request Date</p>
                     <p className="font-medium text-gray-900 dark:text-white">
                       {formatDate(hireRequest.created_at)}
                     </p>
@@ -433,7 +433,7 @@ export default function HireRequestDetail() {
             {/* Work Schedule */}
             {hireRequest.work_schedule && (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   Work Schedule
                 </h2>
                 {renderWorkSchedule(hireRequest.work_schedule)}
@@ -446,7 +446,7 @@ export default function HireRequestDetail() {
             {/* Special Requirements */}
             {hireRequest.special_requirements && (
               <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6">
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                   Special Requirements
                 </h2>
                 <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
@@ -458,7 +458,7 @@ export default function HireRequestDetail() {
             {/* Decline Reason */}
             {hireRequest.decline_reason && (
               <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-6">
-                <h2 className="text-xl font-semibold text-red-800 dark:text-red-200 mb-4">
+                <h2 className="text-lg font-semibold text-red-800 dark:text-red-200 mb-4">
                   Decline Reason
                 </h2>
                 <p className="text-red-700 dark:text-red-300">
@@ -480,7 +480,7 @@ export default function HireRequestDetail() {
           <div className="space-y-6">
             {/* Actions Card */}
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 sticky top-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                 Actions
               </h2>
 
@@ -561,16 +561,16 @@ export default function HireRequestDetail() {
       overflow-y-auto
       animate-slide-up
     ">
-      <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
+      <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">
         Create Employment Contract
       </h3>
 
-      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-3 sm:mb-4">
+      <p className="text-xs sm:text-xs text-gray-600 dark:text-gray-400 mb-3 sm:mb-4">
         This will finalize the hire request and create an active employment contract.
       </p>
 
       <div className="mb-4">
-        <label className="block text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-xs sm:text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
           Contract Notes (Optional)
         </label>
         <textarea
@@ -579,7 +579,7 @@ export default function HireRequestDetail() {
           rows={4}
           placeholder="Add any additional notes or terms..."
           className="
-            w-full px-3 py-2 sm:px-4 text-sm
+            w-full px-3 py-2 sm:px-4 text-xs
             border border-gray-300 dark:border-gray-600 
             rounded-lg 
             focus:ring-2 focus:ring-purple-500
@@ -594,7 +594,7 @@ export default function HireRequestDetail() {
           onClick={() => setShowContractModal(false)}
           disabled={actionLoading}
           className="
-            flex-1 px-4 py-1 text-sm
+            flex-1 px-4 py-1 text-xs
             border border-gray-300 dark:border-gray-600 
             rounded-lg 
             hover:bg-gray-50 dark:hover:bg-gray-700 
@@ -608,7 +608,7 @@ export default function HireRequestDetail() {
           onClick={handleCreateContract}
           disabled={actionLoading}
           className="
-            flex-1 px-4 py-1 text-sm
+            flex-1 px-4 py-1 text-xs
             bg-green-600 text-white 
             rounded-xl 
             hover:bg-green-700 

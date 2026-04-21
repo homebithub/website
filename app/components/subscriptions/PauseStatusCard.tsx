@@ -36,10 +36,10 @@ export function PauseStatusCard({ pauseStatus, loading, onResume }: PauseStatusC
             <ClockIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
           </div>
           <div>
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+            <h4 className="text-base font-semibold text-gray-900 dark:text-white">
               Subscription Paused
             </h4>
-            <p className="text-sm text-gray-600 dark:text-gray-300">
+            <p className="text-xs text-gray-600 dark:text-gray-300">
               Your subscription is currently paused
             </p>
           </div>
@@ -47,21 +47,21 @@ export function PauseStatusCard({ pauseStatus, loading, onResume }: PauseStatusC
       </div>
 
       <div className="space-y-3 mb-4">
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between text-xs">
           <span className="text-gray-600 dark:text-gray-400">Paused On</span>
           <span className="font-medium text-gray-900 dark:text-white">
             {pauseStatus.paused_at ? formatDate(pauseStatus.paused_at) : 'N/A'}
           </span>
         </div>
 
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between text-xs">
           <span className="text-gray-600 dark:text-gray-400">Will Resume On</span>
           <span className="font-medium text-gray-900 dark:text-white">
             {pauseStatus.resume_at ? formatDate(pauseStatus.resume_at) : 'N/A'}
           </span>
         </div>
 
-        <div className="flex justify-between text-sm">
+        <div className="flex justify-between text-xs">
           <span className="text-gray-600 dark:text-gray-400">Days Remaining</span>
           <span className="font-bold text-yellow-600 dark:text-yellow-400">
             {pauseStatus.days_remaining} days
@@ -79,7 +79,7 @@ export function PauseStatusCard({ pauseStatus, loading, onResume }: PauseStatusC
       {/* Pause History */}
       {pauseStatus.history && pauseStatus.history.length > 0 && (
         <div className="mt-6 pt-6 border-t border-yellow-200 dark:border-yellow-800">
-          <h5 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">
+          <h5 className="text-xs font-semibold text-gray-900 dark:text-white mb-3">
             Pause History
           </h5>
           <div className="space-y-2 max-h-40 overflow-y-auto">

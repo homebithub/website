@@ -91,9 +91,9 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
     <div className="w-full max-w-xl mx-auto bg-white border border-gray-100 p-8 rounded-xl shadow-lg flex flex-col gap-8">
       
       
-      <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Type of househelp</h2>
+      <h2 className="text-xl font-extrabold text-primary mb-4 text-center">Type of househelp</h2>
       <div className="flex flex-col gap-5">
-        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${selected === "sleep_in" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${selected === "sleep_in" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
           <input
             type="radio"
             name="nanyType"
@@ -104,7 +104,7 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           />
           <span>Sleep in</span>
         </label>
-        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${selected === "day" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${selected === "day" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
           <input
             type="radio"
             name="nanyType"
@@ -120,10 +120,10 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
       {/* Off Days Selection for Household Sleep-in Nanny */}
       {userType === 'household' && selected === 'sleep_in' && (
         <div className="space-y-4">
-          <h3 className="text-lg font-medium text-gray-900">
+          <h3 className="text-base font-medium text-gray-900">
             Select Off Days <span className="text-xs text-gray-400">(Select up to 3 days)</span>
           </h3>
-          <p className="text-sm text-gray-600">
+          <p className="text-xs text-gray-600">
             Choose which days of the week your sleep-in househelp will have off.
           </p>
           <div className="grid grid-cols-2 gap-3">
@@ -154,12 +154,12 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
                     </svg>
                   )}
                 </div>
-                <span className="text-sm font-medium">{day}</span>
+                <span className="text-xs font-medium">{day}</span>
               </label>
             ))}
           </div>
           {offDays.length > 0 && (
-            <p className="text-sm text-gray-500">
+            <p className="text-xs text-gray-500">
               Selected: {offDays.join(', ')} ({offDays.length}/3)
             </p>
           )}
@@ -172,9 +172,9 @@ const NanyType: React.FC<NannyTypeProps> = ({ userType = 'househelp' }) => {
           <table className="min-w-full table-fixed border-separate border-spacing-y-0">
             <thead>
               <tr>
-                <th className="w-24 px-2 py-1 text-sm text-slate-700 font-medium text-left"></th>
+                <th className="w-24 px-2 py-1 text-xs text-slate-700 font-medium text-left"></th>
                 {TIMES.map(time => (
-                  <th key={time} className="w-20 px-2 py-1 text-sm text-slate-700 font-medium capitalize text-center -ml-2">
+                  <th key={time} className="w-20 px-2 py-1 text-xs text-slate-700 font-medium capitalize text-center -ml-2">
                     <button
                       type="button"
                       className="w-full focus:outline-none"

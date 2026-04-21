@@ -51,7 +51,7 @@ const Dashboard = () => {
         >
           <div className="flex flex-col h-full">
             <div className="mb-4">
-              <h2 className="text-xl font-semibold text-primary-800">{profile.name}</h2>
+              <h2 className="text-lg font-semibold text-primary-800">{profile.name}</h2>
               <p className="text-primary-600">{profile.role}</p>
             </div>
             
@@ -68,7 +68,7 @@ const Dashboard = () => {
                   {profile.skills.map((skill, index) => (
                     <span
                       key={index}
-                      className="bg-primary-100 text-primary-800 px-2 py-1 rounded-full text-sm"
+                      className="bg-primary-100 text-primary-800 px-2 py-1 rounded-full text-xs"
                     >
                       {skill}
                     </span>

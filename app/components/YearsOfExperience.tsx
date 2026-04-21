@@ -120,7 +120,7 @@ const YearsOfExperience = () => {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">💼 Experience</h2>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">💼 Experience</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                 How many years of experience do you have?
             </p>
@@ -135,7 +135,7 @@ const YearsOfExperience = () => {
                         {experienceOptions.map((option) => (
                             <label 
                                 key={option.value}
-                                className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                                className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                                     years === option.value 
                                         ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' 
                                         : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -156,7 +156,7 @@ const YearsOfExperience = () => {
 
                     {years === 6 && (
                         <div className="mt-4">
-                            <label htmlFor="customYears" className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                            <label htmlFor="customYears" className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
                                 Specify years of experience
                             </label>
                             <input
@@ -179,7 +179,7 @@ const YearsOfExperience = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <>

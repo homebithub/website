@@ -111,7 +111,7 @@ export default function DeviceConfirmPage() {
                   </div>
                 </div>
                 
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                   Device Confirmed! 🎉
                 </h1>
                 
@@ -125,10 +125,10 @@ export default function DeviceConfirmPage() {
                       {getDeviceIcon(device.device_type)}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
                         {device.device_name || 'Unknown Device'}
                       </h3>
-                      <div className="space-y-1 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
                         <p>
                           {device.browser} {device.browser_version} on {device.os} {device.os_version}
                         </p>
@@ -145,7 +145,7 @@ export default function DeviceConfirmPage() {
                 <div className="space-y-3">
                   <button
                     onClick={() => navigate('/login')}
-                    className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     Continue to Login
                   </button>
@@ -166,7 +166,7 @@ export default function DeviceConfirmPage() {
                   </div>
                 </div>
                 
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+                <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                   Confirmation Failed
                 </h1>
                 
@@ -180,7 +180,7 @@ export default function DeviceConfirmPage() {
                   <h3 className="font-semibold text-gray-900 dark:text-white mb-2">
                     What can you do?
                   </h3>
-                  <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
+                  <ul className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
                     <li>• Check if the link in your email is complete</li>
                     <li>• Try logging in again to receive a new confirmation email</li>
                     <li>• Contact support if the problem persists</li>
@@ -190,7 +190,7 @@ export default function DeviceConfirmPage() {
                 <div className="space-y-3">
                   <button
                     onClick={() => navigate('/login')}
-                    className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    className="w-full px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                   >
                     Go to Login
                   </button>

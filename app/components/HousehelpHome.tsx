@@ -367,12 +367,12 @@ export default function HousehelpHome() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className={`flex-1 py-8 ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
+        <main className={`flex-1 py-8 ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {showTips && <OnboardingTipsBanner role="househelp" onDismiss={handleDismissTips} />}
             <div className={`bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-gray-700/50`}>
               <div className="flex items-center justify-between gap-3 mb-4">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Find Households</h1>
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Find Households</h1>
                 <button
                   onClick={() => setShowMoreFilters(true)}
                   className="px-4 py-1 rounded-xl bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition"
@@ -382,16 +382,16 @@ export default function HousehelpHome() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Town</label>
+                  <label className="mb-2 text-xs font-semibold text-gray-700 dark:text-white">Town</label>
                   <SearchableTownSelect
                     value={filters.town}
                     onChange={(value) => setFilters((prev) => ({ ...prev, town: value }))}
                     target="households"
-                    buttonClassName="w-full h-12 px-4 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    buttonClassName="w-full h-12 px-4 rounded-xl text-sm bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">House Size</label>
+                  <label className="mb-2 text-xs font-semibold text-gray-700 dark:text-white">House Size</label>
                   <CustomSelect
                     value={filters.house_size || ""}
                     onChange={(val) => setFilters((prev) => ({ ...prev, house_size: val }))}
@@ -400,7 +400,7 @@ export default function HousehelpHome() {
                   />
                 </div>
                 <div className="flex flex-col">
-                  <label className="mb-2 text-sm font-semibold text-gray-700 dark:text-white">Has Kids</label>
+                  <label className="mb-2 text-xs font-semibold text-gray-700 dark:text-white">Has Kids</label>
                   <CustomSelect
                     value={filters.has_kids || ""}
                     onChange={(val) => setFilters((prev) => ({ ...prev, has_kids: val }))}
@@ -444,7 +444,7 @@ export default function HousehelpHome() {
             </SidePanel>
 
             <div className="mt-6 sm:mt-8">
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Households</h2>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Households</h2>
               {actionSuccess && <SuccessAlert message={actionSuccess} className="mb-4" />}
               {actionError && <ErrorAlert message={actionError} className="mb-4" />}
               {loading ? (
@@ -458,13 +458,13 @@ export default function HousehelpHome() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M2.25 21h19.5m-18-18v18m10.5-18v18m6-13.5V21M6.75 6.75h.75m-.75 3h.75m-.75 3h.75m3-6h.75m-.75 3h.75m-.75 3h.75M6.75 21v-3.375c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21M3 3h12m-.75 4.5H21m-3.75 7.5h.008v.008h-.008v-.008zm0 3h.008v.008h-.008v-.008z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Households Available</h3>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Households Available</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs max-w-sm mx-auto">
                     We couldn't load household profiles right now. Please try again in a moment.
                   </p>
                   <button
                     onClick={search}
-                    className="mt-6 inline-flex items-center px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-sm"
+                    className="mt-6 inline-flex items-center px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-xs"
                   >
                     Try Again
                   </button>
@@ -476,8 +476,8 @@ export default function HousehelpHome() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Results Found</h3>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Results Found</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs max-w-sm mx-auto">
                     No households match your current filters. Try adjusting your search criteria or clear filters to see all profiles.
                   </p>
                 </div>
@@ -519,7 +519,7 @@ export default function HousehelpHome() {
 
                       {/* Avatar */}
                       <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-lg font-bold shadow-lg overflow-hidden">
                           {r.avatar_url || (r.id && profilePhotos[r.id]) ? (
                             <OptimizedImage
                               path={r.avatar_url || (r.id && profilePhotos[r.id]) || ''}
@@ -534,17 +534,17 @@ export default function HousehelpHome() {
                       </div>
 
                       {/* Name */}
-                      <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-bold text-center text-gray-900 dark:text-white mb-2">
                         {r.first_name} {r.last_name}
                       </h3>
 
                       {/* Town */}
-                      <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center mb-3">
                         📍 {r.town?.trim() || "No location specified"}
                       </p>
 
                       {/* House size */}
-                      <p className="text-sm text-purple-600 dark:text-purple-400 text-center mb-3">
+                      <p className="text-xs text-purple-600 dark:text-purple-400 text-center mb-3">
                         🏠 {r.house_size || "House size not specified"}
                       </p>
 

@@ -92,7 +92,7 @@ export function InviteCodeGenerator({
         {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-purple-600 to-pink-600 p-6 rounded-t-2xl">
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold text-white flex items-center">
+            <h2 className="text-xl font-bold text-white flex items-center">
               <svg className="w-7 h-7 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
@@ -121,7 +121,7 @@ export function InviteCodeGenerator({
 
               {/* Role Selection */}
               <div>
-                <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-3">
+                <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-3">
                   Member Role
                 </label>
                 <div className="grid grid-cols-2 gap-4">
@@ -136,7 +136,7 @@ export function InviteCodeGenerator({
                   >
                     <div className="text-left">
                       <div className="font-bold text-gray-900 dark:text-white mb-1">Member</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
                         Can manage househelps
                       </div>
                     </div>
@@ -152,7 +152,7 @@ export function InviteCodeGenerator({
                   >
                     <div className="text-left">
                       <div className="font-bold text-gray-900 dark:text-white mb-1">Admin</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
                         Can invite & manage members
                       </div>
                     </div>
@@ -162,7 +162,7 @@ export function InviteCodeGenerator({
 
               {/* Expiry */}
               <div>
-                <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">
+                <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">
                   Expires In
                 </label>
                 <select
@@ -180,7 +180,7 @@ export function InviteCodeGenerator({
 
               {/* Max Uses */}
               <div>
-                <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-2">
+                <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">
                   Maximum Uses
                 </label>
                 <select
@@ -197,7 +197,7 @@ export function InviteCodeGenerator({
 
               {/* Auto-Approve Toggle */}
               <div>
-                <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-3">
+                <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-3">
                   Join Approval
                 </label>
                 <div className="grid grid-cols-2 gap-4">
@@ -212,7 +212,7 @@ export function InviteCodeGenerator({
                   >
                     <div className="text-left">
                       <div className="font-bold text-gray-900 dark:text-white mb-1">Require Approval</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
                         You must approve each join request
                       </div>
                     </div>
@@ -228,7 +228,7 @@ export function InviteCodeGenerator({
                   >
                     <div className="text-left">
                       <div className="font-bold text-gray-900 dark:text-white mb-1">Auto-Approve</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
                         Members join instantly with the code
                       </div>
                     </div>
@@ -240,7 +240,7 @@ export function InviteCodeGenerator({
               <button
                 onClick={handleGenerate}
                 disabled={loading}
-                className="w-full px-6 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full px-6 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <span className="flex items-center justify-center">
@@ -259,8 +259,8 @@ export function InviteCodeGenerator({
             /* Success View */
             <div className="space-y-6">
               <div className="text-center p-6 bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-500/30 rounded-xl">
-                <div className="text-3xl mb-3">🎉</div>
-                <h3 className="text-2xl font-bold text-green-800 dark:text-green-300 mb-2">
+                <div className="text-2xl mb-3">🎉</div>
+                <h3 className="text-xl font-bold text-green-800 dark:text-green-300 mb-2">
                   Invite Code Generated!
                 </h3>
                 <p className="text-green-700 dark:text-green-400">
@@ -270,12 +270,12 @@ export function InviteCodeGenerator({
 
               {/* Invite Code Display */}
               <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border-2 border-purple-300 dark:border-purple-500/50">
-                <label className="block text-sm font-semibold text-primary-600 dark:text-purple-400 mb-3 text-center">
+                <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-3 text-center">
                   Invite Code
                 </label>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 text-center">
-                    <div className="text-2xl font-mono font-bold text-purple-600 dark:text-purple-400 tracking-wider">
+                    <div className="text-xl font-mono font-bold text-purple-600 dark:text-purple-400 tracking-wider">
                       {invitation.invite_code}
                     </div>
                   </div>
@@ -298,7 +298,7 @@ export function InviteCodeGenerator({
               </div>
 
               {/* Details */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4 text-xs">
                 <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
                   <div className="text-gray-600 dark:text-gray-400 mb-1">Role</div>
                   <div className="font-bold text-gray-900 dark:text-white capitalize">{invitation.role}</div>
@@ -321,10 +321,10 @@ export function InviteCodeGenerator({
 
               {/* Share Options */}
               <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-500/30 rounded-xl">
-                <div className="text-sm text-blue-800 dark:text-blue-300 mb-3 font-semibold">
+                <div className="text-xs text-blue-800 dark:text-blue-300 mb-3 font-semibold">
                   💡 How to share:
                 </div>
-                <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-2">
+                <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-2">
                   <li className="flex items-start">
                     <span className="mr-2">📱</span>
                     <span>Send the code via SMS or WhatsApp</span>

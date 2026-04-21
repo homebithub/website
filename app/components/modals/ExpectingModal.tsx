@@ -44,14 +44,14 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
           <XMarkIcon className="h-6 w-6" />
         </button>
 
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">🤰 Expecting a Child</h3>
+        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-6">🤰 Expecting a Child</h3>
 
         <form onSubmit={handleSubmit}>
           <div className="space-y-4">
 
 
             <div>
-              <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
                 Expected Due Date <span className="text-red-500">*</span>
               </label>
               <input
@@ -59,19 +59,19 @@ const ExpectingModal: React.FC<ExpectingModalProps> = ({ isOpen, onClose, onSave
                 required
                 value={expectedDate}
                 onChange={(e) => setExpectedDate(e.target.value)}
-                className="block w-full h-10 px-4 py-1.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+                className="block w-full h-10 px-4 py-1.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
                 Additional Notes (optional)
               </label>
               <textarea
                 rows={3}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="block w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
+                className="block w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all resize-none"
                 placeholder="Any special notes or considerations..."
               />
             </div>

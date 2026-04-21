@@ -15,20 +15,20 @@ export default function LoadingDemoPage() {
       
       <main className="container mx-auto px-4 py-8 border-2 border-purple-500 dark:border-purple-400 rounded-xl bg-white dark:bg-black text-slate-900 dark:text-white shadow-card">
         <div className="max-w-6xl mx-auto">
-          <h1 className="text-2xl font-bold text-primary-800 dark:text-primary-400 mb-8 text-center">
+          <h1 className="text-xl font-bold text-primary-800 dark:text-primary-400 mb-8 text-center">
             Loading Component Demo
           </h1>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Controls Panel */}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
-              <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-6">
+              <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-6">
                 Customization Options
               </h2>
               
               {/* Variant Selection */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-3">
                   Animation Variant
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -42,7 +42,7 @@ export default function LoadingDemoPage() {
                           : 'border-gray-200 dark:border-slate-600 hover:border-primary-300 dark:hover:border-primary-600'
                       }`}
                     >
-                      <div className="text-sm font-medium capitalize">{variant}</div>
+                      <div className="text-xs font-medium capitalize">{variant}</div>
                     </button>
                   ))}
                 </div>
@@ -50,7 +50,7 @@ export default function LoadingDemoPage() {
 
               {/* Size Selection */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-3">
                   Size
                 </label>
                 <div className="flex space-x-3">
@@ -72,7 +72,7 @@ export default function LoadingDemoPage() {
 
               {/* Color Selection */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-3">
                   Color
                 </label>
                 <div className="flex space-x-3">
@@ -97,7 +97,7 @@ export default function LoadingDemoPage() {
 
               {/* Custom Text */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Custom Text
                 </label>
                 <input
@@ -112,7 +112,7 @@ export default function LoadingDemoPage() {
 
             {/* Preview Panel */}
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
-              <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-6">
+              <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-6">
                 Preview
               </h2>
               
@@ -128,10 +128,10 @@ export default function LoadingDemoPage() {
 
               {/* Code Preview */}
               <div className="mt-6">
-                <h3 className="text-lg font-medium text-slate-800 dark:text-slate-200 mb-3">
+                <h3 className="text-base font-medium text-slate-800 dark:text-slate-200 mb-3">
                   Code Example
                 </h3>
-                <pre className="bg-slate-100 dark:bg-slate-900 p-4 rounded-lg text-sm overflow-x-auto">
+                <pre className="bg-slate-100 dark:bg-slate-900 p-4 rounded-lg text-xs overflow-x-auto">
                   <code className="text-slate-800 dark:text-slate-200">
 {`<Loading
   variant="${selectedVariant}"
@@ -148,13 +148,13 @@ export default function LoadingDemoPage() {
 
           {/* Individual Component Examples */}
           <div className="mt-12">
-            <h2 className="text-xl font-bold text-primary-800 dark:text-primary-400 mb-8 text-center">
+            <h2 className="text-lg font-bold text-primary-800 dark:text-primary-400 mb-8 text-center">
               Individual Component Examples
             </h2>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Spinner</h3>
+                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Spinner</h3>
                 <div className="flex justify-center">
                   <Spinner size="lg" color="primary" />
                 </div>
@@ -164,7 +164,7 @@ export default function LoadingDemoPage() {
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Dots</h3>
+                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Dots</h3>
                 <div className="flex justify-center">
                   <Dots size="lg" color="success" />
                 </div>
@@ -174,7 +174,7 @@ export default function LoadingDemoPage() {
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Pulse</h3>
+                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Pulse</h3>
                 <div className="flex justify-center">
                   <Pulse size="lg" color="warning" />
                 </div>
@@ -184,7 +184,7 @@ export default function LoadingDemoPage() {
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Wave</h3>
+                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Wave</h3>
                 <div className="flex justify-center">
                   <Wave size="lg" color="error" />
                 </div>
@@ -194,7 +194,7 @@ export default function LoadingDemoPage() {
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Bounce</h3>
+                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Bounce</h3>
                 <div className="flex justify-center">
                   <Bounce size="lg" color="secondary" />
                 </div>
@@ -204,7 +204,7 @@ export default function LoadingDemoPage() {
               </div>
 
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-slate-700">
-                <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Ring</h3>
+                <h3 className="text-base font-semibold text-slate-800 dark:text-slate-200 mb-4">Ring</h3>
                 <div className="flex justify-center">
                   <Ring size="lg" color="primary" />
                 </div>

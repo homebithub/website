@@ -66,25 +66,25 @@ const YearsOfExperience = () => {
     return (
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6">
             {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm">
+                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-xs">
                     {error}
                 </div>
             )}
             
             {success && (
-                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-sm">
+                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-xs">
                     {success}
                 </div>
             )}
             
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div>
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Years of Experience</h2>
+                    <h2 className="text-base font-medium text-gray-900 mb-4">Years of Experience</h2>
                     <div className="grid grid-cols-2 gap-4">
                         {experienceOptions.map((option) => (
                             <label 
                                 key={option.value}
-                                className={`flex items-center justify-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
+                                className={`flex items-center justify-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${
                                     years === option.value 
                                         ? 'border-primary-500 bg-primary-50 text-primary-900' 
                                         : 'border-gray-200 bg-white hover:bg-gray-50'
@@ -105,7 +105,7 @@ const YearsOfExperience = () => {
 
                     {years === 6 && (
                         <div className="mt-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className="block text-xs font-medium text-gray-700 mb-2">
                                 How many years of experience do you have?
                             </label>
                             <input
@@ -124,7 +124,7 @@ const YearsOfExperience = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full flex justify-center py-1.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${
+                        className={`w-full flex justify-center py-1.5 px-4 border border-transparent rounded-xl shadow-sm text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${
                             loading ? 'opacity-70 cursor-not-allowed' : ''
                         }`}
                     >

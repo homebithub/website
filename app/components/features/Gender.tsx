@@ -64,22 +64,22 @@ const Gender = () => {
     return (
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6">
             {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm">
+                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-xs">
                     {error}
                 </div>
             )}
             
             {success && (
-                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-sm">
+                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-xs">
                     {success}
                 </div>
             )}
             
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div>
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Gender</h2>
+                    <h2 className="text-base font-medium text-gray-900 mb-4">Gender</h2>
                     <div className="grid grid-cols-2 gap-4">
-                        <label className={`flex items-center justify-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
+                        <label className={`flex items-center justify-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${
                             gender === 'female' ? 'border-primary-500 bg-primary-50 text-primary-900' : 'border-gray-200 bg-white hover:bg-gray-50'
                         }`}>
                             <input
@@ -93,7 +93,7 @@ const Gender = () => {
                             />
                             <span>Female</span>
                         </label>
-                        <label className={`flex items-center justify-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
+                        <label className={`flex items-center justify-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${
                             gender === 'male' ? 'border-primary-500 bg-primary-50 text-primary-900' : 'border-gray-200 bg-white hover:bg-gray-50'
                         }`}>
                             <input
@@ -111,7 +111,7 @@ const Gender = () => {
                 </div>
                 
                 <div>
-                    <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700 mb-2">
+                    <label htmlFor="dateOfBirth" className="block text-xs font-medium text-gray-700 mb-2">
                         Date of Birth <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -127,7 +127,7 @@ const Gender = () => {
                         } [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100`}
                         required
                     />
-                    <p className="mt-2 text-sm text-gray-500">
+                    <p className="mt-2 text-xs text-gray-500">
                         You must be at least 18 years old to register.
                     </p>
                 </div>
@@ -136,7 +136,7 @@ const Gender = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full flex justify-center py-1.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors ${
+                        className={`w-full flex justify-center py-1.5 px-4 border border-transparent rounded-xl shadow-sm text-xs font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors ${
                             loading ? 'opacity-70 cursor-not-allowed' : ''
                         }`}
                         

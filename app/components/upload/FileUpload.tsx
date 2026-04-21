@@ -245,10 +245,10 @@ export default function FileUpload({
           )}
           
           <div>
-            <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+            <p className="text-base font-semibold text-gray-700 dark:text-gray-200">
               Click to upload or drag and drop
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               {isPublic ? 'Images only' : 'Images or PDF documents'}
               {' '}(Max {maxSizeMB}MB per file, up to {maxFiles} files)
             </p>
@@ -287,7 +287,7 @@ export default function FileUpload({
                     )}
                     
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                      <p className="text-xs font-medium text-gray-700 dark:text-gray-200 truncate">
                         {file.name}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">

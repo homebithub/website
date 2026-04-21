@@ -109,25 +109,25 @@ const WorkWithPets = () => {
 
     return (
         <div className="max-w-2xl mx-auto bg-white rounded-lg shadow-sm p-6">
-            <h1 className="text-2xl font-bold text-gray-900 mb-6">Pet Work Preferences</h1>
+            <h1 className="text-xl font-bold text-gray-900 mb-6">Pet Work Preferences</h1>
             
             {error && (
-                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-sm">
+                <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl text-xs">
                     {error}
                 </div>
             )}
             
             {success && (
-                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-sm">
+                <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-xl text-xs">
                     {success}
                 </div>
             )}
             
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div>
-                    <h2 className="text-lg font-medium text-gray-900 mb-4">Pet Work Preference</h2>
+                    <h2 className="text-base font-medium text-gray-900 mb-4">Pet Work Preference</h2>
                     <div className="space-y-4">
-                        <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
+                        <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${
                             petPreference === 'with_pets' 
                                 ? 'border-primary-500 bg-primary-50 text-primary-900' 
                                 : 'border-gray-200 bg-white hover:bg-gray-50'
@@ -142,7 +142,7 @@ const WorkWithPets = () => {
                             <span>I can work with pets</span>
                         </label>
                         
-                        <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
+                        <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${
                             petPreference === 'no_pets' 
                                 ? 'border-primary-500 bg-primary-50 text-primary-900' 
                                 : 'border-gray-200 bg-white hover:bg-gray-50'
@@ -168,7 +168,7 @@ const WorkWithPets = () => {
                             {petTypes.map((pet) => (
                                 <div key={pet.value}>
                                     <label 
-                                        className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
+                                        className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${
                                             selectedPets.includes(pet.value)
                                                 ? 'border-primary-500 bg-primary-50 text-primary-900'
                                                 : 'border-gray-200 bg-white hover:bg-gray-50'
@@ -190,14 +190,14 @@ const WorkWithPets = () => {
                                                 value={otherPets}
                                                 onChange={(e) => setOtherPets(e.target.value)}
                                                 placeholder="Please specify the types of pets"
-                                                className={`w-full p-4 rounded-xl border text-lg font-medium ${
+                                                className={`w-full p-4 rounded-xl border text-base font-medium ${
                                                     otherPetsError 
                                                         ? 'border-red-500 bg-red-50 text-red-900' 
                                                         : 'border-gray-200 bg-white hover:bg-gray-50'
                                                 } shadow-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500`}
                                             />
                                             {otherPetsError && (
-                                                <p className="mt-1 text-sm text-red-600">{otherPetsError}</p>
+                                                <p className="mt-1 text-xs text-red-600">{otherPetsError}</p>
                                             )}
                                         </div>
                                     )}
@@ -211,7 +211,7 @@ const WorkWithPets = () => {
                     <button
                         type="submit"
                         disabled={loading}
-                        className={`w-full flex justify-center py-1.5 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${
+                        className={`w-full flex justify-center py-1.5 px-4 border border-transparent rounded-xl shadow-sm text-xs font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors ${
                             loading ? 'opacity-70 cursor-not-allowed' : ''
                         }`}
                     >

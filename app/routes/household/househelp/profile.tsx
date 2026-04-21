@@ -163,13 +163,13 @@ export default function HousehelpProfile() {
           <div className="mt-4 flex items-center justify-center gap-3">
             <button
               onClick={() => setRetryKey((prev) => prev + 1)}
-              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+              className="rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
             >
               Try Again
             </button>
             <button
               onClick={handleBackNavigation}
-              className="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+              className="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
             >
               {backLabel}
             </button>
@@ -186,13 +186,13 @@ export default function HousehelpProfile() {
           <div className="mt-4 flex items-center justify-center gap-3">
             <button
               onClick={() => setRetryKey((prev) => prev + 1)}
-              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+              className="rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
             >
               Try Again
             </button>
             <button
               onClick={handleBackNavigation}
-              className="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+              className="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
             >
               {backLabel}
             </button>
@@ -216,7 +216,7 @@ export default function HousehelpProfile() {
         <button onClick={handleBackNavigation} className="p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition" aria-label={backLabel}>
           <ArrowLeftIcon className="w-6 h-6 text-primary-700 dark:text-primary-300" />
         </button>
-        <span className="text-xl font-bold text-primary dark:text-primary-300">Househelp Profile</span>
+        <span className="text-lg font-bold text-primary dark:text-primary-300">Househelp Profile</span>
         <div className="relative inline-block group">
           {shortlisted ? (
             <>
@@ -287,7 +287,7 @@ export default function HousehelpProfile() {
         />
         {/* Name and KE badge BELOW AVATAR */}
         <div className="flex flex-col items-center mb-2">
-          <div className="text-2xl font-bold text-primary-900 dark:text-primary-100">{User.first_name} {User.last_name}</div>
+          <div className="text-xl font-bold text-primary-900 dark:text-primary-100">{User.first_name} {User.last_name}</div>
           <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs mt-1">{User.country}</span>
         </div>
         {/* User Images Carousel BELOW NAME */}

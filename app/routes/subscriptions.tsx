@@ -696,10 +696,10 @@ export default function SubscriptionsPage() {
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
         <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
-              <h1 className="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-300 mb-1">
+              <h1 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-300 mb-1">
                 Subscriptions & Wallet
               </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 Manage your subscription and payment history
               </p>
             </div>
@@ -715,7 +715,7 @@ export default function SubscriptionsPage() {
                     <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
                       <div className="flex items-start justify-between mb-4">
                         <div>
-                          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
+                          <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
                             {subscription.plan?.name || 'Current Plan'}
                           </h4>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -732,28 +732,28 @@ export default function SubscriptionsPage() {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Amount</p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                          <p className="text-base font-bold text-gray-900 dark:text-gray-100">
                             {formatCurrency(subscription.plan?.price_amount || 0)}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Billing Cycle</p>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 capitalize">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 capitalize">
                             {subscription.plan?.billing_cycle}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period Start</p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
                             {formatDate(subscription.current_period_start)}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period End</p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
                             {formatDate(subscription.current_period_end)}
                           </p>
                         </div>
@@ -765,18 +765,18 @@ export default function SubscriptionsPage() {
                           setPhoneNumber(currentUserPhone);
                           setShowPaymentModal(true);
                         }}
-                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg"
+                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg"
                       >
                         <CreditCardIcon className="w-5 h-5" />
                         Make Payment Now
                       </button>
 
                       {/* Subscription Management Actions */}
-                      <div className="mt-4 flex flex-wrap gap-2">
+                      <div className="mt-4 flex flex-col sm:flex-row sm:flex-wrap gap-2">
                         {subscription.status === 'active' && !pauseStatus?.is_paused && (
                           <button
                             onClick={() => setShowPauseModal(true)}
-                            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-xl hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-all text-sm font-medium"
+                            className="w-full sm:flex-1 sm:min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300 rounded-xl hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-all text-xs font-medium"
                           >
                             <PauseIcon className="w-4 h-4" />
                             Pause
@@ -786,7 +786,7 @@ export default function SubscriptionsPage() {
                         {pauseStatus?.is_paused && (
                           <button
                             onClick={handleResumeSubscription}
-                            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-xl hover:bg-green-200 dark:hover:bg-green-900/50 transition-all text-sm font-medium"
+                            className="w-full sm:flex-1 sm:min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-xl hover:bg-green-200 dark:hover:bg-green-900/50 transition-all text-xs font-medium"
                           >
                             <PlayIcon className="w-4 h-4" />
                             Resume
@@ -796,7 +796,7 @@ export default function SubscriptionsPage() {
                         {subscription.status === 'active' && (
                           <button
                             onClick={() => setShowCancelFlow(true)}
-                            className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-all text-sm font-medium"
+                            className="w-full sm:flex-1 sm:min-w-[140px] flex items-center justify-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-all text-xs font-medium"
                           >
                             <CancelIcon className="w-4 h-4" />
                             Cancel
@@ -830,7 +830,7 @@ export default function SubscriptionsPage() {
                     {/* Change Plan Section */}
                     {plans.length > 0 && (
                       <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                        <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">
                           Change Your Plan
                         </h4>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
@@ -844,14 +844,14 @@ export default function SubscriptionsPage() {
                               className="relative bg-white dark:bg-[#13131a] rounded-xl p-4 border border-purple-200/40 dark:border-purple-500/30 hover:border-purple-400 dark:hover:border-purple-400 transition-colors"
                             >
                               <div className="text-center">
-                                <h5 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                                <h5 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">
                                   {plan.name}
                                 </h5>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                                   {plan.description}
                                 </p>
                                 <div className="mb-3">
-                                  <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                  <span className="text-base font-bold text-gray-900 dark:text-gray-100">
                                     {formatCurrency(plan.price_amount)}
                                   </span>
                                   <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">/ {plan.billing_cycle}</span>
@@ -861,7 +861,7 @@ export default function SubscriptionsPage() {
                                     setSelectedNewPlan(plan);
                                     setShowChangePlanModal(true);
                                   }}
-                                  className="w-full px-4 py-1 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                                  className="w-full px-4 py-1 text-xs font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
                                 >
                                   Switch to This Plan
                                 </button>
@@ -880,7 +880,7 @@ export default function SubscriptionsPage() {
                   </>
                 ) : (
                   <div>
-                    <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                    <h2 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">
                       Choose Your Plan
                     </h2>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
@@ -898,7 +898,7 @@ export default function SubscriptionsPage() {
                               className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5 hover:border-purple-400 dark:hover:border-purple-400 transition-colors flex flex-col"
                             >
                               <div className="flex-1">
-                                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
+                                <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
                                   {plan.name}
                                 </h3>
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
@@ -912,7 +912,7 @@ export default function SubscriptionsPage() {
                                 )}
 
                                 <div className="mb-4">
-                                  <span className="text-lg font-bold text-gray-900 dark:text-gray-100">
+                                  <span className="text-base font-bold text-gray-900 dark:text-gray-100">
                                     {formatCurrency(plan.price_amount)}
                                   </span>
                                   <span className="text-xs text-gray-500 dark:text-gray-400 ml-1">
@@ -932,7 +932,7 @@ export default function SubscriptionsPage() {
 
                               <button
                                 onClick={() => handleSelectCheckoutPlan(plan)}
-                                className="w-full px-4 py-1.5 text-sm font-bold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                                className="w-full px-4 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
                               >
                                 Start Free Trial
                               </button>
@@ -942,7 +942,7 @@ export default function SubscriptionsPage() {
                       </div>
                     ) : (
                       <div className="text-center py-8 bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           No plans available for your profile type at the moment.
                         </p>
                       </div>
@@ -951,7 +951,7 @@ export default function SubscriptionsPage() {
                 )}
 
                 <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
-                  <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+                  <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
                     <BanknotesIcon className="w-5 h-5" />
                     Payment History
                   </h4>
@@ -1031,22 +1031,22 @@ export default function SubscriptionsPage() {
                 <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border dark:border-[#1e1e2e] p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   {paymentStatus === 'idle' && (
                     <>
-                      <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                      <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                         Make Payment
                       </Dialog.Title>
 
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                             Amount
                           </label>
-                          <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                          <div className="text-xl font-bold text-gray-900 dark:text-white">
                             {formatCurrency(paymentAmount)}
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                             M-Pesa Phone Number
                           </label>
                           <input
@@ -1074,7 +1074,7 @@ export default function SubscriptionsPage() {
                           <button
                             onClick={initiatePayment}
                             disabled={!phoneNumber || processingPayment}
-                            className="flex-1 px-4 py-1 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-4 py-1 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Pay Now
                           </button>
@@ -1086,10 +1086,10 @@ export default function SubscriptionsPage() {
                   {paymentStatus === 'initiating' && (
                     <div className="text-center py-8">
                       <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-purple-600 animate-spin" />
-                      <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      <p className="text-base font-medium text-gray-900 dark:text-white mb-2">
                         Initiating Payment...
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         Please wait
                       </p>
                     </div>
@@ -1098,16 +1098,16 @@ export default function SubscriptionsPage() {
                   {paymentStatus === 'processing' && (
                     <div className="text-center py-8">
                       <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
-                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                      <p className="text-base font-bold text-gray-900 dark:text-white mb-2">
                         Check Your Phone
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                         You'll receive a prompt from <strong>Fingo Payment Services</strong>
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                         Enter your M-Pesa PIN to complete payment
                       </p>
-                      <div className="flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                      <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <ArrowPathIcon className="w-4 h-4 animate-spin" />
                         <span>Waiting for confirmation...</span>
                       </div>
@@ -1117,10 +1117,10 @@ export default function SubscriptionsPage() {
                   {paymentStatus === 'success' && (
                     <div className="text-center py-8">
                       <CheckCircleIcon className="w-16 h-16 mx-auto mb-4 text-green-500" />
-                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                      <p className="text-base font-bold text-gray-900 dark:text-white mb-2">
                         Payment Successful!
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         Your payment has been processed
                       </p>
                     </div>
@@ -1129,13 +1129,13 @@ export default function SubscriptionsPage() {
                   {paymentStatus === 'failed' && (
                     <div className="text-center py-8">
                       <XCircleIcon className="w-16 h-16 mx-auto mb-4 text-red-500" />
-                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                      <p className="text-base font-bold text-gray-900 dark:text-white mb-2">
                         Payment Failed
                       </p>
                       {errorMessage && <ErrorAlert message={errorMessage} title="Reason" className="mb-4" />}
                       <button
                         onClick={handleRetry}
-                        className="w-full px-4 py-1.5 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors"
+                        className="w-full px-4 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors"
                       >
                         Try Again
                       </button>
@@ -1145,15 +1145,15 @@ export default function SubscriptionsPage() {
                   {paymentStatus === 'timeout' && (
                     <div className="text-center py-8">
                       <ClockIcon className="w-16 h-16 mx-auto mb-4 text-yellow-500" />
-                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                      <p className="text-base font-bold text-gray-900 dark:text-white mb-2">
                         Payment Pending
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                         Check payment history for status
                       </p>
                       <button
                         onClick={handleRetry}
-                        className="w-full px-4 py-1.5 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors"
+                        className="w-full px-4 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors"
                       >
                         Try Again
                       </button>
@@ -1194,7 +1194,7 @@ export default function SubscriptionsPage() {
               >
                 <Dialog.Panel className="w-full sm:max-w-lg transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border dark:border-[#1e1e2e] p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <div className="flex items-start justify-between mb-4">
-                    <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
+                    <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
                       Transaction Details
                     </Dialog.Title>
                     <button
@@ -1214,8 +1214,8 @@ export default function SubscriptionsPage() {
 
                       {/* Amount */}
                       <div className="text-center py-1 bg-gray-50 dark:bg-[#0d0d14] rounded-xl">
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Amount Paid</p>
-                        <p className="text-xl font-bold text-gray-900 dark:text-white">
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Amount Paid</p>
+                        <p className="text-lg font-bold text-gray-900 dark:text-white">
                           {formatCurrency(selectedPayment.amount)}
                         </p>
                       </div>
@@ -1223,48 +1223,48 @@ export default function SubscriptionsPage() {
                       {/* Transaction Details */}
                       <div className="space-y-3 bg-gray-50 dark:bg-[#0d0d14] rounded-xl p-4">
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Transaction ID</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white font-mono">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Transaction ID</span>
+                          <span className="text-xs font-medium text-gray-900 dark:text-white font-mono">
                             {selectedPayment.id.slice(0, 8)}...
                           </span>
                         </div>
 
                         {selectedPayment.mpesa_receipt_number && (
                           <div className="flex justify-between">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">M-Pesa Receipt</span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">M-Pesa Receipt</span>
+                            <span className="text-xs font-medium text-gray-900 dark:text-white">
                               {selectedPayment.mpesa_receipt_number}
                             </span>
                           </div>
                         )}
 
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Payment Method</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Payment Method</span>
+                          <span className="text-xs font-medium text-gray-900 dark:text-white capitalize">
                             {selectedPayment.payment_method}
                           </span>
                         </div>
 
                         {selectedPayment.phone_number && (
                           <div className="flex justify-between">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Phone Number</span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Phone Number</span>
+                            <span className="text-xs font-medium text-gray-900 dark:text-white">
                               {selectedPayment.phone_number}
                             </span>
                           </div>
                         )}
 
                         <div className="flex justify-between">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Date</span>
-                          <span className="text-sm font-medium text-gray-900 dark:text-white">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">Date</span>
+                          <span className="text-xs font-medium text-gray-900 dark:text-white">
                             {formatDate(selectedPayment.created_at)}
                           </span>
                         </div>
 
                         {selectedPayment.paid_at && (
                           <div className="flex justify-between">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Paid At</span>
-                            <span className="text-sm font-medium text-gray-900 dark:text-white">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Paid At</span>
+                            <span className="text-xs font-medium text-gray-900 dark:text-white">
                               {new Date(selectedPayment.paid_at).toLocaleString('en-KE')}
                             </span>
                           </div>
@@ -1272,8 +1272,8 @@ export default function SubscriptionsPage() {
 
                         {selectedPayment.failure_reason && (
                           <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Failure Reason</p>
-                            <p className="text-sm text-red-600 dark:text-red-400">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Failure Reason</p>
+                            <p className="text-xs text-red-600 dark:text-red-400">
                               {selectedPayment.failure_reason}
                             </p>
                           </div>
@@ -1283,7 +1283,7 @@ export default function SubscriptionsPage() {
                       {/* Receipt Actions - Only for completed transactions */}
                       {selectedPayment.status === 'completed' && (
                         <div className="space-y-4 pt-4 border-t border-gray-200 dark:border-gray-600">
-                          <h4 className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <h4 className="text-xs font-semibold text-gray-900 dark:text-white">
                             Receipt Options
                           </h4>
 
@@ -1291,7 +1291,7 @@ export default function SubscriptionsPage() {
                           <button
                             onClick={handleDownloadReceipt}
                             disabled={downloadingReceipt}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {downloadingReceipt ? (
                               <>
@@ -1310,7 +1310,7 @@ export default function SubscriptionsPage() {
 
                           {/* Email Receipt */}
                           <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
                               Email Receipt To
                             </label>
                             <input
@@ -1323,7 +1323,7 @@ export default function SubscriptionsPage() {
                             <button
                               onClick={handleEmailReceipt}
                               disabled={sendingReceipt || !receiptEmail}
-                              className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-semibold text-purple-600 dark:text-purple-400 bg-white dark:bg-[#1a1a24] border border-purple-200/40 dark:border-purple-500/30 rounded-xl hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-white dark:bg-[#1a1a24] border border-purple-200/40 dark:border-purple-500/30 rounded-xl hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {sendingReceipt ? (
                                 <>
@@ -1356,7 +1356,7 @@ export default function SubscriptionsPage() {
                         <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
                           <div className="flex items-start gap-2">
                             <ExclamationTriangleIcon className="w-5 h-5 text-yellow-600 dark:text-yellow-400 flex-shrink-0 mt-0.5" />
-                            <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                            <p className="text-xs text-yellow-800 dark:text-yellow-300">
                               Receipt download and email options are only available for completed transactions.
                             </p>
                           </div>
@@ -1443,17 +1443,17 @@ export default function SubscriptionsPage() {
                 <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   {checkoutStatus === 'idle' && selectedCheckoutPlan && (
                     <>
-                      <Dialog.Title as="h3" className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
+                      <Dialog.Title as="h3" className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-4">
                         Subscribe to {selectedCheckoutPlan.name}
                       </Dialog.Title>
 
                       <div className="space-y-4">
                         <div className="bg-gray-50 dark:bg-[#0d0d14] rounded-xl p-4">
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Plan</p>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                          <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                             {selectedCheckoutPlan.name} — {selectedCheckoutPlan.description}
                           </p>
-                          <p className="text-lg font-bold text-purple-600 dark:text-purple-400 mt-1">
+                          <p className="text-base font-bold text-purple-600 dark:text-purple-400 mt-1">
                             {formatCurrency(selectedCheckoutPlan.price_amount)}
                             <span className="text-xs font-normal text-gray-500 dark:text-gray-400 ml-1">
                               / {getBillingCycleLabel(selectedCheckoutPlan.billing_cycle)}
@@ -1465,7 +1465,7 @@ export default function SubscriptionsPage() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                             M-Pesa Phone Number
                           </label>
                           <input
@@ -1485,14 +1485,14 @@ export default function SubscriptionsPage() {
                         <div className="flex gap-3 mt-6">
                           <button
                             onClick={handleCloseCheckoutModal}
-                            className="flex-1 px-4 py-1.5 text-sm font-semibold rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#1a1a24] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors"
+                            className="flex-1 px-4 py-1.5 text-xs font-semibold rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#1a1a24] text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={initiateCheckout}
                             disabled={!checkoutPhone || checkoutProcessing}
-                            className="flex-1 px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-1 px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             Start Free Trial
                           </button>
@@ -1504,14 +1504,14 @@ export default function SubscriptionsPage() {
                   {checkoutStatus === 'initiating' && (
                     <div className="text-center py-8">
                       <ArrowPathIcon className="w-12 h-12 mx-auto mb-4 text-purple-500 animate-spin" />
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Initiating payment...</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100">Initiating payment...</p>
                     </div>
                   )}
 
                   {checkoutStatus === 'processing' && (
                     <div className="text-center py-8">
                       <ArrowPathIcon className="w-12 h-12 mx-auto mb-4 text-blue-500 animate-spin" />
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Check your phone</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">Check your phone</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                         You'll receive a prompt from <strong>Fingo Payment Services</strong>
                       </p>
@@ -1524,7 +1524,7 @@ export default function SubscriptionsPage() {
                   {checkoutStatus === 'success' && (
                     <div className="text-center py-8">
                       <CheckCircleIcon className="w-12 h-12 mx-auto mb-4 text-green-500" />
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Payment Successful!</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">Payment Successful!</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400">Your subscription is now active.</p>
                     </div>
                   )}
@@ -1532,11 +1532,11 @@ export default function SubscriptionsPage() {
                   {checkoutStatus === 'failed' && (
                     <div className="text-center py-8">
                       <XCircleIcon className="w-12 h-12 mx-auto mb-4 text-red-500" />
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-2">Payment Failed</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-2">Payment Failed</p>
                       {checkoutError && <ErrorAlert message={checkoutError} className="mb-4" />}
                       <button
                         onClick={handleCheckoutRetry}
-                        className="w-full px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                        className="w-full px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
                       >
                         Try Again
                       </button>
@@ -1546,11 +1546,11 @@ export default function SubscriptionsPage() {
                   {checkoutStatus === 'timeout' && (
                     <div className="text-center py-8">
                       <ClockIcon className="w-12 h-12 mx-auto mb-4 text-yellow-500" />
-                      <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-1">Payment Pending</p>
+                      <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">Payment Pending</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Check payment history for status.</p>
                       <button
                         onClick={handleCheckoutRetry}
-                        className="w-full px-4 py-1.5 text-sm font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                        className="w-full px-4 py-1.5 text-xs font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
                       >
                         Try Again
                       </button>

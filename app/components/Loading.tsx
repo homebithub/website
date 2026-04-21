@@ -32,7 +32,7 @@ export function Loading({
       <div className="relative z-10 flex flex-col items-center">
         {/* Logo */}
         <div className="mb-10">
-          <span className="text-2xl font-bold tracking-tight text-white/90">
+          <span className="text-xl font-bold tracking-tight text-white/90">
             Home<span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Bit</span>
           </span>
         </div>
@@ -65,7 +65,7 @@ export function Loading({
         </div>
 
         {/* Status text */}
-        <p className="text-sm font-medium text-white/50 tracking-wide">
+        <p className="text-xs font-medium text-white/50 tracking-wide">
           {text}
         </p>
 

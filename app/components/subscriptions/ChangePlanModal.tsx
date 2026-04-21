@@ -91,7 +91,7 @@ export function ChangePlanModal({
             >
               <Dialog.Panel className="w-full sm:max-w-2xl transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                 <div className="flex items-start justify-between mb-6">
-                  <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
+                  <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
                     Change Subscription Plan
                   </Dialog.Title>
                   <button
@@ -114,10 +114,10 @@ export function ChangePlanModal({
                       {/* Current Plan */}
                       <div className="flex-1 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Current Plan</p>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">
                           {currentSubscription.plan?.name}
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                        <p className="text-xs text-gray-600 dark:text-gray-300">
                           {formatCurrency(currentSubscription.plan?.price_amount || 0)}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -131,10 +131,10 @@ export function ChangePlanModal({
                       {/* New Plan */}
                       <div className="flex-1 p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-700">
                         <p className="text-xs text-purple-600 dark:text-purple-400 mb-1">New Plan</p>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">
                           {newPlan.name}
                         </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                        <p className="text-xs text-gray-600 dark:text-gray-300">
                           {formatCurrency(newPlan.price_amount)}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -152,7 +152,7 @@ export function ChangePlanModal({
                           </h4>
 
                           <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between text-xs">
                               <span className="text-gray-600 dark:text-gray-400">
                                 Unused credit from current plan
                               </span>
@@ -161,7 +161,7 @@ export function ChangePlanModal({
                               </span>
                             </div>
 
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between text-xs">
                               <span className="text-gray-600 dark:text-gray-400">
                                 Prorated charge for new plan
                               </span>
@@ -175,7 +175,7 @@ export function ChangePlanModal({
                                 <span className="font-semibold text-gray-900 dark:text-white">
                                   Net Amount
                                 </span>
-                                <span className={`text-lg font-bold ${
+                                <span className={`text-base font-bold ${
                                   isUpgrade
                                     ? 'text-purple-600 dark:text-purple-400'
                                     : 'text-green-600 dark:text-green-400'
@@ -206,7 +206,7 @@ export function ChangePlanModal({
                           </h4>
 
                           {isUpgrade && (
-                            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                            <p className="text-xs text-gray-700 dark:text-gray-300 mb-2">
                               You'll be charged{' '}
                               <strong className="text-purple-600 dark:text-purple-400">
                                 {formatCurrency(proration.net_amount)}
@@ -216,7 +216,7 @@ export function ChangePlanModal({
                           )}
 
                           {isDowngrade && (
-                            <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                            <p className="text-xs text-gray-700 dark:text-gray-300 mb-2">
                               <strong className="text-green-600 dark:text-green-400">
                                 {formatCurrency(Math.abs(proration.net_amount))}
                               </strong>{' '}

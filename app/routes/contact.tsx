@@ -76,10 +76,10 @@ export default function Contact() {
       <main className="flex-1 container mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
         <div className="max-w-lg mx-auto bg-white dark:bg-[#13131a] p-8 rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg transition-all duration-500 hover:scale-105 hover:shadow-light-glow-lg dark:hover:shadow-glow-lg  border-2 border-purple-200/40 dark:border-purple-500/30">
           <div className="mb-8 text-center">
-            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
               Contact Us 💬
             </h1>
-            <p className="text-lg text-gray-600 dark:text-gray-400">
+            <p className="text-base text-gray-600 dark:text-gray-400">
               Have questions? We'd love to hear from you. 😊
             </p>
           </div>
@@ -89,8 +89,8 @@ export default function Contact() {
           {success ? (
             <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-500/30 p-6 shadow-md">
               <div className="flex items-center justify-center">
-                <span className="text-xl mr-3">🎉</span>
-                <p className="text-lg font-bold text-green-800 dark:text-green-100">
+                <span className="text-lg mr-3">🎉</span>
+                <p className="text-base font-bold text-green-800 dark:text-green-100">
                   Thank you for your message! We'll get back to you soon. ✔️
                 </p>
               </div>
@@ -100,7 +100,7 @@ export default function Contact() {
               <div>
                 <label
                   htmlFor="name"
-                  className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2"
+                  className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2"
                 >
                   Name
                 </label>
@@ -118,7 +118,7 @@ export default function Contact() {
               <div>
                 <label
                   htmlFor="email"
-                  className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2"
+                  className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2"
                 >
                   Email
                 </label>
@@ -136,7 +136,7 @@ export default function Contact() {
               <div>
                 <label
                   htmlFor="subject"
-                  className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2"
+                  className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2"
                 >
                   Subject
                 </label>
@@ -160,7 +160,7 @@ export default function Contact() {
               <div>
                 <label
                   htmlFor="message"
-                  className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2"
+                  className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2"
                 >
                   Message
                 </label>
@@ -178,7 +178,7 @@ export default function Contact() {
               <button
                 type="submit"
                 disabled={!isFormValid}
-                className={`w-full px-8 py-1.5 rounded-xl font-bold text-lg shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 ${
+                className={`w-full px-8 py-1.5 rounded-xl font-bold text-base shadow-lg transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 ${
                   isFormValid
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:scale-105'
                     : 'bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 cursor-not-allowed'
@@ -188,7 +188,7 @@ export default function Contact() {
               </button>
 
               <div className="mt-6 text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Alternatively, you can reach us directly at{' '}
                   <a 
                     href="mailto:info@homebit.co.ke"

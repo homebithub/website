@@ -216,7 +216,7 @@ export default function DevicesPage() {
           {/* Back link */}
           <button
             onClick={() => navigate('/settings')}
-            className="inline-flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium mb-6 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium mb-6 transition-colors"
           >
             <ArrowLeftIcon className="h-4 w-4" />
             Back to Settings
@@ -224,10 +224,10 @@ export default function DevicesPage() {
 
           {/* Header */}
           <div className="mb-8">
-            <h1 className="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-300 mb-1">
+            <h1 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-300 mb-1">
               Your Devices
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               Manage devices that have access to your account
             </p>
           </div>
@@ -246,13 +246,13 @@ export default function DevicesPage() {
           )}
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
               <div className="flex items-center">
                 <ComputerDesktopIcon className="h-6 w-6 text-purple-600 dark:text-purple-400 flex-shrink-0" />
                 <div className="ml-3">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Total Devices</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{totalCount}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{totalCount}</p>
                 </div>
               </div>
             </div>
@@ -262,7 +262,7 @@ export default function DevicesPage() {
                 <CheckCircleIcon className="h-6 w-6 text-green-600 dark:text-green-400 flex-shrink-0" />
                 <div className="ml-3">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Active</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{activeCount}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{activeCount}</p>
                 </div>
               </div>
             </div>
@@ -272,7 +272,7 @@ export default function DevicesPage() {
                 <ClockIcon className="h-6 w-6 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
                 <div className="ml-3">
                   <p className="text-xs font-medium text-gray-500 dark:text-gray-500">Pending</p>
-                  <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{pendingCount}</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{pendingCount}</p>
                 </div>
               </div>
             </div>
@@ -283,7 +283,7 @@ export default function DevicesPage() {
             <div className="mb-6">
               <button
                 onClick={() => setShowRevokeAllModal(true)}
-                className="inline-flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl text-red-100 bg-red-600 hover:bg-red-700 transition-colors"
+                className="inline-flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl text-red-100 bg-red-600 hover:bg-red-700 transition-colors"
               >
                 <TrashIcon className="h-5 w-5 mr-2" />
                 Remove All Other Devices
@@ -296,8 +296,8 @@ export default function DevicesPage() {
             {devices.length === 0 ? (
               <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-8 text-center">
                 <ComputerDesktopIcon className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-gray-100">No devices</h3>
-                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                <h3 className="mt-2 text-xs font-medium text-gray-900 dark:text-gray-100">No devices</h3>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                   You don't have any devices registered yet.
                 </p>
               </div>
@@ -311,7 +311,7 @@ export default function DevicesPage() {
                       : 'border-purple-200/40 dark:border-purple-500/30'
                   }`}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="flex items-start space-x-4 flex-1">
                       {/* Device Icon */}
                       <div className="flex-shrink-0 text-purple-600 dark:text-purple-400">
@@ -321,7 +321,7 @@ export default function DevicesPage() {
                       {/* Device Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center flex-wrap gap-2 mb-1">
-                          <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 truncate">
+                          <h3 className="text-xs font-semibold text-gray-900 dark:text-gray-100 truncate">
                             {device.device_name || 'Unknown Device'}
                           </h3>
                           {device.is_current_device && (
@@ -404,13 +404,13 @@ export default function DevicesPage() {
                 <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 p-6 text-left align-middle shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <Dialog.Title
                     as="h3"
-                    className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center"
+                    className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center"
                   >
                     <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2" />
                     Remove Device
                   </Dialog.Title>
                   <div className="mt-2">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
                       Are you sure you want to remove "{revokingDevice?.device_name || 'this device'}"? 
                       This device will be removed from your account.
                     </p>
@@ -419,7 +419,7 @@ export default function DevicesPage() {
                   <div className="mt-4 flex space-x-3">
                     <button
                       type="button"
-                      className="flex-1 inline-flex justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex-1 inline-flex justify-center rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       onClick={() => revokingDevice && handleRevokeDevice(revokingDevice)}
                       disabled={processingAction}
                     >
@@ -427,7 +427,7 @@ export default function DevicesPage() {
                     </button>
                     <button
                       type="button"
-                      className="flex-1 inline-flex justify-center rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#1a1a24] px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors"
+                      className="flex-1 inline-flex justify-center rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#1a1a24] px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors"
                       onClick={() => setRevokingDevice(null)}
                       disabled={processingAction}
                     >
@@ -470,13 +470,13 @@ export default function DevicesPage() {
                 <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 p-6 text-left align-middle shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <Dialog.Title
                     as="h3"
-                    className="text-base font-semibold text-gray-900 dark:text-gray-100 flex items-center"
+                    className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center"
                   >
                     <TrashIcon className="h-5 w-5 text-red-500 mr-2" />
                     Remove All Other Devices
                   </Dialog.Title>
                   <div className="mt-2">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
                       This will remove all devices except your current one. You'll need to log in again on those devices.
                     </p>
                   </div>
@@ -484,7 +484,7 @@ export default function DevicesPage() {
                   <div className="mt-4 flex space-x-3">
                     <button
                       type="button"
-                      className="flex-1 inline-flex justify-center rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                      className="flex-1 inline-flex justify-center rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       onClick={handleRevokeAllDevices}
                       disabled={processingAction}
                     >
@@ -492,7 +492,7 @@ export default function DevicesPage() {
                     </button>
                     <button
                       type="button"
-                      className="flex-1 inline-flex justify-center rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#1a1a24] px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors"
+                      className="flex-1 inline-flex justify-center rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#1a1a24] px-4 py-2 text-xs font-semibold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors"
                       onClick={() => setShowRevokeAllModal(false)}
                       disabled={processingAction}
                     >

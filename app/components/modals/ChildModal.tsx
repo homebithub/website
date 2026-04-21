@@ -153,17 +153,17 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
         </button>
 
         <div className="flex items-center gap-2 mb-6">
-          <span className="text-xl">👶🏿</span>
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+          <span className="text-lg">👶🏿</span>
+          <h3 className="text-base font-bold text-gray-900 dark:text-white">
             {initialData ? 'Edit Child' : 'Add Child'}
           </h3>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           <div className="space-y-4">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">Gender <span className="text-red-500">*</span></h2>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">Gender <span className="text-red-500">*</span></h2>
             <div className="grid grid-cols-2 gap-4">
-              <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+              <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                 gender === 'female' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
               }`}>
               <input
@@ -179,7 +179,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
               </svg>
               <span>Female</span>
             </label>
-            <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+            <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
               gender === 'male' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'
             }`}>
               <input
@@ -199,7 +199,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
         </div>
 
         <div className="space-y-2">
-          <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400">Date of Birth <span className="text-red-500">*</span></label>
+          <label className="block text-xs font-semibold text-purple-700 dark:text-purple-400">Date of Birth <span className="text-red-500">*</span></label>
           <input
             type="date"
             value={dateOfBirth}
@@ -215,14 +215,14 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
                 setError('Child must be under 18 years old');
               }
             }}
-            className="block w-full h-10 px-4 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-all text-sm [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
+            className="block w-full h-10 px-4 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-all text-xs [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100"
             max={new Date().toISOString().split('T')[0]}
             required
           />
         </div>
 
         <div>
-          <label className="block mb-2 text-sm font-semibold text-purple-700 dark:text-purple-400">
+          <label className="block mb-2 text-xs font-semibold text-purple-700 dark:text-purple-400">
             Traits <span className="text-red-500">*</span> <span className="text-xs text-gray-500 dark:text-gray-400">(Select up to 3)</span>
           </label>
           <div className="flex flex-wrap gap-2">
@@ -232,7 +232,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
                 type="button"
                 onClick={() => handleTraitChange(trait)}
                 disabled={(traits.length === 3 && !traits.includes(trait)) || (traits.includes('None') && trait !== 'None') || (trait === 'None' && traits.length > 0 && !traits.includes('None'))}
-                className={`px-4 py-1 rounded-xl border-2 text-sm font-medium transition-all ${traits.includes(trait) ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100' : 'bg-white dark:bg-[#13131a] border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'} ${((traits.length === 3 && !traits.includes(trait)) || (traits.includes('None') && trait !== 'None') || (trait === 'None' && traits.length > 0 && !traits.includes('None'))) ? 'opacity-40 cursor-not-allowed' : ''}`}
+                className={`px-4 py-1 rounded-xl border-2 text-xs font-medium transition-all ${traits.includes(trait) ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100' : 'bg-white dark:bg-[#13131a] border-purple-200 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-900/20'} ${((traits.length === 3 && !traits.includes(trait)) || (traits.includes('None') && trait !== 'None') || (trait === 'None' && traits.length > 0 && !traits.includes('None'))) ? 'opacity-40 cursor-not-allowed' : ''}`}
               >
                 {trait}
               </button>
@@ -242,7 +242,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
           {/* Custom input field for "Other" trait */}
           {traits.includes('Other') && (
             <div className="mt-4">
-              <label className="block mb-2 text-sm font-medium text-purple-700 dark:text-purple-400">
+              <label className="block mb-2 text-xs font-medium text-purple-700 dark:text-purple-400">
                 Please specify the trait:
               </label>
               <input
@@ -250,14 +250,14 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
                 value={otherTrait}
                 onChange={(e) => setOtherTrait(e.target.value)}
                 placeholder="Enter custom trait..."
-                className="w-full h-10 px-4 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-all text-sm"
+                className="w-full h-10 px-4 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-purple-500 focus:ring-2 focus:ring-purple-500 focus:outline-none transition-all text-xs"
                 maxLength={50}
               />
             </div>
           )}
         </div>
 
-        {error && <div className="text-red-500 dark:text-red-400 text-sm text-center font-medium">{error}</div>}
+        {error && <div className="text-red-500 dark:text-red-400 text-xs text-center font-medium">{error}</div>}
 
         <div className="flex gap-3">
           <button
@@ -270,7 +270,7 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
           </button>
           <button 
             type="submit" 
-            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-1.5 rounded-xl font-bold text-sm hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all flex justify-center items-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-6 py-1.5 rounded-xl font-bold text-xs hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all flex justify-center items-center shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             disabled={loading || !gender || !dateOfBirth || traits.length === 0 || (traits.includes('Other') && !otherTrait.trim())}
           >
             {loading ? (

@@ -136,7 +136,7 @@ function SelectInput({
       <select
         value={value}
         onChange={onChange}
-        className="w-full appearance-none rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 pr-10 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-sm transition-colors cursor-pointer"
+        className="w-full appearance-none rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 pr-10 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 text-xs transition-colors cursor-pointer"
       >
         {children}
       </select>
@@ -160,7 +160,7 @@ function ToggleChip({
     <button
       type="button"
       onClick={onClick}
-      className={`px-4 py-2 rounded-xl text-sm font-medium border-2 transition-all duration-200 ${
+      className={`px-4 py-2 rounded-xl text-xs font-medium border-2 transition-all duration-200 ${
         selected
           ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent shadow-md"
           : "border-purple-200 dark:border-purple-700 text-gray-700 dark:text-gray-300 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-purple-50 dark:hover:bg-purple-900/20"
@@ -205,7 +205,7 @@ function RadioCard({
         <div>
           <p className="font-semibold text-gray-900 dark:text-white">{label}</p>
           {description && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
               {description}
             </p>
           )}
@@ -330,13 +330,13 @@ export default function WaitlistPage() {
         {step === "hero" && (
           <div className="space-y-8">
             <div className="text-center space-y-4">
-              <span className="inline-flex items-center gap-2 rounded-full border border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20 px-4 py-1.5 text-sm font-medium text-purple-700 dark:text-purple-300">
+              <span className="inline-flex items-center gap-2 rounded-full border border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/20 px-4 py-1.5 text-xs font-medium text-purple-700 dark:text-purple-300">
                 ✨ Homebit — Early Access
               </span>
-              <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white leading-tight">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white leading-tight">
                 Find trusted home help in Kenya without the usual guesswork.
               </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-300">
+              <p className="text-base text-gray-600 dark:text-gray-300">
                 Join the waitlist for early access to vetted nannies, househelps, cleaners, and caregivers.
               </p>
             </div>
@@ -345,7 +345,7 @@ export default function WaitlistPage() {
               {["Vetted profiles", "Safer hiring", "Faster matching"].map((t) => (
                 <span
                   key={t}
-                  className="rounded-full bg-purple-100 dark:bg-purple-900/30 px-4 py-1.5 text-sm text-purple-700 dark:text-purple-300 font-medium"
+                  className="rounded-full bg-purple-100 dark:bg-purple-900/30 px-4 py-1.5 text-xs text-purple-700 dark:text-purple-300 font-medium"
                 >
                   {t}
                 </span>
@@ -356,14 +356,14 @@ export default function WaitlistPage() {
               <button
                 type="button"
                 onClick={() => { setUserType("family"); goNext(); }}
-                className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
+                className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold text-base shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-xl hover:scale-[1.02] transition-all duration-200"
               >
                 Join the Waitlist
               </button>
               <button
                 type="button"
                 onClick={() => { setUserType("worker"); goNext(); }}
-                className="flex-1 py-4 rounded-2xl border-2 border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 font-semibold text-lg hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-500 transition-all duration-200"
+                className="flex-1 py-4 rounded-2xl border-2 border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300 font-semibold text-base hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-500 transition-all duration-200"
               >
                 I'm looking for work
               </button>
@@ -373,7 +373,7 @@ export default function WaitlistPage() {
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-4">
                 Why early members join
               </p>
-              <div className="space-y-3 text-sm text-gray-700 dark:text-gray-300">
+              <div className="space-y-3 text-xs text-gray-700 dark:text-gray-300">
                 <p>
                   <span className="font-semibold text-purple-700 dark:text-purple-300">Trust angle:</span>{" "}
                   Safer way to find home help.
@@ -400,9 +400,9 @@ export default function WaitlistPage() {
           <div className="space-y-6">
             <ProgressBar current={currentStepIndex} total={totalSteps} />
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Step {currentStepIndex} of {totalSteps}</p>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Who are you?</h2>
-              <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Step {currentStepIndex} of {totalSteps}</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Who are you?</h2>
+              <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs">
                 This helps us send you the most relevant updates.
               </p>
             </div>
@@ -426,7 +426,7 @@ export default function WaitlistPage() {
                 onClick={() => setUserType("partner")}
               />
             </div>
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
               <button type="button" onClick={goBack} className="flex items-center gap-1 px-5 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all">
                 <ChevronLeftIcon className="w-4 h-4" /> Back
               </button>
@@ -447,12 +447,12 @@ export default function WaitlistPage() {
           <div className="space-y-6">
             <ProgressBar current={currentStepIndex} total={totalSteps} />
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Step {currentStepIndex} of {totalSteps}</p>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">What kind of help do you need?</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Step {currentStepIndex} of {totalSteps}</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">What kind of help do you need?</h2>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Type of help (select all that apply)</p>
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Type of help (select all that apply)</p>
               <div className="flex flex-wrap gap-2">
                 {HELP_TYPES.map((h) => (
                   <ToggleChip
@@ -465,9 +465,9 @@ export default function WaitlistPage() {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">County *</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">County *</label>
                 <SelectInput
                   value={form.location_county}
                   onChange={(e) => setForm((f) => ({ ...f, location_county: e.target.value }))}
@@ -477,20 +477,20 @@ export default function WaitlistPage() {
                 </SelectInput>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Area / Estate</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Area / Estate</label>
                 <input
                   type="text"
                   value={form.location_area}
                   onChange={(e) => setForm((f) => ({ ...f, location_area: e.target.value }))}
                   placeholder="e.g. Westlands"
-                  className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm"
+                  className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">When do you need help?</p>
-              <div className="grid grid-cols-2 gap-2">
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">When do you need help?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {["Immediately", "This week", "This month", "Just researching"].map((u) => (
                   <RadioCard
                     key={u}
@@ -503,8 +503,8 @@ export default function WaitlistPage() {
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Employment type</p>
-              <div className="grid grid-cols-2 gap-2">
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Employment type</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {["Live-in", "Live-out", "Part-time", "Full-time"].map((e) => (
                   <RadioCard
                     key={e}
@@ -517,7 +517,7 @@ export default function WaitlistPage() {
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Biggest concern (select all that apply)</p>
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Biggest concern (select all that apply)</p>
               <div className="flex flex-wrap gap-2">
                 {CONCERNS.map((c) => (
                   <ToggleChip
@@ -532,7 +532,7 @@ export default function WaitlistPage() {
 
             {stepError && <ErrorAlert message={stepError} />}
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
               <button type="button" onClick={goBack} className="flex items-center gap-1 px-5 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all">
                 <ChevronLeftIcon className="w-4 h-4" /> Back
               </button>
@@ -548,12 +548,12 @@ export default function WaitlistPage() {
           <div className="space-y-6">
             <ProgressBar current={currentStepIndex} total={totalSteps} />
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Step {currentStepIndex} of {totalSteps}</p>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Tell us about your work</h2>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Step {currentStepIndex} of {totalSteps}</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Tell us about your work</h2>
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Role(s) you're seeking (select all that apply)</p>
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Role(s) you're seeking (select all that apply)</p>
               <div className="flex flex-wrap gap-2">
                 {WORKER_ROLES.map((r) => (
                   <ToggleChip
@@ -567,23 +567,23 @@ export default function WaitlistPage() {
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Locations you can work in{" "}
                 <span className="text-gray-400">(up to 10)</span>
               </p>
-              <div className="flex gap-2 mb-2">
+              <div className="flex flex-col sm:flex-row gap-2 mb-2">
                 <input
                   type="text"
                   value={locationInput}
                   onChange={(e) => setLocationInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLocation(); } }}
                   placeholder="e.g. Westlands, Nairobi"
-                  className="flex-1 rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm"
+                  className="flex-1 rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-xs"
                 />
                 <button
                   type="button"
                   onClick={addLocation}
-                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-medium hover:from-purple-700 hover:to-pink-700 transition-all"
+                  className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-medium hover:from-purple-700 hover:to-pink-700 transition-all"
                 >
                   Add
                 </button>
@@ -591,7 +591,7 @@ export default function WaitlistPage() {
               {form.availability_locations.length > 0 && (
                 <div className="flex flex-wrap gap-2">
                   {form.availability_locations.map((loc) => (
-                    <span key={loc} className="flex items-center gap-1 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-sm">
+                    <span key={loc} className="flex items-center gap-1 px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 text-xs">
                       {loc}
                       <button
                         type="button"
@@ -607,8 +607,8 @@ export default function WaitlistPage() {
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Work preference</p>
-              <div className="grid grid-cols-2 gap-2">
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Work preference</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {["Live-in", "Live-out", "Part-time", "Full-time"].map((w) => (
                   <RadioCard
                     key={w}
@@ -621,7 +621,7 @@ export default function WaitlistPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Years of experience</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Years of experience</label>
               <SelectInput
                 value={form.years_experience}
                 onChange={(e) => setForm((f) => ({ ...f, years_experience: e.target.value }))}
@@ -635,19 +635,19 @@ export default function WaitlistPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Skills and past education</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Skills and past education</label>
               <textarea
                 value={form.skills}
                 onChange={(e) => setForm((f) => ({ ...f, skills: e.target.value }))}
                 rows={3}
                 placeholder="e.g. ECDE certificate, 3 years caring for infants, cooking..."
-                className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm resize-none"
+                className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-xs resize-none"
               />
             </div>
 
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Do you have references?</p>
-              <div className="grid grid-cols-2 gap-3">
+              <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Do you have references?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <RadioCard
                   label="Yes, I have references"
                   selected={form.has_references === true}
@@ -663,7 +663,7 @@ export default function WaitlistPage() {
 
             {stepError && <ErrorAlert message={stepError} />}
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
               <button type="button" onClick={goBack} className="flex items-center gap-1 px-5 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all">
                 <ChevronLeftIcon className="w-4 h-4" /> Back
               </button>
@@ -679,55 +679,55 @@ export default function WaitlistPage() {
           <div className="space-y-6">
             <ProgressBar current={currentStepIndex} total={totalSteps} />
             <div>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">Step {currentStepIndex} of {totalSteps}</p>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">How do we reach you?</h2>
-              <p className="text-gray-500 dark:text-gray-400 mt-1 text-sm">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Step {currentStepIndex} of {totalSteps}</p>
+              <h2 className="text-xl font-bold text-gray-900 dark:text-white">How do we reach you?</h2>
+              <p className="text-gray-500 dark:text-gray-400 mt-1 text-xs">
                 Phone is required. Email is optional but recommended for updates.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">First name *</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">First name *</label>
                 <input
                   type="text"
                   value={form.first_name}
                   onChange={(e) => setForm((f) => ({ ...f, first_name: e.target.value }))}
                   placeholder="Your first name"
-                  className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm"
+                  className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-xs"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Last name</label>
+                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Last name</label>
                 <input
                   type="text"
                   value={form.last_name}
                   onChange={(e) => setForm((f) => ({ ...f, last_name: e.target.value }))}
                   placeholder="Your last name"
-                  className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm"
+                  className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-xs"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone number *</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Phone number *</label>
               <input
                 type="tel"
                 value={form.phone}
                 onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
                 placeholder="0712 345 678"
-                className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm"
+                className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-xs"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email address <span className="text-gray-400">(optional but recommended)</span></label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">Email address <span className="text-gray-400">(optional but recommended)</span></label>
               <input
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
                 placeholder="you@example.com"
-                className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm"
+                className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-xs"
               />
             </div>
 
@@ -738,13 +738,13 @@ export default function WaitlistPage() {
                 onChange={(e) => setForm((f) => ({ ...f, whatsapp_opt_in: e.target.checked }))}
                 className="mt-0.5 w-4 h-4 accent-purple-600"
               />
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-xs text-gray-600 dark:text-gray-400">
                 Send me WhatsApp updates when Homebit opens in my area
               </span>
             </label>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                 Any comments or specific requests? <span className="text-gray-400">(optional)</span>
               </label>
               <textarea
@@ -752,13 +752,13 @@ export default function WaitlistPage() {
                 onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))}
                 rows={3}
                 placeholder="Tell us anything else — your location, specific needs, questions, or feedback..."
-                className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm resize-none"
+                className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-xs resize-none"
               />
             </div>
 
             {error && <ErrorAlert message={error} />}
 
-            <div className="flex gap-3 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">
               <button type="button" onClick={goBack} className="flex items-center gap-1 px-5 py-3 rounded-xl border-2 border-purple-200 dark:border-purple-700 text-purple-600 dark:text-purple-400 font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all">
                 <ChevronLeftIcon className="w-4 h-4" /> Back
               </button>
@@ -783,7 +783,7 @@ export default function WaitlistPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white">You're on the list.</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">You're on the list.</h2>
               <p className="text-gray-600 dark:text-gray-300 max-w-sm mx-auto">
                 We'll notify you as soon as Homebit opens access in your area.
               </p>
@@ -791,7 +791,7 @@ export default function WaitlistPage() {
 
             <div className="rounded-2xl bg-white dark:bg-[#13131a] border border-purple-100 dark:border-purple-900/30 p-6 text-left shadow-sm space-y-3">
               <p className="font-semibold text-gray-900 dark:text-white">Know someone who needs this?</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 Share Homebit with friends and family — early members get priority onboarding when we launch.
               </p>
               <button
@@ -813,7 +813,7 @@ export default function WaitlistPage() {
 
             <Link
               to="/"
-              className="inline-block text-sm text-purple-600 dark:text-purple-400 hover:underline"
+              className="inline-block text-xs text-purple-600 dark:text-purple-400 hover:underline"
             >
               Return to homepage
             </Link>

@@ -28,7 +28,7 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
     <footer className={`${baseClasses} ${themeClasses}`}>
       <div className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="mb-4 md:mb-0">
-          <span className="font-bold text-lg gradient-text">Homebit</span> <span className="text-gray-400">&copy; {new Date().getFullYear()}</span>
+          <span className="font-bold text-base gradient-text">Homebit</span> <span className="text-gray-400">&copy; {new Date().getFullYear()}</span>
         </div>
         <div className="flex items-center gap-4">
           <a href="https://web.facebook.com/profile.php?id=61582801828384" target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="text-gray-400 hover:text-purple-400 hover:scale-125 transition-all duration-200">
@@ -52,7 +52,7 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
           <Link to="/contact" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Contact</Link>
         </div>
         {isHousehelpProfileRoute && (
-          <div className="flex flex-wrap justify-center gap-2 text-sm">
+          <div className="flex flex-wrap justify-center gap-2 text-xs">
             <Link to="/househelp/profile" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">Profile</Link>
             <Link to="/househelp/profile1" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">Profile 1</Link>
             <Link to="/househelp/profile2" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">Profile 2</Link>

@@ -144,10 +144,10 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
         <div className="w-full max-w-md mx-auto relative">
             <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6 bg-white dark:bg-[#13131a] border border-gray-100 dark:border-purple-500/30 p-8 rounded-xl shadow-lg dark:shadow-glow-md transition-colors duration-300">
                 <div className="relative">
-                    <label htmlFor="location-input" className="block text-sm font-medium text-primary mb-1">
+                    <label htmlFor="location-input" className="block text-xs font-medium text-primary mb-1">
                         Location
                     </label>
-                    <p className="text-sm text-gray-600 mb-2">
+                    <p className="text-xs text-gray-600 mb-2">
                         If your exact location isn't found, try searching for the nearest town or landmark
                     </p>
                     <input
@@ -157,7 +157,7 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
                         autoComplete="off"
-                        className="w-full h-12 text-base px-4 py-3 rounded-lg border bg-white text-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
+                        className="w-full h-12 text-sm px-4 py-3 rounded-lg border bg-white text-primary-900 focus:outline-none focus:ring-2 focus:ring-primary-400 focus:border-primary-500 transition border-primary-200"
                         placeholder="Enter location..."
                     />
                     {showDropdown && suggestions.length > 0 && (
@@ -183,14 +183,14 @@ const Location: React.FC<LocationProps> = ({onSelect}) => {
                     )}
                 </div>
                 {submitStatus && (
-                    <div className={`p-3 rounded-xl text-sm font-medium ${submitStatus.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
+                    <div className={`p-3 rounded-xl text-xs font-medium ${submitStatus.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
                         {submitStatus.message}
                     </div>
                 )}
                 <button
                     type="submit"
                     disabled={submitting}
-                    className={`w-full ${submitting ? 'bg-primary-500' : 'bg-primary-700 hover:bg-primary-800'} text-white py-1.5 rounded-xl transition-colors duration-200 font-semibold text-lg disabled:opacity-60 flex items-center justify-center`}
+                    className={`w-full ${submitting ? 'bg-primary-500' : 'bg-primary-700 hover:bg-primary-800'} text-white py-1.5 rounded-xl transition-colors duration-200 font-semibold text-base disabled:opacity-60 flex items-center justify-center`}
                 >
                     {submitting ? (
                         <>

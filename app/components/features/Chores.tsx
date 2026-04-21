@@ -53,10 +53,10 @@ const Chores: React.FC = () => {
 
   return (
     <div className="w-full max-w-lg mx-auto bg-white border border-gray-100 p-8 rounded-xl shadow-lg flex flex-col gap-8">
-      <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Select chores</h2>
+      <h2 className="text-xl font-extrabold text-primary mb-4 text-center">Select chores</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {CHORES.map(chore => (
-          <label key={chore} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-lg font-medium transition
+          <label key={chore} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-base font-medium transition
             ${selectedChores.includes(chore) ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}
           `}>
             <span className="relative">
@@ -83,7 +83,7 @@ const Chores: React.FC = () => {
             <span className="text-gray-400">None</span>
           ) : (
             selectedChores.map(chore => (
-              <span key={chore} className="px-3 py-1 rounded-full bg-primary-100 text-primary-800 text-sm font-medium border border-primary-200">
+              <span key={chore} className="px-3 py-1 rounded-full bg-primary-100 text-primary-800 text-xs font-medium border border-primary-200">
                 {chore}
               </span>
             ))

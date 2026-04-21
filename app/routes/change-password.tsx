@@ -174,15 +174,15 @@ export default function ChangePasswordPage() {
           {/* Back link */}
           <button
             onClick={() => navigate('/settings')}
-            className="inline-flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium mb-6 transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium mb-6 transition-colors"
           >
             <ArrowLeftIcon className="h-4 w-4" />
             Back to Settings
           </button>
         </div>
         <PurpleCard hover={false} glow={true} className="w-full max-w-2xl p-8 sm:p-10">
-          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Change Password 🔐</h1>
-          <p className="text-base text-gray-600 dark:text-gray-300 mb-8">Update your password and manage security settings.</p>
+          <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">Change Password 🔐</h1>
+          <p className="text-sm text-gray-600 dark:text-gray-300 mb-8">Update your password and manage security settings.</p>
           
           {isGoogleUser ? (
             <div className="space-y-6">
@@ -197,11 +197,11 @@ export default function ChangePasswordPage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="text-lg font-bold text-blue-800 dark:text-blue-200 mb-2">Signed in with Google</h3>
-                    <p className="text-sm text-blue-700 dark:text-blue-300 leading-relaxed">
+                    <h3 className="text-base font-bold text-blue-800 dark:text-blue-200 mb-2">Signed in with Google</h3>
+                    <p className="text-xs text-blue-700 dark:text-blue-300 leading-relaxed">
                       Your account uses Google for authentication. You don't have a password to change because your login is managed securely by Google.
                     </p>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 mt-3">
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-3">
                       To update your login security, manage your account directly through{' '}
                       <a
                         href="https://myaccount.google.com/security"
@@ -218,7 +218,7 @@ export default function ChangePasswordPage() {
 
               <div className="bg-accent rounded-xl shadow-card p-6 dark:bg-slate-800">
                 <div className="font-bold text-primary mb-1 dark:text-primary-300">Security Settings</div>
-                <div className="text-text text-sm mb-2 dark:text-primary-200">Manage your security settings.</div>
+                <div className="text-text text-xs mb-2 dark:text-primary-200">Manage your security settings.</div>
                 <a href="/settings" className="btn-primary">Security Settings</a>
               </div>
             </div>
@@ -229,8 +229,8 @@ export default function ChangePasswordPage() {
           {success && (
             <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-5 shadow-md transition-colors duration-300">
               <div className="flex items-center justify-center">
-                <span className="text-2xl mr-3">🎉</span>
-                <p className="text-base font-bold text-green-800 dark:text-green-200">Password changed successfully! ✔️</p>
+                <span className="text-xl mr-3">🎉</span>
+                <p className="text-sm font-bold text-green-800 dark:text-green-200">Password changed successfully! ✔️</p>
               </div>
             </div>
           )}
@@ -238,7 +238,7 @@ export default function ChangePasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>
-                <label htmlFor="currentPassword" className="block text-sm font-semibold text-purple-700 mb-2">Current Password</label>
+                <label htmlFor="currentPassword" className="block text-xs font-semibold text-purple-700 mb-2">Current Password</label>
                 <input
                   type="password"
                   id="currentPassword"
@@ -247,7 +247,7 @@ export default function ChangePasswordPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
-                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
+                  className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                     getFieldError('currentPassword') 
                       ? 'border-red-300 dark:border-red-600' 
                       : isFieldValid('currentPassword')
@@ -256,11 +256,11 @@ export default function ChangePasswordPage() {
                   }`}
                 />
                 {getFieldError('currentPassword') && (
-                  <p className="text-red-600 text-sm mt-1">{getFieldError('currentPassword')}</p>
+                  <p className="text-red-600 text-xs mt-1">{getFieldError('currentPassword')}</p>
                 )}
               </div>
               <div>
-                <label htmlFor="newPassword" className="block text-sm font-semibold text-purple-700 mb-2">New Password</label>
+                <label htmlFor="newPassword" className="block text-xs font-semibold text-purple-700 mb-2">New Password</label>
                 <input
                   type="password"
                   id="newPassword"
@@ -269,7 +269,7 @@ export default function ChangePasswordPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
-                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
+                  className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                     getFieldError('newPassword') 
                       ? 'border-red-300 dark:border-red-600' 
                       : isFieldValid('newPassword')
@@ -278,11 +278,11 @@ export default function ChangePasswordPage() {
                   }`}
                 />
                 {getFieldError('newPassword') && (
-                  <p className="text-red-600 text-sm mt-1">{getFieldError('newPassword')}</p>
+                  <p className="text-red-600 text-xs mt-1">{getFieldError('newPassword')}</p>
                 )}
               </div>
               <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-purple-700 mb-2">Confirm New Password</label>
+                <label htmlFor="confirmPassword" className="block text-xs font-semibold text-purple-700 mb-2">Confirm New Password</label>
                 <input
                   type="password"
                   id="confirmPassword"
@@ -291,7 +291,7 @@ export default function ChangePasswordPage() {
                   onChange={handleChange}
                   onBlur={handleBlur}
                   required
-                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
+                  className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#020617] text-gray-900 dark:text-gray-100 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all ${
                     getFieldError('confirmPassword') 
                       ? 'border-red-300 dark:border-red-600' 
                       : isFieldValid('confirmPassword')
@@ -300,14 +300,14 @@ export default function ChangePasswordPage() {
                   }`}
                 />
                 {getFieldError('confirmPassword') && (
-                  <p className="text-red-600 text-sm mt-1">{getFieldError('confirmPassword')}</p>
+                  <p className="text-red-600 text-xs mt-1">{getFieldError('confirmPassword')}</p>
                 )}
               </div>
               <div>
                 <button
                   type="submit"
                   disabled={formLoading}
-                  className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                  className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 >
                   {formLoading ? "✨ Changing..." : "🚀 Change Password"}
                 </button>
@@ -318,7 +318,7 @@ export default function ChangePasswordPage() {
           <div className="space-y-6 mt-6">
             <div className="bg-accent rounded-xl shadow-card p-6 dark:bg-slate-800">
               <div className="font-bold text-primary mb-1 dark:text-primary-300">Security Settings</div>
-              <div className="text-text text-sm mb-2 dark:text-primary-200">Manage your security settings.</div>
+              <div className="text-text text-xs mb-2 dark:text-primary-200">Manage your security settings.</div>
               <a href="/settings" className="btn-primary">Security Settings</a>
             </div>
           </div>

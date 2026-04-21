@@ -40,9 +40,9 @@ export const Button = React.forwardRef<any, ButtonProps & Partial<LinkProps & Re
     const sizes = {
       xs: "px-2.5 py-1.5 text-xs",
       sm: "px-4 py-1.5 text-xs",
-      md: "px-6 py-2 text-sm",
-      lg: "px-8 py-3 text-base",
-      xl: "px-10 py-4 text-lg",
+      md: "px-6 py-2 text-xs",
+      lg: "px-8 py-3 text-sm",
+      xl: "px-10 py-4 text-base",
     };
 
     const widthStyle = fullWidth ? "w-full" : "";

@@ -588,8 +588,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4'
         : `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`;
 
-  const cardTitleClass = isHome3 ? 'text-base' : isHome1 ? 'text-lg' : 'text-xl';
-  const cardTextClass = isHome3 ? 'text-xs' : 'text-sm';
+  const cardTitleClass = isHome3 ? 'text-sm' : isHome1 ? 'text-base' : 'text-lg';
+  const cardTextClass = isHome3 ? 'text-xs' : 'text-xs';
   const filterSectionClass = isHome1
     ? 'bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:via-[#161625] dark:to-slate-900 rounded-3xl p-5 sm:p-7 mb-8 border border-purple-300/40 dark:border-purple-400/30 shadow-xl shadow-purple-300/25 dark:shadow-purple-500/20'
     : isHome2
@@ -608,26 +608,26 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3'
       : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4';
   const quickInputClass = isHome3
-    ? 'w-full h-10 px-3 rounded-lg text-sm bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500'
-    : 'w-full h-12 px-4 rounded-xl text-base bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500';
+    ? 'w-full h-10 px-3 rounded-lg text-xs bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500'
+    : 'w-full h-12 px-4 rounded-xl text-sm bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500';
   const quickLabelClass = isHome3
     ? 'mb-1 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300'
-    : 'mb-2 text-sm font-semibold text-gray-700 dark:text-white';
+    : 'mb-2 text-xs font-semibold text-gray-700 dark:text-white';
 
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className={`flex-1 ${isHome3 ? 'py-6' : 'py-8'} ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
+        <main className={`flex-1 ${isHome3 ? 'py-6' : 'py-8'} ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
           <div className={`mx-auto px-4 sm:px-6 lg:px-8 ${isHome1 ? 'max-w-[88rem]' : isHome2 ? 'max-w-6xl' : 'max-w-7xl'}`}>
             {showTips && <OnboardingTipsBanner role="household" onDismiss={handleDismissTips} />}
             {/* Compact Filters Section */}
             <div className={filterSectionClass}>
               <div className={`flex ${isHome2 ? 'flex-col sm:flex-row sm:items-end' : 'items-center'} justify-between gap-3 mb-4`}>
                 <div>
-                  <h1 className={`${isHome3 ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'} font-bold text-gray-900 dark:text-white`}>Find Househelps</h1>
+                  <h1 className={`${isHome3 ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'} font-bold text-gray-900 dark:text-white`}>Find Househelps</h1>
                   {(isHome1 || isHome2 || isHome3) && (
-                    <p className={`${isHome3 ? 'text-xs' : 'text-sm'} text-gray-600 dark:text-gray-400 mt-1`}>
+                    <p className={`${isHome3 ? 'text-xs' : 'text-xs'} text-gray-600 dark:text-gray-400 mt-1`}>
                       {isHome1 && 'Card grid style filter: wider controls and quick-action flow.'}
                       {isHome2 && 'Editorial style filter: guided search with roomy controls.'}
                       {isHome3 && 'Compact style filter: smaller type and dense arrangement.'}
@@ -684,7 +684,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                 </div>
               </div>
               <div className={controlsRowClass}>
-                <div className={`${isHome2 ? 'md:col-span-2' : 'sm:col-span-2'} flex items-center ${isHome3 ? 'text-sm' : ''}`}>
+                <div className={`${isHome2 ? 'md:col-span-2' : 'sm:col-span-2'} flex items-center ${isHome3 ? 'text-xs' : ''}`}>
                   <span className="text-gray-700 dark:text-white font-medium">
                     Use quick filters above or open <span className="font-semibold">More filters</span> for advanced options.
                     {totalCount !== null ? ` ${totalCount} results` : ''}
@@ -692,7 +692,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                 </div>
                 <button
                   onClick={() => handleSearch()}
-                  className={`w-full ${isHome3 ? 'px-4 py-2 text-sm rounded-lg' : 'px-8 py-1.5 rounded-xl'} font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl ${isHome3 ? '' : 'hover:scale-105'} focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500`}
+                  className={`w-full ${isHome3 ? 'px-4 py-2 text-xs rounded-lg' : 'px-8 py-1.5 rounded-xl'} font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl ${isHome3 ? '' : 'hover:scale-105'} focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500`}
                 >
                   Search
                 </button>
@@ -710,7 +710,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
             </SidePanel>
 
             <div className="mt-6 sm:mt-8">
-              <h2 className={`${isHome3 ? 'text-xl' : 'text-2xl'} font-bold text-gray-900 dark:text-white mb-6`}>
+              <h2 className={`${isHome3 ? 'text-lg' : 'text-xl'} font-bold text-gray-900 dark:text-white mb-6`}>
                 Available Househelps
               </h2>
               {actionError && <ErrorAlert message={actionError} className="mb-4" />}
@@ -726,13 +726,13 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-1.053M18 8.25a3 3 0 11-6 0 3 3 0 016 0zM3.75 9.75a2.625 2.625 0 115.25 0 2.625 2.625 0 01-5.25 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Househelps Available</h3>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Househelps Available</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs max-w-sm mx-auto">
                     We couldn't load househelp profiles right now. Please try again in a moment.
                   </p>
                   <button
                     onClick={() => handleSearch()}
-                    className="mt-6 inline-flex items-center px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-sm"
+                    className="mt-6 inline-flex items-center px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg text-xs"
                   >
                     Try Again
                   </button>
@@ -744,10 +744,10 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                     Ready to find your perfect househelp?
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 text-lg mb-4">
+                  <p className="text-gray-600 dark:text-gray-400 text-base mb-4">
                     Use the filters above to search for househelps, or click Search to see all available profiles.
                   </p>
                   <button
@@ -767,8 +767,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">No Results Found</h3>
-                  <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Results Found</h3>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs max-w-sm mx-auto">
                     No househelps match your current filters. Try adjusting your search criteria or clear filters to see all profiles.
                   </p>
                 </div>
@@ -816,7 +816,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                       <div className={isHome2 ? 'flex items-start gap-4' : ''}>
                         {/* Profile Picture */}
                         <div className={`flex ${isHome2 ? 'justify-start' : 'justify-center'} ${isHome2 ? 'mb-0' : 'mb-4'} ${isHome2 ? 'shrink-0' : ''}`}>
-                          <div className={`${isHome2 ? 'w-20 h-20' : isHome3 ? 'w-20 h-20' : 'w-24 h-24'} rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white ${isHome3 ? 'text-lg' : 'text-xl'} font-bold shadow-lg overflow-hidden relative`}>
+                          <div className={`${isHome2 ? 'w-20 h-20' : isHome3 ? 'w-20 h-20' : 'w-24 h-24'} rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white ${isHome3 ? 'text-base' : 'text-lg'} font-bold shadow-lg overflow-hidden relative`}>
                             {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) || profilePhotos[househelp.user_id || String(househelp.id)] ? (
                               <>
                                 {imageLoadingStates[househelp.profile_id] !== false && (
@@ -920,7 +920,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                             </div>
                             <button
                               onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleViewProfile(String(househelp.profile_id)); }}
-                              className={`px-4 py-1 ${isHome3 ? 'text-xs' : 'text-sm'} bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition`}
+                              className={`px-4 py-1 ${isHome3 ? 'text-xs' : 'text-xs'} bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition`}
                             >
                               View more
                             </button>

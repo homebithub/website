@@ -49,7 +49,7 @@ export default function EditSectionModal({ isOpen, onClose, title, profileType, 
       <div className="relative w-full sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[85vh] bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl shadow-2xl border border-gray-200 dark:border-purple-500/30 flex flex-col animate-slide-up">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-purple-500/20 shrink-0">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white">{title}</h2>
+          <h2 className="text-base font-bold text-gray-900 dark:text-white">{title}</h2>
           <button
             onClick={onClose}
             className="h-9 w-9 rounded-full flex items-center justify-center border border-gray-300 dark:border-purple-500/30 text-gray-500 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-purple-500/10 transition-colors"

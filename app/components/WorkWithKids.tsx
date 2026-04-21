@@ -136,7 +136,7 @@ const WorkWithKids = () => {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">👶 Work with Kids</h2>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">👶 Work with Kids</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                 Can you care for children?
             </p>
@@ -146,9 +146,9 @@ const WorkWithKids = () => {
             
             <div className="space-y-8">
                 <div>
-                    <h2 className="text-sm font-medium text-gray-900 mb-3">Work Preference</h2>
+                    <h2 className="text-xs font-medium text-gray-900 mb-3">Work Preference</h2>
                     <div className="grid grid-cols-2 gap-4">
-                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                             workPreference === 'with_kids' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                         }`}>
                             <input
@@ -161,7 +161,7 @@ const WorkWithKids = () => {
                             <span>I can work with / have worked with children</span>
                         </label>
                         
-                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                             workPreference === 'chores_only' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                         }`}>
                             <input
@@ -179,14 +179,14 @@ const WorkWithKids = () => {
                 {workPreference === 'with_kids' && (
                     <>
                         <div className="space-y-4">
-                            <h3 className="text-sm font-medium text-gray-900">
+                            <h3 className="text-xs font-medium text-gray-900">
                                 What is the age range of the children you can/have worked with?
                             </h3>
                             <div className="grid grid-cols-2 gap-4">
                                 {ageRanges.map((age) => (
                                     <label 
                                         key={age.value}
-                                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-sm font-medium ${
+                                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-xs font-medium ${
                                             selectedAges.includes(age.value) ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                                         }`}
                                     >
@@ -207,14 +207,14 @@ const WorkWithKids = () => {
                         </div>
 
                         <div className="space-y-4">
-                            <h3 className="text-sm font-medium text-gray-900">
+                            <h3 className="text-xs font-medium text-gray-900">
                                 How many children can you look after at the same time?
                             </h3>
                             <div className="grid grid-cols-2 gap-4">
                                 {capacities.map((capacity) => (
                                     <label 
                                         key={capacity.value}
-                                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-sm font-medium ${
+                                        className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer shadow-sm text-xs font-medium ${
                                             selectedCapacities.includes(capacity.value) ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                                         }`}
                                     >

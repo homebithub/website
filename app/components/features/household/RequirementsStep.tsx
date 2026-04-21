@@ -60,7 +60,7 @@ export function RequirementsStep({ data, onUpdate, onNext }: RequirementsStepPro
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Additional Requirements</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Additional Requirements</h3>
         <p className="text-gray-600">Tell us about any special requirements or considerations</p>
       </div>
 
@@ -68,7 +68,7 @@ export function RequirementsStep({ data, onUpdate, onNext }: RequirementsStepPro
         {/* Pet Information */}
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-xs font-medium text-gray-700 mb-3">
               Do you have pets?
             </label>
             <div className="space-y-2">
@@ -97,7 +97,7 @@ export function RequirementsStep({ data, onUpdate, onNext }: RequirementsStepPro
 
           {hasPets && (
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-xs font-medium text-gray-700">
                 Tell us about your pets
               </label>
               <textarea
@@ -108,7 +108,7 @@ export function RequirementsStep({ data, onUpdate, onNext }: RequirementsStepPro
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 required
               />
-              <p className="text-sm text-gray-500">
+              <p className="text-xs text-gray-500">
                 Include the type, number, and any special care requirements for your pets
               </p>
             </div>
@@ -117,7 +117,7 @@ export function RequirementsStep({ data, onUpdate, onNext }: RequirementsStepPro
 
         {/* Other Requirements */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-xs font-medium text-gray-700">
             Other special requirements or preferences
           </label>
           <textarea
@@ -127,7 +127,7 @@ export function RequirementsStep({ data, onUpdate, onNext }: RequirementsStepPro
             rows={4}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
-          <p className="text-sm text-gray-500">
+          <p className="text-xs text-gray-500">
             Any other important requirements, preferences, or considerations we should know about
           </p>
         </div>
@@ -141,10 +141,10 @@ export function RequirementsStep({ data, onUpdate, onNext }: RequirementsStepPro
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-blue-800">
+              <p className="text-xs font-medium text-blue-800">
                 Help us find the perfect match
               </p>
-              <ul className="text-sm text-blue-700 mt-1 space-y-1">
+              <ul className="text-xs text-blue-700 mt-1 space-y-1">
                 <li>• Language preferences (English, Swahili, etc.)</li>
                 <li>• Religious or cultural considerations</li>
                 <li>• Experience level requirements</li>
@@ -165,16 +165,16 @@ export function RequirementsStep({ data, onUpdate, onNext }: RequirementsStepPro
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">
+                <p className="text-xs font-medium text-green-800">
                   Requirements Summary
                 </p>
                 {hasPets && (
-                  <p className="text-sm text-green-700 mt-1">
+                  <p className="text-xs text-green-700 mt-1">
                     <strong>Pets:</strong> {petDetails}
                   </p>
                 )}
                 {otherRequirements && (
-                  <p className="text-sm text-green-700 mt-1">
+                  <p className="text-xs text-green-700 mt-1">
                     <strong>Other:</strong> {otherRequirements}
                   </p>
                 )}

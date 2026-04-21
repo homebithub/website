@@ -449,7 +449,7 @@ export default function HousehelpProfile() {
       <div className="max-w-2xl mx-auto mt-8">
         <div className="p-6 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-500/30">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl">📝</span>
+            <span className="text-xl">📝</span>
             <p className="font-semibold text-yellow-800 dark:text-yellow-400">No profile found</p>
           </div>
           <p className="text-gray-700 dark:text-gray-300 mb-4">You haven't completed your househelp profile yet.</p>
@@ -475,7 +475,7 @@ export default function HousehelpProfile() {
       <div className="rounded-2xl p-4 sm:p-6 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mt-2">{profile.first_name} {profile.last_name}</h1>
+            <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mt-2">{profile.first_name} {profile.last_name}</h1>
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your professional information</p>
           </div>
           <div className="flex items-center gap-2 self-start">
@@ -501,9 +501,9 @@ export default function HousehelpProfile() {
 
       {/* Profile Photos */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div>
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📸 Profile Photos</h2>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📸 Profile Photos</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
               {profile.photos?.length || 0}/{MAX_PHOTOS} photos
             </p>
@@ -519,10 +519,10 @@ export default function HousehelpProfile() {
         {uploading && uploadProgress > 0 && (
           <div className="mb-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-blue-800 dark:text-blue-400">
+              <span className="text-xs font-semibold text-blue-800 dark:text-blue-400">
                 Uploading photo...
               </span>
-              <span className="text-sm font-bold text-blue-800 dark:text-blue-400">
+              <span className="text-xs font-bold text-blue-800 dark:text-blue-400">
                 {uploadProgress}%
               </span>
             </div>
@@ -543,7 +543,7 @@ export default function HousehelpProfile() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span className="text-sm font-semibold text-orange-800 dark:text-orange-400">
+              <span className="text-xs font-semibold text-orange-800 dark:text-orange-400">
                 {deleteStatus}
               </span>
             </div>
@@ -596,17 +596,17 @@ export default function HousehelpProfile() {
                     e.currentTarget.src = '/assets/placeholder-image.png';
                   }}
                 />
-                <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center gap-2">
+                <div className="absolute inset-0 bg-black/35 sm:bg-black sm:bg-opacity-0 sm:group-hover:bg-opacity-50 transition-all duration-300 flex items-center justify-center gap-2">
                   <button
                     onClick={() => setSelectedImage(photo)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-xl text-sm font-semibold hover:bg-purple-50"
+                    className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-xl text-xs font-semibold hover:bg-purple-50"
                   >
                     View Full
                   </button>
                   <button
                     onClick={() => confirmDeletePhoto(photo)}
                     disabled={deleteLoading === photo}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 p-2 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50"
+                    className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-300 p-2 bg-red-600 text-white rounded-xl hover:bg-red-700 disabled:opacity-50"
                     title="Delete photo"
                   >
                     {deleteLoading === photo ? (
@@ -625,15 +625,15 @@ export default function HousehelpProfile() {
         ) : (
           <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700">
             <p className="text-gray-500 dark:text-gray-400">No photos uploaded yet</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Add photos to make your profile stand out!</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Add photos to make your profile stand out!</p>
           </div>
         )}
       </div>
 
       {/* Personal Information */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">👤 Personal Information</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">👤 Personal Information</h2>
           <button
             onClick={() => handleEditSection('gender')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -644,18 +644,18 @@ export default function HousehelpProfile() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Name</span>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
               {profile.first_name} {profile.last_name}
             </p>
           </div>
           <div>
             <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Gender</span>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.gender || 'Not specified'}</p>
+            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.gender || 'Not specified'}</p>
           </div>
           {profile.date_of_birth && (
             <div>
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Date of Birth</span>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
                 {new Date(profile.date_of_birth).toLocaleDateString()}
               </p>
             </div>
@@ -665,8 +665,8 @@ export default function HousehelpProfile() {
 
       {/* Location */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📍 Location</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📍 Location</h2>
           <button
             onClick={() => handleEditSection('location')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -674,7 +674,7 @@ export default function HousehelpProfile() {
             Edit
           </button>
         </div>
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+        <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
           {typeof profile.location === 'string'
             ? (profile.location || 'Not specified')
             : (profile.location?.place || profile.location?.name || 'Not specified')}
@@ -683,8 +683,8 @@ export default function HousehelpProfile() {
 
       {/* Experience & Skills */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">💼 Experience & Skills</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">💼 Experience & Skills</h2>
           <button
             onClick={() => handleEditSection('experience')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -695,7 +695,7 @@ export default function HousehelpProfile() {
         <div className="space-y-4">
           <div>
             <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Years of Experience</span>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
               {profile.years_of_experience ? `${profile.years_of_experience} years` : 'Not specified'}
             </p>
           </div>
@@ -765,8 +765,8 @@ export default function HousehelpProfile() {
       {/* Certifications & Abilities */}
       {(profile.first_aid_certificate || profile.certificate_of_good_conduct || profile.can_drive) && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📜 Certifications & Abilities</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📜 Certifications & Abilities</h2>
             <button
               onClick={() => handleEditSection('certifications')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -777,17 +777,17 @@ export default function HousehelpProfile() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {profile.first_aid_certificate && (
               <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-500">
-                <p className="text-sm font-semibold text-green-900 dark:text-green-100">✅ First Aid Certificate</p>
+                <p className="text-xs font-semibold text-green-900 dark:text-green-100">✅ First Aid Certificate</p>
               </div>
             )}
             {profile.certificate_of_good_conduct && (
               <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border border-green-500">
-                <p className="text-sm font-semibold text-green-900 dark:text-green-100">✅ Certificate of Good Conduct</p>
+                <p className="text-xs font-semibold text-green-900 dark:text-green-100">✅ Certificate of Good Conduct</p>
               </div>
             )}
             {profile.can_drive && (
               <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-500">
-                <p className="text-sm font-semibold text-blue-900 dark:text-blue-100">✅ Can Drive</p>
+                <p className="text-xs font-semibold text-blue-900 dark:text-blue-100">✅ Can Drive</p>
               </div>
             )}
           </div>
@@ -796,8 +796,8 @@ export default function HousehelpProfile() {
 
       {/* Work Preferences */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">⚙️ Work Preferences</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">⚙️ Work Preferences</h2>
           <button
             onClick={() => handleEditSection('nannytype')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -808,14 +808,14 @@ export default function HousehelpProfile() {
         <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <p className="text-sm font-semibold text-purple-900 dark:text-purple-100">👶 Work with Kids</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">👶 Work with Kids</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                 {profile.work_with_kids ? 'Yes' : 'No'}
               </p>
             </div>
             <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <p className="text-sm font-semibold text-purple-900 dark:text-purple-100">🐾 Work with Pets</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">🐾 Work with Pets</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                 {profile.work_with_pets ? 'Yes' : 'No'}
               </p>
             </div>
@@ -823,19 +823,19 @@ export default function HousehelpProfile() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {profile.live_in && (
               <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <p className="text-sm font-semibold text-purple-900 dark:text-purple-100">🌙 Live-in Available</p>
+                <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">🌙 Live-in Available</p>
               </div>
             )}
             {profile.day_worker && (
               <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <p className="text-sm font-semibold text-purple-900 dark:text-purple-100">☀️ Day Worker Available</p>
+                <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">☀️ Day Worker Available</p>
               </div>
             )}
           </div>
           {profile.available_from && (
             <div>
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Available From</span>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
                 {new Date(profile.available_from).toLocaleDateString()}
               </p>
             </div>
@@ -845,8 +845,8 @@ export default function HousehelpProfile() {
 
       {/* Salary Expectations */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">💰 Salary Expectations</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">💰 Salary Expectations</h2>
           <button
             onClick={() => handleEditSection('salary')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -857,14 +857,14 @@ export default function HousehelpProfile() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Expected Salary</span>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
               {profile.salary_expectation ? `KES ${profile.salary_expectation.toLocaleString()}` : 'Not specified'}
             </p>
           </div>
           {profile.salary_frequency && (
             <div>
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Frequency</span>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">
+              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">
                 {profile.salary_frequency}
               </p>
             </div>
@@ -875,8 +875,8 @@ export default function HousehelpProfile() {
       {/* Working with Children Details */}
       {profile.work_with_kids && (profile.children_age_range || profile.number_of_concurrent_children || profile.my_child_preference || (profile.talent_with_kids && profile.talent_with_kids.length > 0)) && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">👶 Working with Children</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">👶 Working with Children</h2>
             <button
               onClick={() => handleEditSection('workwithkids')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -888,19 +888,19 @@ export default function HousehelpProfile() {
             {profile.children_age_range && (
               <div>
                 <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Age Range</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.children_age_range}</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.children_age_range}</p>
               </div>
             )}
             {profile.number_of_concurrent_children !== undefined && profile.number_of_concurrent_children > 0 && (
               <div>
                 <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Can Handle</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.number_of_concurrent_children} children at once</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.number_of_concurrent_children} children at once</p>
               </div>
             )}
             {profile.my_child_preference && (
               <div>
                 <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Child Preference</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.my_child_preference}</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.my_child_preference}</p>
               </div>
             )}
             {profile.talent_with_kids && profile.talent_with_kids.length > 0 && (
@@ -922,8 +922,8 @@ export default function HousehelpProfile() {
       {/* Working with Pets Details */}
       {profile.work_with_pets && profile.pet_types && profile.pet_types.trim() && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🐾 Pet Types</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🐾 Pet Types</h2>
             <button
               onClick={() => handleEditSection('workwithpets')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -944,8 +944,8 @@ export default function HousehelpProfile() {
       {/* Off Days & Availability */}
       {((profile.off_days && profile.off_days.length > 0) || (profile.availability && Object.keys(profile.availability).length > 0)) && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📅 Availability</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📅 Availability</h2>
             <button
               onClick={() => handleEditSection('nannytype')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -994,17 +994,17 @@ export default function HousehelpProfile() {
 
       {/* Religion */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🙏 Religion</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🙏 Religion</h2>
         </div>
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
+        <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
       </div>
 
       {/* My Kids / Personal Info */}
       {(profile.has_kids !== undefined || profile.marital_status || profile.education_level || profile.needs_accommodation !== undefined) && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">👤 Personal Preferences</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">👤 Personal Preferences</h2>
             <button
               onClick={() => handleEditSection('mykids')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -1016,25 +1016,25 @@ export default function HousehelpProfile() {
             {profile.has_kids !== undefined && (
               <div>
                 <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Has Children</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.has_kids ? 'Yes' : 'No'}</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.has_kids ? 'Yes' : 'No'}</p>
               </div>
             )}
             {profile.marital_status && (
               <div>
                 <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Marital Status</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.marital_status}</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.marital_status}</p>
               </div>
             )}
             {profile.education_level && (
               <div>
                 <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Education Level</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.education_level}</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.education_level}</p>
               </div>
             )}
             {profile.needs_accommodation !== undefined && (
               <div>
                 <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Needs Accommodation</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.needs_accommodation ? 'Yes' : 'No'}</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.needs_accommodation ? 'Yes' : 'No'}</p>
               </div>
             )}
           </div>
@@ -1044,8 +1044,8 @@ export default function HousehelpProfile() {
       {/* Preferred Work Environment */}
       {(profile.preferred_household_size || profile.preferred_location_type || profile.preferred_family_type || profile.work_environment_notes) && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🏠 Preferred Work Environment</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🏠 Preferred Work Environment</h2>
             <button
               onClick={() => handleEditSection('workenvironment')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -1057,26 +1057,26 @@ export default function HousehelpProfile() {
             {profile.preferred_household_size && (
               <div>
                 <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Household Size</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_household_size}</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_household_size}</p>
               </div>
             )}
             {profile.preferred_location_type && (
               <div>
                 <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Location Type</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_location_type}</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_location_type}</p>
               </div>
             )}
             {profile.preferred_family_type && (
               <div>
                 <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Family Type</span>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_family_type}</p>
+                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_family_type}</p>
               </div>
             )}
           </div>
           {profile.work_environment_notes && (
             <div className="mt-4">
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
-              <p className="text-sm text-gray-900 dark:text-gray-100 mt-1 whitespace-pre-wrap">{profile.work_environment_notes}</p>
+              <p className="text-xs text-gray-900 dark:text-gray-100 mt-1 whitespace-pre-wrap">{profile.work_environment_notes}</p>
             </div>
           )}
         </div>
@@ -1085,8 +1085,8 @@ export default function HousehelpProfile() {
       {/* References */}
       {profile.reference && profile.reference.trim() && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📝 References</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📝 References</h2>
             <button
               onClick={() => handleEditSection('references')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -1107,19 +1107,19 @@ export default function HousehelpProfile() {
                           {ref.name && (
                             <div>
                               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Name</span>
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ref.name}</p>
+                              <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{ref.name}</p>
                             </div>
                           )}
                           {ref.relationship && (
                             <div>
                               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Relationship</span>
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ref.relationship}</p>
+                              <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{ref.relationship}</p>
                             </div>
                           )}
                           {ref.duration && (
                             <div>
                               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Duration</span>
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ref.duration} years</p>
+                              <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{ref.duration} years</p>
                             </div>
                           )}
                         </div>
@@ -1138,25 +1138,25 @@ export default function HousehelpProfile() {
 
       {/* Background Check & Status */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">✅ Status & Verification</h2>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">✅ Status & Verification</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {profile.status && (
             <div className={`p-3 rounded-xl ${profile.status === 'active' ? 'bg-green-50 dark:bg-green-900/20 border border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border border-gray-300'}`}>
-              <p className={`text-sm font-semibold ${profile.status === 'active' ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>Profile Status</p>
+              <p className={`text-xs font-semibold ${profile.status === 'active' ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>Profile Status</p>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">{profile.status}</p>
             </div>
           )}
           {profile.verified !== undefined && (
             <div className={`p-3 rounded-xl ${profile.verified ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-500' : 'bg-gray-50 dark:bg-gray-900/20 border border-gray-300'}`}>
-              <p className={`text-sm font-semibold ${profile.verified ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.verified ? '✅' : '❌'} Verified</p>
+              <p className={`text-xs font-semibold ${profile.verified ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.verified ? '✅' : '❌'} Verified</p>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.verified ? 'Identity verified' : 'Not verified'}</p>
             </div>
           )}
           {profile.background_check_consent !== undefined && (
             <div className={`p-3 rounded-xl ${profile.background_check_consent ? 'bg-green-50 dark:bg-green-900/20 border border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border border-gray-300'}`}>
-              <p className={`text-sm font-semibold ${profile.background_check_consent ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.background_check_consent ? '✅' : '❌'} Background Check</p>
+              <p className={`text-xs font-semibold ${profile.background_check_consent ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.background_check_consent ? '✅' : '❌'} Background Check</p>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.background_check_consent ? 'Consented' : 'Not consented'}</p>
             </div>
           )}
@@ -1166,8 +1166,8 @@ export default function HousehelpProfile() {
       {/* Bio */}
       {profile.bio && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📝 About Me</h2>
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📝 About Me</h2>
             <button
               onClick={() => handleEditSection('bio')}
               className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -1175,7 +1175,7 @@ export default function HousehelpProfile() {
               Edit
             </button>
           </div>
-          <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio}</p>
+          <p className="text-xs text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio}</p>
         </div>
       )}
     </div>

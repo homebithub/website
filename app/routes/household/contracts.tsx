@@ -123,7 +123,7 @@ export default function HouseholdContracts() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+          <h1 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
             Employment Contracts
           </h1>
           <p className="text-gray-600 dark:text-gray-400">
@@ -135,11 +135,11 @@ export default function HouseholdContracts() {
         <div className="mb-6 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl flex items-center justify-between">
           <div>
             <h3 className="font-medium text-purple-900 dark:text-purple-200">Formal Employment Contracts</h3>
-            <p className="text-sm text-purple-700 dark:text-purple-300">Create, sign, and manage formal employment contracts with your househelps</p>
+            <p className="text-xs text-purple-700 dark:text-purple-300">Create, sign, and manage formal employment contracts with your househelps</p>
           </div>
           <button
             onClick={() => navigate('/household/employment-contracts')}
-            className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors whitespace-nowrap text-sm font-medium"
+            className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors whitespace-nowrap text-xs font-medium"
           >
             View Employment Contracts
           </button>
@@ -153,7 +153,7 @@ export default function HouseholdContracts() {
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  className={`py-4 px-1 border-b-2 font-medium text-xs transition-colors ${
                     activeTab === tab.key
                       ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400 dark:hover:text-gray-300'
@@ -172,7 +172,7 @@ export default function HouseholdContracts() {
             <ErrorAlert message={error} className="mb-4" />
             <button
               onClick={fetchContracts}
-              className="rounded-xl border border-purple-500/50 px-4 py-2 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-900/20"
+              className="rounded-xl border border-purple-500/50 px-4 py-2 text-xs font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-900/20"
             >
               Try Again
             </button>
@@ -190,7 +190,7 @@ export default function HouseholdContracts() {
         {!loading && contracts.length === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-12 text-center">
             <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">
               No contracts yet
             </h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
@@ -228,7 +228,7 @@ export default function HouseholdContracts() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
+                        <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">
                           {contract.househelp?.first_name?.[0]}{contract.househelp?.last_name?.[0]}
                         </div>
                       )}
@@ -237,7 +237,7 @@ export default function HouseholdContracts() {
                     {/* Details */}
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
                           {contract.househelp?.first_name} {contract.househelp?.last_name}
                         </h3>
                         <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(contract.status)}`}>
@@ -247,7 +247,7 @@ export default function HouseholdContracts() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-xs">
                         <div className="flex items-start gap-2">
                           <Briefcase className="w-4 h-4 text-gray-400 mt-0.5" />
                           <div>
@@ -288,8 +288,8 @@ export default function HouseholdContracts() {
 
                       {contract.notes && (
                         <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Notes:</span>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <span className="text-xs font-medium text-gray-700 dark:text-gray-300">Notes:</span>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                             {contract.notes}
                           </p>
                         </div>
@@ -297,8 +297,8 @@ export default function HouseholdContracts() {
 
                       {contract.termination_reason && (
                         <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 rounded-xl">
-                          <span className="text-sm font-medium text-red-800 dark:text-red-200">Termination Reason:</span>
-                          <p className="text-sm text-red-700 dark:text-red-300 mt-1">
+                          <span className="text-xs font-medium text-red-800 dark:text-red-200">Termination Reason:</span>
+                          <p className="text-xs text-red-700 dark:text-red-300 mt-1">
                             {contract.termination_reason}
                           </p>
                         </div>
@@ -310,7 +310,7 @@ export default function HouseholdContracts() {
                   <div className="flex flex-col gap-2 ml-4">
                     <button
                       onClick={() => navigate(`/household/contracts/${contract.id}`)}
-                      className="px-4 py-1 text-sm bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors whitespace-nowrap"
+                      className="px-4 py-1 text-xs bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors whitespace-nowrap"
                     >
                       View Details
                     </button>
@@ -319,7 +319,7 @@ export default function HouseholdContracts() {
                       onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(contract.househelp_id)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Contracts')}`, {
                         state: { profileId: contract.househelp_id, backTo: backToPath, backLabel: 'Back to Contracts' }
                       })}
-                      className="px-4 py-1 text-sm border border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors whitespace-nowrap"
+                      className="px-4 py-1 text-xs border border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors whitespace-nowrap"
                     >
                       View Profile
                     </button>
@@ -333,7 +333,7 @@ export default function HouseholdContracts() {
         {/* Pagination */}
         {!loading && total > limit && (
           <div className="mt-8 flex items-center justify-between">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+            <p className="text-xs text-gray-700 dark:text-gray-300">
               Showing <span className="font-medium">{offset + 1}</span> to{' '}
               <span className="font-medium">{Math.min(offset + limit, total)}</span> of{' '}
               <span className="font-medium">{total}</span> results

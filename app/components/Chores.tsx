@@ -131,7 +131,7 @@ const Chores: React.FC = () => {
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-8">
-      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🧹 Chores & Duties <span className="text-red-500">*</span></h2>
+      <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">🧹 Chores & Duties <span className="text-red-500">*</span></h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
         What tasks do you need help with? (Select at least one)
       </p>
@@ -143,7 +143,7 @@ const Chores: React.FC = () => {
             : selectedChores.includes(chore);
           
           return (
-            <label key={chore} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all
+            <label key={chore} className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all
               ${isChecked ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}
             `}>
               <div className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${
@@ -172,7 +172,7 @@ const Chores: React.FC = () => {
       {/* Other Chore Input */}
       {showOtherInput && (
         <div className="space-y-3 p-5 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
-          <label htmlFor="otherChore" className="block text-sm font-semibold text-purple-700 dark:text-purple-400">
+          <label htmlFor="otherChore" className="block text-xs font-semibold text-purple-700 dark:text-purple-400">
             ✏️ Specify Other Chore <span className="text-red-500">*</span>
           </label>
           <div className="flex gap-3">
@@ -187,18 +187,18 @@ const Chores: React.FC = () => {
                 }
               }}
               placeholder="e.g., Gardening, Car washing, etc."
-              className="flex-1 h-10 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 text-sm"
+              className="flex-1 h-10 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 text-xs"
             />
             <button
               type="button"
               onClick={handleOtherChoreAdd}
               disabled={!otherChore.trim()}
-              className="px-6 py-1.5 rounded-xl bg-purple-600 text-white font-bold text-sm shadow-md hover:bg-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-1.5 rounded-xl bg-purple-600 text-white font-bold text-xs shadow-md hover:bg-purple-700 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add
             </button>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
             Type your custom chore and click "Add" or press Enter
           </p>
         </div>
@@ -206,10 +206,10 @@ const Chores: React.FC = () => {
       
       {selectedChores.length > 0 && (
         <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
-          <span className="text-purple-700 dark:text-purple-400 font-bold text-sm">✓ Selected ({selectedChores.length}):</span>
+          <span className="text-purple-700 dark:text-purple-400 font-bold text-xs">✓ Selected ({selectedChores.length}):</span>
           <div className="mt-2 flex flex-wrap gap-2">
             {selectedChores.map(chore => (
-              <span key={chore} className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-800/40 text-purple-800 dark:text-purple-200 text-sm font-semibold border border-purple-200 dark:border-purple-500/30">
+              <span key={chore} className="px-3 py-1 rounded-full bg-purple-100 dark:bg-purple-800/40 text-purple-800 dark:text-purple-200 text-xs font-semibold border border-purple-200 dark:border-purple-500/30">
                 {chore}
               </span>
             ))}
@@ -222,7 +222,7 @@ const Chores: React.FC = () => {
       )}
       <button
         type="button"
-        className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+        className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
         onClick={saveChores}
         disabled={isLoading || selectedChores.length === 0}
       >

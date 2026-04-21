@@ -248,10 +248,10 @@ export default function PaymentMethodsPage() {
                   <CreditCardIcon className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+                  <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                     Payment Methods
                   </h1>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                  <p className="text-xs text-gray-600 dark:text-gray-300">
                     Manage your saved payment methods
                   </p>
                 </div>
@@ -277,7 +277,7 @@ export default function PaymentMethodsPage() {
             ) : paymentMethods.length === 0 ? (
               <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-12 text-center">
                 <CreditCardIcon className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-2">
                   No Payment Methods
                 </h3>
                 <p className="text-gray-600 dark:text-gray-300 mb-6">
@@ -305,10 +305,10 @@ export default function PaymentMethodsPage() {
                           {getPaymentMethodIcon(method.type)}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">
+                          <p className="text-xs font-medium text-gray-900 dark:text-white capitalize">
                             {method.type}
                           </p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
+                          <p className="text-base font-bold text-gray-900 dark:text-white">
                             {getMaskedDisplay(method)}
                           </p>
                         </div>
@@ -323,7 +323,7 @@ export default function PaymentMethodsPage() {
 
                     {/* Nickname */}
                     {method.nickname && (
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
+                      <p className="text-xs text-gray-600 dark:text-gray-300 mb-3">
                         {method.nickname}
                       </p>
                     )}
@@ -341,7 +341,7 @@ export default function PaymentMethodsPage() {
                         <button
                           onClick={() => handleSetDefault(method.id)}
                           disabled={processingAction}
-                          className="flex-1 px-3 py-1.5 text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors disabled:opacity-50"
+                          className="flex-1 px-3 py-1.5 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50 transition-colors disabled:opacity-50"
                         >
                           Set Default
                         </button>
@@ -404,7 +404,7 @@ export default function PaymentMethodsPage() {
               >
                 <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <div className="flex items-start justify-between mb-4">
-                    <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
+                    <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
                       Add Payment Method
                     </Dialog.Title>
                     <button
@@ -419,7 +419,7 @@ export default function PaymentMethodsPage() {
                   <div className="space-y-4">
                     {/* Type Selector */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Payment Type
                       </label>
                       <div className="flex gap-3">
@@ -432,7 +432,7 @@ export default function PaymentMethodsPage() {
                           }`}
                         >
                           <DevicePhoneMobileIcon className="w-6 h-6 mx-auto mb-1 text-purple-600 dark:text-purple-400" />
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">M-Pesa</p>
+                          <p className="text-xs font-medium text-gray-900 dark:text-white">M-Pesa</p>
                         </button>
                         <button
                           onClick={() => setAddForm({ ...addForm, type: 'card' as any })}
@@ -440,7 +440,7 @@ export default function PaymentMethodsPage() {
                           className="flex-1 p-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 opacity-50 cursor-not-allowed"
                         >
                           <CreditCardIcon className="w-6 h-6 mx-auto mb-1 text-gray-400" />
-                          <p className="text-sm font-medium text-gray-400">Card (Soon)</p>
+                          <p className="text-xs font-medium text-gray-400">Card (Soon)</p>
                         </button>
                       </div>
                     </div>
@@ -448,7 +448,7 @@ export default function PaymentMethodsPage() {
                     {/* Phone Number */}
                     {addForm.type === 'mpesa' && (
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                           M-Pesa Phone Number
                         </label>
                         <input
@@ -466,7 +466,7 @@ export default function PaymentMethodsPage() {
                           }`}
                         />
                         {addFormErrors.phone_number && (
-                          <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                          <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                             {addFormErrors.phone_number}
                           </p>
                         )}
@@ -478,7 +478,7 @@ export default function PaymentMethodsPage() {
 
                     {/* Nickname */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Nickname (Optional)
                       </label>
                       <input
@@ -497,7 +497,7 @@ export default function PaymentMethodsPage() {
                         }`}
                       />
                       {addFormErrors.nickname && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                           {addFormErrors.nickname}
                         </p>
                       )}
@@ -512,7 +512,7 @@ export default function PaymentMethodsPage() {
                         onChange={(e) => setAddForm({ ...addForm, is_default: e.target.checked })}
                         className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
                       />
-                      <label htmlFor="is_default" className="text-sm text-gray-700 dark:text-gray-300">
+                      <label htmlFor="is_default" className="text-xs text-gray-700 dark:text-gray-300">
                         Set as default payment method
                       </label>
                     </div>
@@ -570,7 +570,7 @@ export default function PaymentMethodsPage() {
               >
                 <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   <div className="flex items-start justify-between mb-4">
-                    <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
+                    <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
                       Edit Nickname
                     </Dialog.Title>
                     <button
@@ -584,7 +584,7 @@ export default function PaymentMethodsPage() {
 
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                         Nickname
                       </label>
                       <input
@@ -603,7 +603,7 @@ export default function PaymentMethodsPage() {
                         }`}
                       />
                       {editNicknameError && (
-                        <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                        <p className="mt-1 text-xs text-red-600 dark:text-red-400">
                           {editNicknameError}
                         </p>
                       )}
@@ -665,15 +665,15 @@ export default function PaymentMethodsPage() {
                       <ExclamationTriangleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
                     </div>
                     <div className="flex-1">
-                      <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                      <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                         Remove Payment Method
                       </Dialog.Title>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                      <p className="text-xs text-gray-600 dark:text-gray-300">
                         Are you sure you want to remove this payment method?
                       </p>
                       {deletingMethod && (
                         <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          <p className="text-xs font-medium text-gray-900 dark:text-white">
                             {getMaskedDisplay(deletingMethod)}
                           </p>
                           {deletingMethod.nickname && (

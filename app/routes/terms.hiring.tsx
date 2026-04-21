@@ -14,7 +14,7 @@ export default function HiringTermsAndConditions() {
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 mb-8">
             <div className="flex items-center gap-3 mb-4">
               <FileText className="w-8 h-8 text-purple-600 dark:text-purple-400" />
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-lg font-bold text-gray-900 dark:text-white">
                 Hiring Terms & Conditions
               </h1>
             </div>
@@ -33,7 +33,7 @@ export default function HiringTermsAndConditions() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   1. Agreement to Terms
                 </h2>
               </div>
@@ -51,7 +51,7 @@ export default function HiringTermsAndConditions() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   2. Hire Request Process
                 </h2>
               </div>
@@ -78,7 +78,7 @@ export default function HiringTermsAndConditions() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   3. Employment Contract
                 </h2>
               </div>
@@ -104,7 +104,7 @@ export default function HiringTermsAndConditions() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <AlertCircle className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   4. Responsibilities & Obligations
                 </h2>
               </div>
@@ -136,7 +136,7 @@ export default function HiringTermsAndConditions() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="w-6 h-6 text-red-600 dark:text-red-400" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   5. Termination
                 </h2>
               </div>
@@ -164,7 +164,7 @@ export default function HiringTermsAndConditions() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <AlertCircle className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   6. Platform Role & Limitations
                 </h2>
               </div>
@@ -197,7 +197,7 @@ export default function HiringTermsAndConditions() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   7. Dispute Resolution
                 </h2>
               </div>
@@ -223,7 +223,7 @@ export default function HiringTermsAndConditions() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <Shield className="w-6 h-6 text-teal-600 dark:text-teal-400" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   8. Privacy & Data
                 </h2>
               </div>
@@ -250,7 +250,7 @@ export default function HiringTermsAndConditions() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <AlertCircle className="w-6 h-6 text-gray-600 dark:text-gray-400" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   9. Changes to Terms
                 </h2>
               </div>
@@ -265,7 +265,7 @@ export default function HiringTermsAndConditions() {
             <section>
               <div className="flex items-center gap-2 mb-4">
                 <FileText className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
                   10. Contact Information
                 </h2>
               </div>

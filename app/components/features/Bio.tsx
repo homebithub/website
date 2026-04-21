@@ -115,7 +115,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">{currentContent.title}</h2>
+      <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">{currentContent.title}</h2>
       
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         {currentContent.description}
@@ -123,7 +123,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
       
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
-          <label htmlFor="bio" className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+          <label htmlFor="bio" className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
             Your Bio <span className="text-red-500">*</span>
           </label>
           <div className="mt-1 relative">
@@ -140,7 +140,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
               onChange={(e) => { setBio(e.target.value); markDirty(); }}
               maxLength={MAX_CHARACTERS}
             />
-            <div className="mt-2 flex justify-between text-sm">
+            <div className="mt-2 flex justify-between text-xs">
               <div>
                 {error && !isBioValid && bio.length > 0 && (
                   <span className="text-red-600 dark:text-red-400 font-semibold">{error}</span>
@@ -151,7 +151,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
               </div>
             </div>
             {!isBioValid && bio.length > 0 && (
-              <p className="mt-2 text-sm text-amber-600 dark:text-amber-400 font-semibold">
+              <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 font-semibold">
                 ⚠️ Minimum {MIN_CHARACTERS} characters required
               </p>
             )}
@@ -164,7 +164,7 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
         <button
           type="submit"
           disabled={!isBioValid || isSubmitting}
-          className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+          className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>

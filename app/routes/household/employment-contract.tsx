@@ -518,13 +518,13 @@ export default function EmploymentContractPage() {
             <ChevronLeft className="w-5 h-5 text-purple-600 dark:text-purple-300" />
           </button>
           <div className="flex-1">
-            <p className="text-sm uppercase tracking-widest text-gray-500 font-semibold mb-1 dark:text-purple-300">
+            <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-1 dark:text-purple-300">
               Household • Contract
             </p>
-            <h1 className="text-xl font-extrabold text-gray-900 dark:text-white">
+            <h1 className="text-lg font-extrabold text-gray-900 dark:text-white">
               {contractId ? 'Employment Contract' : 'Create Employment Contract'}
             </h1>
-            <p className="text-sm text-gray-600 dark:text-purple-200">
+            <p className="text-xs text-gray-600 dark:text-purple-200">
               {viewMode === 'configure' ? 'Configure your contract terms and clauses' :
                viewMode === 'preview' ? 'Review and sign your contract' :
                'View contract details'}
@@ -535,13 +535,13 @@ export default function EmploymentContractPage() {
             <div className="flex gap-2">
               <button
                 onClick={() => setViewMode('configure')}
-                className={`px-4 py-1.5 text-sm rounded-xl font-semibold transition-all ${viewMode === 'configure' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30' : 'bg-white/10 dark:bg-purple-900/30 text-gray-700 dark:text-purple-200 border border-purple-200 dark:border-purple-700/50 hover:bg-purple-50 dark:hover:bg-purple-900/50'}`}
+                className={`px-4 py-1.5 text-xs rounded-xl font-semibold transition-all ${viewMode === 'configure' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30' : 'bg-white/10 dark:bg-purple-900/30 text-gray-700 dark:text-purple-200 border border-purple-200 dark:border-purple-700/50 hover:bg-purple-50 dark:hover:bg-purple-900/50'}`}
               >
                 <Edit3 className="w-4 h-4 inline mr-1" /> Edit
               </button>
               <button
                 onClick={() => setViewMode('preview')}
-                className={`px-4 py-1.5 text-sm rounded-xl font-semibold transition-all ${viewMode === 'preview' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30' : 'bg-white/10 dark:bg-purple-900/30 text-gray-700 dark:text-purple-200 border border-purple-200 dark:border-purple-700/50 hover:bg-purple-50 dark:hover:bg-purple-900/50'}`}
+                className={`px-4 py-1.5 text-xs rounded-xl font-semibold transition-all ${viewMode === 'preview' ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/30' : 'bg-white/10 dark:bg-purple-900/30 text-gray-700 dark:text-purple-200 border border-purple-200 dark:border-purple-700/50 hover:bg-purple-50 dark:hover:bg-purple-900/50'}`}
               >
                 <FileText className="w-4 h-4 inline mr-1" /> Preview
               </button>
@@ -592,28 +592,28 @@ export default function EmploymentContractPage() {
           <div className="space-y-6">
             {/* Contract Details */}
             <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Contract Details</h2>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-4">Contract Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Title *</label>
+                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Title *</label>
                   <input type="text" value={jobTitle} onChange={e => setJobTitle(e.target.value)}
                     className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                     placeholder="e.g. Live-in Househelp" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-1">Work Location</label>
+                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Work Location</label>
                   <input type="text" value={workLocation} onChange={e => setWorkLocation(e.target.value)}
                     className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                     placeholder="e.g. Nairobi, Kilimani" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary (KES) *</label>
+                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary (KES) *</label>
                   <input type="number" value={salary} onChange={e => setSalary(e.target.value)}
                     className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                     placeholder="e.g. 15000" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency *</label>
+                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency *</label>
                   <select value={salaryFrequency} onChange={e => setSalaryFrequency(e.target.value)}
                     className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
                     <option value="monthly">Monthly</option>
@@ -623,24 +623,24 @@ export default function EmploymentContractPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-1">Start Date</label>
+                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Start Date</label>
                   <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)}
                     className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-1">End Date (optional)</label>
+                  <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">End Date (optional)</label>
                   <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)}
                     className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all" />
                 </div>
               </div>
               <div className="mt-4">
-                <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Description</label>
+                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Job Description</label>
                 <textarea value={jobDescription} onChange={e => setJobDescription(e.target.value)} rows={3}
                   className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none"
                   placeholder="Describe the duties and responsibilities..." />
               </div>
               <div className="mt-4">
-                <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-1">Additional Notes</label>
+                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Additional Notes</label>
                 <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
                   className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none"
                   placeholder="Any additional notes..." />
@@ -649,8 +649,8 @@ export default function EmploymentContractPage() {
 
             {/* Contract Clauses */}
             <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Contract Clauses</h2>
-              <p className="text-sm text-gray-500 dark:text-purple-300 mb-4">Select which clauses to include in the contract. All are included by default.</p>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Contract Clauses</h2>
+              <p className="text-xs text-gray-500 dark:text-purple-300 mb-4">Select which clauses to include in the contract. All are included by default.</p>
               <div className="space-y-3">
                 {clauses.map((clause) => (
                   <label key={clause.id} className="flex items-start gap-3 p-3 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/40 cursor-pointer transition-colors">
@@ -662,7 +662,7 @@ export default function EmploymentContractPage() {
                     />
                     <div className="flex-1">
                       <span className="font-medium text-gray-900 dark:text-white">{clause.title}</span>
-                      <p className="text-sm text-gray-600 dark:text-purple-200 mt-1">{clause.body}</p>
+                      <p className="text-xs text-gray-600 dark:text-purple-200 mt-1">{clause.body}</p>
                     </div>
                   </label>
                 ))}
@@ -671,11 +671,11 @@ export default function EmploymentContractPage() {
 
             {/* Custom Clauses */}
             <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Additional Clauses</h2>
-              <p className="text-sm text-gray-500 dark:text-purple-300 mb-4">Add any custom clauses you'd like to include.</p>
+              <h2 className="text-base font-semibold text-gray-900 dark:text-white mb-2">Additional Clauses</h2>
+              <p className="text-xs text-gray-500 dark:text-purple-300 mb-4">Add any custom clauses you'd like to include.</p>
               {customClauses.map((clause, index) => (
                 <div key={index} className="flex items-start gap-2 mb-3 p-3 bg-purple-50 dark:bg-purple-900/30 rounded-xl border border-purple-100 dark:border-purple-700/40">
-                  <span className="flex-1 text-sm text-gray-800 dark:text-purple-100">{clause}</span>
+                  <span className="flex-1 text-xs text-gray-800 dark:text-purple-100">{clause}</span>
                   <button onClick={() => removeCustomClause(index)} className="text-red-500 hover:text-red-700 p-1">
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -723,15 +723,15 @@ export default function EmploymentContractPage() {
               <div ref={printRef} className="p-8 md:p-12" style={{ background: 'white', color: '#1a1a1a' }}>
                 {/* Contract Header */}
                 <div className="text-center mb-8">
-                  <h1 className="text-2xl font-bold text-gray-900 mb-1">EMPLOYMENT CONTRACT</h1>
-                  <p className="text-sm text-gray-500">
+                  <h1 className="text-xl font-bold text-gray-900 mb-1">EMPLOYMENT CONTRACT</h1>
+                  <p className="text-xs text-gray-500">
                     Contract ID: {contract.id.slice(0, 8).toUpperCase()} &bull; Created: {formatDate(contract.created_at)}
                   </p>
                 </div>
 
                 {/* Parties */}
                 <div className="mb-8">
-                  <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-300 pb-1 mb-3">Parties</h2>
+                  <h2 className="text-base font-semibold text-gray-900 border-b border-gray-300 pb-1 mb-3">Parties</h2>
                   <p className="text-gray-700 mb-2">
                     <strong>Employer (Household):</strong> {contract.household_signer_name || 'Pending signature'}
                   </p>
@@ -742,8 +742,8 @@ export default function EmploymentContractPage() {
 
                 {/* Terms */}
                 <div className="mb-8">
-                  <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-300 pb-1 mb-3">Terms of Employment</h2>
-                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-700">
+                  <h2 className="text-base font-semibold text-gray-900 border-b border-gray-300 pb-1 mb-3">Terms of Employment</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs text-gray-700">
                     <div><strong>Position:</strong> {contract.job_title}</div>
                     <div><strong>Location:</strong> {contract.work_location || 'As agreed'}</div>
                     <div><strong>Salary:</strong> KES {contract.salary?.toLocaleString()} / {contract.salary_frequency}</div>
@@ -760,11 +760,11 @@ export default function EmploymentContractPage() {
 
                 {/* Clauses */}
                 <div className="mb-8">
-                  <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-300 pb-1 mb-3">Terms & Conditions</h2>
+                  <h2 className="text-base font-semibold text-gray-900 border-b border-gray-300 pb-1 mb-3">Terms & Conditions</h2>
                   {contract.clauses?.filter((c: ContractClause) => c.included).map((clause: ContractClause, idx: number) => (
                     <div key={clause.id} className="mb-4">
                       <p className="font-semibold text-gray-900">{idx + 1}. {clause.title}</p>
-                      <p className="text-gray-700 text-sm mt-1 ml-4">{clause.body}</p>
+                      <p className="text-gray-700 text-xs mt-1 ml-4">{clause.body}</p>
                     </div>
                   ))}
                   {contract.custom_clauses?.filter((c: string) => c.trim()).map((clause: string, idx: number) => (
@@ -772,20 +772,20 @@ export default function EmploymentContractPage() {
                       <p className="font-semibold text-gray-900">
                         {(contract.clauses?.filter((c: ContractClause) => c.included).length || 0) + idx + 1}. Additional Clause
                       </p>
-                      <p className="text-gray-700 text-sm mt-1 ml-4">{clause}</p>
+                      <p className="text-gray-700 text-xs mt-1 ml-4">{clause}</p>
                     </div>
                   ))}
                 </div>
 
                 {contract.notes && (
                   <div className="mb-8">
-                    <h2 className="text-lg font-semibold text-gray-900 border-b border-gray-300 pb-1 mb-3">Additional Notes</h2>
-                    <p className="text-gray-700 text-sm">{contract.notes}</p>
+                    <h2 className="text-base font-semibold text-gray-900 border-b border-gray-300 pb-1 mb-3">Additional Notes</h2>
+                    <p className="text-gray-700 text-xs">{contract.notes}</p>
                   </div>
                 )}
 
                 {/* Signatures */}
-                <div className="mt-12 grid grid-cols-2 gap-8">
+                <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-8">
                   <div className="text-center">
                     <div className="border-t border-gray-400 pt-3">
                       {contract.household_signed_at ? (
@@ -796,7 +796,7 @@ export default function EmploymentContractPage() {
                       ) : (
                         <p className="font-medium text-gray-700">{employerName || 'Awaiting signature'}</p>
                       )}
-                      <p className="text-sm text-gray-600 mt-1">Employer</p>
+                      <p className="text-xs text-gray-600 mt-1">Employer</p>
                     </div>
                   </div>
                   <div className="text-center">
@@ -809,7 +809,7 @@ export default function EmploymentContractPage() {
                       ) : (
                         <p className="font-medium text-gray-700">{employeeName || 'Awaiting signature'}</p>
                       )}
-                      <p className="text-sm text-gray-600 mt-1">Employee</p>
+                      <p className="text-xs text-gray-600 mt-1">Employee</p>
                     </div>
                   </div>
                 </div>
@@ -819,14 +819,14 @@ export default function EmploymentContractPage() {
             {/* Editable Signer Names */}
             {contract && (!contract.household_signed_at || !contract.househelp_signed_at) && (
               <div className="bg-white rounded-2xl shadow-sm border border-purple-100 p-6 dark:bg-purple-900/20 dark:border-purple-700/50">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">Signer Names</h3>
+                <h3 className="text-xs font-semibold text-gray-900 dark:text-white mb-1">Signer Names</h3>
                 <p className="text-xs text-gray-500 dark:text-purple-300 mb-4">
                   These names will appear on the contract. Edit if needed before signing.
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   {/* Employer (Household) side */}
                   <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400">
+                    <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400">
                       Employer (Household)
                     </label>
                     <input
@@ -859,7 +859,7 @@ export default function EmploymentContractPage() {
 
                   {/* Employee (Househelp) side */}
                   <div className="space-y-3">
-                    <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400">
+                    <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400">
                       Employee (Househelp)
                     </label>
                     <input
@@ -933,17 +933,17 @@ export default function EmploymentContractPage() {
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={() => setShowSigningModal(false)} />
             <div className="relative bg-white dark:bg-[#0d0d15] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
-              <h3 className="text-lg font-extrabold text-gray-900 dark:text-white mb-2">Sign Contract</h3>
-              <p className="text-sm text-gray-600 dark:text-purple-200 mb-4">
+              <h3 className="text-base font-extrabold text-gray-900 dark:text-white mb-2">Sign Contract</h3>
+              <p className="text-xs text-gray-600 dark:text-purple-200 mb-4">
                 Enter your full legal name to sign this contract. This serves as your digital signature.
               </p>
               <div className="mb-4">
-                <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-1">Full Legal Name *</label>
+                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Full Legal Name *</label>
                 <input
                   type="text"
                   value={signerName}
                   onChange={e => signingAs === 'household' ? setEmployerName(e.target.value) : setEmployeeName(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all text-lg"
+                  className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all text-base"
                   placeholder="e.g. John Kamau Mwangi"
                   autoFocus
                 />
@@ -971,17 +971,17 @@ export default function EmploymentContractPage() {
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={() => setShowEmailModal(false)} />
             <div className="relative bg-white dark:bg-[#0d0d15] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
-              <h3 className="text-lg font-extrabold text-gray-900 dark:text-white mb-2">Email Contract</h3>
-              <p className="text-sm text-gray-600 dark:text-purple-200 mb-4">
+              <h3 className="text-base font-extrabold text-gray-900 dark:text-white mb-2">Email Contract</h3>
+              <p className="text-xs text-gray-600 dark:text-purple-200 mb-4">
                 We'll send a copy of the signed contract to the email address below.
               </p>
               <div className="mb-5">
-                <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-1">Email Address *</label>
+                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Email Address *</label>
                 <input
                   type="email"
                   value={emailAddress}
                   onChange={e => setEmailAddress(e.target.value)}
-                  className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all text-lg"
+                  className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all text-base"
                   placeholder="e.g. jane@example.com"
                   autoFocus
                 />

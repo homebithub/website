@@ -104,12 +104,12 @@ const Children: React.FC = () => {
   return (
     <div className="w-full max-w-3xl mx-auto">
       <form className="bg-white border p-8 rounded-xl shadow-lg flex flex-col gap-8" onSubmit={handleSubmit}>
-        <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Children</h2>
+        <h2 className="text-xl font-extrabold text-primary mb-4 text-center">Children</h2>
         <div className="flex flex-col gap-5">
           {options.map((opt) => (
             <label
               key={opt.value}
-              className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${
+              className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${
                 selected === opt.value
                   ? "border-primary-500 bg-primary-50 text-primary-900"
                   : "border-gray-200 bg-white hover:bg-gray-50"

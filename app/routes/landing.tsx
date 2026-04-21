@@ -3,6 +3,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { Link } from "react-router";
 import React, { useEffect, useRef, useState } from "react";
+import { MARKETING_SERVICES } from "~/constants/marketingServices";
 
 export const meta = () => [
     { title: "Homebit — Trusted Home Services in Kenya" },
@@ -14,10 +15,6 @@ export const meta = () => [
 import {
   HomeIcon,
   UserGroupIcon,
-  ShieldCheckIcon,
-  SparklesIcon,
-  ClockIcon,
-  ChatBubbleLeftRightIcon,
   ArrowRightIcon,
 } from "@heroicons/react/24/solid";
 
@@ -120,15 +117,6 @@ function Typewriter({ words, className = "" }: { words: string[]; className?: st
   );
 }
 
-const services = [
-  { icon: HomeIcon, title: "Deep Cleaning", desc: "Thorough home cleaning by trained professionals." },
-  { icon: UserGroupIcon, title: "Childcare", desc: "Trusted nannies and babysitters for your family." },
-  { icon: ShieldCheckIcon, title: "Secure Hiring", desc: "Background-checked and verified househelps." },
-  { icon: SparklesIcon, title: "Laundry", desc: "Fresh, folded, and delivered on time." },
-  { icon: ClockIcon, title: "Flexible Hours", desc: "Book by the hour, day, or full-time." },
-  { icon: ChatBubbleLeftRightIcon, title: "Direct Chat", desc: "Message professionals before you hire." },
-];
-
 export default function Home4() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -144,27 +132,27 @@ export default function Home4() {
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-purple-500 dark:text-purple-400 mb-2">
                     Homebit
                   </p>
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 dark:text-white leading-tight">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-gray-900 dark:text-white leading-tight">
                     Find the perfect help for{" "}
                     <Typewriter
                       words={["cooking", "laundry", "dishwashing", "ironing", "mopping", "grocery shopping", "childcare", "pet care", "bathroom cleaning"]}
                       className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500"
                     />
                   </h1>
-                  <p className="mt-3 text-sm sm:text-base text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg">
+                  <p className="mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-300 leading-relaxed max-w-lg">
                     We connect households with trusted, skilled professionals. Simple hiring, transparent pricing, and peace of mind — all in one platform.
                   </p>
                   <div className="mt-4 flex flex-wrap items-center gap-3">
                     <Link
                       to="/signup"
-                      className="group inline-flex items-center gap-2 rounded-xl bg-gray-900 dark:bg-white px-5 py-2 text-sm font-bold text-white dark:text-gray-900 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
+                      className="group inline-flex items-center gap-2 rounded-xl bg-gray-900 dark:bg-white px-5 py-2 text-xs font-bold text-white dark:text-gray-900 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
                     >
                       Get Started
                       <ArrowRightIcon className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
                     </Link>
                     <Link
                       to="/about"
-                      className="text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200 underline underline-offset-4 decoration-gray-300 dark:decoration-gray-600 hover:decoration-purple-400"
+                      className="text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200 underline underline-offset-4 decoration-gray-300 dark:decoration-gray-600 hover:decoration-purple-400"
                     >
                       Learn more
                     </Link>
@@ -214,29 +202,34 @@ export default function Home4() {
             <div className="max-w-5xl mx-auto px-4 sm:px-6">
               <SlideUp>
                 <div className="text-center mb-10 sm:mb-14">
-                  <h2 className="text-base sm:text-lg font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                  <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
                     Our Services
                   </h2>
-                  <p className="mt-2 text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="mt-2 text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
                     Everything under one roof
                   </p>
                 </div>
               </SlideUp>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                {services.map((svc, idx) => (
-                  <SlideUp key={svc.title} delay={idx * 80}>
+                {MARKETING_SERVICES.map((service, idx) => (
+                  <SlideUp key={service.name} delay={idx * 80}>
                     <div className="group relative rounded-2xl border border-purple-200/30 dark:border-purple-500/15 bg-gradient-to-br from-white to-purple-50/50 dark:from-[#13131a] dark:to-[#0a0a0f] p-5 sm:p-6 transition-all duration-300 hover:shadow-light-glow-md dark:hover:shadow-glow-sm hover:-translate-y-1">
                       <div className="flex items-start gap-3.5">
                         <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-md group-hover:scale-110 transition-transform duration-300">
-                          <svc.icon className="h-5 w-5 text-white" />
+                          <service.icon className="h-5 w-5 text-white" />
                         </div>
                         <div>
-                          <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
-                            {svc.title}
+                          <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
+                            {service.name}
                           </h3>
-                          <p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
-                            {svc.desc}
+                          {service.comingSoon && (
+                            <span className="mt-1 inline-block rounded-full bg-gray-100 dark:bg-purple-900/30 px-2 py-0.5 text-xs font-semibold text-purple-600 dark:text-purple-400">
+                              Coming soon
+                            </span>
+                          )}
+                          <p className="mt-1 text-xs sm:text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                            {service.description}
                           </p>
                         </div>
                       </div>
@@ -252,10 +245,10 @@ export default function Home4() {
             <div className="max-w-5xl mx-auto">
               <SlideUp>
                 <div className="text-center mb-10 sm:mb-14">
-                  <h2 className="text-base sm:text-lg font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                  <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
                     How It Works
                   </h2>
-                  <p className="mt-2 text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                  <p className="mt-2 text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
                     Getting started is easy
                   </p>
                 </div>
@@ -266,7 +259,7 @@ export default function Home4() {
                 <div className="mb-8">
                   <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 dark:bg-purple-900/30 px-4 py-1.5 mb-6">
                     <HomeIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                    <span className="text-xs sm:text-sm font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide">
+                    <span className="text-xs sm:text-xs font-bold text-purple-700 dark:text-purple-300 uppercase tracking-wide">
                       For Households
                     </span>
                   </div>
@@ -286,10 +279,10 @@ export default function Home4() {
                   <SlideUp key={item.step} delay={idx * 150}>
                     <div className="text-center relative z-10">
                       <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 mb-4 ring-4 ring-white dark:ring-[#0a0a0f]">
-                        <span className="text-sm font-extrabold text-purple-700 dark:text-purple-400">{item.step}</span>
+                        <span className="text-xs font-extrabold text-purple-700 dark:text-purple-400">{item.step}</span>
                       </div>
-                      <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">{item.title}</h3>
-                      <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs mx-auto">
+                      <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">{item.title}</h3>
+                      <p className="mt-2 text-xs sm:text-xs text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs mx-auto">
                         {item.desc}
                       </p>
                     </div>
@@ -305,7 +298,7 @@ export default function Home4() {
                 <div className="mb-8">
                   <div className="inline-flex items-center gap-2 rounded-full bg-pink-100 dark:bg-pink-900/30 px-4 py-1.5 mb-6">
                     <UserGroupIcon className="h-4 w-4 text-pink-600 dark:text-pink-400" />
-                    <span className="text-xs sm:text-sm font-bold text-pink-700 dark:text-pink-300 uppercase tracking-wide">
+                    <span className="text-xs sm:text-xs font-bold text-pink-700 dark:text-pink-300 uppercase tracking-wide">
                       For Househelps
                     </span>
                   </div>
@@ -325,10 +318,10 @@ export default function Home4() {
                   <SlideUp key={`hh-${item.step}`} delay={idx * 150}>
                     <div className="text-center relative z-10">
                       <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-pink-100 dark:bg-pink-900/30 mb-4 ring-4 ring-white dark:ring-[#0a0a0f]">
-                        <span className="text-sm font-extrabold text-pink-700 dark:text-pink-400">{item.step}</span>
+                        <span className="text-xs font-extrabold text-pink-700 dark:text-pink-400">{item.step}</span>
                       </div>
-                      <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">{item.title}</h3>
-                      <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs mx-auto">
+                      <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">{item.title}</h3>
+                      <p className="mt-2 text-xs sm:text-xs text-gray-500 dark:text-gray-400 leading-relaxed max-w-xs mx-auto">
                         {item.desc}
                       </p>
                     </div>
@@ -342,16 +335,16 @@ export default function Home4() {
           <section className="bg-gradient-to-br from-purple-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-14 sm:py-20 transition-colors duration-300">
             <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center">
               <SlideUp>
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
                   Ready to transform your home experience?
                 </h2>
-                <p className="mt-3 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <p className="mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                   Join thousands of households and professionals already on Homebit.
                 </p>
                 <div className="mt-6">
                   <Link
                     to="/signup"
-                    className="inline-block rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-sm sm:text-base font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300"
+                    className="inline-block rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-xs sm:text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300"
                   >
                     Join Homebit Today
                   </Link>

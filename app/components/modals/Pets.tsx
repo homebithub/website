@@ -154,10 +154,10 @@ const Pets: React.FC = () => {
 
   return (
     <div className="w-full max-w-xl mx-auto bg-white border border-gray-100 p-8 rounded-xl shadow-lg flex flex-col gap-8">
-      <h2 className="text-2xl font-extrabold text-primary mb-4 text-center">Pets</h2>
+      <h2 className="text-xl font-extrabold text-primary mb-4 text-center">Pets</h2>
       
       <div className="flex flex-col gap-5">
-        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${hasPet === "no" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${hasPet === "no" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
           <input
             type="radio"
             name="hasPet"
@@ -169,7 +169,7 @@ const Pets: React.FC = () => {
           <span>I do not have a pet</span>
         </label>
         
-        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-lg font-medium ${hasPet === "yes" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
+        <label className={`flex items-center gap-4 p-4 rounded-xl border cursor-pointer shadow-sm text-base font-medium ${hasPet === "yes" ? "border-primary-500 bg-primary-50 text-primary-900" : "border-gray-200 bg-white hover:bg-gray-50"}`}>
           <input
             type="radio"
             name="hasPet"
@@ -185,22 +185,22 @@ const Pets: React.FC = () => {
       {/* Pet Table - Show if user has pets */}
       {hasPet === "yes" && pets.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-lg font-semibold text-gray-700 mb-4">Your Pets</h3>
+          <h3 className="text-base font-semibold text-gray-700 mb-4">Your Pets</h3>
           <div className="overflow-x-auto">
             <table className="w-full border border-gray-200 rounded-lg overflow-hidden">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-1.5 text-left text-sm font-medium text-gray-700 border-b">Pet Type</th>
-                  <th className="px-4 py-1.5 text-left text-sm font-medium text-gray-700 border-b">Traits</th>
-                  <th className="px-4 py-1.5 text-left text-sm font-medium text-gray-700 border-b">Care Required</th>
-                  <th className="px-4 py-1.5 text-center text-sm font-medium text-gray-700 border-b">Action</th>
+                  <th className="px-4 py-1.5 text-left text-xs font-medium text-gray-700 border-b">Pet Type</th>
+                  <th className="px-4 py-1.5 text-left text-xs font-medium text-gray-700 border-b">Traits</th>
+                  <th className="px-4 py-1.5 text-left text-xs font-medium text-gray-700 border-b">Care Required</th>
+                  <th className="px-4 py-1.5 text-center text-xs font-medium text-gray-700 border-b">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {pets.map((pet, index) => (
                   <tr key={pet.id} className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'} hover:bg-gray-100`}>
-                    <td className="px-4 py-3 text-sm text-gray-800 border-b capitalize">{pet.type}</td>
-                    <td className="px-4 py-3 text-sm text-gray-600 border-b">
+                    <td className="px-4 py-3 text-xs text-gray-800 border-b capitalize">{pet.type}</td>
+                    <td className="px-4 py-3 text-xs text-gray-600 border-b">
                       {pet.traits.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {pet.traits.map(trait => (
@@ -213,7 +213,7 @@ const Pets: React.FC = () => {
                         <span className="text-gray-400">None</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm border-b">
+                    <td className="px-4 py-3 text-xs border-b">
                       {pet.requiresCare ? (
                         <div>
                           <span className="inline-block bg-orange-100 text-orange-700 text-xs px-2 py-1 rounded-full mb-1">Yes</span>
@@ -262,7 +262,7 @@ const Pets: React.FC = () => {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowModal(false)} />
           <div className="relative bg-white rounded-t-2xl sm:rounded-2xl p-6 w-full sm:max-w-md sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold text-gray-800">Add Pet</h3>
+              <h3 className="text-lg font-bold text-gray-800">Add Pet</h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-500 hover:text-gray-700"
@@ -276,7 +276,7 @@ const Pets: React.FC = () => {
             <div className="space-y-4">
               {/* Pet Type Dropdown */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-2">
                   Pet Type <span className="text-red-500">*</span>
                 </label>
                 <CustomSelect
@@ -313,14 +313,14 @@ const Pets: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">Requires Care</span>
+                  <span className="text-xs font-medium text-gray-700">Requires Care</span>
                 </label>
               </div>
 
               {/* Care Details Textarea */}
               {requiresCare && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-2">
                     Care Details
                   </label>
                   <textarea
@@ -335,7 +335,7 @@ const Pets: React.FC = () => {
 
               {/* Pet Traits */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-xs font-medium text-gray-700 mb-2">
                   Traits <span className="text-gray-500">(Select up to 3)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
@@ -345,7 +345,7 @@ const Pets: React.FC = () => {
                       type="button"
                       onClick={() => handleTraitToggle(trait)}
                       disabled={!selectedTraits.includes(trait) && selectedTraits.length >= 3}
-                      className={`px-4 py-1 rounded-full border text-sm font-medium transition-colors ${
+                      className={`px-4 py-1 rounded-full border text-xs font-medium transition-colors ${
                         selectedTraits.includes(trait)
                           ? 'bg-purple-100 border-purple-500 text-purple-700'
                           : selectedTraits.length >= 3
@@ -363,7 +363,7 @@ const Pets: React.FC = () => {
             {/* Error Display */}
             {error && (
               <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-red-600 text-sm">{error}</p>
+                <p className="text-red-600 text-xs">{error}</p>
               </div>
             )}
 
@@ -400,19 +400,19 @@ const Pets: React.FC = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-medium text-gray-900">Delete Pet</h3>
+                <h3 className="text-base font-medium text-gray-900">Delete Pet</h3>
               </div>
             </div>
             
             <div className="mb-6">
-              <p className="text-sm text-gray-600">
+              <p className="text-xs text-gray-600">
                 Are you sure you want to delete <span className="font-semibold capitalize">{petToDelete.type}</span>? This action cannot be undone.
               </p>
             </div>
 
             {error && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
-                <p className="text-red-600 text-sm">{error}</p>
+                <p className="text-red-600 text-xs">{error}</p>
               </div>
             )}
 

@@ -106,24 +106,24 @@ export default function BureauProfile() {
                         {/* Edit button */}
                         {!editMode && (
                             <button
-                                className="absolute top-4 right-4 px-4 py-1 text-sm rounded-xl bg-purple-600 text-white hover:bg-purple-700 font-semibold"
+                                className="absolute top-4 right-4 px-4 py-1 text-xs rounded-xl bg-purple-600 text-white hover:bg-purple-700 font-semibold"
                                 onClick={() => setEditMode(true)}
                                 type="button"
                             >
                                 Edit
                             </button>
                         )}
-                        <h1 className="text-2xl font-bold text-primary mb-2 text-center dark:text-primary-300">Bureau Profile</h1>
+                        <h1 className="text-xl font-bold text-primary mb-2 text-center dark:text-primary-300">Bureau Profile</h1>
                         <div className="text-center text-gray-500 dark:text-gray-300 mb-6">Your bureau profile details</div>
                         <div className="space-y-4">
                             <div className="flex flex-col sm:flex-row sm:gap-4">
                                 <div className="flex-1">
                                     <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Profile Status</span>
-                                    <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_status}</span>
+                                    <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.profile_status}</span>
                                 </div>
                                 <div className="flex-1">
                                     <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Profile Type</span>
-                                    <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_type}</span>
+                                    <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.profile_type}</span>
                                 </div>
                             </div>
                             {/* Editable fields */}
@@ -241,37 +241,37 @@ export default function BureauProfile() {
                                 <>
                                     <div>
                                         <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Company Name</span>
-                                        <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.company_name || '-'}</span>
+                                        <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.company_name || '-'}</span>
                                     </div>
                                     <div>
                                         <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">License Number</span>
-                                        <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.license_number || '-'}</span>
+                                        <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.license_number || '-'}</span>
                                     </div>
                                     <div className="flex flex-col sm:flex-row sm:gap-4">
                                         <div className="flex-1">
                                             <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Founded Year</span>
-                                            <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.founded_year || '-'}</span>
+                                            <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.founded_year || '-'}</span>
                                         </div>
                                         <div className="flex-1">
                                             <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Staff Count</span>
-                                            <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.staff_count || '-'}</span>
+                                            <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.staff_count || '-'}</span>
                                         </div>
                                     </div>
                                     <div>
                                         <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Service Areas</span>
-                                        <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{Array.isArray(profile.service_areas) ? profile.service_areas.join(', ') : '-'}</span>
+                                        <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{Array.isArray(profile.service_areas) ? profile.service_areas.join(', ') : '-'}</span>
                                     </div>
                                     <div>
                                         <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Email</span>
-                                        <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.email || '-'}</span>
+                                        <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.email || '-'}</span>
                                     </div>
                                     <div>
                                         <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Address</span>
-                                        <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.address || '-'}</span>
+                                        <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.address || '-'}</span>
                                     </div>
                                     <div>
                                         <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Bio</span>
-                                        <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.bio || '-'}</span>
+                                        <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.bio || '-'}</span>
                                     </div>
                                 </>
                             )}
@@ -279,16 +279,16 @@ export default function BureauProfile() {
                             <div className="flex flex-col sm:flex-row sm:gap-4">
                                 <div className="flex-1">
                                     <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Verified</span>
-                                    <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.verified ? 'Yes' : 'No'}</span>
+                                    <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.verified ? 'Yes' : 'No'}</span>
                                 </div>
                                 <div className="flex-1">
                                     <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Created At</span>
-                                    <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.created_at ? formatTimeAgo(profile.created_at) : '-'}</span>
+                                    <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.created_at ? formatTimeAgo(profile.created_at) : '-'}</span>
                                 </div>
                             </div>
                             <div>
                                 <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Updated At</span>
-                                <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.updated_at ? formatTimeAgo(profile.updated_at) : '-'}</span>
+                                <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.updated_at ? formatTimeAgo(profile.updated_at) : '-'}</span>
                             </div>
                         </div>
                     </div>

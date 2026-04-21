@@ -456,10 +456,10 @@ export default function HiringHistory() {
       <div className="rounded-3xl bg-white shadow-xl border border-purple-100 px-4 sm:px-8 py-8 dark:bg-gradient-to-b dark:from-[#1a102b] dark:via-[#0e0a1a] dark:to-[#07050d] dark:border-purple-800/40 dark:shadow-2xl dark:shadow-purple-900/50 transition-colors">
         {/* Header */}
         <div className="mb-8">
-          <p className="text-sm uppercase tracking-widest text-gray-500 font-semibold mb-2 dark:text-purple-300">
+          <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-2 dark:text-purple-300">
             Household • Hiring
           </p>
-          <h1 className="text-xl font-extrabold text-gray-900 mb-2 dark:text-white">
+          <h1 className="text-lg font-extrabold text-gray-900 mb-2 dark:text-white">
             Hiring
           </h1>
           <p className="text-gray-600 dark:text-purple-200">
@@ -475,7 +475,7 @@ export default function HiringHistory() {
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
+                  className={`py-4 px-1 border-b-2 font-medium text-xs transition-colors flex items-center gap-2 ${
                     activeTab === tab.key
                       ? 'border-purple-500 text-purple-700 dark:text-white'
                       : 'border-transparent text-gray-400 hover:text-purple-700 dark:hover:text-white hover:border-purple-300'
@@ -508,10 +508,10 @@ export default function HiringHistory() {
         {!loading && activeTab === 'interested' && interests.length === 0 && (
           <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <HandHeart className="w-16 h-16 text-green-400 dark:text-green-300 mx-auto mb-4" />
-            <h3 className="text-xl sm:text-2xl font-semibold text-purple-900 dark:text-white mb-2">
+            <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
               No interested househelps yet
             </h3>
-            <p className="text-gray-600 dark:text-purple-200 mb-6 sm:mb-8 text-sm sm:text-base">
+            <p className="text-gray-600 dark:text-purple-200 mb-6 sm:mb-8 text-xs sm:text-sm">
               When househelps express interest in working for you, they'll appear here
             </p>
           </div>
@@ -541,7 +541,7 @@ export default function HiringHistory() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
+                        <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">
                           {getHousehelpInitials(interest.househelp as any)}
                         </div>
                       )}
@@ -550,7 +550,7 @@ export default function HiringHistory() {
                     {/* Details */}
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
                           {getHousehelpName(interest.househelp as any)}
                         </h3>
                         {!interest.viewed_at && (
@@ -573,7 +573,7 @@ export default function HiringHistory() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-700 dark:text-purple-100">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-gray-700 dark:text-purple-100">
                         {interest.job_type && (
                           <div>
                             <span className="text-gray-500 dark:text-purple-300">Preferred Job</span>
@@ -607,7 +607,7 @@ export default function HiringHistory() {
                       {interest.comments && (
                         <div className="mt-3 p-3 bg-gray-50 dark:bg-purple-900/20 rounded-xl">
                           <span className="text-xs text-gray-500 dark:text-purple-300 block mb-1">Message</span>
-                          <p className="text-sm text-gray-700 dark:text-purple-100">{interest.comments}</p>
+                          <p className="text-xs text-gray-700 dark:text-purple-100">{interest.comments}</p>
                         </div>
                       )}
                     </div>
@@ -617,7 +617,7 @@ export default function HiringHistory() {
                   <div className="flex flex-row lg:flex-col gap-2 lg:items-end">
                     <button
                       onClick={() => handleViewInterest(interest)}
-                      className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-sm font-medium text-purple-700 bg-purple-100 rounded-xl hover:bg-purple-200 dark:text-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 transition-colors"
+                      className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded-xl hover:bg-purple-200 dark:text-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 transition-colors"
                     >
                       <Eye className="w-4 h-4" />
                       View Profile
@@ -626,14 +626,14 @@ export default function HiringHistory() {
                       <>
                         <button
                           onClick={() => handleAcceptInterest(interest)}
-                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-sm font-medium text-white bg-green-500 rounded-xl hover:bg-green-600 transition-colors"
+                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-xs font-medium text-white bg-green-500 rounded-xl hover:bg-green-600 transition-colors"
                         >
                           <UserCheck className="w-4 h-4" />
                           Accept
                         </button>
                         <button
                           onClick={() => handleDeclineInterest(interest)}
-                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-sm font-medium text-red-700 bg-red-100 rounded-xl hover:bg-red-200 dark:text-red-200 dark:bg-red-900/40 dark:hover:bg-red-800/60 transition-colors"
+                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-xl hover:bg-red-200 dark:text-red-200 dark:bg-red-900/40 dark:hover:bg-red-800/60 transition-colors"
                         >
                           <UserX className="w-4 h-4" />
                           Decline
@@ -651,15 +651,15 @@ export default function HiringHistory() {
         {!loading && activeTab !== 'interested' && hireRequests.length === 0 && (
           <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <FileText className="w-16 h-16 text-purple-400 dark:text-purple-300 mx-auto mb-4" />
-            <h3 className="text-xl sm:text-2xl font-semibold text-purple-900 dark:text-white mb-2">
+            <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
               No hire requests yet
             </h3>
-            <p className="text-gray-600 dark:text-purple-200 mb-6 sm:mb-8 text-sm sm:text-base">
+            <p className="text-gray-600 dark:text-purple-200 mb-6 sm:mb-8 text-xs sm:text-sm">
               Start hiring by browsing househelps and sending hire requests
             </p>
             <button
               onClick={() => navigate('/')}
-              className="inline-flex items-center justify-center px-6 sm:px-8 py-1.5 text-base sm:text-lg rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+              className="inline-flex items-center justify-center px-6 sm:px-8 py-1.5 text-sm sm:text-base rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
             >
               Find Househelps
             </button>
@@ -686,7 +686,7 @@ export default function HiringHistory() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
+                        <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">
                           {getHousehelpInitials(request.househelp)}
                         </div>
                       )}
@@ -695,7 +695,7 @@ export default function HiringHistory() {
                     {/* Details */}
                     <div className="flex-1">
                       <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+                        <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
                           {getHousehelpName(request.househelp)}
                         </h3>
                         <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
@@ -704,7 +704,7 @@ export default function HiringHistory() {
                         </span>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-sm text-gray-700 dark:text-purple-100">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs text-gray-700 dark:text-purple-100">
                         <div>
                           <span className="text-gray-500 dark:text-purple-300">Job Type</span>
                           <p className="font-medium text-gray-900 dark:text-white capitalize">
@@ -745,8 +745,8 @@ export default function HiringHistory() {
 
                       {request.special_requirements && (
                         <div className="mt-3">
-                          <span className="text-sm text-gray-500 dark:text-purple-300">Special Requirements:</span>
-                          <p className="text-sm text-gray-700 dark:text-purple-100 mt-1">
+                          <span className="text-xs text-gray-500 dark:text-purple-300">Special Requirements:</span>
+                          <p className="text-xs text-gray-700 dark:text-purple-100 mt-1">
                             {request.special_requirements}
                           </p>
                         </div>
@@ -754,8 +754,8 @@ export default function HiringHistory() {
 
                       {request.decline_reason && (
                         <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700/40 dark:text-red-100">
-                          <span className="text-sm font-medium">Decline Reason:</span>
-                          <p className="text-sm mt-1">
+                          <span className="text-xs font-medium">Decline Reason:</span>
+                          <p className="text-xs mt-1">
                             {request.decline_reason}
                           </p>
                         </div>
@@ -767,7 +767,7 @@ export default function HiringHistory() {
                   <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto">
                     <button
                       onClick={() => setSelectedRequest(request)}
-                      className="inline-flex items-center justify-center px-4 py-1 text-sm rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 flex-1"
+                      className="inline-flex items-center justify-center px-4 py-1 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 flex-1"
                     >
                       View Details
                     </button>
@@ -775,7 +775,7 @@ export default function HiringHistory() {
                     {request.status === 'pending' && (
                       <button
                         onClick={() => openCancelModal(request)}
-                        className="inline-flex items-center justify-center px-4 py-1 text-sm rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-400 text-white font-semibold shadow-lg shadow-red-500/40 hover:from-red-700 hover:via-red-500 hover:to-orange-400 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 flex-1"
+                        className="inline-flex items-center justify-center px-4 py-1 text-xs rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-400 text-white font-semibold shadow-lg shadow-red-500/40 hover:from-red-700 hover:via-red-500 hover:to-orange-400 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 flex-1"
                       >
                         Cancel Request
                       </button>
@@ -785,7 +785,7 @@ export default function HiringHistory() {
                       <button
                         onClick={() => createContract(request)}
                         disabled={contractCreating === request.id}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-1 text-sm rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold shadow-lg shadow-green-500/30 hover:from-green-700 hover:to-emerald-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-500 flex-1 disabled:opacity-50"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-1 text-xs rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold shadow-lg shadow-green-500/30 hover:from-green-700 hover:to-emerald-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-500 flex-1 disabled:opacity-50"
                       >
                         <FileText className="w-4 h-4" />
                         {contractCreating === request.id ? 'Creating...' : 'Create Contract'}
@@ -795,7 +795,7 @@ export default function HiringHistory() {
                     {request.status === 'finalized' && (
                       <button
                         onClick={() => navigateToEmploymentContract(request)}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-1 text-sm rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg shadow-blue-500/30 hover:from-blue-700 hover:to-purple-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 flex-1"
+                        className="inline-flex items-center justify-center gap-2 px-4 py-1 text-xs rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg shadow-blue-500/30 hover:from-blue-700 hover:to-purple-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 flex-1"
                       >
                         <FileText className="w-4 h-4" />
                         {findByAnyIdentifier(employmentContractMap, getHousehelpCandidateIds(request)) ? 'View Employment Contract' : 'Create Employment Contract'}
@@ -812,7 +812,7 @@ export default function HiringHistory() {
         {/* Pagination */}
         {!loading && total > limit && (
           <div className="mt-8 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+            <p className="text-xs text-gray-700 dark:text-gray-300">
               Showing <span className="font-medium">{offset + 1}</span> to{' '}
               <span className="font-medium">{Math.min(offset + limit, total)}</span> of{' '}
               <span className="font-medium">{total}</span> results
@@ -863,10 +863,10 @@ export default function HiringHistory() {
           <p className="text-xs uppercase tracking-widest text-purple-500 dark:text-purple-300 font-semibold">
             Hire Request
           </p>
-          <h3 className="text-lg sm:text-xl font-extrabold text-gray-900 dark:text-white leading-tight">
+          <h3 className="text-base sm:text-lg font-extrabold text-gray-900 dark:text-white leading-tight">
             {getHousehelpName(selectedRequest.househelp)}
           </h3>
-          <div className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 flex flex-col sm:flex-row sm:items-center sm:gap-2">
+          <div className="text-xs sm:text-xs text-gray-500 dark:text-gray-400 flex flex-col sm:flex-row sm:items-center sm:gap-2">
             <span className="capitalize">
               {selectedRequest.job_type.replace("-", " ")}
             </span>
@@ -887,19 +887,19 @@ export default function HiringHistory() {
 
       <div className="grid gap-3 sm:gap-4 sm:grid-cols-2 mb-5 sm:mb-6">
         <div className="rounded-xl sm:rounded-2xl bg-purple-50 dark:bg-purple-900/20 p-3 sm:p-4 border border-purple-100 dark:border-purple-500/30">
-          <p className="text-xs sm:text-sm uppercase tracking-wide text-purple-400 dark:text-purple-200 mb-1">
+          <p className="text-xs sm:text-xs uppercase tracking-wide text-purple-400 dark:text-purple-200 mb-1">
             Salary
           </p>
-          <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white break-words">
+          <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white break-words">
             {formatSalary(selectedRequest.salary_offered, selectedRequest.salary_frequency)}
           </p>
         </div>
 
         <div className="rounded-xl sm:rounded-2xl bg-purple-50 dark:bg-purple-900/20 p-3 sm:p-4 border border-purple-100 dark:border-purple-500/30">
-          <p className="text-xs sm:text-sm uppercase tracking-wide text-purple-400 dark:text-purple-200 mb-1">
+          <p className="text-xs sm:text-xs uppercase tracking-wide text-purple-400 dark:text-purple-200 mb-1">
             Start Date
           </p>
-          <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+          <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
             {selectedRequest.start_date
               ? formatDate(selectedRequest.start_date)
               : "Not specified"}
@@ -907,19 +907,19 @@ export default function HiringHistory() {
         </div>
 
         <div className="rounded-xl sm:rounded-2xl bg-purple-50 dark:bg-purple-900/20 p-3 sm:p-4 border border-purple-100 dark:border-purple-500/30">
-          <p className="text-xs sm:text-sm uppercase tracking-wide text-purple-400 dark:text-purple-200 mb-1">
+          <p className="text-xs sm:text-xs uppercase tracking-wide text-purple-400 dark:text-purple-200 mb-1">
             Requested On
           </p>
-          <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
+          <p className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
             {formatDate(selectedRequest.created_at)}
           </p>
         </div>
 
         <div className="rounded-xl sm:rounded-2xl bg-purple-50 dark:bg-purple-900/20 p-3 sm:p-4 border border-purple-100 dark:border-purple-500/30">
-          <p className="text-xs sm:text-sm uppercase tracking-wide text-purple-400 dark:text-purple-200 mb-1">
+          <p className="text-xs sm:text-xs uppercase tracking-wide text-purple-400 dark:text-purple-200 mb-1">
             Status
           </p>
-          <p className="text-base sm:text-lg font-semibold capitalize text-gray-900 dark:text-white">
+          <p className="text-sm sm:text-base font-semibold capitalize text-gray-900 dark:text-white">
             {selectedRequest.status}
           </p>
         </div>
@@ -929,17 +929,17 @@ export default function HiringHistory() {
         <p className="text-xs uppercase tracking-wide text-purple-500 dark:text-purple-300 mb-1">
           Job Type
         </p>
-        <p className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white capitalize">
+        <p className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white capitalize">
           {selectedRequest.job_type.replace("-", " ")}
         </p>
       </div>
 
       {selectedRequest.special_requirements && (
         <div className="mb-5 sm:mb-6">
-          <h4 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide mb-2">
+          <h4 className="text-xs sm:text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide mb-2">
             Special Requirements
           </h4>
-          <p className="text-sm sm:text-base text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/80">
+          <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/80">
             {selectedRequest.special_requirements}
           </p>
         </div>
@@ -947,21 +947,21 @@ export default function HiringHistory() {
 
       {(selectedRequest.decline_reason || selectedRequest.cancel_reason) && (
         <div className="mb-5 sm:mb-6">
-          <h4 className="text-xs sm:text-sm font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide mb-2">
+          <h4 className="text-xs sm:text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wide mb-2">
             {selectedRequest.status === "declined"
               ? "Decline Reason"
               : "Cancellation Reason"}
           </h4>
-          <p className="text-sm sm:text-base text-gray-800 dark:text-gray-100 bg-red-50 dark:bg-red-900/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-red-100 dark:border-red-500/30">
+          <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-100 bg-red-50 dark:bg-red-900/30 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-red-100 dark:border-red-500/30">
             {selectedRequest.decline_reason || selectedRequest.cancel_reason}
           </p>
 
           {selectedRequest.cancellation_message && (
             <div className="mt-3">
-              <span className="text-xs sm:text-sm font-medium text-gray-600 dark:text-gray-300">
+              <span className="text-xs sm:text-xs font-medium text-gray-600 dark:text-gray-300">
                 Message sent to househelp:
               </span>
-              <p className="text-sm sm:text-base text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/60 mt-1">
+              <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-200 bg-gray-50 dark:bg-gray-900 rounded-xl sm:rounded-2xl p-3 sm:p-4 border border-gray-100 dark:border-gray-700/60 mt-1">
                 {selectedRequest.cancellation_message}
               </p>
             </div>
@@ -979,7 +979,7 @@ export default function HiringHistory() {
             className="
               flex-1 inline-flex items-center justify-center gap-2
               px-5 sm:px-6 py-1 sm:py-1.5
-              text-sm sm:text-base
+              text-xs sm:text-sm
               rounded-xl sm:rounded-2xl
               bg-gradient-to-r from-blue-600 to-purple-600
               text-white font-semibold
@@ -1005,7 +1005,7 @@ export default function HiringHistory() {
             className="
               flex-1 inline-flex items-center justify-center gap-2
               px-5 sm:px-6 py-1 sm:py-1.5
-              text-sm sm:text-base
+              text-xs sm:text-sm
               rounded-xl sm:rounded-2xl
               bg-gradient-to-r from-green-600 to-emerald-600
               text-white font-semibold
@@ -1040,7 +1040,7 @@ export default function HiringHistory() {
           className="
             flex-1 inline-flex items-center justify-center
             px-5 sm:px-6 py-1 sm:py-1.5
-            text-sm sm:text-base
+            text-xs sm:text-sm
             rounded-xl sm:rounded-2xl
             bg-gradient-to-r from-purple-600 to-pink-600
             text-white font-semibold
@@ -1061,7 +1061,7 @@ export default function HiringHistory() {
           className="
             inline-flex items-center justify-center
             px-5 sm:px-6 py-1 sm:py-1.5
-            text-sm sm:text-base
+            text-xs sm:text-sm
             rounded-xl sm:rounded-2xl
             border border-gray-300 dark:border-gray-600
             text-gray-700 dark:text-gray-200 font-semibold
@@ -1104,10 +1104,10 @@ export default function HiringHistory() {
           <p className="text-xs uppercase tracking-widest text-red-500 dark:text-red-300 font-semibold">
             Cancel Hire Request
           </p>
-          <h3 className="text-lg sm:text-2xl font-extrabold text-gray-900 dark:text-white leading-tight">
+          <h3 className="text-base sm:text-xl font-extrabold text-gray-900 dark:text-white leading-tight">
             {getHousehelpName(cancelRequest.househelp)}
           </h3>
-          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-xs sm:text-xs text-gray-500 dark:text-gray-400">
             Select a reason and optionally leave a message the househelp will see.
           </p>
         </div>
@@ -1139,7 +1139,7 @@ export default function HiringHistory() {
               onChange={() => setCancelReason(reason.value)}
               className="mt-0.5 sm:mt-1 text-red-500 focus:ring-red-500 flex-shrink-0"
             />
-            <span className="text-xs sm:text-sm text-gray-800 dark:text-gray-100">
+            <span className="text-xs sm:text-xs text-gray-800 dark:text-gray-100">
               {reason.label}
             </span>
           </label>
@@ -1148,7 +1148,7 @@ export default function HiringHistory() {
 
       {cancelReason === "other" && (
         <div className="mb-5 sm:mb-6">
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-xs sm:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
             Provide your reason
           </label>
           <input
@@ -1156,7 +1156,7 @@ export default function HiringHistory() {
             value={customCancelReason}
             onChange={(e) => setCustomCancelReason(e.target.value)}
             className="
-              w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm
+              w-full px-3 sm:px-4 py-2.5 sm:py-3 text-xs
               rounded-xl sm:rounded-2xl
               border-2
               bg-white dark:bg-[#13131a]
@@ -1170,7 +1170,7 @@ export default function HiringHistory() {
       )}
 
       <div className="mb-5 sm:mb-6">
-        <label className="block text-xs sm:text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-xs sm:text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
           Additional message to the househelp (optional)
         </label>
         <textarea
@@ -1179,7 +1179,7 @@ export default function HiringHistory() {
           onChange={(e) => setCancelMessage(e.target.value)}
           placeholder="Let them know anything specific about the cancellation..."
           className="
-            w-full px-3 sm:px-4 py-2.5 sm:py-3 text-sm
+            w-full px-3 sm:px-4 py-2.5 sm:py-3 text-xs
             rounded-xl sm:rounded-2xl
             border-2
             bg-white dark:bg-[#13131a]
@@ -1200,7 +1200,7 @@ export default function HiringHistory() {
           className="
             flex-1 inline-flex items-center justify-center
             px-5 sm:px-6 py-1 sm:py-1.5
-            text-sm sm:text-base
+            text-xs sm:text-sm
             rounded-xl
             bg-gradient-to-r from-red-600 via-red-500 to-orange-400
             text-white font-semibold
@@ -1221,7 +1221,7 @@ export default function HiringHistory() {
           className="
             inline-flex items-center justify-center
             px-5 sm:px-6 py-1 sm:py-1.5
-            text-sm sm:text-base
+            text-xs sm:text-sm
             rounded-xl
             border border-gray-300 dark:border-gray-600
             text-gray-700 dark:text-gray-200 font-semibold

@@ -48,7 +48,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
   return (
     <aside className="w-full sm:w-72 bg-white dark:bg-[#13131a] border border-purple-200/60 dark:border-purple-500/30 rounded-2xl shadow-lg p-4 sm:p-5 space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-base font-semibold text-purple-700 dark:text-purple-300">Filters</h3>
+        <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-300">Filters</h3>
         <div className="flex items-center gap-2">
           {onClear && (
             <button
@@ -59,14 +59,14 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
             </button>
           )}
           {onClose && (
-            <button onClick={onClose} className="sm:hidden text-sm px-3 py-1 rounded-xl bg-purple-100 text-purple-700">Close</button>
+            <button onClick={onClose} className="sm:hidden text-xs px-3 py-1 rounded-xl bg-purple-100 text-purple-700">Close</button>
           )}
         </div>
       </div>
 
       {/* Status */}
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Status</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Status</label>
         <CustomSelect
           value={fields.status}
           onChange={(val) => onChange("status", val)}
@@ -80,7 +80,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Nanny type */}
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Nanny type</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Nanny type</label>
         <CustomSelect
           value={fields.househelp_type}
           onChange={(val) => onChange("househelp_type", val)}
@@ -91,7 +91,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Gender */}
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Gender</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Gender</label>
         <CustomSelect
           value={fields.gender}
           onChange={(val) => onChange("gender", val)}
@@ -102,7 +102,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Experience */}
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Experience (min)</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Experience (min)</label>
         <CustomSelect
           value={fields.experience}
           onChange={(val) => onChange("experience", val)}
@@ -113,7 +113,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Town */}
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Town</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Town</label>
         <SearchableTownSelect
           value={fields.town}
           onChange={(value) => onChange("town", value)}
@@ -124,7 +124,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Salary frequency */}
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Salary frequency</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Salary frequency</label>
         <CustomSelect
           value={fields.salary_frequency}
           onChange={(val) => onChange("salary_frequency", val)}
@@ -138,9 +138,9 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
       </div>
 
       {/* Salary range */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min salary</label>
+          <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Min salary</label>
           <input
             type="number"
             min="0"
@@ -151,7 +151,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
           />
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Max salary</label>
+          <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Max salary</label>
           <input
             type="number"
             min="0"
@@ -165,7 +165,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Skill */}
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Skill</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Skill</label>
         <CustomSelect
           value={fields.skill}
           onChange={(val) => onChange("skill", val)}
@@ -176,7 +176,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Trait */}
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Trait</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Trait</label>
         <CustomSelect
           value={fields.traits}
           onChange={(val) => onChange("traits", val)}
@@ -187,7 +187,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Compatibility and availability */}
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Works with kids</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Works with kids</label>
         <CustomSelect
           value={fields.can_work_with_kids}
           onChange={(val) => onChange("can_work_with_kids", val)}
@@ -200,7 +200,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
         />
       </div>
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Works with pets</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Works with pets</label>
         <CustomSelect
           value={fields.can_work_with_pets}
           onChange={(val) => onChange("can_work_with_pets", val)}
@@ -213,7 +213,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
         />
       </div>
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Live-in</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Live-in</label>
         <CustomSelect
           value={fields.offers_live_in}
           onChange={(val) => onChange("offers_live_in", val)}
@@ -226,7 +226,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
         />
       </div>
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Day worker</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Day worker</label>
         <CustomSelect
           value={fields.offers_day_worker}
           onChange={(val) => onChange("offers_day_worker", val)}
@@ -239,7 +239,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
         />
       </div>
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Available from</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Available from</label>
         <input
           type="date"
           className={inputBase}
@@ -250,7 +250,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Min rating */}
       <div className="flex flex-col">
-        <label className="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">Min rating</label>
+        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Min rating</label>
         <CustomSelect
           value={fields.min_rating}
           onChange={(val) => onChange("min_rating", val)}
@@ -279,5 +279,4 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
     </aside>
   );
 }
-
 

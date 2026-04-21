@@ -166,10 +166,10 @@ export default function HouseholdRequestsPage() {
                 </svg>
                 Back to Profile
               </button>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                 📬 Join Requests
               </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
+              <p className="text-base text-gray-600 dark:text-gray-400">
                 Review and approve requests to join your household
               </p>
             </div>
@@ -186,7 +186,7 @@ export default function HouseholdRequestsPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                   No Pending Requests
                 </h2>
                 <p className="text-gray-600 dark:text-gray-400">
@@ -201,16 +201,16 @@ export default function HouseholdRequestsPage() {
                     className="bg-white dark:bg-[#13131a] rounded-xl shadow-lg border-2 border-purple-200 dark:border-purple-500/30 p-6"
                   >
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                      <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-base">
                         {request.user?.first_name?.[0] || request.user?.email?.[0] || "U"}
                       </div>
                       <div>
-                        <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-white">
                           {request.user?.first_name && request.user?.last_name
                             ? `${request.user.first_name} ${request.user.last_name}`
                             : request.user?.email || "Unknown User"}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           {new Date(request.created_at).toLocaleDateString()} at{" "}
                           {new Date(request.created_at).toLocaleTimeString()}
                         </p>
@@ -219,7 +219,7 @@ export default function HouseholdRequestsPage() {
 
                     {request.message && (
                       <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                        <p className="text-xs text-gray-700 dark:text-gray-300">
                           💬 "{request.message}"
                         </p>
                       </div>

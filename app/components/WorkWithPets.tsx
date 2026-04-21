@@ -126,7 +126,7 @@ const WorkWithPets = () => {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🐾 Work with Pets</h2>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">🐾 Work with Pets</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                 Are you comfortable working with pets?
             </p>
@@ -137,9 +137,9 @@ const WorkWithPets = () => {
             
             <form onSubmit={handleSubmit} className="space-y-8">
                 <div>
-                    <h2 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">Pet Work Preference</h2>
+                    <h2 className="text-xs font-medium text-gray-900 dark:text-gray-100 mb-3">Pet Work Preference</h2>
                     <div className="grid grid-cols-2 gap-4">
-                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                             petPreference === 'with_pets' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                         }`}>
                             <input
@@ -152,7 +152,7 @@ const WorkWithPets = () => {
                             <span className="text-gray-900 dark:text-gray-100">I can work with pets</span>
                         </label>
                         
-                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                             petPreference === 'no_pets' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                         }`}>
                             <input
@@ -169,13 +169,13 @@ const WorkWithPets = () => {
 
                 {petPreference === 'with_pets' && (
                     <div className="space-y-4">
-                        <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                        <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
                             What types of pets can you work with?
                         </h3>
                         <div className="space-y-3">
                             {petTypes.map(({ value, label }) => (
                                 <div key={value}>
-                                    <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                                    <label className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                                         selectedPets.includes(value) ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                                     }`}>
                                         <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${
@@ -205,7 +205,7 @@ const WorkWithPets = () => {
                                                 className="w-full h-10 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
                                             />
                                             {otherPetsError && (
-                                                <p className="text-red-600 dark:text-red-400 text-sm font-semibold mt-1">⚠️ {otherPetsError}</p>
+                                                <p className="text-red-600 dark:text-red-400 text-xs font-semibold mt-1">⚠️ {otherPetsError}</p>
                                             )}
                                         </div>
                                     )}
@@ -220,7 +220,7 @@ const WorkWithPets = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <>

@@ -425,13 +425,13 @@ function HouseholdProfileSetupContent() {
           <div className="bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-200 dark:border-purple-500/30 mb-6 sm:mb-8 transition-colors duration-300">
             <div className="px-4 sm:px-6 py-4 sm:py-6">
               <div className="text-center mb-4">
-                <h1 className="text-base sm:text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">
+                <h1 className="text-sm sm:text-base font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-1">
                   Complete Your Household Profile 🏠
                 </h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                   {STEPS[currentStep].description}
                 </p>
-                <div className="flex items-center justify-center gap-3 text-sm">
+                <div className="flex items-center justify-center gap-3 text-xs">
                   <span className="font-semibold text-purple-600 dark:text-purple-400">
                     Step {currentStep + 1} of {STEPS.length}
                   </span>
@@ -458,7 +458,7 @@ function HouseholdProfileSetupContent() {
 
               {/* Current Step Title */}
               <div className="flex items-center justify-between">
-                <h2 className="text-sm sm:text-base font-semibold text-purple-700 dark:text-purple-400">
+                <h2 className="text-xs sm:text-sm font-semibold text-purple-700 dark:text-purple-400">
                   {STEPS[currentStep].title}
                 </h2>
               </div>
@@ -471,11 +471,11 @@ function HouseholdProfileSetupContent() {
             <div className="mb-6">
               <button
                 onClick={() => navigate('/household/profile')}
-                className="flex items-center gap-1 text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors mb-4"
+                className="flex items-center gap-1 text-xs font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors mb-4"
               >
                 ← Back to Profile
               </button>
-              <h2 className="text-lg font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <h2 className="text-base font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Edit {STEPS[currentStep].title}
               </h2>
             </div>
@@ -537,7 +537,7 @@ function HouseholdProfileSetupContent() {
                   <button
                     onClick={handleBack}
                     disabled={currentStep === 0}
-                    className={`flex items-center px-4 py-1 rounded-xl text-sm font-medium transition-colors ${
+                    className={`flex items-center px-4 py-1 rounded-xl text-xs font-medium transition-colors ${
                       currentStep === 0
                         ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
                         : 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
@@ -573,7 +573,7 @@ function HouseholdProfileSetupContent() {
                 <button
                   onClick={handleBack}
                   disabled={currentStep === 0}
-                  className={`flex items-center px-4 py-1 rounded-xl text-sm font-medium transition-colors ${
+                  className={`flex items-center px-4 py-1 rounded-xl text-xs font-medium transition-colors ${
                     currentStep === 0
                       ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
                       : 'text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-purple-900/20'
@@ -633,7 +633,7 @@ function HouseholdProfileSetupContent() {
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-white" id="disclaimer-title">
+                  <h3 className="text-lg font-bold text-white" id="disclaimer-title">
                     Almost There!
                   </h3>
                 </div>
@@ -641,7 +641,7 @@ function HouseholdProfileSetupContent() {
 
               <div className="px-6 py-6">
                 {completionError && <ErrorAlert message={completionError} className="mb-4" />}
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                <p className="text-xs text-gray-600 dark:text-gray-400 mb-6">
                   Before we finalize your profile, please confirm the following:
                 </p>
 
@@ -661,7 +661,7 @@ function HouseholdProfileSetupContent() {
                       )}
                     </div>
                   </div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
+                  <span className="text-xs text-gray-700 dark:text-gray-300 leading-relaxed group-hover:text-gray-900 dark:group-hover:text-gray-100 transition-colors">
                     I confirm that all the information I have provided is accurate and truthful to the best of my knowledge. I understand that providing false or misleading information may result in account suspension.
                   </span>
                 </label>
@@ -670,14 +670,14 @@ function HouseholdProfileSetupContent() {
               <div className="px-6 py-4 bg-gray-50 dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 flex flex-col-reverse sm:flex-row gap-3 sm:justify-end">
                 <button
                   onClick={() => { setShowDisclaimer(false); setDisclaimerChecked(false); }}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-sm"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 font-semibold hover:bg-gray-100 dark:hover:bg-gray-700 transition-all text-xs"
                 >
                   Go Back
                 </button>
                 <button
                   onClick={finishSetup}
                   disabled={!disclaimerChecked || saving}
-                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-6 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-xs flex items-center justify-center gap-2"
                 >
                   {saving ? (
                     <>
@@ -708,12 +708,12 @@ function HouseholdProfileSetupContent() {
             <div className="relative transform overflow-hidden rounded-2xl bg-white dark:bg-gray-900 text-center shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg border-4 border-purple-500">
               <div className="bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-8">
                 <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-white mb-4 animate-bounce">
-                  <span className="text-3xl">🎉</span>
+                  <span className="text-2xl">🎉</span>
                 </div>
-                <h3 className="text-xl font-bold text-white mb-2" id="modal-title">
+                <h3 className="text-lg font-bold text-white mb-2" id="modal-title">
                   Congratulations!
                 </h3>
-                <p className="text-xl text-purple-100">
+                <p className="text-lg text-purple-100">
                   Welcome to Homebit!
                 </p>
               </div>
@@ -724,17 +724,17 @@ function HouseholdProfileSetupContent() {
                     <svg className="h-6 w-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
                     </svg>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                    <p className="text-base font-semibold text-gray-900 dark:text-white">
                       Your profile is complete!
                     </p>
                   </div>
 
-                  <p className="text-base text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
                     You can now start browsing and connecting with qualified househelps in your area.
                   </p>
 
                   <div className="pt-4">
-                    <div className="flex items-center justify-center space-x-2 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="flex items-center justify-center space-x-2 text-xs text-gray-500 dark:text-gray-400">
                       <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>

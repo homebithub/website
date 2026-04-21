@@ -72,7 +72,7 @@ const BackgroundCheckConsent: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🔍 Background Check Consent</h2>
+      <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">🔍 Background Check Consent</h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         Are you willing to undergo a background verification check? (Optional)
       </p>
@@ -80,13 +80,13 @@ const BackgroundCheckConsent: React.FC = () => {
       <div className="space-y-6">
         {/* Information Box */}
         <div className="p-6 rounded-xl bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-500/30">
-          <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-2">
+          <h3 className="text-xs font-semibold text-blue-900 dark:text-blue-300 mb-2 flex items-center gap-2">
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
             What is a background check?
           </h3>
-          <ul className="space-y-2 text-sm text-blue-800 dark:text-blue-200">
+          <ul className="space-y-2 text-xs text-blue-800 dark:text-blue-200">
             <li className="flex items-start gap-2">
               <span className="text-blue-600 dark:text-blue-400 mt-0.5">✓</span>
               <span>Verification of your identity and credentials</span>
@@ -104,14 +104,14 @@ const BackgroundCheckConsent: React.FC = () => {
               <span>Helps build trust with potential employers</span>
             </li>
           </ul>
-          <p className="mt-4 text-sm text-blue-700 dark:text-blue-300 font-semibold">
+          <p className="mt-4 text-xs text-blue-700 dark:text-blue-300 font-semibold">
             💡 Profiles with verified backgrounds are more likely to be hired
           </p>
         </div>
 
         {/* Consent Options */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">Your Decision</h3>
+          <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400">Your Decision</h3>
           
           {/* Yes Option */}
           <label 
@@ -140,10 +140,10 @@ const BackgroundCheckConsent: React.FC = () => {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">✅</span>
-                <span className="text-sm font-semibold">Yes, I consent</span>
+                <span className="text-base">✅</span>
+                <span className="text-xs font-semibold">Yes, I consent</span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 I am willing to undergo a background verification check. This will help build trust with potential employers and increase my chances of being hired.
               </p>
             </div>
@@ -176,10 +176,10 @@ const BackgroundCheckConsent: React.FC = () => {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-lg">⏸️</span>
-                <span className="text-sm font-semibold">Not at this time</span>
+                <span className="text-base">⏸️</span>
+                <span className="text-xs font-semibold">Not at this time</span>
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 I prefer not to undergo a background check at this time. I understand this may affect my chances with some employers.
               </p>
             </div>

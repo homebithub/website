@@ -32,12 +32,12 @@ export default function HireContextBanner({
             <h4 className="font-semibold text-purple-900 dark:text-purple-100 mb-1">
               Ready to hire?
             </h4>
-            <p className="text-sm text-purple-700 dark:text-purple-300 mb-3">
+            <p className="text-xs text-purple-700 dark:text-purple-300 mb-3">
               Send a formal hire request with job details, salary, and schedule
             </p>
             <button
               onClick={onSendHireRequest}
-              className="px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl text-sm"
+              className="px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 font-semibold transition-all shadow-lg hover:shadow-xl text-xs"
             >
               Send Hire Request
             </button>
@@ -115,13 +115,13 @@ export default function HireContextBanner({
           <h4 className={`font-semibold ${config.textColor} mb-1`}>
             {config.title}
           </h4>
-          <p className={`text-sm ${config.subTextColor} mb-3`}>
+          <p className={`text-xs ${config.subTextColor} mb-3`}>
             {config.message}
           </p>
           {onViewDetails && (
             <button
               onClick={onViewDetails}
-              className="px-4 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors text-sm"
+              className="px-4 py-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 font-medium transition-colors text-xs"
             >
               View Details
             </button>

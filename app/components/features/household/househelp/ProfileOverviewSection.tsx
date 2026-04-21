@@ -94,55 +94,55 @@ export default function ProfileOverviewSection({
         <button className="btn-primary" onClick={onEdit}>Edit</button>
         <button className="btn-secondary" onClick={onShowImageModal}>Upload Images</button>
       </div>
-      <h2 className="text-lg font-semibold mb-2 text-primary-700 dark:text-primary-200">Profile Overview</h2>
+      <h2 className="text-base font-semibold mb-2 text-primary-700 dark:text-primary-200">Profile Overview</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:gap-8">
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Status</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_status}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.profile_status}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Type</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.profile_type}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.profile_type}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Verified</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.verified ? 'Yes' : 'No'}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.verified ? 'Yes' : 'No'}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Created At</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.created_at ? formatTimeAgo(profile.created_at) : '-'}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.created_at ? formatTimeAgo(profile.created_at) : '-'}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Updated At</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.updated_at ? formatTimeAgo(profile.updated_at) : '-'}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.updated_at ? formatTimeAgo(profile.updated_at) : '-'}</span>
         </div>
         <div className="sm:col-span-2">
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Bio</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.bio || '-'}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.bio || '-'}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Experience (yrs)</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.experience}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.experience}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Hourly Rate</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{profile.hourly_rate}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile.hourly_rate}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Skills</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{Array.isArray(profile.skills) ? profile.skills.join(', ') : '-'}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{Array.isArray(profile.skills) ? profile.skills.join(', ') : '-'}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Languages</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{Array.isArray(profile.languages) ? profile.languages.join(', ') : '-'}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{Array.isArray(profile.languages) ? profile.languages.join(', ') : '-'}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Specialities</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{Array.isArray(profile.specialities) ? profile.specialities.join(', ') : '-'}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{Array.isArray(profile.specialities) ? profile.specialities.join(', ') : '-'}</span>
         </div>
         <div>
           <span className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">References</span>
-          <span className="text-base text-gray-900 dark:text-gray-100 font-medium">{Array.isArray(profile.references) ? profile.references.join(', ') : '-'}</span>
+          <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{Array.isArray(profile.references) ? profile.references.join(', ') : '-'}</span>
         </div>
       </div>
       {/* Expanded Image Modal */}

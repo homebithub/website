@@ -172,10 +172,10 @@ export default function VerifyEmail() {
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
       <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
         <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
-          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 text-center">Verify Your Email 📧</h1>
+          <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-6 text-center">Verify Your Email 📧</h1>
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label htmlFor="email" className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">Email address</label>
+              <label htmlFor="email" className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">Email address</label>
               <input
                 type="email"
                 id="email"
@@ -183,7 +183,7 @@ export default function VerifyEmail() {
                 required
                 value={email}
                 onChange={handleEmailChange}
-                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
+                className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all ${
                   emailError 
                     ? 'border-red-300 dark:border-red-500' 
                     : isEmailValid 
@@ -194,37 +194,37 @@ export default function VerifyEmail() {
                 disabled={loading}
               />
               {emailError && (
-                <p className="text-red-600 dark:text-red-400 text-sm mt-1">{emailError}</p>
+                <p className="text-red-600 dark:text-red-400 text-xs mt-1">{emailError}</p>
               )}
               {isEmailValid && !emailError && (
-                <p className="text-green-600 dark:text-green-400 text-sm mt-1">✓ Valid email</p>
+                <p className="text-green-600 dark:text-green-400 text-xs mt-1">✓ Valid email</p>
               )}
             </div>
             {error && <ErrorAlert message={error} />}
             {success && (
               <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 p-5 shadow-md">
                 <div className="flex items-center justify-center">
-                  <span className="text-2xl mr-3">🎉</span>
-                  <p className="text-base font-bold text-green-800">Verification email sent! Check your inbox 📧</p>
+                  <span className="text-xl mr-3">🎉</span>
+                  <p className="text-sm font-bold text-green-800">Verification email sent! Check your inbox 📧</p>
                 </div>
               </div>
             )}
             <button
               type="submit"
-              className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
               disabled={loading || !isEmailValid || !!emailError}
             >
               {loading ? '✨ Sending...' : '🚀 Send Verification'}
             </button>
             {!isEmailValid && email && (
-              <p className="text-amber-600 dark:text-amber-400 text-sm text-center">
+              <p className="text-amber-600 dark:text-amber-400 text-xs text-center">
                 Please enter a valid email address to continue
               </p>
             )}
           </form>
           <button
             type="button"
-            className="w-full mt-6 text-base text-purple-600 hover:text-purple-700 font-semibold hover:underline transition-colors bg-transparent border-none outline-none"
+            className="w-full mt-6 text-sm text-purple-600 hover:text-purple-700 font-semibold hover:underline transition-colors bg-transparent border-none outline-none"
             style={{ boxShadow: 'none' }}
             onClick={handleSkip}
             disabled={skipLoading}

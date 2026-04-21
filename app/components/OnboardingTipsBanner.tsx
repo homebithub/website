@@ -20,15 +20,15 @@ export default function OnboardingTipsBanner({ onDismiss, role = 'household' }: 
   return (
     <div className="mb-4 rounded-2xl border border-purple-200 dark:border-purple-500/40 bg-gradient-to-r from-purple-50 via-white to-pink-50 dark:from-purple-950/40 dark:via-[#13131a] dark:to-pink-950/30 p-4 sm:p-5 shadow-md dark:shadow-glow-sm text-left">
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 text-2xl">
+        <div className="mt-0.5 text-xl">
           <span role="img" aria-label="lightbulb">💡</span>
         </div>
-        <div className="flex-1 space-y-1 text-sm sm:text-base">
+        <div className="flex-1 space-y-1 text-xs sm:text-sm">
           <div className="font-semibold text-purple-800 dark:text-purple-200">{titleText}</div>
           <p className="text-gray-700 dark:text-gray-200">
             Here are a few quick tips to help you find the right match faster:
           </p>
-          <ul className="list-disc pl-5 text-gray-700 dark:text-gray-200 space-y-0.5 text-sm">
+          <ul className="list-disc pl-5 text-gray-700 dark:text-gray-200 space-y-0.5 text-xs">
             <li>Complete your household or househelp profile so searches can match you better.</li>
             <li>Use the shortlist to save favourites and compare options later.</li>
             <li>Start a conversation from profiles to discuss details and expectations.</li>
@@ -36,14 +36,14 @@ export default function OnboardingTipsBanner({ onDismiss, role = 'household' }: 
           <div className="flex flex-wrap gap-2 pt-2">
             <button
               type="button"
-              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs sm:text-sm font-semibold shadow hover:from-purple-700 hover:to-pink-700 hover:scale-[1.02] transition-all"
+              className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs sm:text-xs font-semibold shadow hover:from-purple-700 hover:to-pink-700 hover:scale-[1.02] transition-all"
               onClick={() => navigate(profilePath, { replace: false })}
             >
               Go to my profile
             </button>
             <button
               type="button"
-              className="px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-500/60 text-xs sm:text-sm text-purple-700 dark:text-purple-200 bg-white dark:bg-[#13131a] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
+              className="px-3 py-1.5 rounded-xl border border-purple-200 dark:border-purple-500/60 text-xs sm:text-xs text-purple-700 dark:text-purple-200 bg-white dark:bg-[#13131a] hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
               onClick={() => navigate(shortlistPath, { replace: false })}
             >
               View my shortlist

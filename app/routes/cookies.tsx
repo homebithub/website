@@ -21,7 +21,7 @@ export default function Cookies() {
         <PurpleCard hover={false} glow={true} className="p-6 sm:p-8">
         <div className="w-full">
           <div className="mb-8">
-            <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+            <h1 className="text-lg font-bold text-slate-900 dark:text-white">
               Cookie Policy
             </h1>
             <p className="mt-2 text-slate-600 dark:text-slate-400">
@@ -53,7 +53,7 @@ export default function Cookies() {
             </p>
 
             <h3>2.1. Authentication Cookies</h3>
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <thead>
                 <tr>
                   <th className="text-left py-2 pr-4">Cookie</th>
@@ -83,7 +83,7 @@ export default function Cookies() {
             </p>
 
             <h3>2.2. Security Cookies</h3>
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <thead>
                 <tr>
                   <th className="text-left py-2 pr-4">Storage</th>
@@ -108,7 +108,7 @@ export default function Cookies() {
             </p>
 
             <h3>2.3. Preference Storage</h3>
-            <table className="w-full text-sm">
+            <table className="w-full text-xs">
               <thead>
                 <tr>
                   <th className="text-left py-2 pr-4">Storage</th>

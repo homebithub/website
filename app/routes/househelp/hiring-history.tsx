@@ -436,11 +436,11 @@ export default function HousehelpHiringHistory() {
       <div className="bg-white dark:bg-purple-950/40 rounded-2xl shadow-lg border border-purple-100 dark:border-purple-800/40 overflow-hidden">
         {/* Header */}
         <div className="px-6 pt-6 pb-4">
-          <p className="text-sm font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">
+          <p className="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">
             Househelp • Hiring
           </p>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Hiring</h1>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">Manage your hire requests and view their status</p>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Hiring</h1>
+          <p className="text-gray-600 dark:text-gray-400 text-xs">Manage your hire requests and view their status</p>
         </div>
 
         {/* Tabs */}
@@ -450,7 +450,7 @@ export default function HousehelpHiringHistory() {
               <button
                 key={tab.key}
                 onClick={() => handleTabChange(tab.key)}
-                className={`relative flex items-center gap-2 py-1.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
+                className={`relative flex items-center gap-2 py-1.5 text-xs font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
                   activeTab === tab.key
                     ? 'border-purple-500 text-gray-900 dark:text-white'
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
@@ -492,7 +492,7 @@ export default function HousehelpHiringHistory() {
                   fetchInterests();
                 }
               }}
-              className="rounded-xl border border-purple-500/50 px-4 py-2 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-900/20"
+              className="rounded-xl border border-purple-500/50 px-4 py-2 text-xs font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-900/20"
             >
               Try Again
             </button>
@@ -512,7 +512,7 @@ export default function HousehelpHiringHistory() {
             {!Array.isArray(hireRequests) || hireRequests.length === 0 ? (
               <div className="p-12 text-center">
                 <MessageCircle className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No hire requests yet</h3>
+                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">No hire requests yet</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">When households send you hire requests, they'll appear here</p>
                 <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
                   Browse Households
@@ -534,38 +534,38 @@ export default function HousehelpHiringHistory() {
                           {request.household?.avatar_url ? (
                             <img src={request.household.avatar_url} alt={getHouseholdName(request.household)} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">{getHouseholdInitials(request.household)}</div>
+                            <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(request.household)}</div>
                           )}
                         </div>
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{getHouseholdName(request.household)}</h3>
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">{getHouseholdName(request.household)}</h3>
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
                               {getStatusIcon(request.status)}
                               {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
                             </span>
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                             <div><span className="text-gray-500 dark:text-purple-300">Job Type</span><p className="font-medium text-gray-900 dark:text-white capitalize">{request.job_type.replace('-', ' ')}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Salary</span><p className="font-medium text-gray-900 dark:text-white">{formatSalary(request.salary_offered, request.salary_frequency)}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Start Date</span><p className="font-medium text-gray-900 dark:text-white">{request.start_date ? formatDate(request.start_date) : 'Not specified'}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Requested</span><p className="font-medium text-gray-900 dark:text-white">{formatDate(request.created_at)}</p></div>
                           </div>
                           {request.special_requirements && (
-                            <div className="mt-3"><span className="text-gray-500 dark:text-purple-300 text-sm">Special Requirements:</span><p className="text-sm text-gray-700 dark:text-purple-200">{request.special_requirements}</p></div>
+                            <div className="mt-3"><span className="text-gray-500 dark:text-purple-300 text-xs">Special Requirements:</span><p className="text-xs text-gray-700 dark:text-purple-200">{request.special_requirements}</p></div>
                           )}
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
-                        <button onClick={() => navigate(buildHouseholdProfileLink({ household: request.household, fallbackProfileId: request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: request.household?.id || request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => navigate(buildHouseholdProfileLink({ household: request.household, fallbackProfileId: request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: request.household?.id || request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Profile
                         </button>
                         {request.status === 'pending' && (
                           <>
-                            <button onClick={() => openAcceptConfirm(request.id)} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50">
+                            <button onClick={() => openAcceptConfirm(request.id)} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all disabled:opacity-50">
                               <CheckCircle className="w-4 h-4" /> Accept
                             </button>
-                            <button onClick={() => { setSelectedRequest(request.id); setShowDeclineModal(true); }} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
+                            <button onClick={() => { setSelectedRequest(request.id); setShowDeclineModal(true); }} disabled={actionLoading === request.id} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
                               <XCircle className="w-4 h-4" /> Decline
                             </button>
                           </>
@@ -581,12 +581,12 @@ export default function HousehelpHiringHistory() {
                                 });
                                 navigate(`/household/employment-contract?${params.toString()}`);
                               }}
-                              className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
+                              className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
                             >
                               <FileText className="w-4 h-4" /> View Contract
                             </button>
                           ) : (
-                            <span className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700/40 rounded-xl">
+                            <span className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700/40 rounded-xl">
                               <CheckCircle className="w-4 h-4" /> Awaiting Contract
                             </span>
                           )
@@ -602,12 +602,12 @@ export default function HousehelpHiringHistory() {
                                 });
                                 navigate(`/household/employment-contract?${params.toString()}`);
                               }}
-                              className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
+                              className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
                             >
                               <FileText className="w-4 h-4" /> View Contract
                             </button>
                           ) : (
-                            <span className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700/40 rounded-xl">
+                            <span className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700/40 rounded-xl">
                               <FileText className="w-4 h-4" /> Finalized
                             </span>
                           )
@@ -627,7 +627,7 @@ export default function HousehelpHiringHistory() {
             {employmentContracts.length === 0 ? (
               <div className="p-12 text-center">
                 <FileText className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No employment contracts yet</h3>
+                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">No employment contracts yet</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">When a household creates a formal employment contract, it will appear here for you to review and sign</p>
               </div>
             ) : (
@@ -648,17 +648,17 @@ export default function HousehelpHiringHistory() {
                             {ec.household?.avatar_url ? (
                               <img src={ec.household.avatar_url} alt={getHouseholdName(ec.household)} className="w-full h-full object-cover" />
                             ) : (
-                              <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">{getHouseholdInitials(ec.household)}</div>
+                              <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(ec.household)}</div>
                             )}
                           </div>
                           <div className="flex-1">
                             <div className="flex flex-wrap items-center gap-2 mb-2">
-                              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{ec.job_title}</h3>
+                              <h3 className="text-base font-semibold text-gray-900 dark:text-white">{ec.job_title}</h3>
                               <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${badge.color}`}>
                                 {badge.icon} {badge.label}
                               </span>
                             </div>
-                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
                               {getHouseholdName(ec.household)} &bull; KES {ec.salary?.toLocaleString()} / {ec.salary_frequency}
                               {ec.start_date && ` \u2022 From ${formatDate(ec.start_date)}`}
                             </p>
@@ -675,7 +675,7 @@ export default function HousehelpHiringHistory() {
                               });
                               navigate(`/household/employment-contract?${params.toString()}`);
                             }}
-                            className={`inline-flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-xl transition-all ${
+                            className={`inline-flex items-center gap-2 px-4 py-1 text-xs font-medium rounded-xl transition-all ${
                               ec.status === 'pending_househelp'
                                 ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
                                 : 'text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700'
@@ -700,7 +700,7 @@ export default function HousehelpHiringHistory() {
             {contracts.length === 0 ? (
               <div className="p-12 text-center">
                 <Briefcase className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No work history yet</h3>
+                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">No work history yet</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">Your completed and ongoing work contracts will appear here</p>
                 <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
                   Find Work
@@ -716,32 +716,32 @@ export default function HousehelpHiringHistory() {
                           {contract.household?.avatar_url ? (
                             <img src={contract.household.avatar_url} alt={getHouseholdName(contract.household)} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">{getHouseholdInitials(contract.household)}</div>
+                            <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(contract.household)}</div>
                           )}
                         </div>
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{getHouseholdName(contract.household)}</h3>
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">{getHouseholdName(contract.household)}</h3>
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(contract.status)}`}>
                               {getStatusIcon(contract.status)}
                               {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
                             </span>
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                             <div><span className="text-gray-500 dark:text-purple-300">Job Type</span><p className="font-medium text-gray-900 dark:text-white capitalize">{contract.job_type.replace('-', ' ')}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Salary</span><p className="font-medium text-gray-900 dark:text-white">{formatSalary(contract.salary, contract.salary_frequency)}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Start Date</span><p className="font-medium text-gray-900 dark:text-white">{formatDate(contract.start_date)}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">End Date</span><p className="font-medium text-gray-900 dark:text-white">{contract.end_date ? formatDate(contract.end_date) : 'Ongoing'}</p></div>
                           </div>
                           {contract.household?.town && (
-                            <div className="mt-2 flex items-center gap-1 text-sm text-gray-500 dark:text-purple-300">
+                            <div className="mt-2 flex items-center gap-1 text-xs text-gray-500 dark:text-purple-300">
                               <Building2 className="w-4 h-4" /> {contract.household.town}
                             </div>
                           )}
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
-                        <button onClick={() => navigate(buildHouseholdProfileLink({ household: contract.household, fallbackProfileId: contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: contract.household?.id || contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => navigate(buildHouseholdProfileLink({ household: contract.household, fallbackProfileId: contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: contract.household?.id || contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Profile
                         </button>
                       </div>
@@ -759,7 +759,7 @@ export default function HousehelpHiringHistory() {
             {interests.length === 0 ? (
               <div className="p-12 text-center">
                 <HandHeart className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No interests sent yet</h3>
+                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">No interests sent yet</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-6">When you express interest in working for a household, it will appear here</p>
                 <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
                   Browse Households
@@ -775,12 +775,12 @@ export default function HousehelpHiringHistory() {
                           {interest.household?.avatar_url ? (
                             <img src={interest.household.avatar_url} alt={getHouseholdName(interest.household)} className="w-full h-full object-cover" />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">{getHouseholdInitials(interest.household)}</div>
+                            <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">{getHouseholdInitials(interest.household)}</div>
                           )}
                         </div>
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{getHouseholdName(interest.household)}</h3>
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">{getHouseholdName(interest.household)}</h3>
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(interest.status)}`}>
                               {getStatusIcon(interest.status)}
                               {interest.status.charAt(0).toUpperCase() + interest.status.slice(1)}
@@ -791,28 +791,28 @@ export default function HousehelpHiringHistory() {
                               </span>
                             )}
                           </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
                             {interest.job_type && <div><span className="text-gray-500 dark:text-purple-300">Job Type</span><p className="font-medium text-gray-900 dark:text-white capitalize">{interest.job_type.replace('-', ' ')}</p></div>}
                             <div><span className="text-gray-500 dark:text-purple-300">Salary Expected</span><p className="font-medium text-gray-900 dark:text-white">{formatSalary(interest.salary_expectation, interest.salary_frequency)}</p></div>
                             {interest.available_from && <div><span className="text-gray-500 dark:text-purple-300">Available From</span><p className="font-medium text-gray-900 dark:text-white">{formatDate(interest.available_from)}</p></div>}
                             <div><span className="text-gray-500 dark:text-purple-300">Sent</span><p className="font-medium text-gray-900 dark:text-white">{formatDate(interest.created_at)}</p></div>
                           </div>
                           {interest.comments && (
-                            <div className="mt-3"><span className="text-gray-500 dark:text-purple-300 text-sm">Your message:</span><p className="text-sm text-gray-700 dark:text-purple-200">{interest.comments}</p></div>
+                            <div className="mt-3"><span className="text-gray-500 dark:text-purple-300 text-xs">Your message:</span><p className="text-xs text-gray-700 dark:text-purple-200">{interest.comments}</p></div>
                           )}
                           {interest.household?.town && (
-                            <div className="mt-2 flex items-center gap-1 text-sm text-gray-500 dark:text-purple-300">
+                            <div className="mt-2 flex items-center gap-1 text-xs text-gray-500 dark:text-purple-300">
                               <Building2 className="w-4 h-4" /> {interest.household.town}
                             </div>
                           )}
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
-                        <button onClick={() => { setSelectedInterest(interest); setShowInterestModal(true); }} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => { setSelectedInterest(interest); setShowInterestModal(true); }} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Details
                         </button>
                         {interest.status === 'pending' && (
-                          <button onClick={() => openWithdrawConfirm(interest.id)} disabled={actionLoading === interest.id} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
+                          <button onClick={() => openWithdrawConfirm(interest.id)} disabled={actionLoading === interest.id} className="inline-flex items-center gap-2 px-4 py-1 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50">
                             <XCircle className="w-4 h-4" /> Withdraw
                           </button>
                         )}
@@ -833,10 +833,10 @@ export default function HousehelpHiringHistory() {
           (activeTab === 'interests' && interestsTotal > limit)
         ) && (
           <div className="p-6 border-t border-gray-200 dark:border-purple-800/40 flex justify-center gap-2">
-            <button onClick={() => setOffset(Math.max(0, offset - limit))} disabled={offset === 0} className="px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={() => setOffset(Math.max(0, offset - limit))} disabled={offset === 0} className="px-4 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
               Previous
             </button>
-            <button onClick={() => setOffset(offset + limit)} disabled={(activeTab === 'requests' && offset + limit >= requestsTotal) || (activeTab === 'work-history' && offset + limit >= contractsTotal) || (activeTab === 'employment-contracts' && offset + limit >= employmentContractsTotal) || (activeTab === 'interests' && offset + limit >= interestsTotal)} className="px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button onClick={() => setOffset(offset + limit)} disabled={(activeTab === 'requests' && offset + limit >= requestsTotal) || (activeTab === 'work-history' && offset + limit >= contractsTotal) || (activeTab === 'employment-contracts' && offset + limit >= employmentContractsTotal) || (activeTab === 'interests' && offset + limit >= interestsTotal)} className="px-4 py-1 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-purple-900/30 rounded-xl hover:bg-gray-200 dark:hover:bg-purple-900/50 disabled:opacity-50 disabled:cursor-not-allowed">
               Next
             </button>
           </div>
@@ -878,13 +878,13 @@ export default function HousehelpHiringHistory() {
                     {selectedInterest.household?.avatar_url ? (
                       <img src={selectedInterest.household.avatar_url} alt={getHouseholdName(selectedInterest.household)} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center text-white text-2xl font-bold">
+                      <div className="w-full h-full flex items-center justify-center text-white text-xl font-bold">
                         {getHouseholdInitials(selectedInterest.household)}
                       </div>
                     )}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-white">{getHouseholdName(selectedInterest.household)}</h3>
+                    <h3 className="text-lg font-bold text-white">{getHouseholdName(selectedInterest.household)}</h3>
                     {selectedInterest.household?.town && (
                       <p className="text-white/80 flex items-center gap-1 mt-1">
                         <MapPin className="w-4 h-4" /> {selectedInterest.household.town}
@@ -905,7 +905,7 @@ export default function HousehelpHiringHistory() {
               <div className="p-6 space-y-6">
                 {/* Interest Details */}
                 <div>
-                  <h4 className="text-sm font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">Your Interest Details</h4>
+                  <h4 className="text-xs font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">Your Interest Details</h4>
                   <div className="grid grid-cols-2 gap-4">
                     {selectedInterest.job_type && (
                       <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
@@ -945,7 +945,7 @@ export default function HousehelpHiringHistory() {
                 {/* Message */}
                 {selectedInterest.comments && (
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">Your Message</h4>
+                    <h4 className="text-xs font-semibold text-gray-500 dark:text-purple-400 uppercase tracking-wider mb-3">Your Message</h4>
                     <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
                       <p className="text-gray-700 dark:text-gray-300">{selectedInterest.comments}</p>
                     </div>
@@ -956,7 +956,7 @@ export default function HousehelpHiringHistory() {
                 <div className="flex gap-3 pt-2">
                   <button 
                     onClick={() => navigate(buildHouseholdProfileLink({ household: selectedInterest.household, fallbackProfileId: selectedInterest.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: selectedInterest.household?.id || selectedInterest.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })}
-                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all"
                   >
                     <User className="w-4 h-4" /> View Household Profile
                   </button>
@@ -964,7 +964,7 @@ export default function HousehelpHiringHistory() {
                     <button 
                       onClick={() => openWithdrawConfirm(selectedInterest.id)}
                       disabled={actionLoading === selectedInterest.id}
-                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-medium text-red-600 border border-red-300 dark:border-red-600 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors disabled:opacity-50"
                     >
                       <XCircle className="w-4 h-4" /> Withdraw
                     </button>

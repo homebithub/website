@@ -147,13 +147,13 @@ export default function BlogIndex() {
             <div className="text-center">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-100 dark:bg-purple-500/10 border border-purple-200 dark:border-purple-500/20 mb-6">
                 <BookOpen className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">Our Blog</span>
+                <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">Our Blog</span>
               </div>
-              <h1 className="text-4xl sm:text-5xl font-extrabold mb-4">
+              <h1 className="text-3xl sm:text-4xl font-extrabold mb-4">
                 <span className="text-gray-900 dark:text-white">Homebit </span>
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Blog</span>
               </h1>
-              <p className="text-lg sm:text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 Insights, tips, and stories about household management and hiring help
               </p>
             </div>
@@ -186,14 +186,14 @@ export default function BlogIndex() {
               <div className="flex flex-wrap gap-4 items-center">
                 <div className="flex items-center gap-2">
                   <Filter className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Filter:</span>
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300">Filter:</span>
                 </div>
 
                 {/* Category Filter */}
                 <select
                   value={searchParams.get("category") || ""}
                   onChange={(e) => handleCategoryFilter(e.target.value)}
-                  className="px-4 py-2 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer"
+                  className="px-4 py-2 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer"
                 >
                   <option value="">All Categories</option>
                   {categories.map((category) => (
@@ -209,7 +209,7 @@ export default function BlogIndex() {
                   <select
                     value={searchParams.get("sort") || "newest"}
                     onChange={(e) => handleSort(e.target.value)}
-                    className="px-4 py-2 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white text-sm font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer"
+                    className="px-4 py-2 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer"
                   >
                     <option value="newest">Newest First</option>
                     <option value="popular">Most Popular</option>
@@ -224,7 +224,7 @@ export default function BlogIndex() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-500/10 mb-6">
                   <BookOpen className="w-8 h-8 text-purple-500 dark:text-purple-400" />
                 </div>
-                <p className="text-gray-500 dark:text-gray-400 text-lg font-medium">
+                <p className="text-gray-500 dark:text-gray-400 text-base font-medium">
                   No blog posts found. Check back soon!
                 </p>
               </div>
@@ -245,7 +245,7 @@ export default function BlogIndex() {
                           />
                         ) : (
                           <div className="w-full h-48 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center group-hover:from-purple-700 group-hover:to-pink-700 transition-all duration-300">
-                            <span className="text-white text-4xl font-bold drop-shadow-lg">
+                            <span className="text-white text-3xl font-bold drop-shadow-lg">
                               {post.title.charAt(0)}
                             </span>
                           </div>
@@ -259,15 +259,15 @@ export default function BlogIndex() {
                             </span>
                           )}
 
-                          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
                             {post.title}
                           </h2>
 
-                          <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3 text-sm">
+                          <p className="text-gray-600 dark:text-gray-400 mb-4 line-clamp-3 text-xs">
                             {post.excerpt}
                           </p>
 
-                          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-500">
+                          <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-500">
                             <div className="flex items-center gap-2">
                               <Calendar className="w-4 h-4" />
                               <span>
@@ -311,7 +311,7 @@ export default function BlogIndex() {
                       Previous
                     </button>
 
-                    <span className="px-4 py-2 text-sm font-semibold text-gray-600 dark:text-gray-400">
+                    <span className="px-4 py-2 text-xs font-semibold text-gray-600 dark:text-gray-400">
                       Page {currentPage} of {totalPages}
                     </span>
 

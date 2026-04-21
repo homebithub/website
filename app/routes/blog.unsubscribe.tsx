@@ -44,7 +44,7 @@ export default function BlogUnsubscribePage() {
               <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
                 <CheckCircle className="w-8 h-8 text-green-600" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">You've been unsubscribed</h1>
+              <h1 className="text-xl font-bold text-gray-900">You've been unsubscribed</h1>
               <p className="text-gray-500">
                 You will no longer receive blog update emails from Homebit.
                 You can re-subscribe any time from our blog page.
@@ -63,9 +63,9 @@ export default function BlogUnsubscribePage() {
               <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto">
                 <XCircle className="w-8 h-8 text-red-500" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">Something went wrong</h1>
+              <h1 className="text-xl font-bold text-gray-900">Something went wrong</h1>
               <p className="text-gray-500">{errorMsg || "The unsubscribe link may be invalid or expired."}</p>
-              <Link to="/blog" className="text-purple-600 underline text-sm">Back to blog</Link>
+              <Link to="/blog" className="text-purple-600 underline text-xs">Back to blog</Link>
             </>
           )}
 
@@ -74,9 +74,9 @@ export default function BlogUnsubscribePage() {
               <div className="w-16 h-16 rounded-full bg-yellow-100 flex items-center justify-center mx-auto">
                 <Mail className="w-8 h-8 text-yellow-600" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900">Missing token</h1>
+              <h1 className="text-xl font-bold text-gray-900">Missing token</h1>
               <p className="text-gray-500">The unsubscribe link appears to be incomplete. Please use the link from your email.</p>
-              <Link to="/blog" className="text-purple-600 underline text-sm">Back to blog</Link>
+              <Link to="/blog" className="text-purple-600 underline text-xs">Back to blog</Link>
             </>
           )}
         </div>

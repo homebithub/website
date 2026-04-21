@@ -89,7 +89,7 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
       <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
           {/* Header */}
           <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Show Interest
             </h2>
             <button
@@ -114,13 +114,13 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
           <form onSubmit={handleSubmit} className="p-6 space-y-6">
             {/* Household Info */}
             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl">
-              <p className="text-sm text-gray-600 dark:text-gray-400">Expressing interest to work for</p>
-              <p className="text-lg font-semibold text-gray-900 dark:text-white">{householdName}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">Expressing interest to work for</p>
+              <p className="text-base font-semibold text-gray-900 dark:text-white">{householdName}</p>
             </div>
 
             {/* Job Type */}
             <div>
-              <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
                 Preferred Job Type *
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -143,7 +143,7 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
 
             {/* Available From */}
             <div>
-              <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
                 Available From (Optional)
               </label>
               <input
@@ -151,14 +151,14 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
                 value={availableFrom}
                 onChange={(e) => setAvailableFrom(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
 
             {/* Salary Expectation */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
                   Salary Expectation (KES) *
                 </label>
                 <input
@@ -169,11 +169,11 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
                   step="100"
                   required
                   placeholder="e.g. 25000"
-                  className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                  className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
                   Frequency *
                 </label>
                 <CustomSelect
@@ -192,7 +192,7 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
 
             {/* Comments */}
             <div>
-              <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
                 Message to Household (Optional)
               </label>
               <textarea
@@ -200,13 +200,13 @@ const ShowInterestModal: React.FC<ShowInterestModalProps> = ({
                 onChange={(e) => setComments(e.target.value)}
                 rows={4}
                 placeholder="Introduce yourself, mention your experience, or ask any questions..."
-                className="w-full text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
+                className="w-full text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
               />
             </div>
 
             {/* Info Box */}
             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl border border-purple-200 dark:border-purple-500/30">
-              <p className="text-sm text-purple-800 dark:text-purple-200">
+              <p className="text-xs text-purple-800 dark:text-purple-200">
                 <strong>What happens next?</strong> The household will receive a notification about your interest. 
                 They can view your profile and contact you if they're interested in hiring you.
               </p>

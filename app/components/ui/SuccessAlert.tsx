@@ -22,9 +22,9 @@ export const SuccessAlert: React.FC<SuccessAlertProps> = ({
         </span>
         <div className="flex-1 min-w-0">
           {title && (
-            <p className="text-sm font-semibold text-green-700 dark:text-green-400 mb-0.5">{title}</p>
+            <p className="text-xs font-semibold text-green-700 dark:text-green-400 mb-0.5">{title}</p>
           )}
-          <p className="text-sm font-medium text-green-700 dark:text-green-300">{message}</p>
+          <p className="text-xs font-medium text-green-700 dark:text-green-300">{message}</p>
         </div>
       </div>
     </div>

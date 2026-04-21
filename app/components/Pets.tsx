@@ -218,13 +218,13 @@ const Pets: React.FC = () => {
 
   return (
     <div className="w-full max-w-3xl mx-auto flex flex-col gap-8">
-      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🐾 Pets</h2>
+      <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">🐾 Pets</h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
         Do you have any pets that need care?
       </p>
       
       <div className="flex flex-col gap-4">
-        <label className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${hasPet === "no" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
+        <label className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${hasPet === "no" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
             type="radio"
             name="hasPet"
@@ -236,7 +236,7 @@ const Pets: React.FC = () => {
           <span className="flex-1">❌ I do not have pets</span>
         </label>
         
-        <label className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${hasPet === "yes" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
+        <label className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${hasPet === "yes" ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105" : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"}`}>
           <input
             type="radio"
             name="hasPet"
@@ -252,22 +252,22 @@ const Pets: React.FC = () => {
       {/* Pet Table - Show if user has pets */}
       {hasPet === "yes" && pets.length > 0 && (
         <div className="mt-6">
-          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-3">Your Pets</h3>
+          <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-3">Your Pets</h3>
           <div className="overflow-x-auto rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
             <table className="w-full">
               <thead className="bg-purple-50 dark:bg-purple-900/20">
                 <tr>
-                  <th className="px-4 py-1.5 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Pet Type</th>
-                  <th className="px-4 py-1.5 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Traits</th>
-                  <th className="px-4 py-1.5 text-left text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Care Required</th>
-                  <th className="px-4 py-1.5 text-center text-sm font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Action</th>
+                  <th className="px-4 py-1.5 text-left text-xs font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Pet Type</th>
+                  <th className="px-4 py-1.5 text-left text-xs font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Traits</th>
+                  <th className="px-4 py-1.5 text-left text-xs font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Care Required</th>
+                  <th className="px-4 py-1.5 text-center text-xs font-bold text-purple-700 dark:text-purple-400 border-b-2 border-purple-200 dark:border-purple-500/30">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {pets.map((pet, index) => (
                   <tr key={pet.id} className={`${index % 2 === 0 ? 'bg-white dark:bg-[#13131a]' : 'bg-purple-50/50 dark:bg-purple-900/10'} hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors`}>
-                    <td className="px-4 py-1.5 text-sm text-gray-900 dark:text-gray-100 border-b border-purple-100 dark:border-purple-500/20 capitalize font-medium">{pet.type}</td>
-                    <td className="px-4 py-3 text-sm border-b border-purple-100 dark:border-purple-500/20">
+                    <td className="px-4 py-1.5 text-xs text-gray-900 dark:text-gray-100 border-b border-purple-100 dark:border-purple-500/20 capitalize font-medium">{pet.type}</td>
+                    <td className="px-4 py-3 text-xs border-b border-purple-100 dark:border-purple-500/20">
                       {pet.traits.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
                           {pet.traits.map(trait => (
@@ -280,7 +280,7 @@ const Pets: React.FC = () => {
                         <span className="text-gray-400 dark:text-gray-500">None</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-sm border-b border-purple-100 dark:border-purple-500/20">
+                    <td className="px-4 py-3 text-xs border-b border-purple-100 dark:border-purple-500/20">
                       {pet.requiresCare ? (
                         <div>
                           <span className="inline-block bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 text-xs px-2 py-1 rounded-full mb-1 font-medium">Yes</span>
@@ -315,7 +315,7 @@ const Pets: React.FC = () => {
         <button
           type="button"
           onClick={handleAddPet}
-          className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
+          className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 flex items-center justify-center gap-2"
         >
           + Add Pet
         </button>
@@ -337,14 +337,14 @@ const Pets: React.FC = () => {
             </button>
 
             <div className="flex items-center gap-2 mb-6">
-              <span className="text-xl">🐾</span>
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Add Pet</h3>
+              <span className="text-lg">🐾</span>
+              <h3 className="text-xs font-semibold text-gray-900 dark:text-white">Add Pet</h3>
             </div>
 
             <div className="space-y-4">
               {/* Pet Type Dropdown */}
               <div>
-                <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                <label className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
                   Pet Type <span className="text-red-500">*</span>
                 </label>
                 <CustomSelect
@@ -364,7 +364,7 @@ const Pets: React.FC = () => {
               {/* Other Pet Type Input */}
               {petType === "Other" && (
                 <div>
-                  <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                  <label className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
                     Specify Pet Type <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -404,14 +404,14 @@ const Pets: React.FC = () => {
                       )}
                     </div>
                   </div>
-                  <span className="text-sm font-semibold text-purple-700 dark:text-purple-400">Requires Care</span>
+                  <span className="text-xs font-semibold text-purple-700 dark:text-purple-400">Requires Care</span>
                 </label>
               </div>
 
               {/* Care Details Textarea */}
               {requiresCare && (
                 <div>
-                  <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                  <label className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
                     Care Details
                   </label>
                   <textarea
@@ -426,8 +426,8 @@ const Pets: React.FC = () => {
 
               {/* Pet Traits */}
               <div>
-                <label className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
-                  Traits <span className="text-sm text-gray-500 dark:text-gray-400">(Select up to 3)</span>
+                <label className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                  Traits <span className="text-xs text-gray-500 dark:text-gray-400">(Select up to 3)</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {PET_TRAITS.map(trait => (
@@ -436,7 +436,7 @@ const Pets: React.FC = () => {
                       type="button"
                       onClick={() => handleTraitToggle(trait)}
                       disabled={!selectedTraits.includes(trait) && selectedTraits.length >= 3}
-                      className={`px-4 py-1 rounded-xl border-2 text-sm font-medium transition-all ${
+                      className={`px-4 py-1 rounded-xl border-2 text-xs font-medium transition-all ${
                         selectedTraits.includes(trait)
                           ? 'bg-purple-100 dark:bg-purple-900/30 border-purple-500 text-purple-900 dark:text-purple-100'
                           : selectedTraits.length >= 3
@@ -488,12 +488,12 @@ const Pets: React.FC = () => {
                 </svg>
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white">Delete Pet</h3>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">Delete Pet</h3>
               </div>
             </div>
             
             <div className="mb-6">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 Are you sure you want to delete <span className="font-semibold capitalize text-purple-700 dark:text-purple-400">{petToDelete.type}</span>? This action cannot be undone.
               </p>
             </div>

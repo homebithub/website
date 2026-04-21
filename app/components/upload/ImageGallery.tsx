@@ -123,7 +123,7 @@ export default function ImageGallery({
         <ErrorAlert message={error} />
         <button
           onClick={loadImages}
-          className="mt-2 text-sm text-purple-700 dark:text-purple-300 underline hover:no-underline"
+          className="mt-2 text-xs text-purple-700 dark:text-purple-300 underline hover:no-underline"
         >
           Try again
         </button>
@@ -183,7 +183,7 @@ export default function ImageGallery({
 
             {/* Image info */}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black to-transparent p-3 opacity-0 group-hover:opacity-100 transition-opacity">
-              <p className="text-white text-sm font-medium truncate">
+              <p className="text-white text-xs font-medium truncate">
                 {image.file_name}
               </p>
               <p className="text-white text-xs opacity-75">

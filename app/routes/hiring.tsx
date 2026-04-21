@@ -75,11 +75,11 @@ export default function HiringHistoryPage() {
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className="flex-1 py-8">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6">Hiring</h1>
+            <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">Hiring</h1>
 
             {items.length === 0 && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
-                <p className="text-gray-600 dark:text-gray-300 text-lg">No hiring records yet.</p>
+                <p className="text-gray-600 dark:text-gray-300 text-base">No hiring records yet.</p>
               </div>
             )}
 
@@ -90,14 +90,14 @@ export default function HiringHistoryPage() {
                 <li key={e.id} className="rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-4">
                   <div className="flex items-center justify-between">
                     <div className="font-semibold text-primary-700 dark:text-purple-300">{e.status}</div>
-                    <div className="text-sm text-gray-500">{new Date(e.created_at).toLocaleDateString()}</div>
+                    <div className="text-xs text-gray-500">{new Date(e.created_at).toLocaleDateString()}</div>
                   </div>
-                  <div className="text-gray-600 dark:text-gray-300 mt-1 text-sm">
+                  <div className="text-gray-600 dark:text-gray-300 mt-1 text-xs">
                     Start: {e.start_date ? new Date(e.start_date).toLocaleDateString() : 'N/A'}
                     {" • "} End: {e.end_date ? new Date(e.end_date).toLocaleDateString() : 'N/A'}
                   </div>
-                  <div className="text-gray-600 dark:text-gray-300 mt-1 text-sm">Salary: {e.salary ? e.salary.toLocaleString() : 'N/A'}</div>
-                  {e.notes && <div className="text-gray-500 dark:text-gray-400 mt-1 text-sm">Notes: {e.notes}</div>}
+                  <div className="text-gray-600 dark:text-gray-300 mt-1 text-xs">Salary: {e.salary ? e.salary.toLocaleString() : 'N/A'}</div>
+                  {e.notes && <div className="text-gray-500 dark:text-gray-400 mt-1 text-xs">Notes: {e.notes}</div>}
                 </li>
               ))}
             </ul>

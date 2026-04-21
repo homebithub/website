@@ -109,7 +109,7 @@ const MyKids = () => {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">👨‍👩‍👧‍👦 My Kids</h2>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">👨‍👩‍👧‍👦 My Kids</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                 Do you have children?
             </p>
@@ -120,13 +120,13 @@ const MyKids = () => {
             
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-4">
-                    <h2 className="text-sm font-medium text-gray-900">
+                    <h2 className="text-xs font-medium text-gray-900">
                         Please select the option that best describes your situation:
                     </h2>
                     
                     {/* Option 1: I have kids and need accommodation */}
                     <div className="space-y-4">
-                        <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                        <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                             kidOption === 'needs_accommodation'
                                 ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105'
                                 : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -140,7 +140,7 @@ const MyKids = () => {
                             />
                             <div className="flex-1">
                                 <span>I have kids and need accommodation</span>
-                                <p className="mt-1 text-sm font-normal text-gray-500">
+                                <p className="mt-1 text-xs font-normal text-gray-500">
                                     You'll need to provide accommodation for your kids
                                 </p>
                             </div>
@@ -158,7 +158,7 @@ const MyKids = () => {
                     </div>
                     
                     {/* Option 2: I do not have kids */}
-                    <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                    <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                         kidOption === 'has_kids'
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105'
                             : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -174,7 +174,7 @@ const MyKids = () => {
                     </label>
                     
                     {/* Option 3: I do not need accommodation for my kids */}
-                    <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                    <label className={`flex items-start gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                         kidOption === 'has_kids_no_accommodation'
                             ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105'
                             : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -188,7 +188,7 @@ const MyKids = () => {
                         />
                         <div className="flex-1">
                             <span>I do not need accommodation for my kids</span>
-                            <p className="mt-1 text-sm font-normal text-gray-500">
+                            <p className="mt-1 text-xs font-normal text-gray-500">
                                 You have kids but don't need accommodation for them
                             </p>
                         </div>
@@ -200,7 +200,7 @@ const MyKids = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <>

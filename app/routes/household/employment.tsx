@@ -247,13 +247,13 @@ export default function HouseholdEmployment() {
       {/* Tabs */}
       <div className="flex items-center border-b border-gray-200 dark:border-slate-700 mb-6">
         <button
-          className={`px-6 py-1 font-semibold text-base focus:outline-none transition border-b-2 ${activeTab === 'find' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
+          className={`px-6 py-1 font-semibold text-sm focus:outline-none transition border-b-2 ${activeTab === 'find' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
           onClick={() => handleTabChange('find')}
         >
           Find a househelp
         </button>
         <button
-          className={`ml-2 px-6 py-1 font-semibold text-base focus:outline-none transition border-b-2 relative flex items-center ${activeTab === 'shortlist' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
+          className={`ml-2 px-6 py-1 font-semibold text-sm focus:outline-none transition border-b-2 relative flex items-center ${activeTab === 'shortlist' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
           onClick={() => handleTabChange('shortlist')}
         >
           My Shortlist
@@ -311,15 +311,15 @@ export default function HouseholdEmployment() {
                   >
                     <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
                     <div className="flex-1">
-                      <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
-                      <div className="text-gray-500 dark:text-gray-300 text-sm">
+                      <div className="font-bold text-base text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
+                      <div className="text-gray-500 dark:text-gray-300 text-xs">
                         Salary: {h.salary_expectation && Number(h.salary_expectation) > 0 
                           ? `${h.salary_expectation} ${h.salary_frequency || ''}` 
                           : 'No salary expectations specified'}
                       </div>
-                      <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
+                      <div className="text-gray-500 dark:text-gray-300 text-xs">Location: {h.county_of_residence || 'N/A'}</div>
                       {h.completed_jobs > 0 && (
-                        <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                        <div className="text-xs text-purple-600 dark:text-purple-400 font-medium">
                           ✓ {h.completed_jobs} job{h.completed_jobs === 1 ? '' : 's'} completed
                         </div>
                       )}
@@ -363,15 +363,15 @@ export default function HouseholdEmployment() {
           {!shortlistProfilesLoading && shortlist.length === 0 && (
             <div className="text-center py-12">
               <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
-              <div className="text-gray-500 text-lg mb-2">Your shortlist is empty</div>
-              <div className="text-gray-400 text-sm">Start browsing househelps and add them to your shortlist to see them here.</div>
+              <div className="text-gray-500 text-base mb-2">Your shortlist is empty</div>
+              <div className="text-gray-400 text-xs">Start browsing househelps and add them to your shortlist to see them here.</div>
             </div>
           )}
           {!shortlistProfilesLoading && shortlistProfiles.length === 0 && shortlist.length > 0 && (
             <div className="text-center py-12">
               <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
-              <div className="text-gray-500 text-lg mb-2">No profiles found</div>
-              <div className="text-gray-400 text-sm">The househelps in your shortlist may no longer be available.</div>
+              <div className="text-gray-500 text-base mb-2">No profiles found</div>
+              <div className="text-gray-400 text-xs">The househelps in your shortlist may no longer be available.</div>
             </div>
           )}
           {shortlistProfiles.map((h) => (
@@ -395,15 +395,15 @@ export default function HouseholdEmployment() {
             >
               <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
               <div className="flex-1">
-                <div className="font-bold text-lg text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
-                <div className="text-gray-500 dark:text-gray-300 text-sm">
+                <div className="font-bold text-base text-primary-700 dark:text-primary-200">{h.first_name} {h.last_name}</div>
+                <div className="text-gray-500 dark:text-gray-300 text-xs">
                   Salary: {h.salary_expectation && Number(h.salary_expectation) > 0 
                     ? `${h.salary_expectation} ${h.salary_frequency || ''}` 
                     : 'No salary expectations specified'}
                 </div>
-                <div className="text-gray-500 dark:text-gray-300 text-sm">Location: {h.county_of_residence || 'N/A'}</div>
+                <div className="text-gray-500 dark:text-gray-300 text-xs">Location: {h.county_of_residence || 'N/A'}</div>
                 {h.completed_jobs > 0 && (
-                  <div className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                  <div className="text-xs text-purple-600 dark:text-purple-400 font-medium">
                     ✓ {h.completed_jobs} job{h.completed_jobs === 1 ? '' : 's'} completed
                   </div>
                 )}

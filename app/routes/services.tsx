@@ -4,20 +4,15 @@ import { Footer } from "~/components/Footer";
 import { Link } from "react-router";
 import { Button } from "~/components/ui";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
+import { MARKETING_SERVICES } from "~/constants/marketingServices";
 
 export const meta = () => [
     { title: "Home Services — Homebit Kenya" },
-    { name: "description", content: "Explore Homebit's range of home services: housekeeping, nanny care, cooking, laundry, gardening, and more. Professional, vetted staff across Kenya." },
+    { name: "description", content: "Explore Homebit's home service offerings across Kenya, from indoor cleaning and laundry to elder care, special needs care, and upcoming specialty support." },
     { property: "og:title", content: "Home Services — Homebit Kenya" },
     { property: "og:url", content: "https://homebit.co.ke/services" },
 ];
 import {
-  WrenchScrewdriverIcon,
-  PaintBrushIcon,
-  HomeIcon,
-  ShieldCheckIcon,
-  BoltIcon,
-  HeartIcon,
   SparklesIcon,
 } from "@heroicons/react/24/outline";
 
@@ -52,39 +47,6 @@ function SlideUp({ children, delay = 0, className = "" }: { children: React.Reac
   );
 }
 
-const services = [
-  {
-    name: "House Helps",
-    icon: HomeIcon,
-    href: "/services/house-helps",
-  },
-  {
-    name: "Child Care (Nannies)",
-    icon: HeartIcon,
-    href: "/services/child-care",
-  },
-  {
-    name: "Home Maintenance & Repairs",
-    icon: WrenchScrewdriverIcon,
-    href: "/services/maintenance-repairs",
-  },
-  {
-    name: "Elder Care",
-    icon: ShieldCheckIcon,
-    href: "/services/security",
-  },
-  {
-    name: "Laundry and Ironing",
-    icon: BoltIcon,
-    href: "/services/electrical",
-  },
-  {
-    name: "Plumbing Services",
-    icon: WrenchScrewdriverIcon,
-    href: "/services/plumbing",
-  },
-];
-
 export default function Services() {
   return (
     <div className="min-h-screen flex flex-col">
@@ -101,10 +63,10 @@ export default function Services() {
                     What We Offer
                   </span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
                   Our Services
                 </h1>
-                <p className="mt-4 text-sm sm:text-base text-gray-600 dark:text-purple-200 leading-relaxed max-w-2xl mx-auto">
+                <p className="mt-4 text-xs sm:text-sm text-gray-600 dark:text-purple-200 leading-relaxed max-w-2xl mx-auto">
                   Homebit connects households with trusted professionals for help at home, and gives service
                   providers a simple way to reach the families who need their help &mdash; all through one smart,
                   reliable platform.
@@ -117,8 +79,7 @@ export default function Services() {
           <section className="bg-white dark:bg-[#0a0a0f] py-14 sm:py-20 transition-colors duration-300">
             <div className="max-w-5xl mx-auto px-4 sm:px-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                {services.map((service, idx) => {
-                  const showBadge = !["House Helps", "Child Care (Nannies)"].includes(service.name);
+                {MARKETING_SERVICES.map((service, idx) => {
                   return (
                     <SlideUp key={service.name} delay={idx * 80}>
                       <div className="group relative rounded-2xl border border-purple-200/30 dark:border-purple-500/15 bg-gradient-to-br from-white to-purple-50/50 dark:from-[#13131a] dark:to-[#0a0a0f] p-5 sm:p-6 transition-all duration-300 hover:shadow-light-glow-md dark:hover:shadow-glow-sm hover:-translate-y-1">
@@ -127,17 +88,17 @@ export default function Services() {
                             <service.icon className="h-5 w-5 text-white" />
                           </div>
                           <div>
-                            <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">
+                            <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">
                               {service.name}
                             </h3>
-                            {showBadge && (
+                            {service.comingSoon && (
                               <span className="mt-1 inline-block rounded-full bg-gray-100 dark:bg-purple-900/30 px-2 py-0.5 text-xs font-semibold text-purple-600 dark:text-purple-400">
                                 Coming soon
                               </span>
                             )}
-                            {/*<p className="mt-1 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">*/}
-                            {/*  {service.description}*/}
-                            {/*</p>*/}
+                            <p className="mt-1 text-xs sm:text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                              {service.description}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -152,10 +113,10 @@ export default function Services() {
           <section className="bg-gradient-to-br from-purple-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-14 sm:py-20 transition-colors duration-300">
             <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center">
               <SlideUp>
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
                   Need help around the house?
                 </h2>
-                <p className="mt-3 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                <p className="mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                   Join Homebit and connect with trusted professionals today.
                 </p>
                 <div className="mt-6">
@@ -179,4 +140,3 @@ export default function Services() {
 
 // Error boundary for better error handling
 export { ErrorBoundary } from "~/components/ErrorBoundary";
-

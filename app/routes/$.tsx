@@ -28,7 +28,7 @@ export default function NotFound() {
           <PurpleCard hover={false} glow={true} className="w-full max-w-2xl p-12 text-center">
             {/* 404 Number */}
             <div className="mb-8">
-              <h1 className="text-9xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 animate-pulse">
+              <h1 className="text-8xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 animate-pulse">
                 404
               </h1>
             </div>
@@ -38,16 +38,16 @@ export default function NotFound() {
               <div className="relative">
                 <MagnifyingGlassIcon className="h-24 w-24 text-purple-400 animate-bounce" />
                 <div className="absolute -top-2 -right-2 h-8 w-8 bg-pink-500 rounded-full flex items-center justify-center">
-                  <span className="text-white text-xl font-bold">?</span>
+                  <span className="text-white text-lg font-bold">?</span>
                 </div>
               </div>
             </div>
 
             {/* Message */}
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
               Oops! Page Not Found
             </h2>
-            <p className="text-lg text-gray-600 dark:text-gray-300 mb-8 max-w-md mx-auto">
+            <p className="text-base text-gray-600 dark:text-gray-300 mb-8 max-w-md mx-auto">
               The page you're looking for seems to have wandered off. Don't worry, even the best explorers get lost sometimes!
             </p>
 
@@ -72,21 +72,21 @@ export default function NotFound() {
 
             {/* Helpful Links */}
             <div className="mt-12 pt-8 border-t border-gray-200 dark:border-purple-500/20">
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Looking for something specific?</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">Looking for something specific?</p>
               <div className="flex flex-wrap justify-center gap-3">
-                <Link to="/about" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm hover:underline">
+                <Link to="/about" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-xs hover:underline">
                   About Us
                 </Link>
                 <span className="text-gray-300 dark:text-gray-600">•</span>
-                <Link to="/services" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm hover:underline">
+                <Link to="/services" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-xs hover:underline">
                   Services
                 </Link>
                 <span className="text-gray-300 dark:text-gray-600">•</span>
-                <Link to="/contact" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm hover:underline">
+                <Link to="/contact" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-xs hover:underline">
                   Contact
                 </Link>
                 <span className="text-gray-300 dark:text-gray-600">•</span>
-                <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-sm hover:underline">
+                <Link to="/login" className="text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 font-medium text-xs hover:underline">
                   Login
                 </Link>
               </div>

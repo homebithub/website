@@ -92,18 +92,18 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Budget & House Details</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Budget & House Details</h3>
         <p className="text-gray-600">Help us understand your budget and house setup</p>
       </div>
 
       <div className="space-y-6">
         {/* Budget Section */}
         <div className="space-y-4">
-          <h4 className="text-lg font-medium text-gray-900">Your Budget</h4>
+          <h4 className="text-base font-medium text-gray-900">Your Budget</h4>
           
           {/* Budget Type Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-xs font-medium text-gray-700 mb-3">
               How would you like to pay?
             </label>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -125,8 +125,8 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
                     className="sr-only"
                   />
                   <div className="text-center">
-                    <div className="text-lg font-medium text-gray-900">{type.label}</div>
-                    <div className="text-sm text-gray-600">{type.description}</div>
+                    <div className="text-base font-medium text-gray-900">{type.label}</div>
+                    <div className="text-xs text-gray-600">{type.description}</div>
                   </div>
                 </label>
               ))}
@@ -135,7 +135,7 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
 
           {/* Budget Amount */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-xs font-medium text-gray-700 mb-2">
               What's your budget? (KSh)
             </label>
             <div className="relative">
@@ -152,7 +152,7 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
                 required
               />
             </div>
-            <p className="text-sm text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 mt-1">
               Typical range: {getBudgetRange()}
             </p>
           </div>
@@ -160,11 +160,11 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
 
         {/* House Details Section */}
         <div className="space-y-4">
-          <h4 className="text-lg font-medium text-gray-900">House Details</h4>
+          <h4 className="text-base font-medium text-gray-900">House Details</h4>
           
           {/* House Size */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-xs font-medium text-gray-700 mb-3">
               What's your house size?
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
@@ -186,7 +186,7 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
                     className="sr-only"
                   />
                   <div className="text-center">
-                    <div className="text-lg font-medium text-gray-900">{size.label}</div>
+                    <div className="text-base font-medium text-gray-900">{size.label}</div>
                   </div>
                 </label>
               ))}
@@ -195,7 +195,7 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
 
           {/* Separate SQ */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-3">
+            <label className="block text-xs font-medium text-gray-700 mb-3">
               Do you have a separate servant's quarter (SQ)?
             </label>
             <div className="space-y-2">
@@ -220,7 +220,7 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
                 <span className="text-gray-700">No separate SQ</span>
               </label>
             </div>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-xs text-gray-500 mt-2">
               This helps us understand accommodation arrangements for sleep-in househelp
             </p>
           </div>
@@ -235,10 +235,10 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-blue-800">
+              <p className="text-xs font-medium text-blue-800">
                 Budget Guidelines
               </p>
-              <ul className="text-sm text-blue-700 mt-1 space-y-1">
+              <ul className="text-xs text-blue-700 mt-1 space-y-1">
                 <li>• Dayburg: KSh 500-2,000 per day</li>
                 <li>• Sleep-in: KSh 15,000-60,000 per month</li>
                 <li>• Rates vary based on experience and responsibilities</li>
@@ -258,10 +258,10 @@ export function BudgetStep({ data, onUpdate, onNext }: BudgetStepProps) {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">
+                <p className="text-xs font-medium text-green-800">
                   Summary
                 </p>
-                <p className="text-sm text-green-700 mt-1">
+                <p className="text-xs text-green-700 mt-1">
                   <strong>Budget:</strong> KSh {budgetAmount.toLocaleString()} per {budgetType}
                   <br />
                   <strong>House:</strong> {HOUSE_SIZES.find(s => s.value === houseSize)?.label}

@@ -7,6 +7,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Button } from '~/components/ui/Button';
 import { useSSESubscription } from '~/hooks/useSSESubscription';
+import { InviteCodeInput, isInviteCodeComplete } from '~/components/household/InviteCodeInput';
 
 export default function JoinHouseholdPage() {
   const navigate = useNavigate();
@@ -66,8 +67,8 @@ export default function JoinHouseholdPage() {
   useSSESubscription('auth.household.updated', refreshPendingStatus, watchPendingStatus);
 
   const handleValidateCode = async () => {
-    if (!inviteCode.trim()) {
-      setError("Please enter an invitation code");
+    if (!isInviteCodeComplete(inviteCode)) {
+      setError("Please enter the full invitation code");
       return;
     }
 
@@ -132,10 +133,10 @@ export default function JoinHouseholdPage() {
           <div className="max-w-2xl mx-auto px-4">
             {/* Header */}
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-4">
                 🏠 Join a Household
               </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
+              <p className="text-base text-gray-600 dark:text-gray-400">
                 Enter the household code shared by your partner to request access
               </p>
             </div>
@@ -170,27 +171,28 @@ export default function JoinHouseholdPage() {
               <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-xl border-2 border-purple-200 dark:border-purple-500/30 p-8">
                 {/* Step 1: Enter Code */}
                 <div className="mb-8">
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
                     Household Invitation Code
                   </label>
-                  <div className="flex gap-3">
-                    <input
-                      type="text"
-                      value={inviteCode}
-                      onChange={(e) => {
-                        setInviteCode(e.target.value.toUpperCase());
-                        setValidationInfo(null);
-                        setError(null);
-                      }}
-                      placeholder="HH-XXXX-XXXX"
-                      className="flex-1 px-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white font-mono text-lg"
-                      disabled={loading || validating}
-                    />
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                    <div className="flex-1">
+                      <InviteCodeInput
+                        value={inviteCode}
+                        onChange={(nextValue) => {
+                          setInviteCode(nextValue);
+                          setValidationInfo(null);
+                          setError(null);
+                        }}
+                        disabled={loading || validating}
+                        autoFocus
+                      />
+                    </div>
                     <Button
                       onClick={handleValidateCode}
-                      disabled={!inviteCode.trim() || loading || validating}
+                      disabled={!isInviteCodeComplete(inviteCode) || loading || validating}
                       isLoading={validating}
                       variant="primary"
+                      className="w-full sm:w-auto"
                     >
                       Validate
                     </Button>
@@ -210,7 +212,7 @@ export default function JoinHouseholdPage() {
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-lg font-bold text-green-900 dark:text-green-100 mb-1">
+                        <h3 className="text-base font-bold text-green-900 dark:text-green-100 mb-1">
                           Valid Invitation Code!
                         </h3>
                       </div>
@@ -218,7 +220,7 @@ export default function JoinHouseholdPage() {
 
                     {/* Optional Message */}
                     <div className="mt-4">
-                      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                      <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-2">
                         Message (Optional)
                       </label>
                       <textarea
@@ -246,10 +248,10 @@ export default function JoinHouseholdPage() {
 
                 {/* Info Box */}
                 <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-xl">
-                  <p className="text-sm text-blue-800 dark:text-blue-200 font-semibold mb-2">
+                  <p className="text-xs text-blue-800 dark:text-blue-200 font-semibold mb-2">
                     ℹ️ What happens next?
                   </p>
-                  <ul className="space-y-1 text-sm text-blue-700 dark:text-blue-300 list-disc list-inside">
+                  <ul className="space-y-1 text-xs text-blue-700 dark:text-blue-300 list-disc list-inside">
                     <li>Enter the household code shared by your partner</li>
                     <li>We'll validate the code and show you the household details</li>
                     <li>Send a request to join the household</li>

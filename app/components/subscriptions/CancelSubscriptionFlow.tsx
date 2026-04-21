@@ -113,7 +113,7 @@ export function CancelSubscriptionFlow({
                 {step === 1 && (
                   <>
                     <div className="flex items-start justify-between mb-4">
-                      <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
+                      <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
                         We'd Hate to See You Go
                       </Dialog.Title>
                       <button
@@ -124,7 +124,7 @@ export function CancelSubscriptionFlow({
                       </button>
                     </div>
 
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mb-6">
                       Before you cancel, consider these alternatives:
                     </p>
 
@@ -140,7 +140,7 @@ export function CancelSubscriptionFlow({
                         <h4 className="font-semibold text-gray-900 dark:text-white mb-1">
                           Pause Your Subscription Instead
                         </h4>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                        <p className="text-xs text-gray-600 dark:text-gray-300">
                           Take a break for 7-90 days. Your subscription will resume automatically.
                         </p>
                       </button>
@@ -165,12 +165,12 @@ export function CancelSubscriptionFlow({
                                   <h5 className="font-semibold text-gray-900 dark:text-white">
                                     {plan.name}
                                   </h5>
-                                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                                  <p className="text-xs text-gray-600 dark:text-gray-300">
                                     {plan.description}
                                   </p>
                                 </div>
                                 <div className="text-right">
-                                  <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                                  <p className="text-base font-bold text-purple-600 dark:text-purple-400">
                                     KES {(plan.price_amount / 100).toFixed(2)}
                                   </p>
                                   <p className="text-xs text-gray-500">/{plan.billing_cycle}</p>
@@ -184,7 +184,7 @@ export function CancelSubscriptionFlow({
                       {/* Continue with Cancellation */}
                       <button
                         onClick={handleContinueToReason}
-                        className="w-full px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
+                        className="w-full px-4 py-2 text-xs text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors"
                       >
                         Continue with cancellation →
                       </button>
@@ -204,7 +204,7 @@ export function CancelSubscriptionFlow({
                         >
                           <ArrowLeftIcon className="w-5 h-5" />
                         </button>
-                        <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
+                        <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
                           Help Us Improve
                         </Dialog.Title>
                       </div>
@@ -217,14 +217,14 @@ export function CancelSubscriptionFlow({
                       </button>
                     </div>
 
-                    <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+                    <p className="text-xs text-gray-600 dark:text-gray-300 mb-6">
                       Please tell us why you're cancelling. Your feedback helps us improve.
                     </p>
 
                     <div className="space-y-4">
                       {/* Reason Selector */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Reason for Cancellation
                         </label>
                         <select
@@ -243,7 +243,7 @@ export function CancelSubscriptionFlow({
 
                       {/* Feedback Textarea */}
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Additional Feedback (Optional)
                         </label>
                         <textarea
@@ -264,7 +264,7 @@ export function CancelSubscriptionFlow({
                         />
                         <div className="flex items-center justify-between mt-1">
                           {feedbackError && (
-                            <p className="text-sm text-red-600 dark:text-red-400">{feedbackError}</p>
+                            <p className="text-xs text-red-600 dark:text-red-400">{feedbackError}</p>
                           )}
                           <p className="text-xs text-gray-500 dark:text-gray-400 ml-auto">
                             {feedback.length}/500
@@ -301,10 +301,10 @@ export function CancelSubscriptionFlow({
                         <ExclamationTriangleIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
                       </div>
                       <div className="flex-1">
-                        <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                        <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                           Confirm Cancellation
                         </Dialog.Title>
-                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                        <p className="text-xs text-gray-600 dark:text-gray-300">
                           Are you sure you want to cancel your subscription?
                         </p>
                       </div>
@@ -313,14 +313,14 @@ export function CancelSubscriptionFlow({
                     {/* Summary */}
                     <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl space-y-2">
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Current Plan</span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        <span className="text-xs text-gray-600 dark:text-gray-400">Current Plan</span>
+                        <span className="text-xs font-medium text-gray-900 dark:text-white">
                           {subscription.plan?.name}
                         </span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-sm text-gray-600 dark:text-gray-400">Access Until</span>
-                        <span className="text-sm font-medium text-gray-900 dark:text-white">
+                        <span className="text-xs text-gray-600 dark:text-gray-400">Access Until</span>
+                        <span className="text-xs font-medium text-gray-900 dark:text-white">
                           {formatDate(subscription.current_period_end)}
                         </span>
                       </div>
@@ -328,7 +328,7 @@ export function CancelSubscriptionFlow({
 
                     {/* Warning */}
                     <div className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-xl border border-yellow-200 dark:border-yellow-800">
-                      <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                      <p className="text-xs text-yellow-800 dark:text-yellow-300">
                         <strong>Important:</strong> You'll lose access to premium features on{' '}
                         {formatDate(subscription.current_period_end)}. No refunds will be issued for the
                         remaining time.

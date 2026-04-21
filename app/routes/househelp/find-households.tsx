@@ -118,10 +118,10 @@ export default function HousehelpFindHouseholds() {
     <div className="w-full">
       {/* Filters header with gradient theme to match household page */}
       <div className="rounded-3xl bg-gradient-to-r from-purple-600 via-pink-600 to-pink-500 p-6 sm:p-8 shadow-2xl shadow-purple-500/30 mb-6">
-        <h1 className="text-xl sm:text-2xl font-extrabold text-white mb-6">Find Households</h1>
+        <h1 className="text-lg sm:text-xl font-extrabold text-white mb-6">Find Households</h1>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 gap-y-4">
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-white/90">Town</label>
+          <label className="mb-1 text-xs font-medium text-white/90">Town</label>
           <SearchableTownSelect
             value={filters.town}
             onChange={(value) => setFilters((prev) => ({ ...prev, town: value }))}
@@ -133,7 +133,7 @@ export default function HousehelpFindHouseholds() {
           />
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-white/90">House Size</label>
+          <label className="mb-1 text-xs font-medium text-white/90">House Size</label>
           <select name="house_size" value={filters.house_size} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             {HOUSE_SIZES.map((s) => (
               <option key={s} value={s}>
@@ -143,7 +143,7 @@ export default function HousehelpFindHouseholds() {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-white/90">Verified</label>
+          <label className="mb-1 text-xs font-medium text-white/90">Verified</label>
           <select name="verified" value={filters.verified} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             <option value="">Any</option>
             <option value="true">Verified</option>
@@ -151,7 +151,7 @@ export default function HousehelpFindHouseholds() {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-white/90">Has Kids</label>
+          <label className="mb-1 text-xs font-medium text-white/90">Has Kids</label>
           <select name="has_kids" value={filters.has_kids} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             <option value="">Any</option>
             <option value="true">Yes</option>
@@ -159,7 +159,7 @@ export default function HousehelpFindHouseholds() {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-white/90">Has Pets</label>
+          <label className="mb-1 text-xs font-medium text-white/90">Has Pets</label>
           <select name="has_pets" value={filters.has_pets} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             <option value="">Any</option>
             <option value="true">Yes</option>
@@ -167,7 +167,7 @@ export default function HousehelpFindHouseholds() {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-white/90">Pet Type</label>
+          <label className="mb-1 text-xs font-medium text-white/90">Pet Type</label>
           <select name="pet_type" value={filters.pet_type} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             {PET_TYPES.map((p) => (
               <option key={p} value={p}>
@@ -177,7 +177,7 @@ export default function HousehelpFindHouseholds() {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-white/90">Type of Househelp</label>
+          <label className="mb-1 text-xs font-medium text-white/90">Type of Househelp</label>
           <select name="type_of_househelp" value={filters.type_of_househelp} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             {NANNY_TYPES.map((t) => (
               <option key={t} value={t}>
@@ -187,7 +187,7 @@ export default function HousehelpFindHouseholds() {
           </select>
         </div>
         <div className="flex flex-col">
-          <label className="mb-1 text-sm font-medium text-white/90">Min Rating</label>
+          <label className="mb-1 text-xs font-medium text-white/90">Min Rating</label>
           <select name="min_rating" value={filters.min_rating} onChange={handleSelect} className="w-full h-12 px-4 py-3 rounded-xl bg-gray-900/80 text-white border border-white/20 shadow-inner backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-white/40 transition">
             {RATING_OPTS.map((r) => (
               <option key={r?.toString() || "any"} value={r?.toString() || ""}>
@@ -221,7 +221,7 @@ export default function HousehelpFindHouseholds() {
             className="bg-black/60 dark:bg-[#0d0d15] border border-purple-800/40 rounded-2xl p-6 shadow-2xl shadow-purple-900/40 hover:shadow-purple-700 transition-all"
           >
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold">
+              <div className="w-16 h-16 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-lg font-bold">
                 {r.avatar_url ? (
                   <img src={r.avatar_url} alt={`${r.first_name} ${r.last_name}`} className="w-full h-full object-cover" />
                 ) : (
@@ -230,14 +230,14 @@ export default function HousehelpFindHouseholds() {
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-lg font-semibold text-white">{r.first_name} {r.last_name}</h3>
+                  <h3 className="text-base font-semibold text-white">{r.first_name} {r.last_name}</h3>
                   {r.verified && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
                       Verified
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm text-purple-100">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs text-purple-100">
                   <div><span className="text-purple-300">Town</span><p className="font-medium text-white">{r.town || "-"}</p></div>
                   <div><span className="text-purple-300">House Size</span><p className="font-medium text-white">{r.house_size || "-"}</p></div>
                   <div><span className="text-purple-300">Kids</span><p className="font-medium text-white">{r.has_kids ? 'Yes' : 'No'}</p></div>

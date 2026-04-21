@@ -41,10 +41,10 @@ export function CreditBalanceCard({ creditBalance, formatted, loading }: CreditB
             }`} />
           </div>
           <div>
-            <h4 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">
+            <h4 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">
               Credit Balance
             </h4>
-            <p className={`text-2xl font-bold ${
+            <p className={`text-xl font-bold ${
               hasCredit
                 ? 'text-green-600 dark:text-green-400'
                 : 'text-gray-500 dark:text-gray-400'
@@ -63,13 +63,13 @@ export function CreditBalanceCard({ creditBalance, formatted, loading }: CreditB
       </div>
 
       {hasCredit && (
-        <p className="mt-3 text-sm text-green-700 dark:text-green-400">
+        <p className="mt-3 text-xs text-green-700 dark:text-green-400">
           Will be applied to your next payment
         </p>
       )}
 
       {!hasCredit && (
-        <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
+        <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
           No credits available
         </p>
       )}

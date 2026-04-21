@@ -461,10 +461,10 @@ export default function Pricing() {
                   Pricing
                 </span>
               </div>
-              <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-3xl mb-4">
+              <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white sm:text-2xl mb-4">
                 Choose Your Plan
               </h1>
-              <p className="mt-4 text-lg leading-8 text-gray-600 dark:text-gray-300">
+              <p className="mt-4 text-base leading-8 text-gray-600 dark:text-gray-300">
                 Select a subscription plan to access premium features
               </p>
             </div>
@@ -476,7 +476,7 @@ export default function Pricing() {
               <Tab.List className="flex space-x-1 rounded-xl bg-white dark:bg-[#13131a] p-1 shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30 max-w-md mx-auto mb-8">
                 <Tab
                   className={({ selected }) =>
-                    `w-full rounded-xl py-1.5 text-sm font-medium leading-5 transition-all
+                    `w-full rounded-xl py-1.5 text-xs font-medium leading-5 transition-all
                     ${
                       selected
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
@@ -488,7 +488,7 @@ export default function Pricing() {
                 </Tab>
                 <Tab
                   className={({ selected }) =>
-                    `w-full rounded-xl py-1.5 text-sm font-medium leading-5 transition-all
+                    `w-full rounded-xl py-1.5 text-xs font-medium leading-5 transition-all
                     ${
                       selected
                         ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
@@ -505,14 +505,14 @@ export default function Pricing() {
                 <Tab.Panel>
                   {householdPlans.length === 0 ? (
                     <div className="text-center py-16 px-8 bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
-                      <p className="text-lg text-gray-600 dark:text-gray-300">No household plans available at the moment</p>
+                      <p className="text-base text-gray-600 dark:text-gray-300">No household plans available at the moment</p>
                     </div>
                   ) : (
                     <>
                       <div className="text-center mb-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-500/30">
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <SparklesIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                             30-Day Free Trial
                           </h3>
                         </div>
@@ -537,30 +537,30 @@ export default function Pricing() {
                             >
                               {index === 2 && (
                                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                                  <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-xs font-semibold shadow-lg">
                                     Best Value
                                   </span>
                                 </div>
                               )}
                               
                               <div className="text-center flex-1 flex flex-col">
-                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                                   {plan.name}
                                 </h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-4">
+                                <p className="text-xs text-gray-600 dark:text-gray-300 mb-4">
                                   {plan.description}
                                 </p>
                                 
                                 {savings && (
                                   <div className="mb-4 bg-green-50 dark:bg-green-900/20 rounded-xl p-2">
-                                    <p className="text-sm font-semibold text-green-700 dark:text-green-400">
+                                    <p className="text-xs font-semibold text-green-700 dark:text-green-400">
                                       {savings}
                                     </p>
                                   </div>
                                 )}
                                 
                                 <div className="mb-6">
-                                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
+                                  <span className="text-xl font-bold text-gray-900 dark:text-white">
                                     {formatCurrency(plan.price_amount)}
                                   </span>
                                   <span className="text-gray-600 dark:text-gray-300 ml-2">
@@ -570,7 +570,7 @@ export default function Pricing() {
                                 
                                 <div className="mb-6 space-y-3 text-left flex-grow">
                                   {features.map((feature, idx) => (
-                                    <div key={idx} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                    <div key={idx} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
                                       <CheckIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                                       <span>{feature}</span>
                                     </div>
@@ -596,7 +596,7 @@ export default function Pricing() {
                 <Tab.Panel>
                   {househelpPlans.length === 0 ? (
                     <div className="text-center py-16 px-8 bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border border-purple-100 dark:border-purple-500/30">
-                      <p className="text-lg text-gray-600 dark:text-gray-300">No househelp plans available at the moment</p>
+                      <p className="text-base text-gray-600 dark:text-gray-300">No househelp plans available at the moment</p>
                     </div>
                   ) : (
                     <>
@@ -604,14 +604,14 @@ export default function Pricing() {
                       <div className="text-center mb-6 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-900/20 dark:to-amber-900/20 rounded-2xl p-6 border-2 border-yellow-400 dark:border-yellow-500 shadow-lg">
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <SparklesIcon className="w-6 h-6 text-yellow-600 dark:text-yellow-400 animate-pulse" />
-                          <h3 className="text-xl font-bold text-yellow-900 dark:text-yellow-100">
+                          <h3 className="text-lg font-bold text-yellow-900 dark:text-yellow-100">
                             🎉 Limited Time Offer!
                           </h3>
                         </div>
-                        <p className="text-yellow-800 dark:text-yellow-200 font-semibold text-lg">
+                        <p className="text-yellow-800 dark:text-yellow-200 font-semibold text-base">
                           First 1,000 househelps to complete their profile get <span className="text-yellow-600 dark:text-yellow-400 font-bold">FREE access for 1 YEAR!</span>
                         </p>
-                        <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-2">
+                        <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-2">
                           Don't miss out on this exclusive opportunity to showcase your skills at no cost.
                         </p>
                       </div>
@@ -619,7 +619,7 @@ export default function Pricing() {
                       <div className="text-center mb-8 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-2xl p-6 border border-purple-200 dark:border-purple-500/30">
                         <div className="flex items-center justify-center gap-2 mb-2">
                           <SparklesIcon className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-                          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                          <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                             30-Day Free Trial
                           </h3>
                         </div>
@@ -638,34 +638,34 @@ export default function Pricing() {
                               className="relative bg-white dark:bg-[#13131a] rounded-3xl shadow-light-glow-lg dark:shadow-glow-lg border-2 border-purple-400 dark:border-purple-400 ring-2 ring-purple-300 dark:ring-purple-500 p-8 flex flex-col"
                             >
                               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                                <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                                <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-1 rounded-full text-xs font-semibold shadow-lg">
                                   Recommended
                                 </span>
                               </div>
                               
                               <div className="text-center flex-1 flex flex-col">
-                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                                <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                                   {plan.name}
                                 </h3>
-                                <p className="text-sm text-gray-600 dark:text-gray-300 mb-6">
+                                <p className="text-xs text-gray-600 dark:text-gray-300 mb-6">
                                   {plan.description}
                                 </p>
                                 
                                 <div className="mb-6">
-                                  <span className="text-3xl font-bold text-gray-900 dark:text-white">
+                                  <span className="text-2xl font-bold text-gray-900 dark:text-white">
                                     {formatCurrency(plan.price_amount)}
                                   </span>
                                   <span className="text-gray-600 dark:text-gray-300 ml-2 block mt-2">
                                     per year
                                   </span>
-                                  <p className="text-sm text-purple-600 dark:text-purple-400 font-semibold mt-2">
+                                  <p className="text-xs text-purple-600 dark:text-purple-400 font-semibold mt-2">
                                     Just KES 83/month
                                   </p>
                                 </div>
                                 
                                 <div className="mb-6 space-y-3 text-left flex-grow">
                                   {features.map((feature, idx) => (
-                                    <div key={idx} className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-300">
+                                    <div key={idx} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
                                       <CheckIcon className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
                                       <span>{feature}</span>
                                     </div>
@@ -723,24 +723,24 @@ export default function Pricing() {
                 <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-[#13131a] border dark:border-[#1e1e2e] p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                   {paymentStatus === 'idle' && (
                     <>
-                      <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                      <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                         <PhoneIcon className="w-6 h-6 text-purple-600" />
                         M-Pesa Payment
                       </Dialog.Title>
 
                       <div className="space-y-4">
                         <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4">
-                          <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">Plan</p>
-                          <p className="text-lg font-bold text-gray-900 dark:text-white">
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mb-2">Plan</p>
+                          <p className="text-base font-bold text-gray-900 dark:text-white">
                             {selectedPlan?.name}
                           </p>
-                          <p className="text-2xl font-bold text-purple-600 dark:text-purple-400 mt-2">
+                          <p className="text-xl font-bold text-purple-600 dark:text-purple-400 mt-2">
                             {selectedPlan && formatCurrency(selectedPlan.price_amount)}
                           </p>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                             M-Pesa Phone Number
                           </label>
                           <input
@@ -748,7 +748,7 @@ export default function Pricing() {
                             value={phoneNumber}
                             onChange={(e) => setPhoneNumber(e.target.value)}
                             placeholder="0712345678"
-                            className="w-full px-4 py-3 border border-gray-300 dark:border-[#2a2a3d] rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-[#0d0d14] dark:text-white text-lg"
+                            className="w-full px-4 py-3 border border-gray-300 dark:border-[#2a2a3d] rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-[#0d0d14] dark:text-white text-base"
                           />
                           <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                             07XXXXXXXX or 01XXXXXXXX
@@ -756,7 +756,7 @@ export default function Pricing() {
                         </div>
 
                         {planResolving && (
-                          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                             <ArrowPathIcon className="w-4 h-4 animate-spin text-purple-500" />
                             Verifying plan details...
                           </div>
@@ -767,7 +767,7 @@ export default function Pricing() {
                         )}
 
                         <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4">
-                          <p className="text-sm text-blue-800 dark:text-blue-300 font-medium mb-2">
+                          <p className="text-xs text-blue-800 dark:text-blue-300 font-medium mb-2">
                             What happens next?
                           </p>
                           <ol className="text-xs text-blue-700 dark:text-blue-400 space-y-1 list-decimal list-inside">
@@ -803,10 +803,10 @@ export default function Pricing() {
                   {paymentStatus === 'initiating' && (
                     <div className="text-center py-8">
                       <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-purple-600 animate-spin" />
-                      <p className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                      <p className="text-base font-medium text-gray-900 dark:text-white mb-2">
                         Initiating Payment...
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <p className="text-xs text-gray-600 dark:text-gray-400">
                         Please wait while we process your request
                       </p>
                     </div>
@@ -820,13 +820,13 @@ export default function Pricing() {
                           <div className="w-3 h-3 bg-green-500 rounded-full animate-ping"></div>
                         </div>
                       </div>
-                      <p className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                      <p className="text-base font-bold text-gray-900 dark:text-white mb-2">
                         Check Your Phone
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">
                         You'll receive a prompt from <strong>Fingo Payment Services</strong>
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                         Enter your M-Pesa PIN to complete payment
                       </p>
                       <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-left">
@@ -839,7 +839,7 @@ export default function Pricing() {
                           <li>Wait a few seconds and check again</li>
                         </ul>
                       </div>
-                      <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                      <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                         <ArrowPathIcon className="w-4 h-4 animate-spin" />
                         <span>Waiting for payment confirmation...</span>
                       </div>
@@ -849,14 +849,14 @@ export default function Pricing() {
                   {paymentStatus === 'success' && (
                     <div className="text-center py-8">
                       <CheckCircleIcon className="w-20 h-20 mx-auto mb-4 text-green-500" />
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                         Payment Successful!
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                         Your subscription has been activated
                       </p>
                       <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4">
-                        <p className="text-sm text-green-800 dark:text-green-300">
+                        <p className="text-xs text-green-800 dark:text-green-300">
                           You'll receive an M-Pesa confirmation SMS shortly
                         </p>
                       </div>
@@ -869,12 +869,12 @@ export default function Pricing() {
                   {paymentStatus === 'failed' && (
                     <div className="text-center py-8">
                       <XCircleIcon className="w-20 h-20 mx-auto mb-4 text-red-500" />
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                         Payment Failed
                       </p>
                       {errorMessage && <ErrorAlert message={errorMessage} title="Reason" className="mb-4" />}
                       <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 mb-4">
-                        <p className="text-sm text-yellow-800 dark:text-yellow-300 mb-2">
+                        <p className="text-xs text-yellow-800 dark:text-yellow-300 mb-2">
                           <strong>Common reasons for failure:</strong>
                         </p>
                         <ul className="text-xs text-yellow-700 dark:text-yellow-400 space-y-1 list-disc list-inside text-left">
@@ -896,14 +896,14 @@ export default function Pricing() {
                   {paymentStatus === 'timeout' && (
                     <div className="text-center py-8">
                       <ClockIcon className="w-20 h-20 mx-auto mb-4 text-yellow-500" />
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+                      <p className="text-xl font-bold text-gray-900 dark:text-white mb-2">
                         Payment Pending
                       </p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                         Your payment is taking longer than expected
                       </p>
                       <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-4 mb-4">
-                        <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                        <p className="text-xs text-yellow-800 dark:text-yellow-300">
                           Please check your payment history or M-Pesa messages to confirm if the payment went through.
                         </p>
                       </div>

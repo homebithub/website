@@ -254,7 +254,7 @@ export default function HouseholdMembersPage() {
       <main className="flex-1 px-4 py-8 max-w-7xl mx-auto w-full">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
             Household Members
           </h1>
           <p className="text-gray-600 dark:text-gray-300">
@@ -277,7 +277,7 @@ export default function HouseholdMembersPage() {
 
         {canInvite && invitations.length > 0 && (
           <div className="mb-8 p-6 bg-violet-50 dark:bg-violet-900/20 border-2 border-violet-200 dark:border-violet-500/30 rounded-xl">
-            <h2 className="text-2xl font-bold text-violet-800 dark:text-violet-300 mb-4 flex items-center">
+            <h2 className="text-xl font-bold text-violet-800 dark:text-violet-300 mb-4 flex items-center">
               <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h8m-8 4h5m5 8H6a2 2 0 01-2-2V5a2 2 0 012-2h8.586a1 1 0 01.707.293l4.414 4.414A1 1 0 0120 8.414V19a2 2 0 01-2 2z" />
               </svg>
@@ -292,7 +292,7 @@ export default function HouseholdMembersPage() {
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex-1">
                       <div className="flex flex-wrap items-center gap-2 mb-2">
-                        <span className="font-mono text-lg font-bold tracking-[0.25em] text-gray-900 dark:text-white">
+                        <span className="font-mono text-base font-bold tracking-[0.25em] text-gray-900 dark:text-white">
                           {invitation.invite_code}
                         </span>
                         <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 border border-violet-300 dark:border-violet-500/50">
@@ -302,7 +302,7 @@ export default function HouseholdMembersPage() {
                           {invitation.uses_count}/{invitation.max_uses} uses
                         </span>
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
                         Expires {invitation.expires_at ? new Date(invitation.expires_at).toLocaleString() : 'N/A'}
                       </div>
                     </div>
@@ -323,7 +323,7 @@ export default function HouseholdMembersPage() {
         {/* Pending Requests */}
         {canInvite && pendingRequests.length > 0 && (
           <div className="mb-8 p-6 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-500/30 rounded-xl">
-            <h2 className="text-2xl font-bold text-amber-800 dark:text-amber-300 mb-4 flex items-center">
+            <h2 className="text-xl font-bold text-amber-800 dark:text-amber-300 mb-4 flex items-center">
               <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
@@ -337,15 +337,15 @@ export default function HouseholdMembersPage() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="font-bold text-gray-900 dark:text-white text-lg">
+                      <div className="font-bold text-gray-900 dark:text-white text-base">
                         {request.user?.first_name} {request.user?.last_name}
                       </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
                         {request.user?.phone} • {request.user?.email}
                       </div>
                       {request.message && (
                         <div className="mt-2 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
-                          <div className="text-sm text-gray-700 dark:text-gray-300">
+                          <div className="text-xs text-gray-700 dark:text-gray-300">
                             "{request.message}"
                           </div>
                         </div>
@@ -379,7 +379,7 @@ export default function HouseholdMembersPage() {
 
         {/* Active Members */}
         <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-xl dark:shadow-glow border-2 border-purple-200 dark:border-purple-500/30 p-6">
-          <h2 className="text-2xl font-bold text-primary-600 dark:text-purple-400 mb-6 flex items-center">
+          <h2 className="text-xl font-bold text-primary-600 dark:text-purple-400 mb-6 flex items-center">
             <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
@@ -399,17 +399,17 @@ export default function HouseholdMembersPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4 flex-1">
                       {/* Avatar */}
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                      <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
                         {member.user?.first_name?.[0]}{member.user?.last_name?.[0]}
                       </div>
 
                       {/* Info */}
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
-                          <div className="font-bold text-gray-900 dark:text-white text-lg">
+                          <div className="font-bold text-gray-900 dark:text-white text-base">
                             {member.user?.first_name} {member.user?.last_name}
                             {isCurrentUser && (
-                              <span className="ml-2 text-sm text-purple-600 dark:text-purple-400">(You)</span>
+                              <span className="ml-2 text-xs text-purple-600 dark:text-purple-400">(You)</span>
                             )}
                           </div>
                           <span
@@ -424,7 +424,7 @@ export default function HouseholdMembersPage() {
                             {member.role}
                           </span>
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                        <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                           {member.user?.phone} • {member.user?.email}
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-500 mt-1">
@@ -512,20 +512,20 @@ export default function HouseholdMembersPage() {
               <svg className="w-16 h-16 mx-auto mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
               </svg>
-              <p className="text-lg font-semibold">No members yet</p>
+              <p className="text-base font-semibold">No members yet</p>
             </div>
           )}
         </div>
 
         {/* Info Card */}
         <div className="mt-8 p-6 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-200 dark:border-blue-500/30 rounded-xl">
-          <h3 className="text-lg font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center">
+          <h3 className="text-base font-bold text-blue-800 dark:text-blue-300 mb-3 flex items-center">
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
             About Household Sharing
           </h3>
-          <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-2">
+          <ul className="text-xs text-blue-700 dark:text-blue-400 space-y-2">
             <li className="flex items-start">
               <span className="mr-2">👥</span>
               <span>Share your household with family members (spouses, parents, etc.)</span>

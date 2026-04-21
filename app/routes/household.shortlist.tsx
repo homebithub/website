@@ -221,14 +221,14 @@ export default function HouseholdShortlistPage() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className={`flex-1 py-8 ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
+        <main className={`flex-1 py-8 ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
+            <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
 
             {(items || []).length === 0 && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-300 text-lg">No shortlisted househelps yet.</p>
+                <p className="text-gray-600 dark:text-gray-300 text-base">No shortlisted househelps yet.</p>
               </div>
             )}
 
@@ -270,7 +270,7 @@ export default function HouseholdShortlistPage() {
 
                       {/* Profile Picture */}
                       <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden relative">
+                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-lg font-bold shadow-lg overflow-hidden relative">
                           {(() => {
                             const imageUrl = h?.avatar_url || h?.profile_picture || (h?.photos && h.photos[0]) || (s.user_id && profilePhotos[s.user_id]);
                             if (imageUrl) {
@@ -300,13 +300,13 @@ export default function HouseholdShortlistPage() {
                       </div>
 
                       {/* Name */}
-                      <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-bold text-center text-gray-900 dark:text-white mb-2">
                         {h ? `${h.first_name || ''} ${h.last_name || ''}` : 'Loading...'}
                       </h3>
 
                       {/* Salary */}
                       {h && (
-                        <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 text-center mb-3">
+                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center mb-3">
                           💰 {h.salary_expectation && Number(h.salary_expectation) > 0 
                             ? `${h.salary_expectation}${h.salary_frequency ? ` per ${
                                 h.salary_frequency === 'daily' ? 'day' :

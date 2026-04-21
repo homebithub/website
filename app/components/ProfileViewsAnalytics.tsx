@@ -107,7 +107,7 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
       <div className="relative w-full sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[85vh] bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl shadow-2xl border border-gray-200 dark:border-purple-500/30 flex flex-col animate-slide-up">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-purple-500/20 shrink-0">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <h2 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
             <Eye className="w-5 h-5 text-purple-500" />
             Profile Views
           </h2>
@@ -145,7 +145,7 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
 
           {error && !loading && (
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <p className="text-sm">{error}</p>
+              <p className="text-xs">{error}</p>
               <button onClick={loadAnalytics} className="mt-3 text-xs text-purple-500 hover:text-purple-400">Try again</button>
             </div>
           )}
@@ -155,14 +155,14 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
               {/* Main Stats Grid */}
               <div className="grid grid-cols-2 gap-3 mb-5">
                 <div className="text-center p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-500/30">
-                  <div className="text-3xl font-bold text-purple-600 dark:text-purple-400">
+                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                     {analytics.total_views.toLocaleString()}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">Total Views</div>
                 </div>
                 
                 <div className="text-center p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-500/30">
-                  <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
                     {analytics.unique_views.toLocaleString()}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium flex items-center justify-center gap-1">
@@ -172,14 +172,14 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
                 </div>
                 
                 <div className="text-center p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-500/30">
-                  <div className="text-3xl font-bold text-green-600 dark:text-green-400">
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
                     {analytics.views_today.toLocaleString()}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">Today</div>
                 </div>
                 
                 <div className="text-center p-4 bg-orange-50 dark:bg-orange-900/20 rounded-xl border border-orange-200 dark:border-orange-500/30">
-                  <div className="text-3xl font-bold text-orange-600 dark:text-orange-400">
+                  <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                     {analytics.views_this_week.toLocaleString()}
                   </div>
                   <div className="text-xs text-gray-600 dark:text-gray-400 mt-1 font-medium">This Week</div>
@@ -188,7 +188,7 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
 
               {/* Secondary Stats */}
               <div className="space-y-3 pt-4 border-t border-gray-200 dark:border-purple-500/20">
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-xs">
                   <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
                     <Calendar className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                   </div>
@@ -200,7 +200,7 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-xs">
                   <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                     <Clock className="w-4 h-4 text-blue-600 dark:text-blue-400" />
                   </div>
@@ -212,7 +212,7 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3 text-sm">
+                <div className="flex items-center gap-3 text-xs">
                   <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
                     <TrendingUp className="w-4 h-4 text-green-600 dark:text-green-400" />
                   </div>

@@ -123,7 +123,7 @@ const Children: React.FC = () => {
   return (
     <div className="w-full max-w-3xl mx-auto">
       <div className="flex flex-col gap-8">
-        <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">👶 Children</h2>
+        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">👶 Children</h2>
         <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
           Tell us about your children so we can find the perfect match
         </p>
@@ -131,7 +131,7 @@ const Children: React.FC = () => {
           {options.map((opt) => (
             <label
               key={opt.value}
-              className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+              className={`flex items-center gap-4 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                 selected === opt.value
                   ? "border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105"
                   : "border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20"
@@ -161,7 +161,7 @@ const Children: React.FC = () => {
 
         {/* Save Status Message */}
         {saveMessage && saveMessage.type === 'success' && (
-          <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
+          <div className="p-4 rounded-xl text-xs font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
             ✓ {saveMessage.text}
           </div>
         )}

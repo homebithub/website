@@ -64,13 +64,13 @@ export function LocationStep({ data, onUpdate, onNext }: LocationStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">Where are you located?</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">Where are you located?</h3>
         <p className="text-gray-600">Help us find househelp near you</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs font-medium text-gray-700 mb-2">
             Your Address
           </label>
           <div className="relative">
@@ -90,7 +90,7 @@ export function LocationStep({ data, onUpdate, onNext }: LocationStepProps) {
             )}
           </div>
           {error && (
-            <p className="text-red-600 text-sm mt-1">{error}</p>
+            <p className="text-red-600 text-xs mt-1">{error}</p>
           )}
         </div>
 
@@ -103,7 +103,7 @@ export function LocationStep({ data, onUpdate, onNext }: LocationStepProps) {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">
+                <p className="text-xs font-medium text-green-800">
                   Location confirmed: {address}
                 </p>
                 <p className="text-xs text-green-600 mt-1">

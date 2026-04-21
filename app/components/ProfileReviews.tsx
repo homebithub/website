@@ -140,13 +140,13 @@ export default function ProfileReviews({
       {/* Review Statistics */}
       {stats && stats.total_reviews > 0 && (
         <div className="bg-white dark:bg-[#13131a] rounded-3xl shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 p-8">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Review Summary</h3>
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Review Summary</h3>
           
           <div className="grid md:grid-cols-2 gap-6">
             {/* Overall Rating */}
             <div className="text-center">
               <div className="inline-flex items-center justify-center w-32 h-32 bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl shadow-xl mb-4">
-                <div className="text-5xl font-bold text-white">
+                <div className="text-4xl font-bold text-white">
                   {stats.average_rating.toFixed(1)}
                 </div>
               </div>
@@ -162,14 +162,14 @@ export default function ProfileReviews({
             <div className="space-y-3">
               {getRatingBreakdown().map((item) => (
                 <div key={item.stars} className="flex items-center gap-3">
-                  <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 w-14">{item.stars} star</span>
+                  <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 w-14">{item.stars} star</span>
                   <div className="flex-1 bg-gray-200 dark:bg-gray-700 rounded-full h-3 overflow-hidden">
                     <div
                       className="bg-gradient-to-r from-yellow-400 to-yellow-500 h-3 rounded-full transition-all duration-500 shadow-sm"
                       style={{ width: `${item.percentage}%` }}
                     />
                   </div>
-                  <span className="text-sm font-semibold text-gray-600 dark:text-gray-400 w-12 text-right">
+                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 w-12 text-right">
                     {item.count}
                   </span>
                 </div>
@@ -189,8 +189,8 @@ export default function ProfileReviews({
         ) : reviews.length === 0 ? (
           <div className="bg-purple-50 dark:bg-purple-900/10 rounded-3xl border-2 border-purple-200 dark:border-purple-500/30 p-12 text-center">
             <Star className="w-16 h-16 text-purple-300 dark:text-purple-600 mx-auto mb-4" />
-            <p className="text-gray-700 dark:text-gray-300 font-semibold text-lg">No reviews yet</p>
-            <p className="text-gray-600 dark:text-gray-400 text-sm mt-2">Be the first to leave a review!</p>
+            <p className="text-gray-700 dark:text-gray-300 font-semibold text-base">No reviews yet</p>
+            <p className="text-gray-600 dark:text-gray-400 text-xs mt-2">Be the first to leave a review!</p>
           </div>
         ) : (
           reviews.map((review) => (
@@ -202,7 +202,7 @@ export default function ProfileReviews({
                     {review.reviewer_profile && (
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-2xl flex items-center justify-center shadow-lg">
-                          <span className="text-white font-bold text-lg">
+                          <span className="text-white font-bold text-base">
                             {review.reviewer_profile.first_name[0]}
                             {review.reviewer_profile.last_name[0]}
                           </span>
@@ -211,7 +211,7 @@ export default function ProfileReviews({
                           <p className="font-bold text-gray-900 dark:text-white">
                             {review.reviewer_profile.first_name} {review.reviewer_profile.last_name}
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             {new Date(review.created_at).toLocaleDateString('en-US', { 
                               year: 'numeric', 
                               month: 'long', 
@@ -227,7 +227,7 @@ export default function ProfileReviews({
               </div>
 
               {/* Review Content */}
-              <h4 className="font-bold text-lg text-gray-900 dark:text-white mb-3">{review.title}</h4>
+              <h4 className="font-bold text-base text-gray-900 dark:text-white mb-3">{review.title}</h4>
               <p className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4">{review.content}</p>
 
               {/* Review Images */}
@@ -249,7 +249,7 @@ export default function ProfileReviews({
                 <div className="bg-purple-50 dark:bg-purple-900/20 rounded-2xl p-5 mt-4 border-l-4 border-purple-500">
                   <div className="flex items-center gap-2 mb-3">
                     <MessageSquare className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                    <span className="font-bold text-sm text-purple-700 dark:text-purple-300">Response from owner</span>
+                    <span className="font-bold text-xs text-purple-700 dark:text-purple-300">Response from owner</span>
                     {review.response_at && (
                       <span className="text-xs text-gray-500 dark:text-gray-400">
                         {new Date(review.response_at).toLocaleDateString('en-US', { 
@@ -271,7 +271,7 @@ export default function ProfileReviews({
                   className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
                 >
                   <ThumbsUp className="w-5 h-5" />
-                  <span className="text-sm">
+                  <span className="text-xs">
                     Helpful ({review.helpful_count})
                   </span>
                 </button>
@@ -292,7 +292,7 @@ export default function ProfileReviews({
             <ChevronLeft className="w-5 h-5 text-purple-600 dark:text-purple-400" />
           </button>
           
-          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 px-4">
+          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 px-4">
             Page {currentPage} of {totalPages}
           </span>
           

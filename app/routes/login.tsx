@@ -291,7 +291,7 @@ export default function LoginPage() {
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
         <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
           <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
-          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 text-center">Welcome Back! 👋</h1>
+          <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-8 text-center">Welcome Back! 👋</h1>
           
           {/* Login Error Alert */}
           {loginError && (
@@ -301,20 +301,20 @@ export default function LoginPage() {
           {loading && (
             <div className="mb-6 rounded-2xl bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 p-4 shadow-md">
               <div className="flex items-center justify-center">
-                <span className="text-2xl mr-3">✨</span>
-                <p className="text-base font-semibold text-purple-700">Logging you in...</p>
+                <span className="text-xl mr-3">✨</span>
+                <p className="text-sm font-semibold text-purple-700">Logging you in...</p>
               </div>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label htmlFor="phone" className="block text-sm font-semibold text-purple-700 mb-2">Phone Number</label>
+              <label htmlFor="phone" className="block text-xs font-semibold text-purple-700 mb-2">Phone Number</label>
               <input
                 type="tel"
                 id="phone"
                 name="phone"
                 required
-                className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
                     getFieldError('phone') 
                         ? 'border-red-300' 
                         : isFieldValid('phone')
@@ -327,19 +327,19 @@ export default function LoginPage() {
                 placeholder="0712345678"
               />
               {getFieldError('phone') && (
-                <p className="text-red-600 text-sm mt-1">{getFieldError('phone')}</p>
+                <p className="text-red-600 text-xs mt-1">{getFieldError('phone')}</p>
               )}
             </div>
             
             <div>
-              <label htmlFor="password" className="block text-sm font-semibold text-purple-700 mb-2">Password</label>
+              <label htmlFor="password" className="block text-xs font-semibold text-purple-700 mb-2">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   id="password"
                   name="password"
                   required
-                  className={`w-full h-12 text-base px-4 py-3 pr-12 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                  className={`w-full h-12 text-sm px-4 py-3 pr-12 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
                       getFieldError('password') 
                           ? 'border-red-300' 
                           : isFieldValid('password')
@@ -365,16 +365,16 @@ export default function LoginPage() {
                 </button>
               </div>
               {getFieldError('password') && (
-                <p className="text-red-600 text-sm mt-1">{getFieldError('password')}</p>
+                <p className="text-red-600 text-xs mt-1">{getFieldError('password')}</p>
               )}
             </div>
             <div className="flex justify-end mb-2">
-              <Link to="/forgot-password" className="text-sm font-semibold text-purple-600 hover:text-purple-700 hover:underline transition-colors">Forgot password?</Link>
+              <Link to="/forgot-password" className="text-xs font-semibold text-purple-600 hover:text-purple-700 hover:underline transition-colors">Forgot password?</Link>
             </div>
           
           <button
             type="submit"
-            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
             disabled={loading || !formData.phone.trim() || !formData.password.trim()}
           >
             {loading ? "✨ Logging in..." : "🚀 Login"}
@@ -385,7 +385,7 @@ export default function LoginPage() {
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t-2 border-purple-200"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
+              <div className="relative flex justify-center text-xs">
                 <span className="px-4 bg-white dark:bg-[#13131a] text-purple-600 dark:text-purple-400 font-medium">Or continue with</span>
               </div>
             </div>
@@ -394,7 +394,7 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full inline-flex justify-center items-center px-6 py-1.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-md dark:shadow-glow-sm bg-white dark:bg-[#13131a] text-base font-semibold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                className="w-full inline-flex justify-center items-center px-6 py-1.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-md dark:shadow-glow-sm bg-white dark:bg-[#13131a] text-sm font-semibold text-gray-700 dark:text-gray-200 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <FcGoogle className="h-5 w-5 mr-2" />
                 Google
@@ -403,8 +403,8 @@ export default function LoginPage() {
           </div>
           
           <div className="mt-6 text-center">
-            <span className="text-base text-gray-600 dark:text-gray-300 font-medium">Don't have an account?</span>
-            <Link to="/signup" className="ml-1 text-base font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline transition-colors">
+            <span className="text-sm text-gray-600 dark:text-gray-300 font-medium">Don't have an account?</span>
+            <Link to="/signup" className="ml-1 text-sm font-bold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 hover:underline transition-colors">
               Sign up
             </Link>
           </div>

@@ -75,8 +75,8 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
                       <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl flex items-center justify-center mb-6 shadow-lg">
                         <UserGroupIcon className="h-8 w-8 text-white" />
                       </div>
-                      <h3 className="text-xl font-bold text-gray-900 mb-3">Join Homebit</h3>
-                      <p className="text-lg text-gray-600 leading-relaxed">Select your account type to get started on your journey</p>
+                      <h3 className="text-lg font-bold text-gray-900 mb-3">Join Homebit</h3>
+                      <p className="text-base text-gray-600 leading-relaxed">Select your account type to get started on your journey</p>
                     </div>
 
                     <div className="grid grid-cols-1 gap-5">
@@ -94,8 +94,8 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
                             <UserGroupIcon className="h-8 w-8 text-white" />
                           </div>
                           <div className="ml-6 flex-1">
-                            <h4 className="text-xl font-bold text-gray-900 mb-1">Househelp</h4>
-                            <p className="text-base text-gray-600 leading-relaxed">I'm looking for work opportunities and want to offer my services</p>
+                            <h4 className="text-lg font-bold text-gray-900 mb-1">Househelp</h4>
+                            <p className="text-sm text-gray-600 leading-relaxed">I'm looking for work opportunities and want to offer my services</p>
                           </div>
                           {isSubmitting && userType === 'househelp' && (
                             <div className="ml-4">
@@ -119,8 +119,8 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
                             <HomeIcon className="h-8 w-8 text-white" />
                           </div>
                           <div className="ml-6 flex-1">
-                            <h4 className="text-xl font-bold text-gray-900 mb-1">Household</h4>
-                            <p className="text-base text-gray-600 leading-relaxed">I need to hire help for my home and family needs</p>
+                            <h4 className="text-lg font-bold text-gray-900 mb-1">Household</h4>
+                            <p className="text-sm text-gray-600 leading-relaxed">I need to hire help for my home and family needs</p>
                           </div>
                           {isSubmitting && userType === 'household' && (
                             <div className="ml-4">
@@ -132,7 +132,7 @@ const SignupFlow: React.FC<SignupFlowProps> = ({ isOpen, onClose, onUserTypeSele
                     </div>
 
                     <div className="text-center pt-6 border-t border-gray-100">
-                      <p className="text-base text-gray-600">
+                      <p className="text-sm text-gray-600">
                         Already have an account?{' '}
                         <a href="/login" className="text-purple-600 hover:text-purple-700 font-semibold transition-colors duration-200">
                           Sign in

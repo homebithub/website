@@ -369,17 +369,17 @@ export default function ProfilePage() {
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
         <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
           <div className="w-full max-w-3xl">
-            <a href="/settings" className="inline-flex items-center gap-1.5 text-sm text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium mb-4 transition-colors">
+            <a href="/settings" className="inline-flex items-center gap-1.5 text-xs text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 font-medium mb-4 transition-colors">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
               Back to Settings
             </a>
           </div>
           <div className="w-full max-w-3xl bg-white dark:bg-[#13131a] rounded-3xl shadow-2xl dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 p-8 transition-colors duration-300">
-            <h1 className="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-300 mb-2 text-center">My Account</h1>
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mb-6">Manage your account information. Only email, name and phone are editable.</p>
+            <h1 className="text-lg sm:text-xl font-bold text-purple-700 dark:text-purple-300 mb-2 text-center">My Account</h1>
+            <p className="text-center text-xs text-gray-600 dark:text-gray-400 mb-6">Manage your account information. Only email, name and phone are editable.</p>
 
             {error && <ErrorAlert message={error} className="mb-4" />}
-            {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-4 shadow-md mb-4 transition-colors duration-300"><div className="flex items-center justify-center"><span className="text-xl mr-2">🎉</span><p className="text-sm font-bold text-green-800 dark:text-green-200">{success}</p></div></div>}
+            {success && <div className="rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-emerald-950/40 dark:to-emerald-950/40 border-2 border-green-200 dark:border-emerald-500/40 p-4 shadow-md mb-4 transition-colors duration-300"><div className="flex items-center justify-center"><span className="text-lg mr-2">🎉</span><p className="text-xs font-bold text-green-800 dark:text-green-200">{success}</p></div></div>}
 
             <form className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -391,11 +391,11 @@ export default function ProfilePage() {
                       name="first_name"
                       value={form.first_name}
                       onChange={handleChange}
-                      className="w-full h-10 px-4 py-2 rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                      className="w-full h-10 px-4 py-2 rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                       autoComplete="given-name"
                     />
                   ) : (
-                    <div className="text-base text-gray-900 dark:text-gray-100 font-medium">
+                    <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
                       {form.first_name || <span className="text-gray-400">-</span>}
                     </div>
                   )}
@@ -408,11 +408,11 @@ export default function ProfilePage() {
                       name="last_name"
                       value={form.last_name}
                       onChange={handleChange}
-                      className="w-full h-10 px-4 py-2 rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                      className="w-full h-10 px-4 py-2 rounded-xl border border-purple-200/40 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-xs text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                       autoComplete="family-name"
                     />
                   ) : (
-                    <div className="text-base text-gray-900 dark:text-gray-100 font-medium">
+                    <div className="text-sm text-gray-900 dark:text-gray-100 font-medium">
                       {form.last_name || <span className="text-gray-400">-</span>}
                     </div>
                   )}
@@ -421,7 +421,7 @@ export default function ProfilePage() {
               <div className="relative">
                 <label className="block text-xs font-semibold mb-2 text-purple-700 dark:text-purple-400">Email</label>
                 <div className="flex items-center">
-                  <div className="flex-1 text-sm text-gray-900 dark:text-gray-100 font-medium">
+                  <div className="flex-1 text-xs text-gray-900 dark:text-gray-100 font-medium">
                     {form.email || <span className="text-gray-500">-</span>}
                   </div>
                   <button
@@ -437,7 +437,7 @@ export default function ProfilePage() {
               <div className="relative">
                 <label className="block text-xs font-semibold mb-2 text-purple-700 dark:text-purple-400">Phone</label>
                 <div className="flex items-center">
-                  <div className="flex-1 text-sm text-gray-900 dark:text-gray-100 font-medium">
+                  <div className="flex-1 text-xs text-gray-900 dark:text-gray-100 font-medium">
                     {form.phone || <span className="text-gray-500">-</span>}
                   </div>
                   <button
@@ -455,19 +455,19 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div>
                     <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Profile Type</span>
-                    <span className="text-sm text-gray-900 dark:text-gray-100 font-medium capitalize">{profile?.profile_type || '-'}</span>
+                    <span className="text-xs text-gray-900 dark:text-gray-100 font-medium capitalize">{profile?.profile_type || '-'}</span>
                   </div>
                   <div>
                     <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Email Verified</span>
-                    <span className={`text-sm font-medium ${profile?.is_verified ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>{profile?.is_verified ? 'Yes' : 'No'}</span>
+                    <span className={`text-xs font-medium ${profile?.is_verified ? 'text-green-600 dark:text-green-400' : 'text-amber-600 dark:text-amber-400'}`}>{profile?.is_verified ? 'Yes' : 'No'}</span>
                   </div>
                   <div>
                     <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Country</span>
-                    <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile?.country || '-'}</span>
+                    <span className="text-xs text-gray-900 dark:text-gray-100 font-medium">{profile?.country || '-'}</span>
                   </div>
                   <div>
                     <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Member Since</span>
-                    <span className="text-sm text-gray-900 dark:text-gray-100 font-medium">{profile?.created_at || '-'}</span>
+                    <span className="text-xs text-gray-900 dark:text-gray-100 font-medium">{profile?.created_at || '-'}</span>
                   </div>
                 </div>
               </div>
@@ -550,7 +550,7 @@ export default function ProfilePage() {
           ) : (
             // Step 2: Enter OTP
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 Enter the OTP sent to {newEmail}
               </p>
 
@@ -561,7 +561,7 @@ export default function ProfilePage() {
                 onChange={(e) => setOtpCode(e.target.value)}
                 placeholder="Enter 6-digit OTP"
                 maxLength={6}
-                className="text-center tracking-widest text-2xl h-14"
+                className="text-center tracking-widest text-xl h-14"
               />
 
               {otpError && <ErrorAlert message={otpError} />}
@@ -593,12 +593,12 @@ export default function ProfilePage() {
                   <button
                     onClick={handleResendOtp}
                     disabled={otpLoading}
-                    className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 text-sm font-semibold hover:underline transition-colors"
+                    className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 text-xs font-semibold hover:underline transition-colors"
                   >
                     Resend OTP
                   </button>
                 ) : (
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs">
                     Resend available in {resendSeconds}s
                   </span>
                 )}
@@ -655,7 +655,7 @@ export default function ProfilePage() {
           ) : (
             // Step 2: Enter OTP
             <div className="space-y-4">
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 Enter the OTP sent to {newPhone}
               </p>
 
@@ -666,7 +666,7 @@ export default function ProfilePage() {
                 onChange={(e) => setOtpCode(e.target.value)}
                 placeholder="Enter 6-digit OTP"
                 maxLength={6}
-                className="text-center tracking-widest text-2xl h-14"
+                className="text-center tracking-widest text-xl h-14"
               />
 
               {otpError && <ErrorAlert message={otpError} />}
@@ -698,12 +698,12 @@ export default function ProfilePage() {
                   <button
                     onClick={handleResendOtp}
                     disabled={otpLoading}
-                    className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 text-sm font-semibold hover:underline transition-colors"
+                    className="text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-300 text-xs font-semibold hover:underline transition-colors"
                   >
                     Resend OTP
                   </button>
                 ) : (
-                  <span className="text-gray-500 dark:text-gray-400 text-sm">
+                  <span className="text-gray-500 dark:text-gray-400 text-xs">
                     Resend available in {resendSeconds}s
                   </span>
                 )}

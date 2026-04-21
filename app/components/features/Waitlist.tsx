@@ -279,7 +279,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   <div className="flex items-center justify-between mb-3">
                     <Dialog.Title
                       as="h3"
-                      className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
+                      className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"
                     >
                       Join Our Waitlist 🎉
                     </Dialog.Title>
@@ -292,7 +292,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                       <XMarkIcon className="h-6 w-6" />
                     </button>
                   </div>
-                  <p className="text-sm text-purple-600 dark:text-purple-400">
+                  <p className="text-xs text-purple-600 dark:text-purple-400">
                     Be the first to know when we launch! Get exclusive early access. ✨
                   </p>
                 </div>
@@ -301,13 +301,13 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   <div className="mb-6 rounded-2xl bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border-2 border-green-200 dark:border-green-700 p-5 shadow-md dark:shadow-glow-sm">
                     <div className="flex items-center">
                       <div className="flex-shrink-0">
-                        <span className="text-xl">🎉</span>
+                        <span className="text-lg">🎉</span>
                       </div>
                       <div className="ml-4">
-                        <p className="text-base font-bold text-green-800 dark:text-green-300">
+                        <p className="text-sm font-bold text-green-800 dark:text-green-300">
                           Successfully added to waitlist!
                         </p>
-                        <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+                        <p className="text-xs text-green-700 dark:text-green-400 mt-1">
                           We'll notify you when Homebit is available. Check your email! 📧
                         </p>
                       </div>
@@ -320,12 +320,12 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                 {/* Google Sign-In Option */}
                 {isClient && (
                   <div className="mb-6">
-                    <p className="text-sm text-purple-700 dark:text-purple-400 font-medium mb-3 text-center">Quick signup with Google</p>
+                    <p className="text-xs text-purple-700 dark:text-purple-400 font-medium mb-3 text-center">Quick signup with Google</p>
                     <div className="flex justify-center">
                       <button
                         type="button"
                         onClick={startOAuthWaitlist}
-                        className="inline-flex items-center justify-center rounded-xl border-2 border-purple-200 dark:border-purple-500/50 bg-white dark:bg-[#13131a] px-6 py-1.5 text-base font-semibold text-gray-700 dark:text-gray-200 shadow-md dark:shadow-glow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                        className="inline-flex items-center justify-center rounded-xl border-2 border-purple-200 dark:border-purple-500/50 bg-white dark:bg-[#13131a] px-6 py-1.5 text-sm font-semibold text-gray-700 dark:text-gray-200 shadow-md dark:shadow-glow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       >
                         <FcGoogle className="h-6 w-6 mr-3" />
                         Sign in with Google
@@ -339,7 +339,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                     <div className="w-full border-t-2 border-purple-200 dark:border-purple-500/30" />
                   </div>
                   <div className="relative flex justify-center">
-                    <span className="px-4 bg-gradient-to-br from-purple-50 to-white dark:from-[#13131a] dark:to-[#0a0a0f] text-sm font-medium text-purple-600 dark:text-purple-400">or fill the form below</span>
+                    <span className="px-4 bg-gradient-to-br from-purple-50 to-white dark:from-[#13131a] dark:to-[#0a0a0f] text-xs font-medium text-purple-600 dark:text-purple-400">or fill the form below</span>
                   </div>
                 </div>
 
@@ -364,7 +364,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   ) : (
                     <div className="flex items-center justify-between rounded-xl border border-green-200 dark:border-green-700 bg-green-50 dark:bg-green-900/20 px-4 py-1.5">
                       <div>
-                        <p className="text-sm text-green-800 dark:text-green-300">
+                        <p className="text-xs text-green-800 dark:text-green-300">
                           Signed in with Google as <span className="font-semibold">{formData.first_name}</span>
                         </p>
                         <p className="text-xs text-green-700 dark:text-green-400">{formData.email}</p>
@@ -432,7 +432,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                   <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6">
                     <button
                       type="button"
-                      className="inline-flex justify-center rounded-xl border-2 border-purple-200 dark:border-purple-500/50 bg-white dark:bg-[#13131a] px-6 py-1.5 text-base font-semibold text-purple-600 dark:text-purple-400 shadow-md dark:shadow-glow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
+                      className="inline-flex justify-center rounded-xl border-2 border-purple-200 dark:border-purple-500/50 bg-white dark:bg-[#13131a] px-6 py-1.5 text-sm font-semibold text-purple-600 dark:text-purple-400 shadow-md dark:shadow-glow-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2"
                       onClick={handleClose}
                       disabled={isSubmitting}
                     >
@@ -440,7 +440,7 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
                     </button>
                     <button
                       type="submit"
-                      className="glow-button inline-flex justify-center rounded-xl border-2 border-transparent bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-1.5 text-base font-bold text-white shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                      className="glow-button inline-flex justify-center rounded-xl border-2 border-transparent bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-1.5 text-sm font-bold text-white shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? '✨ Joining...' : '🚀 Join Waitlist'}

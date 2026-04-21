@@ -551,7 +551,7 @@ export default function HouseholdProfile() {
       <div className="max-w-2xl mx-auto mt-8">
         <div className="p-6 rounded-xl bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-200 dark:border-yellow-500/30">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl">📝</span>
+            <span className="text-xl">📝</span>
             <p className="font-semibold text-yellow-800 dark:text-yellow-400">No profile found</p>
           </div>
           <p className="text-gray-700 dark:text-gray-300 mb-4">You haven't completed your household profile yet.</p>
@@ -578,7 +578,7 @@ export default function HouseholdProfile() {
       <div className="rounded-2xl p-4 sm:p-6 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white">🏠 My Household Profile</h1>
+            <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">🏠 My Household Profile</h1>
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your household information</p>
           </div>
           <div className="flex items-center gap-2 self-start">
@@ -606,7 +606,7 @@ export default function HouseholdProfile() {
       {/* Location */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📍 Location</h2>
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📍 Location</h2>
           <button
             onClick={() => handleEditSection('location')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -614,7 +614,7 @@ export default function HouseholdProfile() {
             Edit
           </button>
         </div>
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+        <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
           {typeof profile.location === 'string'
             ? (profile.location || profile.town || 'Not specified')
             : (profile.location?.place || profile.location?.name || profile.location_ref?.place || profile.town || 'Not specified')}
@@ -625,7 +625,7 @@ export default function HouseholdProfile() {
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🔑 Household Code</h2>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🔑 Household Code</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
               Share this code with your partner to give them access to this household profile
             </p>
@@ -674,12 +674,12 @@ export default function HouseholdProfile() {
             <div className="p-6 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl">
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1">
-                  <p className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-2">Your Household Code:</p>
-                  <p className="text-sm font-bold text-purple-900 dark:text-purple-100 tracking-wider font-mono">
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Your Household Code:</p>
+                  <p className="text-xs font-bold text-purple-900 dark:text-purple-100 tracking-wider font-mono">
                     {invitationCode}
                   </p>
                   {invitationExpiresAt && (
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                       ⏰ Expires in: <span className="font-semibold text-purple-600 dark:text-purple-400">{getTimeRemaining()}</span>
                     </p>
                   )}
@@ -708,10 +708,10 @@ export default function HouseholdProfile() {
             </div>
 
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30 rounded-xl">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
+              <p className="text-xs text-blue-800 dark:text-blue-200">
                 <strong>ℹ️ How it works:</strong>
               </p>
-              <ul className="mt-2 space-y-1 text-sm text-blue-700 dark:text-blue-300 list-disc list-inside">
+              <ul className="mt-2 space-y-1 text-xs text-blue-700 dark:text-blue-300 list-disc list-inside">
                 <li>Share this code with your partner</li>
                 <li>They'll use it to request access to this household</li>
                 <li>You'll receive a notification to approve their request</li>
@@ -725,7 +725,7 @@ export default function HouseholdProfile() {
       {/* Household Members */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">👥 Household Members</h2>
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">👥 Household Members</h2>
         </div>
 
         {membersLoading ? (
@@ -747,7 +747,7 @@ export default function HouseholdProfile() {
                 className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-xl border border-purple-200 dark:border-purple-500/30"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-lg">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center text-white font-bold text-base">
                     {member.user?.first_name?.[0] || member.user?.email?.[0] || "M"}
                   </div>
                   <div>
@@ -801,7 +801,7 @@ export default function HouseholdProfile() {
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <div>
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">📸 Home Photos</h2>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📸 Home Photos</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
               {profile.photos?.length || 0}/{MAX_PHOTOS} photos
             </p>
@@ -817,10 +817,10 @@ export default function HouseholdProfile() {
         {uploading && uploadProgress > 0 && (
           <div className="mb-4 p-4 rounded-xl bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-500/30">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-semibold text-blue-800 dark:text-blue-400">
+              <span className="text-xs font-semibold text-blue-800 dark:text-blue-400">
                 Uploading photo...
               </span>
-              <span className="text-sm font-bold text-blue-800 dark:text-blue-400">
+              <span className="text-xs font-bold text-blue-800 dark:text-blue-400">
                 {uploadProgress}%
               </span>
             </div>
@@ -841,7 +841,7 @@ export default function HouseholdProfile() {
                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
-              <span className="text-sm font-semibold text-orange-800 dark:text-orange-400">
+              <span className="text-xs font-semibold text-orange-800 dark:text-orange-400">
                 {deleteStatus}
               </span>
             </div>
@@ -917,7 +917,7 @@ export default function HouseholdProfile() {
                 }`}>
                   <button
                     onClick={() => setSelectedImage(photo)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-xl text-sm font-semibold hover:bg-purple-50"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 px-3 py-1 bg-white text-purple-600 rounded-xl text-xs font-semibold hover:bg-purple-50"
                   >
                     View Full
                   </button>
@@ -943,7 +943,7 @@ export default function HouseholdProfile() {
         ) : (
           <div className="text-center p-8 bg-gray-50 dark:bg-gray-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-700">
             <p className="text-gray-500 dark:text-gray-400">No photos uploaded yet</p>
-            <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">Add photos of your home to attract qualified househelps!</p>
+            <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Add photos of your home to attract qualified househelps!</p>
           </div>
         )}
       </div>
@@ -951,7 +951,7 @@ export default function HouseholdProfile() {
       {/* House Size & Notes */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🏠 House Information</h2>
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🏠 House Information</h2>
           <button
             onClick={() => handleEditSection('housesize')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -962,12 +962,12 @@ export default function HouseholdProfile() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">House Size</span>
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
+            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
           </div>
           {profile.household_notes && (
             <div className="md:col-span-2">
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
-              <p className="text-sm text-gray-900 dark:text-gray-100 mt-1">{profile.household_notes}</p>
+              <p className="text-xs text-gray-900 dark:text-gray-100 mt-1">{profile.household_notes}</p>
             </div>
           )}
         </div>
@@ -976,7 +976,7 @@ export default function HouseholdProfile() {
       {/* Service Type */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">👥 Service Type Needed</h2>
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">👥 Service Type Needed</h2>
           <button
             onClick={() => handleEditSection('nannytype')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -989,14 +989,14 @@ export default function HouseholdProfile() {
             <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
               <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 Live-in Help</p>
               {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Off days: {profile.live_in_off_days.join(', ')}</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Off days: {profile.live_in_off_days.join(', ')}</p>
               )}
             </div>
           )}
           {profile.needs_day_worker && (
             <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
               <p className="font-semibold text-purple-900 dark:text-purple-100">☀️ Day Worker</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Schedule configured</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Schedule configured</p>
             </div>
           )}
           {!profile.needs_live_in && !profile.needs_day_worker && (
@@ -1005,7 +1005,7 @@ export default function HouseholdProfile() {
           {profile.available_from && (
             <div>
               <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Available From</span>
-              <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString()}</p>
+              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString()}</p>
             </div>
           )}
         </div>
@@ -1014,7 +1014,7 @@ export default function HouseholdProfile() {
       {/* Children */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">👶 Children</h2>
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">👶 Children</h2>
           <button
             onClick={() => handleEditSection('children')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -1029,9 +1029,9 @@ export default function HouseholdProfile() {
                 <p className="font-semibold text-purple-900 dark:text-purple-100">
                   {kid.is_expecting ? '🤰 Expecting' : `👶 Child ${idx + 1}`}
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Gender: {kid.gender}</p>
-                {kid.date_of_birth && <p className="text-sm text-gray-600 dark:text-gray-400">DOB: {new Date(kid.date_of_birth).toLocaleDateString()}</p>}
-                {kid.expected_date && <p className="text-sm text-gray-600 dark:text-gray-400">Expected: {new Date(kid.expected_date).toLocaleDateString()}</p>}
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Gender: {kid.gender}</p>
+                {kid.date_of_birth && <p className="text-xs text-gray-600 dark:text-gray-400">DOB: {new Date(kid.date_of_birth).toLocaleDateString()}</p>}
+                {kid.expected_date && <p className="text-xs text-gray-600 dark:text-gray-400">Expected: {new Date(kid.expected_date).toLocaleDateString()}</p>}
                 {kid.traits && kid.traits.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {kid.traits.map((trait: string, i: number) => (
@@ -1050,7 +1050,7 @@ export default function HouseholdProfile() {
       {/* Pets */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🐾 Pets</h2>
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🐾 Pets</h2>
           <button
             onClick={() => handleEditSection('pets')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -1063,8 +1063,8 @@ export default function HouseholdProfile() {
             {pets.map((pet, idx) => (
               <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                 <p className="font-semibold text-purple-900 dark:text-purple-100 capitalize">🐾 {pet.pet_type}</p>
-                {pet.requires_care && <p className="text-sm text-orange-600 dark:text-orange-400 mt-1">⚠️ Requires care</p>}
-                {pet.care_details && <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{pet.care_details}</p>}
+                {pet.requires_care && <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">⚠️ Requires care</p>}
+                {pet.care_details && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{pet.care_details}</p>}
                 {pet.traits && pet.traits.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-2">
                     {pet.traits.map((trait: string, i: number) => (
@@ -1083,7 +1083,7 @@ export default function HouseholdProfile() {
       {/* Chores */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🧹 Chores & Duties</h2>
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🧹 Chores & Duties</h2>
           <button
             onClick={() => handleEditSection('chores')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -1107,7 +1107,7 @@ export default function HouseholdProfile() {
       {/* Budget */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">💰 Budget</h2>
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">💰 Budget</h2>
           <button
             onClick={() => handleEditSection('budget')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -1117,11 +1117,11 @@ export default function HouseholdProfile() {
         </div>
         {profile.budget_min || profile.budget_max ? (
           <div className="space-y-2">
-            <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
+            <p className="text-xs font-bold text-purple-900 dark:text-purple-100">
               {profile.budget_min && profile.budget_max ? `KES ${profile.budget_min.toLocaleString()} - ${profile.budget_max.toLocaleString()}` : profile.budget_min ? `KES ${profile.budget_min.toLocaleString()}+` : 'Negotiable'}
             </p>
             {profile.salary_frequency && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">Per {profile.salary_frequency.replace('ly', '')}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">Per {profile.salary_frequency.replace('ly', '')}</p>
             )}
           </div>
         ) : (
@@ -1132,7 +1132,7 @@ export default function HouseholdProfile() {
       {/* Religion */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">🙏 Religion & Beliefs</h2>
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🙏 Religion & Beliefs</h2>
           <button
             onClick={() => handleEditSection('religion')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -1140,13 +1140,13 @@ export default function HouseholdProfile() {
             Edit
           </button>
         </div>
-        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
+        <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
       </div>
 
       {/* Bio */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400">✍️ About Your Household</h2>
+          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">✍️ About Your Household</h2>
           <button
             onClick={() => handleEditSection('bio')}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
@@ -1154,7 +1154,7 @@ export default function HouseholdProfile() {
             Edit
           </button>
         </div>
-        <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
+        <p className="text-xs text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
       </div>
     </div>
       </main>

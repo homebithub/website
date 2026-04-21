@@ -28,7 +28,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label 
             htmlFor={inputId} 
-            className="text-sm font-medium text-gray-700 dark:text-gray-300 ml-1"
+            className="text-xs font-medium text-gray-700 dark:text-gray-300 ml-1"
           >
             {label}
           </label>
@@ -50,7 +50,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-gray-500
               ${leftIcon ? 'pl-11' : 'px-4'}
               ${rightIcon ? 'pr-11' : 'px-4'}
-              py-2.5 text-sm
+              py-2.5 text-xs
               ${error 
                 ? 'border-red-300 dark:border-red-900 focus:border-red-500 focus:ring-4 focus:ring-red-500/10' 
                 : 'border-gray-100 dark:border-dark-border focus:border-purple-500 focus:ring-4 focus:ring-purple-500/10 dark:focus:border-purple-500/50'

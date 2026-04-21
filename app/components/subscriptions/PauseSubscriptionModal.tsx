@@ -93,7 +93,7 @@ export function PauseSubscriptionModal({
             >
               <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
                 <div className="flex items-start justify-between mb-4">
-                  <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
+                  <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
                     Pause Your Subscription
                   </Dialog.Title>
                   <button
@@ -107,10 +107,10 @@ export function PauseSubscriptionModal({
 
                 {/* Info Box */}
                 <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm text-blue-800 dark:text-blue-300">
+                  <p className="text-xs text-blue-800 dark:text-blue-300">
                     <strong>What happens when you pause:</strong>
                   </p>
-                  <ul className="mt-2 text-sm text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
+                  <ul className="mt-2 text-xs text-blue-700 dark:text-blue-400 space-y-1 list-disc list-inside">
                     <li>You keep access until {formatDate(accessUntil)}</li>
                     <li>Billing pauses for the selected duration</li>
                     <li>Your subscription resumes automatically</li>
@@ -120,7 +120,7 @@ export function PauseSubscriptionModal({
                 <div className="space-y-4">
                   {/* Duration Selector */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Pause Duration
                     </label>
                     <select
@@ -139,7 +139,7 @@ export function PauseSubscriptionModal({
 
                   {/* Reason Selector */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Reason for Pausing
                     </label>
                     <select
@@ -160,11 +160,11 @@ export function PauseSubscriptionModal({
                   <div className="p-4 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl border border-purple-200 dark:border-purple-700">
                     <div className="flex items-center gap-2 mb-2">
                       <ClockIcon className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      <p className="text-xs font-medium text-gray-900 dark:text-white">
                         Resume Date
                       </p>
                     </div>
-                    <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                    <p className="text-base font-bold text-purple-600 dark:text-purple-400">
                       {formatDate(resumeDate)}
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">

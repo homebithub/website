@@ -29,7 +29,7 @@ export function NannyTypeStep({ data, onUpdate, onNext }: NannyTypeStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">What type of househelp do you need?</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">What type of househelp do you need?</h3>
         <p className="text-gray-600">Choose the arrangement that works best for your family</p>
       </div>
 
@@ -47,13 +47,13 @@ export function NannyTypeStep({ data, onUpdate, onNext }: NannyTypeStepProps) {
             />
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <h4 className="text-lg font-medium text-gray-900">Dayburg</h4>
-                <span className="text-sm text-gray-500">Most Popular</span>
+                <h4 className="text-base font-medium text-gray-900">Dayburg</h4>
+                <span className="text-xs text-gray-500">Most Popular</span>
               </div>
               <p className="text-gray-600 mt-1">
                 Househelp works during the day and goes home in the evening. Perfect for families who need help during working hours.
               </p>
-              <div className="mt-3 space-y-2 text-sm text-gray-600">
+              <div className="mt-3 space-y-2 text-xs text-gray-600">
                 <div className="flex items-center">
                   <svg className="h-4 w-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -90,13 +90,13 @@ export function NannyTypeStep({ data, onUpdate, onNext }: NannyTypeStepProps) {
             />
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <h4 className="text-lg font-medium text-gray-900">Sleep-in</h4>
-                <span className="text-sm text-gray-500">Full-time</span>
+                <h4 className="text-base font-medium text-gray-900">Sleep-in</h4>
+                <span className="text-xs text-gray-500">Full-time</span>
               </div>
               <p className="text-gray-600 mt-1">
                 Househelp lives with your family and provides 24/7 support. Ideal for families needing constant assistance.
               </p>
-              <div className="mt-3 space-y-2 text-sm text-gray-600">
+              <div className="mt-3 space-y-2 text-xs text-gray-600">
                 <div className="flex items-center">
                   <svg className="h-4 w-4 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
@@ -129,10 +129,10 @@ export function NannyTypeStep({ data, onUpdate, onNext }: NannyTypeStepProps) {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-blue-800">
+              <p className="text-xs font-medium text-blue-800">
                 Need help deciding?
               </p>
-              <p className="text-sm text-blue-700 mt-1">
+              <p className="text-xs text-blue-700 mt-1">
                 Dayburg is great for working families who need help during the day. Sleep-in is perfect for families needing round-the-clock support or with very young children.
               </p>
             </div>

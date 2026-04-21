@@ -20,7 +20,7 @@ const FamilyContactsEditSection: React.FC<FamilyContactsEditSectionProps> = ({
   success,
 }) => (
   <section id="family-contacts" className="mb-6 scroll-mt-24">
-    <h2 className="text-lg font-semibold mb-2 text-primary-700 dark:text-primary-200">Family & Contacts</h2>
+    <h2 className="text-base font-semibold mb-2 text-primary-700 dark:text-primary-200">Family & Contacts</h2>
     <form className="grid grid-cols-1 sm:grid-cols-2 gap-4" onSubmit={onSave}>
       <div>
         <label className="block text-xs font-semibold mb-1 text-gray-700 dark:text-gray-200">Father's Name</label>

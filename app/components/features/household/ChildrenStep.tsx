@@ -112,7 +112,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">👶🏿 Children</h3>
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">👶🏿 Children</h3>
         <p className="text-gray-400">Tell us about your children so we can find the perfect match</p>
       </div>
 
@@ -134,7 +134,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
               }`}>
                 {hasChildren && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
               </div>
-              <span className="text-lg">👨‍👩‍👧‍👦</span>
+              <span className="text-base">👨‍👩‍👧‍👦</span>
               <span className="font-medium text-gray-900 dark:text-white">I have/expecting a child</span>
             </button>
             
@@ -152,7 +152,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
               }`}>
                 {!hasChildren && !expecting && <div className="w-2.5 h-2.5 rounded-full bg-white"></div>}
               </div>
-              <span className="text-lg">🚫</span>
+              <span className="text-base">🚫</span>
               <span className="font-medium text-gray-900 dark:text-white">I do not have children</span>
             </button>
           </div>
@@ -174,14 +174,14 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
                 onClick={() => setShowExpectingModal(true)}
                 className="flex items-center gap-2 px-6 py-1.5 font-semibold bg-white dark:bg-gray-800 text-purple-600 dark:text-purple-400 border-2 border-purple-600 dark:border-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-gray-700 hover:scale-105 transition-all"
               >
-                <span className="text-xl">🤰🏿</span>
+                <span className="text-lg">🤰🏿</span>
                 Expecting a Child
               </button>
             </div>
 
             {children.length > 0 && (
               <div className="space-y-3">
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Your Children</h4>
+                <h4 className="text-base font-semibold text-gray-900 dark:text-white">Your Children</h4>
                 {children.map((child, index) => (
                   <div key={index} className="flex items-center justify-between p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-500/30 rounded-xl">
                     <div>
@@ -193,7 +193,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
                     <button
                       type="button"
                       onClick={() => handleRemoveChild(index)}
-                      className="px-3 py-1.5 text-sm font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                      className="px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
                     >
                       Remove
                     </button>
@@ -210,10 +210,10 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
           <div className="space-y-4">
             <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-500/30 rounded-xl">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-2xl">🤰🏿</span>
-                <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Expecting a Child</h4>
+                <span className="text-xl">🤰🏿</span>
+                <h4 className="text-base font-semibold text-gray-900 dark:text-white">Expecting a Child</h4>
               </div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Expected Due Date
               </label>
               <input
@@ -236,7 +236,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
                 </svg>
               </div>
-              <p className="text-sm font-medium text-purple-900 dark:text-purple-100">
+              <p className="text-xs font-medium text-purple-900 dark:text-purple-100">
                 No children selected. You can proceed to the next step.
               </p>
             </div>
@@ -251,7 +251,7 @@ export function ChildrenStep({ data, onUpdate, onNext }: LocationStepProps) {
             (hasChildren && children.length === 0 && !expecting) ||
             (expecting && !dueDate)
           }
-          className="w-full px-8 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+          className="w-full px-8 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base rounded-xl shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
         >
           <span>📦</span>
           Continue

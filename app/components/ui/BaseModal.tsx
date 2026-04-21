@@ -96,13 +96,13 @@ export function BaseModal({
                       {title && (
                         <Dialog.Title
                           as="h3"
-                          className="text-2xl font-bold text-gray-900 dark:text-white leading-tight"
+                          className="text-xl font-bold text-gray-900 dark:text-white leading-tight"
                         >
                           {title}
                         </Dialog.Title>
                       )}
                       {description && (
-                        <Dialog.Description className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        <Dialog.Description className="mt-2 text-xs text-gray-500 dark:text-gray-400">
                           {description}
                         </Dialog.Description>
                       )}

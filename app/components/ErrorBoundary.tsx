@@ -41,10 +41,10 @@ export function ErrorBoundary() {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] px-4 transition-colors duration-300">
         <div className="max-w-md w-full bg-white dark:bg-[#13131a] shadow-xl dark:shadow-glow-lg rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 p-8 transition-colors duration-300">
           <div className="text-center">
-            <div className="text-5xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            <div className="text-4xl font-extrabold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
               {error.status}
             </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
               {error.statusText}
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
@@ -75,8 +75,8 @@ export function ErrorBoundary() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-white to-purple-100 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] px-4 transition-colors duration-300">
       <div className="max-w-md w-full bg-white dark:bg-[#13131a] shadow-xl dark:shadow-glow-lg rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 p-8 transition-colors duration-300">
         <div className="text-center">
-          <div className="text-4xl mb-4">😕</div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          <div className="text-3xl mb-4">😕</div>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
             Oops! Something went wrong
           </h1>
           <p className="text-gray-600 dark:text-gray-400 mb-6">
@@ -84,7 +84,7 @@ export function ErrorBoundary() {
           </p>
           {process.env.NODE_ENV === 'development' && error instanceof Error && (
             <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-500/30 rounded-xl text-left">
-              <p className="text-sm font-mono text-red-800 dark:text-red-400 mb-2 font-semibold">
+              <p className="text-xs font-mono text-red-800 dark:text-red-400 mb-2 font-semibold">
                 {error.message}
               </p>
               {error.stack && (

@@ -373,14 +373,14 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">{currentContent.title} <span className="text-sm font-normal text-gray-500 dark:text-gray-400">(Optional)</span></h2>
+      <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">{currentContent.title} <span className="text-xs font-normal text-gray-500 dark:text-gray-400">(Optional)</span></h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
         {currentContent.description}
       </p>
       
       {/* Benefit Message */}
       <div className="mb-6 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 border-2 border-purple-200 dark:border-purple-500/30">
-        <p className="text-sm font-semibold text-purple-900 dark:text-purple-100 text-center">
+        <p className="text-xs font-semibold text-purple-900 dark:text-purple-100 text-center">
           {currentContent.benefitText}
         </p>
       </div>
@@ -393,10 +393,10 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
       {isSubmitting && uploadProgress > 0 && uploadProgress < 100 && (
         <div className="mb-6 p-4 rounded-xl border-2 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-500/30">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-blue-800 dark:text-blue-400">
+            <span className="text-xs font-semibold text-blue-800 dark:text-blue-400">
               Uploading to Linode Object Storage...
             </span>
-            <span className="text-sm font-bold text-blue-800 dark:text-blue-400">
+            <span className="text-xs font-bold text-blue-800 dark:text-blue-400">
               {uploadProgress}%
             </span>
           </div>
@@ -432,13 +432,13 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
                 d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" 
               />
             </svg>
-            <div className="text-purple-700 dark:text-purple-400 font-bold text-sm">
+            <div className="text-purple-700 dark:text-purple-400 font-bold text-xs">
               {currentContent.uploadText}
             </div>
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
               {currentContent.supportText}
             </div>
-            <div className="text-sm font-semibold text-purple-600 dark:text-purple-400">
+            <div className="text-xs font-semibold text-purple-600 dark:text-purple-400">
               {images.length}/{MAX_FILES} images uploaded
             </div>
           </div>
@@ -465,7 +465,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
         {/* Image Previews */}
         {images.length > 0 && (
           <div className="space-y-4">
-            <h3 className="text-sm font-medium text-gray-700">
+            <h3 className="text-xs font-medium text-gray-700">
               Your photos ({images.length}/{MAX_FILES})
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -504,7 +504,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
             type="button"
             onClick={handleSkip}
             disabled={isSubmitting || isSkipping}
-            className="flex-1 px-8 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-400 font-bold text-sm hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="flex-1 px-8 py-1.5 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-gray-800 text-purple-700 dark:text-purple-400 font-bold text-xs hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-300 dark:hover:border-purple-500/50 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {isSkipping ? (
               <>
@@ -524,7 +524,7 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
           <button
             type="submit"
             disabled={isSubmitting || isSkipping || images.length === 0}
-            className="flex-1 px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+            className="flex-1 px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
@@ -572,10 +572,10 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
                   <div className="relative">
                     <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b border-gray-200">
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-medium text-gray-900 truncate">
+                        <h3 className="text-base font-medium text-gray-900 truncate">
                           {images[selectedImageIndex]?.file.name}
                         </h3>
-                        <div className="text-sm text-gray-500">
+                        <div className="text-xs text-gray-500">
                           {selectedImageIndex + 1} of {images.length}
                         </div>
                       </div>

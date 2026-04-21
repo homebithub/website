@@ -115,7 +115,7 @@ const Gender = () => {
 
     return (
         <div className="max-w-2xl mx-auto">
-            <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">👤 Gender & Age</h2>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">👤 Gender & Age</h2>
             <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
                 Tell us about yourself
             </p>
@@ -126,9 +126,9 @@ const Gender = () => {
             
             <div className="space-y-8">
                 <div>
-                    <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-3">Gender</h3>
+                    <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-3">Gender</h3>
                     <div className="grid grid-cols-2 gap-4">
-                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                             gender === 'female' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                         }`}>
                             <input
@@ -141,7 +141,7 @@ const Gender = () => {
                             />
                             <span>Female</span>
                         </label>
-                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                        <label className={`flex items-center justify-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                             gender === 'male' ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                         }`}>
                             <input
@@ -158,7 +158,7 @@ const Gender = () => {
                 </div>
                 
                 <div>
-                    <label htmlFor="dateOfBirth" className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                    <label htmlFor="dateOfBirth" className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
                         🎂 Date of Birth
                     </label>
                     <input
@@ -170,7 +170,7 @@ const Gender = () => {
                         className="w-full h-10 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
                         required
                     />
-                    <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                    <p className="mt-2 text-xs text-gray-600 dark:text-gray-400">
                         You must be at least 18 years old
                     </p>
                 </div>

@@ -243,10 +243,10 @@ export function SubscriptionWallet() {
                         <WalletIcon className="w-6 h-6 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                           Subscription & Wallet
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
                           Manage your subscription and payments
                         </p>
                       </div>
@@ -270,10 +270,10 @@ export function SubscriptionWallet() {
                         <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-xl p-6 border border-purple-200 dark:border-purple-700">
                           <div className="flex items-start justify-between mb-4">
                             <div>
-                              <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                              <h4 className="text-base font-semibold text-gray-900 dark:text-white mb-1">
                                 {subscription.plan?.name || 'Current Plan'}
                               </h4>
-                              <p className="text-sm text-gray-600 dark:text-gray-300">
+                              <p className="text-xs text-gray-600 dark:text-gray-300">
                                 {subscription.plan?.description}
                               </p>
                             </div>
@@ -290,25 +290,25 @@ export function SubscriptionWallet() {
                           <div className="grid grid-cols-2 gap-4 mt-4">
                             <div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Amount</p>
-                              <p className="text-lg font-bold text-gray-900 dark:text-white">
+                              <p className="text-base font-bold text-gray-900 dark:text-white">
                                 {formatCurrency(subscription.plan?.price_amount || 0)}
                               </p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Billing Cycle</p>
-                              <p className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
+                              <p className="text-base font-semibold text-gray-900 dark:text-white capitalize">
                                 {subscription.plan?.billing_cycle}
                               </p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period Start</p>
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              <p className="text-xs font-medium text-gray-900 dark:text-white">
                                 {formatDate(subscription.current_period_start)}
                               </p>
                             </div>
                             <div>
                               <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period End</p>
-                              <p className="text-sm font-medium text-gray-900 dark:text-white">
+                              <p className="text-xs font-medium text-gray-900 dark:text-white">
                                 {formatDate(subscription.current_period_end)}
                               </p>
                             </div>
@@ -336,7 +336,7 @@ export function SubscriptionWallet() {
 
                       {/* Payment History */}
                       <div>
-                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                        <h4 className="text-base font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
                           <BanknotesIcon className="w-5 h-5" />
                           Payment History
                         </h4>
@@ -417,7 +417,7 @@ export function SubscriptionWallet() {
                 leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
               >
                 <Dialog.Panel className="w-full sm:max-w-md transform overflow-hidden rounded-t-2xl sm:rounded-2xl bg-white dark:bg-gray-800 p-6 shadow-xl transition-all max-h-[90vh] sm:max-h-[85vh] overflow-y-auto">
-                  <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white mb-4">
+                  <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white mb-4">
                     Make Payment
                   </Dialog.Title>
 
@@ -435,7 +435,7 @@ export function SubscriptionWallet() {
                           <p className="text-gray-700 dark:text-gray-300 font-medium mb-2">
                             Check your phone for M-Pesa prompt
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-gray-500 dark:text-gray-400">
                             Enter your M-Pesa PIN to complete payment
                           </p>
                         </div>
@@ -454,7 +454,7 @@ export function SubscriptionWallet() {
                           <p className="text-gray-700 dark:text-gray-300 font-medium">
                             Payment Failed
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                             Please try again
                           </p>
                         </div>
@@ -465,7 +465,7 @@ export function SubscriptionWallet() {
                           <p className="text-gray-700 dark:text-gray-300 font-medium">
                             Payment Pending
                           </p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                             Check payment history for status
                           </p>
                         </div>
@@ -474,16 +474,16 @@ export function SubscriptionWallet() {
                   ) : (
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Amount
                         </label>
-                        <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">
                           {formatCurrency(paymentAmount)}
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                           M-Pesa Phone Number
                         </label>
                         <input

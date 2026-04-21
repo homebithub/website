@@ -11,7 +11,7 @@ export function OfferCard({ icon, title, description, className = "glow-card" }:
   return (
     <div className={`${className} p-8 text-center flex flex-col items-center`}>
       <div className="flex-shrink-0 mb-4">{icon}</div>
-      <h3 className="text-xl font-bold text-slate-900 mb-2">
+      <h3 className="text-lg font-bold text-slate-900 mb-2">
         {title}
       </h3>
       <p className="text-slate-600">{description}</p>

@@ -257,7 +257,7 @@ export function Navigation() {
             <div className="flex justify-between items-center px-8 sm:px-16 lg:px-32 min-h-[64px] sm:min-h-[72px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
-  <Link to="/" prefetch="intent" className="relative font-extrabold text-2xl sm:text-3xl px-3 py-1 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-purple-300/50 hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
+  <Link to="/" prefetch="intent" className="relative font-extrabold text-xl sm:text-2xl px-3 py-1 rounded-2xl transition-all duration-300 hover:scale-110 hover:shadow-xl hover:shadow-purple-300/50 hover:bg-primary-50 dark:hover:bg-[#13131a] dark:hover:shadow-glow-md drop-shadow-lg">
     <span className="logo-shimmer">
       <span className="text-gray-900 dark:text-white">Home</span>
       <span className="gradient-text">Bit</span>
@@ -275,7 +275,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className={`link text-lg sm:text-xl font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
+                                className={`link text-base sm:text-lg font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
                             >
                                 {item.name}
                                 {'count' in item && item.name === 'Shortlist' && renderBadge((item as any).count)}
@@ -297,7 +297,7 @@ export function Navigation() {
                                 key={item.name}
                                 to={item.href}
                                 prefetch="intent"
-                                className={`link text-lg font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
+                                className={`link text-base font-medium transition-all duration-300 px-5 py-1 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 relative ${isActive ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 shadow-xl scale-105' : 'text-primary-600 dark:text-purple-400 hover:text-white dark:hover:text-white hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:shadow-xl hover:scale-110'}`}
                                 id={item.name === 'Shortlist' ? 'shortlist-link' : undefined}
                             >
                                 {item.name}
@@ -332,7 +332,7 @@ export function Navigation() {
                             href="https://hba.homebit.co.ke"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="hidden lg:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105 transition-all duration-200"
+                            className="hidden lg:inline-flex items-center gap-1.5 px-4 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105 transition-all duration-200"
                         >
                             <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -351,7 +351,7 @@ export function Navigation() {
                         <div className="flex items-center space-x-3">
                             <Link
                                 to="/waitlist"
-                                className="link hidden lg:block text-sm font-medium rounded-xl transition-all duration-200 px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
+                                className="link hidden lg:block text-xs font-medium rounded-xl transition-all duration-200 px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md hover:from-purple-700 hover:to-pink-700 hover:shadow-lg hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
                             >
                                 Join Waitlist
                             </Link>
@@ -362,8 +362,8 @@ export function Navigation() {
                     {user && userName && (
                         <Menu as="div" className="relative hidden lg:inline-block text-left">
                             <Menu.Button className="flex items-center space-x-2 px-4 py-1 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/30 transition-all">
-                                <div className="text-sm text-gray-600 dark:text-gray-300">
-                                    <span className="font-semibold text-base">Hello, {userName}</span>
+                                <div className="text-xs text-gray-600 dark:text-gray-300">
+                                    <span className="font-semibold text-sm">Hello, {userName}</span>
                                 </div>
                                 <svg className="w-4 h-4 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -385,7 +385,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
-                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
                                                 >
                                                     <UserIcon className="mr-3 h-5 w-5" />
                                                     {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
@@ -396,7 +396,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to="/settings"
-                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
                                                 >
                                                     <CogIcon className="mr-3 h-5 w-5" />
                                                     Settings
@@ -407,7 +407,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to="/subscriptions"
-                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-sm font-semibold rounded-xl mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
                                                 >
                                                     <CreditCardIcon className="mr-3 h-5 w-5" />
                                                     Subscriptions
@@ -419,7 +419,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <button
                                                     onClick={handleLogout}
-                                                    className={`${active ? 'bg-gradient-to-r from-red-600 to-red-700 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center w-full px-4 py-1.5 text-sm font-semibold rounded-xl mx-2 transition-all`}
+                                                    className={`${active ? 'bg-gradient-to-r from-red-600 to-red-700 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center w-full px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
                                                 >
                                                     <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
                                                     Logout
@@ -457,7 +457,7 @@ export function Navigation() {
                                                 return (
                                                 <Link
                                                     to={item.href}
-                                                    className={`font-medium ${active || isActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
+                                                    className={`font-medium ${active || isActive ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-base rounded-xl transition-all duration-200 mx-2 hover:scale-105`}
                                                 >
                                                     <span>{item.name}</span>
                                                     {'count' in item && (item as any).count > 0 && (
@@ -477,7 +477,7 @@ export function Navigation() {
                                             {({ active }) => (
                                                 <Link
                                                     to="/waitlist"
-                                                    className={`font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-4 py-1 text-sm rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
+                                                    className={`font-medium bg-gradient-to-r from-purple-600 to-pink-600 text-white block px-4 py-1 text-xs rounded-xl shadow-lg transition-all duration-200 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl mx-2 my-1`}
                                                 >
                                                     Join Waitlist
                                                 </Link>
@@ -492,7 +492,7 @@ export function Navigation() {
                                                 <button
                                                     type="button"
                                                     onClick={() => setIsNotificationsOpen(true)}
-                                                    className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-lg rounded-xl transition-all duration-200 mx-2 hover:scale-105 w-[calc(100%-16px)]`}
+                                                    className={`font-medium ${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white scale-105' : 'text-primary-700 dark:text-purple-400'} flex items-center justify-between px-5 py-1 text-base rounded-xl transition-all duration-200 mx-2 hover:scale-105 w-[calc(100%-16px)]`}
                                                 >
                                                     <span className="flex items-center gap-2">
                                                         <BellIcon className="h-5 w-5" />
@@ -510,7 +510,7 @@ export function Navigation() {
 
                                     {/* Theme Toggle in Mobile Menu */}
                                     <div className="px-5 py-3 flex items-center justify-between">
-                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Theme</span>
+                                        <span className="text-xs font-medium text-gray-700 dark:text-gray-200">Theme</span>
                                         <ThemeToggle size="sm" />
                                     </div>
 
@@ -519,8 +519,8 @@ export function Navigation() {
                                         <>
                                             <div className="border-t border-gray-200 dark:border-gray-700 my-1"></div>
                                             {/* User Greeting in Mobile Menu */}
-                                            <div className="px-5 py-1 text-lg font-bold rounded-xl text-primary-700 dark:text-purple-400 border-b border-primary-100 dark:border-gray-700">
-  <div className="font-semibold text-base">Hello, {userName}</div>
+                                            <div className="px-5 py-1 text-base font-bold rounded-xl text-primary-700 dark:text-purple-400 border-b border-primary-100 dark:border-gray-700">
+  <div className="font-semibold text-sm">Hello, {userName}</div>
 </div>
 
 
@@ -530,7 +530,7 @@ export function Navigation() {
                                                 <>
                                                     {authLinks.map((item) => (
                                                         <Menu.Item key={item.name}>{({ active }) => (
-                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-1 text-sm relative`}>
+                                                            <Link to={item.href} className={`${active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'} flex items-center justify-between px-4 py-1 text-xs relative`}>
                                                                 <span>{item.name}</span>
                                                                 {item.name === 'Shortlist' && shortlistCount > 0 && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
@@ -560,7 +560,7 @@ export function Navigation() {
                                                         to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
                                                         className={`${
                                                             active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
-                                                        } flex items-center px-4 py-1 text-sm`}
+                                                        } flex items-center px-4 py-1 text-xs`}
                                                     >
                                                         <UserIcon className="mr-3 h-5 w-5" />
                                                         {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
@@ -573,7 +573,7 @@ export function Navigation() {
                                                         to="/settings"
                                                         className={`${
                                                             active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
-                                                        } flex items-center px-4 py-1 text-sm`}
+                                                        } flex items-center px-4 py-1 text-xs`}
                                                     >
                                                         <CogIcon className="mr-3 h-5 w-5" />
                                                         Settings
@@ -586,7 +586,7 @@ export function Navigation() {
                                                         to="/subscriptions"
                                                         className={`${
                                                             active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
-                                                        } flex items-center px-4 py-1 text-sm`}
+                                                        } flex items-center px-4 py-1 text-xs`}
                                                     >
                                                         <CreditCardIcon className="mr-3 h-5 w-5" />
                                                         Subscriptions
@@ -602,7 +602,7 @@ export function Navigation() {
                                                             rel="noopener noreferrer"
                                                             className={`${
                                                                 active ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400' : 'text-purple-600 dark:text-purple-400'
-                                                            } flex items-center px-4 py-1 text-sm font-semibold`}
+                                                            } flex items-center px-4 py-1 text-xs font-semibold`}
                                                         >
                                                             <svg className="mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -619,7 +619,7 @@ export function Navigation() {
                                                         onClick={handleLogout}
                                                         className={`${
                                                             active ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400' : 'text-gray-700 dark:text-gray-300'
-                                                        } flex items-center w-full px-4 py-1 text-sm`}
+                                                        } flex items-center w-full px-4 py-1 text-xs`}
                                                     >
                                                         <ArrowRightOnRectangleIcon className="mr-3 h-5 w-5" />
                                                         Logout

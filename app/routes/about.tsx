@@ -117,10 +117,10 @@ export default function About() {
                                     Who We Are
                                 </span>
                             </div>
-                            <h1 className="text-xl sm:text-2xl md:text-2xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
+                            <h1 className="text-lg sm:text-xl md:text-xl font-extrabold tracking-tight text-gray-900 dark:text-white leading-tight">
                                 About HomeBit
                             </h1>
-                            <p className="mt-4 text-sm sm:text-base text-gray-600 dark:text-purple-200 leading-relaxed max-w-2xl mx-auto">
+                            <p className="mt-4 text-xs sm:text-sm text-gray-600 dark:text-purple-200 leading-relaxed max-w-2xl mx-auto">
                                 Bridging the gap between households and trusted home professionals — with security, transparency, and care at the heart of everything we do.
                             </p>
                         </div>
@@ -133,18 +133,18 @@ export default function About() {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
                             <SlideUp>
                                 <div className="rounded-2xl border border-purple-200/30 dark:border-purple-500/15 bg-gradient-to-br from-white to-purple-50/50 dark:from-[#13131a] dark:to-[#0a0a0f] p-6 sm:p-8 transition-all duration-300 hover:shadow-light-glow-md dark:hover:shadow-glow-sm hover:-translate-y-1">
-                                    <h2 className="text-base sm:text-lg font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">About Us</h2>
-                                    <p className="mt-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white">A Better Way to Manage Your Home</p>
-                                    <p className="mt-3 text-sm sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed">
+                                    <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">About Us</h2>
+                                    <p className="mt-2 text-base sm:text-lg font-bold text-gray-900 dark:text-white">A Better Way to Manage Your Home</p>
+                                    <p className="mt-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                                         Homebit bridges the gap between households seeking trustworthy househelps and nannies, and professionals seeking reliable jobs. We prioritize security, transparency, and a rigorous vetting process to ensure peace of mind for every family and worker.
                                     </p>
                                 </div>
                             </SlideUp>
                             <SlideUp delay={150}>
                                 <div className="rounded-2xl border border-purple-200/30 dark:border-purple-500/15 bg-gradient-to-br from-white to-purple-50/50 dark:from-[#13131a] dark:to-[#0a0a0f] p-6 sm:p-8 transition-all duration-300 hover:shadow-light-glow-md dark:hover:shadow-glow-sm hover:-translate-y-1">
-                                    <h2 className="text-base sm:text-lg font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">Our Mission</h2>
-                                    <p className="mt-2 text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Connecting Families and Professionals</p>
-                                    <p className="mt-3 text-sm sm:text-base text-gray-500 dark:text-gray-400 leading-relaxed">
+                                    <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">Our Mission</h2>
+                                    <p className="mt-2 text-base sm:text-lg font-bold text-gray-900 dark:text-white">Connecting Families and Professionals</p>
+                                    <p className="mt-3 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
                                         At Homebit, our mission is to connect families with trustworthy, vetted househelps and nannies, making home management simpler, safer, and more reliable for everyone.
                                     </p>
                                 </div>
@@ -158,13 +158,13 @@ export default function About() {
                     <div className="max-w-5xl mx-auto">
                         <SlideUp>
                             <div className="text-center mb-10 sm:mb-14">
-                                <h2 className="text-base sm:text-lg font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                                <h2 className="text-sm sm:text-base font-extrabold uppercase tracking-wider text-purple-600 dark:text-purple-400">
                                     Our Values
                                 </h2>
-                                <p className="mt-2 text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                                <p className="mt-2 text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
                                     What drives everything we do
                                 </p>
-                                <p className="mt-2 text-sm sm:text-base text-gray-500 dark:text-gray-400">
+                                <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400">
                                     Our commitment to excellence is guided by these core principles.
                                 </p>
                             </div>
@@ -179,8 +179,8 @@ export default function About() {
                                                 <value.icon className="h-6 w-6 text-white" aria-hidden="true" />
                                             </div>
                                         </div>
-                                        <h3 className="text-sm sm:text-base font-bold text-gray-900 dark:text-white">{value.name}</h3>
-                                        <p className="mt-2 text-xs sm:text-sm text-gray-500 dark:text-gray-400 leading-relaxed">{value.description}</p>
+                                        <h3 className="text-xs sm:text-sm font-bold text-gray-900 dark:text-white">{value.name}</h3>
+                                        <p className="mt-2 text-xs sm:text-xs text-gray-500 dark:text-gray-400 leading-relaxed">{value.description}</p>
                                     </div>
                                 </SlideUp>
                             ))}
@@ -192,16 +192,16 @@ export default function About() {
                 <section className="bg-gradient-to-br from-purple-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] py-14 sm:py-20 transition-colors duration-300">
                     <div className="max-w-2xl mx-auto px-4 sm:px-6 text-center">
                         <SlideUp>
-                            <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                            <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 dark:text-white">
                                 Ready to get started?
                             </h2>
-                            <p className="mt-3 text-sm sm:text-base text-gray-600 dark:text-gray-300">
+                            <p className="mt-3 text-xs sm:text-sm text-gray-600 dark:text-gray-300">
                                 Join thousands of families and professionals who trust HomeBit for their home management needs.
                             </p>
                             <div className="mt-6">
                                 <Link
                                     to="/signup"
-                                    className="inline-block rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-sm sm:text-base font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300"
+                                    className="inline-block rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-xs sm:text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300"
                                 >
                                     Join HomeBit Today
                                 </Link>

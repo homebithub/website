@@ -113,16 +113,16 @@ export default function EmploymentContractsList() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+            <h1 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
               Employment Contracts
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-xs">
               Formal employment contracts with your househelps
             </p>
           </div>
           <button
             onClick={() => navigate('/household/employment-contract')}
-            className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors flex items-center gap-2 text-sm font-medium"
+            className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors flex items-center gap-2 text-xs font-medium"
           >
             <Plus className="w-4 h-4" /> New Contract
           </button>
@@ -136,7 +136,7 @@ export default function EmploymentContractsList() {
                 <button
                   key={tab.key}
                   onClick={() => handleTabChange(tab.key)}
-                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  className={`py-4 px-1 border-b-2 font-medium text-xs transition-colors ${
                     activeTab === tab.key
                       ? 'border-purple-500 text-purple-600 dark:text-purple-400'
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 dark:text-gray-400'
@@ -154,7 +154,7 @@ export default function EmploymentContractsList() {
             <ErrorAlert message={error} className="mb-4" />
             <button
               onClick={fetchContracts}
-              className="rounded-xl border border-purple-500/50 px-4 py-2 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-900/20"
+              className="rounded-xl border border-purple-500/50 px-4 py-2 text-xs font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-900/20"
             >
               Try Again
             </button>
@@ -170,7 +170,7 @@ export default function EmploymentContractsList() {
         {!loading && contracts.length === 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-12 text-center">
             <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No employment contracts yet</h3>
+            <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">No employment contracts yet</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
               Create a formal employment contract to get started
             </p>
@@ -214,7 +214,7 @@ export default function EmploymentContractsList() {
                         {badge.label}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <p className="text-xs text-gray-600 dark:text-gray-400">
                       {contract.househelp?.first_name} {contract.househelp?.last_name} &bull; KES {contract.salary?.toLocaleString()} / {contract.salary_frequency}
                       {contract.start_date && ` &bull; From ${formatDate(contract.start_date)}`}
                     </p>
@@ -231,7 +231,7 @@ export default function EmploymentContractsList() {
 
         {!loading && total > limit && (
           <div className="mt-8 flex items-center justify-between">
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+            <p className="text-xs text-gray-700 dark:text-gray-300">
               Showing {offset + 1} to {Math.min(offset + limit, total)} of {total}
             </p>
             <div className="flex gap-2">

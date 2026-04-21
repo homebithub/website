@@ -139,7 +139,7 @@ const References: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">📞 References</h2>
+      <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">📞 References</h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         Provide contact information for people who can vouch for your work (Optional but recommended)
       </p>
@@ -151,14 +151,14 @@ const References: React.FC = () => {
             className="p-6 rounded-xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] space-y-4"
           >
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">
+              <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400">
                 Reference {index + 1}
               </h3>
               {references.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeReference(index)}
-                  className="px-3 py-1 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all text-sm font-semibold"
+                  className="px-3 py-1 rounded-xl bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-all text-xs font-semibold"
                 >
                   Remove
                 </button>
@@ -167,7 +167,7 @@ const References: React.FC = () => {
 
             {/* Name */}
             <div>
-              <label className="block text-sm font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Full Name
               </label>
               <input
@@ -181,7 +181,7 @@ const References: React.FC = () => {
 
             {/* Relationship */}
             <div>
-              <label className="block text-sm font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Relationship
               </label>
               <CustomSelect
@@ -194,7 +194,7 @@ const References: React.FC = () => {
 
             {/* Phone */}
             <div>
-              <label className="block text-sm font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Phone Number
               </label>
               <input
@@ -208,7 +208,7 @@ const References: React.FC = () => {
 
             {/* Email */}
             <div>
-              <label className="block text-sm font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 mb-2">
                 Email (Optional)
               </label>
               <input
@@ -222,7 +222,7 @@ const References: React.FC = () => {
 
             {/* Duration */}
             <div>
-              <label className="block text-sm font-bold text-purple-700 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-bold text-purple-700 dark:text-purple-400 mb-2">
                 How long did you work together?
               </label>
               <input
@@ -254,7 +254,7 @@ const References: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>

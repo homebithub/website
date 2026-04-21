@@ -42,16 +42,16 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <h1 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 bg-clip-text text-transparent mb-3">
+              <h1 className="text-lg sm:text-xl font-extrabold bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 bg-clip-text text-transparent mb-3">
                 Continue on Pricing
               </h1>
 
-              <p className="text-base sm:text-lg text-gray-700 dark:text-gray-200 max-w-xl mx-auto mb-6">
+              <p className="text-sm sm:text-base text-gray-700 dark:text-gray-200 max-w-xl mx-auto mb-6">
                 Subscription selection and payment now happen from the pricing page.
                 Pick your plan there and we&apos;ll continue the purchase flow with the latest account-aware pricing data.
               </p>
 
-              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xl mx-auto mb-10">
+              <p className="text-xs text-gray-500 dark:text-gray-400 max-w-xl mx-auto mb-10">
                 If you landed here from an older link, nothing is broken. We&apos;ll route you to the current purchase entry point instead.
               </p>
 
@@ -59,7 +59,7 @@ export default function CheckoutPage() {
                 <button
                   type="button"
                   onClick={handleGoBack}
-                  className="inline-flex items-center justify-center px-6 py-1 rounded-xl border border-purple-200/70 dark:border-purple-500/60 text-sm font-semibold text-purple-700 dark:text-purple-100 bg-white dark:bg-black hover:bg-purple-50 dark:hover:bg-purple-900/40 shadow-sm transition-colors"
+                  className="inline-flex items-center justify-center px-6 py-1 rounded-xl border border-purple-200/70 dark:border-purple-500/60 text-xs font-semibold text-purple-700 dark:text-purple-100 bg-white dark:bg-black hover:bg-purple-50 dark:hover:bg-purple-900/40 shadow-sm transition-colors"
                 >
                   Go Back
                 </button>
@@ -67,7 +67,7 @@ export default function CheckoutPage() {
                 <Link
                   to="/pricing"
                   prefetch="intent"
-                  className="inline-flex items-center justify-center px-6 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-sm font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
+                  className="inline-flex items-center justify-center px-6 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-xs font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
                 >
                   View Plans
                 </Link>

@@ -66,7 +66,7 @@ export function HouseholdProfileModal({ isOpen, onClose, onComplete }: Household
           <div className="flex justify-between items-center mb-2">
             {STEPS.map((step, index) => (
               <div key={step.id} className="flex items-center">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
                   index <= currentStep 
                     ? 'bg-primary-600 text-white' 
                     : 'bg-gray-200 text-gray-600'
@@ -81,7 +81,7 @@ export function HouseholdProfileModal({ isOpen, onClose, onComplete }: Household
               </div>
             ))}
           </div>
-          <p className="text-sm text-gray-600 text-center">
+          <p className="text-xs text-gray-600 text-center">
             Step {currentStep + 1} of {STEPS.length}: {STEPS[currentStep].title}
           </p>
         </div>

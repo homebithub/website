@@ -184,10 +184,10 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
                 
                 return (
                   <tr key={child.id || index} className="hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors">
-                    <td className="px-6 py-1 whitespace-nowrap text-sm font-semibold text-gray-900 dark:text-white capitalize">
+                    <td className="px-6 py-1 whitespace-nowrap text-xs font-semibold text-gray-900 dark:text-white capitalize">
                       {child.gender || 'Not specified'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    <td className="px-6 py-4 whitespace-nowrap text-xs text-gray-700 dark:text-gray-300">
                       {isExpecting ? (
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400">
                           Due: {formatDate(child.expected_date)}
@@ -213,7 +213,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-1 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-1 whitespace-nowrap text-right text-xs font-medium">
                       <button
                         type="button"
                         onClick={() => handleEditChild(index)}

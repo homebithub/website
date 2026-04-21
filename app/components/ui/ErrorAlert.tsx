@@ -22,9 +22,9 @@ export const ErrorAlert: React.FC<ErrorAlertProps> = ({
         </span>
         <div className="flex-1 min-w-0">
           {title && (
-            <p className="text-sm font-semibold text-red-700 dark:text-red-400 mb-0.5">{title}</p>
+            <p className="text-xs font-semibold text-red-700 dark:text-red-400 mb-0.5">{title}</p>
           )}
-          <p className="text-sm font-medium text-red-700 dark:text-red-300">{message}</p>
+          <p className="text-xs font-medium text-red-700 dark:text-red-300">{message}</p>
         </div>
       </div>
     </div>

@@ -123,7 +123,7 @@ const SalaryExpectations: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">💰 Salary Expectations</h2>
+      <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">💰 Salary Expectations</h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         What are your salary requirements?
       </p>
@@ -131,7 +131,7 @@ const SalaryExpectations: React.FC = () => {
       <div className="space-y-8">
         {/* Salary Frequency Dropdown */}
         <div className="space-y-3">
-          <label htmlFor="frequency" className="block text-sm font-semibold text-purple-700 dark:text-purple-400">
+          <label htmlFor="frequency" className="block text-xs font-semibold text-purple-700 dark:text-purple-400">
             📅 Payment Frequency
           </label>
           <CustomSelect
@@ -152,10 +152,10 @@ const SalaryExpectations: React.FC = () => {
 
         {/* Salary Range Radio Group */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">
+          <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400">
             Your {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Salary (KES)
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
             Select your expected salary range
           </p>
           {rangesLoading && (
@@ -165,7 +165,7 @@ const SalaryExpectations: React.FC = () => {
             {currentRanges.map((range) => (
               <label 
                 key={range} 
-                className={`flex items-center p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                className={`flex items-center p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                   selectedRange === range 
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' 
                     : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'

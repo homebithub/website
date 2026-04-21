@@ -78,7 +78,7 @@ export default function NotificationsModal({ isOpen, onClose }: Props) {
           </div>
           <input
             type="text"
-            className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-purple-500/20 rounded-xl leading-5 bg-white dark:bg-purple-900/10 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 sm:text-sm transition-all"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-200 dark:border-purple-500/20 rounded-xl leading-5 bg-white dark:bg-purple-900/10 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-purple-500 focus:border-purple-500 sm:text-xs transition-all"
             placeholder="Search notifications..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
@@ -87,14 +87,14 @@ export default function NotificationsModal({ isOpen, onClose }: Props) {
 
         <div className="flex items-center justify-between border-b border-gray-100 dark:border-purple-500/10 pb-4">
           <div>
-            <h4 className="text-base font-semibold text-gray-900 dark:text-white">Recent</h4>
+            <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Recent</h4>
             {totalCount > 0 && (
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
                 Showing {showingCount} of {totalCount} results
               </p>
             )}
           </div>
-          <button onClick={onMarkAll} className="text-sm font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">Mark all as read</button>
+          <button onClick={onMarkAll} className="text-xs font-medium text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 transition-colors">Mark all as read</button>
         </div>
         <ul className="divide-y divide-gray-100 dark:divide-purple-500/10">
           {items.length === 0 && (
@@ -104,7 +104,7 @@ export default function NotificationsModal({ isOpen, onClose }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
               </div>
-              <p className="text-sm text-gray-500 dark:text-gray-400">You're all caught up. No notifications.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">You're all caught up. No notifications.</p>
             </li>
           )}
           {items.map((n) => (
@@ -113,21 +113,21 @@ export default function NotificationsModal({ isOpen, onClose }: Props) {
                 <div className="pr-3 min-w-0 flex-1">
                   <div className="flex items-center gap-2 mb-1">
                     {!n.clicked && <span className="flex-shrink-0 w-2 h-2 bg-purple-600 rounded-full" />}
-                    <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{n.title || 'Notification'}</p>
+                    <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{n.title || 'Notification'}</p>
                   </div>
-                  <p className={`text-sm ${!expanded[n.id] ? 'line-clamp-2' : ''} text-gray-600 dark:text-gray-300 leading-relaxed`}>{n.message || n.body || ''}</p>
+                  <p className={`text-xs ${!expanded[n.id] ? 'line-clamp-2' : ''} text-gray-600 dark:text-gray-300 leading-relaxed`}>{n.message || n.body || ''}</p>
                 </div>
                 <div className="flex-shrink-0 text-[10px] font-medium text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">{formatTime(n.created_at || n.createdAt)}</div>
               </div>
               {expanded[n.id] && (
-                <div className="mt-3 text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap border-t border-gray-100 dark:border-purple-500/10 pt-3">
+                <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap border-t border-gray-100 dark:border-purple-500/10 pt-3">
                   {n.message || n.body || ''}
                 </div>
               )}
             </li>
           ))}
           {(loadingMore || hasMore) && (
-            <li className="py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+            <li className="py-4 text-center text-xs text-gray-500 dark:text-gray-400">
               {loadingMore ? (
                 <span className="inline-flex items-center gap-2">
                   <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24">

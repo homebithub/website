@@ -68,7 +68,7 @@ export function BlogSubscribeForm({ variant = "banner", className = "", defaultE
           <CheckCircle className="w-6 h-6 text-purple-600 dark:text-purple-400" />
         </div>
         <p className="text-gray-900 dark:text-white font-semibold">You're already subscribed!</p>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-xs text-gray-600 dark:text-gray-400">
           You'll be notified whenever a new post goes live.
           <br />
           To unsubscribe, use the link at the bottom of any blog email.
@@ -84,7 +84,7 @@ export function BlogSubscribeForm({ variant = "banner", className = "", defaultE
           <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
         </div>
         <p className="text-gray-900 dark:text-white font-semibold">{message || "You're subscribed!"}</p>
-        <p className="text-sm text-gray-600 dark:text-gray-400">We'll email you whenever a new post is published.</p>
+        <p className="text-xs text-gray-600 dark:text-gray-400">We'll email you whenever a new post is published.</p>
       </div>
     );
   }
@@ -98,12 +98,12 @@ export function BlogSubscribeForm({ variant = "banner", className = "", defaultE
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="your@email.com"
-          className="flex-1 px-3 py-2 rounded-lg border border-purple-500/30 bg-white/5 text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+          className="flex-1 px-3 py-2 rounded-lg border border-purple-500/30 bg-white/5 text-white placeholder-gray-500 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/40"
         />
         <button
           type="submit"
           disabled={loading}
-          className="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center gap-1.5"
+          className="px-4 py-2 rounded-lg bg-purple-600 text-white text-xs font-medium hover:bg-purple-700 disabled:opacity-50 transition-colors flex items-center gap-1.5"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Subscribe"}
         </button>
@@ -121,7 +121,7 @@ export function BlogSubscribeForm({ variant = "banner", className = "", defaultE
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name (optional)"
-            className="flex-1 px-3 py-2 rounded-lg border border-purple-500/30 bg-white/5 text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+            className="flex-1 px-3 py-2 rounded-lg border border-purple-500/30 bg-white/5 text-white placeholder-gray-500 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/40"
           />
           <input
             type="email"
@@ -129,14 +129,14 @@ export function BlogSubscribeForm({ variant = "banner", className = "", defaultE
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="your@email.com"
-            className="flex-1 px-3 py-2 rounded-lg border border-purple-500/30 bg-white/5 text-white placeholder-gray-500 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500/40"
+            className="flex-1 px-3 py-2 rounded-lg border border-purple-500/30 bg-white/5 text-white placeholder-gray-500 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500/40"
           />
         </div>
         {error && <p className="text-xs text-red-400">{error}</p>}
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
+          className="w-full py-2.5 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold hover:opacity-90 disabled:opacity-50 transition-opacity flex items-center justify-center gap-2"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Mail className="w-4 h-4" /> Subscribe to new posts</>}
         </button>
@@ -151,8 +151,8 @@ export function BlogSubscribeForm({ variant = "banner", className = "", defaultE
         <div className="w-12 h-12 rounded-full bg-white/20 dark:bg-white/10 border border-white/30 dark:border-white/20 flex items-center justify-center mx-auto mb-4">
           <Mail className="w-6 h-6 text-white" />
         </div>
-        <h3 className="text-xl font-bold text-white mb-2">Stay in the loop</h3>
-        <p className="text-purple-100 dark:text-purple-200 text-sm mb-6">
+        <h3 className="text-lg font-bold text-white mb-2">Stay in the loop</h3>
+        <p className="text-purple-100 dark:text-purple-200 text-xs mb-6">
           Get notified when we publish new articles about household management, home tips, and more.
         </p>
         <form onSubmit={handleSubmit} className="space-y-3">
@@ -161,7 +161,7 @@ export function BlogSubscribeForm({ variant = "banner", className = "", defaultE
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Your name (optional)"
-            className="w-full px-4 py-3 rounded-xl border border-white/30 dark:border-white/20 bg-white/20 dark:bg-white/10 text-white placeholder-white/60 dark:placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-white/40"
+            className="w-full px-4 py-3 rounded-xl border border-white/30 dark:border-white/20 bg-white/20 dark:bg-white/10 text-white placeholder-white/60 dark:placeholder-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-white/40"
           />
           <input
             type="email"
@@ -169,7 +169,7 @@ export function BlogSubscribeForm({ variant = "banner", className = "", defaultE
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email address"
-            className="w-full px-4 py-3 rounded-xl border border-white/30 dark:border-white/20 bg-white/20 dark:bg-white/10 text-white placeholder-white/60 dark:placeholder-white/40 text-sm focus:outline-none focus:ring-2 focus:ring-white/40"
+            className="w-full px-4 py-3 rounded-xl border border-white/30 dark:border-white/20 bg-white/20 dark:bg-white/10 text-white placeholder-white/60 dark:placeholder-white/40 text-xs focus:outline-none focus:ring-2 focus:ring-white/40"
           />
           {error && (
             <p className="text-xs text-red-200 text-left">{error}</p>

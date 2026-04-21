@@ -151,11 +151,11 @@ export default function ConversationHireWizard({
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
         <Briefcase className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
           Select Job Type
         </h3>
       </div>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         Choose the type of employment you're offering to {househelpName}
       </p>
       <div className="grid grid-cols-2 gap-3">
@@ -181,13 +181,13 @@ export default function ConversationHireWizard({
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
         <DollarSign className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
           Salary & Start Date
         </h3>
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+        <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
           Salary Offered (KES) *
         </label>
         <input
@@ -198,7 +198,7 @@ export default function ConversationHireWizard({
           step="100"
           required
           placeholder="Enter salary amount"
-          className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+          className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
         />
         {househelpSalaryExpectation && (
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -208,7 +208,7 @@ export default function ConversationHireWizard({
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+        <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
           Frequency *
         </label>
         <CustomSelect
@@ -225,7 +225,7 @@ export default function ConversationHireWizard({
       </div>
 
       <div>
-        <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+        <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
           Preferred Start Date (Optional)
         </label>
         <input
@@ -233,7 +233,7 @@ export default function ConversationHireWizard({
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
           min={new Date().toISOString().split('T')[0]}
-          className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+          className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
         />
       </div>
     </div>
@@ -243,17 +243,17 @@ export default function ConversationHireWizard({
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
         <Clock className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
           Work Schedule
         </h3>
       </div>
-      <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+      <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         Select the days and times you need help
       </p>
       <div className="space-y-2">
         {DAYS.map((day) => (
           <div key={day} className="flex items-center gap-3">
-            <span className="w-24 text-sm font-medium text-purple-700 dark:text-purple-400 capitalize">
+            <span className="w-24 text-xs font-medium text-purple-700 dark:text-purple-400 capitalize">
               {day}
             </span>
             <div className="flex gap-2">
@@ -282,7 +282,7 @@ export default function ConversationHireWizard({
     <div className="space-y-4">
       <div className="flex items-center gap-2 mb-4">
         <FileText className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <h3 className="text-base font-semibold text-gray-900 dark:text-white">
           Review & Submit
         </h3>
       </div>
@@ -290,22 +290,22 @@ export default function ConversationHireWizard({
       {/* Summary */}
       <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 space-y-3">
         <div>
-          <span className="text-sm text-gray-600 dark:text-gray-400">Hiring:</span>
+          <span className="text-xs text-gray-600 dark:text-gray-400">Hiring:</span>
           <p className="font-medium text-gray-900 dark:text-white">{househelpName}</p>
         </div>
         <div>
-          <span className="text-sm text-gray-600 dark:text-gray-400">Job Type:</span>
+          <span className="text-xs text-gray-600 dark:text-gray-400">Job Type:</span>
           <p className="font-medium text-gray-900 dark:text-white capitalize">{jobType.replace('-', ' ')}</p>
         </div>
         <div>
-          <span className="text-sm text-gray-600 dark:text-gray-400">Salary:</span>
+          <span className="text-xs text-gray-600 dark:text-gray-400">Salary:</span>
           <p className="font-medium text-gray-900 dark:text-white">
             KES {salaryOffered.toLocaleString()} / {salaryFrequency}
           </p>
         </div>
         {startDate && (
           <div>
-            <span className="text-sm text-gray-600 dark:text-gray-400">Start Date:</span>
+            <span className="text-xs text-gray-600 dark:text-gray-400">Start Date:</span>
             <p className="font-medium text-gray-900 dark:text-white">
               {new Date(startDate).toLocaleDateString()}
             </p>
@@ -315,7 +315,7 @@ export default function ConversationHireWizard({
 
       {/* Special Requirements */}
       <div>
-        <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+        <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
           Special Requirements (Optional)
         </label>
         <textarea
@@ -323,13 +323,13 @@ export default function ConversationHireWizard({
           onChange={(e) => setSpecialRequirements(e.target.value)}
           rows={3}
           placeholder="Any specific requirements or expectations..."
-          className="w-full text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
+          className="w-full text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
         />
       </div>
 
       {/* Terms */}
       <div className="bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-xs text-gray-600 dark:text-gray-400">
           By sending this hire request, you agree to our{' '}
           <a
             href="/terms/hiring"
@@ -348,10 +348,10 @@ export default function ConversationHireWizard({
     <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 max-w-2xl w-full">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
           Send Hire Request
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
+        <p className="text-xs text-gray-600 dark:text-gray-400">
           Step {currentStep} of {totalSteps}
         </p>
       </div>

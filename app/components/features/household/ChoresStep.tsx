@@ -80,7 +80,7 @@ export function ChoresStep({ data, onUpdate, onNext }: ChoresStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">What chores do you need help with?</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">What chores do you need help with?</h3>
         <p className="text-gray-600">Select all the tasks you'd like your househelp to handle</p>
       </div>
 
@@ -106,10 +106,10 @@ export function ChoresStep({ data, onUpdate, onNext }: ChoresStepProps) {
                 />
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
-                    <span className="text-2xl">{chore.icon}</span>
-                    <h4 className="text-lg font-medium text-gray-900">{chore.label}</h4>
+                    <span className="text-xl">{chore.icon}</span>
+                    <h4 className="text-base font-medium text-gray-900">{chore.label}</h4>
                   </div>
-                  <p className="text-sm text-gray-600 mt-1">{chore.description}</p>
+                  <p className="text-xs text-gray-600 mt-1">{chore.description}</p>
                 </div>
               </label>
             </div>
@@ -118,7 +118,7 @@ export function ChoresStep({ data, onUpdate, onNext }: ChoresStepProps) {
 
         {/* Other Chores */}
         <div className="space-y-3">
-          <label className="block text-sm font-medium text-gray-700">
+          <label className="block text-xs font-medium text-gray-700">
             Other requirements or specific tasks
           </label>
           <textarea
@@ -128,7 +128,7 @@ export function ChoresStep({ data, onUpdate, onNext }: ChoresStepProps) {
             rows={3}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
           />
-          <p className="text-sm text-gray-500">
+          <p className="text-xs text-gray-500">
             Let us know about any specific requirements or additional tasks you need help with
           </p>
         </div>
@@ -143,7 +143,7 @@ export function ChoresStep({ data, onUpdate, onNext }: ChoresStepProps) {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">
+                <p className="text-xs font-medium text-green-800">
                   Selected Chores ({selectedChoresCount})
                 </p>
                 <div className="flex flex-wrap gap-2 mt-1">
@@ -159,7 +159,7 @@ export function ChoresStep({ data, onUpdate, onNext }: ChoresStepProps) {
                   ))}
                 </div>
                 {otherChores && (
-                  <p className="text-sm text-green-700 mt-2">
+                  <p className="text-xs text-green-700 mt-2">
                     <strong>Additional:</strong> {otherChores}
                   </p>
                 )}
@@ -177,10 +177,10 @@ export function ChoresStep({ data, onUpdate, onNext }: ChoresStepProps) {
               </svg>
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-blue-800">
+              <p className="text-xs font-medium text-blue-800">
                 Tips for better matching
               </p>
-              <ul className="text-sm text-blue-700 mt-1 space-y-1">
+              <ul className="text-xs text-blue-700 mt-1 space-y-1">
                 <li>• Be specific about your requirements</li>
                 <li>• Mention any special dietary needs or restrictions</li>
                 <li>• Include pet care if you have pets</li>

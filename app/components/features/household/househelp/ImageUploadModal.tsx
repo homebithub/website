@@ -47,9 +47,9 @@ export default function ImageUploadModal({ open, onClose, files, setFiles, onUpl
       aria-modal="true" role="dialog">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={onClose} />
       <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-lg p-6 w-full sm:max-w-lg sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
-        <h3 className="text-xl font-bold mb-4 text-primary dark:text-primary-200">Upload Images</h3>
+        <h3 className="text-lg font-bold mb-4 text-primary dark:text-primary-200">Upload Images</h3>
         <div className="flex flex-col gap-4">
-          <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">
+          <div className="text-xs text-gray-600 dark:text-gray-300 mb-1">
             You can upload up to 5 images, 10MB each.
           </div>
           <input
@@ -87,7 +87,7 @@ export default function ImageUploadModal({ open, onClose, files, setFiles, onUpl
               </div>
             ))}
           </div>
-          {errorMsg && <div className="text-red-600 text-sm">{errorMsg}</div>}
+          {errorMsg && <div className="text-red-600 text-xs">{errorMsg}</div>}
         </div>
         <div className="flex justify-end gap-2 mt-4">
           <button

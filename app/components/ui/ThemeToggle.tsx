@@ -76,8 +76,8 @@ export default function ThemeToggle({
 
   const textSizes = {
     sm: 'text-xs',
-    md: 'text-sm',
-    lg: 'text-base',
+    md: 'text-xs',
+    lg: 'text-sm',
   };
 
   return (
@@ -121,7 +121,7 @@ export default function ThemeToggle({
                     setOpen(false);
                   }}
                   className={`
-                    flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-colors
+                    flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs transition-colors
                     ${isSelected
                       ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'
                       : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700'}

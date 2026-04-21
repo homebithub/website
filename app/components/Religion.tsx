@@ -118,7 +118,7 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🙏 Religion & Beliefs</h2>
+      <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">🙏 Religion & Beliefs</h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         Please select your religion or belief system. This information helps us provide better matching and ensures cultural compatibility.
       </p>
@@ -126,14 +126,14 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
       <div className="space-y-8">
         {/* Religion Selection */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">
+          <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400">
             Select your religion or belief system <span className="text-red-500">*</span>
           </h3>
           <div className="space-y-3">
             {RELIGIONS.map((religion) => (
               <label
                 key={religion}
-                className={`flex items-center p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                className={`flex items-center p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                   selectedReligion === religion 
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' 
                     : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -165,7 +165,7 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
         {/* Custom Religion Input */}
         {selectedReligion === 'Other' && (
           <div className="space-y-3 p-5 bg-purple-50 dark:bg-purple-900/20 rounded-xl border-2 border-purple-200 dark:border-purple-500/30">
-            <label htmlFor="customReligion" className="block text-sm font-semibold text-purple-700 dark:text-purple-400">
+            <label htmlFor="customReligion" className="block text-xs font-semibold text-purple-700 dark:text-purple-400">
               ✏️ Specify your religion or belief system <span className="text-red-500">*</span>
             </label>
             <input
@@ -177,7 +177,7 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
               className="w-full h-10 px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30"
               maxLength={100}
             />
-            <div className="text-sm text-gray-500 dark:text-gray-400 text-right">
+            <div className="text-xs text-gray-500 dark:text-gray-400 text-right">
               {customReligion.length}/100 characters
             </div>
           </div>
@@ -192,7 +192,7 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
             <button
               type="submit"
               disabled={isSubmitting || !customReligion.trim()}
-              className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+              className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
             >
               {isSubmitting ? (
                 <>

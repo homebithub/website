@@ -240,7 +240,7 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
         <div className="w-full max-w-md mx-auto">
             <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6">
                 <div className="relative z-10">
-                    <label htmlFor="location-input" className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                    <label htmlFor="location-input" className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
                         📍 Location <span className="text-red-500">*</span>
                     </label>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
@@ -254,7 +254,7 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
                         onChange={handleInputChange}
                         onKeyDown={handleKeyDown}
                         autoComplete="off"
-                        className="w-full h-10 text-sm px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 shadow-sm"
+                        className="w-full h-10 text-xs px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 shadow-sm"
                         placeholder="Enter location..."
                     />
                     {showDropdown && suggestions.length > 0 && (
@@ -293,7 +293,7 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
                 <button
                     type="submit"
                     disabled={submitting || !selectedLocation || (savedLocation?.mapbox_id === selectedLocation?.mapbox_id)}
-                    className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+                    className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                 >
                     {submitting ? (
                         <>

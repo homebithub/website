@@ -147,10 +147,10 @@ export default function AddPhone() {
       <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
         <main className="flex-1 flex flex-col justify-center items-center px-4 py-8">
           <PurpleCard hover={false} glow={true} className="w-full max-w-md p-8 sm:p-10">
-            <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2 text-center">
+            <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2 text-center">
               Add Your Phone Number
             </h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-6">
+            <p className="text-xs text-gray-600 dark:text-gray-400 text-center mb-6">
               We need your phone number to verify your account and keep it secure.
             </p>
 
@@ -158,7 +158,7 @@ export default function AddPhone() {
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>
-                <label htmlFor="phone" className="block text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                <label htmlFor="phone" className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
                   Phone Number
                 </label>
                 <input
@@ -168,7 +168,7 @@ export default function AddPhone() {
                   required
                   value={phone}
                   onChange={handlePhoneChange}
-                  className={`w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+                  className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
                     phoneError
                       ? 'border-red-300 dark:border-red-500'
                       : isPhoneValid
@@ -179,10 +179,10 @@ export default function AddPhone() {
                   disabled={loading}
                 />
                 {phoneError && (
-                  <p className="text-red-600 dark:text-red-400 text-sm mt-1">{phoneError}</p>
+                  <p className="text-red-600 dark:text-red-400 text-xs mt-1">{phoneError}</p>
                 )}
                 {isPhoneValid && !phoneError && (
-                  <p className="text-green-600 dark:text-green-400 text-sm mt-1">✓ Valid phone number</p>
+                  <p className="text-green-600 dark:text-green-400 text-xs mt-1">✓ Valid phone number</p>
                 )}
               </div>
 
@@ -190,7 +190,7 @@ export default function AddPhone() {
 
               <button
                 type="submit"
-                className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-base shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                 disabled={loading || !isPhoneValid || !!phoneError}
               >
                 {loading ? '✨ Sending OTP...' : '🚀 Continue'}

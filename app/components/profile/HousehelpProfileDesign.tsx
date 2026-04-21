@@ -122,7 +122,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
 
   const editButton = 'px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white transition-all';
   const sectionCard = 'rounded-2xl p-4 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30';
-  const valueText = 'text-sm text-gray-900 dark:text-gray-100';
+  const valueText = 'text-xs text-gray-900 dark:text-gray-100';
   const keyText = 'text-gray-500 dark:text-gray-400';
 
   const goEdit = (section: string) =>
@@ -133,7 +133,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
   const photosSection = (
     <section className={sectionCard}>
       <div className='flex justify-between items-center mb-3'>
-        <h2 className='text-sm font-semibold text-purple-700 dark:text-purple-300'>Photos ({profile?.photos?.length || 0})</h2>
+        <h2 className='text-xs font-semibold text-purple-700 dark:text-purple-300'>Photos ({profile?.photos?.length || 0})</h2>
         <button className={editButton} onClick={() => goEdit('photos')}>✏️ Edit</button>
       </div>
       {profile?.photos?.length ? (
@@ -151,7 +151,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
   const personalSection = (
     <section className={sectionCard}>
       <div className='flex justify-between items-center mb-3'>
-        <h2 className='text-sm font-semibold text-purple-700 dark:text-purple-300'>Personal Information</h2>
+        <h2 className='text-xs font-semibold text-purple-700 dark:text-purple-300'>Personal Information</h2>
         <button className={editButton} onClick={() => goEdit('gender')}>✏️ Edit</button>
       </div>
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
@@ -168,7 +168,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
   const experienceSection = (
     <section className={sectionCard}>
       <div className='flex justify-between items-center mb-3'>
-        <h2 className='text-sm font-semibold text-purple-700 dark:text-purple-300'>Experience & Skills</h2>
+        <h2 className='text-xs font-semibold text-purple-700 dark:text-purple-300'>Experience & Skills</h2>
         <button className={editButton} onClick={() => goEdit('experience')}>✏️ Edit</button>
       </div>
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
@@ -185,7 +185,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
   const workSection = (
     <section className={sectionCard}>
       <div className='flex justify-between items-center mb-3'>
-        <h2 className='text-sm font-semibold text-purple-700 dark:text-purple-300'>Work Preferences</h2>
+        <h2 className='text-xs font-semibold text-purple-700 dark:text-purple-300'>Work Preferences</h2>
         <button className={editButton} onClick={() => goEdit('nannytype')}>✏️ Edit</button>
       </div>
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
@@ -202,7 +202,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
   const compensationSection = (
     <section className={sectionCard}>
       <div className='flex justify-between items-center mb-3'>
-        <h2 className='text-sm font-semibold text-purple-700 dark:text-purple-300'>Compensation & Availability</h2>
+        <h2 className='text-xs font-semibold text-purple-700 dark:text-purple-300'>Compensation & Availability</h2>
         <button className={editButton} onClick={() => goEdit('salary')}>✏️ Edit</button>
       </div>
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
@@ -216,7 +216,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
   const familySection = (
     <section className={sectionCard}>
       <div className='flex justify-between items-center mb-3'>
-        <h2 className='text-sm font-semibold text-purple-700 dark:text-purple-300'>Family & Environment</h2>
+        <h2 className='text-xs font-semibold text-purple-700 dark:text-purple-300'>Family & Environment</h2>
         <button className={editButton} onClick={() => goEdit('workenvironment')}>✏️ Edit</button>
       </div>
       <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
@@ -234,7 +234,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
   const locationSection = (
     <section className={sectionCard}>
       <div className='flex justify-between items-center mb-3'>
-        <h2 className='text-sm font-semibold text-purple-700 dark:text-purple-300'>Location & Verification</h2>
+        <h2 className='text-xs font-semibold text-purple-700 dark:text-purple-300'>Location & Verification</h2>
         <button className={editButton} onClick={() => goEdit('location')}>✏️ Edit</button>
       </div>
       <div className='grid grid-cols-1 sm:grid-cols-2 gap-3'>
@@ -251,7 +251,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
   const referencesSection = (
     <section className={sectionCard}>
       <div className='flex justify-between items-center mb-3'>
-        <h2 className='text-sm font-semibold text-purple-700 dark:text-purple-300'>References & Bio</h2>
+        <h2 className='text-xs font-semibold text-purple-700 dark:text-purple-300'>References & Bio</h2>
         <div className='flex gap-2'>
           <button className={editButton} onClick={() => goEdit('references')}>✏️ References</button>
           <button className={editButton} onClick={() => goEdit('bio')}>✏️ Bio</button>
@@ -267,7 +267,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
       <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3'>
         <div>
           <span className={`inline-flex text-[11px] px-2 py-1 rounded-full ${styles.badge}`}>Design {variant.slice(1)}</span>
-          <h1 className='text-lg sm:text-xl font-semibold text-gray-900 dark:text-white mt-2'>{fullName}</h1>
+          <h1 className='text-base sm:text-lg font-semibold text-gray-900 dark:text-white mt-2'>{fullName}</h1>
           <p className='text-xs text-gray-600 dark:text-gray-300 mt-1'>Same theme colors, different layout arrangement</p>
         </div>
         <button onClick={() => navigate('/househelp/public-profile')} className='px-3 py-1.5 text-xs rounded-lg bg-purple-600 text-white hover:bg-purple-700'>
@@ -283,7 +283,7 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
       <PurpleThemeWrapper variant='gradient' bubbles={false} bubbleDensity='low' className='flex-1'>
         <main className='max-w-6xl mx-auto w-full px-4 py-6 sm:py-8'>
           {loading ? (
-            <div className='text-sm text-gray-200'>Loading profile...</div>
+            <div className='text-xs text-gray-200'>Loading profile...</div>
           ) : (
             <div className='space-y-4'>
               {hero}

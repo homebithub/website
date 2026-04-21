@@ -44,7 +44,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
   });
 
   const inputCls =
-    "w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm";
+    "w-full h-12 px-4 py-1.5 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm";
   const selectCls = `${inputCls} appearance-none`;
 
   return (
@@ -55,14 +55,14 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
           onClick={() => setOpenSections((prev) => ({ ...prev, basics: !prev.basics }))}
           className="w-full px-4 py-3 flex items-center justify-between text-left"
         >
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Basics & Availability</span>
+          <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Basics & Availability</span>
           <span className="text-gray-500">{openSections.basics ? "−" : "+"}</span>
         </button>
         {openSections.basics && (
           <div className="px-4 pb-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Verified</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Verified</label>
                 <CustomSelect
                   value={fields.verified || ""}
                   onChange={(val) => onChange("verified", val)}
@@ -75,7 +75,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Town</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Town</label>
                 <SearchableTownSelect
                   value={fields.town || ""}
                   onChange={(value) => onChange("town", value)}
@@ -87,7 +87,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">House Size</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">House Size</label>
                 <CustomSelect
                   value={fields.house_size || ""}
                   onChange={(val) => onChange("house_size", val)}
@@ -96,14 +96,14 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Available From</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Available From</label>
                 <input type="date" value={fields.available_from || ""} onChange={(e) => onChange("available_from", e.target.value)} className={inputCls} />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Needs Live-in</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Needs Live-in</label>
                 <CustomSelect
                   value={fields.needs_live_in || ""}
                   onChange={(val) => onChange("needs_live_in", val)}
@@ -116,7 +116,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Needs Day Worker</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Needs Day Worker</label>
                 <CustomSelect
                   value={fields.needs_day_worker || ""}
                   onChange={(val) => onChange("needs_day_worker", val)}
@@ -132,7 +132,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Type of Househelp</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Type of Househelp</label>
                 <CustomSelect
                   value={fields.type_of_househelp || ""}
                   onChange={(val) => onChange("type_of_househelp", val)}
@@ -145,7 +145,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Religion</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Religion</label>
                 <CustomSelect
                   value={fields.religion || ""}
                   onChange={(val) => onChange("religion", val)}
@@ -164,24 +164,24 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
           onClick={() => setOpenSections((prev) => ({ ...prev, budget: !prev.budget }))}
           className="w-full px-4 py-3 flex items-center justify-between text-left"
         >
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Budget & Rating</span>
+          <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Budget & Rating</span>
           <span className="text-gray-500">{openSections.budget ? "−" : "+"}</span>
         </button>
         {openSections.budget && (
           <div className="px-4 pb-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Min Budget (KES)</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Min Budget (KES)</label>
                 <input type="number" min="0" value={fields.budget_min || ""} onChange={(e) => onChange("budget_min", e.target.value)} placeholder="e.g. 10000" className={inputCls} />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Max Budget (KES)</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Max Budget (KES)</label>
                 <input type="number" min="0" value={fields.budget_max || ""} onChange={(e) => onChange("budget_max", e.target.value)} placeholder="e.g. 50000" className={inputCls} />
               </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Salary Frequency</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Salary Frequency</label>
                 <CustomSelect
                   value={fields.salary_frequency || ""}
                   onChange={(val) => onChange("salary_frequency", val)}
@@ -196,7 +196,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Minimum Rating</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Minimum Rating</label>
                 <CustomSelect
                   value={fields.min_rating || ""}
                   onChange={(val) => onChange("min_rating", val)}
@@ -222,14 +222,14 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
           onClick={() => setOpenSections((prev) => ({ ...prev, compatibility: !prev.compatibility }))}
           className="w-full px-4 py-3 flex items-center justify-between text-left"
         >
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Compatibility</span>
+          <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Compatibility</span>
           <span className="text-gray-500">{openSections.compatibility ? "−" : "+"}</span>
         </button>
         {openSections.compatibility && (
           <div className="px-4 pb-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Has Kids</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Has Kids</label>
                 <CustomSelect
                   value={fields.has_kids || ""}
                   onChange={(val) => onChange("has_kids", val)}
@@ -242,7 +242,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Has Pets</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Has Pets</label>
                 <CustomSelect
                   value={fields.has_pets || ""}
                   onChange={(val) => onChange("has_pets", val)}
@@ -256,7 +256,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
               </div>
             </div>
             <div className="flex flex-col">
-              <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Chore / Duty Required</label>
+              <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Chore / Duty Required</label>
               <CustomSelect
                 value={fields.chore || ""}
                 onChange={(val) => onChange("chore", val)}
@@ -268,7 +268,7 @@ export default function HouseholdFilters({ fields, onChange, onSearch, onClear }
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
         <button
           onClick={onClear}
           className="w-full px-4 py-1.5 rounded-xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-white/10 transition-all"

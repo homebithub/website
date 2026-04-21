@@ -160,13 +160,13 @@ export default function HousehelpProfile() {
             <div className="mt-4 flex items-center justify-center gap-3">
               <button
                 onClick={() => setRetryKey((prev) => prev + 1)}
-                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
               >
                 Try Again
               </button>
               <button
                 onClick={handleBackNavigation}
-                className="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+                className="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
               >
                 {backLabel}
               </button>
@@ -183,13 +183,13 @@ export default function HousehelpProfile() {
             <div className="mt-4 flex items-center justify-center gap-3">
               <button
                 onClick={() => setRetryKey((prev) => prev + 1)}
-                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+                className="rounded-xl bg-red-600 px-4 py-2 text-xs font-semibold text-white transition-colors hover:bg-red-700"
               >
                 Try Again
               </button>
               <button
                 onClick={handleBackNavigation}
-                className="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+                className="rounded-xl border border-red-300 px-4 py-2 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100"
               >
                 {backLabel}
               </button>
@@ -290,7 +290,7 @@ export default function HousehelpProfile() {
             />
             {/* Name and KE badge */}
             <div className="flex flex-col items-center mb-2">
-              <div className="text-2xl font-bold text-slate-900 ">{User.first_name} {User.last_name}</div>
+              <div className="text-xl font-bold text-slate-900 ">{User.first_name} {User.last_name}</div>
               <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded text-xs mt-1">{User.country}</span>
             </div>
             {/* User Images Carousel BELOW NAME */}
@@ -332,89 +332,89 @@ export default function HousehelpProfile() {
           {/* Contact info */}
           {(contactDetails.phone || contactDetails.email) && (
             <div className="mt-2 flex flex-col items-center">
-              {contactDetails.phone && <div className="text-lg font-bold text-purple-600">Phone: {contactDetails.phone}</div>}
+              {contactDetails.phone && <div className="text-base font-bold text-purple-600">Phone: {contactDetails.phone}</div>}
               {contactDetails.email && (
-                <div className="text-lg font-bold text-purple-600">Email: {contactDetails.email}</div>
+                <div className="text-base font-bold text-purple-600">Email: {contactDetails.email}</div>
               )}
             </div>
           )}
 
           {/* User details */}
           <div className="w-full mt-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-2 text-xs">
               {/* User fields */}
               <div>
                 <div className="text-gray-400 ">First Name</div>
-                <div className="text-sm text-slate-900  font-medium">{User.first_name || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{User.first_name || '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Last Name</div>
-                <div className="text-sm text-slate-900  font-medium">{User.last_name || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{User.last_name || '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Email</div>
-                <div className="text-sm text-slate-900  font-medium">{contactDetails.email || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{contactDetails.email || '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Phone</div>
-                <div className="text-sm text-slate-900  font-medium">{contactDetails.phone || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{contactDetails.phone || '-'}</div>
               </div>
 
 
               <div>
                 <div className="text-gray-400 ">User Created At</div>
-                <div className="text-sm text-slate-900  font-medium">{User.created_at ? formatTimeAgo(User.created_at) : '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{User.created_at ? formatTimeAgo(User.created_at) : '-'}</div>
               </div>
 
 
               {/* Househelp fields */}
               <div>
                 <div className="text-gray-400 ">Bio</div>
-                <div className="text-sm text-slate-900  font-medium">{Househelp.bio || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Househelp.bio || '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Address</div>
-                <div className="text-sm text-slate-900  font-medium">{Househelp.address || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Househelp.address || '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Status</div>
-                <div className="text-sm text-slate-900  font-medium">{Househelp.status || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Househelp.status || '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Verified</div>
-                <div className="text-sm text-slate-900  font-medium">{Househelp.verified ? 'Yes' : 'No'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Househelp.verified ? 'Yes' : 'No'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Rating</div>
-                <div className="text-sm text-slate-900  font-medium">{Househelp.rating} ({Househelp.review_count} reviews)</div>
+                <div className="text-xs text-slate-900  font-medium">{Househelp.rating} ({Househelp.review_count} reviews)</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Skills</div>
-                <div className="text-sm text-slate-900  font-medium">{Array.isArray(Househelp.skills) && Househelp.skills.length > 0 ? Househelp.skills.join(', ') : '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Array.isArray(Househelp.skills) && Househelp.skills.length > 0 ? Househelp.skills.join(', ') : '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Experience</div>
-                <div className="text-sm text-slate-900  font-medium">{Househelp.experience || 0} years</div>
+                <div className="text-xs text-slate-900  font-medium">{Househelp.experience || 0} years</div>
               </div>
 
               <div>
                 <div className="text-gray-400 ">Languages</div>
-                <div className="text-sm text-slate-900  font-medium">{Array.isArray(Househelp.languages) && Househelp.languages.length > 0 ? Househelp.languages.join(', ') : '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Array.isArray(Househelp.languages) && Househelp.languages.length > 0 ? Househelp.languages.join(', ') : '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Specialities</div>
-                <div className="text-sm text-slate-900  font-medium">{Array.isArray(Househelp.specialities) && Househelp.specialities.length > 0 ? Househelp.specialities.join(', ') : '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Array.isArray(Househelp.specialities) && Househelp.specialities.length > 0 ? Househelp.specialities.join(', ') : '-'}</div>
               </div>
 
 
 
               <div>
                 <div className="text-gray-400 ">Salary Expectation</div>
-                <div className="text-sm text-slate-900  font-medium">{Househelp.salary_expectation ? `KES ${Househelp.salary_expectation}` : '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Househelp.salary_expectation ? `KES ${Househelp.salary_expectation}` : '-'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Salary Frequency</div>
-                <div className="text-sm text-slate-900  font-medium">{Househelp.salary_frequency || '-'}</div>
+                <div className="text-xs text-slate-900  font-medium">{Househelp.salary_frequency || '-'}</div>
               </div>
 
             </div>

@@ -385,13 +385,13 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
   ) => (
     <div className="space-y-4">
       <div className="text-center">
-        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{title}</h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">{instruction}</p>
+        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">{title}</h3>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{instruction}</p>
       </div>
 
       <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-xl p-3">
         <p className="text-xs text-amber-700 dark:text-amber-300 flex items-start gap-2">
-          <span className="text-base leading-none">💡</span>
+          <span className="text-sm leading-none">💡</span>
           <span>Please upload a <strong>clear image</strong> taken in <strong>good lighting</strong>. Ensure all text and details are legible. Blurry or dark images may be rejected.</span>
         </p>
       </div>
@@ -420,7 +420,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
             <svg className="w-10 h-10 mb-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-xs text-gray-500 dark:text-gray-400">
               <span className="font-semibold text-purple-600 dark:text-purple-400">Click to upload</span>
             </p>
             <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">JPG, PNG or WEBP (max 10MB)</p>
@@ -443,14 +443,14 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
         return (
           <div className="space-y-6">
             <div className="text-center">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Identity Verification</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">Identity Verification</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 Select your identification type and provide your ID number
               </p>
             </div>
 
             <div className="space-y-3">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Type of Identification</label>
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">Type of Identification</label>
               {ID_TYPE_OPTIONS.map(opt => (
                 <button
                   key={opt.value}
@@ -481,7 +481,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
             </div>
 
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300">
                 {idType === 'passport' ? 'Passport Number' : 'ID Number'}
               </label>
               <input
@@ -536,8 +536,8 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
         return (
           <div className="space-y-4">
             <div className="text-center">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Profile Photos</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">Profile Photos</h3>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
                 Upload up to {MAX_PROFILE_PHOTOS} photos for your profile (optional but recommended)
               </p>
             </div>
@@ -572,7 +572,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
                   <svg className="w-8 h-8 mb-2 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     <span className="font-semibold text-purple-600 dark:text-purple-400">Add photos</span>
                     <span className="ml-1">({profilePhotos.length}/{MAX_PROFILE_PHOTOS})</span>
                   </p>
@@ -630,7 +630,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
         <button
           onClick={subStep === SUB_STEPS.ID_TYPE ? undefined : handlePrevSubStep}
           disabled={subStep === SUB_STEPS.ID_TYPE || isSubmitting}
-          className={`flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+          className={`flex items-center px-4 py-2 rounded-xl text-xs font-medium transition-colors ${
             subStep === SUB_STEPS.ID_TYPE
               ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed'
               : 'text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-purple-900/20'
@@ -647,7 +647,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
             <button
               onClick={handleSkip}
               disabled={isSubmitting}
-              className="px-4 py-2 rounded-xl text-sm text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 underline"
+              className="px-4 py-2 rounded-xl text-xs text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 underline"
             >
               Skip for now
             </button>

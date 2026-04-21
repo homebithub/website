@@ -50,7 +50,7 @@ export function SidePanel({
                   <div ref={scrollRef} className="flex h-full flex-col overflow-y-auto bg-[#f3f4f7] dark:bg-gradient-to-br dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f] shadow-[0_24px_80px_rgba(15,23,42,0.28)] rounded-none sm:rounded-[2rem] border border-[#d6dbe7] dark:border-purple-500/30">
                     <div className="sticky top-0 z-10 bg-[#f3f4f7] dark:bg-[#13131a] px-6 py-6 sm:px-7">
                       <div className="flex items-start justify-between">
-                        <Dialog.Title className="text-xl font-bold text-gray-900 dark:text-white">
+                        <Dialog.Title className="text-lg font-bold text-gray-900 dark:text-white">
                           {title}
                         </Dialog.Title>
                         <div className="ml-3 flex h-7 items-center">

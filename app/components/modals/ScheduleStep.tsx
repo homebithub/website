@@ -64,7 +64,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h3 className="text-xl font-semibold text-gray-900 mb-2">When do you need your househelp?</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">When do you need your househelp?</h3>
         <p className="text-gray-600">
           {isDayburg 
             ? 'Select the days you need help and when you want to start'
@@ -76,7 +76,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
       <div className="space-y-6">
         {/* Start Date Selection */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-xs font-medium text-gray-700 mb-2">
             When do you want to start?
           </label>
           <input
@@ -87,7 +87,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
             required
           />
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs text-gray-500 mt-1">
             Select a date at least 3 days from today to allow time for matching
           </p>
         </div>
@@ -96,13 +96,13 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
         {isDayburg && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <label className="block text-sm font-medium text-gray-700">
+              <label className="block text-xs font-medium text-gray-700">
                 Which days do you need help?
               </label>
               <button
                 type="button"
                 onClick={() => setShowDaySelection(!showDaySelection)}
-                className="text-sm text-primary-600 hover:text-primary-700"
+                className="text-xs text-primary-600 hover:text-primary-700"
               >
                 {showDaySelection ? 'Hide' : 'Customize'}
               </button>
@@ -118,7 +118,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
                       onChange={() => handleDayToggle(day.value)}
                       className="text-primary-600 focus:ring-primary-500"
                     />
-                    <span className="text-sm text-gray-700">{day.label}</span>
+                    <span className="text-xs text-gray-700">{day.label}</span>
                   </label>
                 ))}
               </div>
@@ -129,14 +129,14 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
                     {selectedDays.map((day) => (
                       <span
                         key={day}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-primary-100 text-primary-800"
+                        className="inline-flex items-center px-3 py-1 rounded-full text-xs bg-primary-100 text-primary-800"
                       >
                         {DAYS_OF_WEEK.find(d => d.value === day)?.label}
                       </span>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No days selected</p>
+                  <p className="text-xs text-gray-500">No days selected</p>
                 )}
               </div>
             )}
@@ -155,7 +155,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
                     }
                   });
                 }}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200"
+                className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200"
               >
                 Weekdays
               </button>
@@ -171,7 +171,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
                     }
                   });
                 }}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200"
+                className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200"
               >
                 Every Day
               </button>
@@ -186,7 +186,7 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
                     }
                   });
                 }}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200"
+                className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200"
               >
                 Clear All
               </button>
@@ -204,10 +204,10 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-blue-800">
+                <p className="text-xs font-medium text-blue-800">
                   Sleep-in Househelp
                 </p>
-                <p className="text-sm text-blue-700 mt-1">
+                <p className="text-xs text-blue-700 mt-1">
                   Your househelp will be available 24/7 starting from the selected date. They will live with your family and provide round-the-clock support.
                 </p>
               </div>
@@ -225,10 +225,10 @@ export function ScheduleStep({ data, onUpdate, onNext }: ScheduleStepProps) {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-green-800">
+                <p className="text-xs font-medium text-green-800">
                   Schedule Summary
                 </p>
-                <p className="text-sm text-green-700 mt-1">
+                <p className="text-xs text-green-700 mt-1">
                   Start Date: {new Date(startDate).toLocaleDateString()}
                   {isDayburg && selectedDays.length > 0 && (
                     <span>

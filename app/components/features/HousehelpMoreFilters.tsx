@@ -58,7 +58,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
   const maxAge = parseInt(fields.max_age || "65");
 
   const inputCls =
-    "w-full h-12 px-4 py-1.5 rounded-xl text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm";
+    "w-full h-12 px-4 py-1.5 rounded-xl text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-200 dark:border-gray-600 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-sm";
   const selectCls = `${inputCls} appearance-none`;
 
   // Derive single select for type of househelp from two boolean-like flags
@@ -91,14 +91,14 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
           onClick={() => setOpenSections((prev) => ({ ...prev, basics: !prev.basics }))}
           className="w-full px-4 py-3 flex items-center justify-between text-left"
         >
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Basics & Availability</span>
+          <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Basics & Availability</span>
           <span className="text-gray-500">{openSections.basics ? "−" : "+"}</span>
         </button>
         {openSections.basics && (
           <div className="px-4 pb-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Status</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Status</label>
                 <CustomSelect
                   value={fields.status || ""}
                   onChange={(val) => onChange("status", val)}
@@ -107,7 +107,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Gender</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Gender</label>
                 <CustomSelect
                   value={fields.gender || ""}
                   onChange={(val) => onChange("gender", val)}
@@ -119,7 +119,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Town</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Town</label>
                 <SearchableTownSelect
                   value={fields.town || ""}
                   onChange={(value) => onChange("town", value)}
@@ -128,7 +128,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Type of Househelp</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Type of Househelp</label>
                 <CustomSelect
                   value={typeValue}
                   onChange={(val) => setType(val)}
@@ -144,11 +144,11 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Available From</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Available From</label>
                 <input type="date" value={fields.available_from || ""} onChange={(e) => onChange("available_from", e.target.value)} className={inputCls} />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Experience</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Experience</label>
                 <CustomSelect
                   value={fields.experience || ""}
                   onChange={(val) => onChange("experience", val)}
@@ -160,7 +160,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Language</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Language</label>
                 <CustomSelect
                   value={fields.language || ""}
                   onChange={(val) => onChange("language", val)}
@@ -173,7 +173,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Skills / Can Help With</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Skills / Can Help With</label>
                 <CustomSelect
                   value={fields.skill || ""}
                   onChange={(val) => onChange("skill", val)}
@@ -185,7 +185,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Trait</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Trait</label>
                 <CustomSelect
                   value={fields.traits || ""}
                   onChange={(val) => onChange("traits", val)}
@@ -204,14 +204,14 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
           onClick={() => setOpenSections((prev) => ({ ...prev, compensation: !prev.compensation }))}
           className="w-full px-4 py-3 flex items-center justify-between text-left"
         >
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Compensation & Rating</span>
+          <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Compensation & Rating</span>
           <span className="text-gray-500">{openSections.compensation ? "−" : "+"}</span>
         </button>
         {openSections.compensation && (
           <div className="px-4 pb-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Salary Frequency</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Salary Frequency</label>
                 <CustomSelect
                   value={fields.salary_frequency || ""}
                   onChange={(val) => onChange("salary_frequency", val)}
@@ -220,7 +220,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Minimum Rating</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Minimum Rating</label>
                 <CustomSelect
                   value={fields.min_rating || ""}
                   onChange={(val) => onChange("min_rating", val)}
@@ -238,11 +238,11 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Min Salary</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Min Salary</label>
                 <input type="number" min="0" value={fields.salary_min || ""} onChange={(e) => onChange("salary_min", e.target.value)} placeholder="e.g. 15000" className={inputCls} />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Max Salary</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Max Salary</label>
                 <input type="number" min="0" value={fields.salary_max || ""} onChange={(e) => onChange("salary_max", e.target.value)} placeholder="e.g. 45000" className={inputCls} />
               </div>
             </div>
@@ -256,14 +256,14 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
           onClick={() => setOpenSections((prev) => ({ ...prev, compatibility: !prev.compatibility }))}
           className="w-full px-4 py-3 flex items-center justify-between text-left"
         >
-          <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">Compatibility</span>
+          <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">Compatibility</span>
           <span className="text-gray-500">{openSections.compatibility ? "−" : "+"}</span>
         </button>
         {openSections.compatibility && (
           <div className="px-4 pb-4 space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Works with Kids</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Works with Kids</label>
                 <CustomSelect
                   value={fields.can_work_with_kids || ""}
                   onChange={(val) => onChange("can_work_with_kids", val)}
@@ -276,7 +276,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
                 />
               </div>
               <div className="flex flex-col">
-                <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Works with Pets</label>
+                <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Works with Pets</label>
                 <CustomSelect
                   value={fields.can_work_with_pets || ""}
                   onChange={(val) => onChange("can_work_with_pets", val)}
@@ -291,7 +291,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
             </div>
 
             <div className="flex flex-col">
-              <label className="mb-2 text-sm font-semibold text-gray-800 dark:text-gray-200">Age Range: {minAge} - {maxAge} years</label>
+              <label className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Age Range: {minAge} - {maxAge} years</label>
               <div className="px-2 py-4">
                 <div className="relative">
                   <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full relative">
@@ -336,7 +336,7 @@ export default function HousehelpMoreFilters({ fields, onChange, onSearch, onCle
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
         <button
           onClick={onClear}
           className="w-full px-4 py-1.5 rounded-xl border-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-200 font-semibold hover:bg-gray-50 dark:hover:bg-white/10 transition-all"

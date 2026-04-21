@@ -112,11 +112,11 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
       <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center gap-2">
           <MessageCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+          <h3 className="text-base font-semibold text-gray-900 dark:text-white">
             Negotiation Messages
           </h3>
         </div>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
           Discuss details and negotiate terms
         </p>
       </div>
@@ -134,7 +134,7 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
         {!loading && negotiations.length === 0 && (
           <div className="text-center py-8">
             <MessageCircle className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-            <p className="text-gray-600 dark:text-gray-400 text-sm">
+            <p className="text-gray-600 dark:text-gray-400 text-xs">
               No messages yet. Start the conversation!
             </p>
           </div>
@@ -162,7 +162,7 @@ export default function NegotiationPanel({ hireRequestId, currentUserId }: Negot
                         {negotiation.sender.first_name} {negotiation.sender.last_name}
                       </p>
                     )}
-                    <p className="text-sm whitespace-pre-wrap break-words">
+                    <p className="text-xs whitespace-pre-wrap break-words">
                       {negotiation.message}
                     </p>
                     <p

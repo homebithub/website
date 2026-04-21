@@ -231,7 +231,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
       <div className="relative bg-white dark:bg-gray-800 rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-2xl sm:mx-4 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up">
           {/* Header */}
           <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Send Hire Request
             </h2>
             <button
@@ -258,8 +258,8 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
             <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl">
               <div className="flex items-start justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Hiring</p>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">{househelpName}</p>
+                  <p className="text-xs text-gray-600 dark:text-gray-400">Hiring</p>
+                  <p className="text-base font-semibold text-gray-900 dark:text-white">{househelpName}</p>
                 </div>
                 {househelpYearsOfExperience != null && househelpYearsOfExperience > 0 && (
                   <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-purple-100 dark:bg-purple-800/40 text-purple-700 dark:text-purple-300">
@@ -301,7 +301,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
 
             {/* Job Type */}
             <div>
-              <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
                 Job Type *
               </label>
               <div className="grid grid-cols-2 gap-3">
@@ -324,7 +324,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
 
             {/* Start Date */}
             <div>
-              <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
                 Preferred Start Date (Optional)
               </label>
               <input
@@ -332,14 +332,14 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
-                className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
               />
             </div>
 
             {/* Salary */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
                   Salary Offered (KES) *
                 </label>
                 <input
@@ -349,11 +349,11 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                   min="0"
                   step="100"
                   required
-                  className="w-full h-12 text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
+                  className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all"
                 />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+                <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
                   Frequency *
                 </label>
                 <CustomSelect
@@ -372,7 +372,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
 
             {/* Special Requirements */}
             <div>
-              <label className="block text-sm font-semibold text-purple-600 dark:text-purple-400 mb-2">
+              <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-2">
                 Special Requirements (Optional)
               </label>
               <textarea
@@ -380,7 +380,7 @@ const HireRequestModal: React.FC<HireRequestModalProps> = ({
                 onChange={(e) => setSpecialRequirements(e.target.value)}
                 rows={4}
                 placeholder="Any specific requirements or expectations..."
-                className="w-full text-base px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
+                className="w-full text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 resize-none"
               />
             </div>
 

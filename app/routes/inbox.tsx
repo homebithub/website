@@ -1338,7 +1338,7 @@ export default function InboxPage() {
   const conversationsList = (
     <div className="flex flex-col h-full bg-white dark:bg-[#13131a]">
       <div className="px-4 py-3 border-b border-purple-200 dark:border-purple-500/30 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-800 dark:text-gray-100">Conversations</h2>
+        <h2 className="text-xs font-semibold text-gray-800 dark:text-gray-100">Conversations</h2>
         {loading && (
           <span className="text-xs text-gray-500 dark:text-gray-400">Loading…</span>
         )}
@@ -1348,7 +1348,7 @@ export default function InboxPage() {
 
       <div className="flex-1 overflow-y-auto">
         {deduplicatedItems.length === 0 && !loading && !error && (
-          <div className="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+          <div className="py-8 text-center text-xs text-gray-500 dark:text-gray-400">
             No conversations yet.
           </div>
         )}
@@ -1383,7 +1383,7 @@ export default function InboxPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <p className="truncate text-xs font-medium text-gray-900 dark:text-gray-100">
                         {c.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
                       </p>
                       <div className="flex items-center gap-2">
@@ -1437,7 +1437,7 @@ export default function InboxPage() {
   const messagesView = !selectedConversation ? (
     <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-[#0a0a0f]">
       <div className="text-center">
-        <p className="text-gray-500 dark:text-gray-400 text-lg">Select a conversation to start messaging</p>
+        <p className="text-gray-500 dark:text-gray-400 text-base">Select a conversation to start messaging</p>
       </div>
     </div>
   ) : (
@@ -1520,7 +1520,7 @@ export default function InboxPage() {
                 setNewMessageCount(0);
                 setIsAtBottom(true);
               }}
-              className="fixed bottom-24 right-8 z-20 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-all flex items-center gap-2"
+              className="fixed bottom-24 right-4 sm:right-8 z-20 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-all flex items-center gap-2"
               aria-label="Scroll to bottom"
             >
               <ChevronDownIcon className="w-6 h-6" />
@@ -1666,7 +1666,7 @@ export default function InboxPage() {
                       {openReactPickerMsgId !== m.id && (
                         <div className={`absolute -top-8 ${mine ? 'right-0' : 'left-0'} z-40 hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition`}>
                           {['👍','❤️','😂','😮','😢'].map(em => (
-                            <button key={em} className="text-base px-1 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => toggleReaction(m, em)}>{em}</button>
+                            <button key={em} className="text-sm px-1 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => toggleReaction(m, em)}>{em}</button>
                           ))}
                           <button className="text-xs px-2 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => setOpenReactPickerMsgId(m.id)}>+</button>
                         </div>
@@ -1720,7 +1720,7 @@ export default function InboxPage() {
                       {editingMessageId === m.id ? (
                         <div>
                           <textarea
-                            className={`w-full resize-none rounded-xl px-3 py-2 text-sm ${mine ? 'text-white placeholder-white/70 bg-white/10' : 'text-gray-900 dark:text-gray-100 bg-white/80 dark:bg-slate-900'}`}
+                            className={`w-full resize-none rounded-xl px-3 py-2 text-xs ${mine ? 'text-white placeholder-white/70 bg-white/10' : 'text-gray-900 dark:text-gray-100 bg-white/80 dark:bg-slate-900'}`}
                             rows={1}
                             value={editingDraft}
                             placeholder="Edit message"
@@ -1758,7 +1758,7 @@ export default function InboxPage() {
                         </div>
                       ) : (
                         <>
-                          <div className="whitespace-pre-wrap break-words text-sm">
+                          <div className="whitespace-pre-wrap break-words text-xs">
                             {showSenderName && (
                               <div className={`text-[10px] font-bold mb-0.5 ${mine ? 'text-white/90' : 'text-purple-600 dark:text-purple-400'}`}>
                                 [{(m as any).sender_name}]
@@ -1900,7 +1900,7 @@ export default function InboxPage() {
                               {['👍','❤️','😂','😮'].map(em => (
                                 <button 
                                   key={em} 
-                                  className="text-xl px-2 py-1 rounded-xl hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
+                                  className="text-lg px-2 py-1 rounded-xl hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
                                   onClick={() => { toggleReaction(m, em); setOpenMsgMenuId(null); }}
                                   aria-label={`React with ${em}`}
                                 >
@@ -1908,7 +1908,7 @@ export default function InboxPage() {
                                 </button>
                               ))}
                               <button 
-                                className="text-xl px-2 py-1 rounded-xl hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
+                                className="text-lg px-2 py-1 rounded-xl hover:bg-white/80 dark:hover:bg-slate-700/80 transition active:scale-95" 
                                 onClick={() => { setOpenMsgMenuId(null); setOpenReactPickerMsgId(m.id); }}
                                 aria-label="Add more reactions"
                               >
@@ -1919,7 +1919,7 @@ export default function InboxPage() {
                             {options.map((opt, idx) => (
                               <button
                                 key={opt.label}
-                                className={`w-full text-left px-3 py-1 text-sm ${opt.danger ? 'text-red-600' : 'text-gray-700 dark:text-gray-200'} ${opt.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50 dark:hover:bg-slate-800'} ${msgMenuFocusIndex === idx ? 'bg-purple-50 dark:bg-slate-800' : ''}`}
+                                className={`w-full text-left px-3 py-1 text-xs ${opt.danger ? 'text-red-600' : 'text-gray-700 dark:text-gray-200'} ${opt.disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-50 dark:hover:bg-slate-800'} ${msgMenuFocusIndex === idx ? 'bg-purple-50 dark:bg-slate-800' : ''}`}
                                 disabled={opt.disabled}
                                 onClick={() => { if (!opt.disabled) { opt.action(); setOpenMsgMenuId(null); } }}
                                 onMouseEnter={() => setMsgMenuFocusIndex(idx)}
@@ -1962,7 +1962,7 @@ export default function InboxPage() {
           <button
             type="button"
             onClick={scrollToBottom}
-            className="fixed right-6 bottom-28 z-[60] p-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xl hover:from-purple-700 hover:to-pink-700 focus:outline-none relative"
+            className="fixed right-4 bottom-28 z-[60] p-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xl hover:from-purple-700 hover:to-pink-700 focus:outline-none relative sm:right-6"
             aria-label="Scroll to bottom"
           >
             <ChevronDownIcon className="w-6 h-6" />
@@ -1977,9 +1977,9 @@ export default function InboxPage() {
         {/* Input - At bottom (grid row) */}
         <div className="p-4 border-t border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a]">
           {selectedIds.size > 0 && (
-            <div className="mb-2 flex items-center justify-between rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-slate-800 px-3 py-1">
+            <div className="mb-2 flex flex-col gap-2 rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-slate-800 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
               <div className="text-xs font-semibold">{selectedIds.size} selected</div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   className="px-2 py-1 rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:text-purple-200 dark:border-purple-500/40 dark:hover:bg-slate-800 text-xs"
@@ -1999,7 +1999,7 @@ export default function InboxPage() {
             </div>
           )}
           {replyTo && (
-            <div className="mb-2 flex items-start justify-between rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-slate-800 px-3 py-1">
+            <div className="mb-2 flex flex-col gap-2 rounded-xl border border-purple-200 dark:border-purple-500/30 bg-purple-50 dark:bg-slate-800 px-3 py-2 sm:flex-row sm:items-start sm:justify-between">
               <div className="text-xs">
                 <div className="font-semibold text-purple-700 dark:text-purple-300">
                   Replying to {replyTo.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')}
@@ -2013,7 +2013,7 @@ export default function InboxPage() {
                   Go to original
                 </button>
               </div>
-              <button type="button" className="ml-3 p-1 rounded hover:bg-purple-100 dark:hover:bg-slate-700" aria-label="Cancel reply" onClick={clearReply}>
+              <button type="button" className="self-end p-1 rounded hover:bg-purple-100 dark:hover:bg-slate-700 sm:self-auto" aria-label="Cancel reply" onClick={clearReply}>
                 <XMarkIcon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
               </button>
             </div>
@@ -2028,7 +2028,7 @@ export default function InboxPage() {
                 <svg className="w-5 h-5 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                <span className="text-sm font-semibold text-purple-700 dark:text-purple-300">
+                <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">
                   Subscribe to start messaging
                 </span>
                 <span className="text-xs text-purple-500 dark:text-purple-400">→</span>
@@ -2039,13 +2039,13 @@ export default function InboxPage() {
               <button
                 type="button"
                 onClick={() => setShowChatTerms(true)}
-                className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline underline-offset-4 transition-colors"
+                className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 underline underline-offset-4 transition-colors"
               >
                 Accept terms of use to start messaging
               </button>
             </div>
           ) : (
-          <form onSubmit={handleSend} className="flex items-center gap-2">
+          <form onSubmit={handleSend} className="flex items-end gap-2">
             <button
               type="button"
               onClick={(e) => {
@@ -2145,12 +2145,12 @@ export default function InboxPage() {
         </main>
       </PurpleThemeWrapper>
       {toasts.length > 0 && (
-        <div className="fixed top-4 right-4 z-[80] space-y-2 pointer-events-none">
+        <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-[80] space-y-2 pointer-events-none">
           {toasts.map((t) => (
             <div
               key={t.id}
               role={t.type === 'error' ? 'alert' : 'status'}
-              className={`pointer-events-auto flex items-start gap-2 rounded-xl border p-3 shadow-lg ${t.type === 'error' ? 'border-red-300/60 bg-red-50 dark:bg-red-900/20' : 'border-emerald-300/60 bg-emerald-50 dark:bg-emerald-900/20'}`}
+              className={`pointer-events-auto flex items-start gap-2 rounded-xl border p-3 shadow-lg w-full sm:w-auto sm:max-w-sm ${t.type === 'error' ? 'border-red-300/60 bg-red-50 dark:bg-red-900/20' : 'border-emerald-300/60 bg-emerald-50 dark:bg-emerald-900/20'}`}
             >
               <div className="mt-0.5">
                 {t.type === 'error' ? (
@@ -2159,7 +2159,7 @@ export default function InboxPage() {
                   <CheckCircleIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                 )}
               </div>
-              <div className="text-sm text-gray-800 dark:text-gray-100">{t.message}</div>
+              <div className="text-xs text-gray-800 dark:text-gray-100">{t.message}</div>
               <button
                 type="button"
                 className="ml-2 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10"
@@ -2181,50 +2181,50 @@ export default function InboxPage() {
             className="relative w-full sm:max-w-md bg-white dark:bg-[#13131a] rounded-t-2xl sm:rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 shadow-xl dark:shadow-glow-lg p-6 sm:p-8 max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4"
             onClick={(e) => e.stopPropagation()}
           >
-            <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-1 text-center">
+            <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white mb-1 text-center">
               Terms of Use
             </h2>
-            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 mb-5 text-center">
+            <p className="text-xs sm:text-xs text-gray-500 dark:text-gray-400 mb-5 text-center">
               Please review and accept before messaging
             </p>
 
             <div className="space-y-3 mb-6">
               <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
-                <span className="text-lg mt-0.5">🤝</span>
+                <span className="text-base mt-0.5">🤝</span>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Be respectful</p>
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white">Be respectful</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Treat everyone with courtesy and professionalism. Harassment or abusive language will not be tolerated.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
-                <span className="text-lg mt-0.5">💰</span>
+                <span className="text-base mt-0.5">💰</span>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Negotiate your price</p>
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white">Negotiate your price</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Salary and compensation are agreed upon between you and the other party. Homebit does not set or guarantee pay rates.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
-                <span className="text-lg mt-0.5">📅</span>
+                <span className="text-base mt-0.5">📅</span>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Agree on your schedule</p>
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white">Agree on your schedule</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Working hours, days off, and start dates should be discussed and mutually agreed upon before hiring.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
-                <span className="text-lg mt-0.5">🔒</span>
+                <span className="text-base mt-0.5">🔒</span>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Protect your privacy</p>
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white">Protect your privacy</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">Do not share sensitive personal information like ID numbers or bank details in chat.</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 border border-purple-200/50 dark:border-purple-500/20">
-                <span className="text-lg mt-0.5">⚖️</span>
+                <span className="text-base mt-0.5">⚖️</span>
                 <div>
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">Homebit is a platform</p>
+                  <p className="text-xs font-semibold text-gray-900 dark:text-white">Homebit is a platform</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">We connect households and househelps but are not a party to any employment agreement. All arrangements are between you and the other party.</p>
                 </div>
               </div>
@@ -2233,7 +2233,7 @@ export default function InboxPage() {
             <button
               type="button"
               onClick={handleAcceptChatTerms}
-              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2.5 text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-[1.02] transition-all duration-300"
+              className="w-full rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2.5 text-xs font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-[1.02] transition-all duration-300"
             >
               I Accept — Start Messaging
             </button>

@@ -154,7 +154,7 @@ const Certifications: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">📜 Certifications</h2>
+      <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">📜 Certifications</h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         Any relevant training or skills?
       </p>
@@ -162,12 +162,12 @@ const Certifications: React.FC = () => {
       <form onSubmit={handleSubmit} className="space-y-10">
         {/* Certifications Section */}
         <div className="space-y-6">
-          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">Certifications & Skills</h3>
+          <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400">Certifications & Skills</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {CERTIFICATIONS.map((cert) => (
               <label 
                 key={cert}
-                className={`flex items-start p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                className={`flex items-start p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                   selectedCerts.includes(cert)
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' 
                     : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -196,7 +196,7 @@ const Certifications: React.FC = () => {
           {/* Other Certifications */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-purple-700 dark:text-purple-400">Other Certifications</h4>
+              <h4 className="text-xs font-bold text-purple-700 dark:text-purple-400">Other Certifications</h4>
               <span className="text-xs text-gray-500 dark:text-gray-400">Type and click the + button to add</span>
             </div>
             {otherCerts.map((cert, index) => (
@@ -242,21 +242,21 @@ const Certifications: React.FC = () => {
             <button
               type="button"
               onClick={addOtherCert}
-              className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-2 transition-colors"
+              className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-2 transition-colors"
             >
-              <span className="text-lg">+</span> Add another certification
+              <span className="text-base">+</span> Add another certification
             </button>
           </div>
         </div>
 
         {/* What Can You Help With Section */}
         <div className="space-y-6">
-          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">What can you help with?</h3>
+          <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400">What can you help with?</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {HELP_WITH_OPTIONS.map((help) => (
               <label 
                 key={help}
-                className={`flex items-start p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                className={`flex items-start p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                   selectedHelp.includes(help)
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' 
                     : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -285,7 +285,7 @@ const Certifications: React.FC = () => {
           {/* Other Help Options */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h4 className="text-sm font-bold text-purple-700 dark:text-purple-400">Other Skills</h4>
+              <h4 className="text-xs font-bold text-purple-700 dark:text-purple-400">Other Skills</h4>
               <span className="text-xs text-gray-500 dark:text-gray-400">Type and click the + button to add</span>
             </div>
             {otherHelp.map((help, index) => (
@@ -331,9 +331,9 @@ const Certifications: React.FC = () => {
             <button
               type="button"
               onClick={addOtherHelp}
-              className="text-sm font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-2 transition-colors"
+              className="text-xs font-semibold text-purple-600 dark:text-purple-400 hover:text-purple-700 dark:hover:text-purple-300 flex items-center gap-2 transition-colors"
             >
-              <span className="text-lg">+</span> Add another skill
+              <span className="text-base">+</span> Add another skill
             </button>
           </div>
         </div>
@@ -346,7 +346,7 @@ const Certifications: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>

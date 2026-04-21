@@ -117,7 +117,7 @@ const PreferredWorkEnvironment: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-2">🏡 Preferred Work Environment</h2>
+      <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">🏡 Preferred Work Environment</h2>
       <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         What type of household would you prefer to work with? (Optional)
       </p>
@@ -125,12 +125,12 @@ const PreferredWorkEnvironment: React.FC = () => {
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Household Size */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">Household Size</h3>
+          <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400">Household Size</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {HOUSEHOLD_SIZES.map((size) => (
               <label 
                 key={size.value}
-                className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                   householdSize === size.value
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' 
                     : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -153,7 +153,7 @@ const PreferredWorkEnvironment: React.FC = () => {
                     <div className="w-3 h-3 rounded-full bg-white"></div>
                   )}
                 </div>
-                <span className="text-lg">{size.icon}</span>
+                <span className="text-base">{size.icon}</span>
                 <span className="flex-1">{size.label}</span>
               </label>
             ))}
@@ -162,12 +162,12 @@ const PreferredWorkEnvironment: React.FC = () => {
 
         {/* Location Type */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">Location Type</h3>
+          <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400">Location Type</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {LOCATION_TYPES.map((location) => (
               <label 
                 key={location.value}
-                className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                   locationType === location.value
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' 
                     : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -190,7 +190,7 @@ const PreferredWorkEnvironment: React.FC = () => {
                     <div className="w-3 h-3 rounded-full bg-white"></div>
                   )}
                 </div>
-                <span className="text-lg">{location.icon}</span>
+                <span className="text-base">{location.icon}</span>
                 <span className="flex-1">{location.label}</span>
               </label>
             ))}
@@ -199,12 +199,12 @@ const PreferredWorkEnvironment: React.FC = () => {
 
         {/* Family Type */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-400">Family Type</h3>
+          <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400">Family Type</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {FAMILY_TYPES.map((family) => (
               <label 
                 key={family.value}
-                className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer shadow-sm text-xs font-medium transition-all ${
                   familyType === family.value
                     ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 scale-105' 
                     : 'border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 hover:bg-purple-50 dark:hover:bg-purple-900/20'
@@ -227,7 +227,7 @@ const PreferredWorkEnvironment: React.FC = () => {
                     <div className="w-3 h-3 rounded-full bg-white"></div>
                   )}
                 </div>
-                <span className="text-lg">{family.icon}</span>
+                <span className="text-base">{family.icon}</span>
                 <span className="flex-1">{family.label}</span>
               </label>
             ))}
@@ -236,7 +236,7 @@ const PreferredWorkEnvironment: React.FC = () => {
 
         {/* Additional Preferences */}
         <div className="space-y-3">
-          <label htmlFor="additionalPreferences" className="block text-sm font-semibold text-purple-700 dark:text-purple-400">
+          <label htmlFor="additionalPreferences" className="block text-xs font-semibold text-purple-700 dark:text-purple-400">
             📝 Additional Preferences (Optional)
           </label>
           <textarea
@@ -257,7 +257,7 @@ const PreferredWorkEnvironment: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-sm shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
+            className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>

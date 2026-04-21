@@ -498,7 +498,7 @@ export default function HousehelpPublicProfile() {
                       </button>
                     )}
                     <div>
-                      <h1 className="text-lg sm:text-xl font-semibold text-gray-900 dark:text-white flex items-center gap-3">
+                      <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-3">
                         {((profile.user?.first_name || profile.first_name) || (profile.user?.last_name || profile.last_name))
                           ? `${profile.user?.first_name || profile.first_name || ''} ${profile.user?.last_name || profile.last_name || ''}`.trim()
                           : 'Househelp Profile'}
@@ -510,7 +510,7 @@ export default function HousehelpPublicProfile() {
                   </div>
 
                   {isViewingOther && (
-                    <div className="flex items-center gap-2 sm:gap-3 self-start lg:self-auto">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 self-start lg:self-auto">
                       <button
                         onClick={handleShortlistToggle}
                         disabled={actionLoading === 'shortlist'}
@@ -555,7 +555,7 @@ export default function HousehelpPublicProfile() {
 
             {/* Photo Gallery */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📸 Photo Gallery</h2>
+              <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📸 Photo Gallery</h2>
               {profile.photos && profile.photos.length > 0 ? (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {profile.photos.map((photo, idx) => (
@@ -579,8 +579,8 @@ export default function HousehelpPublicProfile() {
                           setImageLoaded((prev) => ({ ...prev, [`photo-${idx}`]: true }));
                         }}
                       />
-                      <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <span className="px-3 py-1 bg-white text-purple-600 rounded-xl text-sm font-semibold">
+                      <div className="absolute inset-0 bg-black/30 sm:bg-black/20 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <span className="px-3 py-1 bg-white text-purple-600 rounded-xl text-xs font-semibold">
                           View Full
                         </span>
                       </div>
@@ -594,16 +594,16 @@ export default function HousehelpPublicProfile() {
 
             {/* Personal Information */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">👤 Personal Information</h2>
+              <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">👤 Personal Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Gender</span>
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.gender || 'Not specified'}</p>
+                  <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.gender || 'Not specified'}</p>
                 </div>
                 {profile.date_of_birth && (
                   <div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Age</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
                       {Math.floor(
                         (new Date().getTime() - new Date(profile.date_of_birth ?? '').getTime()) /
                           (365.25 * 24 * 60 * 60 * 1000)
@@ -615,25 +615,25 @@ export default function HousehelpPublicProfile() {
                 {profile.religion && (
                   <div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Religion</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.religion}</p>
+                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.religion}</p>
                   </div>
                 )}
                 {profile.marital_status && (
                   <div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Marital Status</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.marital_status}</p>
+                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.marital_status}</p>
                   </div>
                 )}
                 {profile.education_level && (
                   <div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Education Level</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.education_level}</p>
+                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.education_level}</p>
                   </div>
                 )}
                 {profile.has_kids !== undefined && (
                   <div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Has Children</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.has_kids ? 'Yes' : 'No'}</p>
+                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.has_kids ? 'Yes' : 'No'}</p>
                   </div>
                 )}
               </div>
@@ -641,11 +641,11 @@ export default function HousehelpPublicProfile() {
 
             {/* Location & Contact Area */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📍 Location</h2>
+              <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📍 Location</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Area</span>
-                  <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+                  <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
                     {typeof profile.location === 'string'
                       ? (profile.location || 'Not specified')
                       : (profile.location?.place || profile.location?.name || 'Not specified')}
@@ -654,13 +654,13 @@ export default function HousehelpPublicProfile() {
                 {profile.town && (
                   <div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Town</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.town}</p>
+                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.town}</p>
                   </div>
                 )}
                 {profile.address && (
                   <div className="md:col-span-2">
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Address</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.address}</p>
+                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.address}</p>
                   </div>
                 )}
               </div>
@@ -668,18 +668,18 @@ export default function HousehelpPublicProfile() {
 
             {/* Experience & Skills */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">💼 Experience & Skills</h2>
+              <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">💼 Experience & Skills</h2>
               <div className="space-y-4">
                 <div>
                   <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Years of Experience</span>
-                  <p className="text-sm font-bold text-purple-900 dark:text-purple-100 mt-1">
+                  <p className="text-xs font-bold text-purple-900 dark:text-purple-100 mt-1">
                     {profile.years_of_experience ? `${profile.years_of_experience} years` : 'Not specified'}
                   </p>
                 </div>
                 {profile.completed_jobs !== undefined && profile.completed_jobs > 0 && (
                   <div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Jobs Completed</span>
-                    <p className="text-sm font-bold text-purple-900 dark:text-purple-100 mt-1">
+                    <p className="text-xs font-bold text-purple-900 dark:text-purple-100 mt-1">
                       ✓ {profile.completed_jobs} job{profile.completed_jobs === 1 ? '' : 's'} completed on Homebit
                     </p>
                   </div>
@@ -750,7 +750,7 @@ export default function HousehelpPublicProfile() {
             {/* Certifications & Abilities */}
             {(profile.first_aid_certificate || profile.certificate_of_good_conduct || profile.can_drive) && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📜 Certifications & Abilities</h2>
+                <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📜 Certifications & Abilities</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {profile.first_aid_certificate && (
                     <div className="p-4 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
@@ -774,24 +774,24 @@ export default function HousehelpPublicProfile() {
             {/* Work with Children Details */}
             {profile.can_work_with_kid && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">👶 Working with Children</h2>
+                <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">👶 Working with Children</h2>
                 <div className="space-y-4">
                   {profile.children_age_range && (
                     <div>
                       <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Children Age Range</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.children_age_range}</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.children_age_range}</p>
                     </div>
                   )}
                   {profile.number_of_concurrent_children !== undefined && profile.number_of_concurrent_children > 0 && (
                     <div>
                       <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Can Handle</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.number_of_concurrent_children} children at once</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.number_of_concurrent_children} children at once</p>
                     </div>
                   )}
                   {profile.my_child_preference && (
                     <div>
                       <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Child Preference</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.my_child_preference}</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.my_child_preference}</p>
                     </div>
                   )}
                   {profile.talent_with_kids && Array.isArray(profile.talent_with_kids) && profile.talent_with_kids.length > 0 && (
@@ -813,7 +813,7 @@ export default function HousehelpPublicProfile() {
             {/* Work with Pets Details */}
             {profile.can_work_with_pets && profile.pet_types && profile.pet_types.trim() && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🐾 Working with Pets</h2>
+                <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">🐾 Working with Pets</h2>
                 <div>
                   <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Comfortable with</span>
                   <div className="flex flex-wrap gap-2">
@@ -830,37 +830,37 @@ export default function HousehelpPublicProfile() {
             {/* Household Preferences */}
             {(profile.preferred_household_size || profile.preferred_location_type || profile.preferred_family_type || profile.needs_accommodation) && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">🏠 Household Preferences</h2>
+                <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">🏠 Household Preferences</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {profile.preferred_household_size && (
                     <div>
                       <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Household Size</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_household_size}</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_household_size}</p>
                     </div>
                   )}
                   {profile.preferred_location_type && (
                     <div>
                       <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Location Type</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_location_type}</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_location_type}</p>
                     </div>
                   )}
                   {profile.preferred_family_type && (
                     <div>
                       <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Family Type</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_family_type}</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_family_type}</p>
                     </div>
                   )}
                   {profile.needs_accommodation !== undefined && (
                     <div>
                       <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Needs Accommodation</span>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.needs_accommodation ? 'Yes' : 'No'}</p>
+                      <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.needs_accommodation ? 'Yes' : 'No'}</p>
                     </div>
                   )}
                 </div>
                 {profile.work_environment_notes && (
                   <div className="mt-4">
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
-                    <p className="text-sm text-gray-900 dark:text-gray-100 mt-1 whitespace-pre-wrap">{profile.work_environment_notes}</p>
+                    <p className="text-xs text-gray-900 dark:text-gray-100 mt-1 whitespace-pre-wrap">{profile.work_environment_notes}</p>
                   </div>
                 )}
               </div>
@@ -868,14 +868,14 @@ export default function HousehelpPublicProfile() {
 
             {/* Work Preferences */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">⚙️ Work Preferences</h2>
+              <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">⚙️ Work Preferences</h2>
               <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className={`p-4 rounded-xl ${profile.can_work_with_kid ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
                     <p className={`font-semibold ${profile.can_work_with_kid ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
                       👶 Work with Kids
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                       {profile.can_work_with_kid ? 'Yes, comfortable with children' : 'No'}
                     </p>
                   </div>
@@ -883,7 +883,7 @@ export default function HousehelpPublicProfile() {
                     <p className={`font-semibold ${profile.can_work_with_pets ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
                       🐾 Work with Pets
                     </p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                       {profile.can_work_with_pets ? 'Yes, comfortable with pets' : 'No'}
                     </p>
                   </div>
@@ -892,20 +892,20 @@ export default function HousehelpPublicProfile() {
                   {profile.offers_live_in && (
                     <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
                       <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 Available for Live-in</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Can live with the family</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Can live with the family</p>
                     </div>
                   )}
                   {profile.offers_day_worker && (
                     <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
                       <p className="font-semibold text-yellow-900 dark:text-yellow-100">☀️ Available as Day Worker</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Works during the day</p>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Works during the day</p>
                     </div>
                   )}
                 </div>
                 {profile.available_from && (
                   <div>
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">They are available from</span>
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mt-1">
+                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
                       {new Date(profile.available_from).toLocaleDateString()}
                     </p>
                   </div>
@@ -928,7 +928,7 @@ export default function HousehelpPublicProfile() {
             {/* Availability Schedule */}
             {profile.availability && Object.keys(profile.availability).length > 0 && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📅 Weekly Availability</h2>
+                <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📅 Weekly Availability</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                   {Object.entries(profile.availability).map(([day, times]) => {
                     const dayTimes = times as { morning?: boolean; afternoon?: boolean; evening?: boolean };
@@ -953,14 +953,14 @@ export default function HousehelpPublicProfile() {
 
             {/* Salary Expectations */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">💰 Salary Expectations</h2>
+              <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">💰 Salary Expectations</h2>
               {profile.salary_expectation ? (
                 <div className="space-y-2">
-                  <p className="text-sm font-bold text-purple-900 dark:text-purple-100">
+                  <p className="text-xs font-bold text-purple-900 dark:text-purple-100">
                     KES {profile.salary_expectation.toLocaleString()}
                   </p>
                   {profile.salary_frequency && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 capitalize">
+                    <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">
                       Per {profile.salary_frequency === 'daily' ? 'Day' : profile.salary_frequency === 'weekly' ? 'Week' : profile.salary_frequency === 'monthly' ? 'Month' : profile.salary_frequency === 'yearly' ? 'Year' : profile.salary_frequency}
                     </p>
                   )}
@@ -973,7 +973,7 @@ export default function HousehelpPublicProfile() {
             {/* References */}
             {profile.reference && profile.reference.trim() && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">📝 References</h2>
+                <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📝 References</h2>
                 {(() => {
                   try {
                     const parsedOnce = JSON.parse(profile.reference);
@@ -987,19 +987,19 @@ export default function HousehelpPublicProfile() {
                                 {ref.name && (
                                   <div>
                                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Name</span>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ref.name}</p>
+                                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{ref.name}</p>
                                   </div>
                                 )}
                                 {ref.relationship && (
                                   <div>
                                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Relationship</span>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ref.relationship}</p>
+                                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{ref.relationship}</p>
                                   </div>
                                 )}
                                 {ref.duration && (
                                   <div>
                                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Duration</span>
-                                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{ref.duration} years</p>
+                                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{ref.duration} years</p>
                                   </div>
                                 )}
                               </div>
@@ -1018,30 +1018,30 @@ export default function HousehelpPublicProfile() {
 
             {/* Status & Verification */}
             <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">✅ Status & Verification</h2>
+              <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">✅ Status & Verification</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {profile.status && (
                   <div className={`p-4 rounded-xl ${profile.status === 'active' ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
                     <p className={`font-semibold ${profile.status === 'active' ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>Profile Status</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 capitalize">{profile.status}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">{profile.status}</p>
                   </div>
                 )}
                 {profile.verified !== undefined && (
                   <div className={`p-4 rounded-xl ${profile.verified ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
                     <p className={`font-semibold ${profile.verified ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.verified ? '✅' : '❌'} Verified Profile</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{profile.verified ? 'Identity verified' : 'Not verified'}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.verified ? 'Identity verified' : 'Not verified'}</p>
                   </div>
                 )}
                 {profile.premium !== undefined && (
                   <div className={`p-4 rounded-lg ${profile.premium ? 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
                     <p className={`font-semibold ${profile.premium ? 'text-yellow-900 dark:text-yellow-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.premium ? '⭐' : '○'} Premium Member</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{profile.premium ? 'Premium account' : 'Standard account'}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.premium ? 'Premium account' : 'Standard account'}</p>
                   </div>
                 )}
                 {profile.background_check_consent !== undefined && (
                   <div className={`p-4 rounded-xl ${profile.background_check_consent ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
                     <p className={`font-semibold ${profile.background_check_consent ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.background_check_consent ? '✅' : '❌'} Background Check</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{profile.background_check_consent ? 'Consented to check' : 'Not consented'}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.background_check_consent ? 'Consented to check' : 'Not consented'}</p>
                   </div>
                 )}
               </div>
@@ -1050,8 +1050,8 @@ export default function HousehelpPublicProfile() {
             {/* Bio */}
             {profile.bio && (
               <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
-                <h2 className="text-sm font-semibold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Person</h2>
-                <p className="text-sm text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio}</p>
+                <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Person</h2>
+                <p className="text-xs text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio}</p>
               </div>
             )}
           </div>

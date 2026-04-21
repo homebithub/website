@@ -266,7 +266,7 @@ export default function BlogPost() {
         <PurpleThemeWrapper variant="gradient" bubbles={false} className="flex-1">
           <div className="flex items-center justify-center py-32">
             <div className="text-center">
-              <h1 className="text-4xl font-extrabold text-gray-900 dark:text-white mb-4">
+              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">
                 Post Not Found
               </h1>
               <p className="text-gray-600 dark:text-gray-400 mb-8">
@@ -339,11 +339,11 @@ export default function BlogPost() {
             <div className="absolute inset-0 flex items-end">
               <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 w-full">
                 {post.category && (
-                  <span className="inline-block px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-full mb-4 shadow-lg">
+                  <span className="inline-block px-4 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold rounded-full mb-4 shadow-lg">
                     {post.category}
                   </span>
                 )}
-                <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-white mb-4 drop-shadow-lg">
+                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-4 drop-shadow-lg">
                   {post.title}
                 </h1>
                 <div className="flex items-center gap-6 text-white/90">
@@ -371,7 +371,7 @@ export default function BlogPost() {
             <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border-2 border-purple-100 dark:border-purple-500/10 p-6 sm:p-8 mb-8">
               {/* Share Buttons */}
               <div className="flex items-center gap-3 mb-8 pb-8 border-b border-purple-100 dark:border-purple-500/10">
-                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 flex items-center gap-2">
                   <Share2 className="w-4 h-4 text-purple-500" />
                   Share:
                 </span>
@@ -409,7 +409,7 @@ export default function BlogPost() {
                   <button
                     onClick={handleLike}
                     disabled={likeLoading}
-                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl font-semibold text-xs transition-all duration-200 ${
                       liked
                         ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg shadow-pink-500/25 hover:shadow-xl hover:shadow-pink-500/30 scale-100"
                         : "border-2 border-purple-200 dark:border-purple-500/20 text-gray-700 dark:text-gray-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30"
@@ -441,7 +441,7 @@ export default function BlogPost() {
                     {post.tags.map((tag) => (
                       <span
                         key={tag}
-                        className="px-3 py-1 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-300 text-sm font-medium rounded-full border border-purple-200 dark:border-purple-500/20"
+                        className="px-3 py-1 bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-300 text-xs font-medium rounded-full border border-purple-200 dark:border-purple-500/20"
                       >
                         #{tag}
                       </span>
@@ -453,7 +453,7 @@ export default function BlogPost() {
 
             {/* Comments Section */}
             <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border-2 border-purple-100 dark:border-purple-500/10 p-6 sm:p-8 mb-8">
-              <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                 <MessageCircle className="w-6 h-6 text-purple-500" />
                 Comments {comments.length > 0 && `(${comments.length})`}
               </h2>
@@ -504,7 +504,7 @@ export default function BlogPost() {
                     {submittingComment ? "Posting..." : "Post Comment"}
                   </button>
                   {commentSuccess && (
-                    <span className="text-green-600 dark:text-green-400 text-sm font-medium">
+                    <span className="text-green-600 dark:text-green-400 text-xs font-medium">
                       Comment submitted! It will appear after moderation.
                     </span>
                   )}
@@ -525,7 +525,7 @@ export default function BlogPost() {
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center">
-                          <span className="text-white text-sm font-bold">
+                          <span className="text-white text-xs font-bold">
                             {comment.user_name.charAt(0).toUpperCase()}
                           </span>
                         </div>
@@ -533,7 +533,7 @@ export default function BlogPost() {
                           <span className="font-semibold text-gray-900 dark:text-white">
                             {comment.user_name}
                           </span>
-                          <span className="text-gray-500 dark:text-gray-500 text-sm ml-2">
+                          <span className="text-gray-500 dark:text-gray-500 text-xs ml-2">
                             {new Date(comment.created_at).toLocaleDateString("en-US", {
                               month: "short",
                               day: "numeric",
@@ -554,7 +554,7 @@ export default function BlogPost() {
             {/* Related Posts */}
             {relatedPosts.length > 0 && (
               <div>
-                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white mb-6">
+                <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6">
                   Related Articles
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -572,17 +572,17 @@ export default function BlogPost() {
                           />
                         ) : (
                           <div className="w-full h-40 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                            <span className="text-white text-3xl font-bold drop-shadow-lg">
+                            <span className="text-white text-2xl font-bold drop-shadow-lg">
                               {relatedPost.title.charAt(0)}
                             </span>
                           </div>
                         )}
 
                         <div className="p-4">
-                          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                          <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
                             {relatedPost.title}
                           </h3>
-                          <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-2">
+                          <p className="text-gray-600 dark:text-gray-400 text-xs line-clamp-2">
                             {relatedPost.excerpt}
                           </p>
                         </div>
@@ -630,7 +630,7 @@ export default function BlogPost() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 mb-4">
                 <Heart className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-extrabold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-lg font-extrabold text-gray-900 dark:text-white mb-2">
                 Like this article?
               </h3>
               <p className="text-gray-600 dark:text-gray-400 mb-6">

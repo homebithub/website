@@ -240,7 +240,7 @@ export default function HousehelpHireRequests() {
     <>
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Hire Requests</h1>
+        <h1 className="text-xl font-bold text-gray-900 dark:text-white">Hire Requests</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">Review and respond to hire requests from households</p>
       </div>
 
@@ -250,7 +250,7 @@ export default function HousehelpHireRequests() {
           <button
             key={tab.key}
             onClick={() => handleTabChange(tab.key)}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
+            className={`px-4 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all ${
               activeTab === tab.key
                 ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
                 : 'bg-white/10 dark:bg-white/5 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-purple-500/20 hover:bg-purple-50 dark:hover:bg-purple-500/10'
@@ -279,7 +279,7 @@ export default function HousehelpHireRequests() {
       {!loading && hireRequests.length === 0 && !error && (
         <div className="bg-white/5 dark:bg-[#13131a] border-2 border-dashed border-purple-500/20 rounded-2xl p-12 text-center">
           <Briefcase className="w-16 h-16 text-purple-400/50 mx-auto mb-4" />
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No hire requests</h3>
+          <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2">No hire requests</h3>
           <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
             {activeTab === 'pending'
               ? "You don't have any pending hire requests. When a household wants to hire you, their request will appear here."
@@ -304,15 +304,15 @@ export default function HousehelpHireRequests() {
                 {/* Top row: name + status */}
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-sm font-bold shrink-0">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xs font-bold shrink-0">
                       {getHouseholdName(request).charAt(0)}
                     </div>
                     <div className="min-w-0">
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white truncate">
+                      <h3 className="text-base font-bold text-gray-900 dark:text-white truncate">
                         {getHouseholdName(request)}
                       </h3>
                       {request.household?.town && (
-                        <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
+                        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                           <MapPin className="w-3 h-3" /> {request.household.town}
                         </p>
                       )}
@@ -332,7 +332,7 @@ export default function HousehelpHireRequests() {
                     <Briefcase className="w-4 h-4 text-purple-500" />
                     <div>
                       <span className="text-xs text-gray-500 dark:text-gray-400 block">Job Type</span>
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white capitalize">
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white capitalize">
                         {request.job_type?.replace(/-/g, ' ') || 'Not specified'}
                       </span>
                     </div>
@@ -341,7 +341,7 @@ export default function HousehelpHireRequests() {
                     <DollarSign className="w-4 h-4 text-green-500" />
                     <div>
                       <span className="text-xs text-gray-500 dark:text-gray-400 block">Salary</span>
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white">
                         KES {(request.salary_offered || 0).toLocaleString()}
                         <span className="text-xs font-normal text-gray-400"> / {request.salary_frequency || 'month'}</span>
                       </span>
@@ -351,7 +351,7 @@ export default function HousehelpHireRequests() {
                     <Calendar className="w-4 h-4 text-blue-500" />
                     <div>
                       <span className="text-xs text-gray-500 dark:text-gray-400 block">Start Date</span>
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                      <span className="text-xs font-semibold text-gray-900 dark:text-white">
                         {request.start_date ? formatDate(request.start_date) : 'Flexible'}
                       </span>
                     </div>
@@ -362,7 +362,7 @@ export default function HousehelpHireRequests() {
                 {request.special_requirements && (
                   <div className="mb-4 p-3 rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200/50 dark:border-purple-500/10">
                     <span className="text-xs font-semibold uppercase tracking-wider text-gray-400">Special Requirements</span>
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{request.special_requirements}</p>
+                    <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{request.special_requirements}</p>
                   </div>
                 )}
 
@@ -373,7 +373,7 @@ export default function HousehelpHireRequests() {
                 {request.status === 'declined' && request.decline_reason && (
                   <div className="mt-3 p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200/50 dark:border-red-500/20">
                     <span className="text-xs font-semibold uppercase tracking-wider text-red-400">Decline Reason</span>
-                    <p className="text-sm text-red-700 dark:text-red-300 mt-1">{request.decline_reason}</p>
+                    <p className="text-xs text-red-700 dark:text-red-300 mt-1">{request.decline_reason}</p>
                   </div>
                 )}
 
@@ -385,7 +385,7 @@ export default function HousehelpHireRequests() {
                         onClick={() => navigate(`/household/public-profile?userId=${householdUserId}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hire Requests')}`, {
                           state: { backTo: backToPath, backLabel: 'Back to Hire Requests' },
                         })}
-                        className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold border-2 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-all flex items-center justify-center gap-2"
+                        className="flex-1 px-4 py-2 rounded-xl text-xs font-semibold border-2 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-all flex items-center justify-center gap-2"
                       >
                         <Eye className="w-4 h-4" /> View Household
                       </button>
@@ -393,7 +393,7 @@ export default function HousehelpHireRequests() {
                     <button
                       onClick={() => openAcceptConfirm(request.id)}
                       disabled={actionLoading === request.id}
-                      className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="flex-1 px-4 py-2 rounded-xl text-xs font-semibold bg-green-600 text-white hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <CheckCircle className="w-4 h-4" />
                       {actionLoading === request.id ? 'Accepting...' : 'Accept'}
@@ -401,7 +401,7 @@ export default function HousehelpHireRequests() {
                     <button
                       onClick={() => { setSelectedRequest(request.id); setShowDeclineModal(true); }}
                       disabled={actionLoading === request.id}
-                      className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold border-2 border-red-300 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="flex-1 px-4 py-2 rounded-xl text-xs font-semibold border-2 border-red-300 dark:border-red-500/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       <XCircle className="w-4 h-4" /> Decline
                     </button>
@@ -411,13 +411,13 @@ export default function HousehelpHireRequests() {
                 {/* Accepted state */}
                 {request.status === 'accepted' && (
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-5 pt-4 border-t border-gray-200/50 dark:border-purple-500/10">
-                    <p className="text-sm text-green-500 font-semibold">✓ You accepted this request</p>
+                    <p className="text-xs text-green-500 font-semibold">✓ You accepted this request</p>
                       {householdUserId && (
                         <button
                         onClick={() => navigate(`/household/public-profile?userId=${householdUserId}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hire Requests')}`, {
                           state: { backTo: backToPath, backLabel: 'Back to Hire Requests' },
                         })}
-                        className="px-4 py-1.5 text-sm bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all"
+                        className="px-4 py-1.5 text-xs bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all"
                       >
                         View Household
                       </button>
@@ -433,21 +433,21 @@ export default function HousehelpHireRequests() {
       {/* Pagination */}
       {!loading && total > limit && (
         <div className="mt-8 flex items-center justify-between">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-gray-500 dark:text-gray-400">
             Showing {offset + 1}–{Math.min(offset + limit, total)} of {total}
           </p>
           <div className="flex gap-2">
             <button
               onClick={() => setOffset(Math.max(0, offset - limit))}
               disabled={offset === 0}
-              className="px-4 py-1.5 rounded-xl text-sm font-medium border border-gray-300 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-purple-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="px-4 py-1.5 rounded-xl text-xs font-medium border border-gray-300 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-purple-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               Previous
             </button>
             <button
               onClick={() => setOffset(offset + limit)}
               disabled={offset + limit >= total}
-              className="px-4 py-1.5 rounded-xl text-sm font-medium border border-gray-300 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-purple-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition"
+              className="px-4 py-1.5 rounded-xl text-xs font-medium border border-gray-300 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-purple-500/10 disabled:opacity-40 disabled:cursor-not-allowed transition"
             >
               Next
             </button>

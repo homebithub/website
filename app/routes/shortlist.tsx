@@ -235,14 +235,14 @@ export default function ShortlistPage() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className={`flex-1 py-8 ${accessibilityMode ? 'text-base sm:text-lg' : ''}`}>
+        <main className={`flex-1 py-8 ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h1 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
+            <h1 className="text-lg font-extrabold text-gray-900 dark:text-white mb-6">My Shortlist</h1>
 
             {(!items || items.length === 0) && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-300 text-lg">No shortlisted households yet.</p>
+                <p className="text-gray-600 dark:text-gray-300 text-base">No shortlisted households yet.</p>
               </div>
             )}
 
@@ -286,7 +286,7 @@ export default function ShortlistPage() {
                       </div>
 
                       <div className="flex justify-center mb-4">
-                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-2xl font-bold shadow-lg overflow-hidden relative">
+                        <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden relative">
                           {(() => {
                             const imageUrl = prof?.avatar_url || owner?.avatar_url || (s.user_id && profilePhotos[s.user_id]);
                             if (imageUrl) {
@@ -315,16 +315,16 @@ export default function ShortlistPage() {
                         </div>
                       </div>
 
-                      <h3 className="text-xl font-bold text-center text-gray-900 dark:text-white mb-2">
+                      <h3 className="text-lg font-bold text-center text-gray-900 dark:text-white mb-2">
                         {prof ? `${owner?.first_name || ""} ${owner?.last_name || ""}`.trim() || "Household" : "Loading..."}
                       </h3>
 
-                      <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-3">
+                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center mb-3">
                         📍 {prof?.town?.trim() || owner?.town?.trim() || "No location specified"}
                       </p>
 
                       {prof?.house_size && (
-                        <p className="text-sm text-purple-600 dark:text-purple-400 text-center mb-3">🏠 {prof.house_size}</p>
+                        <p className="text-xs text-purple-600 dark:text-purple-400 text-center mb-3">🏠 {prof.house_size}</p>
                       )}
 
                       <div className="mt-6 flex items-center gap-3">
