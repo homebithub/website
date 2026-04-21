@@ -22,6 +22,7 @@ import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/au
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSubscription } from '~/hooks/useSubscription';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
+import { resolveHousehelpUserId } from '~/utils/househelpProfiles';
 
 interface HousehelpProfile {
   id: number | string;
@@ -248,7 +249,10 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   const [househelps, setHousehelps] = useState<HousehelpProfile[]>([]);
 
   // Fetch profile photos from documents table for all househelps
-  const househelpUserIds = useMemo(() => househelps.map(h => h.user_id || String(h.id)).filter(Boolean), [househelps]);
+  const househelpUserIds = useMemo(
+    () => househelps.map((h) => resolveHousehelpUserId(h)).filter(Boolean),
+    [househelps]
+  );
   const profilePhotos = useProfilePhotos(househelpUserIds);
 
   const [loading, setLoading] = useState(false);
@@ -781,7 +785,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            const targetUserId = househelp.user_id;
+                            const targetUserId = resolveHousehelpUserId(househelp);
                             if (targetUserId) {
                               handleStartChat(String(targetUserId), househelp.profile_id);
                             }
@@ -823,7 +827,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                                     (househelp.avatar_url as string) ||
                                     (househelp.profile_picture as string) ||
                                     (househelp.photos && househelp.photos[0]) ||
-                                    profilePhotos[househelp.user_id || String(househelp.id)] ||
+                                    profilePhotos[resolveHousehelpUserId(househelp)] ||
                                     ''
                                   }
                                   thumbnailPath={(househelp as any).thumbnail_path}

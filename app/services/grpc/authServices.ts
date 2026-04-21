@@ -440,6 +440,7 @@ export const shortlistService = {
     req.setProfileId(profileId);
     return grpcCall((cb) => shortlistClient.shortlistExists(req, getMetadata(), cb));
   },
+  // Legacy compatibility wrapper. Shortlists no longer enforce lock-based access.
   async unlockShortlist(userId: string, profileId: string): Promise<{ unlocked: boolean; phone?: string; email?: string }> {
     const req = new auth_pb.ShortlistUnlockReq();
     req.setUserId(resolveUserId(userId));
@@ -451,6 +452,7 @@ export const shortlistService = {
       email: res?.getEmail?.() || undefined,
     };
   },
+  // Legacy compatibility wrapper. Shortlists no longer enforce lock-based access.
   async getUnlockedContact(userId: string, profileId: string): Promise<{ unlocked: boolean; phone?: string; email?: string }> {
     const req = new auth_pb.ShortlistUnlockReq();
     req.setUserId(resolveUserId(userId));

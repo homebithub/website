@@ -1,7 +1,7 @@
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 
 export type HousehelpProfileLike = {
-  id?: string;
+  id?: string | number;
   profile_id?: string;
   user_id?: string;
   first_name?: string;
@@ -14,11 +14,16 @@ export type HousehelpProfileLike = {
 };
 
 export function resolveHousehelpProfileId(profile: HousehelpProfileLike | null | undefined): string {
-  return profile?.id || profile?.profile_id || '';
+  return profile?.profile_id || (profile?.id != null ? String(profile.id) : '');
 }
 
 export function resolveHousehelpUserId(profile: HousehelpProfileLike | null | undefined): string {
-  return profile?.user_id || profile?.user?.id || '';
+  if (!profile) return '';
+  if (profile.user_id) return profile.user_id;
+  if (profile.user?.id) return profile.user.id;
+  // Search/list payloads often use `id` for the owner user ID and `profile_id` for the profile record.
+  if (profile.profile_id && profile.id != null) return String(profile.id);
+  return '';
 }
 
 function pickHousehelpSearchMatch(raw: any, profileId: string): HousehelpProfileLike | null {

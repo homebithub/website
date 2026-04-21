@@ -22,8 +22,6 @@ type ShortlistItem = {
   profile_type: string;
   household_id: string;
   user_id: string;
-  is_locked: boolean;
-  expires_at?: string | null;
   created_at: string;
 };
 
