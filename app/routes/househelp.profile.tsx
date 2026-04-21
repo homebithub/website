@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { profileService as grpcProfileService, documentService } from '~/services/grpc/authServices';
+import profileSetupService from '~/services/grpc/profileSetup.service';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -125,6 +126,7 @@ export default function HousehelpProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   
   // Track profile views (own profile)
   useProfileViewTracking({
@@ -142,11 +144,13 @@ export default function HousehelpProfile() {
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [setupRedirectLoading, setSetupRedirectLoading] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
       setError(null);
+      setHasError(false);
       try {
         const token = getAccessTokenFromCookies();
         if (!token) {
@@ -155,9 +159,7 @@ export default function HousehelpProfile() {
         }
         
         const profileData = await grpcProfileService.getCurrentHousehelpProfile('');
-        console.log('Raw househelp profile response:', profileData);
         const normalized = normalizeHousehelpProfileResponse(profileData);
-        console.log('Normalized profile location:', normalized.location);
 
         // Fetch photos from documents table via gRPC
         try {
@@ -183,7 +185,32 @@ export default function HousehelpProfile() {
     };
     
     fetchProfile();
-  }, []);
+  }, [navigate, retryKey]);
+
+  const handleContinueSetup = async () => {
+    if (setupRedirectLoading) return;
+    setSetupRedirectLoading(true);
+
+    try {
+      const progressData = await profileSetupService.getProgress('', 'househelp');
+      const totalSteps = progressData?.total_steps || 0;
+      const lastStep = progressData?.last_completed_step || 0;
+      const status = progressData?.status || '';
+      const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
+
+      if (isComplete) {
+        navigate('/househelp/profile', { replace: true });
+        return;
+      }
+
+      const nextStep = lastStep > 0 ? lastStep + 1 : 1;
+      navigate(`/profile-setup/househelp?step=${nextStep}`, { replace: true });
+    } catch {
+      navigate('/profile-setup/househelp?step=1', { replace: true });
+    } finally {
+      setSetupRedirectLoading(false);
+    }
+  };
 
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [showViewsModal, setShowViewsModal] = useState(false);
@@ -399,16 +426,17 @@ export default function HousehelpProfile() {
           <ErrorAlert message={error || "Something went wrong"} />
           <div className="flex gap-3">
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => setRetryKey((prev) => prev + 1)}
               className="px-6 py-1.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              Reload Page
+              Try Again
             </button>
             <button
-              onClick={() => navigate('/profile-setup/househelp')}
+              onClick={handleContinueSetup}
+              disabled={setupRedirectLoading}
               className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              Complete Profile Setup
+              {setupRedirectLoading ? 'Opening Setup...' : 'Continue Profile Setup'}
             </button>
           </div>
         </div>
@@ -426,10 +454,11 @@ export default function HousehelpProfile() {
           </div>
           <p className="text-gray-700 dark:text-gray-300 mb-4">You haven't completed your househelp profile yet.</p>
           <button
-            onClick={() => navigate('/profile-setup/househelp')}
+            onClick={handleContinueSetup}
+            disabled={setupRedirectLoading}
             className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 transition-all"
           >
-            Complete Profile Setup
+            {setupRedirectLoading ? 'Opening Setup...' : 'Continue Profile Setup'}
           </button>
         </div>
       </div>

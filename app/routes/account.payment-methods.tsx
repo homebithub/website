@@ -232,7 +232,7 @@ export default function PaymentMethodsPage() {
   }
 
   if (!user) {
-    return null;
+    return <Loading text="Redirecting to login..." />;
   }
 
   return (

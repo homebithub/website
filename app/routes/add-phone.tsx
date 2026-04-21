@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { handleApiError } from '~/utils/errorMessages';
@@ -8,6 +8,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
+import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 
 export const meta = () => [
   { title: "Add Phone Number — Homebit" },
@@ -17,11 +18,14 @@ export const meta = () => [
 export default function AddPhone() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const locationState = (location.state || {}) as {
     user_id?: string;
     redirectTo?: string;
     profileType?: string;
   };
+  const redirectTo = searchParams.get('redirectTo') || locationState.redirectTo || undefined;
+  const profileType = searchParams.get('profileType') || locationState.profileType || undefined;
 
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,21 +34,43 @@ export default function AddPhone() {
 
   // Get user_id from state or localStorage
   const getUserId = (): string => {
+    const userIdFromQuery = searchParams.get('userId');
+    if (userIdFromQuery) return userIdFromQuery;
     if (locationState.user_id) return locationState.user_id;
-    try {
-      const userObj = JSON.parse(localStorage.getItem('user_object') || '{}');
-      return userObj.user_id || userObj.id || '';
-    } catch {
-      return '';
-    }
+    const storedUser = getStoredUser();
+    return storedUser?.user_id || storedUser?.id || getStoredUserId() || '';
   };
 
   const userId = getUserId();
 
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    let changed = false;
+
+    if (locationState.user_id && !nextParams.get('userId')) {
+      nextParams.set('userId', locationState.user_id);
+      changed = true;
+    }
+    if (locationState.redirectTo && !nextParams.get('redirectTo')) {
+      nextParams.set('redirectTo', locationState.redirectTo);
+      changed = true;
+    }
+    if (locationState.profileType && !nextParams.get('profileType')) {
+      nextParams.set('profileType', locationState.profileType);
+      changed = true;
+    }
+
+    if (changed) {
+      navigate(`/add-phone?${nextParams.toString()}`, {
+        replace: true,
+        state: location.state,
+      });
+    }
+  }, [location.state, locationState.profileType, locationState.redirectTo, locationState.user_id, navigate, searchParams]);
+
   // Redirect to login if no user context
   useEffect(() => {
     if (!userId) {
-      console.warn('[add-phone] No user_id found, redirecting to login');
       navigate('/login', { replace: true });
     }
   }, [userId, navigate]);
@@ -88,13 +114,22 @@ export default function AddPhone() {
           attempts: verificationProto.getAttempts(),
           next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
         };
-
-        navigate('/verify-otp', {
+        const params = new URLSearchParams({
+          userId,
+          afterAddPhone: '1',
+        });
+        if (redirectTo) {
+          params.set('redirectTo', redirectTo);
+        }
+        if (profileType) {
+          params.set('profileType', profileType);
+        }
+        navigate(`/verify-otp?${params.toString()}`, {
           state: {
             verification,
             afterAddPhone: true,
-            redirectTo: locationState.redirectTo,
-            profileType: locationState.profileType,
+            redirectTo,
+            profileType,
           },
         });
       }

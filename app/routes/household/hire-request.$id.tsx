@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router";
+import { useNavigate, useParams, useLocation, useSearchParams } from "react-router";
 import { hireRequestService, hireContractService, employmentContractService } from '~/services/grpc/authServices';
 import { useAuth } from '~/contexts/useAuth';
 import NegotiationPanel from '~/components/hiring/NegotiationPanel';
 import { Briefcase, Calendar, DollarSign, FileText, CheckCircle, XCircle, Ban } from 'lucide-react';
 import { useHiringSSE } from '~/hooks/useHiringSSE';
+import { getStoredUserId } from '~/utils/authStorage';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
+import { getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
 
 interface HireRequest {
   id: string;
@@ -24,6 +29,8 @@ interface HireRequest {
     id: string;
     first_name: string;
     last_name: string;
+    user_id?: string;
+    user?: { id?: string };
     avatar_url?: string;
     photos?: string[];
     salary_expectation?: number;
@@ -33,14 +40,21 @@ interface HireRequest {
 export default function HireRequestDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const [hireRequest, setHireRequest] = useState<HireRequest | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [actionLoading, setActionLoading] = useState(false);
   const [showContractModal, setShowContractModal] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [contractNotes, setContractNotes] = useState('');
   const [existingEmploymentContract, setExistingEmploymentContract] = useState<string | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const backTo = searchParams.get('backTo') || '/household/hiring';
+  const backLabel = searchParams.get('backLabel') || 'Back to Hiring History';
+  const detailPath = `${location.pathname}${location.search || ''}`;
 
   useEffect(() => {
     fetchHireRequest();
@@ -55,9 +69,13 @@ export default function HireRequestDetail() {
 
   const checkExistingEmploymentContract = async () => {
     try {
-      const raw = await employmentContractService.listEmploymentContracts('', undefined, 1, 0);
+      const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
       const contracts = raw?.data || raw || [];
-      const match = (Array.isArray(contracts) ? contracts : []).find((c: any) => c.househelp_id === hireRequest?.househelp_id);
+      const hireRequestIdentifiers = getHousehelpCandidateIds(hireRequest);
+      const match = (Array.isArray(contracts) ? contracts : []).find((c: any) => {
+        const contractIdentifiers = getHousehelpCandidateIds(c);
+        return hireRequestIdentifiers.some((identifier) => contractIdentifiers.includes(identifier));
+      });
       if (match) setExistingEmploymentContract(match.id);
     } catch (err) {
       // Silently fail - not critical
@@ -66,7 +84,8 @@ export default function HireRequestDetail() {
 
   const { user } = useAuth();
   useEffect(() => {
-    if (user) setCurrentUserId(user.id || '');
+    const resolvedUserId = user?.user?.user_id || getStoredUserId() || '';
+    if (resolvedUserId) setCurrentUserId(resolvedUserId);
   }, [user]);
 
   const fetchHireRequest = async () => {
@@ -91,24 +110,21 @@ export default function HireRequestDetail() {
     // onHireRequestAccepted
     useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
       if (event.data.request_id === id) {
-        console.log('[HireRequestDetail SSE] Request accepted:', event.data);
-        alert('This hire request has been accepted!');
+        setFeedbackMessage('This hire request has been accepted.');
         fetchHireRequest();
       }
     }, [id]),
     // onHireRequestRejected
     useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
       if (event.data.request_id === id) {
-        console.log('[HireRequestDetail SSE] Request rejected:', event.data);
-        alert('This hire request has been rejected.');
+        setFeedbackMessage('This hire request has been rejected.');
         fetchHireRequest();
       }
     }, [id]),
     // onContractSigned
     useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
-      console.log('[HireRequestDetail SSE] Contract signed:', event.data);
       if (event.data.signer_name) {
-        alert(`Contract signed by ${event.data.signer_name}!`);
+        setFeedbackMessage(`Contract signed by ${event.data.signer_name}.`);
       }
       checkExistingEmploymentContract();
     }, []),
@@ -117,25 +133,26 @@ export default function HireRequestDetail() {
   );
 
   const handleCancelRequest = async () => {
-    if (!confirm('Are you sure you want to cancel this hire request?')) {
-      return;
-    }
-
     setActionLoading(true);
+    setError(null);
+    setFeedbackMessage(null);
     try {
       await hireRequestService.cancelHireRequest(id!);
 
-      alert('Hire request cancelled successfully');
+      setFeedbackMessage('Hire request cancelled successfully.');
       navigate('/household/hiring');
     } catch (err: any) {
-      alert(err.message || 'Failed to cancel hire request');
+      setError(err.message || 'Failed to cancel hire request');
     } finally {
       setActionLoading(false);
+      setShowCancelConfirm(false);
     }
   };
 
   const handleCreateContract = async () => {
     setActionLoading(true);
+    setError(null);
+    setFeedbackMessage(null);
     try {
       // First create the hire contract to finalize the request
       const contract = await hireContractService.createFromHireRequest('', {
@@ -151,13 +168,15 @@ export default function HireRequestDetail() {
         job_type: hireRequest!.job_type || '',
         salary: String(hireRequest!.salary_offered || ''),
         salary_frequency: hireRequest!.salary_frequency || '',
+        backTo: detailPath,
+        backLabel: 'Back to Hire Request',
       });
       if (hireRequest!.start_date) params.set('start_date', hireRequest!.start_date.split('T')[0]);
       if (contractNotes) params.set('notes', contractNotes);
 
       navigate(`/household/employment-contract?${params.toString()}`);
     } catch (err: any) {
-      alert(err.message || 'Failed to create contract');
+      setError(err.message || 'Failed to create contract');
     } finally {
       setActionLoading(false);
     }
@@ -165,13 +184,20 @@ export default function HireRequestDetail() {
 
   const handleNavigateToEmploymentContract = () => {
     if (existingEmploymentContract) {
-      navigate(`/household/employment-contract?id=${existingEmploymentContract}`);
+      const params = new URLSearchParams({
+        id: existingEmploymentContract,
+        backTo: detailPath,
+        backLabel: 'Back to Hire Request',
+      });
+      navigate(`/household/employment-contract?${params.toString()}`);
     } else {
       const params = new URLSearchParams({
         househelp_id: hireRequest!.househelp_id,
         job_type: hireRequest!.job_type || '',
         salary: String(hireRequest!.salary_offered || ''),
         salary_frequency: hireRequest!.salary_frequency || '',
+        backTo: detailPath,
+        backLabel: 'Back to Hire Request',
       });
       if (hireRequest!.start_date) params.set('start_date', hireRequest!.start_date.split('T')[0]);
       navigate(`/household/employment-contract?${params.toString()}`);
@@ -279,10 +305,10 @@ export default function HireRequestDetail() {
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 max-w-md w-full">
           <p className="text-red-600 dark:text-red-400 mb-4">{error || 'Hire request not found'}</p>
           <button
-            onClick={() => navigate('/household/hiring')}
+            onClick={() => navigate(backTo)}
             className="w-full px-4 py-1 bg-purple-600 text-white rounded-xl hover:bg-purple-700"
           >
-            Back to Hiring
+            {backLabel}
           </button>
         </div>
       </div>
@@ -295,11 +321,13 @@ export default function HireRequestDetail() {
         {/* Header */}
         <div className="mb-6">
           <button
-            onClick={() => navigate('/household/hiring')}
+            onClick={() => navigate(backTo)}
             className="text-purple-600 dark:text-purple-400 hover:underline mb-4"
           >
-            ← Back to Hiring History
+            ← {backLabel}
           </button>
+          {feedbackMessage && <SuccessAlert message={feedbackMessage} className="mb-4" />}
+          {error && <ErrorAlert message={error} className="mb-4" />}
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900 dark:text-white">
               Hire Request Details
@@ -338,8 +366,8 @@ export default function HireRequestDetail() {
                     {hireRequest.househelp?.first_name} {hireRequest.househelp?.last_name}
                   </h3>
                   <button
-                    onClick={() => navigate(`/househelp/public-profile`, {
-                      state: { profileId: hireRequest.househelp_id }
+                    onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(hireRequest.househelp_id)}&from=hiring&backTo=${encodeURIComponent(detailPath)}&backLabel=${encodeURIComponent('Back to Hire Request')}`, {
+                      state: { profileId: hireRequest.househelp_id, backTo: detailPath, backLabel: 'Back to Hire Request' }
                     })}
                     className="text-sm text-purple-600 dark:text-purple-400 hover:underline"
                   >
@@ -458,7 +486,7 @@ export default function HireRequestDetail() {
 
               {hireRequest.status === 'pending' && (
                 <button
-                  onClick={handleCancelRequest}
+                  onClick={() => setShowCancelConfirm(true)}
                   disabled={actionLoading}
                   className="w-full px-4 py-1.5 border-2 border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-3"
                 >
@@ -486,8 +514,8 @@ export default function HireRequestDetail() {
               )}
 
               <button
-                onClick={() => navigate(`/househelp/public-profile`, {
-                  state: { profileId: hireRequest.househelp_id }
+                onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(hireRequest.househelp_id)}&from=hiring&backTo=${encodeURIComponent(detailPath)}&backLabel=${encodeURIComponent('Back to Hire Request')}`, {
+                  state: { profileId: hireRequest.househelp_id, backTo: detailPath, backLabel: 'Back to Hire Request' }
                 })}
                 className="w-full px-4 py-1.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 font-medium transition-colors"
               >
@@ -497,6 +525,21 @@ export default function HireRequestDetail() {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={showCancelConfirm}
+        onClose={() => {
+          if (actionLoading) return;
+          setShowCancelConfirm(false);
+        }}
+        onConfirm={handleCancelRequest}
+        title="Cancel Hire Request"
+        message="Are you sure you want to cancel this hire request?"
+        confirmText={actionLoading ? 'Cancelling...' : 'Cancel Request'}
+        cancelText="Keep Request"
+        variant="warning"
+        isLoading={actionLoading}
+      />
 
       {/* Create Contract Modal */}
       {showContractModal && (

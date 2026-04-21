@@ -120,9 +120,6 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
       // Update local state
       updateStepData(stepId, data);
       setLastCompletedStep(stepNumber);
-      
-      console.log(`Step ${stepId} (${stepNumber}) saved successfully`);
-      
     } catch (err: any) {
       console.error(`Error saving step ${stepId}:`, err);
       setError(err.message || 'Failed to save step');
@@ -142,7 +139,6 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
       const profileType = getStoredProfileType();
       
       if (!token) {
-        console.log('No token found, skipping profile load');
         return;
       }
 
@@ -170,8 +166,6 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
 
       if (stepsData) {
         const steps = Array.isArray(stepsData?.data) ? stepsData.data : (Array.isArray(stepsData) ? stepsData : []);
-        console.log('Steps tracking data:', steps);
-        
         setLastCompletedStep(lastCompleted);
         
         // Steps tracking marks completion but may store empty data.
@@ -202,28 +196,18 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
         }
         
         setProfileData(reconstructed);
-        console.log('Profile loaded from steps tracking + profile merge', { 
-          lastCompletedStep: lastCompleted,
-          profileData: reconstructed 
-        });
       } else {
         // No steps tracked yet, try loading from profile (legacy) via gRPC
-        console.log('No steps tracking found, loading from profile');
-        
         try {
           const profile = profileType === 'househelp'
             ? await grpcProfileService.getCurrentHousehelpProfile('')
             : await grpcProfileService.getCurrentHouseholdProfile('');
-          
-          console.log('Raw profile from backend:', profile);
+
           const reconstructedData = reconstructProfileData(profile);
-          console.log('Reconstructed profile data:', reconstructedData);
-          
+
           setProfileData(reconstructedData);
           setLastCompletedStep(0);
-          console.log('Profile loaded successfully (legacy mode), starting from step 0');
-        } catch (err) {
-          console.log('No existing profile found, starting fresh');
+        } catch {
           setLastCompletedStep(0);
         }
       }
@@ -258,7 +242,6 @@ export const ProfileSetupProvider: React.FC<{ children: ReactNode }> = ({ childr
       } else {
         savedProfile = await grpcProfileService.updateHouseholdProfile('', 'household', transformed);
       }
-      console.log('Profile saved successfully:', savedProfile);
       
       // Clear the local data after successful save
       setProfileData({});
@@ -673,6 +656,5 @@ function calculateLastCompletedStep(data: ProfileSetupData): number {
     }
   }
 
-  console.log('Calculated last completed step:', lastStep, 'from data:', data);
   return lastStep;
 }

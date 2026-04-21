@@ -19,7 +19,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
 import { paymentsService } from '~/services/grpc/payments.service';
-import { getStoredProfileType } from "~/utils/authStorage";
+import { getStoredProfileType, getStoredUser } from "~/utils/authStorage";
 
 export const meta = () => [
     { title: "Pricing & Plans — Homebit Kenya" },
@@ -88,6 +88,11 @@ export default function Pricing() {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
+  const authUser = (user as any)?.user ?? null;
+  const storedUser = getStoredUser();
+  const currentUser = authUser ?? storedUser ?? null;
+  const currentUserPhone = currentUser?.phone || '';
+  const currentUserProfileType = currentUser?.profile_type || getStoredProfileType() || '';
   const returnTo = searchParams.get('return') || null;
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan | null>(null);
@@ -200,10 +205,10 @@ export default function Pricing() {
   ];
 
   useEffect(() => {
-    if (user?.phone) {
-      setPhoneNumber(formatPhoneNumber(user.phone));
+    if (currentUserPhone) {
+      setPhoneNumber(formatPhoneNumber(currentUserPhone));
     }
-  }, [user]);
+  }, [currentUserPhone]);
 
   useEffect(() => {
     // Cleanup polling on unmount
@@ -230,7 +235,7 @@ export default function Pricing() {
     }
     
     setSelectedPlan(plan);
-    setPhoneNumber(formatPhoneNumber(user?.phone || ''));
+    setPhoneNumber(formatPhoneNumber(currentUserPhone));
     setPaymentStatus('idle');
     setErrorMessage('');
     setResolvedPlanId(null);
@@ -290,8 +295,7 @@ export default function Pricing() {
       return;
     }
 
-    const profileType = (user as any)?.profile_type ||
-      getStoredProfileType() ||
+    const profileType = currentUserProfileType ||
       selectedPlan.profile_type || '';
 
     setProcessingPayment(true);

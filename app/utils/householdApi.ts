@@ -42,6 +42,9 @@ export interface HouseholdInvitation {
   expires_at: string;
   created_at: string;
   share_url?: string;
+  invited_email?: string;
+  invited_phone?: string;
+  auto_approve?: boolean;
 }
 
 export interface HouseholdMemberRequest {
@@ -88,26 +91,24 @@ export interface JoinHouseholdRequest {
 
 export const createInvitation = async (
   householdId: string,
-  _data: CreateInvitationRequest
+  data: CreateInvitationRequest
 ): Promise<HouseholdInvitation> => {
-  const result = await householdMemberService.getOrCreateInvitationCode(householdId);
-  return result;
+  const result = await householdMemberService.createInvitation(householdId, data);
+  return result?.data || result;
 };
 
 export const listInvitations = async (
   householdId: string
 ): Promise<HouseholdInvitation[]> => {
-  // Use getOrCreateInvitationCode as a proxy - returns current invitation
-  const result = await householdMemberService.getOrCreateInvitationCode(householdId);
-  return result ? [result] : [];
+  const result = await householdMemberService.listInvitations(householdId);
+  return result?.invitations || result?.data || result || [];
 };
 
 export const revokeInvitation = async (
-  _householdId: string,
-  _invitationId: string
+  householdId: string,
+  invitationId: string
 ): Promise<void> => {
-  // TODO: Add revokeInvitation RPC when available
-  throw new Error('Revoke invitation not yet available via gRPC');
+  await householdMemberService.revokeInvitation(householdId, invitationId, '');
 };
 
 export const validateInviteCode = async (
@@ -166,12 +167,11 @@ export const listMembers = async (
 };
 
 export const updateMemberRole = async (
-  _householdId: string,
-  _userId: string,
-  _role: 'admin' | 'member'
+  householdId: string,
+  userId: string,
+  role: 'admin' | 'member'
 ): Promise<void> => {
-  // TODO: Add updateMemberRole RPC when available
-  throw new Error('Update member role not yet available via gRPC');
+  await householdMemberService.updateMemberRole(householdId, userId, role, '');
 };
 
 export const removeMember = async (
@@ -191,9 +191,8 @@ export const getUserHouseholds = async (): Promise<any[]> => {
 };
 
 export const transferOwnership = async (
-  _householdId: string,
-  _newOwnerId: string
+  householdId: string,
+  newOwnerId: string
 ): Promise<void> => {
-  // TODO: Add transferOwnership RPC when available
-  throw new Error('Transfer ownership not yet available via gRPC');
+  await householdMemberService.transferOwnership(householdId, newOwnerId, '');
 };

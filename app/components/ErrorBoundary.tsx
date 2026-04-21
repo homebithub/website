@@ -1,4 +1,4 @@
-import { useRouteError, isRouteErrorResponse, Link } from "react-router";
+import { useRouteError, isRouteErrorResponse, Link, useNavigate } from "react-router";
 import { useEffect } from "react";
 
 /**
@@ -13,6 +13,20 @@ import { useEffect } from "react";
  */
 export function ErrorBoundary() {
   const error = useRouteError();
+  const navigate = useNavigate();
+
+  const handleGoBack = () => {
+    if (
+      typeof window !== "undefined" &&
+      window.history.length > 1 &&
+      document.referrer.startsWith(window.location.origin)
+    ) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/", { replace: true });
+  };
   
   useEffect(() => {
     // Log error to monitoring service
@@ -44,10 +58,10 @@ export function ErrorBoundary() {
                 🏠 Go Home
               </Link>
               <button
-                onClick={() => window.location.reload()}
+                onClick={handleGoBack}
                 className="block w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-1.5 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-semibold"
               >
-                🔄 Reload Page
+                ← Go Back
               </button>
             </div>
           </div>
@@ -88,10 +102,10 @@ export function ErrorBoundary() {
               🏠 Go Home
             </Link>
             <button
-              onClick={() => window.location.reload()}
+              onClick={handleGoBack}
               className="block w-full bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 px-6 py-1.5 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors font-semibold"
             >
-              🔄 Reload Page
+              ← Go Back
             </button>
           </div>
         </div>
@@ -121,9 +135,37 @@ function logErrorToMonitoring(error: unknown) {
     console.error('[Error Boundary]', error);
   }
 
-  // In production, send to monitoring service
-  // TODO: Integrate with error tracking service (e.g., Sentry)
-  if (process.env.NODE_ENV === 'production') {
-    // Example: Sentry.captureException(error);
+  if (typeof window !== 'undefined') {
+    const payload = {
+      name: error instanceof Error ? error.name : 'RouteError',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      pathname: window.location.pathname,
+      href: window.location.href,
+      timestamp: new Date().toISOString(),
+    };
+
+    window.dispatchEvent(new CustomEvent('homebit:error', { detail: payload }));
+
+    if (process.env.NODE_ENV === 'production') {
+      const endpoint = (window as any).ENV?.ERROR_MONITORING_API_URL || (window as any).ENV?.MONITORING_API_URL;
+      if (!endpoint) return;
+
+      const body = JSON.stringify(payload);
+      try {
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(endpoint, new Blob([body], { type: 'application/json' }));
+          return;
+        }
+        void fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body,
+          keepalive: true,
+        });
+      } catch {
+        // Ignore monitoring transport errors.
+      }
+    }
   }
 }

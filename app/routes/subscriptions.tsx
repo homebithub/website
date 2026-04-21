@@ -30,6 +30,7 @@ import { ChangePlanModal } from '~/components/subscriptions/ChangePlanModal';
 import { CreditBalanceCard } from '~/components/subscriptions/CreditBalanceCard';
 import { PauseStatusCard } from '~/components/subscriptions/PauseStatusCard';
 import type { PauseStatusResponse, CreditBalanceResponse, PauseReason, CancelReason } from '~/types/payments';
+import { getStoredProfileType, getStoredUser } from '~/utils/authStorage';
 
 interface SubscriptionPlan {
   id: string;
@@ -72,18 +73,17 @@ export default function SubscriptionsPage() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const authUser = (user as any)?.user ?? null;
+  const storedUser = getStoredUser();
+  const currentUser = authUser ?? storedUser ?? null;
+  const currentUserPhone = currentUser?.phone || '';
+  const currentUserEmail = currentUser?.email || '';
   const [dataLoading, setDataLoading] = useState(false);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState(user?.phone || '');
-  console.log('[Subscriptions] Initial phone number state:', user?.phone || 'No user phone');
-  
-  // Add console log to track phone number changes
-  useEffect(() => {
-    console.log('[Subscriptions] Phone number state changed to:', phoneNumber);
-  }, [phoneNumber]);
+  const [phoneNumber, setPhoneNumber] = useState(currentUserPhone);
   const [paymentAmount, setPaymentAmount] = useState(0);
   const [processingPayment, setProcessingPayment] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'initiating' | 'processing' | 'success' | 'failed' | 'timeout'>('idle');
@@ -157,8 +157,7 @@ export default function SubscriptionsPage() {
   ];
 
   // Filter plans by user's profile type
-  const userObj: any = (user as any)?.user || user;
-  const profileType: string = userObj?.profile_type || localStorage.getItem('profile_type') || '';
+  const profileType: string = currentUser?.profile_type || getStoredProfileType() || '';
   const relevantPlans = allPlans.filter(p => p.is_active && p.profile_type === profileType);
 
   const getFeaturesList = (features: any): string[] => {
@@ -187,16 +186,12 @@ export default function SubscriptionsPage() {
   const handleSelectCheckoutPlan = async (plan: SubscriptionPlan) => {
     setSelectedCheckoutPlan(plan);
 
-    // 1. localStorage user_object is always the most up-to-date cached source
-    let prefillPhone = '';
-    try {
-      const stored = JSON.parse(localStorage.getItem('user_object') || '{}');
-      prefillPhone = stored?.phone || '';
-    } catch {}
+    // 1. Cached auth user is the most up-to-date local source
+    let prefillPhone = getStoredUser()?.phone || '';
 
     // 2. Fall back to auth context in-memory user (covers freshly-logged-in session)
     if (!prefillPhone) {
-      prefillPhone = userObj?.phone || (user as any)?.phone || '';
+      prefillPhone = currentUserPhone;
     }
 
     // 3. Last resort: query auth service via gateway
@@ -207,7 +202,7 @@ export default function SubscriptionsPage() {
         prefillPhone = userProto?.getPhone?.() || '';
         if (prefillPhone) {
           try {
-            const stored = JSON.parse(localStorage.getItem('user_object') || '{}');
+            const stored = getStoredUser() || {};
             stored.phone = prefillPhone;
             localStorage.setItem('user_object', JSON.stringify(stored));
           } catch {}
@@ -299,32 +294,27 @@ export default function SubscriptionsPage() {
   const fetchSubscriptionData = React.useCallback(async () => {
     setDataLoading(true);
     try {
-      console.log('[Subscriptions] Fetching subscription data...');
-
       try {
         const subData = await paymentsService.getMySubscription('') as any;
-        console.log('[Subscriptions] Subscription data:', subData);
         setSubscription(subData?.toObject?.() ?? subData);
       } catch (err) {
-        console.warn('[Subscriptions] Failed to fetch subscription:', err);
+        console.error('[Subscriptions] Failed to fetch subscription:', err);
       }
 
       try {
         const paymentsData = await paymentsService.listMyPayments('', 0, 10) as any;
-        console.log('[Subscriptions] Payments data:', paymentsData);
         const paymentsList = paymentsData?.toObject?.()?.paymentsList ?? paymentsData?.payments ?? [];
         setPayments(paymentsList);
       } catch (err) {
-        console.warn('[Subscriptions] Failed to fetch payments:', err);
+        console.error('[Subscriptions] Failed to fetch payments:', err);
       }
 
       try {
         const plansData = await paymentsService.getPlans() as any;
-        console.log('[Subscriptions] Plans data:', plansData);
         const plansList = plansData?.toObject?.()?.plansList ?? plansData?.plans ?? [];
         setPlans(plansList);
       } catch (err) {
-        console.warn('[Subscriptions] Failed to fetch plans:', err);
+        console.error('[Subscriptions] Failed to fetch plans:', err);
       }
     } catch (error) {
       console.error('[Subscriptions] Failed to fetch subscription data:', error);
@@ -377,7 +367,6 @@ export default function SubscriptionsPage() {
 
   useEffect(() => {
     if (!loading && !user) {
-      console.log('[Subscriptions] No user, redirecting to login');
       const returnUrl = encodeURIComponent(location.pathname);
       navigate(`/login?redirect=${returnUrl}`);
     }
@@ -385,13 +374,11 @@ export default function SubscriptionsPage() {
 
   useEffect(() => {
     if (user) {
-      console.log('[Subscriptions] User authenticated, fetching data');
       fetchSubscriptionData();
-      setPhoneNumber(user.phone || '');
-      setReceiptEmail(user.email || '');
-      console.log('[Subscriptions] Setting phone number from user:', user.phone);
+      setPhoneNumber(currentUserPhone);
+      setReceiptEmail(currentUserEmail);
     }
-  }, [user, fetchSubscriptionData]);
+  }, [user, fetchSubscriptionData, currentUserEmail, currentUserPhone]);
 
   // Fetch pause status and credit balance when subscription is loaded
   useEffect(() => {
@@ -563,7 +550,7 @@ export default function SubscriptionsPage() {
 
   const handleViewTransaction = (payment: Payment) => {
     setSelectedPayment(payment);
-    setReceiptEmail(user?.email || '');
+    setReceiptEmail(currentUserEmail);
     setReceiptMessage(null);
     setShowTransactionModal(true);
   };
@@ -700,7 +687,7 @@ export default function SubscriptionsPage() {
   }
 
   if (!user) {
-    return null;
+    return <Loading text="Redirecting to login..." />;
   }
 
   return (
@@ -774,10 +761,8 @@ export default function SubscriptionsPage() {
 
                       <button
                         onClick={() => {
-                          console.log('[Subscriptions] Make Payment clicked - user phone:', user?.phone);
                           setPaymentAmount(subscription.plan?.price_amount || 0);
-                          setPhoneNumber(user?.phone || '');
-                          console.log('[Subscriptions] Phone number set to:', user?.phone || '');
+                          setPhoneNumber(currentUserPhone);
                           setShowPaymentModal(true);
                         }}
                         className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-semibold rounded-xl text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-md hover:shadow-lg"

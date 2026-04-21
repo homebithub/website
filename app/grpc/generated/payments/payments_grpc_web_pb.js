@@ -3431,5 +3431,188 @@ proto.payments.PaymentsServicePromiseClient.prototype.isUserWhitelisted =
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.payments.AdminListPaymentsRequest,
+ *   !proto.payments.AdminListPaymentsResponse>}
+ */
+const methodDescriptor_PaymentsService_AdminListPayments = new grpc.web.MethodDescriptor(
+  '/payments.PaymentsService/AdminListPayments',
+  grpc.web.MethodType.UNARY,
+  proto.payments.AdminListPaymentsRequest,
+  proto.payments.AdminListPaymentsResponse,
+  /**
+   * @param {!proto.payments.AdminListPaymentsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.payments.AdminListPaymentsResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.payments.AdminListPaymentsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.payments.AdminListPaymentsResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.payments.AdminListPaymentsResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.payments.PaymentsServiceClient.prototype.adminListPayments =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/payments.PaymentsService/AdminListPayments',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_AdminListPayments,
+      callback);
+};
+
+
+/**
+ * @param {!proto.payments.AdminListPaymentsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.payments.AdminListPaymentsResponse>}
+ *     Promise that resolves to the response
+ */
+proto.payments.PaymentsServicePromiseClient.prototype.adminListPayments =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/payments.PaymentsService/AdminListPayments',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_AdminListPayments);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.payments.AdminListSubscriptionsRequest,
+ *   !proto.payments.AdminListSubscriptionsResponse>}
+ */
+const methodDescriptor_PaymentsService_AdminListSubscriptions = new grpc.web.MethodDescriptor(
+  '/payments.PaymentsService/AdminListSubscriptions',
+  grpc.web.MethodType.UNARY,
+  proto.payments.AdminListSubscriptionsRequest,
+  proto.payments.AdminListSubscriptionsResponse,
+  /**
+   * @param {!proto.payments.AdminListSubscriptionsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.payments.AdminListSubscriptionsResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.payments.AdminListSubscriptionsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.payments.AdminListSubscriptionsResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.payments.AdminListSubscriptionsResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.payments.PaymentsServiceClient.prototype.adminListSubscriptions =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/payments.PaymentsService/AdminListSubscriptions',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_AdminListSubscriptions,
+      callback);
+};
+
+
+/**
+ * @param {!proto.payments.AdminListSubscriptionsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.payments.AdminListSubscriptionsResponse>}
+ *     Promise that resolves to the response
+ */
+proto.payments.PaymentsServicePromiseClient.prototype.adminListSubscriptions =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/payments.PaymentsService/AdminListSubscriptions',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_AdminListSubscriptions);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.payments.AdminUpdatePlanRequest,
+ *   !proto.payments.AdminUpdatePlanResponse>}
+ */
+const methodDescriptor_PaymentsService_AdminUpdatePlan = new grpc.web.MethodDescriptor(
+  '/payments.PaymentsService/AdminUpdatePlan',
+  grpc.web.MethodType.UNARY,
+  proto.payments.AdminUpdatePlanRequest,
+  proto.payments.AdminUpdatePlanResponse,
+  /**
+   * @param {!proto.payments.AdminUpdatePlanRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.payments.AdminUpdatePlanResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.payments.AdminUpdatePlanRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.payments.AdminUpdatePlanResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.payments.AdminUpdatePlanResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.payments.PaymentsServiceClient.prototype.adminUpdatePlan =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/payments.PaymentsService/AdminUpdatePlan',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_AdminUpdatePlan,
+      callback);
+};
+
+
+/**
+ * @param {!proto.payments.AdminUpdatePlanRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.payments.AdminUpdatePlanResponse>}
+ *     Promise that resolves to the response
+ */
+proto.payments.PaymentsServicePromiseClient.prototype.adminUpdatePlan =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/payments.PaymentsService/AdminUpdatePlan',
+      request,
+      metadata || {},
+      methodDescriptor_PaymentsService_AdminUpdatePlan);
+};
+
+
 module.exports = proto.payments;
 

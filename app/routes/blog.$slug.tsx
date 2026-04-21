@@ -8,6 +8,8 @@ import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { BlogSubscribeForm } from "~/components/blog/BlogSubscribeForm";
 import { useAuth } from "~/contexts/useAuth";
 import { blogService } from "~/services/grpc/blog.service";
+import { ErrorAlert } from "~/components/ui/ErrorAlert";
+import { SuccessAlert } from "~/components/ui/SuccessAlert";
 
 interface BlogPost {
   id: string;
@@ -132,6 +134,7 @@ export default function BlogPost() {
   const [likeCount, setLikeCount] = useState(0);
   const [likeLoading, setLikeLoading] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   // Get user ID from auth context
   const getUserId = useCallback(() => {
@@ -219,6 +222,7 @@ export default function BlogPost() {
 
   const handleShare = async (platform: string) => {
     if (!post) return;
+    setShareFeedback(null);
 
     try {
       await blogService.trackShare(
@@ -244,8 +248,13 @@ export default function BlogPost() {
         window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, "_blank");
         break;
       case "copy":
-        navigator.clipboard.writeText(url);
-        alert("Link copied to clipboard!");
+        try {
+          await navigator.clipboard.writeText(url);
+          setShareFeedback({ type: "success", message: "Link copied to clipboard." });
+        } catch (error) {
+          console.error("Error copying blog link:", error);
+          setShareFeedback({ type: "error", message: "Unable to copy the link right now. Please try again." });
+        }
         break;
     }
   };
@@ -412,6 +421,12 @@ export default function BlogPost() {
                   </button>
                 </div>
               </div>
+              {shareFeedback?.type === "success" && (
+                <SuccessAlert message={shareFeedback.message} className="-mt-2 mb-8" />
+              )}
+              {shareFeedback?.type === "error" && (
+                <ErrorAlert message={shareFeedback.message} className="-mt-2 mb-8" />
+              )}
 
               {/* Article Content */}
               <div 

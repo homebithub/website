@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { hireContractService } from '~/services/grpc/authServices';
 import { FileText, CheckCircle, XCircle, Calendar, DollarSign, Briefcase } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -32,17 +32,42 @@ type TabType = 'all' | 'active' | 'completed' | 'terminated';
 
 export default function HouseholdContracts() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>('active');
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs: TabType[] = ['all', 'active', 'completed', 'terminated'];
+    return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'active';
+  });
   const [contracts, setContracts] = useState<HireContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const limit = 20;
+  const backToPath = `${location.pathname}${location.search || ''}`;
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setOffset(0);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set('tab', tab);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   useEffect(() => {
     fetchContracts();
   }, [activeTab, offset]);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs: TabType[] = ['all', 'active', 'completed', 'terminated'];
+    if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
+      setActiveTab(tabParam as TabType);
+      setOffset(0);
+    }
+  }, [activeTab, searchParams]);
 
   const fetchContracts = async () => {
     setLoading(true);
@@ -127,10 +152,7 @@ export default function HouseholdContracts() {
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => {
-                    setActiveTab(tab.key);
-                    setOffset(0);
-                  }}
+                  onClick={() => handleTabChange(tab.key)}
                   className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                     activeTab === tab.key
                       ? 'border-purple-500 text-purple-600 dark:text-purple-400'
@@ -145,7 +167,17 @@ export default function HouseholdContracts() {
         </div>
 
         {/* Error State */}
-        {error && <ErrorAlert message={error} className="mb-6" />}
+        {error && (
+          <div className="mb-6">
+            <ErrorAlert message={error} className="mb-4" />
+            <button
+              onClick={fetchContracts}
+              className="rounded-xl border border-purple-500/50 px-4 py-2 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-900/20"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
@@ -284,8 +316,8 @@ export default function HouseholdContracts() {
                     </button>
 
                     <button
-                      onClick={() => navigate(`/househelp/public-profile`, {
-                        state: { profileId: contract.househelp_id }
+                      onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(contract.househelp_id)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Contracts')}`, {
+                        state: { profileId: contract.househelp_id, backTo: backToPath, backLabel: 'Back to Contracts' }
                       })}
                       className="px-4 py-1 text-sm border border-purple-300 dark:border-purple-700 text-purple-600 dark:text-purple-400 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-colors whitespace-nowrap"
                     >

@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { notificationsService } from '~/services/grpc/notifications.service';
-import { employmentContractService, profileService } from '~/services/grpc/authServices';
+import { employmentContractService } from '~/services/grpc/authServices';
 import { useAuth } from '~/contexts/useAuth';
 import {
   FileText, CheckCircle, XCircle, Download, Mail, Send,
   ChevronLeft, Edit3, Check, AlertCircle, Loader2, Plus, Trash2
 } from 'lucide-react';
+import { resolveHousehelpProfile, resolveHousehelpProfileId } from '~/utils/househelpProfiles';
 
 interface ContractClause {
   id: string;
@@ -54,10 +55,13 @@ export default function EmploymentContractPage() {
   const contractId = searchParams.get('id');
   const househelpId = searchParams.get('househelp_id');
   const hireContractId = searchParams.get('hire_contract_id');
+  const backTo = searchParams.get('backTo') || (contractId ? '/household/employment-contracts' : '/household/hiring');
+  const backLabel = searchParams.get('backLabel') || (contractId ? 'Back to Contracts' : 'Back to Hiring');
   const printRef = useRef<HTMLDivElement>(null);
   const [emailSending, setEmailSending] = useState(false);
   const [showEmailModal, setShowEmailModal] = useState(false);
   const [emailAddress, setEmailAddress] = useState('');
+  const [resolvedHousehelpProfileId, setResolvedHousehelpProfileId] = useState<string>(househelpId || '');
 
   const [viewMode, setViewMode] = useState<ViewMode>(contractId ? 'view' : 'configure');
   const [contract, setContract] = useState<EmploymentContract | null>(null);
@@ -97,7 +101,7 @@ export default function EmploymentContractPage() {
       const paramNotes = searchParams.get('notes');
       if (paramJobType && !jobTitle) setJobTitle(paramJobType.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()));
       if (paramSalary && !salary) setSalary(paramSalary);
-      if (paramSalaryFreq && !salaryFrequency) setSalaryFrequency(paramSalaryFreq);
+      if (paramSalaryFreq) setSalaryFrequency(paramSalaryFreq);
       if (paramStartDate && !startDate) setStartDate(paramStartDate);
       if (paramNotes && !notes) setNotes(paramNotes);
     }
@@ -109,6 +113,36 @@ export default function EmploymentContractPage() {
       fetchContract(contractId);
     }
   }, [contractId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const resolveTargetHousehelp = async () => {
+      const targetId = contract?.househelp_id || househelpId;
+      if (!targetId) {
+        if (!cancelled) setResolvedHousehelpProfileId('');
+        return;
+      }
+
+      try {
+        const profile = await resolveHousehelpProfile(targetId, { identifierType: 'auto' });
+        const profileId = resolveHousehelpProfileId(profile) || targetId;
+        if (!cancelled) {
+          setResolvedHousehelpProfileId(profileId);
+        }
+      } catch {
+        if (!cancelled) {
+          setResolvedHousehelpProfileId(targetId);
+        }
+      }
+    };
+
+    resolveTargetHousehelp();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [contract?.househelp_id, househelpId]);
 
   // Prefill the current user's name into the correct field based on their profile type
   useEffect(() => {
@@ -125,7 +159,7 @@ export default function EmploymentContractPage() {
   // Prefill employee name from househelp profile when creating a new contract
   useEffect(() => {
     const fetchHousehelpName = async () => {
-      const hhId = househelpId || contract?.househelp_id;
+      const hhId = resolvedHousehelpProfileId || contract?.househelp_id || househelpId;
       if (!hhId) return;
       // If contract already has signer names, use those
       if (contract?.househelp_signer_name) {
@@ -144,8 +178,8 @@ export default function EmploymentContractPage() {
       }
       // Fetch househelp profile to get their name
       try {
-        const hh = await profileService.getHousehelpProfileWithUser(hhId);
-        const profile = hh?.data || hh;
+        const hh = await resolveHousehelpProfile(hhId, { identifierType: 'auto' });
+        const profile = hh || {};
         const name = `${profile.first_name || profile.user?.first_name || ''} ${profile.last_name || profile.user?.last_name || ''}`.trim();
         if (name && !employeeName) setEmployeeName(name);
       } catch (err) {
@@ -153,7 +187,7 @@ export default function EmploymentContractPage() {
       }
     };
     fetchHousehelpName();
-  }, [househelpId, contract]);
+  }, [contract, househelpId, resolvedHousehelpProfileId]);
 
   const fetchDefaultClauses = async () => {
     try {
@@ -194,7 +228,7 @@ export default function EmploymentContractPage() {
   };
 
   const handleCreateContract = async () => {
-    if (!jobTitle || !salary || !househelpId) {
+    if (!jobTitle || !salary || !resolvedHousehelpProfileId) {
       setError('Job title, salary, and househelp are required');
       return;
     }
@@ -202,7 +236,7 @@ export default function EmploymentContractPage() {
     setError(null);
     try {
       const body: any = {
-        househelp_id: househelpId,
+        househelp_id: resolvedHousehelpProfileId,
         job_title: jobTitle,
         job_description: jobDescription,
         salary: parseFloat(salary),
@@ -465,6 +499,7 @@ export default function EmploymentContractPage() {
   const isHousehelp = profileType === 'househelp';
   const isSignedByBoth = contract?.household_signed_at && contract?.househelp_signed_at;
   const canDownload = !!isSignedByBoth;
+  const handleBackNavigation = () => navigate(backTo, { replace: true });
 
   if (loading) {
     return (
@@ -479,7 +514,7 @@ export default function EmploymentContractPage() {
       <div className="rounded-3xl bg-white shadow-xl border border-purple-100 px-4 sm:px-8 py-8 dark:bg-gradient-to-b dark:from-[#1a102b] dark:via-[#0e0a1a] dark:to-[#07050d] dark:border-purple-800/40 dark:shadow-2xl dark:shadow-purple-900/50 transition-colors">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <button onClick={() => navigate(-1)} className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/40 rounded-xl transition-colors">
+          <button onClick={handleBackNavigation} aria-label={backLabel} className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/40 rounded-xl transition-colors">
             <ChevronLeft className="w-5 h-5 text-purple-600 dark:text-purple-300" />
           </button>
           <div className="flex-1">
@@ -664,7 +699,7 @@ export default function EmploymentContractPage() {
 
             {/* Action Buttons */}
             <div className="flex justify-end gap-3">
-              <button onClick={() => navigate(-1)}
+              <button onClick={handleBackNavigation}
                 className="px-6 py-2.5 border-2 border-purple-200 dark:border-purple-700/50 text-gray-700 dark:text-purple-200 rounded-xl hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-all font-semibold">
                 Cancel
               </button>

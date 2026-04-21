@@ -18,6 +18,8 @@ import { fetchPreferences } from "~/utils/preferencesApi";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 import CustomSelect from "~/components/ui/CustomSelect";
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
+import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 interface HousehelpProfile {
   id: number | string;
@@ -92,17 +94,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   const [accessibilityMode, setAccessibilityMode] = useState(false);
 
   // Current user (used for chat payloads)
-  const currentUser = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = localStorage.getItem('user_object');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  }, []);
-  const currentUserId: string | undefined = currentUser?.id;
-  const currentProfileType: string | undefined = currentUser?.profile_type;
+  const currentUser = useMemo(() => getStoredUser(), []);
+  const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
+  const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   // Fetch household profile ID if current user is a household
@@ -134,7 +128,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
 
   // Card actions
   const handleViewProfile = (profileId: string) => {
-    navigate('/househelp/public-profile', { state: { profileId } });
+    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}`, {
+      state: { profileId },
+    });
   };
 
   const handleStartChat = async (targetUserId?: string, househelpProfileId?: string) => {
@@ -173,19 +169,18 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
 
   const handleShortlist = async (profileId: string, event: React.MouseEvent<HTMLButtonElement>) => {
     try {
+      setActionError('');
       const isShortlisted = shortlistedProfiles.has(profileId);
-      console.log(isShortlisted ? 'Removing from shortlist:' : 'Adding to shortlist:', profileId);
-      
+
       // Get the button element and shortlist link
       const button = event.currentTarget;
       const card = button.closest('.househelp-card');
       const shortlistLink = document.getElementById('shortlist-link');
-      
+
       if (isShortlisted) {
         // Remove from shortlist
         await shortlistService.deleteShortlist(profileId);
-        
-        console.log('Successfully removed from shortlist');
+
         setShortlistedProfiles(prev => {
           const next = new Set(prev);
           next.delete(profileId);
@@ -194,10 +189,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       } else {
         // Add to shortlist
         await shortlistService.createShortlist('', 'household', { profile_id: profileId, profile_type: 'househelp' });
-        
-        console.log('Successfully added to shortlist');
+
         setShortlistedProfiles(prev => new Set(prev).add(profileId));
-        
+
         // Animate after successful API call
         if (card && shortlistLink) {
           // Get positions
@@ -239,7 +233,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (e) {
       console.error('Failed to toggle shortlist:', e);
-      alert('Failed to update shortlist. Please check your connection and try again.');
+      setActionError('Failed to update shortlist. Please check your connection and try again.');
     }
   };
   const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
@@ -251,6 +245,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [actionError, setActionError] = useState('');
   const [hasSearched, setHasSearched] = useState(false);
   const [shortlistedProfiles, setShortlistedProfiles] = useState<Set<string>>(new Set());
   const [offset, setOffset] = useState(0);
@@ -412,18 +407,16 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   // Fetch shortlist status for loaded profiles
   useEffect(() => {
     if (househelps.length === 0) return;
-    
+
     const fetchShortlistStatus = async () => {
       try {
         const profileIds = househelps.map(h => h.profile_id).filter(Boolean);
-        console.log('Fetching shortlist status for profiles:', profileIds);
-        
+
         const results = await Promise.all(
           profileIds.map(async (profileId) => {
             try {
               const res = await shortlistService.shortlistExists('', profileId);
               const exists = res?.getExists?.() ?? res?.exists ?? false;
-              console.log(`Profile ${profileId} shortlist status:`, exists);
               return { profileId, exists };
             } catch (err) {
               console.error(`Error checking shortlist for ${profileId}:`, err);
@@ -431,16 +424,14 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
             }
           })
         );
-        
+
         const shortlisted = results.filter(r => r.exists).map(r => r.profileId);
-        console.log('Shortlisted profiles:', shortlisted);
-        
         setShortlistedProfiles(new Set(shortlisted));
       } catch (e) {
         console.error('Failed to fetch shortlist status:', e);
       }
     };
-    
+
     fetchShortlistStatus();
   }, [househelps]);
 
@@ -488,7 +479,6 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
       );
       const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, 0);
-      console.log('Search househelps response:', data);
       const inner = data?.data || data;
       const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
       setHousehelps(rows);
@@ -711,6 +701,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
               <h2 className={`${isHome3 ? 'text-xl' : 'text-2xl'} font-bold text-gray-900 dark:text-white mb-6`}>
                 Available Househelps
               </h2>
+              {actionError && <ErrorAlert message={actionError} className="mb-4" />}
 
               {loading ? (
                 <div className="flex justify-center items-center py-20">

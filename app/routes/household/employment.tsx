@@ -51,6 +51,15 @@ export default function HouseholdEmployment() {
     return tabParam === 'shortlist' ? 'shortlist' : 'find';
   });
 
+  const handleTabChange = (tab: 'find' | 'shortlist') => {
+    setActiveTab(tab);
+    setOffset(0);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set('tab', tab);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
+
   // Keep tab in sync with query param
   useEffect(() => {
     const tabParam = searchParams.get('tab');
@@ -239,13 +248,13 @@ export default function HouseholdEmployment() {
       <div className="flex items-center border-b border-gray-200 dark:border-slate-700 mb-6">
         <button
           className={`px-6 py-1 font-semibold text-base focus:outline-none transition border-b-2 ${activeTab === 'find' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
-          onClick={() => setActiveTab('find')}
+          onClick={() => handleTabChange('find')}
         >
           Find a househelp
         </button>
         <button
           className={`ml-2 px-6 py-1 font-semibold text-base focus:outline-none transition border-b-2 relative flex items-center ${activeTab === 'shortlist' ? 'border-primary-600 text-primary-700 dark:text-primary-300' : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-primary-600'}`}
-          onClick={() => setActiveTab('shortlist')}
+          onClick={() => handleTabChange('shortlist')}
         >
           My Shortlist
           <span className="ml-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-purple-600 rounded-full min-w-[1.5rem] min-h-[1.5rem]">
@@ -289,10 +298,15 @@ export default function HouseholdEmployment() {
                   <div
                     key={h.id}
                     className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-xl p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
-                    onClick={() => navigate('/household/househelp/profile', { state: { profileId: h.profile_id } })}
+                    onClick={() => navigate(`/household/househelp/profile?profileId=${encodeURIComponent(h.profile_id)}`, { state: { profileId: h.profile_id } })}
                     role="button"
                     tabIndex={0}
-                    onKeyPress={e => { if (e.key === 'Enter') navigate('/household/househelp/profile', { state: { profile: h.profile_id } }); }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        navigate(`/household/househelp/profile?profileId=${encodeURIComponent(h.profile_id)}`, { state: { profileId: h.profile_id } });
+                      }
+                    }}
                     aria-label={`View profile of ${h.first_name} ${h.last_name}`}
                   >
                     <img src={h.avatar_url || "https://placehold.co/56x56?text=HH"} alt={h.first_name} className="w-14 h-14 rounded-full object-cover bg-gray-200" />
@@ -364,12 +378,17 @@ export default function HouseholdEmployment() {
             <div
               key={h.id}
               className="flex items-center gap-4 bg-slate-50 dark:bg-slate-700 rounded-xl p-4 shadow cursor-pointer hover:bg-primary-50 dark:hover:bg-primary-900 transition"
-              onClick={() => navigate(`/household/househelp/contact?profile_id=${h.profile_id}&tab=shortlist`)}
+              onClick={() => navigate(`/household/househelp/contact?profileId=${encodeURIComponent(h.profile_id)}&tab=shortlist`, {
+                state: { profileId: h.profile_id },
+              })}
               role="button"
               tabIndex={0}
-              onKeyPress={e => {
-                if (e.key === 'Enter') {
-                  navigate(`/household/househelp/contact?profile_id=${h.profile_id}&tab=shortlist`);
+              onKeyDown={e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate(`/household/househelp/contact?profileId=${encodeURIComponent(h.profile_id)}&tab=shortlist`, {
+                    state: { profileId: h.profile_id },
+                  });
                 }
               }}
               aria-label={`View profile of ${h.first_name} ${h.last_name}`}

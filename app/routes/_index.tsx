@@ -3,9 +3,10 @@ import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useLoaderData, redirect } from "react-router";
 import type { Route } from "./+types/_index";
 import { lazyLoad } from "~/utils/lazyLoad";
-import { profileSetupService } from "~/services/grpc/profileSetup.service";
+import { getJoinRequestStatusOnServer, getProfileSetupProgressOnServer } from "~/services/grpc/serverAuth";
 import { getAuthFromCookies } from "~/utils/cookie";
 import { useAuth } from "~/contexts/useAuth";
+import { getStoredProfileType } from "~/utils/authStorage";
 
 const AuthenticatedHome = lazyLoad(() => import("~/components/AuthenticatedHome"));
 const HousehelpHome = lazyLoad(() => import("~/components/HousehelpHome"));
@@ -43,25 +44,43 @@ export async function loader({ request }: Route.LoaderArgs) {
   }
 
   const profileType = userObj.profile_type || userObj.role || null;
+  const userId = userObj.user_id || userObj.id || "";
   if (!profileType) {
     return { isAuthenticated: true, userType: null };
+  }
+  if (!userId) {
+    return { isAuthenticated: true, userType: profileType };
   }
 
   // Check progress
   try {
     const progressData = await withTimeout(
-      profileSetupService.getProgress(userObj.id, profileType),
+      getProfileSetupProgressOnServer(request.url, token, userId, profileType),
       4000
     );
     
-    const totalSteps = progressData?.total_steps || 0;
-    const lastStep = progressData?.last_completed_step || 0;
-    const status = progressData?.status || "";
+    const totalSteps = Number(progressData?.total_steps || 0);
+    const lastStep = Number(progressData?.last_completed_step || 0);
+    const status = String(progressData?.status || "");
     
     const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
 
     if (!isComplete) {
       if (profileType === 'household' && lastStep === 0) {
+        try {
+          const joinRequest = await withTimeout(
+            getJoinRequestStatusOnServer(request.url, token, userId, profileType),
+            3000,
+          );
+          if (joinRequest?.status === 'pending') {
+            throw redirect('/pending-approval');
+          }
+          if (joinRequest?.status === 'approved') {
+            throw redirect('/household/profile');
+          }
+        } catch (joinErr: any) {
+          if (joinErr instanceof Response) throw joinErr;
+        }
         throw redirect('/household-choice');
       }
       const setupRoute = profileType === 'household'
@@ -74,6 +93,20 @@ export async function loader({ request }: Route.LoaderArgs) {
     
     if (err.code === 'NOT_FOUND' || err.status === 5 || err.message?.includes('not found')) {
       if (profileType === 'household') {
+        try {
+          const joinRequest = await withTimeout(
+            getJoinRequestStatusOnServer(request.url, token, userId, profileType),
+            3000,
+          );
+          if (joinRequest?.status === 'pending') {
+            throw redirect('/pending-approval');
+          }
+          if (joinRequest?.status === 'approved') {
+            throw redirect('/household/profile');
+          }
+        } catch (joinErr: any) {
+          if (joinErr instanceof Response) throw joinErr;
+        }
         throw redirect('/household-choice');
       }
       throw redirect('/profile-setup/househelp?step=1');
@@ -95,15 +128,7 @@ export default function Index() {
 
   if (!isAuthenticated && user) {
     isAuthenticated = true;
-    try {
-      if (typeof window !== 'undefined') {
-        const obj = localStorage.getItem('user_object');
-        if (obj) {
-          const parsed = JSON.parse(obj);
-          userType = parsed.profile_type || null;
-        }
-      }
-    } catch {}
+    userType = (user as any)?.user?.profile_type || getStoredProfileType() || null;
   }
 
   // Show authenticated home for logged-in users based on profile type

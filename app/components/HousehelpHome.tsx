@@ -18,6 +18,9 @@ import { fetchPreferences } from "~/utils/preferencesApi";
 import SearchableTownSelect from "~/components/ui/SearchableTownSelect";
 import CustomSelect from "~/components/ui/CustomSelect";
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
+import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 interface HouseholdItem {
   id?: string; // household user id
@@ -78,6 +81,8 @@ export default function HousehelpHome() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const countTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -91,17 +96,9 @@ export default function HousehelpHome() {
     []
   );
   const navigate = useNavigate();
-  const currentUser = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = localStorage.getItem("user_object");
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  }, []);
-  const currentUserId: string | undefined = currentUser?.id;
-  const currentProfileType: string | undefined = currentUser?.profile_type;
+  const currentUser = useMemo(() => getStoredUser(), []);
+  const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
+  const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   // Fetch household profile ID if current user is a household
@@ -181,11 +178,17 @@ export default function HousehelpHome() {
 
   // Actions
   const handleViewMore = (item: HouseholdItem) => {
-    if (item?.id) {
-      navigate(`/household/public-profile?user_id=${item.id}`, {
-        state: { profileId: item.id, backTo: '/', backLabel: 'Back to results' },
-      });
-    }
+    const profileUrl = item?.id
+      ? `/household/public-profile?userId=${item.id}&backTo=${encodeURIComponent('/')}&backLabel=${encodeURIComponent('Back to results')}`
+      : item?.profile_id
+        ? `/household/public-profile?profileId=${item.profile_id}&backTo=${encodeURIComponent('/')}&backLabel=${encodeURIComponent('Back to results')}`
+        : null;
+
+    if (!profileUrl) return;
+
+    navigate(profileUrl, {
+      state: { profileId: item.profile_id || item.id, backTo: '/', backLabel: 'Back to results' },
+    });
   };
 
   const handleStartChat = async (householdUserId?: string) => {
@@ -223,6 +226,8 @@ export default function HousehelpHome() {
   const handleShortlist = async (profileId: string) => {
     if (!profileId) return;
     try {
+      setActionError(null);
+      setActionSuccess(null);
       const isShortlisted = shortlistedProfiles.has(profileId);
       if (isShortlisted) {
         await shortlistService.deleteShortlist(profileId);
@@ -231,14 +236,16 @@ export default function HousehelpHome() {
           next.delete(profileId);
           return next;
         });
+        setActionSuccess('Removed from shortlist.');
       } else {
         await shortlistService.createShortlist('', 'househelp', { profile_id: profileId, profile_type: 'household' });
         setShortlistedProfiles((prev) => new Set(prev).add(profileId));
+        setActionSuccess('Added to shortlist.');
       }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (err) {
       console.error('Failed to update shortlist', err);
-      alert('Shortlist for households will be available soon.');
+      setActionError(getFriendlyErrorMessage(err instanceof Error ? err.message : 'Failed to update shortlist'));
     }
   };
 
@@ -280,19 +287,17 @@ export default function HousehelpHome() {
     setError(null);
     try {
       const raw = await grpcProfileService.searchHouseholds('', 'househelp', buildFilters(), 12, 0);
-      console.log('[HousehelpHome] Search raw response:', raw);
-      
+
       // Try multiple possible response structures
       let data = raw?.data?.data || raw?.data || raw?.profiles || raw;
-      
+
       // If data is an object with a profiles or households property, extract it
       if (data && typeof data === 'object' && !Array.isArray(data)) {
         data = data.profiles || data.households || data.data || [];
       }
-      
+
       // Ensure data is always an array
       const households = Array.isArray(data) ? data : [];
-      console.log('[HousehelpHome] Extracted households:', households.length, households);
       setResults(households as HouseholdItem[]);
     } catch (err: any) {
       console.error('[HousehelpHome] Search error:', err);
@@ -432,6 +437,8 @@ export default function HousehelpHome() {
 
             <div className="mt-6 sm:mt-8">
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Households</h2>
+              {actionSuccess && <SuccessAlert message={actionSuccess} className="mb-4" />}
+              {actionError && <ErrorAlert message={actionError} className="mb-4" />}
               {loading ? (
                 <div className="flex justify-center items-center py-20">
                   <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>

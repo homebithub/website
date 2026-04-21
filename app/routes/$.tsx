@@ -1,4 +1,4 @@
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -6,6 +6,20 @@ import { PurpleCard } from '~/components/ui/PurpleCard';
 import { HomeIcon, ArrowLeftIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 export default function NotFound() {
+  const navigate = useNavigate();
+  const handleGoBack = () => {
+    if (
+      typeof window !== "undefined" &&
+      window.history.length > 1 &&
+      document.referrer.startsWith(window.location.origin)
+    ) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/", { replace: true });
+  };
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -48,7 +62,7 @@ export default function NotFound() {
               </Link>
               
               <button
-                onClick={() => window.history.back()}
+                onClick={handleGoBack}
                 className="inline-flex items-center px-6 py-1.5 bg-white dark:bg-[#13131a] text-purple-600 dark:text-purple-400 font-semibold rounded-xl border-2 border-purple-600 dark:border-purple-500/50 hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all duration-200 shadow-md dark:shadow-glow-sm hover:shadow-lg dark:hover:shadow-glow-md hover:scale-105"
               >
                 <ArrowLeftIcon className="h-5 w-5 mr-2" />

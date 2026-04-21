@@ -119,42 +119,34 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   useSubscriptionSSE(
     // onActivated
     useCallback(() => {
-      console.log('[useSubscription SSE] Subscription activated, refetching...');
       fetchSubscription();
     }, [fetchSubscription]),
     // onSuspended
     useCallback(() => {
-      console.log('[useSubscription SSE] Subscription suspended, refetching...');
       fetchSubscription();
     }, [fetchSubscription]),
     // onReactivated
     useCallback(() => {
-      console.log('[useSubscription SSE] Subscription reactivated, refetching...');
       fetchSubscription();
     }, [fetchSubscription]),
     // onPastDue
-    useCallback((event: import('./useSubscriptionSSE').SubscriptionSSEEvent) => {
-      console.log('[useSubscription SSE] Subscription past due:', event.data);
+    useCallback(() => {
       fetchSubscription();
     }, [fetchSubscription]),
     // onTrialStarted
     useCallback(() => {
-      console.log('[useSubscription SSE] Trial started, refetching...');
       fetchSubscription();
     }, [fetchSubscription]),
     // onExpiryWarning
-    useCallback((event: import('./useSubscriptionSSE').SubscriptionSSEEvent) => {
-      console.log('[useSubscription SSE] Expiry warning:', event.data);
+    useCallback(() => {
       // Could show a toast notification here
     }, []),
     // onLapsed
     useCallback(() => {
-      console.log('[useSubscription SSE] Subscription lapsed, refetching...');
       fetchSubscription();
     }, [fetchSubscription]),
     // onCancelled
     useCallback(() => {
-      console.log('[useSubscription SSE] Subscription cancelled, refetching...');
       fetchSubscription();
     }, [fetchSubscription])
   );

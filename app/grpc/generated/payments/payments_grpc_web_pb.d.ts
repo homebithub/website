@@ -393,6 +393,27 @@ export class PaymentsServiceClient {
                response: payments_payments_pb.IsUserWhitelistedResponse) => void
   ): grpcWeb.ClientReadableStream<payments_payments_pb.IsUserWhitelistedResponse>;
 
+  adminListPayments(
+    request: payments_payments_pb.AdminListPaymentsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: payments_payments_pb.AdminListPaymentsResponse) => void
+  ): grpcWeb.ClientReadableStream<payments_payments_pb.AdminListPaymentsResponse>;
+
+  adminListSubscriptions(
+    request: payments_payments_pb.AdminListSubscriptionsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: payments_payments_pb.AdminListSubscriptionsResponse) => void
+  ): grpcWeb.ClientReadableStream<payments_payments_pb.AdminListSubscriptionsResponse>;
+
+  adminUpdatePlan(
+    request: payments_payments_pb.AdminUpdatePlanRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: payments_payments_pb.AdminUpdatePlanResponse) => void
+  ): grpcWeb.ClientReadableStream<payments_payments_pb.AdminUpdatePlanResponse>;
+
 }
 
 export class PaymentsServicePromiseClient {
@@ -674,6 +695,21 @@ export class PaymentsServicePromiseClient {
     request: payments_payments_pb.IsUserWhitelistedRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<payments_payments_pb.IsUserWhitelistedResponse>;
+
+  adminListPayments(
+    request: payments_payments_pb.AdminListPaymentsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<payments_payments_pb.AdminListPaymentsResponse>;
+
+  adminListSubscriptions(
+    request: payments_payments_pb.AdminListSubscriptionsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<payments_payments_pb.AdminListSubscriptionsResponse>;
+
+  adminUpdatePlan(
+    request: payments_payments_pb.AdminUpdatePlanRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<payments_payments_pb.AdminUpdatePlanResponse>;
 
 }
 

@@ -467,6 +467,334 @@ export namespace SystemMaintenanceAlert {
   };
 }
 
+export class MatchFound extends jspb.Message {
+  getHouseholdId(): string;
+  setHouseholdId(value: string): MatchFound;
+
+  getMatchCount(): number;
+  setMatchCount(value: number): MatchFound;
+
+  getMatchesUrl(): string;
+  setMatchesUrl(value: string): MatchFound;
+
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): MatchFound;
+  hasTimestamp(): boolean;
+  clearTimestamp(): MatchFound;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): MatchFound.AsObject;
+  static toObject(includeInstance: boolean, msg: MatchFound): MatchFound.AsObject;
+  static serializeBinaryToWriter(message: MatchFound, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): MatchFound;
+  static deserializeBinaryFromReader(message: MatchFound, reader: jspb.BinaryReader): MatchFound;
+}
+
+export namespace MatchFound {
+  export type AsObject = {
+    householdId: string;
+    matchCount: number;
+    matchesUrl: string;
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class ProfileUnlocked extends jspb.Message {
+  getHouseholdId(): string;
+  setHouseholdId(value: string): ProfileUnlocked;
+
+  getProfileName(): string;
+  setProfileName(value: string): ProfileUnlocked;
+
+  getPhone(): string;
+  setPhone(value: string): ProfileUnlocked;
+
+  getProfileUrl(): string;
+  setProfileUrl(value: string): ProfileUnlocked;
+
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): ProfileUnlocked;
+  hasTimestamp(): boolean;
+  clearTimestamp(): ProfileUnlocked;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ProfileUnlocked.AsObject;
+  static toObject(includeInstance: boolean, msg: ProfileUnlocked): ProfileUnlocked.AsObject;
+  static serializeBinaryToWriter(message: ProfileUnlocked, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ProfileUnlocked;
+  static deserializeBinaryFromReader(message: ProfileUnlocked, reader: jspb.BinaryReader): ProfileUnlocked;
+}
+
+export namespace ProfileUnlocked {
+  export type AsObject = {
+    householdId: string;
+    profileName: string;
+    phone: string;
+    profileUrl: string;
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class ShortlistAdded extends jspb.Message {
+  getHousehelpId(): string;
+  setHousehelpId(value: string): ShortlistAdded;
+
+  getHouseholdName(): string;
+  setHouseholdName(value: string): ShortlistAdded;
+
+  getHouseholdProfileUrl(): string;
+  setHouseholdProfileUrl(value: string): ShortlistAdded;
+
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): ShortlistAdded;
+  hasTimestamp(): boolean;
+  clearTimestamp(): ShortlistAdded;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ShortlistAdded.AsObject;
+  static toObject(includeInstance: boolean, msg: ShortlistAdded): ShortlistAdded.AsObject;
+  static serializeBinaryToWriter(message: ShortlistAdded, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ShortlistAdded;
+  static deserializeBinaryFromReader(message: ShortlistAdded, reader: jspb.BinaryReader): ShortlistAdded;
+}
+
+export namespace ShortlistAdded {
+  export type AsObject = {
+    househelpId: string;
+    householdName: string;
+    householdProfileUrl: string;
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class ShortlistRemoved extends jspb.Message {
+  getHousehelpId(): string;
+  setHousehelpId(value: string): ShortlistRemoved;
+
+  getHouseholdName(): string;
+  setHouseholdName(value: string): ShortlistRemoved;
+
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): ShortlistRemoved;
+  hasTimestamp(): boolean;
+  clearTimestamp(): ShortlistRemoved;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ShortlistRemoved.AsObject;
+  static toObject(includeInstance: boolean, msg: ShortlistRemoved): ShortlistRemoved.AsObject;
+  static serializeBinaryToWriter(message: ShortlistRemoved, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ShortlistRemoved;
+  static deserializeBinaryFromReader(message: ShortlistRemoved, reader: jspb.BinaryReader): ShortlistRemoved;
+}
+
+export namespace ShortlistRemoved {
+  export type AsObject = {
+    househelpId: string;
+    householdName: string;
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class InterestReceived extends jspb.Message {
+  getRecipientId(): string;
+  setRecipientId(value: string): InterestReceived;
+
+  getInterestedPartyName(): string;
+  setInterestedPartyName(value: string): InterestReceived;
+
+  getInterestedPartyType(): string;
+  setInterestedPartyType(value: string): InterestReceived;
+
+  getDetailsUrl(): string;
+  setDetailsUrl(value: string): InterestReceived;
+
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): InterestReceived;
+  hasTimestamp(): boolean;
+  clearTimestamp(): InterestReceived;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InterestReceived.AsObject;
+  static toObject(includeInstance: boolean, msg: InterestReceived): InterestReceived.AsObject;
+  static serializeBinaryToWriter(message: InterestReceived, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InterestReceived;
+  static deserializeBinaryFromReader(message: InterestReceived, reader: jspb.BinaryReader): InterestReceived;
+}
+
+export namespace InterestReceived {
+  export type AsObject = {
+    recipientId: string;
+    interestedPartyName: string;
+    interestedPartyType: string;
+    detailsUrl: string;
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class InterestResponse extends jspb.Message {
+  getRecipientId(): string;
+  setRecipientId(value: string): InterestResponse;
+
+  getHouseholdName(): string;
+  setHouseholdName(value: string): InterestResponse;
+
+  getDetailsUrl(): string;
+  setDetailsUrl(value: string): InterestResponse;
+
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): InterestResponse;
+  hasTimestamp(): boolean;
+  clearTimestamp(): InterestResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InterestResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: InterestResponse): InterestResponse.AsObject;
+  static serializeBinaryToWriter(message: InterestResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InterestResponse;
+  static deserializeBinaryFromReader(message: InterestResponse, reader: jspb.BinaryReader): InterestResponse;
+}
+
+export namespace InterestResponse {
+  export type AsObject = {
+    recipientId: string;
+    householdName: string;
+    detailsUrl: string;
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class NewProfilesAvailable extends jspb.Message {
+  getHouseholdId(): string;
+  setHouseholdId(value: string): NewProfilesAvailable;
+
+  getNewCount(): number;
+  setNewCount(value: number): NewProfilesAvailable;
+
+  getBrowseUrl(): string;
+  setBrowseUrl(value: string): NewProfilesAvailable;
+
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): NewProfilesAvailable;
+  hasTimestamp(): boolean;
+  clearTimestamp(): NewProfilesAvailable;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): NewProfilesAvailable.AsObject;
+  static toObject(includeInstance: boolean, msg: NewProfilesAvailable): NewProfilesAvailable.AsObject;
+  static serializeBinaryToWriter(message: NewProfilesAvailable, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): NewProfilesAvailable;
+  static deserializeBinaryFromReader(message: NewProfilesAvailable, reader: jspb.BinaryReader): NewProfilesAvailable;
+}
+
+export namespace NewProfilesAvailable {
+  export type AsObject = {
+    householdId: string;
+    newCount: number;
+    browseUrl: string;
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class SavedSearchAlert extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): SavedSearchAlert;
+
+  getSearchName(): string;
+  setSearchName(value: string): SavedSearchAlert;
+
+  getResultsCount(): number;
+  setResultsCount(value: number): SavedSearchAlert;
+
+  getResultsUrl(): string;
+  setResultsUrl(value: string): SavedSearchAlert;
+
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): SavedSearchAlert;
+  hasTimestamp(): boolean;
+  clearTimestamp(): SavedSearchAlert;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SavedSearchAlert.AsObject;
+  static toObject(includeInstance: boolean, msg: SavedSearchAlert): SavedSearchAlert.AsObject;
+  static serializeBinaryToWriter(message: SavedSearchAlert, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SavedSearchAlert;
+  static deserializeBinaryFromReader(message: SavedSearchAlert, reader: jspb.BinaryReader): SavedSearchAlert;
+}
+
+export namespace SavedSearchAlert {
+  export type AsObject = {
+    userId: string;
+    searchName: string;
+    resultsCount: number;
+    resultsUrl: string;
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class ProfileFeatured extends jspb.Message {
+  getHousehelpId(): string;
+  setHousehelpId(value: string): ProfileFeatured;
+
+  getFeatureDuration(): string;
+  setFeatureDuration(value: string): ProfileFeatured;
+
+  getProfileUrl(): string;
+  setProfileUrl(value: string): ProfileFeatured;
+
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): ProfileFeatured;
+  hasTimestamp(): boolean;
+  clearTimestamp(): ProfileFeatured;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ProfileFeatured.AsObject;
+  static toObject(includeInstance: boolean, msg: ProfileFeatured): ProfileFeatured.AsObject;
+  static serializeBinaryToWriter(message: ProfileFeatured, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ProfileFeatured;
+  static deserializeBinaryFromReader(message: ProfileFeatured, reader: jspb.BinaryReader): ProfileFeatured;
+}
+
+export namespace ProfileFeatured {
+  export type AsObject = {
+    househelpId: string;
+    featureDuration: string;
+    profileUrl: string;
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class SimilarProfilesSuggested extends jspb.Message {
+  getHouseholdId(): string;
+  setHouseholdId(value: string): SimilarProfilesSuggested;
+
+  getSuggestionsCount(): number;
+  setSuggestionsCount(value: number): SimilarProfilesSuggested;
+
+  getSuggestionsUrl(): string;
+  setSuggestionsUrl(value: string): SimilarProfilesSuggested;
+
+  getTimestamp(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setTimestamp(value?: google_protobuf_timestamp_pb.Timestamp): SimilarProfilesSuggested;
+  hasTimestamp(): boolean;
+  clearTimestamp(): SimilarProfilesSuggested;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): SimilarProfilesSuggested.AsObject;
+  static toObject(includeInstance: boolean, msg: SimilarProfilesSuggested): SimilarProfilesSuggested.AsObject;
+  static serializeBinaryToWriter(message: SimilarProfilesSuggested, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): SimilarProfilesSuggested;
+  static deserializeBinaryFromReader(message: SimilarProfilesSuggested, reader: jspb.BinaryReader): SimilarProfilesSuggested;
+}
+
+export namespace SimilarProfilesSuggested {
+  export type AsObject = {
+    householdId: string;
+    suggestionsCount: number;
+    suggestionsUrl: string;
+    timestamp?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
 export class SubscriptionActivated extends jspb.Message {
   getSubscriptionId(): string;
   setSubscriptionId(value: string): SubscriptionActivated;

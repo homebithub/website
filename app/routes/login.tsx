@@ -14,6 +14,7 @@ import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { getDeviceId, getDeviceName } from '~/utils/deviceFingerprint';
 import { cacheAuthSession, getStoredAccessToken } from '~/utils/authStorage';
+import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
 
 export const meta = () => [
     { title: "Log In — Homebit" },
@@ -126,9 +127,7 @@ export default function LoginPage() {
               const result = await deviceService.registerDevice(
                 userData.user_id, deviceId, getDeviceName(), navigator.userAgent, ''
               );
-              if (result.requiresConfirmation) {
-                console.log('[Device] New device registered via Google login, confirmation email sent');
-              }
+              void result;
             }
           } catch (deviceError) {
             console.error('[Device] Registration failed after Google login:', deviceError);
@@ -136,7 +135,12 @@ export default function LoginPage() {
 
           // If user has no phone number, redirect to add-phone page
           if (!userData.phone) {
-            navigate('/add-phone', {
+            const params = new URLSearchParams({
+              userId: userData.user_id,
+              profileType,
+              redirectTo: redirectUrl || '/',
+            });
+            navigate(`/add-phone?${params.toString()}`, {
               replace: true,
               state: {
                 user_id: userData.user_id,
@@ -150,40 +154,14 @@ export default function LoginPage() {
           // Mirror the profile-setup redirect logic used in AuthContext.login
           if (profileType === 'household' || profileType === 'househelp') {
             try {
-              const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
-              const progressData = await profileSetupService.getProgress(userData.user_id, profileType);
-
-              if (progressData) {
-                const totalSteps = progressData.total_steps || 0;
-                const lastStep = progressData.last_completed_step || 0;
-                const isComplete = progressData.status === 'completed' ||
-                  (totalSteps > 0 && lastStep >= totalSteps);
-
-                if (isComplete) {
-                  // Redirect completed users to home page instead of profile
-                  navigate('/', { replace: true });
-                  return;
-                }
-
-                if (profileType === 'household' && lastStep === 0) {
-                  navigate('/household-choice', { replace: true });
-                  return;
-                }
-                const setupRoute = profileType === 'household'
-                  ? `/profile-setup/household?step=${lastStep + 1}`
-                  : `/profile-setup/househelp?step=${lastStep + 1}`;
-                navigate(setupRoute, { replace: true });
-                return;
-              }
+              const destination = await resolveProfileSetupDestination({
+                userId: userData.user_id,
+                profileType,
+                completedPath: '/',
+              });
+              navigate(destination, { replace: true });
+              return;
             } catch (err: any) {
-              if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
-                if (profileType === 'household') {
-                  navigate('/household-choice', { replace: true });
-                  return;
-                }
-                navigate('/profile-setup/househelp?step=1', { replace: true });
-                return;
-              }
               console.error('Failed to check profile setup status after Google login:', err);
             }
           }

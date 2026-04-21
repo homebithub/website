@@ -3837,3 +3837,209 @@ export namespace IsUserWhitelistedResponse {
   };
 }
 
+export class AdminListPaymentsRequest extends jspb.Message {
+  getStatus(): string;
+  setStatus(value: string): AdminListPaymentsRequest;
+
+  getUserId(): string;
+  setUserId(value: string): AdminListPaymentsRequest;
+
+  getOffset(): number;
+  setOffset(value: number): AdminListPaymentsRequest;
+
+  getLimit(): number;
+  setLimit(value: number): AdminListPaymentsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListPaymentsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListPaymentsRequest): AdminListPaymentsRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminListPaymentsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListPaymentsRequest;
+  static deserializeBinaryFromReader(message: AdminListPaymentsRequest, reader: jspb.BinaryReader): AdminListPaymentsRequest;
+}
+
+export namespace AdminListPaymentsRequest {
+  export type AsObject = {
+    status: string;
+    userId: string;
+    offset: number;
+    limit: number;
+  };
+}
+
+export class AdminListPaymentsResponse extends jspb.Message {
+  getPaymentsList(): Array<Payment>;
+  setPaymentsList(value: Array<Payment>): AdminListPaymentsResponse;
+  clearPaymentsList(): AdminListPaymentsResponse;
+  addPayments(value?: Payment, index?: number): Payment;
+
+  getTotal(): number;
+  setTotal(value: number): AdminListPaymentsResponse;
+
+  getOffset(): number;
+  setOffset(value: number): AdminListPaymentsResponse;
+
+  getLimit(): number;
+  setLimit(value: number): AdminListPaymentsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListPaymentsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListPaymentsResponse): AdminListPaymentsResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminListPaymentsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListPaymentsResponse;
+  static deserializeBinaryFromReader(message: AdminListPaymentsResponse, reader: jspb.BinaryReader): AdminListPaymentsResponse;
+}
+
+export namespace AdminListPaymentsResponse {
+  export type AsObject = {
+    paymentsList: Array<Payment.AsObject>;
+    total: number;
+    offset: number;
+    limit: number;
+  };
+}
+
+export class AdminListSubscriptionsRequest extends jspb.Message {
+  getStatus(): string;
+  setStatus(value: string): AdminListSubscriptionsRequest;
+
+  getProfileType(): string;
+  setProfileType(value: string): AdminListSubscriptionsRequest;
+
+  getOffset(): number;
+  setOffset(value: number): AdminListSubscriptionsRequest;
+
+  getLimit(): number;
+  setLimit(value: number): AdminListSubscriptionsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListSubscriptionsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListSubscriptionsRequest): AdminListSubscriptionsRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminListSubscriptionsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListSubscriptionsRequest;
+  static deserializeBinaryFromReader(message: AdminListSubscriptionsRequest, reader: jspb.BinaryReader): AdminListSubscriptionsRequest;
+}
+
+export namespace AdminListSubscriptionsRequest {
+  export type AsObject = {
+    status: string;
+    profileType: string;
+    offset: number;
+    limit: number;
+  };
+}
+
+export class AdminListSubscriptionsResponse extends jspb.Message {
+  getSubscriptionsList(): Array<Subscription>;
+  setSubscriptionsList(value: Array<Subscription>): AdminListSubscriptionsResponse;
+  clearSubscriptionsList(): AdminListSubscriptionsResponse;
+  addSubscriptions(value?: Subscription, index?: number): Subscription;
+
+  getTotal(): number;
+  setTotal(value: number): AdminListSubscriptionsResponse;
+
+  getOffset(): number;
+  setOffset(value: number): AdminListSubscriptionsResponse;
+
+  getLimit(): number;
+  setLimit(value: number): AdminListSubscriptionsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListSubscriptionsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListSubscriptionsResponse): AdminListSubscriptionsResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminListSubscriptionsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListSubscriptionsResponse;
+  static deserializeBinaryFromReader(message: AdminListSubscriptionsResponse, reader: jspb.BinaryReader): AdminListSubscriptionsResponse;
+}
+
+export namespace AdminListSubscriptionsResponse {
+  export type AsObject = {
+    subscriptionsList: Array<Subscription.AsObject>;
+    total: number;
+    offset: number;
+    limit: number;
+  };
+}
+
+export class AdminUpdatePlanRequest extends jspb.Message {
+  getPlanId(): string;
+  setPlanId(value: string): AdminUpdatePlanRequest;
+
+  getName(): string;
+  setName(value: string): AdminUpdatePlanRequest;
+
+  getDescription(): string;
+  setDescription(value: string): AdminUpdatePlanRequest;
+
+  getPriceAmount(): number;
+  setPriceAmount(value: number): AdminUpdatePlanRequest;
+
+  getBillingCycle(): string;
+  setBillingCycle(value: string): AdminUpdatePlanRequest;
+
+  getTrialDays(): number;
+  setTrialDays(value: number): AdminUpdatePlanRequest;
+
+  getIsActive(): boolean;
+  setIsActive(value: boolean): AdminUpdatePlanRequest;
+
+  getMaxProfiles(): number;
+  setMaxProfiles(value: number): AdminUpdatePlanRequest;
+
+  getMaxApplications(): number;
+  setMaxApplications(value: number): AdminUpdatePlanRequest;
+
+  getMaxHires(): number;
+  setMaxHires(value: number): AdminUpdatePlanRequest;
+
+  getDisplayOrder(): number;
+  setDisplayOrder(value: number): AdminUpdatePlanRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminUpdatePlanRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminUpdatePlanRequest): AdminUpdatePlanRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminUpdatePlanRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminUpdatePlanRequest;
+  static deserializeBinaryFromReader(message: AdminUpdatePlanRequest, reader: jspb.BinaryReader): AdminUpdatePlanRequest;
+}
+
+export namespace AdminUpdatePlanRequest {
+  export type AsObject = {
+    planId: string;
+    name: string;
+    description: string;
+    priceAmount: number;
+    billingCycle: string;
+    trialDays: number;
+    isActive: boolean;
+    maxProfiles: number;
+    maxApplications: number;
+    maxHires: number;
+    displayOrder: number;
+  };
+}
+
+export class AdminUpdatePlanResponse extends jspb.Message {
+  getPlan(): SubscriptionPlan | undefined;
+  setPlan(value?: SubscriptionPlan): AdminUpdatePlanResponse;
+  hasPlan(): boolean;
+  clearPlan(): AdminUpdatePlanResponse;
+
+  getMessage(): string;
+  setMessage(value: string): AdminUpdatePlanResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminUpdatePlanResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminUpdatePlanResponse): AdminUpdatePlanResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminUpdatePlanResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminUpdatePlanResponse;
+  static deserializeBinaryFromReader(message: AdminUpdatePlanResponse, reader: jspb.BinaryReader): AdminUpdatePlanResponse;
+}
+
+export namespace AdminUpdatePlanResponse {
+  export type AsObject = {
+    plan?: SubscriptionPlan.AsObject;
+    message: string;
+  };
+}
+

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { TrashIcon, EyeIcon } from '@heroicons/react/24/outline';
 import { API_BASE_URL, getAuthHeaders } from '~/config/api';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 
 export interface ImageDocument {
   id: string;
@@ -33,7 +34,9 @@ export default function ImageGallery({
   const [images, setImages] = useState<ImageDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<ImageDocument | null>(null);
+  const [imageToDelete, setImageToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     loadImages();
@@ -44,6 +47,7 @@ export default function ImageGallery({
     setError(null);
 
     try {
+      setActionError(null);
       const token = getAccessTokenFromCookies();
       if (!token) {
         throw new Error('Not authenticated');
@@ -75,10 +79,6 @@ export default function ImageGallery({
   };
 
   const handleDelete = async (imageId: string) => {
-    if (!confirm('Are you sure you want to delete this image?')) {
-      return;
-    }
-
     try {
       const token = getAccessTokenFromCookies();
       if (!token) return;
@@ -100,7 +100,7 @@ export default function ImageGallery({
       onDelete?.(imageId);
     } catch (err: any) {
       console.error('Error deleting image:', err);
-      alert(err.message || 'Failed to delete image');
+      setActionError(err.message || 'Failed to delete image');
     }
   };
 
@@ -147,6 +147,7 @@ export default function ImageGallery({
 
   return (
     <div className={className}>
+      {actionError && <ErrorAlert message={actionError} className="mb-4" />}
       <div className={`grid ${gridCols[columns]} gap-4`}>
         {images.map((image) => (
           <div
@@ -172,7 +173,7 @@ export default function ImageGallery({
               </button>
               
               <button
-                onClick={() => handleDelete(image.id)}
+                onClick={() => setImageToDelete(image.id)}
                 className="p-2 bg-white dark:bg-gray-800 rounded-full hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
                 title="Delete"
               >
@@ -219,6 +220,21 @@ export default function ImageGallery({
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={imageToDelete !== null}
+        onClose={() => setImageToDelete(null)}
+        onConfirm={() => {
+          if (!imageToDelete) return;
+          void handleDelete(imageToDelete);
+          setImageToDelete(null);
+        }}
+        title="Delete Image"
+        message="Are you sure you want to delete this image?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+      />
     </div>
   );
 }
@@ -230,4 +246,3 @@ function formatFileSize(bytes: number): string {
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
 }
-

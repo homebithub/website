@@ -66,7 +66,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
 
     const currentUserId = (user as any)?.user?.id || (user as any)?.id;
     if (!currentUserId) {
-      console.log('[SSE] No authenticated user, skipping connection');
       disconnect();
       return;
     }
@@ -77,12 +76,10 @@ export function SSEProvider({ children }: SSEProviderProps) {
       eventSourceRef.current = null;
     }
 
-    console.log('[SSE] Establishing single EventSource connection...');
     const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
     eventSourceRef.current = es;
 
     es.onopen = () => {
-      console.log('[SSE] Connected successfully');
       setIsConnected(true);
       reconnectAttemptsRef.current = 0;
       connectionStartTimeRef.current = Date.now();
@@ -103,8 +100,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
       try {
         const payload = JSON.parse(ev.data);
         const eventType = payload.event_type;
-        
-        console.log('[SSE] Received event:', eventType);
 
         // Route event to all registered handlers for this event type
         const handlers = listenersRef.current.get(eventType);
@@ -139,7 +134,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
 	      // Attempt reconnection with exponential backoff
 	      if (reconnectAttemptsRef.current < maxReconnectAttempts) {
         const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
-        console.log(`[SSE] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current + 1}/${maxReconnectAttempts})`);
         
         reconnectTimeoutRef.current = setTimeout(() => {
           reconnectAttemptsRef.current++;
@@ -152,14 +146,11 @@ export function SSEProvider({ children }: SSEProviderProps) {
 	  }, [disconnect, user]);
 
   const reconnect = useCallback(() => {
-    console.log('[SSE] Manual reconnect triggered');
     reconnectAttemptsRef.current = 0;
     connect();
   }, [connect]);
 
   const subscribe = useCallback((eventType: string, handler: SSEEventHandler) => {
-    console.log(`[SSE] Subscribing to event type: ${eventType}`);
-    
     if (!listenersRef.current.has(eventType)) {
       listenersRef.current.set(eventType, new Set());
     }
@@ -168,7 +159,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
 
     // Return unsubscribe function
     return () => {
-      console.log(`[SSE] Unsubscribing from event type: ${eventType}`);
       const handlers = listenersRef.current.get(eventType);
       if (handlers) {
         handlers.delete(handler);
@@ -191,7 +181,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
     }
 
     return () => {
-      console.log('[SSE] Cleaning up SSE connection');
       disconnect();
     };
   }, [connect, disconnect, user]);

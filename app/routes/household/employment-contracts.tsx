@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams, useLocation } from "react-router";
 import { employmentContractService } from '~/services/grpc/authServices';
 import {
   FileText, CheckCircle, Clock, Send, Plus, ChevronRight, AlertCircle
@@ -32,17 +32,42 @@ type TabType = 'all' | 'draft' | 'pending_househelp' | 'signed_by_both';
 
 export default function EmploymentContractsList() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<TabType>('all');
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs: TabType[] = ['all', 'draft', 'pending_househelp', 'signed_by_both'];
+    return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'all';
+  });
   const [contracts, setContracts] = useState<EmploymentContract[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
   const [offset, setOffset] = useState(0);
   const limit = 20;
+  const backToPath = `${location.pathname}${location.search || ''}`;
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setOffset(0);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set('tab', tab);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   useEffect(() => {
     fetchContracts();
   }, [activeTab, offset]);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs: TabType[] = ['all', 'draft', 'pending_househelp', 'signed_by_both'];
+    if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
+      setActiveTab(tabParam as TabType);
+      setOffset(0);
+    }
+  }, [activeTab, searchParams]);
 
   const fetchContracts = async () => {
     setLoading(true);
@@ -110,7 +135,7 @@ export default function EmploymentContractsList() {
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => { setActiveTab(tab.key); setOffset(0); }}
+                  onClick={() => handleTabChange(tab.key)}
                   className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                     activeTab === tab.key
                       ? 'border-purple-500 text-purple-600 dark:text-purple-400'
@@ -124,7 +149,17 @@ export default function EmploymentContractsList() {
           </div>
         </div>
 
-        {error && <ErrorAlert message={error} className="mb-6" />}
+        {error && (
+          <div className="mb-6">
+            <ErrorAlert message={error} className="mb-4" />
+            <button
+              onClick={fetchContracts}
+              className="rounded-xl border border-purple-500/50 px-4 py-2 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-900/20"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
 
         {loading && (
           <div className="flex justify-center items-center py-12">
@@ -156,7 +191,14 @@ export default function EmploymentContractsList() {
               return (
                 <button
                   key={contract.id}
-                  onClick={() => navigate(`/household/employment-contract?id=${contract.id}`)}
+                  onClick={() => {
+                    const params = new URLSearchParams({
+                      id: contract.id,
+                      backTo: backToPath,
+                      backLabel: 'Back to Contracts',
+                    });
+                    navigate(`/household/employment-contract?${params.toString()}`);
+                  }}
                   className="w-full bg-white dark:bg-gray-800 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow text-left flex items-center gap-4"
                 >
                   <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold flex-shrink-0">

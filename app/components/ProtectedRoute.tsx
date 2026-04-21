@@ -2,6 +2,7 @@ import React from "react";
 import { Navigate, useLocation } from "react-router";
 import { useAuth } from "~/contexts/useAuth";
 import { Loading } from "~/components/Loading";
+import { getStoredUser } from "~/utils/authStorage";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -11,6 +12,10 @@ interface ProtectedRouteProps {
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
   const { user, loading } = useAuth();
   const location = useLocation();
+  const authUser = (user as any)?.user ?? null;
+  const storedUser = getStoredUser();
+  const currentUser = authUser ?? storedUser ?? null;
+  const currentUserRole = currentUser?.role || "";
 
   if (loading) {
     return <Loading text="Checking authentication..." />;
@@ -20,7 +25,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && user.role !== requiredRole) {
+  if (requiredRole && currentUserRole !== requiredRole) {
     return <Navigate to="/unauthorized" replace />;
   }
 

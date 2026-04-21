@@ -16,8 +16,6 @@ import {
 // Extract proto.auth from the default export
 const auth_pb = auth_pb_module as any;
 
-// Create singleton client instance
-console.log('[gRPC-Web] Initializing AuthServiceClient with base URL:', GRPC_WEB_BASE_URL);
 const authClient = new AuthServiceClient(GRPC_WEB_BASE_URL, null, null);
 const adminAuthClient = new AdminAuthServiceClient(GRPC_WEB_BASE_URL, null, null);
 
@@ -53,8 +51,6 @@ export const authService = {
     profileType: string,
     bureauId?: string
   ): Promise<any> {
-    console.log('[gRPC-Web] signup() called with:', { phone, firstName, lastName, profileType, bureauId });
-    
     return new Promise((resolve, reject) => {
       try {
         const request = new auth_pb.SignupRequest();
@@ -68,14 +64,11 @@ export const authService = {
           request.setBureauId(bureauId);
         }
 
-        console.log('[gRPC-Web] Making signup request to:', GRPC_WEB_BASE_URL);
-        
         authClient.signup(request, getMetadata(), (err, response) => {
           if (err) {
             console.error('[gRPC-Web] signup error:', err);
             reject(handleGrpcError(err));
           } else {
-            console.log('[gRPC-Web] signup success:', response);
             resolve(response);
           }
         });

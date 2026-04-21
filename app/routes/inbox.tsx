@@ -19,6 +19,8 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSubscription } from '~/hooks/useSubscription';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { useInboxSSE } from '~/hooks/useInboxSSE';
+import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { resolveHouseholdProfile } from '~/utils/householdProfiles';
 
 type Conversation = {
   id: string;
@@ -160,6 +162,9 @@ function normalizeMessageList(rawMessages: any[]): Message[] {
 
 export default function InboxPage() {
   const { user, loading: authLoading } = useAuth();
+  const authUser = (user as any)?.user ?? null;
+  const storedUser = getStoredUser();
+  const currentUser = authUser ?? storedUser ?? null;
   const API_BASE = React.useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
   const NOTIFICATIONS_BASE = React.useMemo(
     () => (typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL,
@@ -180,13 +185,7 @@ export default function InboxPage() {
   }, [authLoading, user, navigate]);
 
   // Subscription check - gate messaging behind active subscription
-  const currentUserId_sub = useMemo(() => {
-    try {
-      const str = localStorage.getItem("user_object");
-      if (!str) return null;
-      return JSON.parse(str)?.id || null;
-    } catch { return null; }
-  }, []);
+  const currentUserId_sub = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
   const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId_sub);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
@@ -300,20 +299,16 @@ export default function InboxPage() {
   const { isConnected: sseConnected } = useInboxSSE(
     // onMessageReceived
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
-      console.log('[Inbox SSE] Received new message:', event);
       try {
         const msg = normalizeMessage(event.data);
         if (!msg || !msg.id) {
-          console.warn('[Inbox SSE] Invalid message data:', event.data);
           return;
         }
         
         setMessages((prev) => {
           if (prev.some((m) => m.id === msg.id)) {
-            console.log('[Inbox SSE] Message already exists, skipping');
             return prev;
           }
-          console.log('[Inbox SSE] Adding new message to chat');
           return [...prev, msg];
         });
         
@@ -348,7 +343,6 @@ export default function InboxPage() {
     }, [isAtBottom, activeConversationId]),
     // onMessageRead
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
-      console.log('[Inbox SSE] Message read:', event);
       try {
         const { message_id, read_at } = event.data;
         if (message_id) {
@@ -362,7 +356,6 @@ export default function InboxPage() {
     }, []),
     // onMessageDeleted
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
-      console.log('[Inbox SSE] Message deleted:', event);
       try {
         const { message_id, deleted_at } = event.data;
         if (message_id) {
@@ -375,23 +368,19 @@ export default function InboxPage() {
       }
     }, []),
     // onConversationStarted
-    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
-      console.log('[Inbox SSE] Conversation started:', event);
+    useCallback((_event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       // Refresh conversation list on next load
     }, []),
     // onConversationArchived
-    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
-      console.log('[Inbox SSE] Conversation archived:', event);
+    useCallback((_event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       // Refresh conversation list on next load
     }, []),
     // onConversationMuted
-    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
-      console.log('[Inbox SSE] Conversation muted/unmuted:', event);
+    useCallback((_event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       // Could update conversation mute status in UI
     }, []),
     // onUnreadReminder
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
-      console.log('[Inbox SSE] Unread reminder:', event);
       const { unread_count } = event.data;
       if (unread_count && unread_count > 0) {
         pushToast(`You have ${unread_count} unread messages`, 'success');
@@ -399,38 +388,19 @@ export default function InboxPage() {
     }, [pushToast])
   );
   
-  const currentUserId = useMemo(() => {
-    try {
-      const str = localStorage.getItem("user_object");
-      if (!str) return null;
-      const obj = JSON.parse(str);
-      return obj?.id || null;
-    } catch {
-      return null;
-    }
-  }, []);
-
-  const currentUserProfileType = useMemo(() => {
-    try {
-      const str = localStorage.getItem("user_object");
-      if (!str) return null;
-      const obj = JSON.parse(str);
-      return obj?.profile_type || null;
-    } catch {
-      return null;
-    }
-  }, []);
+  const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
+  const currentUserProfileType = currentUser?.profile_type || getStoredProfileType() || null;
   
   // Deduplicate conversations to prevent showing multiple conversations for the same participant pair
   const deduplicatedItems = useMemo(() => {
     const seen = new Map<string, Conversation>();
-    const currentRole = currentUserProfileType?.toLowerCase();
     
     for (const conv of items) {
-      // Create a unique key based on the participant pair
-      const key = currentRole === 'household' 
-        ? `household-${conv.household_id}-househelp-${conv.househelp_id}`
-        : `househelp-${conv.househelp_id}-household-${conv.household_id}`;
+      // Prefer stable profile ids when available so older/newer conversation
+      // records for the same pair do not render as duplicates.
+      const householdRef = conv.household_profile_id || conv.household_id;
+      const househelpRef = conv.househelp_profile_id || conv.househelp_id;
+      const key = `household-${householdRef}-househelp-${househelpRef}`;
       
       const existing = seen.get(key);
       if (!existing) {
@@ -450,7 +420,7 @@ export default function InboxPage() {
       const bTime = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
       return bTime - aTime; // Most recent first
     });
-  }, [items, currentUserProfileType]);
+  }, [items]);
   
   useEffect(() => {
     setActiveConversationId(selectedConversationId);
@@ -516,13 +486,10 @@ export default function InboxPage() {
             }
 
             const profileData = extractEnvelopeObject<any>(profileResponse);
-            console.log('[Inbox] Househelp profile data:', profileData);
             
             // Extract househelp name from the preloaded user object
             const user = profileData?.user || profileData?.househelp?.user;
-            console.log('[Inbox] Househelp user object:', user);
             const fullName = getNameFromUser(user) || getNameFromProfile(profileData, "Househelp");
-            console.log('[Inbox] Extracted househelp name:', { fullName });
             
             const avatar =
               profileData?.avatar_url ||
@@ -531,13 +498,19 @@ export default function InboxPage() {
               (Array.isArray(profileData?.househelp?.photos) && profileData.househelp.photos.length > 0 ? profileData.househelp.photos[0] : undefined);
             updates.push({ id: conv.id, participant_name: fullName, participant_avatar: avatar });
           } else if (role === "househelp") {
-            // Househelp user: other participant is a household
-            const householdUserId = conv.household_id;
-            if (!householdUserId) continue;
-            let profileResponse: any;
-            try {
-              profileResponse = await grpcProfileService.getHouseholdByUserID(householdUserId);
-            } catch { continue; }
+            // Househelp user: other participant is a household. Older conversation
+            // rows may only carry a household profile id, so resolve both shapes.
+            const householdIdentifier = conv.household_profile_id || conv.household_id;
+            if (!householdIdentifier) continue;
+
+            const profileResponse = await resolveHouseholdProfile(householdIdentifier, {
+              identifierType: conv.household_profile_id ? 'profileId' : 'auto',
+            });
+
+            if (!profileResponse) {
+              continue;
+            }
+
             const profileData = extractEnvelopeObject<any>(profileResponse);
             
             // Extract household owner's name from the preloaded owner object
@@ -675,7 +648,7 @@ export default function InboxPage() {
               }
             }
           } catch (detailErr) {
-            console.warn('[Inbox] Failed to hydrate selected conversation', detailErr);
+            console.error('[Inbox] Failed to hydrate selected conversation', detailErr);
           }
         }
         if (cancelled) return;
@@ -721,7 +694,6 @@ export default function InboxPage() {
       try {
         setMessagesLoading(true);
         setMessagesError(null);
-        console.log('[Inbox] Loading messages for conversation:', conversationId);
         
         const result = await notificationsService.listMessages(conversationId, 0, messagesLimit);
         const items: any[] = result?.messages || [];
@@ -829,7 +801,8 @@ export default function InboxPage() {
         if (!househelpUserId) return;
         
         try {
-          const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+          const profileResponse: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+          const profileData = extractEnvelopeObject<any>(profileResponse);
           househelpProfileId = profileData?.id || profileData?.profile_id;
         } catch (err) {
           console.error('Failed to fetch househelp profile:', err);
@@ -838,7 +811,10 @@ export default function InboxPage() {
         }
       }
       
-      if (!househelpProfileId) return;
+      if (!househelpProfileId) {
+        pushToast('Failed to load profile information', 'error');
+        return;
+      }
       const url = `/househelp/public-profile?profileId=${encodeURIComponent(househelpProfileId)}&embed=1`;
       setProfileModalLoading(true);
       setProfileModalTimedOut(false);
@@ -848,8 +824,14 @@ export default function InboxPage() {
       setProfileModalUrl(url);
       setShowProfileModal(true);
     } else {
-      // Househelp viewing household public profile: pass user_id via query
-      const url = `/household/public-profile?user_id=${encodeURIComponent(selectedConversation.household_id)}&embed=1`;
+      // Househelp viewing household public profile: prefer profile id when available,
+      // because some older conversation records do not reliably distinguish the ids.
+      const householdProfileRef = selectedConversation.household_profile_id || selectedConversation.household_id;
+      if (!householdProfileRef) {
+        pushToast('Failed to load profile information', 'error');
+        return;
+      }
+      const url = `/household/public-profile?profileId=${encodeURIComponent(householdProfileRef)}&embed=1`;
       setProfileModalLoading(true);
       setProfileModalTimedOut(false);
       if (profileModalTimeoutId.current) window.clearTimeout(profileModalTimeoutId.current);
@@ -858,7 +840,7 @@ export default function InboxPage() {
       setProfileModalUrl(url);
       setShowProfileModal(true);
     }
-  }, [selectedConversation, currentUserProfileType]);
+  }, [selectedConversation, currentUserProfileType, pushToast]);
 
   // Intersection Observer for upward infinite scrolling
   useEffect(() => {
@@ -955,9 +937,7 @@ export default function InboxPage() {
 
   // Group messages by date for rendering
   const groupedMessages = useMemo(() => {
-    console.log('[Inbox] Grouping messages, total count:', messages.length, 'isArray:', Array.isArray(messages));
     if (!Array.isArray(messages) || messages.length === 0) {
-      console.log('[Inbox] No messages to group, returning empty array');
       return [] as { key: string; label: string; items: Message[] }[];
     }
     const sorted = [...messages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
@@ -966,7 +946,6 @@ export default function InboxPage() {
     for (const m of sorted) {
       const d = new Date(m.created_at);
       if (Number.isNaN(d.getTime())) {
-        console.warn('[Inbox] Skipping message with invalid date:', m);
         continue;
       }
       const key = d.toISOString().slice(0, 10);
@@ -978,7 +957,6 @@ export default function InboxPage() {
       }
       map.get(key)!.items.push(m);
     }
-    console.log('[Inbox] Grouped messages into', groups.length, 'groups:', groups);
     return groups;
   }, [messages]);
 
@@ -1244,32 +1222,21 @@ export default function InboxPage() {
 
   // Basic WebSocket wiring for new incoming messages
   useEffect(() => {
-    console.log('[Inbox] Setting up WebSocket event listeners');
-    
     // Listen for new_message events directly
     const offNewMessage = addEventListener('new_message', (event: WSMessageEvent) => {
-      console.log('[Inbox] Received new_message event:', event);
-      
       try {
         const inboxEvent = event as any;
         // Backend sends InboxEvent: { type, conversation_id, message, user_id, timestamp }
         const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
-        
-        console.log('[Inbox] Extracted message:', msg);
-        
+
         if (!msg || !msg.id) {
-          console.warn('[Inbox] Invalid message data:', msg);
-          console.warn('[Inbox] Full event:', inboxEvent);
           return;
         }
-        
-        console.log('[Inbox] Valid message, adding to state:', msg);
+
         setMessages((prev) => {
           if (prev.some((m) => m.id === msg.id)) {
-            console.log('[Inbox] Message already exists, skipping');
             return prev;
           }
-          console.log('[Inbox] Adding new message to chat');
           return [...prev, msg];
         });
         
@@ -1310,7 +1277,6 @@ export default function InboxPage() {
     
     // Listen for other message events
     const offMessageEdited = addEventListener('message_edited', (event: WSMessageEvent) => {
-      console.log('[Inbox] Received message_edited event:', event);
       try {
         const inboxEvent = event as any;
         const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
@@ -1323,7 +1289,6 @@ export default function InboxPage() {
     });
     
     const offMessageDeleted = addEventListener('message_deleted', (event: WSMessageEvent) => {
-      console.log('[Inbox] Received message_deleted event:', event);
       try {
         const inboxEvent = event as any;
         const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
@@ -1360,7 +1325,6 @@ export default function InboxPage() {
     });
     
     return () => {
-      console.log('[Inbox] Cleaning up WebSocket event listeners');
       offNewMessage?.();
       offMessageEdited?.();
       offMessageDeleted?.();
@@ -1575,7 +1539,12 @@ export default function InboxPage() {
               onViewDetails={() => {
                 if (hireRequestId) {
                   if (currentUserProfileType?.toLowerCase() === 'household') {
-                    navigate(`/household/hire-request/${hireRequestId}`);
+                    const backTo = `${location.pathname}${location.search || ''}`;
+                    const params = new URLSearchParams({
+                      backTo,
+                      backLabel: 'Back to Inbox',
+                    });
+                    navigate(`/household/hire-request/${hireRequestId}?${params.toString()}`);
                   } else {
                     navigate(`/househelp/hiring`);
                   }
@@ -1720,7 +1689,6 @@ export default function InboxPage() {
                                 emoji = (emojiData as any).native;
                               }
                               if (!emoji) {
-                                console.warn('Could not extract emoji from:', emojiData);
                                 return;
                               }
                               toggleReaction(m, emoji);

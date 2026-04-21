@@ -36,13 +36,6 @@ export function useProfileViewTracking({
         viewIdRef.current = result.viewId;
         startTimeRef.current = Date.now();
         isRecordedRef.current = true;
-
-        console.log('[ProfileView] View recorded:', {
-          viewId: result.viewId,
-          isUnique: result.isUnique,
-          profileId,
-          profileType,
-        });
       } catch (error) {
         console.error('[ProfileView] Failed to record view:', error);
       }
@@ -56,7 +49,6 @@ export function useProfileViewTracking({
         const duration = Math.floor((Date.now() - startTimeRef.current) / 1000);
         if (duration > 0) {
           profileViewService.updateViewDuration(viewIdRef.current, duration).catch(console.error);
-          console.log('[ProfileView] Duration updated:', duration, 'seconds');
         }
       }
     };

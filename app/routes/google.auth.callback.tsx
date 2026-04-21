@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from "react-router";
-import { AUTH_API_BASE_URL } from "~/config/api";
+import { googleSignInOnServer } from "~/services/grpc/serverAuth";
 import { cookieOptions, serializeCookie, TOKEN_COOKIE_NAME } from "~/utils/cookie";
 
 // Google OAuth authentication callback
@@ -16,32 +16,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return Response.redirect(`${origin}/login?error=missing_code`);
   }
 
-  const baseUrl = AUTH_API_BASE_URL;
-
   try {
-    const resp = await fetch(`${baseUrl}/api/v1/auth/google/signin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, flow: "auth", state }),
-    });
-
-    if (!resp.ok) {
-      return Response.redirect(`${origin}/login?error=signin_failed`);
-    }
-
-    const data: {
-      user_id?: string;
-      token?: string;
-      requires_signup?: boolean;
-      email?: string;
-      first_name?: string;
-      last_name?: string;
-      picture?: string;
-      google_id?: string;
-    } = await resp.json();
+    const data = await googleSignInOnServer(request.url, { code, flow: "auth" });
 
     // Check if user already exists (login)
-    if (!data.requires_signup && data.token) {
+    if (!data.requiresSignup && data.token) {
       const headers = new Headers();
       headers.set("Location", `${origin}/login?google_login=success`);
       headers.append(
@@ -56,13 +35,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
 
     // New user - redirect to signup with Google data prefilled
-    if (data.requires_signup) {
+    if (data.requiresSignup) {
       // Parse state to extract profile_type and bureau_id
-      console.log('[GOOGLE_CALLBACK] Raw state from Google:', state);
       let stateData: any = {};
       try {
         stateData = state ? JSON.parse(decodeURIComponent(state)) : {};
-        console.log('[GOOGLE_CALLBACK] Parsed state data:', stateData);
       } catch (e) {
         console.error('[GOOGLE_CALLBACK] Failed to parse state:', e);
         stateData = {};
@@ -71,24 +48,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
       const params = new URLSearchParams({
         google_signup: "1",
         email: data.email || "",
-        first_name: data.first_name || "",
-        last_name: data.last_name || "",
-        google_id: data.google_id || "",
+        first_name: data.firstName || "",
+        last_name: data.lastName || "",
+        google_id: data.googleId || "",
         picture: data.picture || "",
       });
       
       // Preserve profile_type and bureau_id from state
       if (stateData.profile_type) {
-        console.log('[GOOGLE_CALLBACK] Adding profile_type to params:', stateData.profile_type);
         params.set("profile_type", stateData.profile_type);
-      } else {
-        console.warn('[GOOGLE_CALLBACK] No profile_type in state data');
       }
       if (stateData.bureau_id) {
         params.set("bureauId", stateData.bureau_id);
       }
       
-      console.log('[GOOGLE_CALLBACK] Final redirect URL:', `${origin}/signup?${params.toString()}`);
       return Response.redirect(`${origin}/signup?${params.toString()}`);
     }
 

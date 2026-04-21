@@ -73,7 +73,7 @@ export default function ChangePasswordPage() {
 
   // Don't render anything if not authenticated (will redirect)
   if (!user) {
-    return null;
+    return <Loading text="Redirecting to login..." />;
   }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {

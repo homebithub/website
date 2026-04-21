@@ -211,24 +211,11 @@ export default function SignupPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
-        console.log('[SIGNUP] Form submitted', form);
-        console.log('[SIGNUP] Current field errors:', fieldErrors);
-        console.log('[SIGNUP] Button disabled state:', {
-            formLoading,
-            hasProfileType: !!form.profile_type.trim(),
-            hasFieldErrors: Object.keys(fieldErrors).some(key => fieldErrors[key]),
-            hasFirstName: !!form.first_name.trim(),
-            hasLastName: !!form.last_name.trim(),
-            hasPassword: !!form.password.trim(),
-            hasPhone: !!form.phone.trim()
-        });
-        
+
         // Validate entire form
         const validation = validateForm(signupSchema, form);
         
         if (!validation.isValid) {
-            console.log('[SIGNUP] Validation failed:', validation.errors);
             setFieldErrors(validation.errors);
             setError('Please fix the errors in the form');
             // Mark all fields as touched to show errors
@@ -239,9 +226,7 @@ export default function SignupPage() {
             setTouchedFields(allTouched);
             return;
         }
-        
-        console.log('[SIGNUP] Validation passed, making API call...');
-        
+
         setFormLoading(true);
         setError(null);
         setSuccess(null);
@@ -327,7 +312,6 @@ export default function SignupPage() {
                 
                 // Redirect to OTP verification (same as regular signup)
                 if (data.verification) {
-                    console.log('[SIGNUP] Google signup complete, redirecting to verify-otp with verification:', data.verification);
                     navigate('/verify-otp', { 
                         state: { 
                             verification: data.verification,
@@ -336,7 +320,6 @@ export default function SignupPage() {
                         } 
                     });
                 } else {
-                    console.warn('[SIGNUP] No verification data in Google signup response, navigating to verify-otp anyway');
                     navigate('/verify-otp', {
                         state: {
                             userId: userId,
@@ -368,9 +351,7 @@ export default function SignupPage() {
                 const userId = signupResponse.getUserId();
                 const token = signupResponse.getToken();
                 const verificationProto = signupResponse.getVerification();
-                
-                console.log('[SIGNUP] gRPC response:', { userId, token, hasVerification: !!verificationProto });
-                
+
                 data = {
                     user: {
                         user_id: userId,
@@ -429,9 +410,7 @@ export default function SignupPage() {
                 setFormLoading(false);
                 return;
             }
-            
-            console.log('[SIGNUP] Full response:', JSON.stringify(data));
-            
+
             // Extract user_id from either { user: { user_id } } or { user_id } shape
             const userId = data.user?.user_id || data.user_id;
             const profileType = data.user?.profile_type || form.profile_type;
@@ -452,17 +431,15 @@ export default function SignupPage() {
             // Redirect to OTP verification with verification data
             // The OTP page will handle the rest of the flow
             if (data.verification) {
-                console.log('[SIGNUP] Redirecting to verify-otp with verification:', data.verification);
                 navigate('/verify-otp', { 
                     state: { 
                         verification: data.verification,
                         profileType: profileType 
-                    } 
+                } 
                 });
             } else {
                 // Fallback if no verification data - still navigate to verify-otp
                 // The OTP page can request a new code using the user_id
-                console.warn('[SIGNUP] No verification data in response, navigating to verify-otp anyway');
                 navigate('/verify-otp', {
                     state: {
                         userId: userId,
@@ -500,13 +477,10 @@ export default function SignupPage() {
                 bureau_id: bureauId || undefined
             };
             const state = encodeURIComponent(JSON.stringify(statePayload));
-            console.log('[GOOGLE_AUTH] Requesting OAuth URL with state:', statePayload);
             const { default: authSvc } = await import('~/services/grpc/auth.service');
             const response = await authSvc.getGoogleAuthURL(flow, state);
             const url = response?.getUrl?.() || response?.url;
-            console.log('[GOOGLE_AUTH] Received response, url:', url);
             if (url) {
-                console.log('[GOOGLE_AUTH] Redirecting to:', url);
                 window.location.href = url as string;
             } else {
                 console.error('[GOOGLE_AUTH] No URL in response');

@@ -5,7 +5,6 @@ const menu = [
   { label: "Dashboard", to: "/bureau/home" },
   { label: "Profile", to: "/bureau/profile" },
   { label: "Househelps", to: "/bureau/househelps" },
-  { label: "Commercials", to: "/bureau/commercials" },
 ];
 
 export default function BureauSidebar() {

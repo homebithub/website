@@ -1,16 +1,15 @@
 import React, { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { forgotPasswordSchema, validateForm, validateField, normalizeKenyanPhoneNumber } from '~/utils/validation';
-import { API_BASE_URL } from '~/config/api';
-import { extractErrorMessage } from '~/utils/errorMessages';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
 
 export default function ForgotPasswordPage() {
+  const navigate = useNavigate();
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,8 +90,14 @@ export default function ForgotPasswordPage() {
           next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
         };
         setSuccess(true);
-        // Navigate to verify-otp page with verification data in state
-        window.location.href = `/verify-otp?verification=${encodeURIComponent(JSON.stringify(verification))}`;
+        const params = new URLSearchParams({
+          userId: verification.user_id,
+        });
+        navigate(`/verify-otp?${params.toString()}`, {
+          state: {
+            verification,
+          },
+        });
       }
     } catch (err: any) {
       setError(err.message || "Failed to send OTP");

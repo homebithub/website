@@ -4,6 +4,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { employmentService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { getStoredProfileType, getStoredUser } from '~/utils/authStorage';
 
 type Employment = {
   id: string;
@@ -27,13 +28,9 @@ export default function HiringHistoryPage() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const isHousehelp = useMemo(() => {
-    if (typeof window === 'undefined') return false;
-    try {
-      const stored = localStorage.getItem('user_object');
-      if (stored) return JSON.parse(stored)?.profile_type === 'househelp';
-    } catch {}
-    const pt = localStorage.getItem('userType') || localStorage.getItem('profile_type');
-    return pt === 'househelp';
+    const storedUser = getStoredUser();
+    const profileType = storedUser?.profile_type || getStoredProfileType();
+    return profileType === 'househelp';
   }, []);
 
   useEffect(() => {

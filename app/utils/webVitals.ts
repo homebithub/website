@@ -18,28 +18,43 @@ type Metric = {
   id: string;
 };
 
-function sendToAnalytics(metric: Metric) {
-  // In development, log to console
-  if (process.env.NODE_ENV === 'development') {
-    console.log(`[Web Vitals] ${metric.name}:`, {
-      value: `${Math.round(metric.value)}ms`,
-      rating: metric.rating,
-      id: metric.id,
-    });
-  }
+function getWebVitalsEndpoint(): string | null {
+  if (typeof window === 'undefined') return null;
+  const endpoint = (window as any).ENV?.WEB_VITALS_API_URL || (window as any).ENV?.MONITORING_API_URL;
+  return typeof endpoint === 'string' && endpoint.trim() ? endpoint.trim() : null;
+}
 
-  // In production, send to your analytics service
-  // Example: Google Analytics, custom analytics endpoint, etc.
-  if (process.env.NODE_ENV === 'production') {
-    // TODO: Send to analytics service
-    // Example with Google Analytics:
-    // window.gtag?.('event', metric.name, {
-    //   value: Math.round(metric.value),
-    //   metric_id: metric.id,
-    //   metric_value: metric.value,
-    //   metric_delta: metric.delta,
-    //   metric_rating: metric.rating,
-    // });
+function sendToAnalytics(metric: Metric) {
+  if (typeof window === 'undefined') return;
+
+  window.dispatchEvent(new CustomEvent('homebit:web-vital', { detail: metric }));
+
+  if (process.env.NODE_ENV !== 'production') return;
+
+  const endpoint = getWebVitalsEndpoint();
+  if (!endpoint) return;
+
+  const payload = JSON.stringify({
+    ...metric,
+    pathname: window.location.pathname,
+    href: window.location.href,
+    userAgent: window.navigator.userAgent,
+    timestamp: new Date().toISOString(),
+  });
+
+  try {
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(endpoint, new Blob([payload], { type: 'application/json' }));
+      return;
+    }
+    void fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: payload,
+      keepalive: true,
+    });
+  } catch {
+    // Ignore telemetry transport errors.
   }
 }
 

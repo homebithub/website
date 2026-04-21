@@ -4,7 +4,7 @@ import { useNavigate, useLocation } from "react-router";
 import { useSubscription } from '~/hooks/useSubscription';
 import { CheckCircleIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
-import { profileService as grpcProfileService, householdKidsService, petsService, documentService, shortlistService, interestService } from '~/services/grpc/authServices';
+import { householdKidsService, petsService, documentService, shortlistService, interestService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -12,6 +12,10 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import ShowInterestModal from '~/components/modals/ShowInterestModal';
 import { MessageCircle, Heart, HandHeart } from "lucide-react";
+import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { resolveHouseholdOwnerUserId, resolveHouseholdProfile } from '~/utils/householdProfiles';
 
 interface HouseholdData {
   id?: string;
@@ -58,6 +62,9 @@ export default function HouseholdPublicProfile() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const isEmbed = params.get("embed") === "1" || params.get("embed") === "true";
+  const queryBackTo = params.get("backTo");
+  const queryBackLabel = params.get("backLabel");
+  const querySource = params.get("from");
   const navigationState = (location.state ?? {}) as {
     profileId?: string;
     backTo?: string;
@@ -66,30 +73,21 @@ export default function HouseholdPublicProfile() {
     fromShortlist?: boolean;
     fromHireRequests?: boolean;
   };
-  const currentUserId = useMemo(() => {
-    try {
-      const raw = localStorage.getItem("user_object");
-      return raw ? JSON.parse(raw)?.id ?? null : null;
-    } catch {
-      return null;
-    }
-  }, []);
-  const [viewerProfileType, setViewerProfileType] = useState<string | null>(null);
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("user_object");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setViewerProfileType(parsed?.profile_type || null);
-      }
-    } catch {
-      setViewerProfileType(null);
-    }
-  }, []);
+  const currentUser = useMemo(() => getStoredUser(), []);
+  const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
+  const [viewerProfileType, setViewerProfileType] = useState<string | null>(() => currentUser?.profile_type || getStoredProfileType() || null);
+  const hasExplicitUserId = params.has("userId") || params.has("user_id");
+  const hasExplicitProfileId = params.has("profileId") || params.has("profile_id");
+  const stateSource =
+    navigationState.fromInbox ? 'inbox' :
+    navigationState.fromShortlist ? 'shortlist' :
+    navigationState.fromHireRequests ? 'hiring' :
+    undefined;
   const resolvedUserId =
+    params.get("userId") ||
     params.get("user_id") ||
-    params.get("profile_id") ||
     params.get("profileId") ||
+    params.get("profile_id") ||
     navigationState.profileId ||
     currentUserId;
   const [profile, setProfile] = useState<HouseholdData | null>(null);
@@ -99,11 +97,42 @@ export default function HouseholdPublicProfile() {
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [isInterestModalOpen, setIsInterestModalOpen] = useState(false);
   const [hasExpressedInterest, setHasExpressedInterest] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
+  const profileOwnerUserId = resolveHouseholdOwnerUserId(profile);
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(params);
+    let changed = false;
+
+    if (navigationState.profileId && !nextParams.get('profileId') && !nextParams.get('profile_id') && !nextParams.get('userId') && !nextParams.get('user_id')) {
+      nextParams.set('profileId', navigationState.profileId);
+      changed = true;
+    }
+    if (navigationState.backTo && !nextParams.get('backTo')) {
+      nextParams.set('backTo', navigationState.backTo);
+      changed = true;
+    }
+    if (navigationState.backLabel && !nextParams.get('backLabel')) {
+      nextParams.set('backLabel', navigationState.backLabel);
+      changed = true;
+    }
+    if (stateSource && !nextParams.get('from')) {
+      nextParams.set('from', stateSource);
+      changed = true;
+    }
+
+    if (!changed) return;
+    navigate(`/household/public-profile?${nextParams.toString()}`, {
+      replace: true,
+      state: location.state,
+    });
+  }, [location.state, navigate, navigationState.backLabel, navigationState.backTo, navigationState.profileId, params, stateSource]);
 
   useEffect(() => {
     const fetchAllData = async () => {
@@ -114,12 +143,19 @@ export default function HouseholdPublicProfile() {
         if (!token) throw new Error("Not authenticated");
         if (!resolvedUserId) throw new Error("Missing household user id");
 
-        // Fetch household profile via gRPC
-        const profileData = await grpcProfileService.getHouseholdByUserID(resolvedUserId);
+        const profileData = await resolveHouseholdProfile(resolvedUserId, {
+          identifierType: hasExplicitUserId || !hasExplicitProfileId ? 'userId' : 'profileId',
+        }) as HouseholdData | null;
+
+        if (!profileData) {
+          throw new Error("Failed to load profile");
+        }
+
+        const ownerUserId = resolveHouseholdOwnerUserId(profileData) || resolvedUserId;
 
         // Fetch photos from documents table via gRPC
         try {
-          const docsData = await documentService.getUserDocuments(resolvedUserId, 'profile_photo');
+          const docsData = await documentService.getUserDocuments(ownerUserId, 'profile_photo');
           const docs = docsData?.data || docsData?.documents || docsData || [];
           const documentsArray = Array.isArray(docs) ? docs : [];
           const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
@@ -133,7 +169,7 @@ export default function HouseholdPublicProfile() {
         setProfile(profileData);
 
         try {
-          const petsData = await petsService.listMyPets(resolvedUserId);
+          const petsData = await petsService.listMyPets(ownerUserId);
           const petsArray = petsData?.data || petsData;
           setPets(Array.isArray(petsArray) ? petsArray : []);
         } catch (err) {
@@ -141,7 +177,7 @@ export default function HouseholdPublicProfile() {
         }
 
         try {
-          const kidsData = await householdKidsService.listHouseholdKids(resolvedUserId);
+          const kidsData = await householdKidsService.listHouseholdKids(ownerUserId);
           const kidsArray = kidsData?.data || kidsData;
           setKids(Array.isArray(kidsArray) ? kidsArray : []);
         } catch (err) {
@@ -156,13 +192,13 @@ export default function HouseholdPublicProfile() {
     };
 
     fetchAllData();
-  }, [resolvedUserId, currentUserId]);
+  }, [resolvedUserId, currentUserId, hasExplicitProfileId, hasExplicitUserId]);
 
-  const isViewingOwn = !!currentUserId && resolvedUserId === currentUserId;
+  const isViewingOwn = !!currentUserId && !!profileOwnerUserId && profileOwnerUserId === currentUserId;
   const viewerType = viewerProfileType?.toLowerCase();
   const canInteract = viewerType === "househelp" && !isViewingOwn;
   const canShortlist = canInteract && !!profile?.id;
-  const canChat = canInteract && !!resolvedUserId;
+  const canChat = canInteract && !!profileOwnerUserId;
 
   useEffect(() => {
     if (!canShortlist || !profile?.id) {
@@ -219,19 +255,26 @@ export default function HouseholdPublicProfile() {
   }, [canInteract, profile?.id]);
 
   const handleBackNavigation = () => {
-    if (navigationState.backTo) {
-      navigate(navigationState.backTo);
+    const resolvedBackTo = navigationState.backTo || queryBackTo;
+    const resolvedSource =
+      navigationState.fromInbox ? 'inbox' :
+      navigationState.fromShortlist ? 'shortlist' :
+      navigationState.fromHireRequests ? 'hiring' :
+      querySource;
+
+    if (resolvedBackTo) {
+      navigate(resolvedBackTo);
       return;
     }
-    if (navigationState.fromInbox) {
+    if (resolvedSource === 'inbox') {
       navigate('/inbox');
       return;
     }
-    if (navigationState.fromShortlist) {
+    if (resolvedSource === 'shortlist') {
       navigate('/shortlist');
       return;
     }
-    if (navigationState.fromHireRequests) {
+    if (resolvedSource === 'hiring') {
       navigate('/househelp/hire-requests');
       return;
     }
@@ -239,16 +282,26 @@ export default function HouseholdPublicProfile() {
       navigate('/household/profile');
       return;
     }
-    navigate(-1);
+    navigate('/', { replace: true });
   };
 
   const backLabel =
     navigationState.backLabel ||
-    (navigationState.fromInbox
+    queryBackLabel ||
+    ((navigationState.fromInbox ? 'inbox' :
+      navigationState.fromShortlist ? 'shortlist' :
+      navigationState.fromHireRequests ? 'hiring' :
+      querySource) === 'inbox'
       ? 'Back to Inbox'
-      : navigationState.fromShortlist
+      : (navigationState.fromInbox ? 'inbox' :
+        navigationState.fromShortlist ? 'shortlist' :
+        navigationState.fromHireRequests ? 'hiring' :
+        querySource) === 'shortlist'
       ? 'Back to Shortlist'
-      : navigationState.fromHireRequests
+      : (navigationState.fromInbox ? 'inbox' :
+        navigationState.fromShortlist ? 'shortlist' :
+        navigationState.fromHireRequests ? 'hiring' :
+        querySource) === 'hiring'
       ? 'Back to Hiring'
       : isViewingOwn
       ? 'Back to My Profile'
@@ -257,32 +310,36 @@ export default function HouseholdPublicProfile() {
   const handleToggleShortlist = async () => {
     if (!profile?.id) return;
     setActionLoading('shortlist');
+    setActionError(null);
+    setActionSuccess(null);
     try {
       const token = getAccessTokenFromCookies();
       if (!token) throw new Error("Not authenticated");
       if (isShortlisted) {
         await shortlistService.deleteShortlist(profile.id);
         setIsShortlisted(false);
+        setActionSuccess('Removed from shortlist.');
       } else {
         await shortlistService.createShortlist('', 'household', { profile_id: profile.id, profile_type: 'household' });
         setIsShortlisted(true);
+        setActionSuccess('Added to shortlist.');
       }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (err) {
       console.error('Failed to update shortlist', err);
-      alert(err instanceof Error ? err.message : 'Failed to update shortlist');
+      setActionError(err instanceof Error ? err.message : 'Failed to update shortlist');
     } finally {
       setActionLoading(null);
     }
   };
 
   const handleStartChat = async () => {
-    if (!resolvedUserId || !currentUserId) return;
+    if (!profileOwnerUserId || !currentUserId) return;
     setActionLoading('chat');
     try {
       // In this view, the current user is typically a househelp viewing a household profile.
       const payload: StartConversationPayload = {
-        household_user_id: resolvedUserId,
+        household_user_id: profileOwnerUserId,
         househelp_user_id: currentUserId,
       };
       if (profile?.id) {
@@ -332,6 +389,8 @@ export default function HouseholdPublicProfile() {
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
         <main className="flex-1 py-8">
           <div className="max-w-6xl mx-auto px-4">
+            {actionSuccess && <SuccessAlert message={actionSuccess} className="mb-4" />}
+            {actionError && <ErrorAlert message={actionError} className="mb-4" />}
             {/* Header (hidden in embed mode) */}
             {!isEmbed && (
               <div className="rounded-2xl p-4 sm:p-6 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 mb-4">

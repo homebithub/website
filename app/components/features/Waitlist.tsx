@@ -2,9 +2,9 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { FcGoogle } from 'react-icons/fc';
-import { API_ENDPOINTS } from '~/config/api';
 import { waitlistService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { authService } from '~/services/grpc/auth.service';
 
 interface WaitlistProps {
   isOpen: boolean;
@@ -231,10 +231,10 @@ export function Waitlist({ isOpen, onClose, prefillEmail, prefillFirstName, pref
         message: formData.message || undefined,
       };
       const state = encodeURIComponent(JSON.stringify(statePayload));
-      const resp = await fetch(`${API_ENDPOINTS.auth.googleUrl}?flow=waitlist&state=${state}`);
-      const data = await resp.json();
-      if (data?.url) {
-        window.location.href = data.url as string;
+      const response = await authService.getGoogleAuthURL('waitlist', state);
+      const authUrl = response?.getUrl?.() || response?.url;
+      if (authUrl) {
+        window.location.href = authUrl as string;
       } else {
         setError('Failed to start Google sign-in. Please try again.');
       }

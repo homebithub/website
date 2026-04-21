@@ -8,6 +8,7 @@ import { HouseholdCodePrompt } from '~/components/household/HouseholdCodePrompt'
 import { joinHousehold } from '~/utils/householdApi';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { getStoredUser } from '~/utils/authStorage';
 
 export default function HouseholdSetupPage() {
   const { user, loading: authLoading } = useAuth();
@@ -17,43 +18,24 @@ export default function HouseholdSetupPage() {
   const [joinStatus, setJoinStatus] = useState<'idle' | 'pending' | 'approved'>('idle');
 
   useEffect(() => {
-    console.log('[HOUSEHOLD SETUP] Page loaded');
-    console.log('[HOUSEHOLD SETUP] Auth loading:', authLoading);
-    console.log('[HOUSEHOLD SETUP] User:', user);
-    
     // Wait for auth to finish loading before checking user
     if (authLoading) {
-      console.log('[HOUSEHOLD SETUP] Auth still loading, waiting...');
       return;
     }
     
-    // Check localStorage first - if we have a token and user_object, we're authenticated
+    // Check cached auth first - if we have a token and user data, we're authenticated
     const token = getAccessTokenFromCookies();
-    const userObj = localStorage.getItem('user_object');
-    
-    console.log('[HOUSEHOLD SETUP] Token exists:', !!token);
-    console.log('[HOUSEHOLD SETUP] user_object from localStorage:', userObj);
+    const storedUser = getStoredUser();
     
     // If no token and no user from AuthContext, redirect to login
-    if (!token && !user) {
-      console.log('[HOUSEHOLD SETUP] No token and no user, redirecting to /login');
-      navigate('/login');
+    if (!token && !user && !storedUser) {
+      navigate('/login', { replace: true });
       return;
     }
     
     // Check if user already has a household
-    if (userObj) {
-      const parsed = JSON.parse(userObj);
-      console.log('[HOUSEHOLD SETUP] Parsed user object:', parsed);
-      console.log('[HOUSEHOLD SETUP] household_id:', parsed.household_id);
-      
-      if (parsed.household_id) {
-        // User already has a household, redirect to profile
-        console.log('[HOUSEHOLD SETUP] User has household_id, redirecting to /household/profile');
-        navigate('/household/profile');
-      } else {
-        console.log('[HOUSEHOLD SETUP] No household_id found, staying on setup page');
-      }
+    if (storedUser?.household_id) {
+      navigate('/household/profile', { replace: true });
     }
   }, [user, authLoading, navigate]);
   
@@ -78,7 +60,7 @@ export default function HouseholdSetupPage() {
         setJoinStatus('approved');
         // Redirect to household profile after a short delay
         setTimeout(() => {
-          navigate('/household/profile');
+          navigate('/household/profile', { replace: true });
         }, 2000);
       }
     } catch (err: any) {

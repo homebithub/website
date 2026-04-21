@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { hireRequestService, hireContractService, employmentContractService, interestService, shortlistService } from '~/services/grpc/authServices';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSSEContextSafe } from '~/contexts/SSEContext';
+import { buildIdentifierMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
 
 interface HireRequest {
   id: string;
@@ -24,7 +25,9 @@ interface HireRequest {
     id: string;
     first_name?: string;
     last_name?: string;
+    user_id?: string;
     user?: {
+      id?: string;
       first_name?: string;
       last_name?: string;
     };
@@ -114,8 +117,13 @@ const getHousehelpName = (househelp?: HireRequest['househelp']) => {
 export default function HiringHistory() {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const sseContext = useSSEContextSafe();
-  const [activeTab, setActiveTab] = useState<TabType>('interested');
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs: TabType[] = ['interested', 'all', 'pending', 'accepted', 'declined', 'cancelled'];
+    return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'interested';
+  });
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
   const [interestsTotal, setInterestsTotal] = useState(0);
@@ -132,10 +140,19 @@ export default function HiringHistory() {
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [contractCreating, setContractCreating] = useState<string | null>(null);
-  // Map of househelp_id -> employment contract id for quick lookup
-  const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, string>>({});
+  // Map all known househelp identifiers to the matching employment contract.
+  const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, any>>({});
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setOffset(0);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set('tab', tab);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   const removeHousehelpFromShortlist = async (profileId?: string | null) => {
     if (!profileId) return;
@@ -153,11 +170,7 @@ export default function HiringHistory() {
       try {
         const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
         const items = extractEnvelopeArray<any>(raw);
-        const map: Record<string, string> = {};
-        for (const ec of items) {
-          if (ec.househelp_id) map[ec.househelp_id] = ec.id;
-        }
-        setEmploymentContractMap(map);
+        setEmploymentContractMap(buildIdentifierMap(items, getHousehelpCandidateIds));
       } catch (err) {
         // Non-critical
       }
@@ -182,6 +195,15 @@ export default function HiringHistory() {
     }
   }, [activeTab, offset]);
 
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs: TabType[] = ['interested', 'all', 'pending', 'accepted', 'declined', 'cancelled'];
+    if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
+      setActiveTab(tabParam as TabType);
+      setOffset(0);
+    }
+  }, [activeTab, searchParams]);
+
   // Fetch interest count for badge
   useEffect(() => {
     const fetchInterestCount = async () => {
@@ -202,7 +224,6 @@ export default function HiringHistory() {
     const unsub = sseContext.subscribe('auth.household.updated', (event: any) => {
       const action = event?.data?.action;
       if (action === 'interest_received') {
-        console.log('[HiringHistory SSE] Interest received, refetching...');
         fetchInterests();
       }
     });
@@ -251,6 +272,8 @@ export default function HiringHistory() {
         job_type: request.job_type || '',
         salary: String(request.salary_offered || ''),
         salary_frequency: request.salary_frequency || '',
+        backTo: backToPath,
+        backLabel: 'Back to Hiring',
       });
       if (request.start_date) params.set('start_date', request.start_date.split('T')[0]);
       navigate(`/household/employment-contract?${params.toString()}`);
@@ -262,15 +285,26 @@ export default function HiringHistory() {
   };
 
   const navigateToEmploymentContract = (request: HireRequest) => {
-    const existingECId = employmentContractMap[request.househelp_id];
+    const existingEmploymentContract = findByAnyIdentifier(
+      employmentContractMap,
+      getHousehelpCandidateIds(request),
+    );
+    const existingECId = existingEmploymentContract?.id;
     if (existingECId) {
-      navigate(`/household/employment-contract?id=${existingECId}`);
+      const params = new URLSearchParams({
+        id: existingECId,
+        backTo: backToPath,
+        backLabel: 'Back to Hiring',
+      });
+      navigate(`/household/employment-contract?${params.toString()}`);
     } else {
       const params = new URLSearchParams({
         househelp_id: request.househelp_id,
         job_type: request.job_type || '',
         salary: String(request.salary_offered || ''),
         salary_frequency: request.salary_frequency || '',
+        backTo: backToPath,
+        backLabel: 'Back to Hiring',
       });
       if (request.start_date) params.set('start_date', request.start_date.split('T')[0]);
       navigate(`/household/employment-contract?${params.toString()}`);
@@ -390,7 +424,7 @@ export default function HiringHistory() {
     }
     // Navigate to househelp profile using profileId
     const profileId = interest.househelp_id;
-    navigate(`/househelp/public-profile?profileId=${profileId}`, {
+    navigate(`/househelp/public-profile?profileId=${profileId}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
       state: { backTo: backToPath, backLabel: 'Back to Hiring' },
     });
   };
@@ -440,10 +474,7 @@ export default function HiringHistory() {
               {tabs.map((tab) => (
                 <button
                   key={tab.key}
-                  onClick={() => {
-                    setActiveTab(tab.key);
-                    setOffset(0);
-                  }}
+                  onClick={() => handleTabChange(tab.key)}
                   className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2 ${
                     activeTab === tab.key
                       ? 'border-purple-500 text-purple-700 dark:text-white'
@@ -767,7 +798,7 @@ export default function HiringHistory() {
                         className="inline-flex items-center justify-center gap-2 px-4 py-1 text-sm rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg shadow-blue-500/30 hover:from-blue-700 hover:to-purple-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 flex-1"
                       >
                         <FileText className="w-4 h-4" />
-                        {employmentContractMap[request.househelp_id] ? 'View Employment Contract' : 'Create Employment Contract'}
+                        {findByAnyIdentifier(employmentContractMap, getHousehelpCandidateIds(request)) ? 'View Employment Contract' : 'Create Employment Contract'}
                       </button>
                     )}
 
@@ -960,7 +991,7 @@ export default function HiringHistory() {
             "
           >
             <FileText className="w-4 h-4" />
-            {employmentContractMap[selectedRequest.househelp_id] ? 'View Employment Contract' : 'Create Employment Contract'}
+            {findByAnyIdentifier(employmentContractMap, getHousehelpCandidateIds(selectedRequest)) ? 'View Employment Contract' : 'Create Employment Contract'}
           </button>
         )}
 
@@ -996,7 +1027,7 @@ export default function HiringHistory() {
             const profileId =
               selectedRequest?.househelp?.id || selectedRequest?.househelp_id;
             if (profileId) {
-              navigate("/househelp/public-profile", {
+              navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
                 state: {
                   profileId,
                   backTo: backToPath,

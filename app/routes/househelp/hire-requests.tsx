@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { hireRequestService } from '~/services/grpc/authServices';
 import { CheckCircle, XCircle, Briefcase, Calendar, DollarSign, MapPin, Eye } from 'lucide-react';
 import { useHiringSSE } from '~/hooks/useHiringSSE';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 
 interface HireRequest {
   id: string;
@@ -33,7 +36,12 @@ type TabType = 'all' | 'pending' | 'accepted' | 'declined';
 export default function HousehelpHireRequests() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabType>('pending');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs: TabType[] = ['all', 'pending', 'accepted', 'declined'];
+    return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'pending';
+  });
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -42,12 +50,33 @@ export default function HousehelpHireRequests() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
-  const [declineReason, setDeclineReason] = useState('');
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+  const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
+  const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const limit = 20;
+  const backToPath = `${location.pathname}${location.search || ''}`;
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setOffset(0);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set('tab', tab);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   useEffect(() => {
     fetchHireRequests();
   }, [activeTab, offset]);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs: TabType[] = ['all', 'pending', 'accepted', 'declined'];
+    if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
+      setActiveTab(tabParam as TabType);
+      setOffset(0);
+    }
+  }, [activeTab, searchParams]);
 
   const fetchHireRequests = async () => {
     setLoading(true);
@@ -69,70 +98,76 @@ export default function HousehelpHireRequests() {
   useHiringSSE(
     // onHireRequestReceived
     useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
-      console.log('[HireRequests SSE] New hire request received:', event.data);
       // Show notification
       if (event.data.household_name) {
-        alert(`New hire request from ${event.data.household_name}!`);
+        setFeedbackMessage(`New hire request from ${event.data.household_name}.`);
       }
       // Refresh list
       fetchHireRequests();
     }, []),
     // onHireRequestAccepted
     useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
-      console.log('[HireRequests SSE] Hire request accepted:', event.data);
       fetchHireRequests();
     }, []),
     // onHireRequestRejected
     useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
-      console.log('[HireRequests SSE] Hire request rejected:', event.data);
       fetchHireRequests();
     }, []),
     // onContractSigned
     useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
-      console.log('[HireRequests SSE] Contract signed:', event.data);
       if (event.data.signer_name) {
-        alert(`Contract signed by ${event.data.signer_name}!`);
+        setFeedbackMessage(`Contract signed by ${event.data.signer_name}.`);
       }
     }, []),
     // onContractExpiring
     useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
-      console.log('[HireRequests SSE] Contract expiring:', event.data);
       const days = event.data.days_remaining || 0;
       if (days <= 7) {
-        alert(`Contract expiring in ${days} days!`);
+        setFeedbackMessage(`Contract expiring in ${days} days.`);
       }
     }, []),
     // onContractTerminated
     useCallback((event: import('~/hooks/useHiringSSE').HiringSSEEvent) => {
-      console.log('[HireRequests SSE] Contract terminated:', event.data);
-      alert('A contract has been terminated.');
+      setFeedbackMessage('A contract has been terminated.');
     }, [])
   );
 
-  const handleAcceptRequest = async (requestId: string) => {
-    if (!confirm('Are you sure you want to accept this hire request?')) return;
-    setActionLoading(requestId);
+  const openAcceptConfirm = (requestId: string) => {
+    setPendingActionId(requestId);
+    setShowAcceptConfirm(true);
+  };
+
+  const handleAcceptRequest = async () => {
+    if (!pendingActionId) return;
+    setActionLoading(pendingActionId);
+    setError(null);
+    setFeedbackMessage(null);
     try {
-      await hireRequestService.acceptHireRequest(requestId);
+      await hireRequestService.acceptHireRequest(pendingActionId);
       fetchHireRequests();
+      setFeedbackMessage('Hire request accepted.');
     } catch (err: any) {
-      alert(err.message || 'Failed to accept hire request');
+      setError(err.message || 'Failed to accept hire request');
     } finally {
       setActionLoading(null);
+      setPendingActionId(null);
+      setShowAcceptConfirm(false);
     }
   };
 
   const handleDeclineRequest = async () => {
     if (!selectedRequest) return;
     setActionLoading(selectedRequest);
+    setError(null);
+    setFeedbackMessage(null);
     try {
       await hireRequestService.declineHireRequest(selectedRequest);
       fetchHireRequests();
       setShowDeclineModal(false);
       setSelectedRequest(null);
-      setDeclineReason('');
+      setFeedbackMessage('Hire request declined.');
     } catch (err: any) {
-      alert(err.message || 'Failed to decline hire request');
+      setError(err.message || 'Failed to decline hire request');
     } finally {
       setActionLoading(null);
     }
@@ -214,7 +249,7 @@ export default function HousehelpHireRequests() {
         {tabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => { setActiveTab(tab.key); setOffset(0); }}
+            onClick={() => handleTabChange(tab.key)}
             className={`px-4 py-2 rounded-xl text-sm font-semibold whitespace-nowrap transition-all ${
               activeTab === tab.key
                 ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
@@ -226,11 +261,11 @@ export default function HousehelpHireRequests() {
         ))}
       </div>
 
+      {feedbackMessage && <SuccessAlert message={feedbackMessage} className="mb-6" />}
+
       {/* Error */}
       {error && (
-        <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-sm font-medium">
-          {error}
-        </div>
+        <ErrorAlert message={error} className="mb-6" />
       )}
 
       {/* Loading */}
@@ -345,10 +380,10 @@ export default function HousehelpHireRequests() {
                 {/* Actions for pending requests */}
                 {request.status === 'pending' && (
                   <div className="flex flex-col sm:flex-row gap-3 mt-5 pt-4 border-t border-gray-200/50 dark:border-purple-500/10">
-                    {householdUserId && (
-                      <button
-                        onClick={() => navigate(`/household/public-profile?user_id=${householdUserId}`, {
-                          state: { backTo: location.pathname, backLabel: 'Back to Hire Requests' },
+                      {householdUserId && (
+                        <button
+                        onClick={() => navigate(`/household/public-profile?userId=${householdUserId}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hire Requests')}`, {
+                          state: { backTo: backToPath, backLabel: 'Back to Hire Requests' },
                         })}
                         className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold border-2 border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition-all flex items-center justify-center gap-2"
                       >
@@ -356,7 +391,7 @@ export default function HousehelpHireRequests() {
                       </button>
                     )}
                     <button
-                      onClick={() => handleAcceptRequest(request.id)}
+                      onClick={() => openAcceptConfirm(request.id)}
                       disabled={actionLoading === request.id}
                       className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold bg-green-600 text-white hover:bg-green-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
@@ -377,10 +412,10 @@ export default function HousehelpHireRequests() {
                 {request.status === 'accepted' && (
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mt-5 pt-4 border-t border-gray-200/50 dark:border-purple-500/10">
                     <p className="text-sm text-green-500 font-semibold">✓ You accepted this request</p>
-                    {householdUserId && (
-                      <button
-                        onClick={() => navigate(`/household/public-profile?user_id=${householdUserId}`, {
-                          state: { backTo: location.pathname, backLabel: 'Back to Hire Requests' },
+                      {householdUserId && (
+                        <button
+                        onClick={() => navigate(`/household/public-profile?userId=${householdUserId}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hire Requests')}`, {
+                          state: { backTo: backToPath, backLabel: 'Back to Hire Requests' },
                         })}
                         className="px-4 py-1.5 text-sm bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all"
                       >
@@ -421,39 +456,35 @@ export default function HousehelpHireRequests() {
       )}
 
       {/* Decline Modal */}
-      {showDeclineModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => { setShowDeclineModal(false); setDeclineReason(''); }} />
-          <div className="relative bg-white dark:bg-[#1a1a24] rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md p-6 border border-gray-200 dark:border-purple-500/20 animate-slide-up sm:mx-4">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Decline Hire Request</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
-              Please provide a reason for declining. This helps the household understand your decision.
-            </p>
-            <textarea
-              value={declineReason}
-              onChange={(e) => setDeclineReason(e.target.value)}
-              rows={4}
-              placeholder="e.g., Schedule conflict, salary expectations, location too far..."
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 dark:border-purple-500/30 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none mb-4 text-sm"
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={() => { setShowDeclineModal(false); setDeclineReason(''); }}
-                className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold border border-gray-300 dark:border-purple-500/30 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-purple-500/10 transition"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDeclineRequest}
-                disabled={!declineReason.trim() || actionLoading === selectedRequest}
-                className="flex-1 px-4 py-2 rounded-xl text-sm font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
-              >
-                {actionLoading === selectedRequest ? 'Declining...' : 'Decline'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={showDeclineModal}
+        onClose={() => {
+          if (actionLoading) return;
+          setShowDeclineModal(false);
+          setSelectedRequest(null);
+        }}
+        onConfirm={handleDeclineRequest}
+        title="Decline Hire Request"
+        message="Decline this hire request?"
+        confirmText={actionLoading === selectedRequest ? 'Declining...' : 'Decline'}
+        cancelText="Cancel"
+        variant="warning"
+      />
+
+      <ConfirmDialog
+        isOpen={showAcceptConfirm}
+        onClose={() => {
+          if (actionLoading) return;
+          setShowAcceptConfirm(false);
+          setPendingActionId(null);
+        }}
+        onConfirm={handleAcceptRequest}
+        title="Accept Hire Request"
+        message="Are you sure you want to accept this hire request?"
+        confirmText={actionLoading === pendingActionId ? 'Accepting...' : 'Accept'}
+        cancelText="Cancel"
+        variant="info"
+      />
     </>
   );
 }

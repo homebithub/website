@@ -11,9 +11,12 @@ import { getInboxRoute, startOrGetConversation, type StartConversationPayload } 
 import { MessageCircle, Heart, Briefcase } from 'lucide-react';
 import HireRequestModal from '~/components/modals/HireRequestModal';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
 
 interface UserData {
   id?: string;
+  user_id?: string;
   email?: string;
   first_name?: string;
   last_name?: string;
@@ -159,6 +162,10 @@ export default function HousehelpPublicProfile() {
   const location = useLocation();
   const params = new URLSearchParams(location.search);
   const isEmbed = params.get('embed') === '1' || params.get('embed') === 'true';
+  const queryProfileId = params.get('profileId');
+  const queryBackTo = params.get('backTo');
+  const queryBackLabel = params.get('backLabel');
+  const querySource = params.get('from');
   const [profile, setProfile] = useState<HousehelpData | null>(null);
   const [user, setUser] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,6 +173,8 @@ export default function HousehelpPublicProfile() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isViewingOther, setIsViewingOther] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState<Record<string, boolean>>({});
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
@@ -173,24 +182,48 @@ export default function HousehelpPublicProfile() {
   const [isHireModalOpen, setIsHireModalOpen] = useState(false);
   const [viewerProfileType, setViewerProfileType] = useState<string | null>(null);
   const navigationState = (location.state ?? {}) as {
+    profileId?: string;
     backTo?: string;
     backLabel?: string;
     fromInbox?: boolean;
     fromShortlist?: boolean;
     fromHireRequests?: boolean;
   };
+  const stateSource =
+    navigationState.fromInbox ? 'inbox' :
+    navigationState.fromShortlist ? 'shortlist' :
+    navigationState.fromHireRequests ? 'hiring' :
+    undefined;
 
-  const currentUser = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = localStorage.getItem('user_object');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
+  useEffect(() => {
+    const nextParams = new URLSearchParams(params);
+    let changed = false;
+
+    if (navigationState.profileId && !nextParams.get('profileId')) {
+      nextParams.set('profileId', navigationState.profileId);
+      changed = true;
     }
-  }, []);
-  const currentUserId: string | undefined = currentUser?.id;
-  const currentProfileType: string | undefined = currentUser?.profile_type;
+    if (navigationState.backTo && !nextParams.get('backTo')) {
+      nextParams.set('backTo', navigationState.backTo);
+      changed = true;
+    }
+    if (navigationState.backLabel && !nextParams.get('backLabel')) {
+      nextParams.set('backLabel', navigationState.backLabel);
+      changed = true;
+    }
+    if (stateSource && !nextParams.get('from')) {
+      nextParams.set('from', stateSource);
+      changed = true;
+    }
+
+    if (changed) {
+      navigate(`/househelp/public-profile?${nextParams.toString()}`, { replace: true, state: location.state });
+    }
+  }, [location.state, navigate, navigationState.backLabel, navigationState.backTo, navigationState.profileId, params, stateSource]);
+
+  const currentUser = useMemo(() => getStoredUser(), []);
+  const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
+  const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -215,16 +248,27 @@ export default function HousehelpPublicProfile() {
   }, [currentProfileType, currentUserId]);
 
   const handleBackNavigation = () => {
-    if (navigationState.backTo) {
-      navigate(navigationState.backTo);
+    const resolvedBackTo = navigationState.backTo || queryBackTo;
+    const resolvedSource =
+      navigationState.fromInbox ? 'inbox' :
+      navigationState.fromShortlist ? 'shortlist' :
+      navigationState.fromHireRequests ? 'hiring' :
+      querySource;
+
+    if (resolvedBackTo) {
+      navigate(resolvedBackTo);
       return;
     }
-    if (navigationState.fromInbox) {
+    if (resolvedSource === 'inbox') {
       navigate('/inbox');
       return;
     }
-    if (navigationState.fromShortlist) {
+    if (resolvedSource === 'shortlist') {
       navigate('/household/shortlist');
+      return;
+    }
+    if (resolvedSource === 'hiring') {
+      navigate('/household/hiring');
       return;
     }
     navigate('/');
@@ -232,11 +276,21 @@ export default function HousehelpPublicProfile() {
 
   const backButtonLabel =
     navigationState.backLabel ||
-    (navigationState.fromInbox
+    queryBackLabel ||
+    ((navigationState.fromInbox ? 'inbox' :
+      navigationState.fromShortlist ? 'shortlist' :
+      navigationState.fromHireRequests ? 'hiring' :
+      querySource) === 'inbox'
       ? 'Back to Inbox'
-      : navigationState.fromShortlist
+      : (navigationState.fromInbox ? 'inbox' :
+        navigationState.fromShortlist ? 'shortlist' :
+        navigationState.fromHireRequests ? 'hiring' :
+        querySource) === 'shortlist'
       ? 'Back to Shortlist'
-      : navigationState.fromHireRequests
+      : (navigationState.fromInbox ? 'inbox' :
+        navigationState.fromShortlist ? 'shortlist' :
+        navigationState.fromHireRequests ? 'hiring' :
+        querySource) === 'hiring'
       ? 'Back to Hiring'
       : 'Back');
 
@@ -249,7 +303,7 @@ export default function HousehelpPublicProfile() {
         if (!token) throw new Error("Not authenticated");
         
         // Get profileId from query string (for iframe modal) or navigation state fallback
-        const profileId = new URLSearchParams(location.search).get('profileId') || (location.state as any)?.profileId;
+        const profileId = queryProfileId || navigationState.profileId;
         
         // Store the profileId we're viewing
         setViewingProfileId(profileId || null);
@@ -322,12 +376,12 @@ export default function HousehelpPublicProfile() {
     };
     
     fetchProfile();
-  }, [location.state, location.search]);
+  }, [navigationState.profileId, queryProfileId]);
 
   const targetProfileId = viewingProfileId || profile?.profile_id || profile?.id;
 
   const handleChat = async () => {
-    const househelpUserId = user?.id || profile?.user_id;
+    const househelpUserId = user?.user_id || user?.id || profile?.user_id;
     if (!targetProfileId || !currentUserId || !househelpUserId) return;
     setActionLoading('chat');
     try {
@@ -365,17 +419,21 @@ export default function HousehelpPublicProfile() {
   const handleShortlistToggle = async () => {
     if (!targetProfileId) return;
     setActionLoading('shortlist');
+    setActionError(null);
+    setActionSuccess(null);
     try {
       if (isShortlisted) {
         await shortlistService.deleteShortlist(targetProfileId);
         setIsShortlisted(false);
+        setActionSuccess('Removed from shortlist.');
       } else {
         await shortlistService.createShortlist('', 'household', { profile_id: targetProfileId, profile_type: 'househelp' });
         setIsShortlisted(true);
+        setActionSuccess('Added to shortlist.');
       }
     } catch (e) {
       console.error('Failed to update shortlist:', e);
-      alert(e instanceof Error ? e.message : 'Failed to update shortlist');
+      setActionError(e instanceof Error ? e.message : 'Failed to update shortlist');
     } finally {
       setActionLoading(null);
     }
@@ -415,6 +473,8 @@ export default function HousehelpPublicProfile() {
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
         <main className="flex-1">
           <div className={`max-w-6xl mx-auto px-4 pb-6 ${isEmbed ? 'pt-4' : 'pt-6 sm:pt-8'}`}>
+            {actionSuccess && <SuccessAlert message={actionSuccess} className="mb-4" />}
+            {actionError && <ErrorAlert message={actionError} className="mb-4" />}
             {/* Header (hidden in embed) */}
             {!isEmbed && (
             <div className="rounded-2xl p-4 sm:p-6 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 mb-4">

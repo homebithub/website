@@ -7,6 +7,7 @@ import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupCo
 import { OnboardingOptionsProvider } from '~/contexts/OnboardingOptionsContext';
 import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { getStoredUserId } from '~/utils/authStorage';
 import { profileSetupService } from '~/services/grpc/profileSetup.service';
 
 // Import all the components
@@ -84,7 +85,11 @@ function HousehelpProfileSetupContent() {
   const setupCompleteRef = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const stateFromProfile = location.state?.fromProfile === true;
+  const stateEditSection = location.state?.editSection;
   const { user, loading: authLoading } = useAuth();
+  const currentUserId = user?.user?.user_id || getStoredUserId() || '';
   const { 
     profileData, 
     updateStepData, 
@@ -99,7 +104,7 @@ function HousehelpProfileSetupContent() {
   } = useProfileSetup();
   
   // Resume from where left off
-  const { progress, updateProgress } = useOnboardingProgress(user?.id || '', 'househelp');
+  const { progress, updateProgress } = useOnboardingProgress(currentUserId, 'househelp');
   
   // Resume to last incomplete step on mount
   useEffect(() => {
@@ -116,10 +121,11 @@ function HousehelpProfileSetupContent() {
   
   // Redirect if already completed
   useEffect(() => {
-    if (progress?.status === 'completed' && !location.state?.fromProfile) {
-      navigate('/dashboard');
+    const isEditingFromProfile = searchParams.get('fromProfile') === '1';
+    if (progress?.status === 'completed' && !isEditingFromProfile) {
+      navigate('/', { replace: true });
     }
-  }, [progress, navigate, location.state]);
+  }, [progress, navigate, searchParams]);
 
   const isStepValid = () => {
     const stepId = STEPS[currentStep].id;
@@ -221,8 +227,24 @@ function HousehelpProfileSetupContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   
-  // Check if user is editing from profile page using location state (secure, can't be manipulated)
-  const isEditMode = location.state?.fromProfile === true;
+  const editSectionParam = searchParams.get('editSection');
+  const editSection = editSectionParam || stateEditSection;
+  const isEditMode = searchParams.get('fromProfile') === '1' || stateFromProfile;
+
+  useEffect(() => {
+    if (!stateFromProfile && !stateEditSection) return;
+    const nextParams = new URLSearchParams(searchParams);
+    if (stateFromProfile && nextParams.get('fromProfile') !== '1') {
+      nextParams.set('fromProfile', '1');
+    }
+    if (stateEditSection && !nextParams.get('editSection')) {
+      nextParams.set('editSection', stateEditSection);
+    }
+    const nextSearch = nextParams.toString();
+    if (nextSearch !== searchParams.toString()) {
+      navigate(`/profile-setup/househelp${nextSearch ? `?${nextSearch}` : ''}`, { replace: true });
+    }
+  }, [navigate, searchParams, stateEditSection, stateFromProfile]);
   
   // Authentication check - redirect to login if not authenticated
   useEffect(() => {
@@ -234,13 +256,17 @@ function HousehelpProfileSetupContent() {
     }
   }, [authLoading, user, navigate]);
   
-  // Clean up URL on mount - remove any query parameters or hash
+  // Clean up URL on mount for standard onboarding, but preserve durable edit-mode URLs.
   useEffect(() => {
     const cleanPath = '/profile-setup/househelp';
-    if (window.location.search || window.location.hash) {
-      window.history.replaceState({}, '', cleanPath);
+    const editPath = editSection
+      ? `${cleanPath}?fromProfile=1&editSection=${encodeURIComponent(editSection)}`
+      : `${cleanPath}?fromProfile=1`;
+    const targetPath = isEditMode ? editPath : cleanPath;
+    if (`${window.location.pathname}${window.location.search}` !== targetPath || window.location.hash) {
+      window.history.replaceState({}, '', targetPath);
     }
-  }, []);
+  }, [editSection, isEditMode]);
   
   // Track time spent on each step
   useEffect(() => {
@@ -276,8 +302,8 @@ function HousehelpProfileSetupContent() {
     }
 
     // If editing a specific section from profile page, navigate to that step
-    if (isEditMode && location.state?.editSection) {
-      const sectionId = location.state.editSection;
+    if (isEditMode && editSection) {
+      const sectionId = editSection;
       const stepIndex = STEPS.findIndex(step => step.id === sectionId);
       if (stepIndex !== -1) {
         setCurrentStep(stepIndex);
@@ -290,7 +316,7 @@ function HousehelpProfileSetupContent() {
       setCurrentStep(resumeStep);
       setDisplayedStep(resumeStep);
     }
-  }, [lastCompletedStep, isEditMode, location.state]);
+  }, [lastCompletedStep, isEditMode, editSection]);
 
   const handleNext = async () => {
     if (hasUnsavedChanges) return;
@@ -567,7 +593,6 @@ function HousehelpProfileSetupContent() {
                   <CurrentComponent 
                     userType="househelp" 
                     onComplete={async () => {
-                      console.log('KYC onComplete callback triggered!');
                       // Show disclaimer modal before completing
                       setDisclaimerChecked(false);
                       setShowDisclaimer(true);

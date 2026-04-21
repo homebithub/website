@@ -29,26 +29,22 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
 
   const connect = useCallback(() => {
     if (!enabled) {
-      console.log('[WebSocket] Connection disabled, skipping connection');
       setConnectionState('disconnected');
       return;
     }
 
     if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) {
-      console.log('[WebSocket] Already connected or connecting');
       return;
     }
 
     try {
       setConnectionState('connecting');
       const wsUrl = token ? `${url}?token=${encodeURIComponent(token)}` : url;
-      console.log('[WebSocket] Connecting to:', url);
       
       const ws = new WebSocket(wsUrl);
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log('[WebSocket] Connected');
         setConnectionState('connected');
         reconnectAttemptsRef.current = 0;
         
@@ -67,8 +63,6 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
       ws.onmessage = (event) => {
         try {
           const inboxEvent = JSON.parse(event.data);
-          console.log('[WebSocket] Received message:', inboxEvent.type);
-          console.log('[WebSocket] Full event:', inboxEvent);
 
           if (inboxEvent.type === 'pong') {
             return; // Ignore pong messages
@@ -83,7 +77,6 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
           // Call type-specific handlers with the entire event
           const handlers = eventHandlersRef.current.get(inboxEvent.type);
           if (handlers) {
-            console.log('[WebSocket] Calling', handlers.size, 'handlers for type:', inboxEvent.type);
             handlers.forEach(handler => {
               try {
                 handler(inboxEvent);
@@ -91,8 +84,6 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
                 console.error('[WebSocket] Handler error:', err);
               }
             });
-          } else {
-            console.log('[WebSocket] No handlers registered for type:', inboxEvent.type);
           }
         } catch (error) {
           console.error('[WebSocket] Failed to parse message:', error);
@@ -105,7 +96,6 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
       };
 
       ws.onclose = (event) => {
-        console.log('[WebSocket] Disconnected:', event.code, event.reason);
         setConnectionState('disconnected');
         wsRef.current = null;
 
@@ -113,7 +103,6 @@ export function useWebSocket(options: UseWebSocketOptions): WSHookReturn {
         if (shouldReconnectRef.current && reconnectAttemptsRef.current < maxReconnectAttempts) {
           reconnectAttemptsRef.current++;
           const delay = Math.min(reconnectInterval * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
-          console.log(`[WebSocket] Reconnecting in ${delay}ms (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts})`);
           
           reconnectTimeoutRef.current = setTimeout(() => {
             connect();

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useSearchParams, useNavigate } from "react-router";
+import { Link, useLocation, useSearchParams, useNavigate } from "react-router";
 import { Error as ErrorDisplay } from "~/components/Error";
 import { Loading } from "~/components/Loading";
 import { Navigation } from "~/components/Navigation";
@@ -9,6 +9,7 @@ import { authService } from '~/services/grpc/auth.service';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { getStoredUserId } from '~/utils/authStorage';
 
 interface PasswordStrength {
   score: number;
@@ -43,7 +44,19 @@ function calculatePasswordStrength(password: string): PasswordStrength {
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get("token");
+  const location = useLocation();
+  const locationState = (location.state || {}) as { userId?: string };
+  const resetUserId = searchParams.get("userId") || locationState.userId || getStoredUserId() || "";
+
+  React.useEffect(() => {
+    if (!locationState.userId || searchParams.get("userId")) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("userId", locationState.userId);
+    navigate(`/reset-password?${nextParams.toString()}`, {
+      replace: true,
+      state: location.state,
+    });
+  }, [location.state, locationState.userId, navigate, searchParams]);
 
   const [formData, setFormData] = useState({
     password: "",
@@ -62,8 +75,8 @@ export default function ResetPassword() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!token) {
-      setError("Invalid or missing reset token");
+    if (!resetUserId) {
+      setError("Missing password reset session. Please request a new OTP.");
       return;
     }
     if (formData.password !== formData.confirmPassword) {
@@ -79,11 +92,11 @@ export default function ResetPassword() {
     setError(null);
 
     try {
-      await authService.resetPassword(token, formData.password);
+      await authService.resetPassword(resetUserId, formData.password);
 
       setSuccess(true);
       setTimeout(() => {
-        navigate("/login");
+        navigate("/login", { replace: true });
       }, 3000);
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
@@ -91,6 +104,12 @@ export default function ResetPassword() {
       setLoading(false);
     }
   };
+
+  React.useEffect(() => {
+    if (!resetUserId) {
+      setError("Missing password reset session. Please request a new OTP.");
+    }
+  }, [resetUserId]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -215,6 +234,7 @@ export default function ResetPassword() {
               type="submit"
               disabled={
                 loading ||
+                !resetUserId ||
                 formData.password !== formData.confirmPassword ||
                 passwordStrength.score < 3
               }

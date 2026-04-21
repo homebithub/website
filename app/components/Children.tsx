@@ -56,7 +56,6 @@ const Children: React.FC = () => {
         try {
           const kidsData = await householdKidsService.listHouseholdKids('');
           const kids = kidsData?.data?.data || kidsData?.data || [];
-          console.log('Loaded children:', kids);
           if (Array.isArray(kids) && kids.length > 0) {
             setChildrenList(kids);
             setSelected("have_or_expecting");

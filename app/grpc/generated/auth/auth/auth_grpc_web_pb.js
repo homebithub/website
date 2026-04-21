@@ -3174,6 +3174,189 @@ proto.auth.BureauServicePromiseClient.prototype.getCurrentBureauProfile =
 
 
 /**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.BureauHousehelpLinkInitiateRequest,
+ *   !proto.auth.BureauHousehelpLinkResponse>}
+ */
+const methodDescriptor_BureauService_InitiateHousehelpLink = new grpc.web.MethodDescriptor(
+  '/auth.BureauService/InitiateHousehelpLink',
+  grpc.web.MethodType.UNARY,
+  proto.auth.BureauHousehelpLinkInitiateRequest,
+  proto.auth.BureauHousehelpLinkResponse,
+  /**
+   * @param {!proto.auth.BureauHousehelpLinkInitiateRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.BureauHousehelpLinkResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.BureauHousehelpLinkInitiateRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.BureauHousehelpLinkResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.BureauHousehelpLinkResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.BureauServiceClient.prototype.initiateHousehelpLink =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.BureauService/InitiateHousehelpLink',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_InitiateHousehelpLink,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.BureauHousehelpLinkInitiateRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.BureauHousehelpLinkResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.BureauServicePromiseClient.prototype.initiateHousehelpLink =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.BureauService/InitiateHousehelpLink',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_InitiateHousehelpLink);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.BureauHousehelpLinkVerifyRequest,
+ *   !proto.auth.BureauHousehelpLinkResponse>}
+ */
+const methodDescriptor_BureauService_VerifyHousehelpLink = new grpc.web.MethodDescriptor(
+  '/auth.BureauService/VerifyHousehelpLink',
+  grpc.web.MethodType.UNARY,
+  proto.auth.BureauHousehelpLinkVerifyRequest,
+  proto.auth.BureauHousehelpLinkResponse,
+  /**
+   * @param {!proto.auth.BureauHousehelpLinkVerifyRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.BureauHousehelpLinkResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.BureauHousehelpLinkVerifyRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.BureauHousehelpLinkResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.BureauHousehelpLinkResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.BureauServiceClient.prototype.verifyHousehelpLink =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.BureauService/VerifyHousehelpLink',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_VerifyHousehelpLink,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.BureauHousehelpLinkVerifyRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.BureauHousehelpLinkResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.BureauServicePromiseClient.prototype.verifyHousehelpLink =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.BureauService/VerifyHousehelpLink',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_VerifyHousehelpLink);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.BureauHousehelpLinkIdRequest,
+ *   !proto.auth.BureauHousehelpLinkResponse>}
+ */
+const methodDescriptor_BureauService_ResendHousehelpLinkOTP = new grpc.web.MethodDescriptor(
+  '/auth.BureauService/ResendHousehelpLinkOTP',
+  grpc.web.MethodType.UNARY,
+  proto.auth.BureauHousehelpLinkIdRequest,
+  proto.auth.BureauHousehelpLinkResponse,
+  /**
+   * @param {!proto.auth.BureauHousehelpLinkIdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.BureauHousehelpLinkResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.BureauHousehelpLinkIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.BureauHousehelpLinkResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.BureauHousehelpLinkResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.BureauServiceClient.prototype.resendHousehelpLinkOTP =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.BureauService/ResendHousehelpLinkOTP',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_ResendHousehelpLinkOTP,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.BureauHousehelpLinkIdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.BureauHousehelpLinkResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.BureauServicePromiseClient.prototype.resendHousehelpLinkOTP =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.BureauService/ResendHousehelpLinkOTP',
+      request,
+      metadata || {},
+      methodDescriptor_BureauService_ResendHousehelpLinkOTP);
+};
+
+
+/**
  * @param {string} hostname
  * @param {?Object} credentials
  * @param {?grpc.web.ClientOptions} options
@@ -8536,6 +8719,128 @@ proto.auth.ShortlistServicePromiseClient.prototype.shortlistExists =
       request,
       metadata || {},
       methodDescriptor_ShortlistService_ShortlistExists);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.ShortlistUnlockReq,
+ *   !proto.auth.ShortlistContactResponse>}
+ */
+const methodDescriptor_ShortlistService_UnlockShortlist = new grpc.web.MethodDescriptor(
+  '/auth.ShortlistService/UnlockShortlist',
+  grpc.web.MethodType.UNARY,
+  proto.auth.ShortlistUnlockReq,
+  proto.auth.ShortlistContactResponse,
+  /**
+   * @param {!proto.auth.ShortlistUnlockReq} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.ShortlistContactResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.ShortlistUnlockReq} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.ShortlistContactResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.ShortlistContactResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ShortlistServiceClient.prototype.unlockShortlist =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ShortlistService/UnlockShortlist',
+      request,
+      metadata || {},
+      methodDescriptor_ShortlistService_UnlockShortlist,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.ShortlistUnlockReq} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.ShortlistContactResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ShortlistServicePromiseClient.prototype.unlockShortlist =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ShortlistService/UnlockShortlist',
+      request,
+      metadata || {},
+      methodDescriptor_ShortlistService_UnlockShortlist);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.ShortlistUnlockReq,
+ *   !proto.auth.ShortlistContactResponse>}
+ */
+const methodDescriptor_ShortlistService_GetUnlockedContact = new grpc.web.MethodDescriptor(
+  '/auth.ShortlistService/GetUnlockedContact',
+  grpc.web.MethodType.UNARY,
+  proto.auth.ShortlistUnlockReq,
+  proto.auth.ShortlistContactResponse,
+  /**
+   * @param {!proto.auth.ShortlistUnlockReq} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.ShortlistContactResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.ShortlistUnlockReq} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.ShortlistContactResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.ShortlistContactResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ShortlistServiceClient.prototype.getUnlockedContact =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ShortlistService/GetUnlockedContact',
+      request,
+      metadata || {},
+      methodDescriptor_ShortlistService_GetUnlockedContact,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.ShortlistUnlockReq} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.ShortlistContactResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ShortlistServicePromiseClient.prototype.getUnlockedContact =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ShortlistService/GetUnlockedContact',
+      request,
+      metadata || {},
+      methodDescriptor_ShortlistService_GetUnlockedContact);
 };
 
 
@@ -16392,6 +16697,128 @@ proto.auth.ContactServicePromiseClient.prototype.updateContactMessageStatus =
       request,
       metadata || {},
       methodDescriptor_ContactService_UpdateContactMessageStatus);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ContactService_ResolveContactMessage = new grpc.web.MethodDescriptor(
+  '/auth.ContactService/ResolveContactMessage',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ContactServiceClient.prototype.resolveContactMessage =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ContactService/ResolveContactMessage',
+      request,
+      metadata || {},
+      methodDescriptor_ContactService_ResolveContactMessage,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ContactServicePromiseClient.prototype.resolveContactMessage =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ContactService/ResolveContactMessage',
+      request,
+      metadata || {},
+      methodDescriptor_ContactService_ResolveContactMessage);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_ContactService_AddContactComment = new grpc.web.MethodDescriptor(
+  '/auth.ContactService/AddContactComment',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.ContactServiceClient.prototype.addContactComment =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.ContactService/AddContactComment',
+      request,
+      metadata || {},
+      methodDescriptor_ContactService_AddContactComment,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.ContactServicePromiseClient.prototype.addContactComment =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.ContactService/AddContactComment',
+      request,
+      metadata || {},
+      methodDescriptor_ContactService_AddContactComment);
 };
 
 

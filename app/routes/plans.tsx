@@ -185,6 +185,7 @@ export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [plansError, setPlansError] = useState<string | null>(null);
+  const [plansRetryKey, setPlansRetryKey] = useState(0);
 
   // Payment modal
   const [showModal, setShowModal] = useState(false);
@@ -234,7 +235,7 @@ export default function PlansPage() {
         setPlansError("Failed to load plans. Please try again.");
       })
       .finally(() => setPlansLoading(false));
-  }, [user, authLoading]);
+  }, [user, authLoading, navigate, location.pathname, location.search, plansRetryKey]);
 
   // Cleanup polling on unmount
   useEffect(() => {
@@ -465,7 +466,7 @@ export default function PlansPage() {
           <div className="max-w-md mx-auto">
             <ErrorAlert message={plansError} />
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => setPlansRetryKey((prev) => prev + 1)}
               className="mt-4 w-full rounded-xl py-2.5 text-sm font-semibold text-purple-400 border-2 border-purple-500/50 hover:bg-purple-500/10 transition-colors"
             >
               Try Again

@@ -84,7 +84,18 @@ export default function BureauProfile() {
 
     if (loading) return <div className="flex justify-center py-12">Loading...</div>;
     if (error) return <div className="mt-6 max-w-md mx-auto"><ErrorAlert message={error} /></div>;
-    if (!profile) return null;
+    if (!profile) {
+        return (
+            <>
+                <Navigation />
+                <div className="min-h-screen w-full bg-slate-950">
+                    <div className="mx-auto max-w-md px-4 py-12">
+                        <ErrorAlert message="Bureau profile data is unavailable right now. Please try again." />
+                    </div>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>

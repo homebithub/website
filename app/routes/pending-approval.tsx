@@ -15,7 +15,7 @@ export default function PendingApprovalPage() {
   const checkRequestStatus = useCallback(async () => {
     const token = getAccessTokenFromCookies();
     if (!token) {
-      navigate("/login");
+      navigate("/login", { replace: true });
       return;
     }
 
@@ -24,7 +24,7 @@ export default function PendingApprovalPage() {
       const request = data?.data || data;
 
       if (!request || !request.status) {
-        navigate("/household-choice");
+        navigate("/household-choice", { replace: true });
         return;
       }
 
@@ -32,11 +32,11 @@ export default function PendingApprovalPage() {
       setHouseholdName(request.household_name || "the household");
 
       if (request.status === 'approved') {
-        navigate("/household/profile");
+        navigate("/household/profile", { replace: true });
       }
     } catch (err) {
       console.error("Error checking join status:", err);
-      navigate("/household-choice");
+      navigate("/household-choice", { replace: true });
     } finally {
       setLoading(false);
     }

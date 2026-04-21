@@ -6,17 +6,43 @@ import { handleApiError, extractErrorMessage } from '~/utils/errorMessages';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [emailError, setEmailError] = useState<string | null>(null);
+  const [skipLoading, setSkipLoading] = useState(false);
   const location = useLocation();
   const locationState = (location.state || {}) as { user_id?:string, from?: string };
-  const [user_id, setUserId] = useState(locationState.user_id);
+  const userId = searchParams.get('userId') || locationState.user_id || getStoredUserId() || '';
+  const from = searchParams.get('from') || locationState.from || '';
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    let changed = false;
+
+    if (locationState.user_id && !nextParams.get('userId')) {
+      nextParams.set('userId', locationState.user_id);
+      changed = true;
+    }
+    if (locationState.from && !nextParams.get('from')) {
+      nextParams.set('from', locationState.from);
+      changed = true;
+    }
+
+    if (changed) {
+      navigate(`/verify-email?${nextParams.toString()}`, {
+        replace: true,
+        state: location.state,
+      });
+    }
+  }, [location.state, locationState.from, locationState.user_id, navigate, searchParams]);
   
   // Email validation regex
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -38,11 +64,59 @@ export default function VerifyEmail() {
   
   // Redirect to signup if no user_id (user typed URL directly)
   React.useEffect(() => {
-    if (!user_id) {
-      console.warn('No user_id - redirecting to signup');
+    if (!userId) {
       navigate('/signup', { replace: true });
     }
-  }, [user_id, navigate]);
+  }, [userId, navigate]);
+
+  const handleSkip = async () => {
+    if (skipLoading) return;
+    setSkipLoading(true);
+
+    try {
+      const storedUser = getStoredUser();
+      const profileType = getStoredProfileType() || '';
+      const pt = storedUser?.profile_type || profileType;
+
+      if (pt === 'household') {
+        const destination = await resolveProfileSetupDestination({
+          profileType: 'household',
+          completedPath: '/',
+        });
+        navigate(destination);
+        return;
+      }
+
+      if (pt === 'househelp') {
+        try {
+          const destination = await resolveProfileSetupDestination({
+            profileType: 'househelp',
+            completedPath: '/',
+          });
+          navigate(destination);
+          return;
+        } catch {
+          navigate('/profile-setup/househelp?step=1');
+          return;
+        }
+      }
+
+      if (pt === 'bureau') {
+        navigate('/bureau');
+        return;
+      }
+
+      if (from === 'add-phone') {
+        navigate('/');
+        return;
+      }
+
+      navigate('/');
+    } finally {
+      setSkipLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -50,7 +124,7 @@ export default function VerifyEmail() {
     setSuccess(false);
     try {
       const { default: authService } = await import('~/services/grpc/auth.service');
-      const response = await authService.updateEmail(user_id || '', email);
+      const response = await authService.updateEmail(userId, email);
 
       const verificationProto = response.getVerification();
       if (verificationProto) {
@@ -67,10 +141,18 @@ export default function VerifyEmail() {
         };
         // Navigate to verify-otp page with verification object in state
         // After email OTP verification, it will redirect to household setup
-        navigate("/verify-otp", { 
+        const params = new URLSearchParams({
+          userId,
+          afterEmailVerification: '1',
+        });
+        if (from) {
+          params.set('from', from);
+        }
+        navigate(`/verify-otp?${params.toString()}`, {
           state: { 
             verification,
-            afterEmailVerification: true 
+            afterEmailVerification: true,
+            from,
           } 
         });
         setSuccess(true);
@@ -84,7 +166,6 @@ export default function VerifyEmail() {
       setLoading(false);
     }
   };
-console.log(user_id,"user_id");
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -145,25 +226,10 @@ console.log(user_id,"user_id");
             type="button"
             className="w-full mt-6 text-base text-purple-600 hover:text-purple-700 font-semibold hover:underline transition-colors bg-transparent border-none outline-none"
             style={{ boxShadow: 'none' }}
-            onClick={() => {
-              const userObj = localStorage.getItem('user_object');
-              const profileType = localStorage.getItem('profile_type') || '';
-              let path = '/';
-              if (userObj) {
-                const parsed = JSON.parse(userObj);
-                const pt = parsed.profile_type || profileType;
-                if (pt === 'household') {
-                  path = '/household-choice';
-                } else if (pt === 'househelp') {
-                  path = '/profile-setup/househelp?step=1';
-                } else if (pt === 'bureau') {
-                  path = '/bureau';
-                }
-              }
-              navigate(path);
-            }}
+            onClick={handleSkip}
+            disabled={skipLoading}
           >
-            Skip for now
+            {skipLoading ? 'Opening...' : 'Skip for now'}
           </button>
         </PurpleCard>
       </main>

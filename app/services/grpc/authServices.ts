@@ -99,6 +99,66 @@ function jsonResponseToJs(response: any): any {
   return response;
 }
 
+function verificationInfoToJs(verification: any): any {
+  if (!verification) return null;
+  return {
+    id: verification.getId?.() || '',
+    user_id: verification.getUserId?.() || '',
+    type: verification.getType?.() || '',
+    status: verification.getStatus?.() || '',
+    target: verification.getTarget?.() || '',
+    expires_at: verification.getExpiresAt?.()?.toDate?.()?.toISOString?.() || '',
+    next_resend_at: verification.getNextResendAt?.()?.toDate?.()?.toISOString?.() || '',
+    attempts: verification.getAttempts?.() ?? 0,
+    max_attempts: verification.getMaxAttempts?.() ?? 0,
+    resends: verification.getResends?.() ?? 0,
+    max_resends: verification.getMaxResends?.() ?? 0,
+    created_at: verification.getCreatedAt?.()?.toDate?.()?.toISOString?.() || '',
+    updated_at: verification.getUpdatedAt?.()?.toDate?.()?.toISOString?.() || '',
+  };
+}
+
+function bureauResponseToJs(response: any): any {
+  if (!response) return null;
+  const struct = response.getData?.();
+  if (struct && struct.toJavaScript) {
+    return struct.toJavaScript();
+  }
+  return response;
+}
+
+function bureauHousehelpLinkResponseToJs(response: any): any {
+  if (!response) return null;
+
+  const linkRequest = response.getLinkRequest?.();
+  const househelp = response.getHousehelp?.();
+
+  return {
+    message: response.getMessage?.() || '',
+    link_request: linkRequest ? {
+      id: linkRequest.getId?.() || '',
+      bureau_id: linkRequest.getBureauId?.() || '',
+      househelp_user_id: linkRequest.getHousehelpUserId?.() || '',
+      househelp_profile_id: linkRequest.getHousehelpProfileId?.() || '',
+      phone: linkRequest.getPhone?.() || '',
+      status: linkRequest.getStatus?.() || '',
+      expires_at: linkRequest.getExpiresAt?.()?.toDate?.()?.toISOString?.() || '',
+      verified_at: linkRequest.getVerifiedAt?.()?.toDate?.()?.toISOString?.() || '',
+      created_at: linkRequest.getCreatedAt?.()?.toDate?.()?.toISOString?.() || '',
+      updated_at: linkRequest.getUpdatedAt?.()?.toDate?.()?.toISOString?.() || '',
+    } : null,
+    verification: verificationInfoToJs(response.getVerification?.()),
+    househelp: househelp ? {
+      user_id: househelp.getUserId?.() || '',
+      profile_id: househelp.getProfileId?.() || '',
+      first_name: househelp.getFirstName?.() || '',
+      last_name: househelp.getLastName?.() || '',
+      phone: househelp.getPhone?.() || '',
+      bureau_id: househelp.getBureauId?.() || '',
+    } : null,
+  };
+}
+
 // ── Helper: generic gRPC call wrapper ──────────────────────────────────
 function grpcCall<T>(fn: (cb: (err: any, res: T) => void) => void): Promise<T> {
   return new Promise((resolve, reject) => {
@@ -379,6 +439,28 @@ export const shortlistService = {
     req.setUserId(resolveUserId(userId));
     req.setProfileId(profileId);
     return grpcCall((cb) => shortlistClient.shortlistExists(req, getMetadata(), cb));
+  },
+  async unlockShortlist(userId: string, profileId: string): Promise<{ unlocked: boolean; phone?: string; email?: string }> {
+    const req = new auth_pb.ShortlistUnlockReq();
+    req.setUserId(resolveUserId(userId));
+    req.setProfileId(profileId);
+    const res: any = await grpcCall((cb) => shortlistClient.unlockShortlist(req, getMetadata(), cb));
+    return {
+      unlocked: !!res?.getUnlocked?.(),
+      phone: res?.getPhone?.() || undefined,
+      email: res?.getEmail?.() || undefined,
+    };
+  },
+  async getUnlockedContact(userId: string, profileId: string): Promise<{ unlocked: boolean; phone?: string; email?: string }> {
+    const req = new auth_pb.ShortlistUnlockReq();
+    req.setUserId(resolveUserId(userId));
+    req.setProfileId(profileId);
+    const res: any = await grpcCall((cb) => shortlistClient.getUnlockedContact(req, getMetadata(), cb));
+    return {
+      unlocked: !!res?.getUnlocked?.(),
+      phone: res?.getPhone?.() || undefined,
+      email: res?.getEmail?.() || undefined,
+    };
   },
   async getShortlistCount(userId: string, profileType?: string): Promise<any> {
     const res = await grpcCall((cb) => shortlistClient.getShortlistCount(buildUserIdRequest(userId, profileType), getMetadata(), cb));
@@ -694,6 +776,26 @@ export const householdMemberService = {
     const res = await grpcCall((cb) => householdMemberClient.getOrCreateInvitationCode(buildIdRequest(householdId, userId), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
+  async createInvitation(householdId: string, data: Record<string, any>, userId?: string): Promise<any> {
+    const req = new auth_pb.CreateInvitationReq();
+    req.setHouseholdId(householdId);
+    req.setUserId(resolveUserId(userId || ''));
+    const struct = toStruct(data);
+    if (struct) req.setData(struct);
+    const res = await grpcCall((cb) => householdMemberClient.createInvitation(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async listInvitations(householdId: string, userId?: string): Promise<any> {
+    const res = await grpcCall((cb) => householdMemberClient.listInvitations(buildIdRequest(householdId, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async revokeInvitation(householdId: string, invitationId: string, userId: string): Promise<void> {
+    const req = new auth_pb.RevokeInvitationReq();
+    req.setHouseholdId(householdId);
+    req.setInvitationId(invitationId);
+    req.setUserId(resolveUserId(userId));
+    await grpcCall((cb) => householdMemberClient.revokeInvitation(req, getMetadata(), cb));
+  },
   async joinHousehold(userId: string, inviteCode: string, message?: string): Promise<any> {
     const req = new auth_pb.JoinHouseholdReq();
     req.setUserId(resolveUserId(userId));
@@ -730,12 +832,29 @@ export const householdMemberService = {
     const res = await grpcCall((cb) => householdMemberClient.listMembers(buildIdRequest(householdId, userId), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
+  async updateMemberRole(householdId: string, memberUserId: string, role: string, userId: string): Promise<any> {
+    const req = new auth_pb.UpdateMemberRoleReq();
+    req.setHouseholdId(householdId);
+    req.setMemberUserId(memberUserId);
+    req.setRole(role);
+    req.setUserId(resolveUserId(userId));
+    const res = await grpcCall((cb) => householdMemberClient.updateMemberRole(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
   async removeMember(householdId: string, memberUserId: string, userId: string): Promise<void> {
     const req = new auth_pb.RemoveMemberReq();
     req.setHouseholdId(householdId);
     req.setMemberUserId(memberUserId);
     req.setUserId(resolveUserId(userId));
     await grpcCall((cb) => householdMemberClient.removeMember(req, getMetadata(), cb));
+  },
+  async transferOwnership(householdId: string, newOwnerUserId: string, userId: string): Promise<any> {
+    const req = new auth_pb.TransferOwnershipReq();
+    req.setHouseholdId(householdId);
+    req.setNewOwnerUserId(newOwnerUserId);
+    req.setUserId(resolveUserId(userId));
+    const res = await grpcCall((cb) => householdMemberClient.transferOwnership(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
   async getUserHouseholds(userId: string): Promise<any> {
     const res = await grpcCall((cb) => householdMemberClient.getUserHouseholds(buildUserIdRequest(userId), getMetadata(), cb));
@@ -1076,9 +1195,30 @@ export const waitlistService = {
 
 export const bureauService = {
   async getCurrentBureauProfile(userId: string): Promise<any> {
-    return grpcCall((cb) => bureauClient.getCurrentBureauProfile(buildUserIdRequest(userId), getMetadata(), cb));
+    const res = await grpcCall((cb) => bureauClient.getCurrentBureauProfile(buildUserIdRequest(userId), getMetadata(), cb));
+    return bureauResponseToJs(res);
   },
   async getBureau(id: string, userId?: string): Promise<any> {
-    return grpcCall((cb) => bureauClient.getBureau(buildIdRequest(id, userId), getMetadata(), cb));
+    const res = await grpcCall((cb) => bureauClient.getBureau(buildIdRequest(id, userId), getMetadata(), cb));
+    return bureauResponseToJs(res);
+  },
+  async initiateHousehelpLink(phone: string): Promise<any> {
+    const req = new auth_pb.BureauHousehelpLinkInitiateRequest();
+    req.setPhone(phone);
+    const res = await grpcCall((cb) => bureauClient.initiateHousehelpLink(req, getMetadata(), cb));
+    return bureauHousehelpLinkResponseToJs(res);
+  },
+  async verifyHousehelpLink(requestId: string, otp: string): Promise<any> {
+    const req = new auth_pb.BureauHousehelpLinkVerifyRequest();
+    req.setRequestId(requestId);
+    req.setOtp(otp);
+    const res = await grpcCall((cb) => bureauClient.verifyHousehelpLink(req, getMetadata(), cb));
+    return bureauHousehelpLinkResponseToJs(res);
+  },
+  async resendHousehelpLinkOTP(requestId: string): Promise<any> {
+    const req = new auth_pb.BureauHousehelpLinkIdRequest();
+    req.setRequestId(requestId);
+    const res = await grpcCall((cb) => bureauClient.resendHousehelpLinkOTP(req, getMetadata(), cb));
+    return bureauHousehelpLinkResponseToJs(res);
   },
 };

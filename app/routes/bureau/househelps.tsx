@@ -1,115 +1,164 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { bureauService, profileService as grpcProfileService } from '~/services/grpc/authServices';
-import { getStoredAccessToken } from '~/utils/authStorage';
 
-// Add phone input styles
-const phoneInputStyle = {
-  color: '#1f2937', // Dark text color
-  backgroundColor: '#f9fafb', // Light background
-  padding: '0.5rem',
-  borderRadius: '0.5rem',
-  border: '1px solid #e5e7eb',
-  fontSize: '1rem',
-};
+import { bureauService, profileService as grpcProfileService } from "~/services/grpc/authServices";
+import { getStoredAccessToken } from "~/utils/authStorage";
+
+type LinkFlowState = {
+  message?: string;
+  link_request?: {
+    id?: string;
+    status?: string;
+  } | null;
+  verification?: {
+    target?: string;
+    expires_at?: string;
+    next_resend_at?: string;
+  } | null;
+  househelp?: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+  } | null;
+} | null;
 
 export default function BureauHousehelps() {
   const [househelps, setHousehelps] = useState<any[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState("");
-  // State for Onboard modal and OTP
-  const [showOnboardModal, setShowOnboardModal] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [phone, setPhone] = useState("");
-  const [otp, setOtp] = useState("");
-  const [searching, setSearching] = useState(false);
-  const [searchError, setSearchError] = useState("");
-  const [househelpInfo, setHousehelpInfo] = useState<any>(null);
-  const [sendingOtp, setSendingOtp] = useState(false);
-  const [otpError, setOtpError] = useState("");
-  // State for bureau ID
   const [bureauId, setBureauId] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Fetch bureau profile to get bureau ID
-    const fetchProfile = async () => {
-      try {
-        const token = getStoredAccessToken();
-        if (!token) return;
-        const data = await bureauService.getCurrentBureauProfile('');
-        const resolvedBureauId = data?.id || data?._id || null;
-        setBureauId(resolvedBureauId);
+  const [linkPhone, setLinkPhone] = useState("");
+  const [linkOtp, setLinkOtp] = useState("");
+  const [linkState, setLinkState] = useState<LinkFlowState>(null);
+  const [linkLoading, setLinkLoading] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [linkError, setLinkError] = useState("");
+  const [linkSuccess, setLinkSuccess] = useState("");
 
-        if (resolvedBureauId) {
-          setListLoading(true);
-          const result = await grpcProfileService.getHousehelpsByBureau(resolvedBureauId, 20, 0);
-          setHousehelps(Array.isArray(result?.data) ? result.data : []);
-        }
-      } catch {}
-      finally {
-        setListLoading(false);
+  const loadBureauHousehelps = async () => {
+    const token = getStoredAccessToken();
+    if (!token) {
+      setListLoading(false);
+      setListError("Please log in to manage bureau househelps.");
+      return;
+    }
+
+    setListLoading(true);
+    setListError("");
+
+    try {
+      const data = await bureauService.getCurrentBureauProfile("");
+      const resolvedBureauId = data?.id || data?._id || null;
+      setBureauId(resolvedBureauId);
+
+      if (!resolvedBureauId) {
+        setHousehelps([]);
+        setListError("Could not resolve the authenticated bureau profile.");
+        return;
       }
-    };
-    fetchProfile();
+
+      const result = await grpcProfileService.getHousehelpsByBureau(resolvedBureauId, 20, 0);
+      setHousehelps(Array.isArray(result?.data) ? result.data : []);
+    } catch (error: any) {
+      setHousehelps([]);
+      setListError(error?.message || "Failed to load bureau househelps.");
+    } finally {
+      setListLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBureauHousehelps();
   }, []);
 
-  // Handlers
-  const handleSearchPhone = async () => {
-    setSearching(true);
-    setSearchError("");
-    setHousehelpInfo(null);
+  const handleInitiateLink = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!linkPhone.trim()) {
+      setLinkError("Enter the househelp phone number first.");
+      return;
+    }
+
+    setLinkLoading(true);
+    setLinkError("");
+    setLinkSuccess("");
+
     try {
-      const data = await grpcProfileService.searchHousehelpByPhone(phone);
-      setHousehelpInfo(data);
-    } catch (err: any) {
-      setSearchError(err.message || "No househelp found with this number");
+      const result = await bureauService.initiateHousehelpLink(linkPhone.trim());
+      setLinkState(result);
+      setLinkOtp("");
+      setLinkSuccess(result?.message || "Verification code sent.");
+    } catch (error: any) {
+      setLinkState(null);
+      setLinkError(error?.message || "Failed to send verification code.");
     } finally {
-      setSearching(false);
+      setLinkLoading(false);
     }
   };
 
-  const handleSendOtp = async () => {
-    setSendingOtp(true);
-    setOtpError("");
-    // TODO: Replace with real API endpoint
+  const handleVerifyLink = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const requestId = linkState?.link_request?.id;
+    if (!requestId) {
+      setLinkError("Start a link request before verifying.");
+      return;
+    }
+    if (!linkOtp.trim()) {
+      setLinkError("Enter the OTP shared by the househelp.");
+      return;
+    }
+
+    setVerifyLoading(true);
+    setLinkError("");
+    setLinkSuccess("");
+
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setShowOtpModal(true);
-    } catch (err: any) {
-      setOtpError("Failed to send OTP");
+      const result = await bureauService.verifyHousehelpLink(requestId, linkOtp.trim());
+      setLinkSuccess(result?.message || "Househelp linked successfully.");
+      setLinkState(null);
+      setLinkPhone("");
+      setLinkOtp("");
+      await loadBureauHousehelps();
+    } catch (error: any) {
+      setLinkError(error?.message || "Failed to verify the OTP.");
     } finally {
-      setSendingOtp(false);
+      setVerifyLoading(false);
     }
   };
 
-  const handleResendOtp = () => {
-    handleSendOtp();
+  const handleResendOTP = async () => {
+    const requestId = linkState?.link_request?.id;
+    if (!requestId) {
+      setLinkError("Start a link request before resending.");
+      return;
+    }
+
+    setResendLoading(true);
+    setLinkError("");
+    setLinkSuccess("");
+
+    try {
+      const result = await bureauService.resendHousehelpLinkOTP(requestId);
+      setLinkState(result);
+      setLinkSuccess(result?.message || "OTP resent successfully.");
+    } catch (error: any) {
+      setLinkError(error?.message || "Failed to resend the OTP.");
+    } finally {
+      setResendLoading(false);
+    }
   };
 
-  const handleVerifyOtp = async () => {
-    // TODO: Integrate backend call to verify OTP and onboard househelp
-    setShowOnboardModal(false);
-    setShowOtpModal(false);
-    setPhone("");
-    setOtp("");
-    setHousehelpInfo(null);
-  };
-
-  const handleCloseModal = () => {
-    setShowOnboardModal(false);
-    setShowOtpModal(false);
-    setPhone("");
-    setOtp("");
-    setHousehelpInfo(null);
-    setSearchError("");
-    setOtpError("");
-  };
+  const linkedHousehelpName = [linkState?.househelp?.first_name, linkState?.househelp?.last_name]
+    .filter(Boolean)
+    .join(" ");
 
   return (
     <div className="p-4 sm:p-6">
       <h2 className="text-xl font-bold text-primary dark:text-primary-300">Househelps</h2>
-      <div className="flex items-center justify-between mb-4 mt-6">
+      <div className="mb-4 mt-6 flex items-center justify-between">
         <div className="text-gray-500 dark:text-gray-300">Manage househelps registered with your bureau.</div>
         <div className="flex gap-2">
           {bureauId && (
@@ -120,15 +169,93 @@ export default function BureauHousehelps() {
               Create New (Househelp)
             </Link>
           )}
-          <button
-            className="btn-secondary"
-            onClick={() => setShowOnboardModal(true)}
-          >
-            Onboard
-          </button>
         </div>
       </div>
-      <div className="bg-gradient-to-br from-purple-50 to-white rounded-2xl shadow-lg border-2 border-purple-200 p-6 text-gray-600">
+
+      <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        <div className="font-semibold">Link an existing househelp with OTP verification</div>
+        <p className="mt-1 text-amber-900">
+          Homebit sends the verification code to the househelp phone number. Ask the househelp to share the code with your bureau before you confirm the link.
+        </p>
+
+        <form className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]" onSubmit={handleInitiateLink}>
+          <input
+            type="tel"
+            value={linkPhone}
+            onChange={(event) => setLinkPhone(event.target.value)}
+            placeholder="+2547XXXXXXXX"
+            className="w-full rounded-xl border border-amber-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-amber-500"
+          />
+          <button
+            type="submit"
+            disabled={linkLoading}
+            className="rounded-xl bg-amber-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {linkLoading ? "Sending..." : "Send Link OTP"}
+          </button>
+        </form>
+
+        {linkSuccess ? <div className="mt-3 rounded-xl bg-green-50 px-3 py-2 text-sm text-green-800">{linkSuccess}</div> : null}
+        {linkError ? <div className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{linkError}</div> : null}
+
+        {linkState?.link_request?.id ? (
+          <div className="mt-4 rounded-2xl border border-amber-300 bg-white p-4">
+            <div className="text-sm font-semibold text-gray-900">
+              {linkedHousehelpName || "Existing househelp found"}
+            </div>
+            <div className="mt-1 text-sm text-gray-600">
+              OTP sent to {linkState?.verification?.target || linkState?.househelp?.phone || linkPhone}.
+            </div>
+            {linkState?.verification?.expires_at ? (
+              <div className="mt-1 text-xs text-gray-500">
+                Expires at {new Date(linkState.verification.expires_at).toLocaleString()}
+              </div>
+            ) : null}
+
+            <form className="mt-4 grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]" onSubmit={handleVerifyLink}>
+              <input
+                type="text"
+                value={linkOtp}
+                onChange={(event) => setLinkOtp(event.target.value)}
+                placeholder="Enter OTP from househelp"
+                className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-amber-500"
+              />
+              <button
+                type="submit"
+                disabled={verifyLoading}
+                className="rounded-xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {verifyLoading ? "Verifying..." : "Verify and Link"}
+              </button>
+            </form>
+
+            <div className="mt-3 flex flex-wrap gap-3">
+              <button
+                type="button"
+                onClick={handleResendOTP}
+                disabled={resendLoading}
+                className="rounded-lg border border-amber-300 px-3 py-2 text-sm font-medium text-amber-800 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {resendLoading ? "Resending..." : "Resend OTP"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setLinkState(null);
+                  setLinkOtp("");
+                  setLinkError("");
+                  setLinkSuccess("");
+                }}
+                className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </div>
+
+      <div className="rounded-2xl border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-white p-6 text-gray-600 shadow-lg">
         {listLoading ? (
           <div>Loading bureau househelps...</div>
         ) : listError ? (
@@ -150,11 +277,11 @@ export default function BureauHousehelps() {
                 {househelps.map((item: any) => (
                   <tr key={item?.Househelp?.id || item?.User?.id} className="border-b border-purple-100 last:border-b-0">
                     <td className="py-2 pr-4 font-medium text-gray-900">
-                      {[item?.User?.first_name, item?.User?.last_name].filter(Boolean).join(' ') || 'Unnamed househelp'}
+                      {[item?.User?.first_name, item?.User?.last_name].filter(Boolean).join(" ") || "Unnamed househelp"}
                     </td>
-                    <td className="py-2 pr-4">{item?.User?.phone || '-'}</td>
-                    <td className="py-2 pr-4">{item?.Househelp?.current_location || item?.Househelp?.location || '-'}</td>
-                    <td className="py-2 pr-4">{item?.User?.status || item?.Househelp?.profile_status || '-'}</td>
+                    <td className="py-2 pr-4">{item?.User?.phone || "-"}</td>
+                    <td className="py-2 pr-4">{item?.Househelp?.current_location || item?.Househelp?.location || "-"}</td>
+                    <td className="py-2 pr-4">{item?.User?.status || item?.Househelp?.profile_status || "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -162,88 +289,8 @@ export default function BureauHousehelps() {
           </div>
         )}
       </div>
-      {/* Onboard Modal */}
-      {showOnboardModal && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={handleCloseModal} />
-          <div className="relative bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl p-8 w-full sm:max-w-lg shadow-2xl max-h-[90vh] sm:max-h-[85vh] overflow-y-auto animate-slide-up sm:mx-4">
-            <button
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 text-2xl font-bold"
-              onClick={handleCloseModal}
-              aria-label="Close"
-            >
-              &times;
-            </button>
-            <h4 className="text-xl font-bold mb-6 text-primary-700 dark:text-primary-300">Onboard Existing Househelp</h4>
-            {!showOtpModal ? (
-              <>
-                <label className="block mb-3 text-base font-medium">Phone Number</label>
-                <input
-                  type="tel"
-                  className="input-primary mb-4 w-full text-lg px-4 py-3"
-                  placeholder="Enter phone number"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                  disabled={searching || !!househelpInfo}
-                  style={phoneInputStyle}
-                />
-                {!househelpInfo && (
-                  <button
-                    className="btn-primary w-full py-1.5 text-lg mb-2"
-                    onClick={handleSearchPhone}
-                    disabled={searching || !phone}
-                  >
-                    {searching ? "Searching..." : "Search"}
-                  </button>
-                )}
-                {searchError && <div className="text-red-600 mb-2 text-center">{searchError}</div>}
-                {househelpInfo && (
-                  <div className="mb-4 p-4 rounded bg-primary-50 dark:bg-primary-900/20 text-primary-800 dark:text-primary-200">
-                    <div className="font-semibold">Househelp Found:</div>
-                    <div>Name: {[househelpInfo?.User?.first_name, househelpInfo?.User?.last_name].filter(Boolean).join(' ') || househelpInfo.name || househelpInfo.first_name || "-"}</div>
-                    <div>Phone: {househelpInfo?.User?.phone || househelpInfo.phone || '-'}</div>
-                  </div>
-                )}
-                {househelpInfo && (
-                  <button
-                    className="btn-secondary w-full py-1.5 text-lg"
-                    onClick={handleSendOtp}
-                    disabled={sendingOtp}
-                  >
-                    {sendingOtp ? "Sending OTP..." : "Send OTP"}
-                  </button>
-                )}
-                {otpError && <div className="text-red-600 mb-2 text-center">{otpError}</div>}
-              </>
-            ) : (
-              <>
-                <label className="block mb-3 text-base font-medium">Enter OTP</label>
-                <input
-                  type="text"
-                  className="input-primary mb-4 w-full text-lg px-4 py-3"
-                  placeholder="Enter OTP"
-                  value={otp}
-                  onChange={e => setOtp(e.target.value)}
-                />
-                <div className="flex gap-2 justify-between items-center mb-2">
-                  <button className="text-primary-600 text-base underline" onClick={handleResendOtp} disabled={sendingOtp}>
-                    Resend OTP
-                  </button>
-                  <div className="flex gap-2">
-                    <button className="btn-secondary" onClick={handleCloseModal}>Cancel</button>
-                    <button className="btn-primary" onClick={handleVerifyOtp} disabled={!otp}>
-                      Verify
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
-// Error boundary for better error handling
 export { ErrorBoundary } from "~/components/ErrorBoundary";

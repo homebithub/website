@@ -15,6 +15,8 @@ import { formatTimeAgo } from "~/utils/timeAgo";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
+import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { resolveHouseholdOwnerUserId, resolveHouseholdProfile } from '~/utils/householdProfiles';
 
 type ShortlistItem = {
   id: string;
@@ -47,17 +49,9 @@ export default function ShortlistPage() {
   const fetchedProfilesRef = useRef<Set<string>>(new Set());
   const [compactView, setCompactView] = useState(false);
   const [accessibilityMode, setAccessibilityMode] = useState(false);
-  const currentUser = useMemo(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = localStorage.getItem('user_object');
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  }, []);
-  const currentUserId: string | undefined = currentUser?.id;
-  const currentProfileType: string | undefined = currentUser?.profile_type;
+  const currentUser = useMemo(() => getStoredUser(), []);
+  const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
+  const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   // Load UI preferences (compact view, accessibility)
@@ -158,8 +152,7 @@ export default function ShortlistPage() {
         const results = await Promise.all(
           missing.map(async (profileId) => {
             try {
-              const raw = await grpcProfileService.getHouseholdByUserID(profileId);
-              const data = raw?.data || raw;
+              const data = await resolveHouseholdProfile(profileId, { identifierType: 'profileId' });
               return { profileId, data };
             } catch {
               return { profileId, data: null };
@@ -263,12 +256,15 @@ export default function ShortlistPage() {
                 .map((s) => {
                   const prof = s.profile_id ? profiles[s.profile_id] : null;
                   const owner = prof?.owner || prof;
-                  const householdUserId = prof?.owner_user_id || prof?.user_id || owner?.id || s.user_id;
+                  const householdUserId = resolveHouseholdOwnerUserId(prof) || s.user_id;
+                  const householdProfileLink = householdUserId
+                    ? `/household/public-profile?userId=${householdUserId}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`
+                    : `/household/public-profile?profileId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`;
                   return (
                     <div
                       key={s.id}
-                      onClick={() => navigate(`/household/public-profile?user_id=${householdUserId || s.profile_id}`, {
-                        state: { profileId: householdUserId || s.profile_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
+                      onClick={() => navigate(householdProfileLink, {
+                        state: { profileId: s.profile_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
                       })}
                       className={`relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 transition-all duration-300 cursor-pointer`}
                     >
@@ -340,8 +336,8 @@ export default function ShortlistPage() {
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
-                            navigate(`/household/public-profile?user_id=${householdUserId || s.profile_id}`, {
-                              state: { profileId: householdUserId || s.profile_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
+                            navigate(householdProfileLink, {
+                              state: { profileId: s.profile_id, backTo: '/shortlist', backLabel: 'Back to shortlist' }
                             });
                           }}
                           className="ml-auto px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"

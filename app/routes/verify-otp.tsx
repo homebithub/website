@@ -1,34 +1,115 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { handleApiError, extractErrorMessage } from '~/utils/errorMessages';
-// Temporarily commented out to debug module loading issue
-// import { HouseholdProfileModal } from '~/components/modals/HouseholdProfileModal';
 import { otpSchema, updatePhoneSchema, updateEmailSchema, validateForm, validateField } from '~/utils/validation';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
-import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
-import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { cacheAuthSession, getStoredProfileType } from '~/utils/authStorage';
+import { Loading } from '~/components/Loading';
+import { cacheAuthSession, getStoredProfileType, getStoredUserId } from '~/utils/authStorage';
+import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
+
+const PENDING_VERIFICATION_KEY = 'homebit.pendingVerification';
+
+type VerifyOtpLocationState = {
+  verification?: any;
+  bureauId?: string;
+  afterEmailVerification?: boolean;
+  isGoogleSignup?: boolean;
+  afterAddPhone?: boolean;
+  redirectTo?: string;
+  profileType?: string;
+  from?: string;
+};
+
+function readPendingVerificationState(): VerifyOtpLocationState {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.sessionStorage.getItem(PENDING_VERIFICATION_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function persistPendingVerificationState(state: VerifyOtpLocationState) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.setItem(PENDING_VERIFICATION_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore session storage failures and fall back to route state only.
+  }
+}
+
+function clearPendingVerificationState() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.sessionStorage.removeItem(PENDING_VERIFICATION_KEY);
+  } catch {
+    // Ignore session storage failures.
+  }
+}
 
 export default function VerifyOtpPage() {
   // UI state for changing phone
   const [showChangePhone, setShowChangePhone] = React.useState(false);
   const [newPhone, setNewPhone] = React.useState('');
-  
-  // Household profile modal state
-  const [showProfileModal, setShowProfileModal] = React.useState(false);
-  const [profileData, setProfileData] = React.useState(null);
 
   // Validation state
   const [otpError, setOtpError] = React.useState<string | null>(null);
   const [newPhoneError, setNewPhoneError] = React.useState<string | null>(null);
   const [otpTouched, setOtpTouched] = React.useState(false);
 
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const locationState = (location.state || {}) as VerifyOtpLocationState;
+  const queryFlags: VerifyOtpLocationState = {
+    bureauId: searchParams.get('bureauId') || undefined,
+    afterEmailVerification: searchParams.has('afterEmailVerification')
+      ? searchParams.get('afterEmailVerification') === '1'
+      : undefined,
+    isGoogleSignup: searchParams.has('isGoogleSignup')
+      ? searchParams.get('isGoogleSignup') === '1'
+      : undefined,
+    afterAddPhone: searchParams.has('afterAddPhone')
+      ? searchParams.get('afterAddPhone') === '1'
+      : undefined,
+    redirectTo: searchParams.get('redirectTo') || undefined,
+    profileType: searchParams.get('profileType') || undefined,
+    from: searchParams.get('from') || undefined,
+  };
+  const [verificationState, setVerificationState] = useState<VerifyOtpLocationState>(() => (
+    locationState.verification
+      ? { ...queryFlags, ...locationState }
+      : { ...queryFlags, ...readPendingVerificationState() }
+  ));
+  const verification = verificationState.verification;
+  const afterEmailVerification = verificationState.afterEmailVerification;
+  const afterAddPhone = verificationState.afterAddPhone;
+  const verificationType = verification?.type || '';
+  const isPhoneUpdateFlow = verificationType === 'phone';
+  const isPasswordResetFlow = verificationType === 'password_reset';
+  const usesPhoneTarget = isPhoneUpdateFlow || isPasswordResetFlow;
+
+  const verificationToState = (verificationProto: any) => ({
+    id: verificationProto.getId(),
+    user_id: verificationProto.getUserId(),
+    type: verificationProto.getType(),
+    status: verificationProto.getStatus(),
+    target: verificationProto.getTarget(),
+    expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
+    max_attempts: verificationProto.getMaxAttempts(),
+    attempts: verificationProto.getAttempts(),
+    next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
+  });
+
+  const resolveVerificationUserId = () => verification?.user_id || getStoredUserId() || '';
+  
   // Handler for phone change submit
   const [changePhoneError, setChangePhoneError] = React.useState<string | null>(null);
   const [changePhoneLoading, setChangePhoneLoading] = React.useState(false);
@@ -38,11 +119,11 @@ export default function VerifyOtpPage() {
     setChangePhoneLoading(true);
     
     // Validate new phone/email
-    const schema = verification.type === 'phone' || verification.type === 'password_reset' 
-      ? updatePhoneSchema 
+    const schema = usesPhoneTarget
+      ? updatePhoneSchema
       : updateEmailSchema;
     const validation = validateForm(schema, { 
-      [verification.type === 'phone' || verification.type === 'password_reset' ? 'phone' : 'email']: newPhone 
+      [usesPhoneTarget ? 'phone' : 'email']: newPhone 
     });
     
     if (!validation.isValid) {
@@ -54,62 +135,58 @@ export default function VerifyOtpPage() {
     try {
       const { default: authService } = await import('~/services/grpc/auth.service');
       let verificationProto: any = null;
+      const currentUserId = resolveVerificationUserId();
 
-      if (verification.type === 'phone') {
-        const response = await authService.updatePhone(verification?.user_id, newPhone);
+      if (isPhoneUpdateFlow) {
+        const response = await authService.updatePhone(currentUserId, newPhone);
+        verificationProto = response.getVerification();
+      } else if (isPasswordResetFlow) {
+        const response = await authService.forgotPassword(newPhone);
         verificationProto = response.getVerification();
       } else {
-        const response = await authService.forgotPassword(newPhone);
+        const response = await authService.updateEmail(currentUserId, newPhone);
         verificationProto = response.getVerification();
       }
 
       if (verificationProto) {
-        setVerification({
-          id: verificationProto.getId(),
-          user_id: verificationProto.getUserId(),
-          type: verificationProto.getType(),
-          status: verificationProto.getStatus(),
-          target: verificationProto.getTarget(),
-          expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
-          max_attempts: verificationProto.getMaxAttempts(),
-          attempts: verificationProto.getAttempts(),
-          next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
-        });
+        setVerificationState((prev) => ({
+          ...prev,
+          verification: verificationToState(verificationProto),
+        }));
         setShowChangePhone(false);
         setNewPhone('');
         setLocalFailedAttempts(0);
         setOtp('');
         setLastTriedOtp('');
-        setResendSeconds(60);
       }
     } catch (err: any) {
-      setChangePhoneError(err.message || 'Failed to update phone');
+      setChangePhoneError(err.message || `Failed to update ${usesPhoneTarget ? 'phone' : 'email'}`);
     } finally {
       setChangePhoneLoading(false);
     }
   };
-
-  const location = useLocation();
-  const navigate = useNavigate();
-  // Check if state exists
-  const locationState = (location.state || {}) as { verification?: any, bureauId?: string, afterEmailVerification?: boolean, isGoogleSignup?: boolean, afterAddPhone?: boolean, redirectTo?: string, profileType?: string };
-  const [verification, setVerification] = useState(locationState.verification);
-  const afterEmailVerification = locationState.afterEmailVerification;
-  const afterAddPhone = locationState.afterAddPhone;
   
-  // Debug logging
   React.useEffect(() => {
-    console.log('verify-otp mounted');
-    console.log('Location state:', locationState);
-    console.log('Verification:', verification);
-    console.log('After email verification:', afterEmailVerification);
-  }, []);
-  
+    if (locationState.verification) {
+      setVerificationState((prev) => ({ ...prev, ...queryFlags, ...locationState }));
+    }
+  }, [locationState, queryFlags.afterAddPhone, queryFlags.afterEmailVerification, queryFlags.bureauId, queryFlags.from, queryFlags.isGoogleSignup, queryFlags.profileType, queryFlags.redirectTo]);
+
+  React.useEffect(() => {
+    setVerificationState((prev) => ({ ...prev, ...queryFlags }));
+  }, [queryFlags.afterAddPhone, queryFlags.afterEmailVerification, queryFlags.bureauId, queryFlags.from, queryFlags.isGoogleSignup, queryFlags.profileType, queryFlags.redirectTo]);
+
+  React.useEffect(() => {
+    if (verificationState.verification) {
+      persistPendingVerificationState(verificationState);
+      return;
+    }
+    clearPendingVerificationState();
+  }, [verificationState]);
+
   // Redirect to signup if no verification data (user typed URL directly)
   React.useEffect(() => {
     if (!verification) {
-      console.warn('No verification data - redirecting to signup');
-      console.warn('Location state was:', locationState);
       navigate('/signup', { replace: true });
     }
   }, [verification, navigate]);
@@ -188,10 +265,7 @@ export default function VerifyOtpPage() {
     try {
       // Use gRPC-Web instead of REST
       const { default: authService } = await import('~/services/grpc/auth.service');
-      const verifyResponse = await authService.verifyOTP(user_id, verification.type, otp);
-      
-      console.log('[VERIFY-OTP] gRPC response received');
-      
+      const verifyResponse = await authService.verifyOTP(resolveVerificationUserId(), verification.type, otp);
       // Extract data from gRPC response
       const token = verifyResponse.getToken();
       const refreshToken = verifyResponse.getRefreshToken();
@@ -208,9 +282,6 @@ export default function VerifyOtpPage() {
         is_verified: userProto?.getIsVerified() || false,
         profile_image: userProto?.getProfileImage() || '',
       };
-      
-      console.log('[VERIFY-OTP] Extracted user data:', flatUser);
-      
       // Store token and user_object in localStorage
       if (token) {
         cacheAuthSession({
@@ -230,9 +301,7 @@ export default function VerifyOtpPage() {
           const result = await deviceService.registerDevice(
             uid, devId, getDeviceName(), navigator.userAgent, ''
           );
-          if (result.requiresConfirmation) {
-            console.log('[Device] New device registered, confirmation email sent');
-          }
+          void result;
         }
       } catch (deviceError) {
         console.error('[Device] Registration failed:', deviceError);
@@ -241,76 +310,65 @@ export default function VerifyOtpPage() {
       setSuccess(true);
       setLocalFailedAttempts(0); // reset on success
       setLastTriedOtp('');
+      clearPendingVerificationState();
       
       const profileType = flatUser.profile_type;
       const userId = flatUser.user_id;
-      console.log('[VERIFY-OTP] Profile type:', profileType, 'User ID:', userId);
+
+      if (isPasswordResetFlow) {
+        navigate(`/reset-password?userId=${encodeURIComponent(userId)}`, {
+          replace: true,
+        });
+        return;
+      }
       
       // If bureauId is present in state, redirect to /bureau/househelps after verification
-      if (locationState.bureauId) {
+      if (verificationState.bureauId) {
         navigate('/bureau/househelps');
       } else if (afterAddPhone) {
         // Coming from /add-phone flow (e.g. Google login user adding phone)
         // Next: email verification if no email, or profile setup / redirect
-        const pt = profileType || locationState.profileType || '';
+        const pt = profileType || verificationState.profileType || '';
         if (!flatUser.email && (pt === 'household' || pt === 'househelp')) {
-          navigate('/verify-email', {
-            state: { user_id: userId, from: 'add-phone' },
+          const params = new URLSearchParams({
+            userId,
+            from: 'add-phone',
           });
-          return;
+            navigate(`/verify-email?${params.toString()}`, {
+              state: { user_id: userId, from: 'add-phone' },
+            });
+            return;
         }
         // If they have email already, go to profile setup or redirectTo
-        const redirectTo = locationState.redirectTo || '/';
+        const redirectTo = verificationState.redirectTo || '/';
         if (pt === 'household' || pt === 'househelp') {
           try {
-            const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
-            const progressData = await profileSetupService.getProgress(userId, pt);
-            if (progressData) {
-              const totalSteps = progressData.total_steps || 0;
-              const lastStep = progressData.last_completed_step || 0;
-              const isComplete = progressData.status === 'completed' ||
-                (totalSteps > 0 && lastStep >= totalSteps);
-              if (isComplete) {
-                // Redirect completed users to home page instead of profile
-                navigate('/', { replace: true });
-                return;
-              }
-              if (pt === 'household' && lastStep === 0) {
-                navigate('/household-choice', { replace: true });
-                return;
-              }
-              const setupRoute = pt === 'household'
-                ? `/profile-setup/household?step=${lastStep + 1}`
-                : `/profile-setup/househelp?step=${lastStep + 1}`;
-              navigate(setupRoute, { replace: true });
-              return;
-            }
+            const destination = await resolveProfileSetupDestination({
+              userId,
+              profileType: pt,
+              completedPath: redirectTo,
+            });
+            navigate(destination, { replace: true });
+            return;
           } catch (err: any) {
-            if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
-              if (pt === 'household') {
-                navigate('/household-choice', { replace: true });
-                return;
-              }
-              navigate('/profile-setup/househelp?step=1', { replace: true });
-              return;
-            }
           }
         }
         navigate(redirectTo, { replace: true });
       } else {
         // Bureau users should not verify through regular flow
         if (profileType === 'bureau') {
-          console.log('[VERIFY-OTP] Bureau user detected, redirecting to home');
           navigate('/');
           return;
         }
 
         // Step 1: After phone OTP, go to email entry page (unless already done or Google signup)
-        console.log('[VERIFY-OTP] Redirect decision - afterEmailVerification:', afterEmailVerification, 'isGoogleSignup:', locationState.isGoogleSignup);
-        if (!afterEmailVerification && !locationState.isGoogleSignup) {
+        if (!afterEmailVerification && !verificationState.isGoogleSignup) {
           if (profileType === 'household' || profileType === 'househelp') {
-            console.log('[VERIFY-OTP] Phone verified, redirecting to verify-email');
-            navigate('/verify-email', {
+            const params = new URLSearchParams({
+              userId,
+              from: 'phone-verification',
+            });
+            navigate(`/verify-email?${params.toString()}`, {
               state: {
                 user_id: userId,
                 from: 'phone-verification',
@@ -321,62 +379,24 @@ export default function VerifyOtpPage() {
         }
 
         // Step 2: After email OTP, go to next onboarding step
-        console.log('[VERIFY-OTP] Step 2: Checking profile setup for profileType:', profileType);
         let path = '/';
         if (profileType === 'household' || profileType === 'househelp') {
           try {
-            const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
-            const progressData = await profileSetupService.getProgress(user_id, profileType);
-            console.log('[VERIFY-OTP] GetProgress response:', JSON.stringify(progressData, null, 2));
-
-            if (progressData) {
-              const totalSteps = progressData.total_steps || 0;
-              const lastStep = progressData.last_completed_step || 0;
-              const isComplete = progressData.status === 'completed' ||
-                (totalSteps > 0 && lastStep >= totalSteps);
-
-              console.log('[VERIFY-OTP] Progress check - status:', progressData.status, 'totalSteps:', totalSteps, 'lastStep:', lastStep, 'isComplete:', isComplete);
-
-              if (isComplete) {
-                console.log('[VERIFY-OTP] Setup complete, redirecting to home page');
-                // Redirect completed users to home page instead of profile
-                navigate('/');
-                return;
-              }
-
-              if (profileType === 'household' && lastStep === 0) {
-                console.log('[VERIFY-OTP] Household user with lastStep=0, redirecting to household choice');
-                navigate('/household-choice');
-                return;
-              }
-              const setupRoute = profileType === 'household'
-                ? `/profile-setup/household?step=${lastStep + 1}`
-                : `/profile-setup/househelp?step=${lastStep + 1}`;
-              console.log('[VERIFY-OTP] Redirecting to profile setup:', setupRoute);
-              navigate(setupRoute);
-              return;
-            } else {
-              console.log('[VERIFY-OTP] progressData is falsy:', progressData);
-            }
+            const destination = await resolveProfileSetupDestination({
+              userId,
+              profileType,
+              completedPath: '/',
+            });
+            navigate(destination, { replace: true });
+            return;
           } catch (err: any) {
             console.error('[VERIFY-OTP] GetProgress error:', err);
-            if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
-              if (profileType === 'household') {
-                console.log('[VERIFY-OTP] No profile setup record, redirecting to household choice');
-                navigate('/household-choice');
-                return;
-              }
-              console.log("[VERIFY-OTP] No profile setup record found, starting from step 1");
-              navigate('/profile-setup/househelp?step=1');
-              return;
-            }
             console.error('[VERIFY-OTP] Failed to check profile setup status:', err);
           }
 
           // Fallback
           path = profileType === 'household' ? '/household-choice' : '/profile-setup/househelp?step=1';
         }
-        console.log('[VERIFY-OTP] Final fallback - Redirecting to:', path);
         navigate(path);
       }
     } catch (err: any) {
@@ -395,25 +415,17 @@ export default function VerifyOtpPage() {
     setError(null);
     try {
       const { default: authService } = await import('~/services/grpc/auth.service');
-      const response = await authService.resendOTP(user_id, verification?.type || 'phone');
+      const response = await authService.resendOTP(resolveVerificationUserId(), verification?.type || 'phone');
       const verificationProto = response.getVerification();
       if (verificationProto) {
-        setVerification({
-          id: verificationProto.getId(),
-          user_id: verificationProto.getUserId(),
-          type: verificationProto.getType(),
-          status: verificationProto.getStatus(),
-          target: verificationProto.getTarget(),
-          expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
-          max_attempts: verificationProto.getMaxAttempts(),
-          attempts: verificationProto.getAttempts(),
-          next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
-        });
+        setVerificationState((prev) => ({
+          ...prev,
+          verification: verificationToState(verificationProto),
+        }));
         setLocalFailedAttempts(0);
         setOtp('');
         setLastTriedOtp('');
       }
-      setResendSeconds(60);
       setResent(true);
     } catch (err: any) {
       const errorMessage = handleApiError(err, 'otp');
@@ -452,11 +464,11 @@ export default function VerifyOtpPage() {
 
   const handleNewPhoneBlur = () => {
     if (newPhone) {
-      const schema = verification.type === 'phone' || verification.type === 'password_reset' 
-        ? updatePhoneSchema 
+      const schema = usesPhoneTarget
+        ? updatePhoneSchema
         : updateEmailSchema;
       const validation = validateForm(schema, { 
-        [verification.type === 'phone' || verification.type === 'password_reset' ? 'phone' : 'email']: newPhone 
+        [usesPhoneTarget ? 'phone' : 'email']: newPhone 
       });
       if (!validation.isValid) {
         setNewPhoneError(Object.values(validation.errors)[0]);
@@ -466,37 +478,9 @@ export default function VerifyOtpPage() {
     }
   };
 
-  // Handle profile completion
-  const handleProfileComplete = async (data: any) => {
-    try {
-      const token = getAccessTokenFromCookies();
-      if (!token) throw new Error('Not authenticated');
-      
-      // Save profile data to backend via gRPC
-      await grpcProfileService.updateHouseholdProfile('', 'household', data);
-      
-      setProfileData(data);
-      setShowProfileModal(false);
-      
-      // Redirect to household dashboard
-      navigate('/household/profile');
-    } catch (err: any) {
-      console.error('Failed to save profile:', err);
-      // Still redirect even if save fails
-      setShowProfileModal(false);
-      navigate('/household/profile');
-    }
-  };
-
-  const handleProfileModalClose = () => {
-    setShowProfileModal(false);
-    // Redirect to household profile page
-    navigate('/household/profile');
-  };
-
   // Guard: render nothing while redirecting if verification is missing
   if (!verification) {
-    return null;
+    return <Loading text="Redirecting..." />;
   }
 
   return (
@@ -592,7 +576,7 @@ export default function VerifyOtpPage() {
                 onClick={() => setShowChangePhone(true)}
               >
                 <span className="text-gray-400 dark:text-gray-300">
-                  {verification.type === 'phone' || verification.type === 'password_reset'
+                  {usesPhoneTarget
                     ? 'Used the wrong phone number? Click '
                     : 'Used the wrong email? Click '}
                 </span>
@@ -609,52 +593,20 @@ export default function VerifyOtpPage() {
           )}
           {showChangePhone && (
             <form
-              onSubmit={verification.type === 'phone' || verification.type === 'password_reset' ? handleChangePhoneSubmit : async (e) => {
-                e.preventDefault();
-                setChangePhoneError(null);
-                setChangePhoneLoading(true);
-                try {
-                  const { default: authService } = await import('~/services/grpc/auth.service');
-                  const response = await authService.updateEmail(user_id || '', newPhone);
-                  const verificationProto = response.getVerification();
-                  if (verificationProto) {
-                    setVerification({
-                      id: verificationProto.getId(),
-                      user_id: verificationProto.getUserId(),
-                      type: verificationProto.getType(),
-                      status: verificationProto.getStatus(),
-                      target: verificationProto.getTarget(),
-                      expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
-                      max_attempts: verificationProto.getMaxAttempts(),
-                      attempts: verificationProto.getAttempts(),
-                      next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
-                    });
-                    setShowChangePhone(false);
-                    setNewPhone('');
-                    setLocalFailedAttempts(0);
-                    setOtp('');
-                    setLastTriedOtp('');
-                    setResendSeconds(60);
-                  }
-                } catch (err: any) {
-                  setChangePhoneError(err.message || 'Failed to update email');
-                } finally {
-                  setChangePhoneLoading(false);
-                }
-              }}
+              onSubmit={handleChangePhoneSubmit}
               className="space-y-4 mt-6 flex flex-col items-center"
               style={{ width: '100%' }}
             >
               <label className="block text-primary-700 mb-1 font-medium text-center">
-                {verification.type === 'phone' || verification.type === 'password_reset'
+                {usesPhoneTarget
                   ? 'Enter new phone number'
                   : 'Enter new email address'}
               </label>
-              {(verification.type === 'phone' || verification.type === 'password_reset') && (
+              {usesPhoneTarget && (
                 <SafaricomDisclaimer className="w-full max-w-xs" />
               )}
               <input
-                type={verification.type === 'phone' || verification.type === 'password_reset' ? 'tel' : 'email'}
+                type={usesPhoneTarget ? 'tel' : 'email'}
                 name="newPhone"
                 value={newPhone}
                 onChange={handleNewPhoneChange}
@@ -667,7 +619,7 @@ export default function VerifyOtpPage() {
                     ? 'border-green-300 dark:border-green-600'
                     : 'border-primary-200 dark:border-primary-700'
                 }`}
-                placeholder={verification.type === 'phone' || verification.type === 'password_reset' ? 'e.g. 0712345678' : 'e.g. user@email.com'}
+                placeholder={usesPhoneTarget ? 'e.g. 0712345678' : 'e.g. user@email.com'}
               />
               {newPhoneError && (
                 <div className="w-full max-w-xs"><ErrorAlert message={newPhoneError} /></div>
@@ -700,14 +652,7 @@ export default function VerifyOtpPage() {
         </PurpleCard>
       </main>
       </PurpleThemeWrapper>
-      
-      {/* Household Profile Modal - Temporarily commented out to debug */}
-      {/* <HouseholdProfileModal
-        isOpen={showProfileModal}
-        onClose={handleProfileModalClose}
-        onComplete={handleProfileComplete}
-      /> */}
-      
+
       <Footer />
     </div>
   );

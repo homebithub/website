@@ -7,26 +7,56 @@ import { useAuth } from '~/contexts/useAuth';
 import { InviteCodeGenerator } from '~/components/household/InviteCodeGenerator';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import {
   listMembers,
   listPendingRequests,
+  listInvitations,
+  revokeInvitation,
   approveRequest,
   rejectRequest,
-  removeMember,
   updateMemberRole,
+  removeMember,
+  transferOwnership,
   type HouseholdMember,
   type HouseholdMemberRequest,
+  type HouseholdInvitation,
 } from '~/utils/householdApi';
+import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 
 export default function HouseholdMembersPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const storedUser = getStoredUser();
+  const currentUserId = user?.user?.user_id || getStoredUserId() || '';
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<HouseholdMember[]>([]);
+  const [invitations, setInvitations] = useState<HouseholdInvitation[]>([]);
   const [pendingRequests, setPendingRequests] = useState<HouseholdMemberRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
   const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [pendingRequestAction, setPendingRequestAction] = useState<{
+    type: 'approve' | 'reject';
+    requestId: string;
+  } | null>(null);
+  const [invitationToRevoke, setInvitationToRevoke] = useState<HouseholdInvitation | null>(null);
+  const [memberRoleAction, setMemberRoleAction] = useState<{
+    userId: string;
+    userName: string;
+    nextRole: 'admin' | 'member';
+  } | null>(null);
+  const [ownershipTransferTarget, setOwnershipTransferTarget] = useState<{
+    userId: string;
+    userName: string;
+  } | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<{
+    userId: string;
+    userName: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -34,36 +64,33 @@ export default function HouseholdMembersPage() {
     }
 
     // Get household ID from user profile
-    const userObj = localStorage.getItem('user_object');
-    if (userObj) {
-      const parsed = JSON.parse(userObj);
-      // Assuming household_id is stored in user profile
-      const hhId = parsed.household_id;
-      if (hhId) {
-        setHouseholdId(hhId);
-        loadData(hhId);
-      } else {
-        setError('No household found for your account');
-        setLoading(false);
-      }
+    const householdUserId = storedUser?.household_id;
+    if (householdUserId) {
+      setHouseholdId(householdUserId);
+      loadData(householdUserId);
+    } else {
+      setError('No household found for your account');
+      setLoading(false);
     }
-  }, [user, navigate]);
+  }, [user, navigate, storedUser]);
 
   const loadData = async (hhId: string) => {
     try {
       setLoading(true);
       setError(null);
 
-      const [membersData, requestsData] = await Promise.all([
+      const [membersData, requestsData, invitationsData] = await Promise.all([
         listMembers(hhId),
         listPendingRequests(hhId).catch(() => []), // Ignore if no permission
+        listInvitations(hhId).catch(() => []),
       ]);
 
       setMembers(membersData);
       setPendingRequests(requestsData);
+      setInvitations(Array.isArray(invitationsData) ? invitationsData : []);
 
       // Find current user's role
-      const currentMember = membersData.find((m) => m.user_id === user?.id);
+      const currentMember = membersData.find((m) => m.user_id === currentUserId);
       if (currentMember) {
         setCurrentUserRole(currentMember.role);
       }
@@ -78,58 +105,144 @@ export default function HouseholdMembersPage() {
     if (!householdId) return;
 
     try {
+      setActionLoading(`approve-${requestId}`);
+      setError(null);
+      setSuccessMessage(null);
       await approveRequest(householdId, requestId);
       await loadData(householdId);
+      setSuccessMessage('Request approved successfully.');
     } catch (err: any) {
-      alert(err.message || 'Failed to approve request');
+      setError(err.message || 'Failed to approve request');
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const handleReject = async (requestId: string) => {
     if (!householdId) return;
 
-    const reason = prompt('Reason for rejection (optional):');
     try {
-      await rejectRequest(householdId, requestId, reason || undefined);
+      setActionLoading(`reject-${requestId}`);
+      setError(null);
+      setSuccessMessage(null);
+      await rejectRequest(householdId, requestId);
       await loadData(householdId);
+      setSuccessMessage('Request rejected successfully.');
     } catch (err: any) {
-      alert(err.message || 'Failed to reject request');
+      setError(err.message || 'Failed to reject request');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRevokeInvitation = async (invitation: HouseholdInvitation) => {
+    if (!householdId) return;
+
+    try {
+      setActionLoading(`revoke-${invitation.id}`);
+      setError(null);
+      setSuccessMessage(null);
+      await revokeInvitation(householdId, invitation.id);
+      await loadData(householdId);
+      setSuccessMessage('Invitation revoked successfully.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to revoke invitation');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleUpdateMemberRole = async (userId: string, userName: string, role: 'admin' | 'member') => {
+    if (!householdId) return;
+
+    try {
+      setActionLoading(`role-${userId}`);
+      setError(null);
+      setSuccessMessage(null);
+      await updateMemberRole(householdId, userId, role);
+      await loadData(householdId);
+      setSuccessMessage(`${userName} is now ${role}.`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to update member role');
+    } finally {
+      setActionLoading(null);
     }
   };
 
   const handleRemoveMember = async (userId: string, userName: string) => {
     if (!householdId) return;
 
-    if (!confirm(`Are you sure you want to remove ${userName} from the household?`)) {
-      return;
-    }
-
     try {
+      setActionLoading(`remove-${userId}`);
+      setError(null);
+      setSuccessMessage(null);
       await removeMember(householdId, userId);
       await loadData(householdId);
+      setSuccessMessage(`${userName} was removed from the household.`);
     } catch (err: any) {
-      alert(err.message || 'Failed to remove member');
+      setError(err.message || 'Failed to remove member');
+    } finally {
+      setActionLoading(null);
     }
   };
 
-  const handleChangeRole = async (userId: string, currentRole: string) => {
+  const handleTransferOwnership = async (userId: string, userName: string) => {
     if (!householdId) return;
 
-    const newRole = currentRole === 'admin' ? 'member' : 'admin';
-    if (!confirm(`Change role to ${newRole}?`)) {
-      return;
+    try {
+      setActionLoading(`transfer-${userId}`);
+      setError(null);
+      setSuccessMessage(null);
+      await transferOwnership(householdId, userId);
+      await loadData(householdId);
+      setSuccessMessage(`Ownership transferred to ${userName}.`);
+    } catch (err: any) {
+      setError(err.message || 'Failed to transfer ownership');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleConfirmPendingRequest = async () => {
+    if (!pendingRequestAction) return;
+
+    if (pendingRequestAction.type === 'approve') {
+      await handleApprove(pendingRequestAction.requestId);
+    } else {
+      await handleReject(pendingRequestAction.requestId);
     }
 
-    try {
-      await updateMemberRole(householdId, userId, newRole as 'admin' | 'member');
-      await loadData(householdId);
-    } catch (err: any) {
-      alert(err.message || 'Failed to update role');
-    }
+    setPendingRequestAction(null);
+  };
+
+  const handleConfirmMemberRemoval = async () => {
+    if (!memberToRemove) return;
+    await handleRemoveMember(memberToRemove.userId, memberToRemove.userName);
+    setMemberToRemove(null);
+  };
+
+  const handleConfirmInvitationRevocation = async () => {
+    if (!invitationToRevoke) return;
+    await handleRevokeInvitation(invitationToRevoke);
+    setInvitationToRevoke(null);
+  };
+
+  const handleConfirmMemberRoleChange = async () => {
+    if (!memberRoleAction) return;
+    await handleUpdateMemberRole(memberRoleAction.userId, memberRoleAction.userName, memberRoleAction.nextRole);
+    setMemberRoleAction(null);
+  };
+
+  const handleConfirmOwnershipTransfer = async () => {
+    if (!ownershipTransferTarget) return;
+    await handleTransferOwnership(ownershipTransferTarget.userId, ownershipTransferTarget.userName);
+    setOwnershipTransferTarget(null);
   };
 
   const canInvite = currentUserRole === 'owner' || currentUserRole === 'admin';
   const canRemove = currentUserRole === 'owner';
+  const canManageRoles = currentUserRole === 'owner';
+  const canTransferOwnership = currentUserRole === 'owner';
 
   if (loading) {
     return <Loading text="Loading household members..." />;
@@ -149,6 +262,7 @@ export default function HouseholdMembersPage() {
           </p>
         </div>
 
+        {successMessage && <SuccessAlert message={successMessage} className="mb-6" />}
         {error && <ErrorAlert message={error} className="mb-6" />}
 
         {/* Invite Button */}
@@ -158,6 +272,51 @@ export default function HouseholdMembersPage() {
               householdId={householdId}
               onInviteCreated={() => loadData(householdId)}
             />
+          </div>
+        )}
+
+        {canInvite && invitations.length > 0 && (
+          <div className="mb-8 p-6 bg-violet-50 dark:bg-violet-900/20 border-2 border-violet-200 dark:border-violet-500/30 rounded-xl">
+            <h2 className="text-2xl font-bold text-violet-800 dark:text-violet-300 mb-4 flex items-center">
+              <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 9h8m-8 4h5m5 8H6a2 2 0 01-2-2V5a2 2 0 012-2h8.586a1 1 0 01.707.293l4.414 4.414A1 1 0 0120 8.414V19a2 2 0 01-2 2z" />
+              </svg>
+              Active Invitations ({invitations.length})
+            </h2>
+            <div className="space-y-4">
+              {invitations.map((invitation) => (
+                <div
+                  key={invitation.id}
+                  className="p-4 bg-white dark:bg-[#13131a] rounded-xl border-2 border-violet-200 dark:border-violet-500/30 shadow-md"
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <span className="font-mono text-lg font-bold tracking-[0.25em] text-gray-900 dark:text-white">
+                          {invitation.invite_code}
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-violet-100 dark:bg-violet-900/30 text-violet-800 dark:text-violet-300 border border-violet-300 dark:border-violet-500/50">
+                          {invitation.role}
+                        </span>
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600">
+                          {invitation.uses_count}/{invitation.max_uses} uses
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">
+                        Expires {invitation.expires_at ? new Date(invitation.expires_at).toLocaleString() : 'N/A'}
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setInvitationToRevoke(invitation)}
+                      disabled={actionLoading === `revoke-${invitation.id}`}
+                      className="px-4 py-1 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {actionLoading === `revoke-${invitation.id}` ? 'Revoking...' : 'Revoke'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
@@ -197,13 +356,13 @@ export default function HouseholdMembersPage() {
                     </div>
                     <div className="flex gap-2 ml-4">
                       <button
-                        onClick={() => handleApprove(request.id)}
+                        onClick={() => setPendingRequestAction({ type: 'approve', requestId: request.id })}
                         className="px-4 py-1 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-all focus:outline-none focus:ring-2 focus:ring-green-500"
                       >
                         ✅ Approve
                       </button>
                       <button
-                        onClick={() => handleReject(request.id)}
+                        onClick={() => setPendingRequestAction({ type: 'reject', requestId: request.id })}
                         className="px-4 py-1 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
                       >
                         ❌ Reject
@@ -227,7 +386,7 @@ export default function HouseholdMembersPage() {
 
           <div className="space-y-4">
             {members.map((member) => {
-              const isCurrentUser = member.user_id === user?.id;
+              const isCurrentUser = member.user_id === currentUserId;
               const isOwner = member.role === 'owner';
 
               return (
@@ -292,26 +451,44 @@ export default function HouseholdMembersPage() {
                     </div>
 
                     {/* Actions */}
-                    {!isCurrentUser && !isOwner && canRemove && (
-                      <div className="flex gap-2">
-                        {member.role !== 'owner' && (
+                    {!isCurrentUser && !isOwner && (canManageRoles || canTransferOwnership || canRemove) && (
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {canManageRoles && (
                           <button
-                            onClick={() => handleChangeRole(member.user_id, member.role)}
-                            className="px-4 py-1 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            title="Change role"
+                            onClick={() => setMemberRoleAction({
+                              userId: member.user_id,
+                              userName: `${member.user?.first_name} ${member.user?.last_name}`.trim() || 'this member',
+                              nextRole: member.role === 'admin' ? 'member' : 'admin',
+                            })}
+                            disabled={actionLoading === `role-${member.user_id}`}
+                            className="px-4 py-1 rounded-xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                            title={member.role === 'admin' ? 'Change role to member' : 'Change role to admin'}
                           >
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                            </svg>
+                            {actionLoading === `role-${member.user_id}`
+                              ? 'Saving...'
+                              : member.role === 'admin'
+                              ? 'Make Member'
+                              : 'Make Admin'}
+                          </button>
+                        )}
+                        {canTransferOwnership && (
+                          <button
+                            onClick={() => setOwnershipTransferTarget({
+                              userId: member.user_id,
+                              userName: `${member.user?.first_name} ${member.user?.last_name}`.trim() || 'this member',
+                            })}
+                            disabled={actionLoading === `transfer-${member.user_id}`}
+                            className="px-4 py-1 rounded-xl bg-amber-500 text-white font-semibold hover:bg-amber-600 transition-all focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-60 disabled:cursor-not-allowed"
+                            title="Transfer household ownership"
+                          >
+                            {actionLoading === `transfer-${member.user_id}` ? 'Transferring...' : 'Make Owner'}
                           </button>
                         )}
                         <button
-                          onClick={() =>
-                            handleRemoveMember(
-                              member.user_id,
-                              `${member.user?.first_name} ${member.user?.last_name}`
-                            )
-                          }
+                          onClick={() => setMemberToRemove({
+                            userId: member.user_id,
+                            userName: `${member.user?.first_name} ${member.user?.last_name}`.trim() || 'this member',
+                          })}
                           className="px-4 py-1 rounded-xl bg-red-600 text-white font-semibold hover:bg-red-700 transition-all focus:outline-none focus:ring-2 focus:ring-red-500"
                           title="Remove member"
                         >
@@ -366,6 +543,69 @@ export default function HouseholdMembersPage() {
         </div>
       </main>
       <Footer />
+
+      <ConfirmDialog
+        isOpen={!!pendingRequestAction}
+        onClose={() => setPendingRequestAction(null)}
+        onConfirm={handleConfirmPendingRequest}
+        title={pendingRequestAction?.type === 'approve' ? 'Approve Request' : 'Reject Request'}
+        message={
+          pendingRequestAction?.type === 'approve'
+            ? 'Approve this request and add the user to your household?'
+            : 'Reject this join request?'
+        }
+        confirmText={pendingRequestAction?.type === 'approve' ? 'Approve' : 'Reject'}
+        cancelText="Cancel"
+        variant={pendingRequestAction?.type === 'approve' ? 'info' : 'warning'}
+      />
+
+      <ConfirmDialog
+        isOpen={!!memberToRemove}
+        onClose={() => setMemberToRemove(null)}
+        onConfirm={handleConfirmMemberRemoval}
+        title="Remove Member"
+        message={`Remove ${memberToRemove?.userName || 'this member'} from the household?`}
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="danger"
+        isLoading={!!memberToRemove && actionLoading === `remove-${memberToRemove.userId}`}
+      />
+
+      <ConfirmDialog
+        isOpen={!!invitationToRevoke}
+        onClose={() => setInvitationToRevoke(null)}
+        onConfirm={handleConfirmInvitationRevocation}
+        title="Revoke Invitation"
+        message={`Revoke invite code ${invitationToRevoke?.invite_code || ''}? Anyone using it will no longer be able to join.`}
+        confirmText="Revoke"
+        cancelText="Cancel"
+        variant="warning"
+        isLoading={!!invitationToRevoke && actionLoading === `revoke-${invitationToRevoke.id}`}
+      />
+
+      <ConfirmDialog
+        isOpen={!!memberRoleAction}
+        onClose={() => setMemberRoleAction(null)}
+        onConfirm={handleConfirmMemberRoleChange}
+        title="Change Member Role"
+        message={`Change ${memberRoleAction?.userName || 'this member'} to ${memberRoleAction?.nextRole || 'member'}?`}
+        confirmText="Save Role"
+        cancelText="Cancel"
+        variant="info"
+        isLoading={!!memberRoleAction && actionLoading === `role-${memberRoleAction.userId}`}
+      />
+
+      <ConfirmDialog
+        isOpen={!!ownershipTransferTarget}
+        onClose={() => setOwnershipTransferTarget(null)}
+        onConfirm={handleConfirmOwnershipTransfer}
+        title="Transfer Ownership"
+        message={`Transfer household ownership to ${ownershipTransferTarget?.userName || 'this member'}? You will lose owner-only controls after this change.`}
+        confirmText="Transfer Ownership"
+        cancelText="Cancel"
+        variant="warning"
+        isLoading={!!ownershipTransferTarget && actionLoading === `transfer-${ownershipTransferTarget.userId}`}
+      />
     </div>
   );
 }

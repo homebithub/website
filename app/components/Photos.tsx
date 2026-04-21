@@ -149,7 +149,6 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
   };
 
   const handleSkip = async () => {
-    console.log('Skip button clicked, onComplete:', onComplete);
     setIsSkipping(true);
     setError('');
     setSuccess('');
@@ -200,16 +199,11 @@ const Photos: React.FC<PhotosProps> = ({ userType = 'househelp', onComplete }) =
       }
 
       setSuccess('Skipped photos. You can add them later from your profile!');
-      console.log('Skip successful, calling onComplete...');
       // Trigger completion callback if provided
       if (onComplete) {
-        console.log('onComplete exists, calling it...');
         setTimeout(() => {
-          console.log('Executing onComplete callback');
           onComplete();
         }, 500);
-      } else {
-        console.log('No onComplete callback provided!');
       }
     } catch (err: any) {
       setError(handleApiError(err, 'photos', 'Failed to skip. Please try again.'));

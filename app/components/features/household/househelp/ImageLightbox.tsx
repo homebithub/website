@@ -1,5 +1,5 @@
 import React from "react";
-import { API_BASE_URL } from '~/config/api';
+import { resolveHousehelpImageUrl } from './imageUrl';
 
 interface ImageLightboxProps {
   images: any[];
@@ -32,7 +32,7 @@ export default function ImageLightbox({ images, open, index, onClose, onPrev, on
         ◀
       </button>
       <img
-        src={img.path ? `API_BASE_URL/images/${img.path}` : (img.url || img)}
+        src={resolveHousehelpImageUrl(img)}
         alt={`Image ${index + 1}`}
         className="max-h-[80vh] max-w-[90vw] rounded-lg shadow-xl"
       />

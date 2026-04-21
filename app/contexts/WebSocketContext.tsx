@@ -23,9 +23,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const wsUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
     const base = ((typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_WS_BASE_URL) || NOTIFICATIONS_WS_BASE_URL).replace(/^http/, 'ws');
-    const url = `${base}`;
-    console.log('[WebSocketContext] WebSocket URL:', url);
-    return url;
+    return `${base}`;
   }, []);
 
   const { connectionState, addEventListener } = useWebSocket({
@@ -35,11 +33,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     reconnectInterval: 3000,
     maxReconnectAttempts: 10,
   });
-
-  // Log connection state changes
-  React.useEffect(() => {
-    console.log('[WebSocketContext] Connection state changed:', connectionState);
-  }, [connectionState]);
 
   const incrementUnreadCount = useCallback(() => {
     setUnreadCount(prev => prev + 1);

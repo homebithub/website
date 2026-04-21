@@ -366,6 +366,27 @@ export class BureauServiceClient {
                response: auth_auth_pb.BureauResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.BureauResponse>;
 
+  initiateHousehelpLink(
+    request: auth_auth_pb.BureauHousehelpLinkInitiateRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.BureauHousehelpLinkResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.BureauHousehelpLinkResponse>;
+
+  verifyHousehelpLink(
+    request: auth_auth_pb.BureauHousehelpLinkVerifyRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.BureauHousehelpLinkResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.BureauHousehelpLinkResponse>;
+
+  resendHousehelpLinkOTP(
+    request: auth_auth_pb.BureauHousehelpLinkIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.BureauHousehelpLinkResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.BureauHousehelpLinkResponse>;
+
 }
 
 export class ProfileServiceClient {
@@ -988,6 +1009,20 @@ export class ShortlistServiceClient {
     callback: (err: grpcWeb.RpcError,
                response: auth_auth_pb.BoolResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.BoolResponse>;
+
+  unlockShortlist(
+    request: auth_auth_pb.ShortlistUnlockReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.ShortlistContactResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.ShortlistContactResponse>;
+
+  getUnlockedContact(
+    request: auth_auth_pb.ShortlistUnlockReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.ShortlistContactResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.ShortlistContactResponse>;
 
 }
 
@@ -1906,6 +1941,20 @@ export class ContactServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  resolveContactMessage(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  addContactComment(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
 }
 
 export class WaitlistServiceClient {
@@ -2536,6 +2585,21 @@ export class BureauServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.BureauResponse>;
 
+  initiateHousehelpLink(
+    request: auth_auth_pb.BureauHousehelpLinkInitiateRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.BureauHousehelpLinkResponse>;
+
+  verifyHousehelpLink(
+    request: auth_auth_pb.BureauHousehelpLinkVerifyRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.BureauHousehelpLinkResponse>;
+
+  resendHousehelpLinkOTP(
+    request: auth_auth_pb.BureauHousehelpLinkIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.BureauHousehelpLinkResponse>;
+
 }
 
 export class ProfileServicePromiseClient {
@@ -2994,6 +3058,16 @@ export class ShortlistServicePromiseClient {
     request: auth_auth_pb.ShortlistExistsReq,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.BoolResponse>;
+
+  unlockShortlist(
+    request: auth_auth_pb.ShortlistUnlockReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.ShortlistContactResponse>;
+
+  getUnlockedContact(
+    request: auth_auth_pb.ShortlistUnlockReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.ShortlistContactResponse>;
 
 }
 
@@ -3677,6 +3751,16 @@ export class ContactServicePromiseClient {
 
   updateContactMessageStatus(
     request: auth_auth_pb.UpdateStatusReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  resolveContactMessage(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  addContactComment(
+    request: auth_auth_pb.JsonPayload,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 

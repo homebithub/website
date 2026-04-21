@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router";
+import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { hireRequestService, hireContractService, employmentContractService, interestService } from '~/services/grpc/authServices';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { buildIdentifierMap, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
   Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User, FileText
@@ -143,10 +145,31 @@ const extractTotal = (raw: any, fallbackLength: number): number => {
   return typeof total === 'number' ? total : fallbackLength;
 };
 
+function buildHouseholdProfileLink(options: {
+  household?: { id?: string; user_id?: string } | null;
+  fallbackProfileId?: string;
+  backTo: string;
+  backLabel: string;
+}) {
+  const { household, fallbackProfileId, backTo, backLabel } = options;
+  const userId = household?.user_id || '';
+  const profileId = household?.id || fallbackProfileId || '';
+  const base = userId
+    ? `/household/public-profile?userId=${encodeURIComponent(userId)}`
+    : `/household/public-profile?profileId=${encodeURIComponent(profileId)}`;
+
+  return `${base}&from=hiring&backTo=${encodeURIComponent(backTo)}&backLabel=${encodeURIComponent(backLabel)}`;
+}
+
 export default function HousehelpHiringHistory() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [activeTab, setActiveTab] = useState<TabType>('requests');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs: TabType[] = ['requests', 'work-history', 'employment-contracts', 'interests'];
+    return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'requests';
+  });
   
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
   const [requestsTotal, setRequestsTotal] = useState(0);
@@ -163,7 +186,7 @@ export default function HousehelpHiringHistory() {
   const [employmentContracts, setEmploymentContracts] = useState<EmploymentContract[]>([]);
   const [employmentContractsTotal, setEmploymentContractsTotal] = useState(0);
   const [employmentContractsLoading, setEmploymentContractsLoading] = useState(true);
-  // Map of househelp_id -> employment contract for quick lookup on request cards
+  // Map all known household identifiers to the matching employment contract.
   const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, EmploymentContract>>({});
   
   const [error, setError] = useState<string | null>(null);
@@ -171,10 +194,10 @@ export default function HousehelpHiringHistory() {
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [showDeclineModal, setShowDeclineModal] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<string | null>(null);
-  const [declineReason, setDeclineReason] = useState('');
   const [showInterestModal, setShowInterestModal] = useState(false);
   const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
   // Confirmation dialog states
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
@@ -182,6 +205,15 @@ export default function HousehelpHiringHistory() {
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setOffset(0);
+
+    const nextSearchParams = new URLSearchParams(searchParams);
+    nextSearchParams.set('tab', tab);
+    setSearchParams(nextSearchParams, { replace: true });
+  };
 
   useEffect(() => {
     const fetchPendingCount = async () => {
@@ -207,6 +239,15 @@ export default function HousehelpHiringHistory() {
       fetchInterests();
     }
   }, [activeTab, offset]);
+
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    const validTabs: TabType[] = ['requests', 'work-history', 'employment-contracts', 'interests'];
+    if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
+      setActiveTab(tabParam as TabType);
+      setOffset(0);
+    }
+  }, [activeTab, searchParams]);
 
   const fetchHireRequests = async () => {
     setRequestsLoading(true);
@@ -260,11 +301,7 @@ export default function HousehelpHiringHistory() {
       try {
         const raw = await employmentContractService.listEmploymentContracts('', undefined, 50, 0);
         const items = extractEnvelopeArray<EmploymentContract>(raw);
-        const map: Record<string, EmploymentContract> = {};
-        for (const ec of items) {
-          map[ec.household_id] = ec;
-        }
-        setEmploymentContractMap(map);
+        setEmploymentContractMap(buildIdentifierMap(items, getHouseholdCandidateIds));
       } catch (err) {
         // Non-critical
       }
@@ -295,10 +332,13 @@ export default function HousehelpHiringHistory() {
   const handleAcceptRequest = async () => {
     if (!pendingActionId) return;
     setActionLoading(pendingActionId);
+    setError(null);
+    setSuccessMessage(null);
     try {
       await hireRequestService.acceptHireRequest(pendingActionId);
       fetchHireRequests();
       window.dispatchEvent(new Event('hiring-updated'));
+      setSuccessMessage('Hire request accepted.');
     } catch (err: any) {
       setError(err.message || 'Failed to accept hire request');
     } finally {
@@ -309,21 +349,21 @@ export default function HousehelpHiringHistory() {
   };
 
   const handleDeclineRequest = async () => {
-    if (!selectedRequest || !declineReason.trim()) {
-      alert('Please provide a reason for declining');
+    if (!selectedRequest) {
       return;
     }
     setActionLoading(selectedRequest);
+    setError(null);
+    setSuccessMessage(null);
     try {
       await hireRequestService.declineHireRequest(selectedRequest);
       fetchHireRequests();
       setShowDeclineModal(false);
       setSelectedRequest(null);
-      setDeclineReason('');
       window.dispatchEvent(new Event('hiring-updated'));
-      alert('Hire request declined');
+      setSuccessMessage('Hire request declined.');
     } catch (err: any) {
-      alert(err.message || 'Failed to decline hire request');
+      setError(err.message || 'Failed to decline hire request');
     } finally {
       setActionLoading(null);
     }
@@ -409,7 +449,7 @@ export default function HousehelpHiringHistory() {
             {tabs.map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => { setActiveTab(tab.key); setOffset(0); }}
+                onClick={() => handleTabChange(tab.key)}
                 className={`relative flex items-center gap-2 py-1.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
                   activeTab === tab.key
                     ? 'border-purple-500 text-gray-900 dark:text-white'
@@ -432,7 +472,32 @@ export default function HousehelpHiringHistory() {
         </div>
 
         {/* Error State */}
-        {error && <div className="mx-6 mt-4"><ErrorAlert message={error} /></div>}
+        {successMessage && (
+          <div className="mx-6 mt-4">
+            <SuccessAlert message={successMessage} />
+          </div>
+        )}
+        {error && (
+          <div className="mx-6 mt-4">
+            <ErrorAlert message={error} className="mb-4" />
+            <button
+              onClick={() => {
+                if (activeTab === 'requests') {
+                  fetchHireRequests();
+                } else if (activeTab === 'work-history') {
+                  fetchContracts();
+                } else if (activeTab === 'employment-contracts') {
+                  fetchEmploymentContracts();
+                } else {
+                  fetchInterests();
+                }
+              }}
+              className="rounded-xl border border-purple-500/50 px-4 py-2 text-sm font-medium text-purple-600 transition-colors hover:bg-purple-50 dark:text-purple-300 dark:hover:bg-purple-900/20"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
 
         {/* Loading State */}
         {loading && (
@@ -455,7 +520,13 @@ export default function HousehelpHiringHistory() {
               </div>
             ) : (
               <div className="divide-y divide-gray-200 dark:divide-purple-800/40">
-                {(Array.isArray(hireRequests) ? hireRequests : []).map((request) => (
+                {(Array.isArray(hireRequests) ? hireRequests : []).map((request) => {
+                  const matchingEmploymentContract = findByAnyIdentifier(
+                    employmentContractMap,
+                    getHouseholdCandidateIds(request),
+                  );
+
+                  return (
                   <div key={request.id} className="p-6 hover:bg-purple-50/50 dark:hover:bg-purple-900/20 transition-colors">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex items-start gap-4 flex-1">
@@ -486,7 +557,7 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
-                        <button onClick={() => navigate(`/household/public-profile?user_id=${request.household?.user_id}`, { state: { profileId: request.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => navigate(buildHouseholdProfileLink({ household: request.household, fallbackProfileId: request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: request.household?.id || request.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Profile
                         </button>
                         {request.status === 'pending' && (
@@ -500,9 +571,16 @@ export default function HousehelpHiringHistory() {
                           </>
                         )}
                         {request.status === 'accepted' && (
-                          employmentContractMap[request.household_id] ? (
+                          matchingEmploymentContract ? (
                             <button
-                              onClick={() => navigate(`/household/employment-contract?id=${employmentContractMap[request.household_id].id}`)}
+                              onClick={() => {
+                                const params = new URLSearchParams({
+                                  id: matchingEmploymentContract.id,
+                                  backTo: backToPath,
+                                  backLabel: 'Back to Hiring',
+                                });
+                                navigate(`/household/employment-contract?${params.toString()}`);
+                              }}
                               className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
                             >
                               <FileText className="w-4 h-4" /> View Contract
@@ -514,9 +592,16 @@ export default function HousehelpHiringHistory() {
                           )
                         )}
                         {request.status === 'finalized' && (
-                          employmentContractMap[request.household_id] ? (
+                          matchingEmploymentContract ? (
                             <button
-                              onClick={() => navigate(`/household/employment-contract?id=${employmentContractMap[request.household_id].id}`)}
+                              onClick={() => {
+                                const params = new URLSearchParams({
+                                  id: matchingEmploymentContract.id,
+                                  backTo: backToPath,
+                                  backLabel: 'Back to Hiring',
+                                });
+                                navigate(`/household/employment-contract?${params.toString()}`);
+                              }}
                               className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all"
                             >
                               <FileText className="w-4 h-4" /> View Contract
@@ -530,7 +615,7 @@ export default function HousehelpHiringHistory() {
                       </div>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             )}
           </>
@@ -582,7 +667,14 @@ export default function HousehelpHiringHistory() {
                         </div>
                         <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
                           <button
-                            onClick={() => navigate(`/household/employment-contract?id=${ec.id}`)}
+                            onClick={() => {
+                              const params = new URLSearchParams({
+                                id: ec.id,
+                                backTo: backToPath,
+                                backLabel: 'Back to Hiring',
+                              });
+                              navigate(`/household/employment-contract?${params.toString()}`);
+                            }}
                             className={`inline-flex items-center gap-2 px-4 py-1 text-sm font-medium rounded-xl transition-all ${
                               ec.status === 'pending_househelp'
                                 ? 'text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700'
@@ -649,7 +741,7 @@ export default function HousehelpHiringHistory() {
                         </div>
                       </div>
                       <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end lg:self-end">
-                        <button onClick={() => navigate(`/household/public-profile?user_id=${contract.household?.user_id}`, { state: { profileId: contract.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
+                        <button onClick={() => navigate(buildHouseholdProfileLink({ household: contract.household, fallbackProfileId: contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: contract.household?.id || contract.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })} className="inline-flex items-center gap-2 px-4 py-1 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all">
                           View Profile
                         </button>
                       </div>
@@ -752,26 +844,20 @@ export default function HousehelpHiringHistory() {
       </div>
 
       {/* Decline Modal */}
-      {showDeclineModal && (
-        <div className="fixed inset-0 z-50 overflow-y-auto">
-          <div className="flex min-h-screen items-center justify-center p-4">
-            <div className="fixed inset-0 bg-black bg-opacity-50 transition-opacity" onClick={() => { setShowDeclineModal(false); setSelectedRequest(null); setDeclineReason(''); }} />
-            <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-xl max-w-md w-full p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Decline Hire Request</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Please provide a reason for declining this hire request.</p>
-              <textarea value={declineReason} onChange={(e) => setDeclineReason(e.target.value)} rows={4} placeholder="Enter your reason..." className="w-full px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all resize-none" />
-              <div className="flex gap-3 mt-4">
-                <button onClick={() => { setShowDeclineModal(false); setSelectedRequest(null); setDeclineReason(''); }} className="flex-1 px-4 py-1 text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-700 rounded-xl hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors">
-                  Cancel
-                </button>
-                <button onClick={handleDeclineRequest} disabled={!declineReason.trim() || actionLoading !== null} className="flex-1 px-4 py-1 text-sm font-medium text-white bg-red-600 rounded-xl hover:bg-red-700 transition-colors disabled:opacity-50">
-                  {actionLoading ? 'Declining...' : 'Decline Request'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={showDeclineModal}
+        onClose={() => {
+          if (actionLoading) return;
+          setShowDeclineModal(false);
+          setSelectedRequest(null);
+        }}
+        onConfirm={handleDeclineRequest}
+        title="Decline Hire Request"
+        message="Decline this hire request?"
+        confirmText={actionLoading ? 'Declining...' : 'Decline Request'}
+        cancelText="Cancel"
+        variant="warning"
+      />
 
       {/* Interest Details Modal */}
       {showInterestModal && selectedInterest && (
@@ -869,7 +955,7 @@ export default function HousehelpHiringHistory() {
                 {/* Actions */}
                 <div className="flex gap-3 pt-2">
                   <button 
-                    onClick={() => navigate(`/household/public-profile?user_id=${selectedInterest.household?.user_id}`, { state: { profileId: selectedInterest.household?.user_id, backTo: backToPath, backLabel: 'Back to Hiring' } })}
+                    onClick={() => navigate(buildHouseholdProfileLink({ household: selectedInterest.household, fallbackProfileId: selectedInterest.household_id, backTo: backToPath, backLabel: 'Back to Hiring' }), { state: { profileId: selectedInterest.household?.id || selectedInterest.household_id, backTo: backToPath, backLabel: 'Back to Hiring' } })}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-1.5 text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all"
                   >
                     <User className="w-4 h-4" /> View Household Profile

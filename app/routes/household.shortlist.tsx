@@ -13,6 +13,7 @@ import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholder
 import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
+import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 
 // Types
 type ShortlistItem = {
@@ -47,16 +48,8 @@ export default function HouseholdShortlistPage() {
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
   const [compactView, setCompactView] = useState(false);
   const [accessibilityMode, setAccessibilityMode] = useState(false);
-  const currentUser = useMemo(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const raw = localStorage.getItem("user_object");
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
-  }, []);
-  const currentUserId: string | undefined = currentUser?.id;
+  const currentUser = useMemo(() => getStoredUser(), []);
+  const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
   const [chatError, setChatError] = useState<string | null>(null);
 
@@ -121,15 +114,13 @@ export default function HouseholdShortlistPage() {
         setLoading(true);
         setError(null);
         const response = await shortlistService.listByHousehold('');
-        console.log('Shortlist response:', response);
-        
+
         // Extract shortlist array from nested structure
         const data = response?.data?.data || response?.data || response;
-        console.log('Extracted shortlist data:', data);
-        
+
         // Ensure it's an array
         const shortlistArray = Array.isArray(data) ? data : [];
-        
+
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? shortlistArray : [...prev, ...shortlistArray]));
         setHasMore(shortlistArray.length === limit);
@@ -254,7 +245,9 @@ export default function HouseholdShortlistPage() {
                   return (
                     <div
                       key={s.id}
-                      onClick={() => navigate('/househelp/public-profile', { state: { profileId: s.profile_id, fromShortlist: true } })}
+                      onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
+                        state: { profileId: s.profile_id, fromShortlist: true },
+                      })}
                       className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 transition-all duration-300 cursor-pointer`}
                     >
                       {/* Top-right actions */}
@@ -333,7 +326,12 @@ export default function HouseholdShortlistPage() {
                           {s.created_at ? new Date(s.created_at).toLocaleDateString() : ''}
                         </div>
                         <button
-                          onClick={(e) => { e.stopPropagation(); navigate('/househelp/public-profile', { state: { profileId: s.profile_id, fromShortlist: true } }); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigate(`/househelp/public-profile?profileId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
+                              state: { profileId: s.profile_id, fromShortlist: true },
+                            });
+                          }}
                           className="px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
                         >
                           View more

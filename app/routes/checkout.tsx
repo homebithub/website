@@ -7,6 +7,18 @@ import { CreditCardIcon } from "@heroicons/react/24/outline";
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
+  const handleGoBack = () => {
+    if (
+      typeof window !== "undefined" &&
+      window.history.length > 1 &&
+      document.referrer.startsWith(window.location.origin)
+    ) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/pricing", { replace: true });
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -31,39 +43,38 @@ export default function CheckoutPage() {
               </div>
 
               <h1 className="text-xl sm:text-2xl font-extrabold bg-gradient-to-r from-purple-500 via-pink-500 to-indigo-500 bg-clip-text text-transparent mb-3">
-                Checkout is Coming Soon
+                Continue on Pricing
               </h1>
 
               <p className="text-base sm:text-lg text-gray-700 dark:text-gray-200 max-w-xl mx-auto mb-6">
-                We&apos;re putting the final touches on a seamless, secure subscription checkout experience.
-                Soon you&apos;ll be able to pick a plan and complete your payment right here.
+                Subscription selection and payment now happen from the pricing page.
+                Pick your plan there and we&apos;ll continue the purchase flow with the latest account-aware pricing data.
               </p>
 
               <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xl mx-auto mb-10">
-                This feature is currently under active development. In the meantime, you can continue exploring
-                HomeBit or manage your profile and shortlist as usual.
+                If you landed here from an older link, nothing is broken. We&apos;ll route you to the current purchase entry point instead.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <button
                   type="button"
-                  onClick={() => navigate(-1)}
+                  onClick={handleGoBack}
                   className="inline-flex items-center justify-center px-6 py-1 rounded-xl border border-purple-200/70 dark:border-purple-500/60 text-sm font-semibold text-purple-700 dark:text-purple-100 bg-white dark:bg-black hover:bg-purple-50 dark:hover:bg-purple-900/40 shadow-sm transition-colors"
                 >
                   Go Back
                 </button>
 
                 <Link
-                  to="/"
+                  to="/pricing"
                   prefetch="intent"
                   className="inline-flex items-center justify-center px-6 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-sm font-semibold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/40 transition-all"
                 >
-                  Back to Home
+                  View Plans
                 </Link>
               </div>
 
               <div className="mt-10 text-[11px] uppercase tracking-[0.25em] text-gray-500 dark:text-gray-500">
-                Feature under development
+                Pricing handles checkout
               </div>
             </div>
           </div>

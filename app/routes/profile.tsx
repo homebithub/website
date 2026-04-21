@@ -7,20 +7,10 @@ import { useNavigate, useLocation } from "react-router";
 import { Loading } from "~/components/Loading";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { authService } from '~/services/grpc/auth.service';
-import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Button, Input, BaseModal } from '~/components/ui';
-import { extractErrorMessage } from '~/utils/errorMessages';
-
-interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  bio: string;
-}
+import { cacheAuthSession, getStoredUserId } from "~/utils/authStorage";
 
 
 export default function ProfilePage() {
@@ -47,12 +37,15 @@ export default function ProfilePage() {
   const [newPhone, setNewPhone] = React.useState('');
   const [otpCode, setOtpCode] = React.useState('');
   const [currentVerificationType, setCurrentVerificationType] = React.useState<'email' | 'phone' | null>(null);
-  const [currentVerificationId, setCurrentVerificationId] = React.useState<string | null>(null);
   const [otpLoading, setOtpLoading] = React.useState(false);
   const [otpError, setOtpError] = React.useState<string | null>(null);
   const [otpSuccess, setOtpSuccess] = React.useState<string | null>(null);
   const [resendSeconds, setResendSeconds] = React.useState(60);
   const [canResend, setCanResend] = React.useState(false);
+
+  const resolveCurrentUserId = React.useCallback(() => {
+    return profile?.id || user?.user?.user_id || getStoredUserId();
+  }, [profile?.id, user]);
 
   // Redirect if not authenticated
   React.useEffect(() => {
@@ -62,7 +55,6 @@ export default function ProfilePage() {
     }
   }, [user, loading, navigate, location.pathname]);
 
-  // Fetch profile from /api/v1/users/me which returns non-sensitive information from the users table
   React.useEffect(() => {
     const fetchProfile = async () => {
       const token = getAccessTokenFromCookies();
@@ -142,26 +134,17 @@ export default function ProfilePage() {
     setOtpSuccess(null);
 
     try {
-      const token = getAccessTokenFromCookies();
-      // Use the existing update-email endpoint (this might directly update without OTP)
-      // If OTP is needed, the backend should handle the OTP sending
-      const result = await authService.updateEmail('', newEmail);
-      const data = {
-        verification: result.getVerification ? {
-          id: result.getVerification()?.getId?.() || result.getVerificationId?.(),
-        } : null,
-      };
+      const result = await authService.updateEmail(resolveCurrentUserId(), newEmail);
+      const verification = result.getVerification?.();
 
-      // If the response contains verification info, show OTP modal
-      if (data.verification && data.verification.id) {
-        setCurrentVerificationId(data.verification.id);
+      if (verification?.getId?.()) {
         setCurrentVerificationType('email');
-        setShowEmailModal(true);
-        setResendSeconds(60);
-        setCanResend(false);
+        const nextResendAt = verification.getNextResendAt?.()?.toDate?.()?.getTime?.() || null;
+        const waitSeconds = nextResendAt ? Math.max(0, Math.ceil((nextResendAt - Date.now()) / 1000)) : 60;
+        setResendSeconds(waitSeconds);
+        setCanResend(waitSeconds <= 0);
         setOtpSuccess('OTP sent to your new email address');
       } else {
-        // Direct update succeeded
         await fetchProfile();
         setOtpSuccess('Email updated successfully!');
         setTimeout(() => {
@@ -188,26 +171,17 @@ export default function ProfilePage() {
     setOtpSuccess(null);
 
     try {
-      const token = getAccessTokenFromCookies();
-      // Use the existing update-phone endpoint (this might directly update without OTP)
-      // If OTP is needed, the backend should handle the OTP sending
-      const result = await authService.updatePhone('', newPhone);
-      const data = {
-        verification: result.getVerification ? {
-          id: result.getVerification()?.getId?.() || result.getVerificationId?.(),
-        } : null,
-      };
+      const result = await authService.updatePhone(resolveCurrentUserId(), newPhone);
+      const verification = result.getVerification?.();
 
-      // If the response contains verification info, show OTP modal
-      if (data.verification && data.verification.id) {
-        setCurrentVerificationId(data.verification.id);
+      if (verification?.getId?.()) {
         setCurrentVerificationType('phone');
-        setShowPhoneModal(true);
-        setResendSeconds(60);
-        setCanResend(false);
+        const nextResendAt = verification.getNextResendAt?.()?.toDate?.()?.getTime?.() || null;
+        const waitSeconds = nextResendAt ? Math.max(0, Math.ceil((nextResendAt - Date.now()) / 1000)) : 60;
+        setResendSeconds(waitSeconds);
+        setCanResend(waitSeconds <= 0);
         setOtpSuccess('OTP sent to your new phone number');
       } else {
-        // Direct update succeeded
         await fetchProfile();
         setOtpSuccess('Phone updated successfully!');
         setTimeout(() => {
@@ -224,7 +198,7 @@ export default function ProfilePage() {
 
   // Verify OTP and complete email/phone change
   const handleVerifyOtp = async () => {
-    if (!otpCode || !currentVerificationId) {
+    if (!otpCode || !currentVerificationType) {
       setOtpError('Please enter the OTP code');
       return;
     }
@@ -233,15 +207,32 @@ export default function ProfilePage() {
     setOtpError(null);
 
     try {
-      const token = getAccessTokenFromCookies();
-      // Use the new verify-profile-otp endpoint (requires JWT)
-      await authService.verifyOTP(currentVerificationId, otpCode, currentVerificationType || '');
+      const verifyResponse = await authService.verifyOTP(resolveCurrentUserId(), currentVerificationType, otpCode);
+      const userProto = verifyResponse?.getUser?.();
+      const token = verifyResponse?.getToken?.();
+      const refreshToken = verifyResponse?.getRefreshToken?.();
 
-      // Success - update profile data
+      if (token && userProto) {
+        cacheAuthSession({
+          token,
+          refreshToken,
+          user: {
+            id: userProto.getId?.() || "",
+            user_id: userProto.getId?.() || "",
+            email: userProto.getEmail?.() || "",
+            phone: userProto.getPhone?.() || "",
+            first_name: userProto.getFirstName?.() || "",
+            last_name: userProto.getLastName?.() || "",
+            profile_type: userProto.getProfileType?.() || "",
+            is_verified: userProto.getIsVerified?.() || false,
+            profile_image: userProto.getProfileImage?.() || "",
+          },
+        });
+      }
+
       await fetchProfile();
       setOtpSuccess(`${currentVerificationType === 'email' ? 'Email' : 'Phone'} updated successfully!`);
 
-      // Close modal and reset state
       setTimeout(() => {
         setShowEmailModal(false);
         setShowPhoneModal(false);
@@ -257,20 +248,21 @@ export default function ProfilePage() {
 
   // Resend OTP
   const handleResendOtp = async () => {
-    if (!currentVerificationId || !currentVerificationType) return;
+    if (!currentVerificationType) return;
 
     setOtpLoading(true);
     setOtpError(null);
     setOtpSuccess(null);
 
     try {
-      const token = getAccessTokenFromCookies();
-      // Use the new resend-profile-otp endpoint (requires JWT)
-      await authService.resendOTP(currentVerificationId || '', currentVerificationType || '');
+      const response = await authService.resendOTP(resolveCurrentUserId(), currentVerificationType);
+      const verification = response?.getVerification?.();
 
       setOtpCode('');
-      setResendSeconds(60);
-      setCanResend(false);
+      const nextResendAt = verification?.getNextResendAt?.()?.toDate?.()?.getTime?.() || null;
+      const waitSeconds = nextResendAt ? Math.max(0, Math.ceil((nextResendAt - Date.now()) / 1000)) : 60;
+      setResendSeconds(waitSeconds);
+      setCanResend(waitSeconds <= 0);
       setOtpSuccess('OTP resent successfully');
     } catch (err: any) {
       setOtpError(err.message || 'Failed to resend OTP');
@@ -285,7 +277,6 @@ export default function ProfilePage() {
     setNewPhone('');
     setOtpCode('');
     setCurrentVerificationType(null);
-    setCurrentVerificationId(null);
     setOtpError(null);
     setOtpSuccess(null);
     setResendSeconds(60);
@@ -354,7 +345,23 @@ export default function ProfilePage() {
   if (loading || profileLoading) {
     return <Loading text="Loading profile..." />;
   }
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navigation />
+        <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
+          <main className="flex-1 flex items-center justify-center px-4 py-8">
+            <div className="max-w-xl w-full rounded-3xl border-2 border-red-200/60 dark:border-red-500/30 bg-white dark:bg-[#13131a] p-6 text-center shadow-xl">
+              <p className="text-red-700 dark:text-red-300 font-semibold">
+                Account data could not be loaded. Please refresh and try again.
+              </p>
+            </div>
+          </main>
+        </PurpleThemeWrapper>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -444,27 +451,6 @@ export default function ProfilePage() {
                 </div>
               </div>
 
-              {/* Email/Phone Modals (placeholders) */}
-              {showEmailModal && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowEmailModal(false)} />
-                  <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-lg p-6 w-full sm:max-w-sm sm:mx-4 animate-slide-up">
-                    <h3 className="text-lg font-semibold mb-4">Change Email</h3>
-                    {/* TODO: User will advise on modal logic here */}
-                    <button className="btn-secondary mt-4 w-full" onClick={() => setShowEmailModal(false)}>Close</button>
-                  </div>
-                </div>
-              )}
-              {showPhoneModal && (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
-                  <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setShowPhoneModal(false)} />
-                  <div className="relative bg-white dark:bg-slate-800 rounded-t-2xl sm:rounded-2xl shadow-lg p-6 w-full sm:max-w-sm sm:mx-4 animate-slide-up">
-                    <h3 className="text-lg font-semibold mb-4">Change Phone</h3>
-                    {/* TODO: User will advise on modal logic here */}
-                    <button className="btn-secondary mt-4 w-full" onClick={() => setShowPhoneModal(false)}>Close</button>
-                  </div>
-                </div>
-              )}
               <div className="mt-6 pt-6 border-t border-purple-200/40 dark:border-purple-500/20">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div>
@@ -527,7 +513,7 @@ export default function ProfilePage() {
         title="Change Email"
       >
         <div className="space-y-6">
-          {!currentVerificationId ? (
+          {!currentVerificationType ? (
             // Step 1: Enter new email
             <div className="space-y-4">
               <Input
@@ -632,7 +618,7 @@ export default function ProfilePage() {
         title="Change Phone"
       >
         <div className="space-y-6">
-          {!currentVerificationId ? (
+          {!currentVerificationType ? (
             // Step 1: Enter new phone
             <div className="space-y-4">
               <Input

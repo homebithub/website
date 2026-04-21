@@ -6,6 +6,8 @@ import ExpectingModal from './ExpectingModal';
 import type { Child } from './Children';
 import { householdKidsService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 
 // Simple UUID generator function
 const generateUUID = (): string => {
@@ -29,6 +31,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
   const [editingChild, setEditingChild] = useState<Child | null>(null);
   const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Update local state when initialChildren prop changes
   useEffect(() => {
@@ -38,7 +41,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
   const handleRemoveChild = async (index: number) => {
     try {
       const childId = children[index].id;
-      const token = getAccessTokenFromCookies();
+      setError(null);
       
       // Safety check: if no ID, just remove from local state
       if (!childId) {
@@ -56,13 +59,11 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
       onChildrenUpdate(updatedChildren);
     } catch (err: any) {
       console.error("Failed to delete child:", err);
-      alert(handleApiError(err, 'children', 'Failed to delete child'));
+      setError(handleApiError(err, 'children', 'Failed to delete child'));
     }
   };
 
   const handleEditChild = (index: number) => {
-    console.log('Editing child at index:', index);
-    console.log('Child data being edited:', children[index]);
     setEditingChild(children[index]);
     setEditingIndex(index);
     setShowChildModal(true);
@@ -70,39 +71,23 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
 
   const handleSaveChild = async (childData: Omit<Child, 'id'>): Promise<void> => {
     try {
-      const token = getAccessTokenFromCookies();
+      setError(null);
       
       if (editingIndex >= 0) {
         // Update existing child
         const childId = children[editingIndex].id;
-        console.log('Editing child at index:', editingIndex);
-        console.log('Child data:', children[editingIndex]);
-        console.log('Child ID:', childId);
-        console.log('Child ID type:', typeof childId);
-        console.log('Child ID length:', typeof childId === 'string' ? childId.length : (typeof childId === 'number' ? childId.toString().length : 'N/A'));
-        console.log('Child ID for update:', childId);
-        
+
         // Safety check: if no ID, generate one and update
         if (!childId) {
           console.warn('Child ID is missing, generating UUID and updating');
           const newChildWithId = { ...children[editingIndex], ...childData, id: generateUUID() };
-          console.log('Generated new ID for existing child:', newChildWithId.id);
-          
+
           // Update with generated ID
           const savedChild = await householdKidsService.createHouseholdKid('', newChildWithId);
-          console.log('Saved child response:', savedChild);
-          console.log('Saved child ID:', savedChild.id);
-          console.log('Saved child keys:', Object.keys(savedChild));
-          // Check if ID might be nested
-          if (savedChild.data) {
-            console.log('Saved child.data:', savedChild.data);
-            console.log('Saved child.data.id:', savedChild.data.id);
-          }
-          
+
           // Use the generated ID if backend doesn't return one, otherwise use backend's ID
           const finalChild = { ...newChildWithId, ...savedChild, id: savedChild.id || newChildWithId.id };
-          console.log('Final child with ID:', finalChild);
-          
+
           const updatedChildren = [...children];
           updatedChildren[editingIndex] = finalChild;
           setChildren(updatedChildren);
@@ -119,22 +104,12 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
       } else {
         // Create new child
         const newChildWithId = { ...childData, id: generateUUID() };
-        console.log('Creating new child with generated ID:', newChildWithId.id);
-        
+
         const savedChild = await householdKidsService.createHouseholdKid('', newChildWithId);
-        console.log('New child created response:', savedChild);
-        console.log('New child ID:', savedChild.id);
-        console.log('New child keys:', Object.keys(savedChild));
-        // Check if ID might be nested
-        if (savedChild.data) {
-          console.log('New child.data:', savedChild.data);
-          console.log('New child.data.id:', savedChild.data.id);
-        }
-        
+
         // Use the generated ID if backend doesn't return one, otherwise use backend's ID
         const finalChild = { ...newChildWithId, ...savedChild, id: savedChild.id || newChildWithId.id };
-        console.log('Final child with ID:', finalChild);
-        
+
         const updatedChildren = [...children, finalChild];
         setChildren(updatedChildren);
         onChildrenUpdate(updatedChildren);
@@ -166,10 +141,9 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
     <div className={`space-y-4 ${className}`}>
       {/* Success Message */}
       {saveSuccess && (
-        <div className="p-4 rounded-xl text-sm font-semibold border-2 bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-500/30">
-          ✓ Child saved successfully
-        </div>
+        <SuccessAlert message="Child saved successfully" className="mb-0" />
       )}
+      {error && <ErrorAlert message={error} className="mb-0" />}
       <div className="flex gap-4">
         <button
           type="button"
@@ -280,7 +254,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
         onClose={() => setShowExpectingModal(false)}
         onSave={async (data) => {
           try {
-            const token = getAccessTokenFromCookies();
+            setError(null);
             
             // Save expecting child to database via gRPC
             const savedChild = await householdKidsService.createHouseholdKid('', {
@@ -302,7 +276,7 @@ const Kids: React.FC<KidsProps> = ({ onChildrenUpdate, initialChildren = [], cla
             setTimeout(() => setSaveSuccess(false), 3000);
           } catch (err: any) {
             console.error("Failed to save expecting child:", err);
-            alert(handleApiError(err, 'children', 'Failed to save expecting child'));
+            setError(handleApiError(err, 'children', 'Failed to save expecting child'));
           }
         }}
       />

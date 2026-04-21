@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
-import {useSearchParams, useNavigate, useLocation} from "react-router";
+import { useSearchParams, useNavigate, useLocation } from "react-router";
 import { ArrowLeftIcon, HeartIcon, TrashIcon } from "@heroicons/react/24/outline";
 import ReadOnlyUserImageCarousel from "~/components/features/household/househelp/ReadOnlyUserImageCarousel";
 import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
 import { profileService as grpcProfileService, profileViewService, shortlistService, imageService } from '~/services/grpc/authServices';
 import { formatTimeAgo } from "~/utils/timeAgo";
+import { ErrorAlert } from "~/components/ui/ErrorAlert";
+import { SuccessAlert } from "~/components/ui/SuccessAlert";
 
 export default function HousehelpProfile() {
   // Carousel state (ALWAYS at the top)
@@ -18,10 +20,13 @@ export default function HousehelpProfile() {
   const [shortlistDisabled, setShortlistDisabled] = useState(false);
   const [shortlistDisabledReason, setShortlistDisabledReason] = useState<string | null>(null);
   const [shortlisted, setShortlisted] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleShortlist = async () => {
     if (!profileId) return;
     setShortlistLoading(true);
+    setError(null);
+    setSuccessMessage(null);
     try {
       await shortlistService.createShortlist('', 'househelp', {
         profile_id: profileId,
@@ -30,8 +35,9 @@ export default function HousehelpProfile() {
       setShortlisted(true);
       setShortlistDisabled(true);
       setShortlistDisabledReason('You have already shortlisted this profile.');
+      setSuccessMessage('Added to shortlist.');
     } catch (err: any) {
-      if (!shortlistDisabled) alert(err.message || 'Failed to shortlist');
+      if (!shortlistDisabled) setError(err.message || 'Failed to shortlist');
     } finally {
       setShortlistLoading(false);
     }
@@ -41,6 +47,7 @@ export default function HousehelpProfile() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   // Fetch images after data is loaded and User.id is available
   useEffect(() => {
@@ -59,10 +66,56 @@ export default function HousehelpProfile() {
     }
   }, [data && data.User && data.User.id]);
 
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
-  const locationState = (location.state || {}) as { profileId?: string };
-  const profileId = locationState.profileId
+  const locationState = (location.state || {}) as {
+    profileId?: string;
+    backTo?: string;
+    backLabel?: string;
+  };
+  const profileId =
+    searchParams.get('profileId') ||
+    searchParams.get('profile_id') ||
+    locationState.profileId ||
+    '';
+  const tabParam = searchParams.get('tab');
+  const backTo =
+    searchParams.get('backTo') ||
+    locationState.backTo ||
+    (tabParam === 'shortlist' ? '/household/employment?tab=shortlist' : '/household/employment');
+  const backLabel =
+    searchParams.get('backLabel') ||
+    locationState.backLabel ||
+    (tabParam === 'shortlist' ? 'Back to Shortlist' : 'Back');
+
+  const handleBackNavigation = () => {
+    navigate(backTo, { replace: true });
+  };
+
+  useEffect(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    let changed = false;
+
+    if (locationState.profileId && !nextParams.get('profileId') && !nextParams.get('profile_id')) {
+      nextParams.set('profileId', locationState.profileId);
+      changed = true;
+    }
+    if (locationState.backTo && !nextParams.get('backTo')) {
+      nextParams.set('backTo', locationState.backTo);
+      changed = true;
+    }
+    if (locationState.backLabel && !nextParams.get('backLabel')) {
+      nextParams.set('backLabel', locationState.backLabel);
+      changed = true;
+    }
+
+    if (!changed) return;
+    navigate(`/household/househelp/profile?${nextParams.toString()}`, {
+      replace: true,
+      state: location.state,
+    });
+  }, [location.state, locationState.backLabel, locationState.backTo, locationState.profileId, navigate, searchParams]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -99,11 +152,55 @@ export default function HousehelpProfile() {
       }
     };
     fetchProfile();
-  }, [profileId]);
+  }, [profileId, retryKey]);
 
   if (loading) return <div className="flex justify-center py-12">Loading...</div>;
-  // if (error) return
-  if (!data) return null;
+  if (error && !data) {
+    return (
+      <div className="flex justify-center py-12 px-4">
+        <div className="max-w-xl w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-center text-red-700">
+          <p>{error}</p>
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <button
+              onClick={() => setRetryKey((prev) => prev + 1)}
+              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={handleBackNavigation}
+              className="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+            >
+              {backLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (!data) {
+    return (
+      <div className="flex justify-center py-12 px-4">
+        <div className="max-w-xl w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-center text-red-700">
+          <p>Profile data is unavailable right now. Please try again.</p>
+          <div className="mt-4 flex items-center justify-center gap-3">
+            <button
+              onClick={() => setRetryKey((prev) => prev + 1)}
+              className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+            >
+              Try Again
+            </button>
+            <button
+              onClick={handleBackNavigation}
+              className="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+            >
+              {backLabel}
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const { User, Househelp } = data;
 
@@ -111,11 +208,12 @@ export default function HousehelpProfile() {
   return (
     <div className="w-full flex justify-center bg-transparent mt-4 sm:mt-2">
       <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-gray-100 dark:border-slate-700 p-8 sm:p-12 px-8 sm:px-16 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-5xl">
-        {error && <div className="bg-red-100 text-red-700 px-4 py-1 rounded mt-6 text-center">{error}</div>}
+        {successMessage && <SuccessAlert message={successMessage} className="mt-6 mb-0" />}
+        {error && <ErrorAlert message={error} className="mt-6 mb-0" />}
 
         {/* Top Bar */}
         <div className="flex justify-between items-center mb-4">
-        <button onClick={() => navigate(-1)} className="p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition" aria-label="Back">
+        <button onClick={handleBackNavigation} className="p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition" aria-label={backLabel}>
           <ArrowLeftIcon className="w-6 h-6 text-primary-700 dark:text-primary-300" />
         </button>
         <span className="text-xl font-bold text-primary dark:text-primary-300">Househelp Profile</span>
@@ -132,6 +230,8 @@ export default function HousehelpProfile() {
                     setShortlisted(false);
                     setShortlistDisabled(false);
                     setShortlistDisabledReason(null);
+                    setError(null);
+                    setSuccessMessage('Removed from shortlist.');
                     try {
                       const shortlistData = await shortlistService.shortlistExists('', profileId!);
                       const exists = !!(shortlistData?.getExists?.() ?? shortlistData?.exists);
@@ -145,7 +245,7 @@ export default function HousehelpProfile() {
                       }
                     } catch { /* ignore */ }
                   } catch (err: any) {
-                    alert(err.message || 'Failed to remove from shortlist');
+                    setError(err.message || 'Failed to remove from shortlist');
                   } finally {
                     setShortlistLoading(false);
                   }

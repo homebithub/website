@@ -1,8 +1,8 @@
-import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
-import { profileSetupService } from '~/services/grpc/profileSetup.service';
 import { Loading } from './Loading';
+import { getStoredProfileType } from '~/utils/authStorage';
+import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
 
 interface ProfileSetupGuardProps {
   children: React.ReactNode;
@@ -58,11 +58,9 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
       return;
     }
 
-    const profileType = localStorage.getItem('profile_type');
+    const profileType = getStoredProfileType();
     try {
-      const token = getAccessTokenFromCookies();
-
-      if (!token || !profileType) {
+      if (!profileType) {
         // Not logged in, allow navigation (auth guard will handle)
         setIsSetupComplete(true);
         setIsChecking(false);
@@ -77,60 +75,20 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
       }
 
       // Check profile setup status
-      const data = await profileSetupService.getProgress('', profileType);
-      if (data) {
-        const progressData = data.data || data || {};
-        const totalSteps = progressData.total_steps || 0;
-        const lastStep = progressData.last_completed_step || 0;
-        const isComplete = progressData.status === 'completed' ||
-          (totalSteps > 0 && lastStep >= totalSteps);
+      const destination = await resolveProfileSetupDestination({
+        profileType,
+        completedPath: '',
+      });
 
-        console.log('ProfileSetupGuard - Setup status:', { isComplete, lastStep, totalSteps });
-
-        if (isComplete) {
-          setIsSetupComplete(true);
-          setIsChecking(false);
-          return;
-        }
-
-        // Household users who haven't started setup go to choice page first
-        if (profileType === 'household' && lastStep === 0) {
-          console.log('ProfileSetupGuard - Household user at step 0, redirecting to choice page');
-          navigate('/household-choice', { replace: true });
-          return;
-        }
-        // Profile incomplete, redirect to setup
-        const setupRoute = profileType === 'household'
-          ? `/profile-setup/household?step=${lastStep + 1}`
-          : `/profile-setup/househelp?step=${lastStep + 1}`;
-
-        console.log('ProfileSetupGuard - Redirecting to:', setupRoute);
-        navigate(setupRoute, { replace: true });
-        return;
-      } else {
-        // No data returned - treat as no setup record
-        if (profileType === 'household') {
-          console.log('ProfileSetupGuard - No setup record, redirecting to household choice');
-          navigate('/household-choice', { replace: true });
-          return;
-        }
-        console.log("ProfileSetupGuard - No profile setup record found, starting from step 1");
-        navigate('/profile-setup/househelp?step=1', { replace: true });
-        return;
-      }
-    } catch (error: any) {
-      // Handle NOT_FOUND (no profile setup record) - user hasn't started setup
-      if (error?.code === 5 || error?.message?.includes('not found') || error?.message?.includes('NOT_FOUND')) {
-        if (profileType === 'household') {
-          console.log('ProfileSetupGuard - No setup record, redirecting to household choice');
-          navigate('/household-choice', { replace: true });
-        } else {
-          console.log("ProfileSetupGuard - No profile setup record found, starting from step 1");
-          navigate('/profile-setup/househelp?step=1', { replace: true });
-        }
+      if (!destination) {
+        setIsSetupComplete(true);
         setIsChecking(false);
         return;
       }
+
+      navigate(destination, { replace: true });
+      return;
+    } catch (error: any) {
       console.error('ProfileSetupGuard - Error:', error);
       // On other errors, allow navigation (fail open)
       setIsSetupComplete(true);
@@ -144,7 +102,7 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
   }
 
   if (!isSetupComplete) {
-    return null; // Will redirect
+    return <Loading text="Redirecting..." />;
   }
 
   return <>{children}</>;

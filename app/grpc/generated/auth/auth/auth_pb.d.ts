@@ -1419,6 +1419,200 @@ export namespace ResendOTPResponse {
   };
 }
 
+export class BureauHousehelpLinkRequest extends jspb.Message {
+  getId(): string;
+  setId(value: string): BureauHousehelpLinkRequest;
+
+  getBureauId(): string;
+  setBureauId(value: string): BureauHousehelpLinkRequest;
+
+  getHousehelpUserId(): string;
+  setHousehelpUserId(value: string): BureauHousehelpLinkRequest;
+
+  getHousehelpProfileId(): string;
+  setHousehelpProfileId(value: string): BureauHousehelpLinkRequest;
+
+  getPhone(): string;
+  setPhone(value: string): BureauHousehelpLinkRequest;
+
+  getStatus(): string;
+  setStatus(value: string): BureauHousehelpLinkRequest;
+
+  getExpiresAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setExpiresAt(value?: google_protobuf_timestamp_pb.Timestamp): BureauHousehelpLinkRequest;
+  hasExpiresAt(): boolean;
+  clearExpiresAt(): BureauHousehelpLinkRequest;
+
+  getVerifiedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setVerifiedAt(value?: google_protobuf_timestamp_pb.Timestamp): BureauHousehelpLinkRequest;
+  hasVerifiedAt(): boolean;
+  clearVerifiedAt(): BureauHousehelpLinkRequest;
+
+  getCreatedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setCreatedAt(value?: google_protobuf_timestamp_pb.Timestamp): BureauHousehelpLinkRequest;
+  hasCreatedAt(): boolean;
+  clearCreatedAt(): BureauHousehelpLinkRequest;
+
+  getUpdatedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setUpdatedAt(value?: google_protobuf_timestamp_pb.Timestamp): BureauHousehelpLinkRequest;
+  hasUpdatedAt(): boolean;
+  clearUpdatedAt(): BureauHousehelpLinkRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauHousehelpLinkRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauHousehelpLinkRequest): BureauHousehelpLinkRequest.AsObject;
+  static serializeBinaryToWriter(message: BureauHousehelpLinkRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauHousehelpLinkRequest;
+  static deserializeBinaryFromReader(message: BureauHousehelpLinkRequest, reader: jspb.BinaryReader): BureauHousehelpLinkRequest;
+}
+
+export namespace BureauHousehelpLinkRequest {
+  export type AsObject = {
+    id: string;
+    bureauId: string;
+    househelpUserId: string;
+    househelpProfileId: string;
+    phone: string;
+    status: string;
+    expiresAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    verifiedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    createdAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    updatedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class BureauHousehelpLinkHousehelp extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): BureauHousehelpLinkHousehelp;
+
+  getProfileId(): string;
+  setProfileId(value: string): BureauHousehelpLinkHousehelp;
+
+  getFirstName(): string;
+  setFirstName(value: string): BureauHousehelpLinkHousehelp;
+
+  getLastName(): string;
+  setLastName(value: string): BureauHousehelpLinkHousehelp;
+
+  getPhone(): string;
+  setPhone(value: string): BureauHousehelpLinkHousehelp;
+
+  getBureauId(): string;
+  setBureauId(value: string): BureauHousehelpLinkHousehelp;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauHousehelpLinkHousehelp.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauHousehelpLinkHousehelp): BureauHousehelpLinkHousehelp.AsObject;
+  static serializeBinaryToWriter(message: BureauHousehelpLinkHousehelp, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauHousehelpLinkHousehelp;
+  static deserializeBinaryFromReader(message: BureauHousehelpLinkHousehelp, reader: jspb.BinaryReader): BureauHousehelpLinkHousehelp;
+}
+
+export namespace BureauHousehelpLinkHousehelp {
+  export type AsObject = {
+    userId: string;
+    profileId: string;
+    firstName: string;
+    lastName: string;
+    phone: string;
+    bureauId: string;
+  };
+}
+
+export class BureauHousehelpLinkInitiateRequest extends jspb.Message {
+  getPhone(): string;
+  setPhone(value: string): BureauHousehelpLinkInitiateRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauHousehelpLinkInitiateRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauHousehelpLinkInitiateRequest): BureauHousehelpLinkInitiateRequest.AsObject;
+  static serializeBinaryToWriter(message: BureauHousehelpLinkInitiateRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauHousehelpLinkInitiateRequest;
+  static deserializeBinaryFromReader(message: BureauHousehelpLinkInitiateRequest, reader: jspb.BinaryReader): BureauHousehelpLinkInitiateRequest;
+}
+
+export namespace BureauHousehelpLinkInitiateRequest {
+  export type AsObject = {
+    phone: string;
+  };
+}
+
+export class BureauHousehelpLinkVerifyRequest extends jspb.Message {
+  getRequestId(): string;
+  setRequestId(value: string): BureauHousehelpLinkVerifyRequest;
+
+  getOtp(): string;
+  setOtp(value: string): BureauHousehelpLinkVerifyRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauHousehelpLinkVerifyRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauHousehelpLinkVerifyRequest): BureauHousehelpLinkVerifyRequest.AsObject;
+  static serializeBinaryToWriter(message: BureauHousehelpLinkVerifyRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauHousehelpLinkVerifyRequest;
+  static deserializeBinaryFromReader(message: BureauHousehelpLinkVerifyRequest, reader: jspb.BinaryReader): BureauHousehelpLinkVerifyRequest;
+}
+
+export namespace BureauHousehelpLinkVerifyRequest {
+  export type AsObject = {
+    requestId: string;
+    otp: string;
+  };
+}
+
+export class BureauHousehelpLinkIdRequest extends jspb.Message {
+  getRequestId(): string;
+  setRequestId(value: string): BureauHousehelpLinkIdRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauHousehelpLinkIdRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauHousehelpLinkIdRequest): BureauHousehelpLinkIdRequest.AsObject;
+  static serializeBinaryToWriter(message: BureauHousehelpLinkIdRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauHousehelpLinkIdRequest;
+  static deserializeBinaryFromReader(message: BureauHousehelpLinkIdRequest, reader: jspb.BinaryReader): BureauHousehelpLinkIdRequest;
+}
+
+export namespace BureauHousehelpLinkIdRequest {
+  export type AsObject = {
+    requestId: string;
+  };
+}
+
+export class BureauHousehelpLinkResponse extends jspb.Message {
+  getMessage(): string;
+  setMessage(value: string): BureauHousehelpLinkResponse;
+
+  getLinkRequest(): BureauHousehelpLinkRequest | undefined;
+  setLinkRequest(value?: BureauHousehelpLinkRequest): BureauHousehelpLinkResponse;
+  hasLinkRequest(): boolean;
+  clearLinkRequest(): BureauHousehelpLinkResponse;
+
+  getVerification(): VerificationInfo | undefined;
+  setVerification(value?: VerificationInfo): BureauHousehelpLinkResponse;
+  hasVerification(): boolean;
+  clearVerification(): BureauHousehelpLinkResponse;
+
+  getHousehelp(): BureauHousehelpLinkHousehelp | undefined;
+  setHousehelp(value?: BureauHousehelpLinkHousehelp): BureauHousehelpLinkResponse;
+  hasHousehelp(): boolean;
+  clearHousehelp(): BureauHousehelpLinkResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BureauHousehelpLinkResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: BureauHousehelpLinkResponse): BureauHousehelpLinkResponse.AsObject;
+  static serializeBinaryToWriter(message: BureauHousehelpLinkResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BureauHousehelpLinkResponse;
+  static deserializeBinaryFromReader(message: BureauHousehelpLinkResponse, reader: jspb.BinaryReader): BureauHousehelpLinkResponse;
+}
+
+export namespace BureauHousehelpLinkResponse {
+  export type AsObject = {
+    message: string;
+    linkRequest?: BureauHousehelpLinkRequest.AsObject;
+    verification?: VerificationInfo.AsObject;
+    househelp?: BureauHousehelpLinkHousehelp.AsObject;
+  };
+}
+
 export class CheckVerificationStatusRequest extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): CheckVerificationStatusRequest;
@@ -2268,6 +2462,54 @@ export namespace ShortlistExistsReq {
   export type AsObject = {
     userId: string;
     profileId: string;
+  };
+}
+
+export class ShortlistUnlockReq extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): ShortlistUnlockReq;
+
+  getProfileId(): string;
+  setProfileId(value: string): ShortlistUnlockReq;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ShortlistUnlockReq.AsObject;
+  static toObject(includeInstance: boolean, msg: ShortlistUnlockReq): ShortlistUnlockReq.AsObject;
+  static serializeBinaryToWriter(message: ShortlistUnlockReq, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ShortlistUnlockReq;
+  static deserializeBinaryFromReader(message: ShortlistUnlockReq, reader: jspb.BinaryReader): ShortlistUnlockReq;
+}
+
+export namespace ShortlistUnlockReq {
+  export type AsObject = {
+    userId: string;
+    profileId: string;
+  };
+}
+
+export class ShortlistContactResponse extends jspb.Message {
+  getUnlocked(): boolean;
+  setUnlocked(value: boolean): ShortlistContactResponse;
+
+  getPhone(): string;
+  setPhone(value: string): ShortlistContactResponse;
+
+  getEmail(): string;
+  setEmail(value: string): ShortlistContactResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ShortlistContactResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ShortlistContactResponse): ShortlistContactResponse.AsObject;
+  static serializeBinaryToWriter(message: ShortlistContactResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ShortlistContactResponse;
+  static deserializeBinaryFromReader(message: ShortlistContactResponse, reader: jspb.BinaryReader): ShortlistContactResponse;
+}
+
+export namespace ShortlistContactResponse {
+  export type AsObject = {
+    unlocked: boolean;
+    phone: string;
+    email: string;
   };
 }
 
@@ -4599,6 +4841,15 @@ export class AdminUserDetail extends jspb.Message {
   hasUpdatedAt(): boolean;
   clearUpdatedAt(): AdminUserDetail;
 
+  getFullName(): string;
+  setFullName(value: string): AdminUserDetail;
+
+  getGender(): string;
+  setGender(value: string): AdminUserDetail;
+
+  getProfilePicture(): string;
+  setProfilePicture(value: string): AdminUserDetail;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AdminUserDetail.AsObject;
   static toObject(includeInstance: boolean, msg: AdminUserDetail): AdminUserDetail.AsObject;
@@ -4618,6 +4869,9 @@ export namespace AdminUserDetail {
     rolesList: Array<RoleInfo.AsObject>;
     createdAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
     updatedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    fullName: string;
+    gender: string;
+    profilePicture: string;
   };
 }
 
@@ -4755,6 +5009,15 @@ export class UpdateAdminUserRequest extends jspb.Message {
   getIsActive(): boolean;
   setIsActive(value: boolean): UpdateAdminUserRequest;
 
+  getFullName(): string;
+  setFullName(value: string): UpdateAdminUserRequest;
+
+  getGender(): string;
+  setGender(value: string): UpdateAdminUserRequest;
+
+  getProfilePicture(): string;
+  setProfilePicture(value: string): UpdateAdminUserRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UpdateAdminUserRequest.AsObject;
   static toObject(includeInstance: boolean, msg: UpdateAdminUserRequest): UpdateAdminUserRequest.AsObject;
@@ -4770,6 +5033,9 @@ export namespace UpdateAdminUserRequest {
     phone: string;
     password: string;
     isActive: boolean;
+    fullName: string;
+    gender: string;
+    profilePicture: string;
   };
 }
 
@@ -4865,6 +5131,12 @@ export class AcceptInvitationRequest extends jspb.Message {
   getOtpCode(): string;
   setOtpCode(value: string): AcceptInvitationRequest;
 
+  getFullName(): string;
+  setFullName(value: string): AcceptInvitationRequest;
+
+  getGender(): string;
+  setGender(value: string): AcceptInvitationRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): AcceptInvitationRequest.AsObject;
   static toObject(includeInstance: boolean, msg: AcceptInvitationRequest): AcceptInvitationRequest.AsObject;
@@ -4878,6 +5150,8 @@ export namespace AcceptInvitationRequest {
     token: string;
     password: string;
     otpCode: string;
+    fullName: string;
+    gender: string;
   };
 }
 

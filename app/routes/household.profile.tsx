@@ -3,6 +3,7 @@ import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { profileService as grpcProfileService, householdKidsService, petsService, documentService, householdMemberService } from '~/services/grpc/authServices';
+import profileSetupService from '~/services/grpc/profileSetup.service';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -11,6 +12,7 @@ import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Eye } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import EditSectionModal from '~/components/ui/EditSectionModal';
 import Location from '~/components/Location';
 import Children from '~/components/Children';
@@ -59,6 +61,7 @@ export default function HouseholdProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
   
   // Track profile views (own profile)
   useProfileViewTracking({
@@ -85,11 +88,14 @@ export default function HouseholdProfile() {
   const [codeCopied, setCodeCopied] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [, setTimeUpdate] = useState(0); // Force re-render for countdown
+  const [memberActionSuccess, setMemberActionSuccess] = useState<string | null>(null);
+  const [setupRedirectLoading, setSetupRedirectLoading] = useState(false);
   
   // Household members state
   const [members, setMembers] = useState<any[]>([]);
   const [membersLoading, setMembersLoading] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
+  const [memberToRemove, setMemberToRemove] = useState<{ userId: string } | null>(null);
 
   // Update countdown every minute
   useEffect(() => {
@@ -106,22 +112,21 @@ export default function HouseholdProfile() {
     const fetchAllData = async () => {
       setLoading(true);
       setError(null);
+      setHasError(false);
       try {
         // Fetch household profile via gRPC
         const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
-        console.log('Profile data:', profileData);
         setProfile(profileData);
 
         // Load existing invitation code if available
         try {
           const householdId = profileData.id;
-          console.log('Household ID:', householdId);
           const inviteData = await householdMemberService.getOrCreateInvitationCode(householdId);
           const extracted = inviteData?.data || inviteData;
           setInvitationCode(extracted.invite_code);
           setInvitationExpiresAt(extracted.expires_at);
         } catch (err) {
-          console.log("No existing invitation code or error loading it:", err);
+          console.error("No existing invitation code or error loading it:", err);
         }
 
         // Fetch kids via gRPC
@@ -130,7 +135,7 @@ export default function HouseholdProfile() {
           const kidsArray = Array.isArray(kidsData?.data || kidsData) ? (kidsData?.data || kidsData) : [];
           setKids(Array.isArray(kidsArray) ? kidsArray : []);
         } catch (err) {
-          console.log("Error loading kids:", err);
+          console.error("Error loading kids:", err);
         }
 
         // Fetch pets via gRPC
@@ -139,7 +144,7 @@ export default function HouseholdProfile() {
           const petsArray = Array.isArray(petsData?.data || petsData) ? (petsData?.data || petsData) : [];
           setPets(Array.isArray(petsArray) ? petsArray : []);
         } catch (err) {
-          console.log("Error loading pets:", err);
+          console.error("Error loading pets:", err);
         }
 
         // Fetch photos from documents table via gRPC
@@ -150,7 +155,7 @@ export default function HouseholdProfile() {
           const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
           setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
         } catch (err) {
-          console.log("Error loading photos:", err);
+          console.error("Error loading photos:", err);
         }
       } catch (err: any) {
         console.error("Error loading profile:", err);
@@ -168,7 +173,7 @@ export default function HouseholdProfile() {
       setHasError(true);
       setLoading(false);
     }
-  }, []);
+  }, [retryKey]);
 
   // Fetch members when profile loads
   useEffect(() => {
@@ -176,6 +181,35 @@ export default function HouseholdProfile() {
       fetchMembers();
     }
   }, [profile]);
+
+  const handleContinueSetup = async () => {
+    if (setupRedirectLoading) return;
+    setSetupRedirectLoading(true);
+
+    try {
+      const progressData = await profileSetupService.getProgress('', 'household');
+      const totalSteps = progressData?.total_steps || 0;
+      const lastStep = progressData?.last_completed_step || 0;
+      const status = progressData?.status || '';
+      const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
+
+      if (isComplete) {
+        navigate('/household/profile', { replace: true });
+        return;
+      }
+
+      if (lastStep <= 0) {
+        navigate('/household-choice', { replace: true });
+        return;
+      }
+
+      navigate(`/profile-setup/household?step=${lastStep + 1}`, { replace: true });
+    } catch {
+      navigate('/household-choice', { replace: true });
+    } finally {
+      setSetupRedirectLoading(false);
+    }
+  };
 
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [showViewsModal, setShowViewsModal] = useState(false);
@@ -294,9 +328,10 @@ export default function HouseholdProfile() {
 
   const handleRemoveMember = async (userId: string) => {
     if (!profile?.id) return;
-    if (!confirm("Are you sure you want to remove this member from your household?")) return;
     
     setRemovingMemberId(userId);
+    setError(null);
+    setMemberActionSuccess(null);
     try {
       const token = getAccessTokenFromCookies();
       if (!token) throw new Error("Not authenticated");
@@ -305,9 +340,10 @@ export default function HouseholdProfile() {
       
       // Refresh members list
       await fetchMembers();
+      setMemberActionSuccess('Member removed successfully.');
     } catch (err: any) {
       console.error("Error removing member:", err);
-      alert(err.message || "Failed to remove member");
+      setError(err.message || "Failed to remove member");
     } finally {
       setRemovingMemberId(null);
     }
@@ -492,16 +528,17 @@ export default function HouseholdProfile() {
           <ErrorAlert message={error || "Something went wrong"} />
           <div className="flex gap-3">
             <button
-              onClick={() => window.location.reload()}
+              onClick={() => setRetryKey((prev) => prev + 1)}
               className="px-6 py-1.5 bg-gradient-to-r from-gray-600 to-gray-700 text-white rounded-xl font-semibold hover:from-gray-700 hover:to-gray-800 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              Reload Page
+              Try Again
             </button>
             <button
-              onClick={() => navigate('/profile-setup/household')}
+              onClick={handleContinueSetup}
+              disabled={setupRedirectLoading}
               className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
             >
-              Complete Profile Setup
+              {setupRedirectLoading ? 'Opening Setup...' : 'Continue Profile Setup'}
             </button>
           </div>
         </div>
@@ -519,10 +556,11 @@ export default function HouseholdProfile() {
           </div>
           <p className="text-gray-700 dark:text-gray-300 mb-4">You haven't completed your household profile yet.</p>
           <button
-            onClick={() => navigate('/profile-setup/household')}
+            onClick={handleContinueSetup}
+            disabled={setupRedirectLoading}
             className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 transition-all"
           >
-            Complete Profile Setup
+            {setupRedirectLoading ? 'Opening Setup...' : 'Continue Profile Setup'}
           </button>
         </div>
       </div>
@@ -535,6 +573,7 @@ export default function HouseholdProfile() {
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
       <main className="flex-1 py-8">
     <div className="max-w-5xl mx-auto px-4">
+      {memberActionSuccess && <SuccessAlert message={memberActionSuccess} className="mb-4" />}
       {/* Header */}
       <div className="rounded-2xl p-4 sm:p-6 bg-white dark:bg-[#13131a] border border-purple-200/40 dark:border-purple-500/30 mb-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -554,7 +593,7 @@ export default function HouseholdProfile() {
               </button>
             )}
             <button
-              onClick={() => navigate(`/household/public-profile?user_id=${profile?.user_id || ''}`)}
+              onClick={() => navigate(`/household/public-profile?userId=${profile?.user_id || ''}`)}
               className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all shadow-lg whitespace-nowrap"
               disabled={!profile?.user_id}
             >
@@ -736,7 +775,7 @@ export default function HouseholdProfile() {
 
                 {member.role !== 'owner' && (
                   <button
-                    onClick={() => handleRemoveMember(member.user_id)}
+                    onClick={() => setMemberToRemove({ userId: member.user_id })}
                     disabled={removingMemberId === member.user_id}
                     className="px-4 py-1 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                   >
@@ -1141,6 +1180,21 @@ export default function HouseholdProfile() {
         variant="danger"
         onConfirm={handleDeletePhoto}
         onCancel={() => setPhotoToDelete(null)}
+      />
+
+      <ConfirmDialog
+        isOpen={memberToRemove !== null}
+        title="Remove Member"
+        message="Are you sure you want to remove this member from your household?"
+        confirmText="Remove"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={() => {
+          if (!memberToRemove) return;
+          void handleRemoveMember(memberToRemove.userId);
+          setMemberToRemove(null);
+        }}
+        onCancel={() => setMemberToRemove(null)}
       />
 
       {/* Edit Section Modal */}

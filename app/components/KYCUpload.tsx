@@ -1,7 +1,7 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { API_BASE_URL, API_ENDPOINTS } from '~/config/api';
-import { profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { API_BASE_URL } from '~/config/api';
+import { kycService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { profileSetupService } from '~/services/grpc/profileSetup.service';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -233,8 +233,6 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
     setUploadProgress(0);
 
     try {
-      const token = getAccessTokenFromCookies();
-
       // Upload KYC images
       setIsUploading(true);
 
@@ -260,19 +258,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
         selfie_s3_key: selfieResult.s3Key,
       };
 
-      const kycResponse = await fetch(API_ENDPOINTS.kyc.submit, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify(kycPayload),
-      });
-
-      if (!kycResponse.ok) {
-        const errData = await kycResponse.json().catch(() => ({}));
-        throw new Error(errData.message || 'Failed to submit KYC');
-      }
+      await kycService.submitKYC('', kycPayload);
 
       // Upload profile photos if any
       if (profilePhotos.length > 0) {
@@ -295,6 +281,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
           });
           xhr.addEventListener('error', () => reject(new Error('Network error')));
           xhr.open('POST', `${API_BASE_URL}/api/v1/documents/upload`);
+          const token = getAccessTokenFromCookies();
           if (token) xhr.setRequestHeader('Authorization', `Bearer ${token}`);
           xhr.send(formData);
         });
@@ -339,7 +326,6 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
 
   const handleSkip = async () => {
     try {
-      const token = getAccessTokenFromCookies();
       // Mark step as skipped via gRPC
       await profileSetupService.updateStep('', {
         step_id: 'kyc',

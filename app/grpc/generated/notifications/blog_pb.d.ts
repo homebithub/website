@@ -1685,3 +1685,47 @@ export namespace BlogSubscriberCountResponse {
   };
 }
 
+export class BlogPostPublishedEvent extends jspb.Message {
+  getPostId(): string;
+  setPostId(value: string): BlogPostPublishedEvent;
+
+  getTitle(): string;
+  setTitle(value: string): BlogPostPublishedEvent;
+
+  getSlug(): string;
+  setSlug(value: string): BlogPostPublishedEvent;
+
+  getExcerpt(): string;
+  setExcerpt(value: string): BlogPostPublishedEvent;
+
+  getFeaturedImage(): string;
+  setFeaturedImage(value: string): BlogPostPublishedEvent;
+
+  getAuthorName(): string;
+  setAuthorName(value: string): BlogPostPublishedEvent;
+
+  getPublishedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setPublishedAt(value?: google_protobuf_timestamp_pb.Timestamp): BlogPostPublishedEvent;
+  hasPublishedAt(): boolean;
+  clearPublishedAt(): BlogPostPublishedEvent;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): BlogPostPublishedEvent.AsObject;
+  static toObject(includeInstance: boolean, msg: BlogPostPublishedEvent): BlogPostPublishedEvent.AsObject;
+  static serializeBinaryToWriter(message: BlogPostPublishedEvent, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): BlogPostPublishedEvent;
+  static deserializeBinaryFromReader(message: BlogPostPublishedEvent, reader: jspb.BinaryReader): BlogPostPublishedEvent;
+}
+
+export namespace BlogPostPublishedEvent {
+  export type AsObject = {
+    postId: string;
+    title: string;
+    slug: string;
+    excerpt: string;
+    featuredImage: string;
+    authorName: string;
+    publishedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+

@@ -1,42 +1,27 @@
 import React, {useEffect, useState} from "react";
-import {useSearchParams, useNavigate, useLocation} from "react-router";
+import { useLocation, useSearchParams, useNavigate } from "react-router";
 import {ArrowLeftIcon, HeartIcon, TrashIcon, LockClosedIcon, LockOpenIcon} from "@heroicons/react/24/outline";
 import ReadOnlyUserImageCarousel from "~/components/features/household/househelp/ReadOnlyUserImageCarousel";
 import ImageLightbox from "~/components/features/household/househelp/ImageLightbox";
-import { API_ENDPOINTS } from '~/config/api';
 import { profileService as grpcProfileService, profileViewService, shortlistService, imageService } from '~/services/grpc/authServices';
-import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { formatTimeAgo } from "~/utils/timeAgo";
-import { usePaymentSSE } from '~/hooks/usePaymentSSE';
+import { ErrorAlert } from "~/components/ui/ErrorAlert";
+import { SuccessAlert } from "~/components/ui/SuccessAlert";
 
 export default function HousehelpProfile() {
     const [showUnlockModal, setShowUnlockModal] = useState(false);
-    const [phone, setPhone] = useState('');
-    const [editingPhone, setEditingPhone] = useState(false);
-    // When opening the modal, always set phone to the latest user_object.phone
-    const handleShowUnlockModal = () => {
-      try {
-        const userObjStr = localStorage.getItem('user_object');
-        if (userObjStr) {
-          const userObj = JSON.parse(userObjStr);
-          setPhone(userObj.phone || '');
-        } else {
-          setPhone('');
-        }
-      } catch {
-        setPhone('');
-      }
-      setShowUnlockModal(true);
-    };
-
     const [shortlistLoading, setShortlistLoading] = useState(false);
     const [shortlistDisabled, setShortlistDisabled] = useState(false);
     const [shortlistDisabledReason, setShortlistDisabledReason] = useState<string | null>(null);
     const [shortlisted, setShortlisted] = useState(false);
+    const [actionError, setActionError] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
     const handleShortlist = async () => {
         if (!profileId) return;
         setShortlistLoading(true);
+        setActionError(null);
+        setSuccessMessage(null);
         try {
             await shortlistService.createShortlist('', 'househelp', {
                 profile_id: profileId,
@@ -45,8 +30,9 @@ export default function HousehelpProfile() {
             setShortlisted(true);
             setShortlistDisabled(true);
             setShortlistDisabledReason('You have already shortlisted this profile.');
+            setSuccessMessage('Added to shortlist.');
         } catch (err: any) {
-            if (!shortlistDisabled) alert(err.message || 'Failed to shortlist');
+            if (!shortlistDisabled) setActionError(err.message || 'Failed to shortlist');
         } finally {
             setShortlistLoading(false);
         }
@@ -54,58 +40,75 @@ export default function HousehelpProfile() {
 
     const [searchParams] = useSearchParams();
     const location = useLocation();
-    const profileId = searchParams.get("profile_id");
+    const locationState = (location.state || {}) as {
+      profileId?: string;
+      backTo?: string;
+      backLabel?: string;
+    };
+    const profileId =
+      searchParams.get("profileId") ||
+      searchParams.get("profile_id") ||
+      locationState.profileId ||
+      "";
     const tabParam = searchParams.get("tab");
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [unlockedContact, setUnlockedContact] = useState<{ phone?: string; email?: string } | null>(null);
-    const [paymentPending, setPaymentPending] = useState(false);
+    const [retryKey, setRetryKey] = useState(0);
     const navigate = useNavigate();
+    const backTo =
+      searchParams.get("backTo") ||
+      locationState.backTo ||
+      (tabParam === 'shortlist' ? '/household/employment?tab=shortlist' : '/household/employment');
+    const backLabel =
+      searchParams.get("backLabel") ||
+      locationState.backLabel ||
+      (tabParam === 'shortlist' ? 'Back to Shortlist' : 'Back');
 
-    // SSE for real-time payment updates
-    usePaymentSSE(
-      // onPaymentSucceeded
-      React.useCallback((event: any) => {
-        console.log('[Contact] Payment succeeded:', event.data);
-        setPaymentPending(false);
-        // Refresh unlocked contact status
-        if (profileId) {
-          const token = getAccessTokenFromCookies();
-          if (token) {
-            fetch(`${API_ENDPOINTS.shortlists.base}/unlock/${profileId}`, {
-              headers: { Authorization: `Bearer ${token}` }
-            })
-            .then(res => res.json())
-            .then(data => {
-              if (data.phone || data.email) {
-                setUnlockedContact(data);
-                setShowUnlockModal(false);
-              }
-            })
-            .catch(err => console.error('Failed to fetch unlocked contact:', err));
-          }
-        }
-      }, [profileId]),
-      // onPaymentFailed
-      React.useCallback((event: any) => {
-        console.log('[Contact] Payment failed:', event.data);
-        setPaymentPending(false);
-        alert(`Payment failed: ${event.data.reason || 'Unknown error'}`);
-      }, []),
-      // onPaymentRefunded
-      React.useCallback((event: any) => {
-        console.log('[Contact] Payment refunded:', event.data);
-      }, [])
-    );
+    const handleBackNavigation = () => {
+      navigate(backTo, { replace: true });
+    };
+
+    useEffect(() => {
+      const nextParams = new URLSearchParams(searchParams);
+      let changed = false;
+
+      if (locationState.profileId && !nextParams.get('profileId') && !nextParams.get('profile_id')) {
+        nextParams.set('profileId', locationState.profileId);
+        changed = true;
+      }
+      if (locationState.backTo && !nextParams.get('backTo')) {
+        nextParams.set('backTo', locationState.backTo);
+        changed = true;
+      }
+      if (locationState.backLabel && !nextParams.get('backLabel')) {
+        nextParams.set('backLabel', locationState.backLabel);
+        changed = true;
+      }
+
+      if (!changed) return;
+      navigate(`/household/househelp/contact?${nextParams.toString()}`, {
+        replace: true,
+        state: location.state,
+      });
+    }, [location.state, locationState.backLabel, locationState.backTo, locationState.profileId, navigate, searchParams]);
+
+    const refreshUnlockedContact = React.useCallback(async () => {
+      if (!profileId) return;
+      const contact = await shortlistService.getUnlockedContact('', profileId);
+      if (contact.unlocked && (contact.phone || contact.email)) {
+        setUnlockedContact(contact);
+        return;
+      }
+      setUnlockedContact(null);
+    }, [profileId]);
 
     useEffect(() => {
         const fetchProfile = async () => {
             setLoading(true);
             setError(null);
             try {
-                const token = getAccessTokenFromCookies();
-                if (!token) throw new Error("Not authenticated");
                 if (!profileId) throw new Error("No profile ID provided");
                 // Check if already shortlisted
                 try {
@@ -120,6 +123,11 @@ export default function HousehelpProfile() {
                         setShortlistDisabledReason(null);
                     }
                 } catch { /* ignore */ }
+                try {
+                    await refreshUnlockedContact();
+                } catch (err) {
+                    console.warn('Failed to fetch unlocked contact:', err);
+                }
                 // Track profile view via gRPC
                 try {
                     await profileViewService.recordView('', profileId, 'househelp');
@@ -136,7 +144,7 @@ export default function HousehelpProfile() {
             }
         };
         fetchProfile();
-    }, [profileId]);
+    }, [profileId, refreshUnlockedContact, retryKey]);
 
     // Carousel state (must be above any early returns)
     const [images, setImages] = useState<any[]>([]);
@@ -161,8 +169,52 @@ export default function HousehelpProfile() {
     }, [data && data.User && data.User.id]);
 
     if (loading) return <div className="flex justify-center py-12">Loading...</div>;
-    if (error) return <div className="bg-red-100 text-red-700 px-4 py-1 rounded mt-6 text-center">{error}</div>;
-    if (!data) return null;
+    if (error) {
+      return (
+        <div className="flex justify-center py-12 px-4">
+          <div className="max-w-xl w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-center text-red-700">
+            <p>{error}</p>
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <button
+                onClick={() => setRetryKey((prev) => prev + 1)}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={handleBackNavigation}
+                className="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+              >
+                {backLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    if (!data) {
+      return (
+        <div className="flex justify-center py-12 px-4">
+          <div className="max-w-xl w-full rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-center text-red-700">
+            <p>Profile data is unavailable right now. Please try again.</p>
+            <div className="mt-4 flex items-center justify-center gap-3">
+              <button
+                onClick={() => setRetryKey((prev) => prev + 1)}
+                className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700"
+              >
+                Try Again
+              </button>
+              <button
+                onClick={handleBackNavigation}
+                className="rounded-xl border border-red-300 px-4 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-100"
+              >
+                {backLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     const {User, Househelp} = data;
 
@@ -178,46 +230,10 @@ export default function HousehelpProfile() {
               <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-4 sm:p-6 w-full max-w-[calc(100%-1.5rem)] sm:max-w-md">
               <h2 className="text-base sm:text-lg font-bold mb-2 text-center text-primary-700 dark:text-primary-300">Unlock Contact</h2>
               <p className="mb-3 text-xs sm:text-sm text-gray-700 dark:text-gray-200 text-center">
-                You are allowed to unlock up to 3 profiles. Make sure you go through the profile before you make a decision.<br />
-                <span className="font-semibold text-primary-700 dark:text-primary-300">We shall charge you KES 1000 for this.</span>
+                You can keep up to 3 profiles unlocked at the same time. Unlock this shortlisted profile to reveal the latest phone number and email for a limited period.
               </p>
-              <div className="mb-3">
-                <label className="block text-xs mb-1 font-semibold text-gray-700 dark:text-gray-300">Phone Number</label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1.5 flex-1 text-xs sm:text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    disabled={!editingPhone}
-                  />
-                  {!editingPhone ? (
-                    <button className="text-xs text-blue-600 dark:text-blue-400 underline whitespace-nowrap" onClick={() => setEditingPhone(true)}>Edit</button>
-                  ) : (
-                    <button className="text-xs text-green-600 dark:text-green-400 underline whitespace-nowrap" onClick={() => setEditingPhone(false)}>Done</button>
-                  )}
-                </div>
-              </div>
-
-              <table className="w-full mb-3 text-xs sm:text-sm text-gray-700 dark:text-gray-300">
-                <tbody>
-                  <tr>
-                    <td className="py-1">Service fee</td>
-                    <td className="py-1 text-right">KES 500</td>
-                  </tr>
-                  <tr>
-                    <td className="py-1">Househelp charge</td>
-                    <td className="py-1 text-right">KES 500</td>
-                  </tr>
-                  <tr className="font-bold border-t border-gray-300 dark:border-gray-600">
-                    <td className="py-1">Total</td>
-                    <td className="py-1 text-right">KES 1000</td>
-                  </tr>
-                </tbody>
-              </table>
-
               <div className="mb-4 text-xs text-gray-500 dark:text-gray-400 text-center">
-                The househelp will be required to reimburse you if you hire them.
+                This only works for profiles already in your shortlist.
               </div>
 
               <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
@@ -231,27 +247,19 @@ export default function HousehelpProfile() {
                   className="flex items-center justify-center gap-2 px-4 py-1 text-sm rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold shadow transition-colors"
                   onClick={async () => {
                     try {
-                      const token = getAccessTokenFromCookies();
-                      if (!token) throw new Error('Not authenticated');
-                      const res = await fetch(`${API_ENDPOINTS.shortlists.base}/unlock`, {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                          Authorization: `Bearer ${token}`,
-                        },
-                        body: JSON.stringify({ profile_id: profileId }),
-                      });
-                      if (!res.ok) throw new Error('Failed to unlock contact');
-                      const data = await res.json();
+                      if (!profileId) throw new Error('No profile selected');
+                      const data = await shortlistService.unlockShortlist('', profileId);
+                      if (!data.unlocked) throw new Error('Contact is still locked');
                       setUnlockedContact(data);
                       setShowUnlockModal(false);
+                      setActionError(null);
+                      setSuccessMessage('Contact unlocked successfully.');
                     } catch (err: any) {
-                      alert(err.message || 'Failed to unlock contact');
+                      setActionError(err.message || 'Failed to unlock contact');
                     }
                   }}
                 >
-                  <img src="/assets/mpesa-logo.svg" alt="M-PESA" className="w-5 h-5 sm:w-6 sm:h-6" />
-                  <span>{paymentPending ? 'Processing...' : 'Pay with M-PESA'}</span>
+                  <span>Unlock Contact</span>
                 </button>
               </div>
             </div>
@@ -261,18 +269,14 @@ export default function HousehelpProfile() {
 
         {/* User Information Section */}
         <div className="bg-white  rounded-2xl shadow-lg border border-gray-100  p-8 sm:p-12 md:px-24 relative w-full mx-2 sm:mx-6 md:mx-16 max-w-4xl flex flex-col items-center mb-8">
+          {successMessage && <SuccessAlert message={successMessage} className="w-full mb-4" />}
+          {actionError && <ErrorAlert message={actionError} className="w-full mb-4" />}
           {/* Back button and action buttons */}
           <div className="flex flex-row items-center justify-between gap-4 w-full mb-4">
             <button
-              onClick={() => {
-                if (tabParam === 'shortlist') {
-                  navigate('/household/employment?tab=shortlist');
-                } else {
-                  navigate(-1);
-                }
-              }}
+              onClick={handleBackNavigation}
               className="p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition"
-              aria-label="Back"
+              aria-label={backLabel}
               type="button"
             >
               <ArrowLeftIcon className="w-6 h-6 text-primary-700 dark:text-primary-300" />
@@ -289,6 +293,8 @@ export default function HousehelpProfile() {
                         setShortlisted(false);
                         setShortlistDisabled(false);
                         setShortlistDisabledReason(null);
+                        setActionError(null);
+                        setSuccessMessage('Removed from shortlist.');
                         try {
                           const shortlistData = await shortlistService.shortlistExists('', profileId!);
                           const exists = !!(shortlistData?.getExists?.() ?? shortlistData?.exists);
@@ -302,7 +308,7 @@ export default function HousehelpProfile() {
                           }
                         } catch { /* ignore */ }
                       } catch (err: any) {
-                        alert(err.message || 'Failed to remove from shortlist');
+                        setActionError(err.message || 'Failed to remove from shortlist');
                       } finally {
                         setShortlistLoading(false);
                       }
@@ -316,7 +322,7 @@ export default function HousehelpProfile() {
                   <button
                     className="flex items-center justify-center gap-1 px-4 py-1 min-w-[130px] rounded-full font-semibold shadow transition bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-400 text-xs"
                     aria-label="Unlock Contact"
-                    onClick={handleShowUnlockModal}
+                    onClick={() => setShowUnlockModal(true)}
                     tabIndex={0}
                   >
                     <span>View Contact</span>
@@ -420,11 +426,11 @@ export default function HousehelpProfile() {
               </div>
               <div>
                 <div className="text-gray-400 ">Email</div>
-                <div className="text-sm text-slate-900  font-medium">{User.email || '-'}</div>
+                <div className="text-sm text-slate-900  font-medium">{unlockedContact?.email || 'Unlock to view'}</div>
               </div>
               <div>
                 <div className="text-gray-400 ">Phone</div>
-                <div className="text-sm text-slate-900  font-medium">{User.phone || '-'}</div>
+                <div className="text-sm text-slate-900  font-medium">{unlockedContact?.phone || 'Unlock to view'}</div>
               </div>
 
 

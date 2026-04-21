@@ -30,19 +30,12 @@ const ChildModal: React.FC<ChildModalProps> = ({ isOpen, onClose, onSave, initia
 
   // Reset form when modal is opened/closed or initialData changes
   useEffect(() => {
-    console.log('ChildModal - isOpen:', isOpen);
-    console.log('ChildModal - initialData:', initialData);
     if (isOpen) {
       setGender(initialData?.gender || '');
       setDateOfBirth(initialData?.date_of_birth || initialData?.dob || '');
       setTraits(initialData?.traits || []);
       setError('');
       setOtherTrait('');
-      console.log('ChildModal - Form initialized with:', {
-        gender: initialData?.gender || '',
-        dateOfBirth: initialData?.date_of_birth || initialData?.dob || '',
-        traits: initialData?.traits || []
-      });
     }
   }, [isOpen, initialData]);
 

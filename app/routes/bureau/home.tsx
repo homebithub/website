@@ -1,6 +1,4 @@
-import { getAccessTokenFromCookies } from '~/utils/cookie';
-import React, { useState, useEffect } from "react";
-import { bureauService } from '~/services/grpc/authServices';
+import React from "react";
 
 export default function BureauHomeDashboard() {
   // Dummy data for dashboard
@@ -14,58 +12,6 @@ export default function BureauHomeDashboard() {
     { label: "Revenue (This Month)", value: "KES 2,500" },
     { label: "Avg. Placement Time", value: "5 days" },
   ];
-
-  // State for Onboard modal and OTP
-  const [showOnboardModal, setShowOnboardModal] = useState(false);
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [phone, setPhone] = useState("");
-
-  // Add styles for phone input
-  const phoneInputStyle = {
-    color: '#1f2937', // Dark text color
-    backgroundColor: '#f9fafb', // Light background
-    padding: '0.5rem',
-    borderRadius: '0.5rem',
-    border: '1px solid #e5e7eb',
-    fontSize: '1rem',
-  };
-  const [otp, setOtp] = useState("");
-
-  // State for bureau ID
-  const [bureauId, setBureauId] = useState<string | null>(null);
-
-  useEffect(() => {
-    // Fetch bureau profile to get bureau ID
-    const fetchProfile = async () => {
-      try {
-        const token = getAccessTokenFromCookies();
-        if (!token) return;
-        const data = await bureauService.getCurrentBureauProfile('');
-        setBureauId(data?.id || data?._id || null);
-      } catch {}
-    };
-    fetchProfile();
-  }, []);
-
-  // Placeholder handler functions
-  const handleSendOtp = () => {
-    // TODO: Integrate backend call to send OTP
-    setShowOtpModal(true);
-  };
-
-  const handleResendOtp = () => {
-    // TODO: Integrate backend call to resend OTP
-    // Optionally show a message to the user
-  };
-
-  const handleVerifyOtp = () => {
-    // TODO: Integrate backend call to verify OTP and onboard househelp
-    setShowOnboardModal(false);
-    setShowOtpModal(false);
-    setPhone("");
-    setOtp("");
-    // Optionally update househelp list here
-  };
 
   return (
     <div className="p-4 sm:p-6">

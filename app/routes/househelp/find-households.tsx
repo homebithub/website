@@ -244,7 +244,7 @@ export default function HousehelpFindHouseholds() {
                 </div>
               </div>
               <button
-                onClick={() => navigate(`/household/public-profile?profile_id=${r.profile_id}`, {
+                onClick={() => navigate(`/household/public-profile?profileId=${r.profile_id}&backTo=${encodeURIComponent('/househelp/find-households')}&backLabel=${encodeURIComponent('Back to results')}`, {
                   state: { backTo: '/househelp/find-households', backLabel: 'Back to results' }
                 })}
                 className="ml-4 px-4 py-1 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 transition-all"

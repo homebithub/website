@@ -125,7 +125,10 @@ export default function HousehelpProfileDesign({ variant }: { variant: Variant }
   const valueText = 'text-sm text-gray-900 dark:text-gray-100';
   const keyText = 'text-gray-500 dark:text-gray-400';
 
-  const goEdit = (section: string) => navigate('/profile-setup/househelp', { state: { fromProfile: true, editSection: section } });
+  const goEdit = (section: string) =>
+    navigate(`/profile-setup/househelp?fromProfile=1&editSection=${encodeURIComponent(section)}`, {
+      state: { fromProfile: true, editSection: section },
+    });
 
   const photosSection = (
     <section className={sectionCard}>

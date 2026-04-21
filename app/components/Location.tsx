@@ -201,9 +201,6 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
                 }
             };
 
-            console.log('[Location] createPayload:', JSON.stringify(createPayload));
-            console.log('[Location] profilePayload:', JSON.stringify(profilePayload));
-
             await locationService.createLocation('', createPayload);
 
             // Also update the profile's location JSONB field so it appears on the profile page

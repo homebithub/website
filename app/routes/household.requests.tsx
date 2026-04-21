@@ -6,6 +6,8 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { profileService as grpcProfileService, householdMemberService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
+import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 
 interface JoinRequest {
   id: string;
@@ -25,8 +27,10 @@ export default function HouseholdRequestsPage() {
   const [requests, setRequests] = useState<JoinRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [householdId, setHouseholdId] = useState<string | null>(null);
+  const [pendingAction, setPendingAction] = useState<{ type: 'approve' | 'reject'; requestId: string } | null>(null);
 
   useEffect(() => {
     fetchRequests();
@@ -65,6 +69,8 @@ export default function HouseholdRequestsPage() {
     if (!householdId) return;
 
     setActionLoading(requestId);
+    setError(null);
+    setSuccessMessage(null);
     try {
       const token = getAccessTokenFromCookies();
       if (!token) {
@@ -76,9 +82,10 @@ export default function HouseholdRequestsPage() {
 
       // Refresh requests list
       await fetchRequests();
+      setSuccessMessage('Request approved successfully.');
     } catch (err: any) {
       console.error("Error approving request:", err);
-      alert(err.message || "Failed to approve request");
+      setError(err.message || "Failed to approve request");
     } finally {
       setActionLoading(null);
     }
@@ -87,10 +94,9 @@ export default function HouseholdRequestsPage() {
   const handleReject = async (requestId: string) => {
     if (!householdId) return;
 
-    const reason = prompt("Reason for rejection (optional):");
-    if (reason === null) return; // User cancelled
-
     setActionLoading(requestId);
+    setError(null);
+    setSuccessMessage(null);
     try {
       const token = getAccessTokenFromCookies();
       if (!token) {
@@ -102,12 +108,25 @@ export default function HouseholdRequestsPage() {
 
       // Refresh requests list
       await fetchRequests();
+      setSuccessMessage('Request rejected successfully.');
     } catch (err: any) {
       console.error("Error rejecting request:", err);
-      alert(err.message || "Failed to reject request");
+      setError(err.message || "Failed to reject request");
     } finally {
       setActionLoading(null);
     }
+  };
+
+  const handleConfirmAction = async () => {
+    if (!pendingAction) return;
+
+    if (pendingAction.type === 'approve') {
+      await handleApprove(pendingAction.requestId);
+    } else {
+      await handleReject(pendingAction.requestId);
+    }
+
+    setPendingAction(null);
   };
 
   if (loading) {
@@ -155,7 +174,8 @@ export default function HouseholdRequestsPage() {
               </p>
             </div>
 
-            {/* Error Message */}
+            {/* Feedback */}
+            {successMessage && <SuccessAlert message={successMessage} className="mb-4" />}
             {error && <ErrorAlert message={error} />}
 
             {/* Requests List */}
@@ -207,7 +227,7 @@ export default function HouseholdRequestsPage() {
 
                     <div className="flex gap-3 mt-4">
                       <button
-                        onClick={() => handleReject(request.id)}
+                        onClick={() => setPendingAction({ type: 'reject', requestId: request.id })}
                         disabled={actionLoading === request.id}
                         className="flex-1 px-4 py-1 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                       >
@@ -217,7 +237,7 @@ export default function HouseholdRequestsPage() {
                         Reject
                       </button>
                       <button
-                        onClick={() => handleApprove(request.id)}
+                        onClick={() => setPendingAction({ type: 'approve', requestId: request.id })}
                         disabled={actionLoading === request.id}
                         className="flex-1 px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
                       >
@@ -247,6 +267,28 @@ export default function HouseholdRequestsPage() {
         </main>
       </PurpleThemeWrapper>
       <Footer />
+
+      <ConfirmDialog
+        isOpen={!!pendingAction}
+        onClose={() => {
+          if (actionLoading) return;
+          setPendingAction(null);
+        }}
+        onConfirm={handleConfirmAction}
+        title={pendingAction?.type === 'approve' ? 'Approve Join Request' : 'Reject Join Request'}
+        message={
+          pendingAction?.type === 'approve'
+            ? 'Approve this request and add the user to your household?'
+            : 'Reject this request? You can still invite the user again later if needed.'
+        }
+        confirmText={
+          pendingAction?.type === 'approve'
+            ? (actionLoading === pendingAction.requestId ? 'Approving...' : 'Approve')
+            : (actionLoading === pendingAction?.requestId ? 'Rejecting...' : 'Reject')
+        }
+        cancelText="Cancel"
+        variant={pendingAction?.type === 'approve' ? 'info' : 'warning'}
+      />
     </div>
   );
 }

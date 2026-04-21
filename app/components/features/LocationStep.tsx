@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { HouseholdProfileData } from '../../types/household-profile';
+import { locationService } from '~/services/grpc/authServices';
 
 interface LocationStepProps {
   data: HouseholdProfileData;
@@ -16,9 +17,6 @@ export function LocationStep({ data, onUpdate, onNext }: LocationStepProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Mapbox API key - you'll need to add this to your environment variables
-  const MAPBOX_ACCESS_TOKEN = process.env.MAPBOX_ACCESS_TOKEN || 'your_mapbox_token_here';
-
   const handleAddressSearch = async (searchAddress: string) => {
     if (!searchAddress.trim()) return;
 
@@ -26,26 +24,23 @@ export function LocationStep({ data, onUpdate, onNext }: LocationStepProps) {
     setError(null);
 
     try {
-      const response = await fetch(
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(searchAddress)}.json?access_token=${MAPBOX_ACCESS_TOKEN}&country=KE`
-      );
+      const suggestions = await locationService.getLocationSuggestions(searchAddress);
+      const results = Array.isArray(suggestions) ? suggestions : [];
+      const feature = results[0];
 
-      if (!response.ok) {
-        throw new Error('Failed to search location');
-      }
+      if (feature?.name) {
+        const locationRecord = feature.mapbox_id
+          ? await locationService.getLocationByMapboxID(feature.mapbox_id)
+          : null;
+        const lat = Number(locationRecord?.latitude ?? 0);
+        const lng = Number(locationRecord?.longitude ?? 0);
 
-      const data = await response.json();
-      
-      if (data.features && data.features.length > 0) {
-        const feature = data.features[0];
-        const [lng, lat] = feature.center;
-        
         setCoordinates([lat, lng]);
-        setAddress(feature.place_name);
+        setAddress(feature.name);
         
         onUpdate({
           location: {
-            address: feature.place_name,
+            address: feature.name,
             coordinates: [lat, lng]
           }
         });

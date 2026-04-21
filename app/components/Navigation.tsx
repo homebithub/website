@@ -12,6 +12,7 @@ import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { shortlistService, interestService, hireRequestService } from '~/services/grpc/authServices';
 import { notificationsService } from '~/services/grpc/notifications.service';
 import authService from '~/services/grpc/auth.service';
+import { getStoredUser } from '~/utils/authStorage';
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -24,6 +25,9 @@ const navigation = [
 export function Navigation() {
     const { user, logout, loading } = useAuth();
     const { isInSetupMode } = useProfileSetupStatus();
+    const authUser = (user as any)?.user ?? null;
+    const storedUser = getStoredUser();
+    const currentUser = authUser ?? storedUser ?? null;
     const [profileType, setProfileType] = useState<string | null>(null);
     const [userName, setUserName] = useState<string | null>(null);
     const [shortlistCount, setShortlistCount] = useState<number>(0);
@@ -128,41 +132,37 @@ export function Navigation() {
     useEffect(() => {
         if (user) {
             try {
-                const obj = localStorage.getItem("user_object");
-                if (obj) {
-                    const parsed = JSON.parse(obj);
-                    const profileType = parsed.profile_type || null;
-
-                    // Check admin status using the user's email
-                    const email = parsed.email || user.email || '';
-                    if (email) {
-                        authService.checkIsAdmin(email).then((admin) => setIsAdmin(admin)).catch(() => setIsAdmin(false));
-                    }
-
-                    // Bureau users should not access regular navigation
-                    if (profileType === "bureau") {
-                        setProfileType(null);
-                        setUserName(null);
-                        return;
-                    }
-
-                    setProfileType(profileType);
-                    // Get user name for greeting
-                    const firstName = parsed.first_name || parsed.firstName || "";
-                    setUserName(firstName);
-
-                    console.log('[Navigation] Profile type:', profileType);
-                    console.log('[Navigation] Is household?', profileType === "household");
-
-                    // Fetch counts only for authenticated users who finished onboarding
-                    if (!isInSetupMode) {
-                        fetchShortlistCount();
-                        fetchInboxCount();
-                        fetchHireRequestCount(profileType);
-                    }
-                } else {
+                if (!currentUser) {
                     setProfileType(null);
                     setUserName(null);
+                    return;
+                }
+
+                const resolvedProfileType = currentUser.profile_type || null;
+
+                // Check admin status using the canonical current user email
+                const email = currentUser.email || '';
+                if (email) {
+                    authService.checkIsAdmin(email).then((admin) => setIsAdmin(admin)).catch(() => setIsAdmin(false));
+                }
+
+                // Bureau users should not access regular navigation
+                if (resolvedProfileType === "bureau") {
+                    setProfileType(null);
+                    setUserName(null);
+                    return;
+                }
+
+                setProfileType(resolvedProfileType);
+                // Get user name for greeting
+                const firstName = currentUser.first_name || currentUser.firstName || "";
+                setUserName(firstName);
+
+                // Fetch counts only for authenticated users who finished onboarding
+                if (!isInSetupMode) {
+                    fetchShortlistCount();
+                    fetchInboxCount();
+                    fetchHireRequestCount(resolvedProfileType);
                 }
             } catch {
                 setProfileType(null);
@@ -174,7 +174,7 @@ export function Navigation() {
             setShortlistCount(0);
             setInboxCount(0);
         }
-    }, [user, isInSetupMode]);
+    }, [user, currentUser, isInSetupMode]);
 
     // Listen for shortlist and inbox updates (only when not in setup mode)
     useEffect(() => {

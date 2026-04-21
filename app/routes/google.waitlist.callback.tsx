@@ -1,5 +1,5 @@
 import type { LoaderFunctionArgs } from "react-router";
-import { AUTH_API_BASE_URL } from "~/config/api";
+import { createWaitlistOnServer, googleSignInOnServer } from "~/services/grpc/serverAuth";
 
 // Google OAuth waitlist callback
 // Receives `code` from Google, exchanges it with the Auth API, and redirects
@@ -16,29 +16,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return Response.redirect(`${origin}/?waitlist=1&error=missing_code`);
   }
 
-  const baseUrl = AUTH_API_BASE_URL;
-
   try {
-    const resp = await fetch(`${baseUrl}/api/v1/auth/google/signin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code, flow: "waitlist", state: rawState }),
-    });
+    const data = await googleSignInOnServer(request.url, { code, flow: "waitlist" });
 
-    if (!resp.ok) {
-      return Response.redirect(`${origin}/?waitlist=1&error=signin_failed`);
-    }
-
-    const data: {
-      requires_signup?: boolean;
-      requiresSignup?: boolean; // backend uses RequiresSignup
-      email?: string;
-      first_name?: string;
-      firstName?: string;
-    } = await resp.json();
-
-    const email = (data as any).Email ?? data.email ?? "";
-    const firstName = (data as any).FirstName ?? data.first_name ?? data.firstName ?? "";
+    const email = data.email || "";
+    const firstName = data.firstName || "";
     // Decode state from Google callback (we encoded JSON with phone/message before redirect)
     let state: any = {};
     try {
@@ -54,27 +36,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const phone: string | undefined = state?.phone;
     const message: string | undefined = state?.message;
     if (phone && email && firstName) {
-      const createResp = await fetch(`${baseUrl}/api/v1/waitlist`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
+      try {
+        await createWaitlistOnServer(request.url, {
           phone,
           email,
           first_name: firstName,
           message: message || "",
-        }),
-      });
-      if (createResp.ok) {
+        });
         params.set("success", "1");
         return Response.redirect(`${origin}/?${params.toString()}`);
-      } else {
-        // Try to surface backend validation errors if present
-        let errText = "waitlist_create_failed";
-        try {
-          const err = await createResp.json();
-          errText = err?.error || Object.values(err?.errors || {}).join(" ") || errText;
-        } catch {}
-        params.set("error", encodeURIComponent(String(errText)));
+      } catch (error: any) {
+        params.set("error", encodeURIComponent(String(error?.message || "waitlist_create_failed")));
         return Response.redirect(`${origin}/?${params.toString()}`);
       }
     }

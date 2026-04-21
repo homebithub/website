@@ -5,13 +5,13 @@ import { migratePreferences } from '~/utils/preferencesApi';
 import { extractErrorMessage, transformErrorMessage } from '~/utils/errorMessages';
 import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
-import { householdMemberService } from '~/services/grpc/authServices';
 import {
   cacheAuthSession,
   clearStoredAuthSession,
   getStoredAccessToken,
   getStoredUser,
 } from "~/utils/authStorage";
+import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
 
 interface User {
   id: string;
@@ -80,28 +80,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const profileType = user.profile_type;
       if (profileType === 'household' && !isPublicRoute()) {
         try {
-          const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
-          const progressData = await profileSetupService.getProgress(user.id, profileType);
-          const lastStep = progressData?.last_completed_step || 0;
-          const setupStatus = progressData?.status || '';
-          const isComplete = setupStatus === 'completed' || (progressData?.total_steps > 0 && lastStep >= progressData?.total_steps);
-          
-          // Only check for pending requests if profile setup is not complete and user is at step 0
-          if (!isComplete && lastStep === 0) {
-            try {
-              const joinRequestData = await householdMemberService.getJoinRequestStatus('');
-              const request = joinRequestData?.data || joinRequestData;
-              
-              if (request && request.status === 'pending' && location.pathname !== '/pending-approval') {
-                navigate('/pending-approval');
-                return;
-              } else if (request && request.status === 'approved' && location.pathname !== '/household/profile') {
-                navigate('/household/profile');
-                return;
-              }
-            } catch (joinErr: any) {
-              // No pending request found, continue normally
-            }
+          const destination = await resolveProfileSetupDestination({
+            userId: user.id,
+            profileType,
+            completedPath: '/',
+          });
+
+          if (destination === '/pending-approval' && location.pathname !== '/pending-approval') {
+            navigate('/pending-approval');
+            return;
+          }
+
+          if (destination === '/household/profile' && location.pathname !== '/household/profile') {
+            navigate('/household/profile');
+            return;
           }
         } catch (err: any) {
           // Error checking profile setup, continue normally
@@ -174,11 +166,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const result = await deviceService.registerDevice(
           userData.user_id, deviceId, getDeviceName(), navigator.userAgent, ''
         );
-        if (result.requiresConfirmation) {
-          console.log('[Device] New device registered, confirmation email sent');
-        }
       } catch (deviceError) {
-        console.error('[Device] Registration failed after login:', deviceError);
+        console.warn('[Device] Registration failed after login:', deviceError);
       }
 
       // If user has no phone number, redirect to add-phone page
@@ -201,78 +190,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (profileType === "household" || profileType === "househelp") {
         try {
-          const { default: profileSetupService } = await import('~/services/grpc/profileSetup.service');
-          const progressData = await profileSetupService.getProgress(userData.id, profileType);
-
-          if (progressData) {
-            const totalSteps = progressData.total_steps || 0;
-            const lastStep = progressData.last_completed_step || 0;
-            const setupStatus = progressData.status || "";
-          
-            const isComplete = setupStatus === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
-
-            if (isComplete) {
-              // Redirect completed users to home page instead of profile
-              navigate('/');
-              return;
-            }
-
-            if (profileType === 'household' && lastStep === 0) {
-              // Check if user has a pending household join request
-              try {
-                const joinRequestData = await householdMemberService.getJoinRequestStatus('');
-                const request = joinRequestData?.data || joinRequestData;
-                
-                if (request && request.status === 'pending') {
-                  // User has a pending join request, redirect to pending approval page
-                  navigate('/pending-approval');
-                  return;
-                } else if (request && request.status === 'approved') {
-                  // Request was approved, redirect to household profile
-                  navigate('/household/profile');
-                  return;
-                }
-              } catch (joinErr: any) {
-                // No pending request or error checking, continue to household choice
-                console.log('No pending join request found');
-              }
-              
-              navigate('/household-choice');
-              return;
-            }
-            const setupRoute = profileType === "household" 
-              ? `/profile-setup/household?step=${lastStep + 1}`
-              : `/profile-setup/househelp?step=${lastStep + 1}`;
-            navigate(setupRoute);
-            return;
-          }
+          const destination = await resolveProfileSetupDestination({
+            userId: userData.id,
+            profileType,
+            completedPath: '/',
+          });
+          navigate(destination);
+          return;
         } catch (err: any) {
-          // gRPC NOT_FOUND means no profile setup record
-          if (err.message?.includes('not found') || err.message?.includes('NOT_FOUND')) {
-            if (profileType === 'household') {
-              // Check if user has a pending household join request
-              try {
-                const joinRequestData = await householdMemberService.getJoinRequestStatus('');
-                const request = joinRequestData?.data || joinRequestData;
-                
-                if (request && request.status === 'pending') {
-                  navigate('/pending-approval');
-                  return;
-                } else if (request && request.status === 'approved') {
-                  navigate('/household/profile');
-                  return;
-                }
-              } catch (joinErr: any) {
-                // No pending request, continue to household choice
-                console.log('No pending join request found');
-              }
-              
-              navigate('/household-choice');
-              return;
-            }
-            navigate('/profile-setup/househelp?step=1');
-            return;
-          }
           console.error('Failed to check profile setup status:', err);
         }
       }
@@ -322,8 +247,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const { default: authService } = await import('~/services/grpc/auth.service');
         await authService.logout();
-      } catch (error) {
-        console.log("Server logout failed, but clearing local state");
+      } catch {
       }
 
       // Remove the current device from the backend (non-blocking)
@@ -336,8 +260,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (deviceId && userId) {
           await deviceService.revokeDevice(deviceId, userId, 'logout');
         }
-      } catch (deviceError) {
-        console.log('[Device] Removal on logout failed:', deviceError);
+      } catch {
       }
 
       clearStoredAuthSession();

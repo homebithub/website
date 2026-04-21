@@ -87,7 +87,6 @@ const Children: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Submitting children data:", childrenList);
     // Handle form submission with childrenList
     try {
       const token = getAccessTokenFromCookies();
@@ -97,7 +96,6 @@ const Children: React.FC = () => {
           await householdKidsService.createHouseholdKid('', child);
         }
       }
-      console.log("Children data saved successfully");
     } catch (error) {
       console.error("Error saving children data:", error);
     }

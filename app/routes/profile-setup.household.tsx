@@ -7,7 +7,9 @@ import { ProfileSetupProvider, useProfileSetup } from '~/contexts/ProfileSetupCo
 import { OnboardingOptionsProvider } from '~/contexts/OnboardingOptionsContext';
 import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { getStoredUserId } from '~/utils/authStorage';
 import { profileSetupService } from '~/services/grpc/profileSetup.service';
+import { ErrorAlert } from '~/components/ui/ErrorAlert';
 
 // Import all the components
 import Location from '~/components/Location';
@@ -46,15 +48,20 @@ function HouseholdProfileSetupContent() {
   const [showCongratulations, setShowCongratulations] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
   const [disclaimerChecked, setDisclaimerChecked] = useState(false);
+  const [completionError, setCompletionError] = useState('');
   const [isProfileLoaded, setIsProfileLoaded] = useState(false);
   const setupCompleteRef = useRef(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const stateFromProfile = location.state?.fromProfile === true;
+  const stateEditSection = location.state?.editSection;
   const { user, loading: authLoading } = useAuth();
   const { saveProfileToBackend, loadProfileFromBackend, updateStepData, saveStepToBackend, lastCompletedStep, profileData, error: setupError, hasUnsavedChanges, markClean } = useProfileSetup();
+  const currentUserId = user?.user?.user_id || getStoredUserId() || '';
   
   // Resume from where left off
-  const { progress, updateProgress } = useOnboardingProgress(user?.id || '', 'household');
+  const { progress, updateProgress } = useOnboardingProgress(currentUserId, 'household');
   
   // Resume to last incomplete step on mount
   useEffect(() => {
@@ -71,10 +78,11 @@ function HouseholdProfileSetupContent() {
   
   // Redirect if already completed
   useEffect(() => {
-    if (progress?.status === 'completed' && !location.state?.fromProfile) {
-      navigate('/dashboard');
+    const isEditingFromProfile = searchParams.get('fromProfile') === '1';
+    if (progress?.status === 'completed' && !isEditingFromProfile) {
+      navigate('/', { replace: true });
     }
-  }, [progress, navigate, location.state]);
+  }, [progress, navigate, searchParams]);
   
   const isStepValid = () => {
     const stepId = STEPS[currentStep].id;
@@ -159,8 +167,24 @@ function HouseholdProfileSetupContent() {
     }
   };
 
-  // Check if user is editing from profile page using location state (secure, can't be manipulated)
-  const isEditMode = location.state?.fromProfile === true;
+  const editSectionParam = searchParams.get('editSection');
+  const editSection = editSectionParam || stateEditSection;
+  const isEditMode = searchParams.get('fromProfile') === '1' || stateFromProfile;
+
+  useEffect(() => {
+    if (!stateFromProfile && !stateEditSection) return;
+    const nextParams = new URLSearchParams(searchParams);
+    if (stateFromProfile && nextParams.get('fromProfile') !== '1') {
+      nextParams.set('fromProfile', '1');
+    }
+    if (stateEditSection && !nextParams.get('editSection')) {
+      nextParams.set('editSection', stateEditSection);
+    }
+    const nextSearch = nextParams.toString();
+    if (nextSearch !== searchParams.toString()) {
+      navigate(`/profile-setup/household${nextSearch ? `?${nextSearch}` : ''}`, { replace: true });
+    }
+  }, [navigate, searchParams, stateEditSection, stateFromProfile]);
 
   // Authentication check - redirect to login if not authenticated
   useEffect(() => {
@@ -172,14 +196,18 @@ function HouseholdProfileSetupContent() {
     }
   }, [authLoading, user, navigate]);
 
-  // Clean up URL on mount - remove any query parameters or hash
+  // Clean up URL on mount for standard onboarding, but preserve durable edit-mode URLs.
   useEffect(() => {
     const currentPath = window.location.pathname;
     const cleanPath = '/profile-setup/household';
-    if (currentPath !== cleanPath || window.location.search || window.location.hash) {
-      window.history.replaceState({}, '', cleanPath);
+    const editPath = editSection
+      ? `${cleanPath}?fromProfile=1&editSection=${encodeURIComponent(editSection)}`
+      : `${cleanPath}?fromProfile=1`;
+    const targetPath = isEditMode ? editPath : cleanPath;
+    if (`${currentPath}${window.location.search}` !== targetPath || window.location.hash) {
+      window.history.replaceState({}, '', targetPath);
     }
-  }, []);
+  }, [editSection, isEditMode]);
 
   // Track time spent on each step
   useEffect(() => {
@@ -214,8 +242,8 @@ function HouseholdProfileSetupContent() {
     }
 
     // If editing a specific section from profile page, navigate to that step
-    if (isEditMode && location.state?.editSection) {
-      const sectionId = location.state.editSection;
+    if (isEditMode && editSection) {
+      const sectionId = editSection;
       const stepIndex = STEPS.findIndex(step => step.id === sectionId);
       if (stepIndex !== -1) {
         setCurrentStep(stepIndex);
@@ -223,7 +251,7 @@ function HouseholdProfileSetupContent() {
       }
     }
     // Resume is handled by useOnboardingProgress (progress.current_step) — no duplicate resume here
-  }, [lastCompletedStep, isEditMode, location.state]);
+  }, [lastCompletedStep, isEditMode, editSection]);
 
   const handleNext = async () => {
     if (hasUnsavedChanges) return;
@@ -271,6 +299,7 @@ function HouseholdProfileSetupContent() {
 
   const finishSetup = async () => {
     setSaving(true);
+    setCompletionError('');
     setupCompleteRef.current = true;
     try {
       await saveProfileToBackend();
@@ -282,7 +311,7 @@ function HouseholdProfileSetupContent() {
       }, 3000);
     } catch (error) {
       console.error('Failed to save profile:', error);
-      alert('Failed to save profile. Please try again.');
+      setCompletionError('Failed to save profile. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -470,7 +499,6 @@ function HouseholdProfileSetupContent() {
                   <CurrentComponent userType="household" />
                 ) : STEPS[currentStep].id === 'photos' ? (
                   <CurrentComponent userType="household" onComplete={async () => {
-                    console.log('Photos onComplete callback triggered!');
                     // Show disclaimer modal before completing
                     setDisclaimerChecked(false);
                     setShowDisclaimer(true);
@@ -612,6 +640,7 @@ function HouseholdProfileSetupContent() {
               </div>
 
               <div className="px-6 py-6">
+                {completionError && <ErrorAlert message={completionError} className="mb-4" />}
                 <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                   Before we finalize your profile, please confirm the following:
                 </p>
