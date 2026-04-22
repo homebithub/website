@@ -51,14 +51,7 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
           <Link to="/terms" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Terms of Service</Link>
           <Link to="/contact" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Contact</Link>
         </div>
-        {isHousehelpProfileRoute && (
-          <div className="flex flex-wrap justify-center gap-2 text-xs">
-            <Link to="/househelp/profile" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">Profile</Link>
-            <Link to="/househelp/profile1" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">Profile 1</Link>
-            <Link to="/househelp/profile2" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">Profile 2</Link>
-            <Link to="/househelp/profile3" className="px-3 py-1 rounded-lg border border-purple-500/40 hover:bg-purple-500/15 transition-colors duration-200">Profile 3</Link>
-          </div>
-        )}
+        
       </div>
     </footer>
   );

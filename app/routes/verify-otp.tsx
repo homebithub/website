@@ -8,7 +8,6 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
 import { Loading } from '~/components/Loading';
 import { cacheAuthSession, getStoredProfileType, getStoredUserId } from '~/utils/authStorage';
 import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
@@ -500,9 +499,6 @@ export default function VerifyOtpPage() {
               ) : (
                 <p className="mb-4 text-center text-gray-700 dark:text-gray-300">Enter the OTP sent to <span className="font-semibold">{phone || ''}</span></p>
               )}
-              {(verification.type === 'phone' || verification.type === 'password_reset') && (
-                <SafaricomDisclaimer className="mb-4" />
-              )}
             </>
           )}
           {/* Hide OTP form if showChangePhone is true */}
@@ -602,9 +598,6 @@ export default function VerifyOtpPage() {
                   ? 'Enter new phone number'
                   : 'Enter new email address'}
               </label>
-              {usesPhoneTarget && (
-                <SafaricomDisclaimer className="w-full max-w-xs" />
-              )}
               <input
                 type={usesPhoneTarget ? 'tel' : 'email'}
                 name="newPhone"

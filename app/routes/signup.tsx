@@ -13,7 +13,6 @@ import { Modal } from '~/components/features/Modal';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { SafaricomDisclaimer } from '~/components/ui/SafaricomDisclaimer';
 import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorage';
 import { API_ENDPOINTS } from '~/config/api';
 
@@ -766,7 +765,6 @@ export default function SignupPage() {
     {getFieldError('phone') && (
         <p className="text-red-600 text-xs mt-1">{getFieldError('phone')}</p>
     )}
-    <SafaricomDisclaimer className="mt-2" />
 </div>
 
 {error && <ErrorAlert message={error} onClose={() => setError(null)} />}
