@@ -11,39 +11,18 @@ import {
   BanknotesIcon
 } from '@heroicons/react/24/outline';
 import { paymentsService } from '~/services/grpc/payments.service';
+import {
+  extractPayments,
+  extractPlans,
+  extractSubscription,
+  type NormalizedPayment,
+  type NormalizedSubscription,
+  type NormalizedSubscriptionPlan,
+} from '~/utils/subscriptionData';
 
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  description: string;
-  price_amount: number;
-  billing_cycle: string;
-  features: any;
-  is_active: boolean;
-}
-
-interface Subscription {
-  id: string;
-  plan_id: string;
-  status: string;
-  current_period_start: string;
-  current_period_end: string;
-  trial_end?: string;
-  metadata?: Record<string, any>;
-  plan?: SubscriptionPlan;
-}
-
-interface Payment {
-  id: string;
-  amount: number;
-  currency: string;
-  status: string;
-  payment_method: string;
-  phone_number?: string;
-  mpesa_receipt_number?: string;
-  paid_at?: string;
-  created_at: string;
-}
+type SubscriptionPlan = NormalizedSubscriptionPlan;
+type Subscription = NormalizedSubscription;
+type Payment = NormalizedPayment;
 
 export function SubscriptionWallet() {
   const [isOpen, setIsOpen] = useState(false);
@@ -69,19 +48,17 @@ export function SubscriptionWallet() {
     try {
       try {
         const subData = await paymentsService.getMySubscription('') as any;
-        setSubscription(subData?.toObject?.() ?? subData);
+        setSubscription(extractSubscription(subData));
       } catch { /* ignore */ }
 
       try {
         const paymentsData = await paymentsService.listMyPayments('', 0, 10) as any;
-        const paymentsList = paymentsData?.toObject?.()?.paymentsList ?? paymentsData?.payments ?? [];
-        setPayments(paymentsList);
+        setPayments(extractPayments(paymentsData));
       } catch { /* ignore */ }
 
       try {
         const plansData = await paymentsService.getPlans() as any;
-        const plansList = plansData?.toObject?.()?.plansList ?? plansData?.plans ?? [];
-        setPlans(plansList);
+        setPlans(extractPlans(plansData));
       } catch { /* ignore */ }
     } catch (error) {
       console.error('Failed to fetch subscription data:', error);

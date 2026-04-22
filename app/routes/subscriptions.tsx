@@ -30,44 +30,19 @@ import { ChangePlanModal } from '~/components/subscriptions/ChangePlanModal';
 import { CreditBalanceCard } from '~/components/subscriptions/CreditBalanceCard';
 import { PauseStatusCard } from '~/components/subscriptions/PauseStatusCard';
 import type { PauseStatusResponse, CreditBalanceResponse, PauseReason, CancelReason } from '~/types/payments';
-import { getStoredProfileType, getStoredUser } from '~/utils/authStorage';
+import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import {
+  extractPayments,
+  extractPlans,
+  extractSubscription,
+  type NormalizedPayment,
+  type NormalizedSubscription,
+  type NormalizedSubscriptionPlan,
+} from '~/utils/subscriptionData';
 
-interface SubscriptionPlan {
-  id: string;
-  name: string;
-  description: string;
-  price_amount: number;
-  billing_cycle: string;
-  profile_type?: string;
-  trial_days?: number;
-  features: any;
-  is_active: boolean;
-}
-
-interface Subscription {
-  id: string;
-  plan_id: string;
-  status: string;
-  current_period_start: string;
-  current_period_end: string;
-  trial_end?: string;
-  metadata?: Record<string, any>;
-  plan?: SubscriptionPlan;
-}
-
-interface Payment {
-  id: string;
-  amount: number;
-  currency: string;
-  status: string;
-  payment_method: string;
-  phone_number?: string;
-  mpesa_receipt_number?: string;
-  paid_at?: string;
-  created_at: string;
-  subscription_id?: string;
-  failure_reason?: string;
-}
+type SubscriptionPlan = NormalizedSubscriptionPlan;
+type Subscription = NormalizedSubscription;
+type Payment = NormalizedPayment;
 
 export default function SubscriptionsPage() {
   const { user, loading } = useAuth();
@@ -78,6 +53,7 @@ export default function SubscriptionsPage() {
   const currentUser = authUser ?? storedUser ?? null;
   const currentUserPhone = currentUser?.phone || '';
   const currentUserEmail = currentUser?.email || '';
+  const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId();
   const [dataLoading, setDataLoading] = useState(false);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
@@ -296,23 +272,22 @@ export default function SubscriptionsPage() {
     try {
       try {
         const subData = await paymentsService.getMySubscription('') as any;
-        setSubscription(subData?.toObject?.() ?? subData);
+        setSubscription(extractSubscription(subData));
       } catch (err) {
         console.error('[Subscriptions] Failed to fetch subscription:', err);
+        setSubscription(null);
       }
 
       try {
         const paymentsData = await paymentsService.listMyPayments('', 0, 10) as any;
-        const paymentsList = paymentsData?.toObject?.()?.paymentsList ?? paymentsData?.payments ?? [];
-        setPayments(paymentsList);
+        setPayments(extractPayments(paymentsData));
       } catch (err) {
         console.error('[Subscriptions] Failed to fetch payments:', err);
       }
 
       try {
         const plansData = await paymentsService.getPlans() as any;
-        const plansList = plansData?.toObject?.()?.plansList ?? plansData?.plans ?? [];
-        setPlans(plansList);
+        setPlans(extractPlans(plansData));
       } catch (err) {
         console.error('[Subscriptions] Failed to fetch plans:', err);
       }
@@ -563,12 +538,16 @@ export default function SubscriptionsPage() {
 
   const handleDownloadReceipt = async () => {
     if (!selectedPayment || selectedPayment.status !== 'completed') return;
-    
+    if (!currentUserId) {
+      setReceiptMessage({ type: 'error', text: 'Please log in again to download your receipt.' });
+      return;
+    }
+
     setDownloadingReceipt(true);
     setReceiptMessage(null);
-    
+
     try {
-      const response = await paymentsService.downloadReceipt(selectedPayment.id, '') as any;
+      const response = await paymentsService.downloadReceipt(selectedPayment.id, currentUserId) as any;
       const result = response?.toObject?.() ?? response;
       const pdfData = result.pdfData || result.pdf_data;
       const filename = result.filename || `receipt-${selectedPayment.mpesa_receipt_number || selectedPayment.id}.pdf`;
@@ -597,7 +576,11 @@ export default function SubscriptionsPage() {
 
   const handleEmailReceipt = async () => {
     if (!selectedPayment || selectedPayment.status !== 'completed' || !receiptEmail) return;
-    
+    if (!currentUserId) {
+      setReceiptMessage({ type: 'error', text: 'Please log in again to send your receipt.' });
+      return;
+    }
+
     // Validate email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(receiptEmail)) {
@@ -607,9 +590,9 @@ export default function SubscriptionsPage() {
 
     setSendingReceipt(true);
     setReceiptMessage(null);
-    
+
     try {
-      await paymentsService.emailReceipt(selectedPayment.id, '', receiptEmail);
+      await paymentsService.emailReceipt(selectedPayment.id, currentUserId, receiptEmail);
 
       setReceiptMessage({ 
         type: 'success', 
@@ -656,6 +639,10 @@ export default function SubscriptionsPage() {
     }
     if (isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('en-KE', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const resolvePaymentTimestamp = (payment: Payment): any => {
+    return payment.paid_at || payment.created_at;
   };
 
   const getStatusBadge = (status: string) => {
@@ -719,7 +706,7 @@ export default function SubscriptionsPage() {
                             {subscription.plan?.name || 'Current Plan'}
                           </h4>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {subscription.plan?.description}
+                            {subscription.plan?.description || 'Subscription details'}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -742,7 +729,7 @@ export default function SubscriptionsPage() {
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Billing Cycle</p>
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 capitalize">
-                            {subscription.plan?.billing_cycle}
+                            {subscription.plan?.billing_cycle || '—'}
                           </p>
                         </div>
                         <div>
@@ -755,6 +742,20 @@ export default function SubscriptionsPage() {
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period End</p>
                           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
                             {formatDate(subscription.current_period_end)}
+                          </p>
+                        </div>
+                        {subscription.trial_end && (
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Trial Ends</p>
+                            <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
+                              {formatDate(subscription.trial_end)}
+                            </p>
+                          </div>
+                        )}
+                        <div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Subscription ID</p>
+                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100 font-mono break-all">
+                            {subscription.id}
                           </p>
                         </div>
                       </div>
@@ -972,7 +973,7 @@ export default function SubscriptionsPage() {
                               {getStatusBadge(payment.status)}
                             </div>
                             <p className="text-xs text-gray-500 dark:text-gray-400">
-                              {formatDate(payment.created_at)}
+                              {formatDate(resolvePaymentTimestamp(payment))}
                               {payment.mpesa_receipt_number && (
                                 <span className="ml-2">• Receipt: {payment.mpesa_receipt_number}</span>
                               )}
@@ -980,7 +981,7 @@ export default function SubscriptionsPage() {
                           </div>
                           <div className="text-right">
                             <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
-                              {payment.payment_method}
+                              {payment.payment_method || '—'}
                             </p>
                             {payment.phone_number && (
                               <p className="text-xs text-gray-400 dark:text-gray-500">
@@ -1241,7 +1242,7 @@ export default function SubscriptionsPage() {
                         <div className="flex justify-between">
                           <span className="text-xs text-gray-600 dark:text-gray-400">Payment Method</span>
                           <span className="text-xs font-medium text-gray-900 dark:text-white capitalize">
-                            {selectedPayment.payment_method}
+                            {selectedPayment.payment_method || '—'}
                           </span>
                         </div>
 
@@ -1254,12 +1255,65 @@ export default function SubscriptionsPage() {
                           </div>
                         )}
 
+                        {selectedPayment.subscription_id && (
+                          <div className="flex justify-between gap-4">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Subscription ID</span>
+                            <span className="text-xs font-medium text-gray-900 dark:text-white font-mono text-right break-all">
+                              {selectedPayment.subscription_id}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedPayment.merchant_transaction_id && (
+                          <div className="flex justify-between gap-4">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Merchant Reference</span>
+                            <span className="text-xs font-medium text-gray-900 dark:text-white font-mono text-right break-all">
+                              {selectedPayment.merchant_transaction_id}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedPayment.fingo_transaction_id && (
+                          <div className="flex justify-between gap-4">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Processor Reference</span>
+                            <span className="text-xs font-medium text-gray-900 dark:text-white font-mono text-right break-all">
+                              {selectedPayment.fingo_transaction_id}
+                            </span>
+                          </div>
+                        )}
+
+                        {selectedPayment.subscription_id && selectedPayment.subscription_id === subscription?.id && subscription?.plan && (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-xs text-gray-600 dark:text-gray-400">Plan</span>
+                              <span className="text-xs font-medium text-gray-900 dark:text-white">
+                                {subscription.plan.name}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-xs text-gray-600 dark:text-gray-400">Billing Cycle</span>
+                              <span className="text-xs font-medium text-gray-900 dark:text-white capitalize">
+                                {subscription.plan.billing_cycle || '—'}
+                              </span>
+                            </div>
+                          </>
+                        )}
+
                         <div className="flex justify-between">
                           <span className="text-xs text-gray-600 dark:text-gray-400">Date</span>
                           <span className="text-xs font-medium text-gray-900 dark:text-white">
-                            {formatDate(selectedPayment.created_at)}
+                            {formatDate(resolvePaymentTimestamp(selectedPayment))}
                           </span>
                         </div>
+
+                        {selectedPayment.created_at && (
+                          <div className="flex justify-between">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Created At</span>
+                            <span className="text-xs font-medium text-gray-900 dark:text-white">
+                              {new Date(selectedPayment.created_at).toLocaleString('en-KE')}
+                            </span>
+                          </div>
+                        )}
 
                         {selectedPayment.paid_at && (
                           <div className="flex justify-between">
@@ -1291,7 +1345,7 @@ export default function SubscriptionsPage() {
                           <button
                             onClick={handleDownloadReceipt}
                             disabled={downloadingReceipt}
-                            className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-700 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {downloadingReceipt ? (
                               <>
@@ -1318,12 +1372,12 @@ export default function SubscriptionsPage() {
                               value={receiptEmail}
                               onChange={(e) => setReceiptEmail(e.target.value)}
                               placeholder="your@email.com"
-                              className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-gray-700 dark:text-white"
+                              className="w-full px-4 py-2 text-sm rounded-xl bg-white dark:bg-[#0d0d14] border border-purple-200/40 dark:border-purple-500/40 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition"
                             />
                             <button
                               onClick={handleEmailReceipt}
                               disabled={sendingReceipt || !receiptEmail}
-                              className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-semibold text-purple-600 dark:text-purple-400 bg-white dark:bg-[#1a1a24] border border-purple-200/40 dark:border-purple-500/30 rounded-xl hover:bg-gray-50 dark:hover:bg-[#1e1e2a] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-semibold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 rounded-xl transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                               {sendingReceipt ? (
                                 <>

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { paymentsService } from '~/services/grpc/payments.service';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { useSubscriptionSSE } from './useSubscriptionSSE';
+import { extractSubscription } from '~/utils/subscriptionData';
 
 export type SubscriptionStatus = 'loading' | 'active' | 'trial' | 'none' | 'expired' | 'error';
 
@@ -53,8 +54,7 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       setError(null);
 
       const response = await paymentsService.getMySubscription(userId);
-      const data = response?.getData?.()?.toJavaScript?.() || response;
-      const sub = data?.subscription || null;
+      const sub = extractSubscription(response);
 
       if (!sub || !sub.id) {
         setStatus('none');
