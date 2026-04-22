@@ -78,9 +78,14 @@ export default function LoginPage() {
     const googleLogin = params.get('google_login');
     const token = params.get('token') || getStoredAccessToken() || null;
     const errorParam = params.get('error');
+    const deviceRevoked = params.get('device_revoked');
 
     if (errorParam && !loginError) {
       setLoginError('Google login failed. Please try again or use phone and password.');
+    }
+
+    if (deviceRevoked === '1' && !loginError) {
+      setLoginError('This device is no longer approved for your account. Please sign in again on an authorized device.');
     }
 
     if (googleLogin === 'success' && token && !processingGoogleRef.current) {
