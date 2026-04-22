@@ -22,6 +22,7 @@ const Budget: React.FC = () => {
   const [success, setSuccess] = useState('');
   const submit = useSubmit();
   const initialLoadDone = useRef(false);
+  const pendingBudgetRange = useRef<{ min: number; max: number } | null>(null);
   
   const BUDGET_RANGES: Record<BudgetFrequency, BudgetRange[]> = {
     daily: budgetRanges.map(r => r.label),
@@ -47,15 +48,15 @@ const Budget: React.FC = () => {
       if (cached.rangeLabel) {
         setSelectedRange(cached.rangeLabel);
       } else if (cached.min !== undefined && cached.max !== undefined) {
-        const matchedRange = findRangeByAmounts(Number(cached.min), Number(cached.max));
-        if (matchedRange) {
-          setSelectedRange(matchedRange.label);
-        }
+        pendingBudgetRange.current = {
+          min: Number(cached.min),
+          max: Number(cached.max),
+        };
       }
       const freq = cached.frequency || cached.salary_frequency;
       if (freq) setFrequency(freq.toLowerCase() as BudgetFrequency);
     }
-  }, [budgetRanges, profileData.budget]);
+  }, [profileData.budget]);
 
   // Load existing data from backend (only once on mount)
   useEffect(() => {
@@ -72,10 +73,10 @@ const Budget: React.FC = () => {
             setFrequency(data.salary_frequency.toLowerCase() as BudgetFrequency);
           }
           if (data.budget_min !== undefined || data.budget_max !== undefined) {
-            const matchedRange = findRangeByAmounts(Number(data.budget_min || 0), Number(data.budget_max || 0));
-            if (matchedRange) {
-              setSelectedRange(matchedRange.label);
-            }
+            pendingBudgetRange.current = {
+              min: Number(data.budget_min || 0),
+              max: Number(data.budget_max || 0),
+            };
           }
           initialLoadDone.current = true;
         }
@@ -84,7 +85,21 @@ const Budget: React.FC = () => {
       }
     };
     loadData();
-  }, [budgetRanges]);
+  }, []);
+
+  useEffect(() => {
+    if (selectedRange || !pendingBudgetRange.current) return;
+
+    const matchedRange = findRangeByAmounts(
+      pendingBudgetRange.current.min,
+      pendingBudgetRange.current.max
+    );
+
+    if (matchedRange) {
+      setSelectedRange(matchedRange.label);
+      pendingBudgetRange.current = null;
+    }
+  }, [budgetRanges, selectedRange]);
 
   const handleRangeSelect = async (range: string) => {
     setSelectedRange(range);

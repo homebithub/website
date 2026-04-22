@@ -1,5 +1,5 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useSubmit } from 'react-router';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { handleApiError } from '../utils/errorMessages';
@@ -20,6 +20,8 @@ const SalaryExpectations: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const submit = useSubmit();
+  const initialLoadDone = useRef(false);
+  const pendingBackendAmount = useRef<number | null>(null);
   
   const currentRanges = (salaryRanges || []).map(r => r.label);
   const findRangeByLabel = (label: string): SalaryRange | undefined =>
@@ -44,6 +46,8 @@ const SalaryExpectations: React.FC = () => {
 
   // Load existing data from backend
   useEffect(() => {
+    if (initialLoadDone.current) return;
+
     const loadData = async () => {
       try {
         const token = getAccessTokenFromCookies();
@@ -56,18 +60,26 @@ const SalaryExpectations: React.FC = () => {
             setFrequency(freq);
           }
           if (data.salary_expectation !== undefined && data.salary_expectation !== null) {
-            const matchedRange = findRangeByAmount(Number(data.salary_expectation));
-            if (matchedRange) {
-              setSelectedRange(matchedRange.label);
-            }
+            pendingBackendAmount.current = Number(data.salary_expectation);
           }
         }
+        initialLoadDone.current = true;
       } catch (err) {
         console.error('Failed to load salary expectations:', err);
       }
     };
     loadData();
-  }, [salaryRanges]);
+  }, []);
+
+  useEffect(() => {
+    if (selectedRange || pendingBackendAmount.current === null) return;
+
+    const matchedRange = findRangeByAmount(pendingBackendAmount.current);
+    if (matchedRange) {
+      setSelectedRange(matchedRange.label);
+      pendingBackendAmount.current = null;
+    }
+  }, [salaryRanges, selectedRange]);
 
   const autoSave = async (freq: SalaryFrequency, range: string) => {
     if (!range) return;
