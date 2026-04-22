@@ -247,7 +247,7 @@ export default function HouseholdShortlistPage() {
                       onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
                         state: { profileId: s.profile_id, fromShortlist: true },
                       })}
-                      className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 transition-all duration-300 cursor-pointer`}
+                      className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md transition-all duration-300 cursor-pointer`}
                     >
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">

@@ -370,7 +370,7 @@ export default function HousehelpHome() {
         <main className={`flex-1 py-8 ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {showTips && <OnboardingTipsBanner role="househelp" onDismiss={handleDismissTips} />}
-            <div className={`bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-gray-700/50`}>
+            <div className={`bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 border-2 border-gray-200 dark:border-gray-700/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-500/20`}>
               <div className="flex items-center justify-between gap-3 mb-4">
                 <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Find Households</h1>
                 <button
@@ -487,7 +487,7 @@ export default function HousehelpHome() {
                     <div
                       key={r.profile_id}
                       onClick={() => handleViewMore(r)}
-                      className={`relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 transition-all duration-300 cursor-pointer`}
+                      className={`relative bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md transition-all duration-300 cursor-pointer`}
                     >
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">

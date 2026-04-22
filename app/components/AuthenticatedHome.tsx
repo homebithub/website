@@ -592,12 +592,12 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   const cardTitleClass = isHome3 ? 'text-sm' : isHome1 ? 'text-base' : 'text-lg';
   const cardTextClass = isHome3 ? 'text-xs' : 'text-xs';
   const filterSectionClass = isHome1
-    ? 'bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:via-[#161625] dark:to-slate-900 rounded-3xl p-5 sm:p-7 mb-8 border border-purple-300/40 dark:border-purple-400/30 shadow-xl shadow-purple-300/25 dark:shadow-purple-500/20'
+    ? 'bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:via-[#161625] dark:to-slate-900 rounded-3xl p-5 sm:p-7 mb-8 border border-purple-300/40 dark:border-purple-400/30 transition-all duration-300 hover:shadow-xl hover:shadow-purple-300/25 dark:hover:shadow-purple-500/20'
     : isHome2
-      ? 'bg-white dark:bg-gradient-to-br dark:from-[#0f1020] dark:to-[#18182a] rounded-3xl p-5 sm:p-8 mb-8 border-2 border-purple-200/70 dark:border-purple-500/30 shadow-[0_20px_60px_rgba(26,26,46,0.35)]'
+      ? 'bg-white dark:bg-gradient-to-br dark:from-[#0f1020] dark:to-[#18182a] rounded-3xl p-5 sm:p-8 mb-8 border-2 border-purple-200/70 dark:border-purple-500/30 transition-all duration-300 hover:shadow-[0_20px_60px_rgba(26,26,46,0.35)]'
       : isHome3
-        ? 'bg-white dark:bg-[#11131f]/95 rounded-2xl p-4 sm:p-5 mb-7 border border-purple-200/50 dark:border-purple-500/25 shadow-lg'
-        : `bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 shadow-lg shadow-purple-200/50 dark:shadow-purple-500/20 border-2 border-gray-200 dark:border-gray-700/50`;
+        ? 'bg-white dark:bg-[#11131f]/95 rounded-2xl p-4 sm:p-5 mb-7 border border-purple-200/50 dark:border-purple-500/25 transition-all duration-300 hover:shadow-lg'
+        : `bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 border-2 border-gray-200 dark:border-gray-700/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-500/20`;
   const controlsRowClass = isHome2
     ? 'mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-end'
     : isHome3
@@ -779,7 +779,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                     <div
                       key={househelp.id}
                       onClick={() => househelp.profile_id && handleViewProfile(String(househelp.profile_id))}
-                      className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl shadow-light-glow-md dark:shadow-glow-md border-2 border-purple-200/40 dark:border-purple-500/30 ${isHome2 ? 'p-4 sm:p-5' : isHome3 ? 'p-4' : compactView ? 'p-4' : 'p-6'} ${isHome2 ? 'hover:-translate-y-0.5' : 'hover:scale-105'} transition-all duration-300 cursor-pointer`}
+                      className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 ${isHome2 ? 'p-4 sm:p-5 hover:-translate-y-0.5 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : isHome3 ? 'p-4 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : compactView ? 'p-4 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : 'p-6 hover:shadow-light-glow-md dark:hover:shadow-glow-md'} ${isHome2 ? '' : 'hover:scale-105'} transition-all duration-300 cursor-pointer`}
                     >
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">
