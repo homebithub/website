@@ -10,7 +10,7 @@ import { profileService as grpcProfileService, shortlistService } from '~/servic
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import HouseholdFilters, { type HouseholdSearchFields } from "~/components/features/HouseholdFilters";
 import { SidePanel } from '~/components/SidePanel';
-import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { ChatBubbleLeftRightIcon, HeartIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import { formatTimeAgo } from "~/utils/timeAgo";
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
@@ -86,6 +86,7 @@ export default function HousehelpHome() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(false);
   const [totalCount, setTotalCount] = useState<number | null>(null);
   const countTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [shortlistedProfiles, setShortlistedProfiles] = useState<Set<string>>(new Set());
@@ -363,6 +364,12 @@ export default function HousehelpHome() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
+  const filterDescription = 'Tap to expand and fine-tune your household search.';
+  const filterBaseClass = 'bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl mb-8 border-2 border-gray-200 dark:border-gray-700/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-500/20';
+  const filterPaddingExpanded = compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8';
+  const filterSectionClass = `${filterBaseClass} ${filtersExpanded ? filterPaddingExpanded : 'p-4 sm:p-5'}`;
+  const headerRowClass = `flex items-center justify-between gap-3 ${filtersExpanded ? 'mb-4' : ''}`;
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -370,63 +377,80 @@ export default function HousehelpHome() {
         <main className={`flex-1 py-8 ${accessibilityMode ? 'text-sm sm:text-base' : ''}`}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {showTips && <OnboardingTipsBanner role="househelp" onDismiss={handleDismissTips} />}
-            <div className={`bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 border-2 border-gray-200 dark:border-gray-700/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-500/20`}>
-              <div className="flex items-center justify-between gap-3 mb-4">
-                <h1 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Find Households</h1>
+            <div className={filterSectionClass}>
+              <div className={headerRowClass}>
                 <button
-                  onClick={() => setShowMoreFilters(true)}
-                  className="px-4 py-1 rounded-xl bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition"
+                  type="button"
+                  onClick={() => setFiltersExpanded(prev => !prev)}
+                  aria-expanded={filtersExpanded}
+                  className={`group flex-1 flex items-center justify-between gap-3 rounded-2xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 transition-colors ${filtersExpanded ? '' : 'hover:bg-gray-50/70 dark:hover:bg-white/5'}`}
                 >
-                  More filters
-                </button>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="flex flex-col">
-                  <label className="mb-2 text-xs font-semibold text-gray-700 dark:text-white">Town</label>
-                  <SearchableTownSelect
-                    value={filters.town}
-                    onChange={(value) => setFilters((prev) => ({ ...prev, town: value }))}
-                    target="households"
-                    buttonClassName="w-full h-12 px-4 rounded-xl text-sm bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="mb-2 text-xs font-semibold text-gray-700 dark:text-white">House Size</label>
-                  <CustomSelect
-                    value={filters.house_size || ""}
-                    onChange={(val) => setFilters((prev) => ({ ...prev, house_size: val }))}
-                    options={['', 'bedsitter', '1br', '2br', '3br+', 'mansion'].map((s) => ({ value: s, label: s || 'Any' }))}
-                    placeholder="Any"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className="mb-2 text-xs font-semibold text-gray-700 dark:text-white">Has Kids</label>
-                  <CustomSelect
-                    value={filters.has_kids || ""}
-                    onChange={(val) => setFilters((prev) => ({ ...prev, has_kids: val }))}
-                    options={[
-                      { value: "", label: "Any" },
-                      { value: "true", label: "Yes" },
-                      { value: "false", label: "No" },
-                    ]}
-                    placeholder="Any"
-                  />
-                </div>
-              </div>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
-                <div className="sm:col-span-2 flex items-center">
-                  <span className="text-gray-700 dark:text-white font-medium">
-                    Use quick filters above or open <span className="font-semibold">More filters</span> for advanced options.
-                    {totalCount !== null ? ` ${totalCount} results` : ''}
+                  <span className="flex flex-col">
+                    <span className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">Find Households</span>
+                    <span className="text-xs text-gray-600 dark:text-gray-400 mt-1">{filterDescription}</span>
                   </span>
-                </div>
-                <button
-                  onClick={search}
-                  className="w-full px-8 py-1.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500"
-                >
-                  Search
+                  <ChevronDownIcon className={`w-5 h-5 text-gray-600 dark:text-gray-300 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
                 </button>
+                {filtersExpanded && (
+                  <button
+                    onClick={() => { setFiltersExpanded(true); setShowMoreFilters(true); }}
+                    className="px-4 py-1 rounded-xl bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition"
+                  >
+                    More filters
+                  </button>
+                )}
               </div>
+              {filtersExpanded && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="flex flex-col">
+                      <label className="mb-2 text-xs font-semibold text-gray-700 dark:text-white">Town</label>
+                      <SearchableTownSelect
+                        value={filters.town}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, town: value }))}
+                        target="households"
+                        buttonClassName="w-full h-12 px-4 rounded-xl text-sm bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="mb-2 text-xs font-semibold text-gray-700 dark:text-white">House Size</label>
+                      <CustomSelect
+                        value={filters.house_size || ""}
+                        onChange={(val) => setFilters((prev) => ({ ...prev, house_size: val }))}
+                        options={['', 'bedsitter', '1br', '2br', '3br+', 'mansion'].map((s) => ({ value: s, label: s || 'Any' }))}
+                        placeholder="Any"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className="mb-2 text-xs font-semibold text-gray-700 dark:text-white">Has Kids</label>
+                      <CustomSelect
+                        value={filters.has_kids || ""}
+                        onChange={(val) => setFilters((prev) => ({ ...prev, has_kids: val }))}
+                        options={[
+                          { value: "", label: "Any" },
+                          { value: "true", label: "Yes" },
+                          { value: "false", label: "No" },
+                        ]}
+                        placeholder="Any"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                    <div className="sm:col-span-2 flex items-center">
+                      <span className="text-gray-700 dark:text-white font-medium">
+                        Use quick filters above or open <span className="font-semibold">More filters</span> for advanced options.
+                        {totalCount !== null ? ` ${totalCount} results` : ''}
+                      </span>
+                    </div>
+                    <button
+                      onClick={search}
+                      className="w-full px-8 py-1.5 rounded-xl font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl hover:scale-105 focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500"
+                    >
+                      Search
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Slide-over Drawer for full filters */}

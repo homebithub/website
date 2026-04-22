@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { paymentsService } from '~/services/grpc/payments.service';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
 import { useSubscriptionSSE } from './useSubscriptionSSE';
-import { extractSubscription } from '~/utils/subscriptionData';
+import { extractSubscription, extractSubscriptionAccess } from '~/utils/subscriptionData';
 
 export type SubscriptionStatus = 'loading' | 'active' | 'trial' | 'none' | 'expired' | 'error';
 
@@ -31,6 +31,9 @@ export type UseSubscriptionResult = {
   subscription: SubscriptionData | null;
   isActive: boolean;
   isEarlyAdopter: boolean;
+  daysRemaining: number;
+  expiresAt: string | null;
+  accessMessage: string | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -41,6 +44,9 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [daysRemaining, setDaysRemaining] = useState(0);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
+  const [accessMessage, setAccessMessage] = useState<string | null>(null);
 
   const fetchSubscription = useCallback(async () => {
     if (!userId) {
@@ -53,49 +59,59 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       setLoading(true);
       setError(null);
 
-      const response = await paymentsService.getMySubscription(userId);
-      const sub = extractSubscription(response);
+      const [subscriptionResult, accessResult] = await Promise.allSettled([
+        paymentsService.getMySubscription(userId),
+        paymentsService.checkSubscriptionAccess(userId),
+      ]);
+
+      const sub =
+        subscriptionResult.status === 'fulfilled'
+          ? extractSubscription(subscriptionResult.value)
+          : null;
+      const access =
+        accessResult.status === 'fulfilled'
+          ? extractSubscriptionAccess(accessResult.value)
+          : null;
 
       if (!sub || !sub.id) {
-        setStatus('none');
         setSubscription(null);
-        return;
+      } else {
+        // Map dynamic fields to SubscriptionData
+        const normalizedSub: SubscriptionData = {
+          id: sub.id || "",
+          plan_id: sub.plan_id || "",
+          status: sub.status || "",
+          current_period_start: sub.current_period_start || "",
+          current_period_end: sub.current_period_end || "",
+          trial_start: sub.trial_start,
+          trial_end: sub.trial_end,
+          is_trial_used: sub.is_trial_used || false,
+          metadata: sub.metadata || {},
+          plan: sub.plan ? {
+            id: sub.plan.id || "",
+            name: sub.plan.name || "",
+            description: sub.plan.description || "",
+            price_amount: sub.plan.price_amount || 0,
+            billing_cycle: sub.plan.billing_cycle || "",
+            trial_days: sub.plan.trial_days || 0,
+          } : undefined
+        };
+
+        setSubscription(normalizedSub);
       }
 
-      // Map dynamic fields to SubscriptionData
-      const normalizedSub: SubscriptionData = {
-        id: sub.id || "",
-        plan_id: sub.plan_id || "",
-        status: sub.status || "",
-        current_period_start: sub.current_period_start || "",
-        current_period_end: sub.current_period_end || "",
-        trial_start: sub.trial_start,
-        trial_end: sub.trial_end,
-        is_trial_used: sub.is_trial_used || false,
-        metadata: sub.metadata || {},
-        plan: sub.plan ? {
-          id: sub.plan.id || "",
-          name: sub.plan.name || "",
-          description: sub.plan.description || "",
-          price_amount: sub.plan.price_amount || 0,
-          billing_cycle: sub.plan.billing_cycle || "",
-          trial_days: sub.plan.trial_days || 0,
-        } : undefined
-      };
+      setDaysRemaining(access?.days_remaining ?? 0);
+      setExpiresAt(access?.expires_at ?? null);
+      setAccessMessage(access?.message ?? null);
 
-      setSubscription(normalizedSub);
-
-      if (normalizedSub.status === 'active' || normalizedSub.status === 'trial') {
-        const endDate = normalizedSub.trial_end || normalizedSub.current_period_end;
-        if (endDate && new Date(endDate) < new Date()) {
-          setStatus('expired');
-        } else {
-          setStatus(normalizedSub.status === 'trial' ? 'trial' : 'active');
-        }
-      } else if (normalizedSub.status === 'expired') {
+      if (access?.has_access) {
+        setStatus(access.is_trial ? 'trial' : 'active');
+      } else if (sub?.status === 'expired' || access?.status === 'expired') {
         setStatus('expired');
-      } else {
+      } else if (!sub?.id) {
         setStatus('none');
+      } else {
+        setStatus((sub.status as SubscriptionStatus) || 'none');
       }
     } catch (err: any) {
       if (err.code === 'NOT_FOUND' || err.status === 5) {
@@ -158,13 +174,16 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   );
 
   const isActive = status === 'active' || status === 'trial';
-  const isEarlyAdopter = !!subscription?.metadata?.early_adopter;
+  const isEarlyAdopter = !!subscription?.metadata?.early_adopter || accessMessage === "Early adopter free access active";
 
   return {
     status,
     subscription,
     isActive,
     isEarlyAdopter,
+    daysRemaining,
+    expiresAt,
+    accessMessage,
     loading,
     error,
     refetch: fetchSubscription,

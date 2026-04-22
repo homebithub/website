@@ -11,7 +11,7 @@ import { getInboxRoute, startOrGetConversation, type StartConversationPayload } 
 import { type HousehelpSearchFields } from "~/components/features/HousehelpFilters";
 import HousehelpMoreFilters from "~/components/features/HousehelpMoreFilters";
 import { SidePanel } from '~/components/SidePanel';
-import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
+import { ChatBubbleLeftRightIcon, HeartIcon, ChevronDownIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
 import OnboardingTipsBanner from "~/components/OnboardingTipsBanner";
 import { fetchPreferences } from "~/utils/preferencesApi";
@@ -272,13 +272,16 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   const navigate = useNavigate();
   const lastSetQueryRef = useRef<string | null>(null);
   const [showMoreFilters, setShowMoreFilters] = useState(false);
+  const [filtersExpanded, setFiltersExpanded] = useState(() => Boolean(searchParams.toString()));
 
   // Initialize from URL params on mount
   useEffect(() => {
     const fromParams = paramsToFields(searchParams, initialFields);
     setFields(fromParams);
+    const hasParams = Boolean(searchParams.toString());
+    setFiltersExpanded(hasParams);
     // Only search if there are URL params (user navigated with filters)
-    if (searchParams.toString()) {
+    if (hasParams) {
       handleSearch(undefined, fromParams);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -339,6 +342,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     const fromParams = paramsToFields(searchParams, initialFields);
     setFields(fromParams);
     handleSearch(undefined, fromParams);
+    setFiltersExpanded(Boolean(currentQs));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search]);
 
@@ -591,13 +595,32 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
 
   const cardTitleClass = isHome3 ? 'text-sm' : isHome1 ? 'text-base' : 'text-lg';
   const cardTextClass = isHome3 ? 'text-xs' : 'text-xs';
-  const filterSectionClass = isHome1
-    ? 'bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:via-[#161625] dark:to-slate-900 rounded-3xl p-5 sm:p-7 mb-8 border border-purple-300/40 dark:border-purple-400/30 transition-all duration-300 hover:shadow-xl hover:shadow-purple-300/25 dark:hover:shadow-purple-500/20'
+  const filterDescription = isHome1
+    ? 'Card grid style filter: wider controls and quick-action flow.'
     : isHome2
-      ? 'bg-white dark:bg-gradient-to-br dark:from-[#0f1020] dark:to-[#18182a] rounded-3xl p-5 sm:p-8 mb-8 border-2 border-purple-200/70 dark:border-purple-500/30 transition-all duration-300 hover:shadow-[0_20px_60px_rgba(26,26,46,0.35)]'
+      ? 'Editorial style filter: guided search with roomy controls.'
       : isHome3
-        ? 'bg-white dark:bg-[#11131f]/95 rounded-2xl p-4 sm:p-5 mb-7 border border-purple-200/50 dark:border-purple-500/25 transition-all duration-300 hover:shadow-lg'
-        : `bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl ${compactView ? 'p-4 sm:p-6' : 'p-6 sm:p-8'} mb-8 border-2 border-gray-200 dark:border-gray-700/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-500/20`;
+        ? 'Compact style filter: smaller type and dense arrangement.'
+        : 'Tap to expand and fine-tune your search filters.';
+  const filterSectionBaseClass = isHome1
+    ? 'bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:via-[#161625] dark:to-slate-900 rounded-3xl mb-8 border border-purple-300/40 dark:border-purple-400/30 transition-all duration-300 hover:shadow-xl hover:shadow-purple-300/25 dark:hover:shadow-purple-500/20'
+    : isHome2
+      ? 'bg-white dark:bg-gradient-to-br dark:from-[#0f1020] dark:to-[#18182a] rounded-3xl mb-8 border-2 border-purple-200/70 dark:border-purple-500/30 transition-all duration-300 hover:shadow-[0_20px_60px_rgba(26,26,46,0.35)]'
+      : isHome3
+        ? 'bg-white dark:bg-[#11131f]/95 rounded-2xl mb-7 border border-purple-200/50 dark:border-purple-500/25 transition-all duration-300 hover:shadow-lg'
+        : 'bg-white dark:bg-gradient-to-r dark:from-gray-800 dark:to-gray-900 rounded-3xl mb-8 border-2 border-gray-200 dark:border-gray-700/50 transition-all duration-300 hover:shadow-lg hover:shadow-purple-200/50 dark:hover:shadow-purple-500/20';
+  const collapsedPadding = isHome3 ? 'p-3 sm:p-4' : 'p-4 sm:p-5';
+  const expandedPadding = isHome1
+    ? 'p-5 sm:p-7'
+    : isHome2
+      ? 'p-5 sm:p-8'
+      : isHome3
+        ? 'p-4 sm:p-5'
+        : compactView
+          ? 'p-4 sm:p-6'
+          : 'p-6 sm:p-8';
+  const filterSectionClass = `${filterSectionBaseClass} ${filtersExpanded ? expandedPadding : collapsedPadding}`;
+  const headerRowClass = `flex ${isHome2 ? 'flex-col sm:flex-row sm:items-end' : 'items-center'} justify-between gap-3 ${filtersExpanded ? 'mb-4' : ''}`;
   const controlsRowClass = isHome2
     ? 'mt-4 grid grid-cols-1 md:grid-cols-3 gap-3 items-end'
     : isHome3
@@ -624,80 +647,90 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
             {showTips && <OnboardingTipsBanner role="household" onDismiss={handleDismissTips} />}
             {/* Compact Filters Section */}
             <div className={filterSectionClass}>
-              <div className={`flex ${isHome2 ? 'flex-col sm:flex-row sm:items-end' : 'items-center'} justify-between gap-3 mb-4`}>
-                <div>
-                  <h1 className={`${isHome3 ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'} font-bold text-gray-900 dark:text-white`}>Find Househelps</h1>
-                  {(isHome1 || isHome2 || isHome3) && (
-                    <p className={`${isHome3 ? 'text-xs' : 'text-xs'} text-gray-600 dark:text-gray-400 mt-1`}>
-                      {isHome1 && 'Card grid style filter: wider controls and quick-action flow.'}
-                      {isHome2 && 'Editorial style filter: guided search with roomy controls.'}
-                      {isHome3 && 'Compact style filter: smaller type and dense arrangement.'}
-                    </p>
-                  )}
-                </div>
+              <div className={headerRowClass}>
                 <button
-                  onClick={() => setShowMoreFilters(true)}
-                  className={`px-4 py-1 ${isHome3 ? 'text-xs rounded-lg' : 'rounded-xl'} bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition`}
+                  type="button"
+                  onClick={() => setFiltersExpanded(prev => !prev)}
+                  aria-expanded={filtersExpanded}
+                  className={`group flex-1 flex items-center justify-between gap-3 rounded-2xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 transition-colors ${filtersExpanded ? '' : 'hover:bg-gray-50/70 dark:hover:bg-white/5'}`}
                 >
-                  More filters
-                  </button>
-                </div>
-              <div className={quickFilterGridClass}>
-                <div className="flex flex-col">
-                  <label className={quickLabelClass}>Town</label>
-                  <SearchableTownSelect
-                    value={fields.town || ""}
-                    onChange={(value) => handleFieldChange("town", value)}
-                    target="househelps"
-                    buttonClassName={quickInputClass}
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className={quickLabelClass}>Type of Househelp</label>
-                  <CustomSelect
-                    value={getTypeValue()}
-                    onChange={(val) => setTypeValue(val)}
-                    options={[
-                      { value: "", label: "Any" },
-                      { value: "live_in", label: "Live-in" },
-                      { value: "day_worker", label: "Day worker" },
-                    ]}
-                    placeholder="Any"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className={quickLabelClass}>Experience</label>
-                  <CustomSelect
-                    value={fields.experience || ""}
-                    onChange={(val) => handleFieldChange('experience', val)}
-                    options={EXPERIENCE_MIN_OPTIONS}
-                    placeholder="Any"
-                  />
-                </div>
-                <div className="flex flex-col">
-                  <label className={quickLabelClass}>Skills / Can Help With</label>
-                  <input
-                    value={fields.skill || ""}
-                    onChange={(e) => handleFieldChange('skill', e.target.value)}
-                    className={quickInputClass}
-                    placeholder="e.g. cooking, childcare"
-                  />
-                </div>
-              </div>
-              <div className={controlsRowClass}>
-                <div className={`${isHome2 ? 'md:col-span-2' : 'sm:col-span-2'} flex items-center ${isHome3 ? 'text-xs' : ''}`}>
-                  <span className="text-gray-700 dark:text-white font-medium">
-                    Use quick filters above or open <span className="font-semibold">More filters</span> for advanced options.
-                    {totalCount !== null ? ` ${totalCount} results` : ''}
+                  <span className="flex flex-col">
+                    <span className={`${isHome3 ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'} font-bold text-gray-900 dark:text-white`}>Find Househelps</span>
+                    {filterDescription && (
+                      <span className={`${cardTextClass} text-gray-600 dark:text-gray-400 mt-1`}>{filterDescription}</span>
+                    )}
                   </span>
-                </div>
-                <button
-                  onClick={() => handleSearch()}
-                  className={`w-full ${isHome3 ? 'px-4 py-2 text-xs rounded-lg' : 'px-8 py-1.5 rounded-xl'} font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl ${isHome3 ? '' : 'hover:scale-105'} focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500`}
-                >
-                  Search
+                  <ChevronDownIcon className={`w-5 h-5 text-gray-600 dark:text-gray-300 transition-transform ${filtersExpanded ? 'rotate-180' : ''}`} />
                 </button>
+                {filtersExpanded && (
+                  <button
+                    onClick={() => setShowMoreFilters(true)}
+                    className={`px-4 py-1 ${isHome3 ? 'text-xs rounded-lg' : 'rounded-xl'} bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition`}
+                  >
+                    More filters
+                  </button>
+                )}
               </div>
+              {filtersExpanded && (
+                <>
+                  <div className={quickFilterGridClass}>
+                    <div className="flex flex-col">
+                      <label className={quickLabelClass}>Town</label>
+                      <SearchableTownSelect
+                        value={fields.town || ""}
+                        onChange={(value) => handleFieldChange("town", value)}
+                        target="househelps"
+                        buttonClassName={quickInputClass}
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={quickLabelClass}>Type of Househelp</label>
+                      <CustomSelect
+                        value={getTypeValue()}
+                        onChange={(val) => setTypeValue(val)}
+                        options={[
+                          { value: "", label: "Any" },
+                          { value: "live_in", label: "Live-in" },
+                          { value: "day_worker", label: "Day worker" },
+                        ]}
+                        placeholder="Any"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={quickLabelClass}>Experience</label>
+                      <CustomSelect
+                        value={fields.experience || ""}
+                        onChange={(val) => handleFieldChange('experience', val)}
+                        options={EXPERIENCE_MIN_OPTIONS}
+                        placeholder="Any"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <label className={quickLabelClass}>Skills / Can Help With</label>
+                      <input
+                        value={fields.skill || ""}
+                        onChange={(e) => handleFieldChange('skill', e.target.value)}
+                        className={quickInputClass}
+                        placeholder="e.g. cooking, childcare"
+                      />
+                    </div>
+                  </div>
+                  <div className={controlsRowClass}>
+                    <div className={`${isHome2 ? 'md:col-span-2' : 'sm:col-span-2'} flex items-center ${isHome3 ? 'text-xs' : ''}`}>
+                      <span className="text-gray-700 dark:text-white font-medium">
+                        Use quick filters above or open <span className="font-semibold">More filters</span> for advanced options.
+                        {totalCount !== null ? ` ${totalCount} results` : ''}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => handleSearch()}
+                      className={`w-full ${isHome3 ? 'px-4 py-2 text-xs rounded-lg' : 'px-8 py-1.5 rounded-xl'} font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl ${isHome3 ? '' : 'hover:scale-105'} focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500`}
+                    >
+                      Search
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Slide-over Drawer for full filters */}

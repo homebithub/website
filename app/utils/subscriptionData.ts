@@ -56,6 +56,17 @@ export type NormalizedPayment = {
   retry_count?: number;
 };
 
+export type NormalizedSubscriptionAccess = {
+  has_access: boolean;
+  status: string;
+  subscription_id?: string;
+  expires_at?: string;
+  is_trial: boolean;
+  is_early_adopter: boolean;
+  days_remaining: number;
+  message: string;
+};
+
 function toIsoString(value: MaybeTimestamp): string {
   if (!value) return '';
   if (typeof value === 'string') {
@@ -174,4 +185,20 @@ export function extractPlans(response: any): NormalizedSubscriptionPlan[] {
   return rawPlans
     .map(normalizePlan)
     .filter(Boolean) as NormalizedSubscriptionPlan[];
+}
+
+export function extractSubscriptionAccess(response: any): NormalizedSubscriptionAccess | null {
+  const raw = response?.toObject?.() ?? response ?? null;
+  if (!raw) return null;
+
+  return {
+    has_access: Boolean(raw.hasAccess ?? raw.has_access ?? false),
+    status: raw.status || '',
+    subscription_id: raw.subscriptionId ?? raw.subscription_id ?? undefined,
+    expires_at: toIsoString(raw.expiresAt ?? raw.expires_at) || undefined,
+    is_trial: Boolean(raw.isTrial ?? raw.is_trial ?? false),
+    is_early_adopter: Boolean(raw.isEarlyAdopter ?? raw.is_early_adopter ?? false),
+    days_remaining: Number(raw.daysRemaining ?? raw.days_remaining ?? 0),
+    message: raw.message || '',
+  };
 }

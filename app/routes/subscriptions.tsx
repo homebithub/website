@@ -35,8 +35,10 @@ import {
   extractPayments,
   extractPlans,
   extractSubscription,
+  extractSubscriptionAccess,
   type NormalizedPayment,
   type NormalizedSubscription,
+  type NormalizedSubscriptionAccess,
   type NormalizedSubscriptionPlan,
 } from '~/utils/subscriptionData';
 
@@ -58,6 +60,7 @@ export default function SubscriptionsPage() {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [subscriptionAccess, setSubscriptionAccess] = useState<NormalizedSubscriptionAccess | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState(currentUserPhone);
   const [paymentAmount, setPaymentAmount] = useState(0);
@@ -134,7 +137,8 @@ export default function SubscriptionsPage() {
 
   // Filter plans by user's profile type
   const profileType: string = currentUser?.profile_type || getStoredProfileType() || '';
-  const relevantPlans = allPlans.filter(p => p.is_active && p.profile_type === profileType);
+  const availablePlans = (plans.length > 0 ? plans : allPlans).filter(p => p.is_active && p.profile_type === profileType);
+  const relevantPlans = availablePlans;
 
   const getFeaturesList = (features: any): string[] => {
     const list: string[] = [];
@@ -279,6 +283,14 @@ export default function SubscriptionsPage() {
       }
 
       try {
+        const accessData = await paymentsService.checkSubscriptionAccess('') as any;
+        setSubscriptionAccess(extractSubscriptionAccess(accessData));
+      } catch (err) {
+        console.error('[Subscriptions] Failed to fetch subscription access:', err);
+        setSubscriptionAccess(null);
+      }
+
+      try {
         const paymentsData = await paymentsService.listMyPayments('', 0, 10) as any;
         setPayments(extractPayments(paymentsData));
       } catch (err) {
@@ -297,6 +309,15 @@ export default function SubscriptionsPage() {
       setDataLoading(false);
     }
   }, []);
+
+  const currentPlan =
+    subscription?.plan ||
+    plans.find((plan) => plan.id === subscription?.plan_id) ||
+    relevantPlans.find((plan) => plan.id === subscription?.plan_id) ||
+    null;
+  const currentExpiresAt = subscriptionAccess?.expires_at || subscription?.trial_end || subscription?.current_period_end || '';
+  const isTrialing = subscriptionAccess?.is_trial || subscription?.status === 'trial';
+  const daysRemaining = subscriptionAccess?.days_remaining ?? 0;
 
   // Fetch pause status
   const fetchPauseStatus = React.useCallback(async () => {
@@ -703,45 +724,58 @@ export default function SubscriptionsPage() {
                       <div className="flex items-start justify-between mb-4">
                         <div>
                           <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-0.5">
-                            {subscription.plan?.name || 'Current Plan'}
+                            {currentPlan?.name || (isTrialing ? 'Free Trial' : 'Current Plan')}
                           </h4>
                           <p className="text-xs text-gray-500 dark:text-gray-400">
-                            {subscription.plan?.description || 'Subscription details'}
+                            {currentPlan?.description || subscriptionAccess?.message || 'Subscription details'}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
-                          {subscription.metadata?.early_adopter && (
+                          {(subscriptionAccess?.is_early_adopter || subscription.metadata?.early_adopter) && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
                               Early Adopter
                             </span>
                           )}
-                          {getStatusBadge(subscription.status)}
+                          {getStatusBadge(subscriptionAccess?.status || subscription.status)}
                         </div>
                       </div>
+
+                      {isTrialing && currentExpiresAt && (
+                        <div className="rounded-xl border border-blue-200/60 bg-blue-50/70 px-4 py-3 dark:border-blue-500/20 dark:bg-blue-900/20">
+                          <p className="text-xs font-semibold text-blue-900 dark:text-blue-200">
+                            {subscriptionAccess?.is_early_adopter ? 'Early adopter access' : 'Free trial active'}
+                          </p>
+                          <p className="mt-1 text-xs text-blue-800/80 dark:text-blue-200/80">
+                            {daysRemaining > 0
+                              ? `${daysRemaining} day${daysRemaining === 1 ? '' : 's'} remaining until ${formatDate(currentExpiresAt)}.`
+                              : `Your trial ends on ${formatDate(currentExpiresAt)}.`}
+                          </p>
+                        </div>
+                      )}
                       
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Amount</p>
                           <p className="text-base font-bold text-gray-900 dark:text-gray-100">
-                            {formatCurrency(subscription.plan?.price_amount || 0)}
+                            {formatCurrency(currentPlan?.price_amount || 0)}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Billing Cycle</p>
                           <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 capitalize">
-                            {subscription.plan?.billing_cycle || '—'}
+                            {currentPlan?.billing_cycle || '—'}
                           </p>
                         </div>
                         <div>
                           <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period Start</p>
                           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
-                            {formatDate(subscription.current_period_start)}
+                            {formatDate(isTrialing ? subscription.trial_start || subscription.current_period_start : subscription.current_period_start)}
                           </p>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Period End</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{isTrialing ? 'Access Ends' : 'Period End'}</p>
                           <p className="text-xs font-medium text-gray-900 dark:text-gray-100">
-                            {formatDate(subscription.current_period_end)}
+                            {formatDate(currentExpiresAt)}
                           </p>
                         </div>
                         {subscription.trial_end && (
@@ -752,17 +786,11 @@ export default function SubscriptionsPage() {
                             </p>
                           </div>
                         )}
-                        <div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Subscription ID</p>
-                          <p className="text-xs font-medium text-gray-900 dark:text-gray-100 font-mono break-all">
-                            {subscription.id}
-                          </p>
-                        </div>
                       </div>
 
                       <button
                         onClick={() => {
-                          setPaymentAmount(subscription.plan?.price_amount || 0);
+                          setPaymentAmount(currentPlan?.price_amount || 0);
                           setPhoneNumber(currentUserPhone);
                           setShowPaymentModal(true);
                         }}
@@ -862,7 +890,7 @@ export default function SubscriptionsPage() {
                                     setSelectedNewPlan(plan);
                                     setShowChangePlanModal(true);
                                   }}
-                                  className="w-full px-4 py-1 text-xs font-semibold rounded-xl text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                                  className="w-full px-6 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg hover:from-purple-700 hover:to-pink-700 hover:shadow-purple-500/25 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 >
                                   Switch to This Plan
                                 </button>
@@ -977,6 +1005,11 @@ export default function SubscriptionsPage() {
                               {payment.mpesa_receipt_number && (
                                 <span className="ml-2">• Receipt: {payment.mpesa_receipt_number}</span>
                               )}
+                            </p>
+                            <p className="mt-1 text-xs text-gray-400 dark:text-gray-500">
+                              {payment.payment_method ? payment.payment_method.toUpperCase() : 'PAYMENT'}
+                              {payment.phone_number ? ` • ${payment.phone_number}` : ''}
+                              {payment.merchant_transaction_id ? ` • Ref: ${payment.merchant_transaction_id}` : ''}
                             </p>
                           </div>
                           <div className="text-right">
@@ -1223,12 +1256,21 @@ export default function SubscriptionsPage() {
 
                       {/* Transaction Details */}
                       <div className="space-y-3 bg-gray-50 dark:bg-[#0d0d14] rounded-xl p-4">
-                        <div className="flex justify-between">
+                        <div className="flex justify-between gap-4">
                           <span className="text-xs text-gray-600 dark:text-gray-400">Transaction ID</span>
-                          <span className="text-xs font-medium text-gray-900 dark:text-white font-mono">
-                            {selectedPayment.id.slice(0, 8)}...
+                          <span className="text-xs font-medium text-gray-900 dark:text-white font-mono text-right break-all">
+                            {selectedPayment.id}
                           </span>
                         </div>
+
+                        {selectedPayment.subscription_id && (
+                          <div className="flex justify-between gap-4">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Subscription ID</span>
+                            <span className="text-xs font-medium text-gray-900 dark:text-white font-mono text-right break-all">
+                              {selectedPayment.subscription_id}
+                            </span>
+                          </div>
+                        )}
 
                         {selectedPayment.mpesa_receipt_number && (
                           <div className="flex justify-between">
@@ -1255,15 +1297,6 @@ export default function SubscriptionsPage() {
                           </div>
                         )}
 
-                        {selectedPayment.subscription_id && (
-                          <div className="flex justify-between gap-4">
-                            <span className="text-xs text-gray-600 dark:text-gray-400">Subscription ID</span>
-                            <span className="text-xs font-medium text-gray-900 dark:text-white font-mono text-right break-all">
-                              {selectedPayment.subscription_id}
-                            </span>
-                          </div>
-                        )}
-
                         {selectedPayment.merchant_transaction_id && (
                           <div className="flex justify-between gap-4">
                             <span className="text-xs text-gray-600 dark:text-gray-400">Merchant Reference</span>
@@ -1282,18 +1315,18 @@ export default function SubscriptionsPage() {
                           </div>
                         )}
 
-                        {selectedPayment.subscription_id && selectedPayment.subscription_id === subscription?.id && subscription?.plan && (
+                        {selectedPayment.subscription_id && selectedPayment.subscription_id === subscription?.id && currentPlan && (
                           <>
                             <div className="flex justify-between">
                               <span className="text-xs text-gray-600 dark:text-gray-400">Plan</span>
                               <span className="text-xs font-medium text-gray-900 dark:text-white">
-                                {subscription.plan.name}
+                                {currentPlan.name}
                               </span>
                             </div>
                             <div className="flex justify-between">
                               <span className="text-xs text-gray-600 dark:text-gray-400">Billing Cycle</span>
                               <span className="text-xs font-medium text-gray-900 dark:text-white capitalize">
-                                {subscription.plan.billing_cycle || '—'}
+                                {currentPlan.billing_cycle || '—'}
                               </span>
                             </div>
                           </>
