@@ -47,10 +47,12 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   const [daysRemaining, setDaysRemaining] = useState(0);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [accessMessage, setAccessMessage] = useState<string | null>(null);
+  const [isEarlyAdopter, setIsEarlyAdopter] = useState(false);
 
   const fetchSubscription = useCallback(async () => {
     if (!userId) {
       setStatus('none');
+      setIsEarlyAdopter(false);
       setLoading(false);
       return;
     }
@@ -103,6 +105,7 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
       setDaysRemaining(access?.days_remaining ?? 0);
       setExpiresAt(access?.expires_at ?? null);
       setAccessMessage(access?.message ?? null);
+      setIsEarlyAdopter(Boolean(access?.is_early_adopter || sub?.metadata?.early_adopter));
 
       if (access?.has_access) {
         setStatus(access.is_trial ? 'trial' : 'active');
@@ -174,7 +177,6 @@ export function useSubscription(userId?: string | null): UseSubscriptionResult {
   );
 
   const isActive = status === 'active' || status === 'trial';
-  const isEarlyAdopter = !!subscription?.metadata?.early_adopter || accessMessage === "Early adopter free access active";
 
   return {
     status,
