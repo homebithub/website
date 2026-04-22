@@ -299,6 +299,25 @@ function transformProfileData(data: ProfileSetupData): any {
   // This transforms the step data into the format your backend expects
   const transformed: any = {};
   const profileType = getStoredProfileType();
+  const parseCurrencyAmount = (value: any): number => {
+    if (typeof value === 'number') {
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    if (typeof value !== 'string') {
+      return 0;
+    }
+
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.toLowerCase() === 'negotiable') {
+      return 0;
+    }
+
+    const normalized = trimmed.replace(/KES/gi, '').replace(/,/g, '').trim();
+    const firstPart = normalized.split('-')[0].replace('+', '').trim();
+    const parsed = Number(firstPart);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
 
   // Common fields
   // Location
@@ -416,7 +435,13 @@ function transformProfileData(data: ProfileSetupData): any {
 
     // Salary Expectations
     if (data.salary) {
-      transformed.salary_expectation = parseFloat(data.salary.amount || data.salary.expectation || 0);
+      transformed.salary_expectation = parseCurrencyAmount(
+        data.salary.amount ??
+        data.salary.salary_expectation ??
+        data.salary.min_amount ??
+        data.salary.expectation ??
+        0
+      );
       transformed.salary_frequency = data.salary.frequency || 'monthly';
     }
 
@@ -496,7 +521,7 @@ function reconstructProfileData(profile: any): ProfileSetupData {
     // Pets - loaded separately from pets table
 
     // Budget
-    if (profile.budget_min || profile.budget_max) {
+    if (profile.budget_min !== undefined || profile.budget_max !== undefined) {
       data.budget = {
         min: profile.budget_min,
         max: profile.budget_max,
@@ -570,9 +595,10 @@ function reconstructProfileData(profile: any): ProfileSetupData {
     }
 
     // Salary
-    if (profile.salary_expectation || profile.salary_frequency) {
+    if (profile.salary_expectation !== undefined || profile.salary_frequency) {
       data.salary = {
         expectation: profile.salary_expectation,
+        amount: profile.salary_expectation,
         frequency: profile.salary_frequency
       };
     }

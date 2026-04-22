@@ -5,6 +5,7 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
+import { formatOnboardingAmount } from '~/utils/onboardingCompensation';
 
 type Variant = 'v1' | 'v2' | 'v3';
 
@@ -73,7 +74,7 @@ function formatDate(value?: string) {
 
 function formatMoney(value?: number, frequency?: string) {
   if (!value) return 'Not specified';
-  const amount = `KES ${Number(value).toLocaleString()}`;
+  const amount = formatOnboardingAmount(value, frequency);
   return frequency ? `${amount} / ${frequency}` : amount;
 }
 

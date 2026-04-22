@@ -26,6 +26,7 @@ import PreferredWorkEnvironment from '~/components/PreferredWorkEnvironment';
 import Bio from '~/components/Bio';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
+import { formatOnboardingAmount } from '~/utils/onboardingCompensation';
 
 interface HousehelpData {
   id?: string;
@@ -858,7 +859,7 @@ export default function HousehelpProfile() {
           <div>
             <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Expected Salary</span>
             <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
-              {profile.salary_expectation ? `KES ${profile.salary_expectation.toLocaleString()}` : 'Not specified'}
+              {profile.salary_expectation ? formatOnboardingAmount(profile.salary_expectation, profile.salary_frequency) : 'Not specified'}
             </p>
           </div>
           {profile.salary_frequency && (

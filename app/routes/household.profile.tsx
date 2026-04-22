@@ -25,6 +25,7 @@ import Bio from '~/components/Bio';
 import Religion from '~/components/Religion';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
+import { formatOnboardingBudgetRange } from '~/utils/onboardingCompensation';
 
 interface HouseholdData {
   id?: string;
@@ -1118,7 +1119,7 @@ export default function HouseholdProfile() {
         {profile.budget_min || profile.budget_max ? (
           <div className="space-y-2">
             <p className="text-xs font-bold text-purple-900 dark:text-purple-100">
-              {profile.budget_min && profile.budget_max ? `KES ${profile.budget_min.toLocaleString()} - ${profile.budget_max.toLocaleString()}` : profile.budget_min ? `KES ${profile.budget_min.toLocaleString()}+` : 'Negotiable'}
+              {formatOnboardingBudgetRange(profile.budget_min, profile.budget_max, profile.salary_frequency)}
             </p>
             {profile.salary_frequency && (
               <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">Per {profile.salary_frequency.replace('ly', '')}</p>

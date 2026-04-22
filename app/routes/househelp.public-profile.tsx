@@ -15,6 +15,7 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { useSubscription } from '~/hooks/useSubscription';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
+import { formatOnboardingAmount } from '~/utils/onboardingCompensation';
 
 interface UserData {
   id?: string;
@@ -957,7 +958,7 @@ export default function HousehelpPublicProfile() {
               {profile.salary_expectation ? (
                 <div className="space-y-2">
                   <p className="text-xs font-bold text-purple-900 dark:text-purple-100">
-                    KES {profile.salary_expectation.toLocaleString()}
+                    {formatOnboardingAmount(profile.salary_expectation, profile.salary_frequency)}
                   </p>
                   {profile.salary_frequency && (
                     <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">

@@ -23,6 +23,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSubscription } from '~/hooks/useSubscription';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
 import { resolveHousehelpUserId } from '~/utils/househelpProfiles';
+import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 
 interface HousehelpProfile {
   id: number | string;
@@ -870,14 +871,11 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                           )}
 
                           <p className={`${cardTextClass} font-semibold text-gray-700 dark:text-gray-300 ${isHome2 ? 'text-left' : 'text-center'} mb-2`}>
-                            💰 {househelp.salary_expectation && Number(househelp.salary_expectation) > 0
-                              ? `${househelp.salary_expectation}${househelp.salary_frequency ? ` per ${
-                                  househelp.salary_frequency === 'daily' ? 'day' :
-                                  househelp.salary_frequency === 'weekly' ? 'week' :
-                                  househelp.salary_frequency === 'monthly' ? 'month' :
-                                  househelp.salary_frequency
-                                }` : ''}`
-                              : 'Salary not yet specified'}
+                            💰 {formatOnboardingAmountWithFrequency(
+                              househelp.salary_expectation,
+                              househelp.salary_frequency,
+                              'Salary not yet specified'
+                            )}
                           </p>
 
                           <div className={`flex flex-wrap gap-2 ${isHome2 ? 'justify-start' : 'justify-center'} mb-3`}>

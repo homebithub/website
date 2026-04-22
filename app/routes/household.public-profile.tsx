@@ -16,6 +16,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { resolveHouseholdOwnerUserId, resolveHouseholdProfile } from '~/utils/householdProfiles';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
+import { formatOnboardingBudgetRange } from '~/utils/onboardingCompensation';
 
 interface HouseholdData {
   id?: string;
@@ -638,13 +639,7 @@ export default function HouseholdPublicProfile() {
             <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200/50 dark:border-green-500/20 sm:col-span-2">
               <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Salary Range</span>
               <p className="text-base font-bold text-green-800 dark:text-green-200 mt-1">
-                {profile.budget_min && profile.budget_max
-                  ? `KES ${profile.budget_min.toLocaleString()} – ${profile.budget_max.toLocaleString()}`
-                  : profile.budget_min
-                    ? `KES ${profile.budget_min.toLocaleString()}+`
-                    : profile.budget_max
-                      ? `Up to KES ${profile.budget_max.toLocaleString()}`
-                      : 'Negotiable'}
+                {formatOnboardingBudgetRange(profile.budget_min, profile.budget_max, profile.salary_frequency).replace(' - ', ' – ')}
               </p>
             </div>
             <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-xl">

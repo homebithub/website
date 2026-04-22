@@ -6,24 +6,10 @@ import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
-import { useSalaryRanges } from '~/hooks/useOnboardingOptions';
+import { useSalaryRanges, type SalaryRange } from '~/hooks/useOnboardingOptions';
 import CustomSelect from '~/components/ui/CustomSelect';
 
 type SalaryFrequency = 'daily' | 'weekly' | 'monthly';
-type SalaryRange = string;
-
-function parseSalaryRangeToNumber(range: string): number | null {
-  const trimmed = (range || '').trim();
-  if (!trimmed || trimmed.toLowerCase() === 'negotiable') {
-    return null;
-  }
-
-  // Remove currency labels and commas, then parse first numeric bound.
-  const normalized = trimmed.replace(/KES/gi, '').replace(/,/g, '').trim();
-  const firstPart = normalized.split('-')[0].replace('+', '').trim();
-  const parsed = Number(firstPart);
-  return Number.isFinite(parsed) ? parsed : null;
-}
 
 const SalaryExpectations: React.FC = () => {
   const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
@@ -36,6 +22,15 @@ const SalaryExpectations: React.FC = () => {
   const submit = useSubmit();
   
   const currentRanges = (salaryRanges || []).map(r => r.label);
+  const findRangeByLabel = (label: string): SalaryRange | undefined =>
+    (salaryRanges || []).find((range) => range.label === label);
+  const findRangeByAmount = (amount: number): SalaryRange | undefined =>
+    (salaryRanges || []).find((range) => {
+      if (range.is_negotiable) {
+        return amount === 0;
+      }
+      return range.min_amount === amount;
+    });
 
   // Populate from context (instant on back-nav)
   useEffect(() => {
@@ -56,21 +51,14 @@ const SalaryExpectations: React.FC = () => {
         
         const data = await grpcProfileService.getCurrentHousehelpProfile('');
         if (data) {
-          let effectiveFreq: SalaryFrequency = frequency;
           if (data.salary_frequency) {
             const freq = data.salary_frequency.toLowerCase() as SalaryFrequency;
             setFrequency(freq);
-            effectiveFreq = freq;
           }
-          if (data.salary_expectation) {
-            // Find matching range from current ranges
-            const matchedRange = currentRanges.find(range => {
-              if (range === 'Negotiable') return data.salary_expectation === 0;
-              const parsed = parseSalaryRangeToNumber(range);
-              return parsed === data.salary_expectation;
-            });
+          if (data.salary_expectation !== undefined && data.salary_expectation !== null) {
+            const matchedRange = findRangeByAmount(Number(data.salary_expectation));
             if (matchedRange) {
-              setSelectedRange(matchedRange);
+              setSelectedRange(matchedRange.label);
             }
           }
         }
@@ -79,7 +67,7 @@ const SalaryExpectations: React.FC = () => {
       }
     };
     loadData();
-  }, [frequency, currentRanges.length]);
+  }, [salaryRanges]);
 
   const autoSave = async (freq: SalaryFrequency, range: string) => {
     if (!range) return;
@@ -90,12 +78,15 @@ const SalaryExpectations: React.FC = () => {
 
     try {
       const token = getAccessTokenFromCookies();
-      const normalizedExpectation = parseSalaryRangeToNumber(range);
+      const selectedSalaryRange = findRangeByLabel(range);
+      const normalizedExpectation = selectedSalaryRange?.is_negotiable
+        ? 0
+        : selectedSalaryRange?.min_amount;
       const updates: Record<string, string | number> = {
         salary_frequency: freq.toLowerCase(),
       };
 
-      if (normalizedExpectation !== null) {
+      if (normalizedExpectation !== undefined && normalizedExpectation !== null) {
         updates.salary_expectation = normalizedExpectation;
       }
 
@@ -104,7 +95,14 @@ const SalaryExpectations: React.FC = () => {
       );
 
       markClean();
-      updateStepData('salary', { expectation: range, frequency: freq });
+      updateStepData('salary', {
+        expectation: range,
+        amount: normalizedExpectation ?? 0,
+        min_amount: selectedSalaryRange?.min_amount ?? 0,
+        max_amount: selectedSalaryRange?.max_amount ?? 0,
+        is_negotiable: selectedSalaryRange?.is_negotiable ?? false,
+        frequency: freq,
+      });
       setSuccess('Salary expectations saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {

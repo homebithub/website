@@ -6,7 +6,7 @@ import { handleApiError } from '../../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileSetup } from '~/contexts/ProfileSetupContext';
-import { useSalaryRanges } from '~/hooks/useOnboardingOptions';
+import { useSalaryRanges, type SalaryRange } from '~/hooks/useOnboardingOptions';
 import CustomSelect from '~/components/ui/CustomSelect';
 
 type BudgetFrequency = 'daily' | 'weekly' | 'monthly';
@@ -30,18 +30,32 @@ const Budget: React.FC = () => {
   };
 
   const currentRanges = BUDGET_RANGES[frequency] || [];
+  const findRangeByLabel = (label: string): SalaryRange | undefined =>
+    budgetRanges.find((range) => range.label === label);
+  const findRangeByAmounts = (min: number, max: number): SalaryRange | undefined =>
+    budgetRanges.find((range) => {
+      if (range.is_negotiable) {
+        return min === 0 && max === 0;
+      }
+      return range.min_amount === min && range.max_amount === max;
+    });
 
   // Populate from context (instant on back-nav)
   useEffect(() => {
     const cached = profileData.budget;
     if (cached) {
-      if (cached.min && cached.max) {
-        setSelectedRange(`${cached.min}-${cached.max}`);
+      if (cached.rangeLabel) {
+        setSelectedRange(cached.rangeLabel);
+      } else if (cached.min !== undefined && cached.max !== undefined) {
+        const matchedRange = findRangeByAmounts(Number(cached.min), Number(cached.max));
+        if (matchedRange) {
+          setSelectedRange(matchedRange.label);
+        }
       }
       const freq = cached.frequency || cached.salary_frequency;
       if (freq) setFrequency(freq.toLowerCase() as BudgetFrequency);
     }
-  }, [profileData.budget]);
+  }, [budgetRanges, profileData.budget]);
 
   // Load existing data from backend (only once on mount)
   useEffect(() => {
@@ -54,20 +68,13 @@ const Budget: React.FC = () => {
         
         const data = await grpcProfileService.getCurrentHouseholdProfile('');
         if (data) {
-          let effectiveFreq: BudgetFrequency = 'monthly';
           if (data.salary_frequency) {
-            effectiveFreq = data.salary_frequency.toLowerCase() as BudgetFrequency;
-            setFrequency(effectiveFreq);
+            setFrequency(data.salary_frequency.toLowerCase() as BudgetFrequency);
           }
           if (data.budget_min !== undefined || data.budget_max !== undefined) {
-            // Store the backend values to match against ranges once they load
-            const budgetMin = data.budget_min;
-            const budgetMax = data.budget_max;
-            // We'll set the range directly as a string for now
-            if (budgetMin === 0 && budgetMax === 0) {
-              setSelectedRange('Negotiable');
-            } else if (budgetMin && budgetMax) {
-              setSelectedRange(`${budgetMin.toLocaleString()}-${budgetMax.toLocaleString()} KES`);
+            const matchedRange = findRangeByAmounts(Number(data.budget_min || 0), Number(data.budget_max || 0));
+            if (matchedRange) {
+              setSelectedRange(matchedRange.label);
             }
           }
           initialLoadDone.current = true;
@@ -77,7 +84,7 @@ const Budget: React.FC = () => {
       }
     };
     loadData();
-  }, []);
+  }, [budgetRanges]);
 
   const handleRangeSelect = async (range: string) => {
     setSelectedRange(range);
@@ -99,21 +106,9 @@ const Budget: React.FC = () => {
 
     try {
       const token = getAccessTokenFromCookies();
-      
-      // Parse budget range
-      let budgetMin = 0;
-      let budgetMax = 0;
-      
-      if (range !== 'Negotiable') {
-        const parts = range.split('-');
-        if (parts.length === 2) {
-          budgetMin = parseInt(parts[0].replace(/,/g, '').replace(/\s+/g, ''));
-          budgetMax = parseInt(parts[1].replace(/,/g, '').replace(/\s+/g, '').replace('KES', '').replace('+', ''));
-        } else if (range.includes('+')) {
-          budgetMin = parseInt(range.replace(/,/g, '').replace(/\s+/g, '').replace('KES', '').replace('+', ''));
-          budgetMax = budgetMin * 2; // Set max to double for open-ended ranges
-        }
-      }
+      const selectedBudgetRange = findRangeByLabel(range);
+      const budgetMin = selectedBudgetRange?.min_amount ?? 0;
+      const budgetMax = selectedBudgetRange?.max_amount ?? 0;
       
       await grpcProfileService.updateHouseholdProfile('', 'household', {
         budget_min: budgetMin,
@@ -127,7 +122,13 @@ const Budget: React.FC = () => {
       });
 
       markClean();
-      updateStepData('budget', { min: budgetMin, max: budgetMax, frequency });
+      updateStepData('budget', {
+        min: budgetMin,
+        max: budgetMax,
+        frequency,
+        rangeLabel: selectedBudgetRange?.label || range,
+        is_negotiable: selectedBudgetRange?.is_negotiable ?? false,
+      });
       setSuccess('Budget saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {

@@ -14,6 +14,7 @@ import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 
 // Types
 type ShortlistItem = {
@@ -307,14 +308,11 @@ export default function HouseholdShortlistPage() {
                       {/* Salary */}
                       {h && (
                         <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center mb-3">
-                          💰 {h.salary_expectation && Number(h.salary_expectation) > 0 
-                            ? `${h.salary_expectation}${h.salary_frequency ? ` per ${
-                                h.salary_frequency === 'daily' ? 'day' :
-                                h.salary_frequency === 'weekly' ? 'week' :
-                                h.salary_frequency === 'monthly' ? 'month' :
-                                h.salary_frequency
-                              }` : ''}`
-                            : 'No salary expectations specified'}
+                          💰 {formatOnboardingAmountWithFrequency(
+                            h.salary_expectation,
+                            h.salary_frequency,
+                            'No salary expectations specified'
+                          )}
                         </p>
                       )}
 

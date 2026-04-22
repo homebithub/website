@@ -114,8 +114,9 @@ function HouseholdProfileSetupContent() {
                (data.chores?.chores?.length > 0);
       case 'budget':
         // updateStepData: { min, max } | legacy: { min, max } | step tracking: { budget_min, budget_max }
-        return (!!data.budget?.min && !!data.budget?.max) ||
-               (!!data.budget?.budget_min && !!data.budget?.budget_max);
+        return (data.budget?.min !== undefined && data.budget?.max !== undefined) ||
+               (data.budget?.budget_min !== undefined && data.budget?.budget_max !== undefined) ||
+               !!data.budget?.rangeLabel;
       case 'religion':
         return !!data.religion;
       case 'bio':
