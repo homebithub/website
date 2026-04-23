@@ -355,7 +355,21 @@ export const paymentsService = {
       request.setUserId(resolveUserId(userId));
       paymentsClient.downloadReceipt(request, getMetadata(), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
-        else resolve(response);
+        else {
+          const pdfData =
+            typeof response?.getPdfData_asU8 === 'function'
+              ? response.getPdfData_asU8()
+              : response?.getPdfData?.() ?? null;
+          const filename =
+            typeof response?.getFilename === 'function'
+              ? response.getFilename()
+              : response?.filename ?? response?.getFilename?.() ?? '';
+
+          resolve({
+            pdfData,
+            filename,
+          });
+        }
       });
     });
   },

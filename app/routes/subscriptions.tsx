@@ -568,10 +568,13 @@ export default function SubscriptionsPage() {
     setReceiptMessage(null);
 
     try {
-      const response = await paymentsService.downloadReceipt(selectedPayment.id, currentUserId) as any;
-      const result = response?.toObject?.() ?? response;
-      const pdfData = result.pdfData || result.pdf_data;
-      const filename = result.filename || `receipt-${selectedPayment.mpesa_receipt_number || selectedPayment.id}.pdf`;
+      const result = await paymentsService.downloadReceipt(selectedPayment.id, currentUserId) as any;
+      const pdfData = result?.pdfData;
+      const filename = result?.filename || `receipt-${selectedPayment.mpesa_receipt_number || selectedPayment.id}.pdf`;
+
+      if (!pdfData || (pdfData instanceof Uint8Array && pdfData.byteLength === 0)) {
+        throw new Error('Receipt PDF data is empty');
+      }
 
       const blob = new Blob([pdfData], { type: 'application/pdf' });
       const url = window.URL.createObjectURL(blob);
