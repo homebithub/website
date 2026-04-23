@@ -38,13 +38,18 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   const mapToNotification = (n: any): NotificationItem => ({
     id: n.id || "",
     userId: n.user_id || "",
-    title: n.title || "",
-    message: n.message || "",
+    title: n.title || n.rendered_subject || "",
+    message: n.message || n.rendered_content || "",
     type: n.type || "",
     status: n.status || "",
-    clicked: n.clicked || false,
+    clicked: Boolean(n.clicked || n.clicked_at),
     createdAt: n.created_at || "",
     updatedAt: n.updated_at || "",
+    created_at: n.created_at || "",
+    updated_at: n.updated_at || "",
+    rendered_subject: n.rendered_subject || "",
+    rendered_content: n.rendered_content || "",
+    clicked_at: n.clicked_at || "",
   });
 
   const fetchLatest = useCallback(async (query: string = search) => {
