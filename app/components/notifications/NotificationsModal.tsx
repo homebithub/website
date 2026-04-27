@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import { SidePanel } from '~/components/SidePanel';
 import { useNotifications } from '~/hooks/useNotifications';
 import type { NotificationItem } from '~/types/notifications';
@@ -6,6 +7,52 @@ import type { NotificationItem } from '~/types/notifications';
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+}
+
+function getNotificationBody(notification: NotificationItem) {
+  return notification.message || notification.body || '';
+}
+
+function isHtmlBody(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return /^<!doctype\s+html/i.test(trimmed)
+    || /^<html[\s>]/i.test(trimmed)
+    || /<body[\s>]/i.test(trimmed)
+    || /<\/(?:div|p|table|section|article|main|h1|h2|h3)>/i.test(trimmed);
+}
+
+function htmlPreviewSrcDoc(html: string) {
+  if (/^<!doctype\s+html/i.test(html.trim()) || /^<html[\s>]/i.test(html.trim())) {
+    return html;
+  }
+
+  return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"></head><body>${html}</body></html>`;
+}
+
+function NotificationBodyPreview({ body, expanded }: { body: string; expanded: boolean }) {
+  if (!isHtmlBody(body)) {
+    return (
+      <p className={`text-xs ${!expanded ? 'line-clamp-2' : 'whitespace-pre-wrap'} text-gray-600 dark:text-gray-300 leading-relaxed`}>
+        {body}
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-2 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-purple-500/20 dark:bg-white">
+      <div className="flex items-center justify-between border-b border-gray-100 bg-gray-50 px-3 py-2 dark:border-gray-200">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-gray-500">HTML preview</span>
+        <span className="text-[10px] text-gray-400">{expanded ? 'Expanded' : 'Tap to expand'}</span>
+      </div>
+      <iframe
+        title="Notification HTML preview"
+        sandbox=""
+        srcDoc={htmlPreviewSrcDoc(body)}
+        className={`block w-full pointer-events-none bg-white ${expanded ? 'h-[420px]' : 'h-40'}`}
+      />
+    </div>
+  );
 }
 
 export default function NotificationsModal({ isOpen, onClose }: Props) {
@@ -48,6 +95,12 @@ export default function NotificationsModal({ isOpen, onClose }: Props) {
       await markOneAsRead(n.id);
     }
     toggle(n.id);
+  };
+
+  const onItemKeyDown = (event: KeyboardEvent<HTMLDivElement>, notification: NotificationItem) => {
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+    event.preventDefault();
+    void onClickItem(notification);
   };
 
   useEffect(() => {
@@ -104,26 +157,29 @@ export default function NotificationsModal({ isOpen, onClose }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
               </div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">You're all caught up. No notifications.</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">You&apos;re all caught up. No notifications.</p>
             </li>
           )}
           {items.map((n) => (
-            <li key={n.id} className={`py-4 px-2 -mx-2 rounded-xl transition-all cursor-pointer ${!n.clicked ? 'bg-purple-50/60 dark:bg-purple-900/10' : 'hover:bg-gray-50 dark:hover:bg-purple-900/5'}`} onClick={() => onClickItem(n)}>
-              <div className="flex items-start justify-between">
-                <div className="pr-3 min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    {!n.clicked && <span className="flex-shrink-0 w-2 h-2 bg-purple-600 rounded-full" />}
-                    <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{n.title || 'Notification'}</p>
+            <li key={n.id}>
+              <div
+                className={`py-4 px-2 -mx-2 rounded-xl transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 ${!n.clicked ? 'bg-purple-50/60 dark:bg-purple-900/10' : 'hover:bg-gray-50 dark:hover:bg-purple-900/5'}`}
+                onClick={() => onClickItem(n)}
+                onKeyDown={(event) => onItemKeyDown(event, n)}
+                role="button"
+                tabIndex={0}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="pr-3 min-w-0 flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      {!n.clicked && <span className="flex-shrink-0 w-2 h-2 bg-purple-600 rounded-full" />}
+                      <p className="text-xs font-bold text-gray-900 dark:text-white truncate">{n.title || 'Notification'}</p>
+                    </div>
+                    <NotificationBodyPreview body={getNotificationBody(n)} expanded={Boolean(expanded[n.id])} />
                   </div>
-                  <p className={`text-xs ${!expanded[n.id] ? 'line-clamp-2' : ''} text-gray-600 dark:text-gray-300 leading-relaxed`}>{n.message || n.body || ''}</p>
+                  <div className="flex-shrink-0 text-[10px] font-medium text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">{formatTime(n.created_at || n.createdAt)}</div>
                 </div>
-                <div className="flex-shrink-0 text-[10px] font-medium text-gray-400 dark:text-gray-500 ml-2 whitespace-nowrap">{formatTime(n.created_at || n.createdAt)}</div>
               </div>
-              {expanded[n.id] && (
-                <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap border-t border-gray-100 dark:border-purple-500/10 pt-3">
-                  {n.message || n.body || ''}
-                </div>
-              )}
             </li>
           ))}
           {(loadingMore || hasMore) && (

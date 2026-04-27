@@ -15,6 +15,46 @@ interface UseNotificationsOptions {
   search?: string;
 }
 
+type NotificationsUpdatedDetail = {
+  action?: "mark-all-read" | "mark-one-read";
+  notificationId?: string;
+  unreadCount?: number;
+  source?: string;
+};
+
+type NotificationApiItem = Record<string, unknown>;
+
+const NOTIFICATIONS_UPDATED_EVENT = "notifications-updated";
+
+function dispatchNotificationsUpdated(detail: NotificationsUpdatedDetail) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent<NotificationsUpdatedDetail>(NOTIFICATIONS_UPDATED_EVENT, { detail }));
+}
+
+function asString(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  return typeof value === "string" ? value : String(value);
+}
+
+function mapToNotification(n: NotificationApiItem): NotificationItem {
+  return {
+    id: asString(n.id),
+    userId: asString(n.user_id),
+    title: asString(n.title || n.rendered_subject),
+    message: asString(n.message || n.rendered_content),
+    type: asString(n.type),
+    status: asString(n.status),
+    clicked: Boolean(n.clicked || n.clicked_at),
+    createdAt: asString(n.created_at),
+    updatedAt: asString(n.updated_at),
+    created_at: asString(n.created_at),
+    updated_at: asString(n.updated_at),
+    rendered_subject: asString(n.rendered_subject),
+    rendered_content: asString(n.rendered_content),
+    clicked_at: asString(n.clicked_at),
+  };
+}
+
 export function useNotifications({ pollingMs = 15000, pageSize = 20, search = "" }: UseNotificationsOptions = {}) {
   const [items, setItems] = useState<NotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -24,6 +64,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const unavailableUntilRef = useRef(0);
+  const sourceIdRef = useRef(`notifications-${Math.random().toString(36).slice(2)}`);
 
   const getCurrentUserId = useCallback((): string | null => {
     const user = getStoredUser();
@@ -35,24 +76,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
 
   const computeUnread = (list: NotificationItem[]) => list.filter(n => !n.clicked && (n.status?.toLowerCase?.() !== "read")).length;
 
-  const mapToNotification = (n: any): NotificationItem => ({
-    id: n.id || "",
-    userId: n.user_id || "",
-    title: n.title || n.rendered_subject || "",
-    message: n.message || n.rendered_content || "",
-    type: n.type || "",
-    status: n.status || "",
-    clicked: Boolean(n.clicked || n.clicked_at),
-    createdAt: n.created_at || "",
-    updatedAt: n.updated_at || "",
-    created_at: n.created_at || "",
-    updated_at: n.updated_at || "",
-    rendered_subject: n.rendered_subject || "",
-    rendered_content: n.rendered_content || "",
-    clicked_at: n.clicked_at || "",
-  });
-
-  const fetchLatest = useCallback(async (query: string = search) => {
+  const fetchLatest = useCallback(async () => {
     try {
       if (Date.now() < unavailableUntilRef.current) return;
       setLoading(true);
@@ -70,16 +94,16 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       if (!userID) return;
 
       const data = await notificationsService.listNotificationsByUser(userID, pageSize, 0);
-      const notifications = data?.notifications || [];
+      const notifications: NotificationApiItem[] = Array.isArray(data?.notifications) ? data.notifications : [];
       
-      const list: NotificationItem[] = notifications.map((n: any) => mapToNotification(n));
+      const list: NotificationItem[] = notifications.map((n) => mapToNotification(n));
 
       setItems(list);
       setHasMore(list.length >= pageSize);
       
-      setTotalCount(data?.total_count || list.length);
+      setTotalCount(data?.total_count ?? list.length);
       setShowingCount(list.length);
-      setUnreadCount(data?.unread_count || computeUnread(list));
+      setUnreadCount(data?.unread_count ?? computeUnread(list));
     } catch (e) {
       if (shouldSilenceGatewayError(e)) {
         unavailableUntilRef.current = Date.now() + 60_000;
@@ -89,7 +113,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
     } finally {
       setLoading(false);
     }
-  }, [getCurrentUserId, pageSize, search]);
+  }, [getCurrentUserId, pageSize]);
 
   const loadMore = async () => {
     if (loadingMore || !hasMore) return;
@@ -100,9 +124,9 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       if (!userID) return;
 
       const data = await notificationsService.listNotificationsByUser(userID, pageSize, items.length);
-      const notifications = data?.notifications || [];
+      const notifications: NotificationApiItem[] = Array.isArray(data?.notifications) ? data.notifications : [];
       
-      const list: NotificationItem[] = notifications.map((n: any) => mapToNotification(n));
+      const list: NotificationItem[] = notifications.map((n) => mapToNotification(n));
 
       if (list.length > 0) {
         setItems(prev => {
@@ -130,15 +154,43 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
   };
 
   useEffect(() => {
-    fetchLatest(search);
-    const id = setInterval(() => fetchLatest(search), pollingMs);
+    fetchLatest();
+    const id = setInterval(() => fetchLatest(), pollingMs);
     return () => clearInterval(id);
   }, [fetchLatest, pollingMs, search]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const handleNotificationsUpdated = (event: Event) => {
+      const detail = (event as CustomEvent<NotificationsUpdatedDetail>).detail;
+      if (detail?.source === sourceIdRef.current) return;
+
+      unavailableUntilRef.current = 0;
+
+      if (typeof detail?.unreadCount === "number") {
+        setUnreadCount(detail.unreadCount);
+      }
+
+      if (detail?.action === "mark-all-read") {
+        setItems(prev => prev.map(item => ({ ...item, clicked: true, status: "read" })));
+      }
+
+      if (detail?.action === "mark-one-read" && detail.notificationId) {
+        setItems(prev => prev.map(item => item.id === detail.notificationId ? { ...item, clicked: true, status: "read" } : item));
+      }
+
+      void fetchLatest();
+    };
+
+    window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
+    return () => window.removeEventListener(NOTIFICATIONS_UPDATED_EVENT, handleNotificationsUpdated);
+  }, [fetchLatest]);
+
   const refreshFromRealtime = useCallback(() => {
     unavailableUntilRef.current = 0;
-    void fetchLatest(search);
-  }, [fetchLatest, search]);
+    void fetchLatest();
+  }, [fetchLatest]);
 
   useSSESubscription('notifications.snapshot', refreshFromRealtime);
   useSSESubscription('notifications.created', refreshFromRealtime);
@@ -151,6 +203,9 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       if (!userID) return;
       await notificationsService.markAllNotificationsAsClicked(userID);
       unavailableUntilRef.current = 0;
+      setUnreadCount(0);
+      setItems(prev => prev.map(item => ({ ...item, clicked: true, status: "read" })));
+      dispatchNotificationsUpdated({ action: "mark-all-read", unreadCount: 0, source: sourceIdRef.current });
       await fetchLatest();
     } catch (e) {
       if (!shouldSilenceGatewayError(e)) {
@@ -163,6 +218,9 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
     try {
       await notificationsService.markNotificationAsClicked(id, '');
       unavailableUntilRef.current = 0;
+      setUnreadCount(prev => Math.max(0, prev - 1));
+      setItems(prev => prev.map(item => item.id === id ? { ...item, clicked: true, status: "read" } : item));
+      dispatchNotificationsUpdated({ action: "mark-one-read", notificationId: id, source: sourceIdRef.current });
       await fetchLatest();
     } catch (e) {
       if (!shouldSilenceGatewayError(e)) {
