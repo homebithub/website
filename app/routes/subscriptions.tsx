@@ -139,6 +139,9 @@ export default function SubscriptionsPage() {
   const profileType: string = currentUser?.profile_type || getStoredProfileType() || '';
   const availablePlans = (plans.length > 0 ? plans : allPlans).filter(p => p.is_active && p.profile_type === profileType);
   const relevantPlans = availablePlans;
+  const changePlanOptions = subscription
+    ? relevantPlans.filter((plan) => plan.is_active && plan.id !== subscription.plan_id)
+    : [];
 
   const getFeaturesList = (features: any): string[] => {
     const list: string[] = [];
@@ -860,7 +863,7 @@ export default function SubscriptionsPage() {
                     )}
 
                     {/* Change Plan Section */}
-                    {plans.length > 0 && (
+                    {changePlanOptions.length > 0 && (
                       <div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">
                         <h4 className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">
                           Change Your Plan
@@ -870,7 +873,7 @@ export default function SubscriptionsPage() {
                         </p>
                         
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                          {plans.filter(p => p.is_active && p.id !== subscription.plan_id).map((plan) => (
+                          {changePlanOptions.map((plan) => (
                             <div
                               key={plan.id}
                               className="relative bg-white dark:bg-[#13131a] rounded-xl p-4 border border-purple-200/40 dark:border-purple-500/30 hover:border-purple-400 dark:hover:border-purple-400 transition-colors"
@@ -1481,14 +1484,14 @@ export default function SubscriptionsPage() {
           isOpen={showCancelFlow}
           onClose={() => setShowCancelFlow(false)}
           subscription={subscription as any}
-          availablePlans={plans as any}
+          availablePlans={relevantPlans as any}
           onCancel={handleCancelSubscription}
           onPauseInstead={() => {
             setShowCancelFlow(false);
             setShowPauseModal(true);
           }}
           onDowngrade={(planId) => {
-            const plan = plans.find(p => p.id === planId);
+            const plan = relevantPlans.find(p => p.id === planId);
             if (plan) {
               setSelectedNewPlan(plan);
               setShowChangePlanModal(true);
