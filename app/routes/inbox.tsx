@@ -2324,37 +2324,39 @@ export default function InboxPage() {
       {showHireWizard && selectedConversation && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in" />
-          <ConversationHireWizard
-            househelpId={
-              currentUserProfileType?.toLowerCase() === 'household'
-                ? (househelpProfileIdForHire || selectedConversation!.househelp_profile_id || selectedConversation!.househelp_id)
-                : (selectedConversation!.household_profile_id || selectedConversation!.household_id)
-            }
-            househelpName={selectedConversation!.participant_name || 'User'}
-            onClose={() => {
-              setShowHireWizard(false);
-              setHousehelpProfileIdForHire(null);
-            }}
-            onSuccess={(newHireRequestId) => {
-              setShowHireWizard(false);
-              setHousehelpProfileIdForHire(null);
-              setHireRequestStatus('pending');
-              setHireRequestId(newHireRequestId);
-              const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
-              notificationsService.sendMessage(activeConversationId!, body)
-                .then((data) => {
-                  const msg = normalizeMessage(data || {});
-                  if (msg) {
-                    setMessages((prev) => [...prev, msg]);
-                    setTimeout(
-                      () => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }),
-                      50,
-                    );
-                  }
-                })
-                .catch(console.error);
-            }}
-          />
+          <div className="relative z-10 w-full px-4 sm:px-0 flex justify-center">
+            <ConversationHireWizard
+              househelpId={
+                currentUserProfileType?.toLowerCase() === 'household'
+                  ? (househelpProfileIdForHire || selectedConversation!.househelp_profile_id || selectedConversation!.househelp_id)
+                  : (selectedConversation!.household_profile_id || selectedConversation!.household_id)
+              }
+              househelpName={selectedConversation!.participant_name || 'User'}
+              onClose={() => {
+                setShowHireWizard(false);
+                setHousehelpProfileIdForHire(null);
+              }}
+              onSuccess={(newHireRequestId) => {
+                setShowHireWizard(false);
+                setHousehelpProfileIdForHire(null);
+                setHireRequestStatus('pending');
+                setHireRequestId(newHireRequestId);
+                const body = `I've sent you a formal hire request. Please review and let me know if you have any questions!`;
+                notificationsService.sendMessage(activeConversationId!, body)
+                  .then((data) => {
+                    const msg = normalizeMessage(data || {});
+                    if (msg) {
+                      setMessages((prev) => [...prev, msg]);
+                      setTimeout(
+                        () => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }),
+                        50,
+                      );
+                    }
+                  })
+                  .catch(console.error);
+              }}
+            />
+          </div>
         </div>
       )}
 
