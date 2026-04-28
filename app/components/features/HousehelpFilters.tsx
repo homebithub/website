@@ -43,17 +43,17 @@ interface Props {
 
 export default function HousehelpFilters({ fields, onChange, onSearch, onClose, onClear }: Props) {
   const inputBase =
-    "w-full h-11 px-4 py-2 rounded-xl border-2 border-purple-200 bg-white text-gray-900 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all";
+    "w-full h-10 px-3 py-1.5 rounded-xl border-2 border-purple-200 bg-white text-gray-900 text-xs shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all";
 
   return (
     <aside className="w-full sm:w-72 bg-white dark:bg-[#13131a] border border-purple-200/60 dark:border-purple-500/30 rounded-2xl shadow-lg p-4 sm:p-5 space-y-4">
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-purple-700 dark:text-purple-300">Filters</h3>
+        <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-300">Filters</h3>
         <div className="flex items-center gap-2">
           {onClear && (
             <button
               onClick={onClear}
-              className="hidden sm:inline-block text-xs px-3 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
+              className="hidden sm:inline-block text-[11px] px-3 py-1 rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700"
             >
               Clear
             </button>
@@ -66,7 +66,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Status */}
       <div className="flex flex-col">
-        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Status</label>
+        <label className="mb-1 text-[11px] font-medium text-gray-700 dark:text-gray-200">Status</label>
         <CustomSelect
           value={fields.status}
           onChange={(val) => onChange("status", val)}
@@ -80,7 +80,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Nanny type */}
       <div className="flex flex-col">
-        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Nanny type</label>
+        <label className="mb-1 text-[11px] font-medium text-gray-700 dark:text-gray-200">Nanny type</label>
         <CustomSelect
           value={fields.househelp_type}
           onChange={(val) => onChange("househelp_type", val)}
@@ -91,7 +91,7 @@ export default function HousehelpFilters({ fields, onChange, onSearch, onClose, 
 
       {/* Gender */}
       <div className="flex flex-col">
-        <label className="mb-1 text-xs font-medium text-gray-700 dark:text-gray-200">Gender</label>
+        <label className="mb-1 text-[11px] font-medium text-gray-700 dark:text-gray-200">Gender</label>
         <CustomSelect
           value={fields.gender}
           onChange={(val) => onChange("gender", val)}

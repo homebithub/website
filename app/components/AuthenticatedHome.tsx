@@ -593,8 +593,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4'
         : `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`;
 
-  const cardTitleClass = isHome3 ? 'text-sm' : isHome1 ? 'text-base' : 'text-lg';
-  const cardTextClass = isHome3 ? 'text-xs' : 'text-xs';
+  const cardTitleClass = isHome3 ? 'text-xs' : isHome1 ? 'text-sm' : 'text-base';
+  const cardTextClass = isHome3 ? 'text-[10px]' : 'text-[11px]';
   const filterDescription = isHome1
     ? 'Card grid style filter: wider controls and quick-action flow.'
     : isHome2
@@ -632,11 +632,11 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3'
       : 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4';
   const quickInputClass = isHome3
-    ? 'w-full h-10 px-3 rounded-lg text-xs bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500'
-    : 'w-full h-12 px-4 rounded-xl text-sm bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500';
+    ? 'w-full h-9 px-3 rounded-lg text-[10px] bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500'
+    : 'w-full h-10 px-4 rounded-xl text-xs bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100 border border-purple-200/60 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500';
   const quickLabelClass = isHome3
-    ? 'mb-1 text-xs font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300'
-    : 'mb-2 text-xs font-semibold text-gray-700 dark:text-white';
+    ? 'mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-600 dark:text-gray-300'
+    : 'mb-1 text-[11px] font-semibold text-gray-700 dark:text-white';
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -655,7 +655,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                   className={`group flex-1 flex items-center justify-between gap-3 rounded-2xl text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-purple-500 transition-colors ${filtersExpanded ? '' : 'hover:bg-gray-50/70 dark:hover:bg-white/5'}`}
                 >
                   <span className="flex flex-col">
-                    <span className={`${isHome3 ? 'text-base sm:text-lg' : 'text-lg sm:text-xl'} font-bold text-gray-900 dark:text-white`}>Find Househelps</span>
+                    <span className={`${isHome3 ? 'text-sm sm:text-base' : 'text-base sm:text-lg'} font-bold text-gray-900 dark:text-white`}>Find Househelps</span>
                     {filterDescription && (
                       <span className={`${cardTextClass} text-gray-600 dark:text-gray-400 mt-1`}>{filterDescription}</span>
                     )}
@@ -665,7 +665,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                 {filtersExpanded && (
                   <button
                     onClick={() => setShowMoreFilters(true)}
-                    className={`px-4 py-1 ${isHome3 ? 'text-xs rounded-lg' : 'rounded-xl'} bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition`}
+                    className={`px-4 py-1 ${isHome3 ? 'text-[10px] rounded-lg' : 'text-xs rounded-xl'} bg-gray-100 dark:bg-purple-600/30 text-gray-700 dark:text-white font-semibold border border-gray-300 dark:border-purple-500/30 hover:bg-gray-200 dark:hover:bg-purple-600/50 transition`}
                   >
                     More filters
                   </button>
@@ -716,15 +716,15 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                     </div>
                   </div>
                   <div className={controlsRowClass}>
-                    <div className={`${isHome2 ? 'md:col-span-2' : 'sm:col-span-2'} flex items-center ${isHome3 ? 'text-xs' : ''}`}>
-                      <span className="text-gray-700 dark:text-white font-medium">
+                    <div className={`${isHome2 ? 'md:col-span-2' : 'sm:col-span-2'} flex items-center ${isHome3 ? 'text-[10px]' : ''}`}>
+                      <span className="text-gray-700 dark:text-white font-medium text-[11px] leading-snug">
                         Use quick filters above or open <span className="font-semibold">More filters</span> for advanced options.
                         {totalCount !== null ? ` ${totalCount} results` : ''}
                       </span>
                     </div>
                     <button
                       onClick={() => handleSearch()}
-                      className={`w-full ${isHome3 ? 'px-4 py-2 text-xs rounded-lg' : 'px-8 py-1.5 rounded-xl'} font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl ${isHome3 ? '' : 'hover:scale-105'} focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500`}
+                      className={`w-full ${isHome3 ? 'px-4 py-2 text-[10px] rounded-lg' : 'px-8 py-1.5 text-xs rounded-xl'} font-bold text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl ${isHome3 ? '' : 'hover:scale-105'} focus:outline-none focus:ring-4 focus:ring-purple-300 dark:focus:ring-purple-500`}
                     >
                       Search
                     </button>
@@ -744,7 +744,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
             </SidePanel>
 
             <div className="mt-6 sm:mt-8">
-              <h2 className={`${isHome3 ? 'text-lg' : 'text-xl'} font-bold text-gray-900 dark:text-white mb-6`}>
+              <h2 className={`${isHome3 ? 'text-base' : 'text-lg'} font-bold text-gray-900 dark:text-white mb-6`}>
                 Available Househelps
               </h2>
               {actionError && <ErrorAlert message={actionError} className="mb-4" />}
