@@ -42,6 +42,8 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const connectionStartTimeRef = useRef<number>(0);
   const uptimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasConnectedRef = useRef(false);
+  const consecutiveErrorCountRef = useRef(0);
+  const disabledDueToErrorsRef = useRef(false);
   
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000;
@@ -80,6 +82,9 @@ export function SSEProvider({ children }: SSEProviderProps) {
 
   const connect = useCallback(() => {
     if (typeof window === 'undefined') return;
+    if (disabledDueToErrorsRef.current) {
+      return;
+    }
 
     const currentUserId = (user as any)?.user?.id || (user as any)?.id;
     if (!currentUserId) {
@@ -101,6 +106,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
       reconnectAttemptsRef.current = 0;
       connectionStartTimeRef.current = Date.now();
       hasConnectedRef.current = true;
+      consecutiveErrorCountRef.current = 0;
       
       // Start uptime tracking
       if (uptimeIntervalRef.current) {
@@ -132,17 +138,26 @@ export function SSEProvider({ children }: SSEProviderProps) {
       setIsConnected(false);
       es.close();
       eventSourceRef.current = null;
-      
-	      // Clear uptime tracking
-        if (uptimeIntervalRef.current) {
-          clearInterval(uptimeIntervalRef.current);
-          uptimeIntervalRef.current = null;
-        }
-        connectionStartTimeRef.current = 0;
-        setConnectionUptime(0);
+      consecutiveErrorCountRef.current += 1;
 
-	      // Attempt reconnection with exponential backoff
-	      if (!suppressLocalRetry && reconnectAttemptsRef.current < maxReconnectAttempts) {
+      // Clear uptime tracking
+      if (uptimeIntervalRef.current) {
+        clearInterval(uptimeIntervalRef.current);
+        uptimeIntervalRef.current = null;
+      }
+      connectionStartTimeRef.current = 0;
+      setConnectionUptime(0);
+
+      if (!suppressLocalRetry && consecutiveErrorCountRef.current >= 3) {
+        disabledDueToErrorsRef.current = true;
+        if (!suppressLocalRetry) {
+          console.warn('[SSE] Disabled SSE retries after repeated errors');
+        }
+        return;
+      }
+
+      // Attempt reconnection with exponential backoff
+      if (!suppressLocalRetry && reconnectAttemptsRef.current < maxReconnectAttempts) {
         const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
         
         reconnectTimeoutRef.current = setTimeout(() => {
@@ -156,6 +171,9 @@ export function SSEProvider({ children }: SSEProviderProps) {
 	  }, [disconnect, user]);
 
   const reconnect = useCallback(() => {
+    if (disabledDueToErrorsRef.current) {
+      return;
+    }
     reconnectAttemptsRef.current = 0;
     connect();
   }, [connect]);
@@ -183,6 +201,8 @@ export function SSEProvider({ children }: SSEProviderProps) {
   useEffect(() => {
     const currentUserId = (user as any)?.user?.id || (user as any)?.id;
     reconnectAttemptsRef.current = 0;
+    consecutiveErrorCountRef.current = 0;
+    disabledDueToErrorsRef.current = false;
 
     if (currentUserId) {
       hasConnectedRef.current = false;

@@ -6,7 +6,7 @@ import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { profileService as grpcProfileService, hireRequestService } from '~/services/grpc/authServices';
-import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
 import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
@@ -54,6 +54,34 @@ type Message = {
   edited_at?: string | null;
   reply_to_id?: string | null;
   reactions?: Array<{ emoji: string; user_id: string }>;
+};
+
+const normalizeConversationData = (c: any): Conversation => ({
+  id: c?.id || c?.conversation_id || '',
+  household_id: c?.household_user_id || c?.household_id || '',
+  househelp_id: c?.househelp_user_id || c?.househelp_id || '',
+  household_profile_id: c?.household_profile_id || null,
+  househelp_profile_id: c?.househelp_profile_id || null,
+  household_profile_type: c?.household_profile_type || 'household',
+  househelp_profile_type: c?.househelp_profile_type || 'househelp',
+  last_message_at: c?.last_message_at || null,
+  last_message_body: c?.last_message_body || null,
+  last_message_sender_id: c?.last_message_sender_id || null,
+  unread_count: c?.unread_count ?? 0,
+  participant_name: c?.participant_name || undefined,
+  participant_avatar: c?.participant_avatar || undefined,
+});
+
+const resolveConversationId = (payload: any): string | undefined => {
+  if (!payload || typeof payload !== 'object') return undefined;
+  return (
+    payload.conversation_id ||
+    payload.conversationId ||
+    payload?.conversation?.id ||
+    payload.id ||
+    payload?.data?.id ||
+    undefined
+  );
 };
 
 type ToastItem = {
@@ -264,6 +292,35 @@ export default function InboxPage() {
   const deleteTimersRef = useRef<Record<string, number>>({});
   const deletedBackupRef = useRef<Record<string, { body: string }>>({});
   const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
+  const hydratedConversationIds = useRef<Set<string>>(new Set());
+
+  const hydrateConversation = useCallback(async (conversationId: string) => {
+    if (!conversationId) return;
+    try {
+      const detail = await notificationsService.getConversation(conversationId);
+      const normalized = normalizeConversationData(detail);
+      if (!normalized.id) return;
+      setItems((prev) => {
+        const idx = prev.findIndex((conv) => conv.id === normalized.id);
+        if (idx === -1) {
+          return [normalized, ...prev];
+        }
+        const next = [...prev];
+        next[idx] = { ...next[idx], ...normalized };
+        return next;
+      });
+    } catch (err) {
+      console.error('[Inbox] Failed to hydrate conversation', err);
+      hydratedConversationIds.current.delete(conversationId);
+    }
+  }, []);
+
+  const requestConversationHydration = useCallback((conversationId: string | undefined | null) => {
+    if (!conversationId) return;
+    if (hydratedConversationIds.current.has(conversationId)) return;
+    hydratedConversationIds.current.add(conversationId);
+    hydrateConversation(conversationId);
+  }, [hydrateConversation]);
 
   // Chat terms acceptance state
   const [chatTermsAccepted, setChatTermsAccepted] = useState(() => {
@@ -301,6 +358,7 @@ export default function InboxPage() {
     // onMessageReceived
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       try {
+        requestConversationHydration(event.data?.conversation_id);
         const msg = normalizeMessage(event.data);
         if (!msg || !msg.id) {
           return;
@@ -341,11 +399,14 @@ export default function InboxPage() {
       } catch (err) {
         console.error('[Inbox SSE] Failed to handle new message', err);
       }
-    }, [isAtBottom, activeConversationId]),
+    }, [isAtBottom, activeConversationId, requestConversationHydration]),
     // onMessageRead
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       try {
-        const { message_id, read_at } = event.data;
+        const { message_id, read_at, conversation_id } = event.data;
+        if (conversation_id) {
+          requestConversationHydration(conversation_id);
+        }
         if (message_id) {
           setMessages((prev) => prev.map((m) => 
             m.id === message_id ? { ...m, read_at: read_at || new Date().toISOString() } : m
@@ -354,11 +415,14 @@ export default function InboxPage() {
       } catch (err) {
         console.error('[Inbox SSE] Failed to handle message read', err);
       }
-    }, []),
+    }, [requestConversationHydration]),
     // onMessageDeleted
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       try {
-        const { message_id, deleted_at } = event.data;
+        const { message_id, deleted_at, conversation_id } = event.data;
+        if (conversation_id) {
+          requestConversationHydration(conversation_id);
+        }
         if (message_id) {
           setMessages((prev) => prev.map((m) => 
             m.id === message_id ? { ...m, deleted_at: deleted_at || new Date().toISOString() } : m
@@ -367,19 +431,28 @@ export default function InboxPage() {
       } catch (err) {
         console.error('[Inbox SSE] Failed to handle message deleted', err);
       }
-    }, []),
+    }, [requestConversationHydration]),
     // onConversationStarted
-    useCallback((_event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
-      // Refresh conversation list on next load
-    }, []),
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      const convId = resolveConversationId(event?.data) || event?.data?.conversation_id;
+      if (convId) {
+        requestConversationHydration(convId);
+      }
+    }, [requestConversationHydration]),
     // onConversationArchived
-    useCallback((_event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
-      // Refresh conversation list on next load
-    }, []),
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      const convId = resolveConversationId(event?.data) || event?.data?.conversation_id;
+      if (convId) {
+        requestConversationHydration(convId);
+      }
+    }, [requestConversationHydration]),
     // onConversationMuted
-    useCallback((_event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
-      // Could update conversation mute status in UI
-    }, []),
+    useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
+      const convId = resolveConversationId(event?.data) || event?.data?.conversation_id;
+      if (convId) {
+        requestConversationHydration(convId);
+      }
+    }, [requestConversationHydration]),
     // onUnreadReminder
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       const { unread_count } = event.data;
@@ -391,7 +464,9 @@ export default function InboxPage() {
   
   const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
   const currentUserProfileType = currentUser?.profile_type || getStoredProfileType() || null;
-  
+  const isHouseholdUser = currentUserProfileType?.toLowerCase() === 'household';
+  const shouldRestrictMessaging = !subscriptionLoading && !hasActiveSubscription && isHouseholdUser;
+
   // Deduplicate conversations to prevent showing multiple conversations for the same participant pair
   const deduplicatedItems = useMemo(() => {
     const seen = new Map<string, Conversation>();
@@ -428,6 +503,7 @@ export default function InboxPage() {
   }, [selectedConversationId]);
 
   const selectedConversation = items.find(c => c.id === activeConversationId);
+  const lockMessages = shouldRestrictMessaging && !!selectedConversation;
   
   // Track image loading state for avatars
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
@@ -617,33 +693,17 @@ export default function InboxPage() {
         setLoading(true);
         setError(null);
         
-        const result = await notificationsService.listConversations('', offset, limit);
+        const result = await notificationsService.listConversations(currentUserId || '', offset, limit);
         const raw: any[] = result?.conversations || [];
 
-        const normalizeConversation = (c: any): Conversation => ({
-          id: c.id || "",
-          household_id: c.household_user_id || c.household_id || "",
-          househelp_id: c.househelp_user_id || c.househelp_id || "",
-          household_profile_id: c.household_profile_id || null,
-          househelp_profile_id: c.househelp_profile_id || null,
-          household_profile_type: c.household_profile_type || "household",
-          househelp_profile_type: c.househelp_profile_type || "househelp",
-          last_message_at: c.last_message_at || null,
-          last_message_body: c.last_message_body || null,
-          last_message_sender_id: c.last_message_sender_id || null,
-          unread_count: c.unread_count || 0,
-          participant_name: c.participant_name || undefined,
-          participant_avatar: c.participant_avatar || undefined,
-        });
-
-        let data: Conversation[] = raw.map(normalizeConversation).filter((c: any) => !!c.id);
+        let data: Conversation[] = raw.map(normalizeConversationData).filter((c: any) => !!c.id);
 
         // If we're deep-linking to a conversation that isn't in this page, fetch it explicitly.
         if (offset === 0 && selectedConversationId && !data.some((c) => c.id === selectedConversationId)) {
           try {
             const detail = await notificationsService.getConversation(selectedConversationId);
             if (detail) {
-              const normalized = normalizeConversation(detail);
+              const normalized = normalizeConversationData(detail);
               if (normalized.id) {
                 data = [normalized, ...data];
               }
@@ -654,6 +714,9 @@ export default function InboxPage() {
         }
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
+        data.forEach((conv) => {
+          if (conv.id) hydratedConversationIds.current.add(conv.id);
+        });
         setHasMore(raw.length === limit);
         
         // Auto-select the first conversation if none is selected and we have conversations
@@ -1228,6 +1291,10 @@ export default function InboxPage() {
       try {
         const inboxEvent = event as any;
         // Backend sends InboxEvent: { type, conversation_id, message, user_id, timestamp }
+        const convId = resolveConversationId(inboxEvent) || resolveConversationId(inboxEvent?.data);
+        if (convId) {
+          requestConversationHydration(convId);
+        }
         const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
 
         if (!msg || !msg.id) {
@@ -1282,6 +1349,9 @@ export default function InboxPage() {
         const inboxEvent = event as any;
         const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
         if (msg && msg.id) {
+          if (msg.conversation_id) {
+            requestConversationHydration(msg.conversation_id);
+          }
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
       } catch (err) {
@@ -1294,6 +1364,9 @@ export default function InboxPage() {
         const inboxEvent = event as any;
         const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
         if (msg && msg.id) {
+          if (msg.conversation_id) {
+            requestConversationHydration(msg.conversation_id);
+          }
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
       } catch (err) {
@@ -1306,6 +1379,9 @@ export default function InboxPage() {
         const inboxEvent = event as any;
         const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
         if (msg && msg.id) {
+          if (msg.conversation_id) {
+            requestConversationHydration(msg.conversation_id);
+          }
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
       } catch (err) {
@@ -1318,6 +1394,9 @@ export default function InboxPage() {
         const inboxEvent = event as any;
         const msg = normalizeMessage(inboxEvent.message || inboxEvent?.data?.message || inboxEvent?.data);
         if (msg && msg.id) {
+          if (msg.conversation_id) {
+            requestConversationHydration(msg.conversation_id);
+          }
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
       } catch (err) {
@@ -1332,7 +1411,7 @@ export default function InboxPage() {
       offReactionAdded?.();
       offReactionRemoved?.();
     };
-  }, [addEventListener, isAtBottom]);
+  }, [addEventListener, isAtBottom, activeConversationId, requestConversationHydration]);
 
   // Conversations list JSX (left sidebar)
   const conversationsList = (
@@ -1502,113 +1581,115 @@ export default function InboxPage() {
 
         {/* Messages - Scrollable */}
         <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="min-h-0 overflow-y-auto p-4 space-y-2 relative">
-          <div ref={messagesSentinelRef} className="h-4" />
-          
-          {loadingMore && (
-            <div className="flex justify-center py-2">
-              <svg className="animate-spin h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </div>
-          )}
+          <div className={lockMessages ? 'pointer-events-none select-none blur-sm transition duration-150' : ''}>
+            <div ref={messagesSentinelRef} className="h-4" />
+            
+            {loadingMore && (
+              <div className="flex justify-center py-2">
+                <svg className="animate-spin h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            )}
 
-          {showScrollToBottom && (
-            <button
-              onClick={() => {
-                bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-                setNewMessageCount(0);
-                setIsAtBottom(true);
-              }}
-              className="fixed bottom-24 right-4 sm:right-8 z-20 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-all flex items-center gap-2"
-              aria-label="Scroll to bottom"
-            >
-              <ChevronDownIcon className="w-6 h-6" />
-              {newMessageCount > 0 && (
-                <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                  {newMessageCount > 99 ? '99+' : newMessageCount}
-                </span>
-              )}
-            </button>
-          )}
-          
-          {/* Hire Context Banner */}
-          {selectedConversation && (
-            <HireContextBanner
-              hireRequestStatus={hireRequestStatus}
-              hireRequestId={hireRequestId}
-              onViewDetails={() => {
-                if (hireRequestId) {
-                  if (currentUserProfileType?.toLowerCase() === 'household') {
-                    const backTo = `${location.pathname}${location.search || ''}`;
-                    const params = new URLSearchParams({
-                      backTo,
-                      backLabel: 'Back to Inbox',
-                    });
-                    navigate(`/household/hire-request/${hireRequestId}?${params.toString()}`);
-                  } else {
-                    navigate(`/househelp/hiring`);
-                  }
-                }
-              }}
-              onSendHireRequest={async () => {
-                if (!hasActiveSubscription && !subscriptionLoading) {
-                  setShowSubscriptionModal(true);
-                  return;
-                }
-                if (currentUserProfileType?.toLowerCase() === 'household' && selectedConversation) {
-                  const househelpUserId = selectedConversation.househelp_id;
-                  if (selectedConversation.househelp_profile_id) {
-                    setHousehelpProfileIdForHire(selectedConversation.househelp_profile_id);
-                    setShowHireWizard(true);
-                  } else {
-                    try {
-                      const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
-                      setHousehelpProfileIdForHire(profileData?.id || profileData?.profile_id);
-                      setShowHireWizard(true);
-                    } catch (err) {
-                      console.error('Failed to fetch househelp profile:', err);
-                      pushToast('Failed to load profile information', 'error');
+            {showScrollToBottom && (
+              <button
+                onClick={() => {
+                  bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+                  setNewMessageCount(0);
+                  setIsAtBottom(true);
+                }}
+                className="fixed bottom-24 right-4 sm:right-8 z-20 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-all flex items-center gap-2"
+                aria-label="Scroll to bottom"
+              >
+                <ChevronDownIcon className="w-6 h-6" />
+                {newMessageCount > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
+                    {newMessageCount > 99 ? '99+' : newMessageCount}
+                  </span>
+                )}
+              </button>
+            )}
+            
+            {/* Hire Context Banner */}
+            {selectedConversation && (
+              <HireContextBanner
+                hireRequestStatus={hireRequestStatus}
+                hireRequestId={hireRequestId}
+                onViewDetails={() => {
+                  if (hireRequestId) {
+                    if (currentUserProfileType?.toLowerCase() === 'household') {
+                      const backTo = `${location.pathname}${location.search || ''}`;
+                      const params = new URLSearchParams({
+                        backTo,
+                        backLabel: 'Back to Inbox',
+                      });
+                      navigate(`/household/hire-request/${hireRequestId}?${params.toString()}`);
+                    } else {
+                      navigate(`/househelp/hiring`);
                     }
                   }
-                } else {
-                  setShowHireWizard(true);
-                }
-              }}
-              onAccept={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
-              onDecline={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
-              actionLoading={hireActionLoading}
-              userRole={currentUserProfileType?.toLowerCase() as 'household' | 'househelp'}
-            />
-          )}
-          
-          {messagesLoading && messages.length === 0 && (
-            <div className="flex justify-center py-8">
-              <svg className="animate-spin h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-            </div>
-          )}
-
-          {messages.length === 0 && !messagesLoading && !messagesError && (
-            <div className="text-center text-gray-500 dark:text-gray-400 py-12">No messages yet. Start the conversation!</div>
-          )}
-
-          {messagesError && <ErrorAlert message={messagesError} className="mb-3" />}
-
-          {groupedMessages.map(group => (
-            <div key={group.key} className="space-y-3">
-              <div className="flex justify-center my-3">
-                <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700 dark:bg-slate-800 dark:text-purple-200 border border-purple-200/60 dark:border-purple-500/30">
-                  {group.label}
-                </span>
+                }}
+                onSendHireRequest={async () => {
+                  if (!hasActiveSubscription && !subscriptionLoading) {
+                    setShowSubscriptionModal(true);
+                    return;
+                  }
+                  if (currentUserProfileType?.toLowerCase() === 'household' && selectedConversation) {
+                    const househelpUserId = selectedConversation.househelp_id;
+                    if (selectedConversation.househelp_profile_id) {
+                      setHousehelpProfileIdForHire(selectedConversation.househelp_profile_id);
+                      setShowHireWizard(true);
+                    } else {
+                      try {
+                        const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+                        setHousehelpProfileIdForHire(profileData?.id || profileData?.profile_id);
+                        setShowHireWizard(true);
+                      } catch (err) {
+                        console.error('Failed to fetch househelp profile:', err);
+                        pushToast('Failed to load profile information', 'error');
+                      }
+                    }
+                  } else {
+                    setShowHireWizard(true);
+                  }
+                }}
+                onAccept={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
+                onDecline={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
+                actionLoading={hireActionLoading}
+                userRole={currentUserProfileType?.toLowerCase() as 'household' | 'househelp'}
+              />
+            )}
+            
+            {messagesLoading && messages.length === 0 && (
+              <div className="flex justify-center py-8">
+                <svg className="animate-spin h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
               </div>
-              {group.items.map((m) => {
+            )}
+
+            {messages.length === 0 && !messagesLoading && !messagesError && (
+              <div className="text-center text-gray-500 dark:text-gray-400 py-12">No messages yet. Start the conversation!</div>
+            )}
+
+            {messagesError && <ErrorAlert message={messagesError} className="mb-3" />}
+
+            {groupedMessages.map(group => (
+              <div key={group.key} className="space-y-3">
+                <div className="flex justify-center my-3">
+                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-700 dark:bg-slate-800 dark:text-purple-200 border border-purple-200/60 dark:border-purple-500/30">
+                    {group.label}
+                  </span>
+                </div>
+                {group.items.map((m) => {
                 const mine = currentUserId && m.sender_id === currentUserId;
                 const status = m._status || (m.read_at ? 'read' : 'delivered');
                 const replyMsg = m.reply_to_id ? messageById.get(m.reply_to_id) : undefined;
                 const replyFromName = replyMsg ? (replyMsg.sender_id === currentUserId ? 'You' : (selectedConversation?.participant_name || 'User')) : '';
+                const interactionsDisabled = lockMessages;
                 
                 // Show sender name in brackets for household chats (multi-member)
                 const showSenderName = !mine && (m as any).sender_name && (m as any).sender_name !== selectedConversation?.participant_name;
@@ -1654,16 +1735,18 @@ export default function InboxPage() {
                         : 'bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-gray-100'
                     } ${status === 'sending' ? 'opacity-70' : ''} ${m.deleted_at ? 'opacity-60 italic' : ''}`}>
                       {/* Bubble controls: 3-dots (always visible on mobile, hover on desktop) and quick reactions */}
-                      <button
-                        type="button"
-                        className={`absolute -top-2 ${mine ? '-right-2' : '-left-2'} inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow lg:opacity-0 lg:group-hover:opacity-100 transition`}
-                        onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
-                        aria-label="Message options"
-                      >
-                        <EllipsisVerticalIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
-                      </button>
+                      {!interactionsDisabled && (
+                        <button
+                          type="button"
+                          className={`absolute -top-2 ${mine ? '-right-2' : '-left-2'} inline-flex items-center justify-center w-7 h-7 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30 shadow lg:opacity-0 lg:group-hover:opacity-100 transition`}
+                          onClick={() => setOpenMsgMenuId(openMsgMenuId === m.id ? null : m.id)}
+                          aria-label="Message options"
+                        >
+                          <EllipsisVerticalIcon className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                        </button>
+                      )}
 
-                      {openReactPickerMsgId !== m.id && (
+                      {!interactionsDisabled && openReactPickerMsgId !== m.id && (
                         <div className={`absolute -top-8 ${mine ? 'right-0' : 'left-0'} z-40 hidden lg:flex items-center gap-1 opacity-0 group-hover:opacity-100 transition`}>
                           {['👍','❤️','😂','😮','😢'].map(em => (
                             <button key={em} className="text-sm px-1 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => toggleReaction(m, em)}>{em}</button>
@@ -1671,7 +1754,7 @@ export default function InboxPage() {
                           <button className="text-xs px-2 py-0.5 rounded-full bg-white/80 dark:bg-[#0f0f16]/80 border border-purple-200 dark:border-purple-500/30" onClick={() => setOpenReactPickerMsgId(m.id)}>+</button>
                         </div>
                       )}
-                      {openReactPickerMsgId === m.id && (
+                      {!interactionsDisabled && openReactPickerMsgId === m.id && (
                         <div ref={reactionPickerRef} className={`absolute ${mine ? 'right-0' : 'left-0'} bottom-full mb-2 z-50`}>
                           <EmojiPicker
                             onEmojiClick={(emojiData) => {
@@ -1871,7 +1954,7 @@ export default function InboxPage() {
                           )}
                         </>
                       )}
-                      {openMsgMenuId === m.id && (() => {
+                      {!interactionsDisabled && openMsgMenuId === m.id && (() => {
                         const selected = selectedIds.has(m.id);
                         const options = [
                           { label: 'Copy text', disabled: !!m.deleted_at || !m.body, action: async () => { try { await navigator.clipboard.writeText(m.body || ''); pushToast('Copied message', 'success'); } catch { pushToast('Copy failed', 'error'); } } },
@@ -1934,7 +2017,29 @@ export default function InboxPage() {
               })}
             </div>
           ))}
-          <div ref={bottomRef} />
+            <div ref={bottomRef} />
+          </div>
+
+          {lockMessages && (
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-white/80 dark:bg-[#13131a]/80 backdrop-blur-md text-center px-6">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
+                <LockClosedIcon className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Unlock messaging</h3>
+                <p className="mt-1 text-xs text-gray-600 dark:text-gray-300 max-w-md">
+                  Subscribe to read previous messages and continue the conversation. You can still browse profiles and conversation previews without a subscription.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="px-5 py-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 transition"
+                onClick={() => setShowSubscriptionModal(true)}
+              >
+                View plans & pricing
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Emoji Picker - Position based on message count */}
@@ -2019,7 +2124,7 @@ export default function InboxPage() {
             </div>
           )}
           
-          {!hasActiveSubscription && !subscriptionLoading ? (
+          {shouldRestrictMessaging ? (
             <div
               className="flex items-center justify-center gap-3 py-3 cursor-pointer group"
               onClick={() => setShowSubscriptionModal(true)}
