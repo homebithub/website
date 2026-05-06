@@ -466,6 +466,33 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
     fetchShortlistStatus();
   }, [househelps]);
 
+  const enrichHousehelpProfiles = async (rows: HousehelpProfile[]) => {
+    const profileIds = Array.from(new Set((rows || []).map((row) => row.profile_id).filter(Boolean)));
+    if (profileIds.length === 0) return rows;
+    try {
+      const response = await grpcProfileService.searchMultipleWithUser('', 'househelp', { profile_ids: profileIds });
+      const data = response?.data?.data || response?.data || response;
+      const profiles = Array.isArray(data) ? data : [];
+      if (profiles.length === 0) return rows;
+      const byProfileId = new Map<string, any>(profiles
+        .filter((profile) => profile?.profile_id)
+        .map((profile) => [profile.profile_id, profile]));
+      return rows.map((row) => {
+        const details = byProfileId.get(row.profile_id);
+        if (!details) return row;
+        const merged = { ...row, ...details };
+        return {
+          ...merged,
+          id: row.id ?? merged.user_id ?? merged.id,
+          profile_id: row.profile_id || merged.profile_id || details.id,
+        } as HousehelpProfile;
+      });
+    } catch (err) {
+      console.error('Failed to load househelp profile details:', err);
+      return rows;
+    }
+  };
+
   const handleSearch = async (e?: React.FormEvent, overrideFields?: HousehelpSearchFields) => {
     if (e) e.preventDefault();
     setLoading(true);
@@ -512,7 +539,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, 0);
       const inner = data?.data || data;
       const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
-      setHousehelps(rows);
+      const enrichedRows = await enrichHousehelpProfiles(rows);
+      setHousehelps(enrichedRows);
       setHasMore(rows.length === limit);
     } catch (err) {
       console.error('Error loading househelps:', err);
@@ -557,7 +585,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
       const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, nextOffset);
       const inner = data?.data || data;
       const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
-      setHousehelps(prev => [...prev, ...rows]);
+      const enrichedRows = await enrichHousehelpProfiles(rows);
+      setHousehelps(prev => [...prev, ...enrichedRows]);
       setOffset(nextOffset);
       setHasMore(rows.length === limit);
     } catch (err) {

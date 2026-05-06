@@ -341,6 +341,9 @@ export default function HousehelpPublicProfile() {
         }
         
         const normalizedProfile = normalizeHousehelpData(rawProfile);
+        if (rawUser && !normalizedProfile.user) {
+          normalizedProfile.user = rawUser;
+        }
         setUser(rawUser);
         setIsViewingOther(!!profileId); // Set to true if viewing someone else's profile
 
@@ -476,6 +479,10 @@ export default function HousehelpPublicProfile() {
     );
   }
 
+  const resolvedFirstName = profile?.first_name || profile?.user?.first_name || user?.first_name;
+  const resolvedLastName = profile?.last_name || profile?.user?.last_name || user?.last_name;
+  const displayName = [resolvedFirstName, resolvedLastName].filter(Boolean).join(' ').trim();
+
   return (
     <div className="min-h-screen flex flex-col">
       {isEmbed ? null : <Navigation />}
@@ -500,9 +507,7 @@ export default function HousehelpPublicProfile() {
                     )}
                     <div>
                       <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-3">
-                        {((profile.user?.first_name || profile.first_name) || (profile.user?.last_name || profile.last_name))
-                          ? `${profile.user?.first_name || profile.first_name || ''} ${profile.user?.last_name || profile.last_name || ''}`.trim()
-                          : 'Househelp Profile'}
+                        {displayName || 'Househelp Profile'}
                       </h1>
                       {profile['househelp-type'] && (
                         <p className="text-xs text-gray-600 dark:text-gray-300 capitalize mt-1">{profile['househelp-type']}</p>

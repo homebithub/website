@@ -315,6 +315,28 @@ export default function HousehelpHome() {
   const toPayload = () => ({ ...buildFilters(), limit: 12, offset: 0 });
   const buildCountPayload = () => buildFilters();
 
+  const enrichHouseholds = async (items: HouseholdItem[]) => {
+    if (!Array.isArray(items) || items.length === 0) return items;
+    const enriched = await Promise.all(
+      items.map(async (item) => {
+        if (!item?.id) return item;
+        try {
+          const fullProfile = await grpcProfileService.getHouseholdByUserID(item.id);
+          if (!fullProfile) return item;
+          const merged = { ...fullProfile, ...item };
+          return {
+            ...merged,
+            id: item.id || merged.user_id || merged.owner_user_id,
+            profile_id: item.profile_id || merged.profile_id || merged.id,
+          } as HouseholdItem;
+        } catch {
+          return item;
+        }
+      })
+    );
+    return enriched;
+  };
+
   const search = async () => {
     setLoading(true);
     setError(null);
@@ -331,7 +353,8 @@ export default function HousehelpHome() {
 
       // Ensure data is always an array
       const households = Array.isArray(data) ? data : [];
-      setResults(households as HouseholdItem[]);
+      const enrichedHouseholds = await enrichHouseholds(households as HouseholdItem[]);
+      setResults(enrichedHouseholds);
     } catch (err: any) {
       console.error('[HousehelpHome] Search error:', err);
       setError(err.message || "Failed to load households");

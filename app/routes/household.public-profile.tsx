@@ -23,6 +23,10 @@ interface HouseholdData {
   user_id?: string;
   owner_user_id?: string;
   owner?: { id?: string; first_name?: string; last_name?: string; avatar_url?: string };
+  first_name?: string;
+  last_name?: string;
+  owner_first_name?: string;
+  owner_last_name?: string;
   // From embedded Profile
   town?: string;
   address?: string;
@@ -388,6 +392,10 @@ export default function HouseholdPublicProfile() {
     );
   }
 
+  const ownerFirstName = profile.owner?.first_name || profile.owner_first_name || profile.first_name;
+  const ownerLastName = profile.owner?.last_name || profile.owner_last_name || profile.last_name;
+  const householdDisplayName = [ownerFirstName, ownerLastName].filter(Boolean).join(' ').trim();
+
   return (
     <div className="min-h-screen flex flex-col">
       {isEmbed ? null : <Navigation />}
@@ -412,7 +420,7 @@ export default function HouseholdPublicProfile() {
                       )}
                       <div>
                         <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-3">
-                          🏠 {profile.owner ? `${profile.owner.first_name || ''} ${profile.owner.last_name || ''}`.trim() || 'Household Profile' : 'Household Profile'}
+                          🏠 {householdDisplayName || 'Household Profile'}
                         </h1>
                         {profile.town && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">📍 {profile.town}</p>}
                       </div>
