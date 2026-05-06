@@ -262,6 +262,23 @@ export default function ShortlistPage() {
                   const prof = s.profile_id ? profiles[s.profile_id] : null;
                   const owner = prof?.owner || prof;
                   const householdUserId = resolveHouseholdOwnerUserId(prof) || s.user_id;
+                  const kidsCount =
+                    prof?.number_of_children ??
+                    prof?.children_count ??
+                    prof?.kids_count ??
+                    (Array.isArray(prof?.kids) ? prof.kids.length : undefined) ??
+                    (Array.isArray(prof?.children) ? prof.children.length : undefined);
+                  const chores = Array.isArray(prof?.chores)
+                    ? prof.chores
+                    : prof?.chore
+                      ? [prof.chore]
+                      : [];
+                  const serviceTypes = [
+                    prof?.needs_live_in ? 'Live-in' : '',
+                    prof?.needs_day_worker ? 'Day worker' : '',
+                    prof?.service_type || prof?.type_of_househelp || '',
+                  ].filter(Boolean);
+                  const serviceLabel = Array.from(new Set(serviceTypes)).join(', ');
                   const householdProfileLink = householdUserId
                     ? `/household/public-profile?userId=${householdUserId}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`
                     : `/household/public-profile?profileId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`;
@@ -345,6 +362,12 @@ export default function ShortlistPage() {
                             </p>
                           )}
 
+                          {serviceLabel && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
+                              🧰 Service: {serviceLabel}
+                            </p>
+                          )}
+
                           {prof?.available_from && (
                             <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
                               📅 Available from {prof.available_from}
@@ -352,9 +375,13 @@ export default function ShortlistPage() {
                           )}
 
                           <div className="flex flex-wrap gap-2 justify-start mb-3">
-                            {typeof prof?.has_kids === 'boolean' && (
+                            {(typeof kidsCount === 'number' || typeof prof?.has_kids === 'boolean') && (
                               <span className="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                                {prof.has_kids ? 'Has kids' : 'No kids'}
+                                {typeof kidsCount === 'number'
+                                  ? `${kidsCount} kid${kidsCount === 1 ? '' : 's'}`
+                                  : prof?.has_kids
+                                    ? 'Has kids'
+                                    : 'No kids'}
                               </span>
                             )}
                             {typeof prof?.has_pets === 'boolean' && (
@@ -373,6 +400,13 @@ export default function ShortlistPage() {
                               </span>
                             )}
                           </div>
+
+                          {chores.length > 0 && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
+                              🧹 Chores: {chores.slice(0, 3).join(', ')}
+                              {chores.length > 3 ? ` +${chores.length - 3} more` : ''}
+                            </p>
+                          )}
 
                           <div className="mt-6 flex items-center gap-3">
                             <div className="text-xs font-semibold tracking-wide uppercase text-gray-400">

@@ -16,6 +16,18 @@ import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 
+const formatGender = (value?: string) => {
+  if (!value) return '';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const formatAge = (dob?: string) => {
+  if (!dob) return '';
+  const parsed = new Date(dob);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return Math.floor((Date.now() - parsed.getTime()) / (365.25 * 24 * 60 * 60 * 1000)).toString();
+};
+
 // Types
 type ShortlistItem = {
   id: string;
@@ -310,6 +322,14 @@ export default function HouseholdShortlistPage() {
                           {(h?.county_of_residence || h?.location) && (
                             <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
                               📍 {h?.county_of_residence || h?.location}
+                            </p>
+                          )}
+
+                          {(h?.gender || h?.date_of_birth) && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
+                              {h?.gender ? `👤 ${formatGender(h?.gender)}` : ''}
+                              {h?.gender && h?.date_of_birth ? ' • ' : ''}
+                              {h?.date_of_birth ? `🎂 ${formatAge(h?.date_of_birth)} yrs` : ''}
                             </p>
                           )}
 

@@ -32,6 +32,10 @@ interface HouseholdItem {
   avatar_url?: string;
   town?: string;
   house_size?: string;
+  type_of_househelp?: string;
+  service_type?: string;
+  chores?: string[];
+  chore?: string;
   budget_min?: string | number;
   budget_max?: string | number;
   salary_frequency?: string;
@@ -39,6 +43,11 @@ interface HouseholdItem {
   needs_day_worker?: boolean;
   has_kids?: boolean;
   has_pets?: boolean;
+  number_of_children?: number;
+  children_count?: number;
+  kids_count?: number;
+  kids?: any[];
+  children?: any[];
   available_from?: string;
   verified?: boolean;
   created_at?: string;
@@ -522,12 +531,31 @@ export default function HousehelpHome() {
                 </div>
               ) : (
                 <div className={`grid grid-cols-1 ${compactView ? 'gap-4' : 'gap-6'}`}>
-                  {(Array.isArray(results) ? results : []).map((r) => (
-                    <div
-                      key={r.profile_id}
-                      onClick={() => handleViewMore(r)}
-                      className={`relative bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md transition-all duration-300 cursor-pointer`}
-                    >
+                  {(Array.isArray(results) ? results : []).map((r) => {
+                    const kidsCount =
+                      r.number_of_children ??
+                      r.children_count ??
+                      r.kids_count ??
+                      (Array.isArray(r.kids) ? r.kids.length : undefined) ??
+                      (Array.isArray(r.children) ? r.children.length : undefined);
+                    const chores = Array.isArray(r.chores)
+                      ? r.chores
+                      : r.chore
+                        ? [r.chore]
+                        : [];
+                    const serviceTypes = [
+                      r.needs_live_in ? 'Live-in' : '',
+                      r.needs_day_worker ? 'Day worker' : '',
+                      r.service_type || r.type_of_househelp || '',
+                    ].filter(Boolean);
+                    const serviceLabel = Array.from(new Set(serviceTypes)).join(', ');
+
+                    return (
+                      <div
+                        key={r.profile_id}
+                        onClick={() => handleViewMore(r)}
+                        className={`relative bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md transition-all duration-300 cursor-pointer`}
+                      >
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">
                         <button
@@ -598,6 +626,12 @@ export default function HousehelpHome() {
                             </p>
                           )}
 
+                          {serviceLabel && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
+                              🧰 Service: {serviceLabel}
+                            </p>
+                          )}
+
                           {r.available_from && (
                             <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
                               📅 Available from {r.available_from}
@@ -608,9 +642,13 @@ export default function HousehelpHome() {
                             {r.verified && (
                               <span className="inline-block text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">Verified</span>
                             )}
-                            {typeof r.has_kids === 'boolean' && (
+                            {(typeof kidsCount === 'number' || typeof r.has_kids === 'boolean') && (
                               <span className="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                                {r.has_kids ? 'Has kids' : 'No kids'}
+                                {typeof kidsCount === 'number'
+                                  ? `${kidsCount} kid${kidsCount === 1 ? '' : 's'}`
+                                  : r.has_kids
+                                    ? 'Has kids'
+                                    : 'No kids'}
                               </span>
                             )}
                             {typeof r.has_pets === 'boolean' && (
@@ -630,6 +668,13 @@ export default function HousehelpHome() {
                             )}
                           </div>
 
+                          {chores.length > 0 && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
+                              🧹 Chores: {chores.slice(0, 3).join(', ')}
+                              {chores.length > 3 ? ` +${chores.length - 3} more` : ''}
+                            </p>
+                          )}
+
                           {/* Bottom actions */}
                           <div className="mt-4 flex items-center gap-3">
                             <div className="text-xs font-semibold tracking-wide uppercase text-gray-400">
@@ -644,8 +689,9 @@ export default function HousehelpHome() {
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
               </div>

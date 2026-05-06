@@ -31,6 +31,8 @@ interface HousehelpProfile {
   profile_id: string;
   first_name: string;
   last_name: string;
+  gender?: string;
+  date_of_birth?: string;
   avatar_url?: string;
   profile_picture?: string;
   photos?: string[];
@@ -67,6 +69,18 @@ const EXPERIENCE_MIN_OPTIONS = [
   { value: "5", label: "5+ years" },
   { value: "10", label: "10+ years" },
 ];
+
+const formatGender = (value?: string) => {
+  if (!value) return '';
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const formatAge = (dob?: string) => {
+  if (!dob) return '';
+  const parsed = new Date(dob);
+  if (Number.isNaN(parsed.getTime())) return '';
+  return Math.floor((Date.now() - parsed.getTime()) / (365.25 * 24 * 60 * 60 * 1000)).toString();
+};
 
 export default function AuthenticatedHome({ variant = 'default' }: AuthenticatedHomeProps) {
   const initialFields: HousehelpSearchFields = {
@@ -888,6 +902,14 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                           {(househelp.county_of_residence || househelp.location) && (
                             <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
                               📍 {househelp.county_of_residence || househelp.location}
+                            </p>
+                          )}
+
+                          {(househelp.gender || househelp.date_of_birth) && (
+                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
+                              {househelp.gender ? `👤 ${formatGender(househelp.gender)}` : ''}
+                              {househelp.gender && househelp.date_of_birth ? ' • ' : ''}
+                              {househelp.date_of_birth ? `🎂 ${formatAge(househelp.date_of_birth)} yrs` : ''}
                             </p>
                           )}
 
