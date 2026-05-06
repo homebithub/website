@@ -575,8 +575,8 @@ export default function HouseholdPublicProfile() {
         ) : (
           <div className="space-y-4">
             {profile.needs_live_in && (
-              <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200/50 dark:border-indigo-500/20">
-                <p className="font-semibold text-indigo-900 dark:text-indigo-100 mb-1">🌙 Live-in Help Needed</p>
+              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200/50 dark:border-indigo-500/20">
+                <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-100 mb-1">🌙 Live-in Help Needed</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">This household needs a househelp who can live on the premises.</p>
                 {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
                   <div className="mt-2">
@@ -591,8 +591,8 @@ export default function HouseholdPublicProfile() {
               </div>
             )}
             {profile.needs_day_worker && (
-              <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200/50 dark:border-amber-500/20">
-                <p className="font-semibold text-amber-900 dark:text-amber-100 mb-1">☀️ Day Worker Needed</p>
+              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200/50 dark:border-amber-500/20">
+                <p className="text-xs font-semibold text-amber-900 dark:text-amber-100 mb-1">☀️ Day Worker Needed</p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">This household needs a househelp for daytime work.</p>
                 {profile.day_worker_schedule && (() => {
                   try {
@@ -609,8 +609,8 @@ export default function HouseholdPublicProfile() {
                             const slots = [d?.morning && 'Morning', d?.afternoon && 'Afternoon', d?.evening && 'Evening'].filter(Boolean);
                             return (
                               <div key={day} className="p-2 bg-amber-100/60 dark:bg-amber-800/20 rounded-lg">
-                                <p className="text-xs font-bold text-amber-900 dark:text-amber-200 capitalize">{day}</p>
-                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{slots.join(', ')}</p>
+                                <p className="text-[11px] font-semibold text-amber-900 dark:text-amber-200 capitalize">{day}</p>
+                                <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5">{slots.join(', ')}</p>
                               </div>
                             );
                           })}

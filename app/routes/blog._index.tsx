@@ -149,11 +149,11 @@ export default function BlogIndex() {
                 <BookOpen className="w-4 h-4 text-purple-600 dark:text-purple-400" />
                 <span className="text-xs font-semibold text-purple-700 dark:text-purple-300">Our Blog</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold mb-4">
+              <h1 className="text-xl sm:text-2xl font-extrabold mb-4">
                 <span className="text-gray-900 dark:text-white">Homebit </span>
                 <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">Blog</span>
               </h1>
-              <p className="text-base sm:text-lg text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+              <p className="text-sm text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
                 Insights, tips, and stories about household management and hiring help
               </p>
             </div>
@@ -171,12 +171,12 @@ export default function BlogIndex() {
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Search articles..."
-                    className="w-full pl-12 pr-4 py-3 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                    className="w-full pl-12 pr-4 py-3 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 hover:scale-105 transition-all duration-200"
+                  className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-sm text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:shadow-purple-500/30 hover:scale-105 transition-all duration-200"
                 >
                   Search
                 </button>
@@ -224,7 +224,7 @@ export default function BlogIndex() {
                 <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-purple-100 dark:bg-purple-500/10 mb-6">
                   <BookOpen className="w-8 h-8 text-purple-500 dark:text-purple-400" />
                 </div>
-                <p className="text-gray-500 dark:text-gray-400 text-base font-medium">
+                <p className="text-gray-500 dark:text-gray-400 text-sm font-medium">
                   No blog posts found. Check back soon!
                 </p>
               </div>
@@ -245,7 +245,7 @@ export default function BlogIndex() {
                           />
                         ) : (
                           <div className="w-full h-48 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center group-hover:from-purple-700 group-hover:to-pink-700 transition-all duration-300">
-                            <span className="text-white text-3xl font-bold drop-shadow-lg">
+                            <span className="text-white text-xl font-bold drop-shadow-lg">
                               {post.title.charAt(0)}
                             </span>
                           </div>
@@ -259,7 +259,7 @@ export default function BlogIndex() {
                             </span>
                           )}
 
-                          <h2 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                          <h2 className="text-sm font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
                             {post.title}
                           </h2>
 
@@ -306,7 +306,7 @@ export default function BlogIndex() {
                         setSearchParams(params);
                       }}
                       disabled={currentPage === 1}
-                      className="px-5 py-2.5 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all"
+                      className="px-5 py-2.5 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-sm text-gray-700 dark:text-gray-300 font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all"
                     >
                       Previous
                     </button>
@@ -322,7 +322,7 @@ export default function BlogIndex() {
                         setSearchParams(params);
                       }}
                       disabled={currentPage === totalPages}
-                      className="px-5 py-2.5 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-700 dark:text-gray-300 font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all"
+                      className="px-5 py-2.5 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-sm text-gray-700 dark:text-gray-300 font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all"
                     >
                       Next
                     </button>

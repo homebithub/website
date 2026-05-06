@@ -236,7 +236,7 @@ export default function HouseholdShortlistPage() {
             {chatError && <ErrorAlert message={chatError} className="mb-4" />}
             {error && <ErrorAlert message={error} className="mb-4" />}
 	
-            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>
+            <div className={`grid grid-cols-1 ${compactView ? 'gap-4' : 'gap-6'}`}>
               {(items || [])
                 .filter((s) => s.profile_type === "househelp")
                 .map((s) => {
@@ -269,69 +269,125 @@ export default function HouseholdShortlistPage() {
                         </button>
                       </div>
 
-                      {/* Profile Picture */}
-                      <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-lg font-bold shadow-lg overflow-hidden relative">
-                          {(() => {
-                            const imageUrl = h?.avatar_url || h?.profile_picture || (h?.photos && h.photos[0]) || (s.user_id && profilePhotos[s.user_id]);
-                            if (imageUrl) {
-                              return (
-                                <>
-                                  {imageLoadingStates[s.profile_id] !== false && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
-                                  )}
-                                  <img
-                                    src={imageUrl}
-                                    alt={`${h?.first_name || ''} ${h?.last_name || ''}`}
-                                    className={`w-full h-full object-cover transition-opacity duration-300 ${
-                                      imageLoadingStates[s.profile_id] === false ? 'opacity-100' : 'opacity-0'
-                                    }`}
-                                    onLoad={() => setImageLoadingStates(prev => ({ ...prev, [s.profile_id]: false }))}
-                                    onError={(e) => {
-                                      setImageLoadingStates(prev => ({ ...prev, [s.profile_id]: false }));
-                                      e.currentTarget.style.display = 'none';
-                                    }}
-                                  />
-                                </>
-                              );
-                            }
-                            return `${h?.first_name?.[0] || ''}${h?.last_name?.[0] || 'HH'}`;
-                          })()}
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                        {/* Profile Picture */}
+                        <div className="flex justify-center sm:justify-start mb-4 sm:mb-0 shrink-0">
+                          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-lg font-bold shadow-lg overflow-hidden relative">
+                            {(() => {
+                              const imageUrl = h?.avatar_url || h?.profile_picture || (h?.photos && h.photos[0]) || (s.user_id && profilePhotos[s.user_id]);
+                              if (imageUrl) {
+                                return (
+                                  <>
+                                    {imageLoadingStates[s.profile_id] !== false && (
+                                      <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                                    )}
+                                    <img
+                                      src={imageUrl}
+                                      alt={`${h?.first_name || ''} ${h?.last_name || ''}`}
+                                      className={`w-full h-full object-cover transition-opacity duration-300 ${
+                                        imageLoadingStates[s.profile_id] === false ? 'opacity-100' : 'opacity-0'
+                                      }`}
+                                      onLoad={() => setImageLoadingStates(prev => ({ ...prev, [s.profile_id]: false }))}
+                                      onError={(e) => {
+                                        setImageLoadingStates(prev => ({ ...prev, [s.profile_id]: false }));
+                                        e.currentTarget.style.display = 'none';
+                                      }}
+                                    />
+                                  </>
+                                );
+                              }
+                              return `${h?.first_name?.[0] || ''}${h?.last_name?.[0] || 'HH'}`;
+                            })()}
+                          </div>
                         </div>
-                      </div>
 
-                      {/* Name */}
-                      <h3 className="text-lg font-bold text-center text-gray-900 dark:text-white mb-2">
-                        {h ? `${h.first_name || ''} ${h.last_name || ''}` : 'Loading...'}
-                      </h3>
+                        <div className="min-w-0 flex-1 sm:pr-8">
+                          {/* Name */}
+                          <h3 className="text-lg font-bold text-left text-gray-900 dark:text-white mb-2">
+                            {h ? `${h.first_name || ''} ${h.last_name || ''}` : 'Loading...'}
+                          </h3>
 
-                      {/* Salary */}
-                      {h && (
-                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-center mb-3">
-                          💰 {formatOnboardingAmountWithFrequency(
-                            h.salary_expectation,
-                            h.salary_frequency,
-                            'No salary expectations specified'
+                          {(h?.county_of_residence || h?.location) && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
+                              📍 {h?.county_of_residence || h?.location}
+                            </p>
                           )}
-                        </p>
-                      )}
 
-                      {/* Bottom actions */}
-                      <div className="mt-4 flex items-center justify-between">
-                        <div className="text-xs text-gray-400">
-                          {s.created_at ? new Date(s.created_at).toLocaleDateString() : ''}
+                          {((h?.years_of_experience ?? h?.experience) as number) > 0 && (
+                            <p className="text-xs text-purple-600 dark:text-purple-400 text-left mb-2">
+                              ⭐ {h?.years_of_experience ?? h?.experience} years experience
+                            </p>
+                          )}
+
+                          {h && (
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-left mb-2">
+                              💰 {formatOnboardingAmountWithFrequency(
+                                h.salary_expectation,
+                                h.salary_frequency,
+                                'No salary expectations specified'
+                              )}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap gap-2 justify-start mb-3">
+                            {h?.househelp_type && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
+                                {h.househelp_type}
+                              </span>
+                            )}
+                            {typeof h?.can_work_with_kids === 'boolean' && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                                {h.can_work_with_kids ? 'Works with kids' : 'No kids'}
+                              </span>
+                            )}
+                            {typeof h?.can_work_with_pets === 'boolean' && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                                {h.can_work_with_pets ? 'Pet friendly' : 'No pets'}
+                              </span>
+                            )}
+                            {(h?.rating || h?.review_count) && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300">
+                                ★ {h?.rating ? Number(h.rating).toFixed(1) : 'New'}{h?.review_count ? ` (${h.review_count})` : ''}
+                              </span>
+                            )}
+                            {typeof h?.is_available === 'boolean' && (
+                              <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                                {h.is_available ? 'Available now' : 'Busy'}
+                              </span>
+                            )}
+                          </div>
+
+                          {Array.isArray(h?.skills) && h.skills.length > 0 && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
+                              🧹 {h.skills.slice(0, 3).join(', ')}
+                              {h.skills.length > 3 ? ` +${h.skills.length - 3} more` : ''}
+                            </p>
+                          )}
+
+                          {h?.bio && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left line-clamp-3 mb-4">
+                              {h.bio}
+                            </p>
+                          )}
+
+                          {/* Bottom actions */}
+                          <div className="mt-4 flex items-center justify-between">
+                            <div className="text-xs text-gray-400">
+                              {s.created_at ? new Date(s.created_at).toLocaleDateString() : ''}
+                            </div>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/househelp/public-profile?profileId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
+                                  state: { profileId: s.profile_id, fromShortlist: true },
+                                });
+                              }}
+                              className="px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
+                            >
+                              View more
+                            </button>
+                          </div>
                         </div>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/househelp/public-profile?profileId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
-                              state: { profileId: s.profile_id, fromShortlist: true },
-                            });
-                          }}
-                          className="px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
-                        >
-                          View more
-                        </button>
                       </div>
                     </div>
                   );

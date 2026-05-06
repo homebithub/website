@@ -21,26 +21,26 @@ export default function Privacy() {
         <PurpleCard hover={false} glow={true} className="p-6 sm:p-8">
         <div className="w-full">
           <div className="mb-8">
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white">
+            <h1 className="text-base font-bold text-slate-900 dark:text-white">
               Privacy Statement
             </h1>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               Effective Date: 1 January 2026
             </p>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Last Updated: 5 February 2026
             </p>
-            <p className="mt-4 text-slate-700 dark:text-slate-300">
+            <p className="mt-4 text-sm text-slate-700 dark:text-slate-300">
               Homebit Hub Limited ("Homebit", "we", "us", or "our") is committed to protecting your personal data and 
               your right to privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your 
               information when you visit our website https://homebit.co.ke (the "Platform").
             </p>
-            <p className="mt-2 text-slate-700 dark:text-slate-300">
+            <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
               By using the Platform, you agree to the collection and use of information in accordance with this policy.
             </p>
           </div>
 
-          <div className="prose dark:prose-invert max-w-none">
+          <div className="prose prose-sm dark:prose-invert max-w-none">
             <h2>1. Information We Collect</h2>
             <p>We collect several types of information to provide and improve our services:</p>
             
@@ -166,7 +166,7 @@ export default function Privacy() {
           <div className="mt-8 text-center">
             <Link
               to="/"
-              className="inline-flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="inline-flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-sm text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               Back to Home
             </Link>

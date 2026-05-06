@@ -32,6 +32,14 @@ interface HouseholdItem {
   avatar_url?: string;
   town?: string;
   house_size?: string;
+  budget_min?: string | number;
+  budget_max?: string | number;
+  salary_frequency?: string;
+  needs_live_in?: boolean;
+  needs_day_worker?: boolean;
+  has_kids?: boolean;
+  has_pets?: boolean;
+  available_from?: string;
   verified?: boolean;
   created_at?: string;
 };
@@ -51,6 +59,13 @@ const getFriendlyErrorMessage = (error?: string | null) => {
     }
   }
   return error;
+};
+
+const formatBudgetAmount = (value?: string | number) => {
+  if (value === undefined || value === null || value === "") return "";
+  const num = Number(value);
+  if (Number.isNaN(num)) return String(value);
+  return `KES ${num.toLocaleString()}`;
 };
 
 export default function HousehelpHome() {
@@ -506,7 +521,7 @@ export default function HousehelpHome() {
                   </p>
                 </div>
               ) : (
-                <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`}>
+                <div className={`grid grid-cols-1 ${compactView ? 'gap-4' : 'gap-6'}`}>
                   {(Array.isArray(results) ? results : []).map((r) => (
                     <div
                       key={r.profile_id}
@@ -541,53 +556,93 @@ export default function HousehelpHome() {
                         </button>
                       </div>
 
-                      {/* Avatar */}
-                      <div className="flex justify-center mb-4">
-                        <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-lg font-bold shadow-lg overflow-hidden">
-                          {r.avatar_url || (r.id && profilePhotos[r.id]) ? (
-                            <OptimizedImage
-                              path={r.avatar_url || (r.id && profilePhotos[r.id]) || ''}
-                              alt={(r.first_name || 'H') + ' ' + (r.last_name || 'H')}
-                              className="w-full h-full object-cover"
-                              onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
-                            />
-                          ) : (
-                            `${r.first_name?.[0] || 'H'}${r.last_name?.[0] || 'H'}`
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                        {/* Avatar */}
+                        <div className="flex justify-center sm:justify-start mb-4 sm:mb-0 shrink-0">
+                          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-lg font-bold shadow-lg overflow-hidden">
+                            {r.avatar_url || (r.id && profilePhotos[r.id]) ? (
+                              <OptimizedImage
+                                path={r.avatar_url || (r.id && profilePhotos[r.id]) || ''}
+                                alt={(r.first_name || 'H') + ' ' + (r.last_name || 'H')}
+                                className="w-full h-full object-cover"
+                                onError={(e: any) => { e.currentTarget.style.display = 'none'; }}
+                              />
+                            ) : (
+                              `${r.first_name?.[0] || 'H'}${r.last_name?.[0] || 'H'}`
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="min-w-0 flex-1 sm:pr-8">
+                          {/* Name */}
+                          <h3 className="text-lg font-bold text-left text-gray-900 dark:text-white mb-2">
+                            {r.first_name} {r.last_name}
+                          </h3>
+
+                          {/* Town */}
+                          <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
+                            📍 {r.town?.trim() || "No location specified"}
+                          </p>
+
+                          {/* House size */}
+                          <p className="text-xs text-purple-600 dark:text-purple-400 text-left mb-2">
+                            🏠 {r.house_size || "House size not specified"}
+                          </p>
+
+                          {(r.budget_min || r.budget_max) && (
+                            <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-left mb-2">
+                              💰 Budget {formatBudgetAmount(r.budget_min)}
+                              {r.budget_min && r.budget_max ? " - " : ""}
+                              {formatBudgetAmount(r.budget_max)}
+                              {r.salary_frequency ? ` / ${r.salary_frequency}` : ""}
+                            </p>
                           )}
+
+                          {r.available_from && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
+                              📅 Available from {r.available_from}
+                            </p>
+                          )}
+
+                          <div className="flex flex-wrap gap-2 justify-start mb-3">
+                            {r.verified && (
+                              <span className="inline-block text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">Verified</span>
+                            )}
+                            {typeof r.has_kids === 'boolean' && (
+                              <span className="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                {r.has_kids ? 'Has kids' : 'No kids'}
+                              </span>
+                            )}
+                            {typeof r.has_pets === 'boolean' && (
+                              <span className="inline-block text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">
+                                {r.has_pets ? 'Has pets' : 'No pets'}
+                              </span>
+                            )}
+                            {typeof r.needs_live_in === 'boolean' && (
+                              <span className="inline-block text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
+                                {r.needs_live_in ? 'Needs live-in' : 'No live-in'}
+                              </span>
+                            )}
+                            {typeof r.needs_day_worker === 'boolean' && (
+                              <span className="inline-block text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">
+                                {r.needs_day_worker ? 'Day worker' : 'No day worker'}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Bottom actions */}
+                          <div className="mt-4 flex items-center gap-3">
+                            <div className="text-xs font-semibold tracking-wide uppercase text-gray-400">
+                              {formatTimeAgo(r.created_at)}
+                            </div>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); handleViewMore(r); }}
+                              className="ml-auto px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
+                            >
+                              View more
+                            </button>
+                          </div>
                         </div>
-                      </div>
-
-                      {/* Name */}
-                      <h3 className="text-lg font-bold text-center text-gray-900 dark:text-white mb-2">
-                        {r.first_name} {r.last_name}
-                      </h3>
-
-                      {/* Town */}
-                      <p className="text-xs text-gray-600 dark:text-gray-400 text-center mb-3">
-                        📍 {r.town?.trim() || "No location specified"}
-                      </p>
-
-                      {/* House size */}
-                      <p className="text-xs text-purple-600 dark:text-purple-400 text-center mb-3">
-                        🏠 {r.house_size || "House size not specified"}
-                      </p>
-
-                      {/* Verified */}
-                      {r.verified && (
-                        <div className="text-center"><span className="inline-block text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">Verified</span></div>
-                      )}
-
-                      {/* Bottom actions */}
-                      <div className="mt-6 flex items-center gap-3">
-                        <div className="text-xs font-semibold tracking-wide uppercase text-gray-400">
-                          {formatTimeAgo(r.created_at)}
-                        </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleViewMore(r); }}
-                          className="ml-auto px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"
-                        >
-                          View more
-                        </button>
                       </div>
                     </div>
                   ))}

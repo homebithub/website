@@ -585,13 +585,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   const isHome2 = variant === 'home2';
   const isHome3 = variant === 'home3';
 
-  const gridClass = isHome2
-    ? 'grid grid-cols-1 gap-4'
-    : isHome3
-      ? 'grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4'
-      : isHome1
-        ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4'
-        : `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 ${compactView ? 'gap-4' : 'gap-6'}`;
+  const gridClass = `grid grid-cols-1 ${compactView ? 'gap-4' : 'gap-6'}`;
 
   const cardTitleClass = isHome3 ? 'text-xs' : isHome1 ? 'text-sm' : 'text-base';
   const cardTextClass = isHome3 ? 'text-[10px]' : 'text-[11px]';
@@ -847,9 +841,9 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                           )}
                         </button>
                       </div>
-                      <div className={isHome2 ? 'flex items-start gap-4' : ''}>
+                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                         {/* Profile Picture */}
-                        <div className={`flex ${isHome2 ? 'justify-start' : 'justify-center'} ${isHome2 ? 'mb-0' : 'mb-4'} ${isHome2 ? 'shrink-0' : ''}`}>
+                        <div className="flex justify-center sm:justify-start mb-4 sm:mb-0 shrink-0">
                           <div className={`${isHome2 ? 'w-20 h-20' : isHome3 ? 'w-20 h-20' : 'w-24 h-24'} rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white ${isHome3 ? 'text-base' : 'text-lg'} font-bold shadow-lg overflow-hidden relative`}>
                             {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) || profilePhotos[househelp.user_id || String(househelp.id)] ? (
                               <>
@@ -885,25 +879,25 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                           </div>
                         </div>
 
-                        <div className={`min-w-0 ${isHome2 ? 'flex-1 pr-8' : ''}`}>
+                        <div className="min-w-0 flex-1 sm:pr-8">
                           {/* Name */}
-                          <h3 className={`${cardTitleClass} font-bold ${isHome2 ? 'text-left' : 'text-center'} text-gray-900 dark:text-white mb-2`}>
+                          <h3 className={`${cardTitleClass} font-bold text-left text-gray-900 dark:text-white mb-2`}>
                             {househelp.first_name} {househelp.last_name}
                           </h3>
 
                           {(househelp.county_of_residence || househelp.location) && (
-                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 ${isHome2 ? 'text-left' : 'text-center'} mb-2`}>
+                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
                               📍 {househelp.county_of_residence || househelp.location}
                             </p>
                           )}
 
                           {((househelp.years_of_experience ?? househelp.experience) as number) > 0 && (
-                            <p className={`${cardTextClass} text-purple-600 dark:text-purple-400 ${isHome2 ? 'text-left' : 'text-center'} mb-2`}>
+                            <p className={`${cardTextClass} text-purple-600 dark:text-purple-400 text-left mb-2`}>
                               ⭐ {househelp.years_of_experience ?? househelp.experience} years experience
                             </p>
                           )}
 
-                          <p className={`${cardTextClass} font-semibold text-gray-700 dark:text-gray-300 ${isHome2 ? 'text-left' : 'text-center'} mb-2`}>
+                          <p className={`${cardTextClass} font-semibold text-gray-700 dark:text-gray-300 text-left mb-2`}>
                             💰 {formatOnboardingAmountWithFrequency(
                               househelp.salary_expectation,
                               househelp.salary_frequency,
@@ -911,7 +905,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                             )}
                           </p>
 
-                          <div className={`flex flex-wrap gap-2 ${isHome2 ? 'justify-start' : 'justify-center'} mb-3`}>
+                          <div className="flex flex-wrap gap-2 justify-start mb-3">
                             {househelp.househelp_type && (
                               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                                 {househelp.househelp_type}
@@ -939,8 +933,22 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                             )}
                           </div>
 
+                          {Array.isArray(househelp.skills) && househelp.skills.length > 0 && (
+                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
+                              🧹 {househelp.skills.slice(0, 3).join(', ')}
+                              {househelp.skills.length > 3 ? ` +${househelp.skills.length - 3} more` : ''}
+                            </p>
+                          )}
+
+                          {Array.isArray(househelp.languages) && househelp.languages.length > 0 && (
+                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
+                              🗣️ {househelp.languages.slice(0, 3).join(', ')}
+                              {househelp.languages.length > 3 ? ` +${househelp.languages.length - 3} more` : ''}
+                            </p>
+                          )}
+
                           {househelp.bio && (
-                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 ${isHome2 ? 'text-left' : 'text-center'} ${isHome3 ? 'line-clamp-2' : 'line-clamp-3'} mb-4`}>
+                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left ${isHome3 ? 'line-clamp-3' : 'line-clamp-4'} mb-4`}>
                               {househelp.bio}
                             </p>
                           )}

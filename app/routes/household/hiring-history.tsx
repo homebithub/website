@@ -5,6 +5,7 @@ import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, E
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { useSSEContextSafe } from '~/contexts/SSEContext';
 import { buildIdentifierMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
+import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 
 interface HireRequest {
   id: string;
@@ -399,9 +400,8 @@ export default function HiringHistory() {
     });
   };
 
-  const formatSalary = (amount: number, frequency: string) => {
-    return `KES ${amount.toLocaleString()} / ${frequency}`;
-  };
+  const formatSalary = (amount?: number | null, frequency?: string) =>
+    formatOnboardingAmountWithFrequency(amount, frequency, 'Not specified');
 
   const tabs: { key: TabType; label: string; count?: number }[] = [
     { key: 'interested', label: 'Interested', count: interestsCount },

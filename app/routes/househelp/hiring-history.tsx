@@ -5,6 +5,7 @@ import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { buildIdentifierMap, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
+import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
   Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User, FileText
@@ -395,7 +396,8 @@ export default function HousehelpHiringHistory() {
     return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
-  const formatSalary = (amount: number, frequency: string) => `KES ${amount.toLocaleString()} / ${frequency}`;
+  const formatSalary = (amount?: number | null, frequency?: string) =>
+    formatOnboardingAmountWithFrequency(amount, frequency, 'Not specified');
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -659,8 +661,8 @@ export default function HousehelpHiringHistory() {
                               </span>
                             </div>
                             <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                              {getHouseholdName(ec.household)} &bull; KES {ec.salary?.toLocaleString()} / {ec.salary_frequency}
-                              {ec.start_date && ` \u2022 From ${formatDate(ec.start_date)}`}
+                              {getHouseholdName(ec.household)} &bull; {formatSalary(ec.salary, ec.salary_frequency)}
+                              {ec.start_date && ` • From ${formatDate(ec.start_date)}`}
                             </p>
                             <p className="text-xs text-gray-400 dark:text-gray-500">Created {formatDate(ec.created_at)}</p>
                           </div>

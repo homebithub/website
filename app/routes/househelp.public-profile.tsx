@@ -872,16 +872,16 @@ export default function HousehelpPublicProfile() {
               <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">⚙️ Work Preferences</h2>
               <div className="space-y-3">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className={`p-4 rounded-xl ${profile.can_work_with_kid ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
-                    <p className={`font-semibold ${profile.can_work_with_kid ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
+                  <div className={`p-3 rounded-xl ${profile.can_work_with_kid ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
+                    <p className={`text-xs font-semibold ${profile.can_work_with_kid ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
                       👶 Work with Kids
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                       {profile.can_work_with_kid ? 'Yes, comfortable with children' : 'No'}
                     </p>
                   </div>
-                  <div className={`p-4 rounded-xl ${profile.can_work_with_pets ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
-                    <p className={`font-semibold ${profile.can_work_with_pets ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
+                  <div className={`p-3 rounded-xl ${profile.can_work_with_pets ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
+                    <p className={`text-xs font-semibold ${profile.can_work_with_pets ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
                       🐾 Work with Pets
                     </p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
@@ -891,14 +891,14 @@ export default function HousehelpPublicProfile() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {profile.offers_live_in && (
-                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                      <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 Available for Live-in</p>
+                    <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+                      <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">🌙 Available for Live-in</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Can live with the family</p>
                     </div>
                   )}
                   {profile.offers_day_worker && (
-                    <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                      <p className="font-semibold text-yellow-900 dark:text-yellow-100">☀️ Available as Day Worker</p>
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
+                      <p className="text-xs font-semibold text-yellow-900 dark:text-yellow-100">☀️ Available as Day Worker</p>
                       <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Works during the day</p>
                     </div>
                   )}
@@ -916,7 +916,7 @@ export default function HousehelpPublicProfile() {
                     <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Off Days</span>
                     <div className="flex flex-wrap gap-2">
                       {profile.off_days.map((day, idx) => (
-                        <span key={idx} className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100 rounded-xl font-medium">
+                        <span key={idx} className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100 rounded-lg text-xs font-medium">
                           📅 {day}
                         </span>
                       ))}
@@ -938,12 +938,12 @@ export default function HousehelpPublicProfile() {
                     if (dayTimes.afternoon) availableTimes.push('Afternoon');
                     if (dayTimes.evening) availableTimes.push('Evening');
                     return (
-                      <div key={day} className={`p-3 rounded-xl border-2 ${availableTimes.length > 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-gray-300 dark:border-gray-700'}`}>
-                        <p className={`font-semibold capitalize mb-1 ${availableTimes.length > 0 ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{day}</p>
+                      <div key={day} className={`p-2.5 rounded-lg border-2 ${availableTimes.length > 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-gray-300 dark:border-gray-700'}`}>
+                        <p className={`text-xs font-semibold capitalize mb-1 ${availableTimes.length > 0 ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{day}</p>
                         {availableTimes.length > 0 ? (
-                          <p className="text-xs text-gray-600 dark:text-gray-400">{availableTimes.join(', ')}</p>
+                          <p className="text-[11px] text-gray-600 dark:text-gray-400">{availableTimes.join(', ')}</p>
                         ) : (
-                          <p className="text-xs text-gray-500 dark:text-gray-500">Not available</p>
+                          <p className="text-[11px] text-gray-500 dark:text-gray-500">Not available</p>
                         )}
                       </div>
                     );
@@ -1022,26 +1022,26 @@ export default function HousehelpPublicProfile() {
               <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">✅ Status & Verification</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {profile.status && (
-                  <div className={`p-4 rounded-xl ${profile.status === 'active' ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
-                    <p className={`font-semibold ${profile.status === 'active' ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>Profile Status</p>
+                  <div className={`p-3 rounded-xl ${profile.status === 'active' ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
+                    <p className={`text-xs font-semibold ${profile.status === 'active' ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>Profile Status</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">{profile.status}</p>
                   </div>
                 )}
                 {profile.verified !== undefined && (
-                  <div className={`p-4 rounded-xl ${profile.verified ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
-                    <p className={`font-semibold ${profile.verified ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.verified ? '✅' : '❌'} Verified Profile</p>
+                  <div className={`p-3 rounded-xl ${profile.verified ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
+                    <p className={`text-xs font-semibold ${profile.verified ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.verified ? '✅' : '❌'} Verified Profile</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.verified ? 'Identity verified' : 'Not verified'}</p>
                   </div>
                 )}
                 {profile.premium !== undefined && (
-                  <div className={`p-4 rounded-lg ${profile.premium ? 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
-                    <p className={`font-semibold ${profile.premium ? 'text-yellow-900 dark:text-yellow-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.premium ? '⭐' : '○'} Premium Member</p>
+                  <div className={`p-3 rounded-lg ${profile.premium ? 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
+                    <p className={`text-xs font-semibold ${profile.premium ? 'text-yellow-900 dark:text-yellow-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.premium ? '⭐' : '○'} Premium Member</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.premium ? 'Premium account' : 'Standard account'}</p>
                   </div>
                 )}
                 {profile.background_check_consent !== undefined && (
-                  <div className={`p-4 rounded-xl ${profile.background_check_consent ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
-                    <p className={`font-semibold ${profile.background_check_consent ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.background_check_consent ? '✅' : '❌'} Background Check</p>
+                  <div className={`p-3 rounded-xl ${profile.background_check_consent ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
+                    <p className={`text-xs font-semibold ${profile.background_check_consent ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.background_check_consent ? '✅' : '❌'} Background Check</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.background_check_consent ? 'Consented to check' : 'Not consented'}</p>
                   </div>
                 )}

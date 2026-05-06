@@ -266,15 +266,15 @@ export default function BlogPost() {
         <PurpleThemeWrapper variant="gradient" bubbles={false} className="flex-1">
           <div className="flex items-center justify-center py-32">
             <div className="text-center">
-              <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white mb-4">
+              <h1 className="text-xl font-extrabold text-gray-900 dark:text-white mb-4">
                 Post Not Found
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mb-8">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-8">
                 The blog post you're looking for doesn't exist or has been removed.
               </p>
               <Link
                 to="/blog"
-                className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-sm text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200"
               >
                 Back to Blog
               </Link>
@@ -343,10 +343,10 @@ export default function BlogPost() {
                     {post.category}
                   </span>
                 )}
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-white mb-4 drop-shadow-lg">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-extrabold text-white mb-4 drop-shadow-lg">
                   {post.title}
                 </h1>
-                <div className="flex items-center gap-6 text-white/90">
+                <div className="flex items-center gap-6 text-sm text-white/90">
                   <div className="flex items-center gap-2">
                     <User className="w-5 h-5" />
                     <span className="font-medium">{post.author_name}</span>
@@ -430,7 +430,7 @@ export default function BlogPost() {
 
               {/* Article Content */}
               <div 
-                className="prose prose-lg dark:prose-invert max-w-none prose-headings:font-extrabold prose-a:text-purple-600 dark:prose-a:text-purple-400 prose-img:rounded-2xl"
+                className="prose prose-sm dark:prose-invert max-w-none prose-headings:font-extrabold prose-a:text-purple-600 dark:prose-a:text-purple-400 prose-img:rounded-2xl"
                 dangerouslySetInnerHTML={{ __html: post.content }}
               />
 
@@ -453,7 +453,7 @@ export default function BlogPost() {
 
             {/* Comments Section */}
             <div className="bg-white dark:bg-white/5 rounded-2xl shadow-sm border-2 border-purple-100 dark:border-purple-500/10 p-6 sm:p-8 mb-8">
-              <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
+              <h2 className="text-base font-extrabold text-gray-900 dark:text-white mb-6 flex items-center gap-2">
                 <MessageCircle className="w-6 h-6 text-purple-500" />
                 Comments {comments.length > 0 && `(${comments.length})`}
               </h2>
@@ -484,7 +484,7 @@ export default function BlogPost() {
                   onChange={(e) => setCommentName(e.target.value)}
                   placeholder="Your name"
                   required
-                  className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
+                  className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
                 />
                 <textarea
                   value={commentContent}
@@ -492,13 +492,13 @@ export default function BlogPost() {
                   placeholder="Share your thoughts..."
                   required
                   rows={4}
-                  className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all"
+                  className="w-full px-4 py-3 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all"
                 />
                 <div className="flex items-center gap-4">
                   <button
                     type="submit"
                     disabled={submittingComment}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 text-sm text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200"
                   >
                     <Send className="w-4 h-4" />
                     {submittingComment ? "Posting..." : "Post Comment"}
@@ -513,7 +513,7 @@ export default function BlogPost() {
 
               {/* Comments List */}
               {comments.length === 0 ? (
-                <p className="text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   No comments yet. Be the first to share your thoughts!
                 </p>
               ) : (
@@ -530,7 +530,7 @@ export default function BlogPost() {
                           </span>
                         </div>
                         <div>
-                          <span className="font-semibold text-gray-900 dark:text-white">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
                             {comment.user_name}
                           </span>
                           <span className="text-gray-500 dark:text-gray-500 text-xs ml-2">
@@ -542,7 +542,7 @@ export default function BlogPost() {
                           </span>
                         </div>
                       </div>
-                      <p className="text-gray-700 dark:text-gray-300 ml-11">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 ml-11">
                         {comment.content}
                       </p>
                     </div>
@@ -554,7 +554,7 @@ export default function BlogPost() {
             {/* Related Posts */}
             {relatedPosts.length > 0 && (
               <div>
-                <h2 className="text-xl font-extrabold text-gray-900 dark:text-white mb-6">
+                <h2 className="text-base font-extrabold text-gray-900 dark:text-white mb-6">
                   Related Articles
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -572,14 +572,14 @@ export default function BlogPost() {
                           />
                         ) : (
                           <div className="w-full h-40 bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center">
-                            <span className="text-white text-2xl font-bold drop-shadow-lg">
+                            <span className="text-white text-xl font-bold drop-shadow-lg">
                               {relatedPost.title.charAt(0)}
                             </span>
                           </div>
                         )}
 
                         <div className="p-4">
-                          <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
+                          <h3 className="text-sm font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
                             {relatedPost.title}
                           </h3>
                           <p className="text-gray-600 dark:text-gray-400 text-xs line-clamp-2">
@@ -600,7 +600,7 @@ export default function BlogPost() {
             <div className="mt-8 text-center">
               <Link
                 to="/blog"
-                className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200"
+                className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-sm text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200"
               >
                 ← Back to All Posts
               </Link>
@@ -630,22 +630,22 @@ export default function BlogPost() {
               <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-pink-500 to-rose-500 mb-4">
                 <Heart className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-lg font-extrabold text-gray-900 dark:text-white mb-2">
+              <h3 className="text-base font-extrabold text-gray-900 dark:text-white mb-2">
                 Like this article?
               </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
                 Sign in or create an account to like posts and engage with our community.
               </p>
               <div className="flex flex-col gap-3">
                 <Link
                   to="/login"
-                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200 text-center"
+                  className="w-full px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-sm text-white rounded-xl font-semibold shadow-lg shadow-purple-500/25 hover:shadow-xl hover:scale-105 transition-all duration-200 text-center"
                 >
                   Sign In
                 </Link>
                 <Link
                   to="/signup"
-                  className="w-full px-6 py-3 border-2 border-purple-200 dark:border-purple-500/20 text-purple-700 dark:text-purple-300 rounded-xl font-semibold hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all text-center"
+                  className="w-full px-6 py-3 border-2 border-purple-200 dark:border-purple-500/20 text-sm text-purple-700 dark:text-purple-300 rounded-xl font-semibold hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all text-center"
                 >
                   Create Account
                 </Link>

@@ -21,23 +21,23 @@ export default function Terms() {
         <PurpleCard hover={false} glow={true} className="p-6 sm:p-8">
         <div className="w-full">
           <div className="mb-8">
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white">
+            <h1 className="text-base font-bold text-slate-900 dark:text-white">
               Terms and Conditions
             </h1>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               Effective Date: 1 January 2026
             </p>
-            <p className="text-slate-600 dark:text-slate-400">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
               Last Updated: {new Date().toLocaleDateString()}
             </p>
-            <p className="mt-4 text-slate-700 dark:text-slate-300">
+            <p className="mt-4 text-sm text-slate-700 dark:text-slate-300">
               Welcome to Homebit ("Platform"), owned and operated by Homebit Hub Limited ("Homebit", "we", "us", or "our"), 
               a private limited company registered under the laws of Kenya. By accessing or using our website located at 
               https://homebit.co.ke, you agree to be bound by these Terms and Conditions ("Terms"). Please read them carefully.
             </p>
           </div>
 
-          <div className="prose dark:prose-invert max-w-none">
+          <div className="prose prose-sm dark:prose-invert max-w-none">
             <h2>1. Definitions</h2>
             <ul>
               <li>"User" refers to any individual or entity that accesses the Platform.</li>
@@ -163,7 +163,7 @@ export default function Terms() {
           <div className="mt-8 text-center">
             <Link
               to="/"
-              className="inline-flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
+              className="inline-flex items-center px-6 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-sm text-white font-semibold shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500"
             >
               Back to Home
             </Link>

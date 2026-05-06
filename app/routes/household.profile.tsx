@@ -987,16 +987,16 @@ export default function HouseholdProfile() {
         </div>
         <div className="space-y-3">
           {profile.needs_live_in && (
-            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <p className="font-semibold text-purple-900 dark:text-purple-100">🌙 Live-in Help</p>
+            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+              <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">🌙 Live-in Help</p>
               {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Off days: {profile.live_in_off_days.join(', ')}</p>
               )}
             </div>
           )}
           {profile.needs_day_worker && (
-            <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <p className="font-semibold text-purple-900 dark:text-purple-100">☀️ Day Worker</p>
+            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
+              <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">☀️ Day Worker</p>
               <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Schedule configured</p>
             </div>
           )}

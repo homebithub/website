@@ -7,6 +7,7 @@ import { profileService as grpcProfileService, profileViewService, shortlistServ
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
+import { formatOnboardingAmountWithFrequency } from "~/utils/onboardingCompensation";
 
 export default function HousehelpProfile() {
   // Carousel state (ALWAYS at the top)
@@ -203,6 +204,7 @@ export default function HousehelpProfile() {
   }
 
   const { User, Househelp } = data;
+  const profileName = [User?.first_name, User?.last_name].filter(Boolean).join(' ') || 'Househelp';
 
 
   return (
@@ -216,7 +218,9 @@ export default function HousehelpProfile() {
         <button onClick={handleBackNavigation} className="p-2 rounded-full hover:bg-primary-100 dark:hover:bg-primary-900 transition" aria-label={backLabel}>
           <ArrowLeftIcon className="w-6 h-6 text-primary-700 dark:text-primary-300" />
         </button>
-        <span className="text-lg font-bold text-primary dark:text-primary-300">Househelp Profile</span>
+        <div className="flex items-center">
+          <span className="text-lg font-bold text-primary dark:text-primary-300">{profileName}</span>
+        </div>
         <div className="relative inline-block group">
           {shortlisted ? (
             <>
@@ -328,7 +332,10 @@ export default function HousehelpProfile() {
           <div><span className="font-semibold">Specialities:</span> {Househelp.specialities && Househelp.specialities.length ? Househelp.specialities.join(', ') : '-'}</div>
           <div><span className="font-semibold">Languages:</span> {Househelp.languages && Househelp.languages.length ? Househelp.languages.join(', ') : '-'}</div>
           <div><span className="font-semibold">Hourly Rate:</span> {Househelp.hourly_rate ? Househelp.hourly_rate : '-'}</div>
-          <div><span className="font-semibold">Salary Expectation:</span> {Househelp.salary_expectation ? `${Househelp.salary_expectation} (${Househelp.salary_frequency})` : '-'}</div>
+          <div>
+            <span className="font-semibold">Salary Expectation:</span>{' '}
+            {formatOnboardingAmountWithFrequency(Househelp.salary_expectation, Househelp.salary_frequency, '-')}
+          </div>
 
           <div><span className="font-semibold">Rating:</span> {Househelp.rating} ({Househelp.review_count} reviews)</div>
           <div><span className="font-semibold">References:</span> {Househelp.references ? Househelp.references : '-'}</div>
