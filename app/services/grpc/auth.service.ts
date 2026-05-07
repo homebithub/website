@@ -14,7 +14,7 @@ import {
 } from '~/utils/authStorage';
 
 // Extract proto.auth from the default export
-const auth_pb = auth_pb_module as any;
+const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const { AuthServiceClient, AdminAuthServiceClient } = auth_grpc_web_module as any;
 
 const authClient = new AuthServiceClient(GRPC_WEB_BASE_URL, null, null);

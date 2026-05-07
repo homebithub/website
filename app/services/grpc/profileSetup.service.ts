@@ -15,7 +15,7 @@ import {
 } from '~/utils/authStorage';
 
 // @ts-ignore - Generated protobuf code
-const auth_pb = auth_pb_module as any;
+const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const { ProfileSetupServiceClient } = auth_grpc_web_module as any;
 
 const profileSetupClient = new ProfileSetupServiceClient(GRPC_WEB_BASE_URL, null, null);

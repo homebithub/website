@@ -15,7 +15,7 @@ import {
   getStoredUserId,
 } from '~/utils/authStorage';
 
-const auth_pb = auth_pb_module as any;
+const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const {
   ProfileServiceClient,
   ShortlistServiceClient,
