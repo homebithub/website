@@ -22,7 +22,7 @@ interface HousehelpSummary {
   avatar_url?: string;
   photos?: string[];
   town?: string;
-  location?: string;
+  location?: string | Record<string, any>;
   years_of_experience?: number;
   salary_expectation?: number;
   salary_frequency?: string;
@@ -33,6 +33,41 @@ interface HousehelpSummary {
     avatar_url?: string;
   };
 }
+
+const toRecord = (value: unknown): Record<string, any> | null => (
+  value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : null
+);
+
+const formatTextValue = (value: unknown, fallback = ""): string => {
+  if (typeof value === "string") return value;
+  if (typeof value === "number" || typeof value === "boolean") return String(value);
+  const record = toRecord(value);
+  if (record) {
+    return (
+      formatTextValue(record.name) ||
+      formatTextValue(record.place) ||
+      formatTextValue(record.town) ||
+      formatTextValue(record.label) ||
+      formatTextValue(record.display_name) ||
+      formatTextValue(record.title) ||
+      fallback
+    );
+  }
+  return fallback;
+};
+
+const toStringArray = (value: unknown): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value.map((item) => formatTextValue(item)).filter(Boolean);
+};
+
+const firstString = (...values: unknown[]): string => {
+  for (const value of values) {
+    const text = formatTextValue(value);
+    if (text) return text;
+  }
+  return "";
+};
 
 interface OpenForWorkListing {
   id: string;
@@ -56,17 +91,74 @@ const formatDate = (value?: string) => {
   return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
-const formatSalary = (min?: number, max?: number, frequency?: string) => {
-  if (min == null && max == null) return "Not specified";
+const toFiniteNumber = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+};
+
+const normalizeHousehelp = (raw: unknown): HousehelpSummary | undefined => {
+  const househelp = toRecord(raw);
+  if (!househelp) return undefined;
+  const user = toRecord(househelp.user);
+
+  return {
+    ...househelp,
+    id: formatTextValue(househelp.id) || undefined,
+    user_id: formatTextValue(househelp.user_id) || undefined,
+    first_name: formatTextValue(househelp.first_name) || undefined,
+    last_name: formatTextValue(househelp.last_name) || undefined,
+    avatar_url: formatTextValue(househelp.avatar_url) || undefined,
+    photos: toStringArray(househelp.photos),
+    town: formatTextValue(househelp.town) || undefined,
+    location: formatTextValue(househelp.location) || undefined,
+    years_of_experience: toFiniteNumber(househelp.years_of_experience),
+    salary_expectation: toFiniteNumber(househelp.salary_expectation),
+    salary_frequency: formatTextValue(househelp.salary_frequency) || undefined,
+    user: user ? {
+      ...user,
+      id: formatTextValue(user.id) || undefined,
+      first_name: formatTextValue(user.first_name) || undefined,
+      last_name: formatTextValue(user.last_name) || undefined,
+      avatar_url: formatTextValue(user.avatar_url) || undefined,
+    } : undefined,
+  };
+};
+
+const normalizeOpenForWorkListing = (raw: unknown, fallbackId: string): OpenForWorkListing => {
+  const listing = toRecord(raw) || {};
+
+  return {
+    ...listing,
+    id: formatTextValue(listing.id) || fallbackId,
+    job_types: toStringArray(listing.job_types),
+    available_from: formatTextValue(listing.available_from) || undefined,
+    status: formatTextValue(listing.status) || undefined,
+    created_at: formatTextValue(listing.created_at) || undefined,
+    salary_min: toFiniteNumber(listing.salary_min),
+    salary_max: toFiniteNumber(listing.salary_max),
+    salary_frequency: formatTextValue(listing.salary_frequency) || undefined,
+    househelp: normalizeHousehelp(listing.househelp),
+  };
+};
+
+const formatSalary = (min?: unknown, max?: unknown, frequency?: unknown) => {
+  const normalizedMin = toFiniteNumber(min);
+  const normalizedMax = toFiniteNumber(max);
+  if (normalizedMin == null && normalizedMax == null) return "Not specified";
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "KES",
     maximumFractionDigits: 0,
   });
-  const minLabel = min != null ? formatter.format(min) : null;
-  const maxLabel = max != null ? formatter.format(max) : null;
+  const minLabel = normalizedMin != null ? formatter.format(normalizedMin) : null;
+  const maxLabel = normalizedMax != null ? formatter.format(normalizedMax) : null;
   const base = minLabel && maxLabel ? `${minLabel} - ${maxLabel}` : (minLabel || maxLabel || "Not specified");
-  const freqLabel = frequency ? ` / ${frequency}` : "";
+  const frequencyLabel = formatTextValue(frequency);
+  const freqLabel = frequencyLabel ? ` / ${frequencyLabel}` : "";
   return `${base}${freqLabel}`;
 };
 
@@ -96,7 +188,7 @@ export default function HouseholdJobsHome() {
   const limit = 12;
 
   const househelpUserIds = useMemo(
-    () => listings.map((listing) => listing.househelp?.user_id || listing.househelp?.user?.id).filter(Boolean) as string[],
+    () => listings.map((listing) => firstString(listing.househelp?.user_id, listing.househelp?.user?.id)).filter(Boolean),
     [listings]
   );
   const profilePhotos = useProfilePhotos(househelpUserIds);
@@ -117,9 +209,12 @@ export default function HouseholdJobsHome() {
               ? payload
               : [];
         const total = typeof payload?.total === "number" ? payload.total : (Array.isArray(items) ? items.length : 0);
+        const normalizedItems = (items as unknown[]).map((item: unknown, index: number) => (
+          normalizeOpenForWorkListing(item, `open-for-work-${offset + index}`)
+        ));
         if (cancelled) return;
-        setListings((prev) => (offset === 0 ? items : [...prev, ...items]));
-        setHasMore(offset + items.length < total);
+        setListings((prev) => (offset === 0 ? normalizedItems : [...prev, ...normalizedItems]));
+        setHasMore(offset + normalizedItems.length < total);
       } catch (err: any) {
         if (!cancelled) setError(err.message || "Failed to load open-for-work listings");
       } finally {
@@ -192,12 +287,15 @@ export default function HouseholdJobsHome() {
                 {listings.map((listing) => {
                   const househelp = listing.househelp || {};
                   const user = househelp.user || {};
-                  const name = `${user.first_name || househelp.first_name || ""} ${user.last_name || househelp.last_name || ""}`.trim() || "Househelp";
+                  const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || "Househelp";
                   const initials = name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "HW";
-                  const avatar = househelp.avatar_url || househelp.photos?.[0] || profilePhotos[househelp.user_id || user.id || ""];
+                  const userId = firstString(househelp.user_id, user.id);
+                  const photos = toStringArray(househelp.photos);
+                  const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
                   const scheduleLabel = summarizeSchedule(listing.work_schedule);
-                  const jobTypes = listing.job_types || [];
-                  const location = househelp.town || househelp.location || "Location not specified";
+                  const jobTypes = toStringArray(listing.job_types);
+                  const location = firstString(househelp.town, househelp.location) || "Location not specified";
+                  const experienceYears = toFiniteNumber(househelp.years_of_experience);
 
                   return (
                     <div
@@ -254,7 +352,7 @@ export default function HouseholdJobsHome() {
                           </div>
 
                           <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
-                            <p>Experience: {househelp.years_of_experience ? `${househelp.years_of_experience} yrs` : "Not specified"}</p>
+                            <p>Experience: {experienceYears ? `${experienceYears} yrs` : "Not specified"}</p>
                             <p>
                               Salary: {formatSalary(listing.salary_min ?? househelp.salary_expectation, listing.salary_max, listing.salary_frequency || househelp.salary_frequency)}
                             </p>
