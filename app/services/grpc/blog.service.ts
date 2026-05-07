@@ -4,17 +4,8 @@
 
 import { BlogServiceClient } from '~/grpc/generated/notifications/blog_grpc_web_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
-import blog_pb_module from '~/grpc/generated/notifications/blog_pb';
-import type {
-  LikePostResponse,
-  LikeStatusResponse,
-  SubscribeToBlogResponse,
-  CommentResponse,
-  ListCommentsResponse,
-} from '~/grpc/generated/notifications/blog_pb';
+import * as blog_pb from '~/grpc/generated/notifications/blog_pb';
 import type { RpcError } from 'grpc-web';
-
-const blog_pb = blog_pb_module as any;
 
 class BlogService {
   private client: BlogServiceClient;
@@ -29,7 +20,7 @@ class BlogService {
     request.setUserId(userId);
 
     return new Promise((resolve, reject) => {
-      this.client.likePost(request, {}, (err: RpcError, response: LikePostResponse) => {
+      this.client.likePost(request, {}, (err: RpcError, response: blog_pb.LikePostResponse) => {
         if (err) {
           reject(handleGrpcError(err));
         } else if (response) {
@@ -68,7 +59,7 @@ class BlogService {
     }
 
     return new Promise((resolve, reject) => {
-      this.client.getLikeStatus(request, {}, (err: RpcError, response: LikeStatusResponse) => {
+      this.client.getLikeStatus(request, {}, (err: RpcError, response: blog_pb.LikeStatusResponse) => {
         if (err) {
           reject(handleGrpcError(err));
         } else if (response) {
@@ -88,7 +79,7 @@ class BlogService {
     if (name) request.setName(name);
 
     return new Promise((resolve, reject) => {
-      this.client.subscribeToBlog(request, {}, (err: RpcError, response: SubscribeToBlogResponse) => {
+      this.client.subscribeToBlog(request, {}, (err: RpcError, response: blog_pb.SubscribeToBlogResponse) => {
         if (err) {
           reject(handleGrpcError(err));
         } else if (response) {
@@ -166,7 +157,7 @@ class BlogService {
     if (userEmail) request.setUserEmail(userEmail);
     if (userId) request.setUserId(userId);
     return new Promise<void>((resolve, reject) => {
-      this.client.createComment(request, {}, (err: RpcError, _response: CommentResponse) => {
+      this.client.createComment(request, {}, (err: RpcError, _response: blog_pb.CommentResponse) => {
         if (err) reject(handleGrpcError(err));
         else resolve();
       });
@@ -178,7 +169,7 @@ class BlogService {
     request.setPostId(postId);
     request.setStatus(status);
     return new Promise((resolve, reject) => {
-      this.client.listComments(request, {}, (err: RpcError, response: ListCommentsResponse) => {
+      this.client.listComments(request, {}, (err: RpcError, response: blog_pb.ListCommentsResponse) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response.getCommentsList().map(c => ({
           id: c.getId(),
