@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { profileService as grpcProfileService, documentService } from '~/services/grpc/authServices';
+import { profileService as grpcProfileService, documentService, openForWorkService } from '~/services/grpc/authServices';
 import profileSetupService from '~/services/grpc/profileSetup.service';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -12,6 +12,7 @@ import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { Eye } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import EditSectionModal from '~/components/ui/EditSectionModal';
 import Location from '~/components/Location';
 import Gender from '~/components/Gender';
@@ -27,6 +28,7 @@ import Bio from '~/components/Bio';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 import { formatOnboardingAmount } from '~/utils/onboardingCompensation';
+import OpenForWorkModal from '~/components/modals/OpenForWorkModal';
 
 interface HousehelpData {
   id?: string;
@@ -146,6 +148,11 @@ export default function HousehelpProfile() {
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [setupRedirectLoading, setSetupRedirectLoading] = useState(false);
+  const [openForWorkListing, setOpenForWorkListing] = useState<any | null>(null);
+  const [openForWorkLoading, setOpenForWorkLoading] = useState(false);
+  const [openForWorkError, setOpenForWorkError] = useState<string | null>(null);
+  const [openForWorkSuccess, setOpenForWorkSuccess] = useState<string | null>(null);
+  const [showOpenForWorkModal, setShowOpenForWorkModal] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -187,6 +194,60 @@ export default function HousehelpProfile() {
     
     fetchProfile();
   }, [navigate, retryKey]);
+
+  const fetchOpenForWorkListing = async (househelpId: string, silent?: boolean) => {
+    if (!silent) {
+      setOpenForWorkLoading(true);
+    }
+    setOpenForWorkError(null);
+    try {
+      const listing = await openForWorkService.getOpenForWorkByHousehelp(househelpId, '');
+      setOpenForWorkListing(listing);
+    } catch (err: any) {
+      const message = err?.message || '';
+      if (!message.toLowerCase().includes('not found')) {
+        setOpenForWorkError(message || 'Failed to load open-for-work listing');
+      } else {
+        setOpenForWorkListing(null);
+      }
+    } finally {
+      if (!silent) {
+        setOpenForWorkLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    const househelpId = profile?.id;
+    if (!househelpId) return;
+    let cancelled = false;
+    const run = async (resolvedId: string) => {
+      if (cancelled) return;
+      setOpenForWorkLoading(true);
+      await fetchOpenForWorkListing(resolvedId, true);
+      if (!cancelled) setOpenForWorkLoading(false);
+    };
+    run(househelpId);
+    return () => {
+      cancelled = true;
+    };
+  }, [profile?.id]);
+
+  const handleOpenForWorkStatus = async (nextStatus: string) => {
+    if (!openForWorkListing?.id) {
+      setShowOpenForWorkModal(true);
+      return;
+    }
+    setOpenForWorkError(null);
+    setOpenForWorkSuccess(null);
+    try {
+      await openForWorkService.updateOpenForWork(openForWorkListing.id, '', { status: nextStatus });
+      setOpenForWorkListing((prev: any) => prev ? { ...prev, status: nextStatus } : prev);
+      setOpenForWorkSuccess(nextStatus === 'active' ? 'Listing activated.' : 'Listing set to inactive.');
+    } catch (err: any) {
+      setOpenForWorkError(err.message || 'Failed to update listing status');
+    }
+  };
 
   const handleContinueSetup = async () => {
     if (setupRedirectLoading) return;
@@ -412,7 +473,7 @@ export default function HousehelpProfile() {
         <div className="text-center">
           <svg className="animate-spin h-12 w-12 text-purple-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           <p className="text-gray-600 dark:text-gray-400">Loading your profile...</p>
         </div>
@@ -498,6 +559,82 @@ export default function HousehelpProfile() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Open for Work */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">💼 Open for Work</h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              Share your availability with households looking to hire.
+            </p>
+          </div>
+          <button
+            onClick={() => setShowOpenForWorkModal(true)}
+            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+          >
+            {openForWorkListing ? 'Edit Listing' : 'Create Listing'}
+          </button>
+        </div>
+
+        {openForWorkSuccess && <SuccessAlert message={openForWorkSuccess} className="mb-3" />}
+        {openForWorkError && <ErrorAlert message={openForWorkError} className="mb-3" />}
+
+        {openForWorkLoading ? (
+          <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+            Loading listing...
+          </div>
+        ) : openForWorkListing ? (
+          <div className="rounded-xl border border-gray-200 dark:border-purple-500/30 p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">
+                  Status: <span className={`ml-1 ${openForWorkListing.status === 'inactive' ? 'text-gray-500' : 'text-green-600 dark:text-green-400'}`}>
+                    {openForWorkListing.status || 'active'}
+                  </span>
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  Available from: {openForWorkListing.available_from ? String(openForWorkListing.available_from).split('T')[0] : 'Flexible'}
+                </p>
+              </div>
+              <button
+                onClick={() => handleOpenForWorkStatus(openForWorkListing.status === 'active' ? 'inactive' : 'active')}
+                className="px-4 py-1.5 text-xs rounded-xl border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+              >
+                {openForWorkListing.status === 'active' ? 'Set Inactive' : 'Activate'}
+              </button>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(openForWorkListing.job_types || []).length > 0 ? (
+                openForWorkListing.job_types.map((type: string) => (
+                  <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
+                    {type.replace(/_/g, ' ')}
+                  </span>
+                ))
+              ) : (
+                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                  Flexible roles
+                </span>
+              )}
+              {openForWorkListing.can_work_with_kids && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                  Kids friendly
+                </span>
+              )}
+              {openForWorkListing.can_work_with_pets && (
+                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                  Pets friendly
+                </span>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-purple-200 dark:border-purple-500/30 p-4 text-xs text-gray-600 dark:text-gray-400">
+            You have not published an open-for-work listing yet.
+          </div>
+        )}
       </div>
 
       {/* Profile Photos */}
@@ -1226,6 +1363,18 @@ export default function HousehelpProfile() {
           onClose={() => setShowViewsModal(false)}
         />
       )}
+
+      <OpenForWorkModal
+        isOpen={showOpenForWorkModal}
+        onClose={() => setShowOpenForWorkModal(false)}
+        listing={openForWorkListing}
+        onSaved={() => {
+          if (profile?.id) {
+            fetchOpenForWorkListing(profile.id, true);
+          }
+          setOpenForWorkSuccess('Listing updated successfully.');
+        }}
+      />
     </div>
   );
 }

@@ -16,13 +16,14 @@
 
 
 
-const grpc = {};
-grpc.web = require('grpc-web');
+import * as grpcWeb from 'grpc-web';
+const grpc = { web: grpcWeb };
 
 
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js')
-const proto = {};
-proto.notifications = require('./notifications_pb.js');
+import * as _google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
+const google_protobuf_struct_pb = _google_protobuf_struct_pb.default || _google_protobuf_struct_pb
+import * as notifications_pb from './notifications_pb.js';
+const proto = { notifications: notifications_pb.default || notifications_pb };
 
 /**
  * @param {string} hostname
@@ -1665,6 +1666,128 @@ proto.notifications.NotificationsServicePromiseClient.prototype.toggleFeatureFla
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.notifications.AdminListNotificationsRequest,
+ *   !proto.notifications.AdminListNotificationsResponse>}
+ */
+const methodDescriptor_NotificationsService_AdminListNotifications = new grpc.web.MethodDescriptor(
+  '/notifications.NotificationsService/AdminListNotifications',
+  grpc.web.MethodType.UNARY,
+  proto.notifications.AdminListNotificationsRequest,
+  proto.notifications.AdminListNotificationsResponse,
+  /**
+   * @param {!proto.notifications.AdminListNotificationsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.notifications.AdminListNotificationsResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.notifications.AdminListNotificationsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.notifications.AdminListNotificationsResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.notifications.AdminListNotificationsResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.notifications.NotificationsServiceClient.prototype.adminListNotifications =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/notifications.NotificationsService/AdminListNotifications',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_AdminListNotifications,
+      callback);
+};
+
+
+/**
+ * @param {!proto.notifications.AdminListNotificationsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.notifications.AdminListNotificationsResponse>}
+ *     Promise that resolves to the response
+ */
+proto.notifications.NotificationsServicePromiseClient.prototype.adminListNotifications =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/notifications.NotificationsService/AdminListNotifications',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_AdminListNotifications);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.notifications.AdminListConversationsRequest,
+ *   !proto.notifications.AdminListConversationsResponse>}
+ */
+const methodDescriptor_NotificationsService_AdminListConversations = new grpc.web.MethodDescriptor(
+  '/notifications.NotificationsService/AdminListConversations',
+  grpc.web.MethodType.UNARY,
+  proto.notifications.AdminListConversationsRequest,
+  proto.notifications.AdminListConversationsResponse,
+  /**
+   * @param {!proto.notifications.AdminListConversationsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.notifications.AdminListConversationsResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.notifications.AdminListConversationsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.notifications.AdminListConversationsResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.notifications.AdminListConversationsResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.notifications.NotificationsServiceClient.prototype.adminListConversations =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/notifications.NotificationsService/AdminListConversations',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_AdminListConversations,
+      callback);
+};
+
+
+/**
+ * @param {!proto.notifications.AdminListConversationsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.notifications.AdminListConversationsResponse>}
+ *     Promise that resolves to the response
+ */
+proto.notifications.NotificationsServicePromiseClient.prototype.adminListConversations =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/notifications.NotificationsService/AdminListConversations',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_AdminListConversations);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.notifications.GetDeliveryStatsRequest,
  *   !proto.notifications.GetDeliveryStatsResponse>}
  */
@@ -2516,5 +2639,8 @@ proto.notifications.NotificationsServicePromiseClient.prototype.purgeUserData =
 };
 
 
-module.exports = proto.notifications;
+export default proto.notifications;
+export const {
+  NotificationsServiceClient,
+} = proto.notifications;
 

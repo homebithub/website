@@ -40,6 +40,7 @@ const {
   EmploymentServiceClient,
   EmploymentContractServiceClient,
   JobServiceClient,
+  OpenForWorkServiceClient,
   BureauServiceClient,
   WaitlistServiceClient,
 } = auth_grpc_web_module as any;
@@ -196,6 +197,7 @@ const hireNegotiationClient = new HireNegotiationServiceClient(GRPC_WEB_BASE_URL
 const employmentClient = new EmploymentServiceClient(GRPC_WEB_BASE_URL, null, null);
 const employmentContractClient = new EmploymentContractServiceClient(GRPC_WEB_BASE_URL, null, null);
 const jobClient = new JobServiceClient(GRPC_WEB_BASE_URL, null, null);
+const openForWorkClient = new OpenForWorkServiceClient(GRPC_WEB_BASE_URL, null, null);
 const bureauClient = new BureauServiceClient(GRPC_WEB_BASE_URL, null, null);
 const waitlistClient = new WaitlistServiceClient(GRPC_WEB_BASE_URL, null, null);
 
@@ -1112,6 +1114,127 @@ export const hireNegotiationService = {
     req.setHireRequestId(hireRequestId);
     const res = await grpcCall((cb) => hireNegotiationClient.listNegotiations(req, getMetadata(), cb));
     return jsonResponseToJs(res);
+  },
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// Job Service
+// ══════════════════════════════════════════════════════════════════════════
+export const jobService = {
+  async createJob(userId: string, data: Record<string, any>): Promise<any> {
+    const req = new auth_pb.CreateJobReq();
+    req.setUserId(resolveUserId(userId));
+    const struct = toStruct(data);
+    if (struct) req.setData(struct);
+    const res = await grpcCall((cb) => jobClient.createJob(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async updateJob(id: string, userId: string, data: Record<string, any>): Promise<any> {
+    const req = new auth_pb.UpdateJobReq();
+    req.setId(id);
+    req.setUserId(resolveUserId(userId));
+    const struct = toStruct(data);
+    if (struct) req.setData(struct);
+    const res = await grpcCall((cb) => jobClient.updateJob(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async deleteJob(id: string, userId?: string): Promise<void> {
+    await grpcCall((cb) => jobClient.deleteJob(buildIdRequest(id, userId), getMetadata(), cb));
+  },
+  async getJob(id: string, userId?: string): Promise<any> {
+    const res = await grpcCall((cb) => jobClient.getJob(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async listJobs(limit = 20, offset = 0): Promise<any> {
+    const res = await grpcCall((cb) => jobClient.listJobs(buildListRequest(limit, offset), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async searchJobs(filters: Record<string, any>): Promise<any> {
+    const req = new auth_pb.SearchRequest();
+    const struct = toStruct(filters || {});
+    if (struct) req.setFilters(struct);
+    const res = await grpcCall((cb) => jobClient.searchJobs(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async getLatestJobs(limit = 10): Promise<any> {
+    const res = await grpcCall((cb) => jobClient.getLatestJobs(buildListRequest(limit, 0), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async applyForJob(id: string, userId?: string): Promise<any> {
+    const res = await grpcCall((cb) => jobClient.applyForJob(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async closeJob(id: string, userId?: string): Promise<any> {
+    const res = await grpcCall((cb) => jobClient.closeJob(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async reopenJob(id: string, userId?: string): Promise<any> {
+    const res = await grpcCall((cb) => jobClient.reopenJob(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async getJobsByUserId(userId: string): Promise<any> {
+    const res = await grpcCall((cb) => jobClient.getJobsByUserID(buildUserIdRequest(userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async getJobsByStatus(status: string): Promise<any> {
+    const req = new auth_pb.StatusRequest();
+    req.setStatus(status);
+    const res = await grpcCall((cb) => jobClient.getJobsByStatus(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async getJobsByType(jobType: string): Promise<any> {
+    const req = new auth_pb.StringFieldRequest();
+    req.setValue(jobType);
+    const res = await grpcCall((cb) => jobClient.getJobsByType(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async getJobsByLocation(location: string): Promise<any> {
+    const req = new auth_pb.StringFieldRequest();
+    req.setValue(location);
+    const res = await grpcCall((cb) => jobClient.getJobsByLocation(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async getJobsBySkill(skill: string): Promise<any> {
+    const req = new auth_pb.StringFieldRequest();
+    req.setValue(skill);
+    const res = await grpcCall((cb) => jobClient.getJobsBySkill(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async getJobsBySalaryRange(min: number, max: number): Promise<any> {
+    const req = new auth_pb.SalaryRangeRequest();
+    req.setMinSalary(min);
+    req.setMaxSalary(max);
+    const res = await grpcCall((cb) => jobClient.getJobsBySalaryRange(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+};
+
+// ══════════════════════════════════════════════════════════════════════════
+// Open For Work Service
+// ══════════════════════════════════════════════════════════════════════════
+export const openForWorkService = {
+  async createOpenForWork(userId: string, data: Record<string, any>): Promise<any> {
+    const res = await grpcCall((cb) => openForWorkClient.createOpenForWork(buildJsonPayload(userId, data), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async getOpenForWork(id: string, userId?: string): Promise<any> {
+    const res = await grpcCall((cb) => openForWorkClient.getOpenForWork(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async getOpenForWorkByHousehelp(househelpId: string, userId?: string): Promise<any> {
+    const res = await grpcCall((cb) => openForWorkClient.getOpenForWorkByHousehelp(buildIdRequest(househelpId, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async listOpenForWork(limit = 20, offset = 0): Promise<any> {
+    const res = await grpcCall((cb) => openForWorkClient.listOpenForWork(buildListRequest(limit, offset), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async updateOpenForWork(id: string, userId: string, data: Record<string, any>): Promise<any> {
+    const res = await grpcCall((cb) => openForWorkClient.updateOpenForWork(buildUpdateByIdPayload(id, userId, data), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async deleteOpenForWork(id: string, userId?: string): Promise<void> {
+    await grpcCall((cb) => openForWorkClient.deleteOpenForWork(buildIdRequest(id, userId), getMetadata(), cb));
   },
 };
 

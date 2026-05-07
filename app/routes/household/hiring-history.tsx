@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { hireRequestService, hireContractService, employmentContractService, interestService, shortlistService } from '~/services/grpc/authServices';
-import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX } from 'lucide-react';
+import { hireRequestService, hireContractService, employmentContractService, interestService, shortlistService, jobService } from '~/services/grpc/authServices';
+import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import ConfirmDialog from '~/components/ConfirmDialog';
+import JobPostModal from '~/components/modals/JobPostModal';
 import { useSSEContextSafe } from '~/contexts/SSEContext';
 import { buildIdentifierMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
@@ -37,7 +39,20 @@ interface HireRequest {
   };
 }
 
-type TabType = 'interested' | 'all' | 'pending' | 'accepted' | 'declined' | 'cancelled';
+interface JobPosting {
+  id: string;
+  title?: string;
+  description?: string;
+  location?: string;
+  job_types?: string[];
+  start_date?: string;
+  max_applicants?: number;
+  status?: string;
+  created_at?: string;
+  salary_range?: { min?: number; max?: number; currency?: string };
+}
+
+type TabType = 'interested' | 'jobs' | 'all' | 'pending' | 'accepted' | 'declined' | 'cancelled';
 
 interface Interest {
   id: string;
@@ -122,11 +137,12 @@ export default function HiringHistory() {
   const sseContext = useSSEContextSafe();
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['interested', 'all', 'pending', 'accepted', 'declined', 'cancelled'];
+    const validTabs: TabType[] = ['interested', 'jobs', 'all', 'pending', 'accepted', 'declined', 'cancelled'];
     return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'interested';
   });
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
   const [interests, setInterests] = useState<Interest[]>([]);
+  const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [interestsTotal, setInterestsTotal] = useState(0);
   const [interestsCount, setInterestsCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -135,6 +151,10 @@ export default function HiringHistory() {
   const [offset, setOffset] = useState(0);
   const [selectedRequest, setSelectedRequest] = useState<HireRequest | null>(null);
   const [cancelRequest, setCancelRequest] = useState<HireRequest | null>(null);
+  const [showJobModal, setShowJobModal] = useState(false);
+  const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<JobPosting | null>(null);
+  const [jobActionLoading, setJobActionLoading] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState<string>('');
   const [customCancelReason, setCustomCancelReason] = useState('');
   const [cancelMessage, setCancelMessage] = useState('');
@@ -165,6 +185,45 @@ export default function HiringHistory() {
     }
   };
 
+  const handleJobSaved = () => {
+    fetchJobs();
+    setShowJobModal(false);
+    setEditingJob(null);
+  };
+
+  const handleToggleJobStatus = async (job: JobPosting) => {
+    if (!job?.id) return;
+    setJobActionLoading(job.id);
+    setError(null);
+    try {
+      if (job.status === 'closed') {
+        await jobService.reopenJob(job.id, '');
+      } else {
+        await jobService.closeJob(job.id, '');
+      }
+      await fetchJobs();
+    } catch (err: any) {
+      setError(err.message || 'Failed to update job status');
+    } finally {
+      setJobActionLoading(null);
+    }
+  };
+
+  const handleDeleteJob = async () => {
+    if (!jobToDelete?.id) return;
+    setJobActionLoading(jobToDelete.id);
+    setError(null);
+    try {
+      await jobService.deleteJob(jobToDelete.id, '');
+      await fetchJobs();
+    } catch (err: any) {
+      setError(err.message || 'Failed to delete job');
+    } finally {
+      setJobActionLoading(null);
+      setJobToDelete(null);
+    }
+  };
+
   // Fetch employment contracts to build lookup map
   useEffect(() => {
     const fetchECMap = async () => {
@@ -191,6 +250,8 @@ export default function HiringHistory() {
   useEffect(() => {
     if (activeTab === 'interested') {
       fetchInterests();
+    } else if (activeTab === 'jobs') {
+      fetchJobs();
     } else {
       fetchHireRequests();
     }
@@ -198,7 +259,7 @@ export default function HiringHistory() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['interested', 'all', 'pending', 'accepted', 'declined', 'cancelled'];
+    const validTabs: TabType[] = ['interested', 'jobs', 'all', 'pending', 'accepted', 'declined', 'cancelled'];
     if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
       setActiveTab(tabParam as TabType);
       setOffset(0);
@@ -241,6 +302,21 @@ export default function HiringHistory() {
       setInterestsTotal(extractTotal(raw, items.length));
     } catch (err: any) {
       setError(err.message || 'Failed to load interested househelps');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchJobs = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const raw = await jobService.getJobsByUserId('');
+      const payload = raw?.data || raw || [];
+      const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+      setJobs(items as JobPosting[]);
+    } catch (err: any) {
+      setError(err.message || 'Failed to load job postings');
     } finally {
       setLoading(false);
     }
@@ -403,8 +479,24 @@ export default function HiringHistory() {
   const formatSalary = (amount?: number | null, frequency?: string) =>
     formatOnboardingAmountWithFrequency(amount, frequency, 'Not specified');
 
+  const formatJobDate = (value?: string) => {
+    if (!value) return 'Flexible';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Flexible';
+    return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatJobSalary = (range?: JobPosting['salary_range']) => {
+    if (!range) return 'Not specified';
+    const min = range.min ? `KES ${range.min.toLocaleString()}` : '';
+    const max = range.max ? `KES ${range.max.toLocaleString()}` : '';
+    if (min && max) return `${min} - ${max}`;
+    return min || max || 'Not specified';
+  };
+
   const tabs: { key: TabType; label: string; count?: number }[] = [
     { key: 'interested', label: 'Interested', count: interestsCount },
+    { key: 'jobs', label: 'Jobs' },
     { key: 'all', label: 'All Requests' },
     { key: 'pending', label: 'Pending' },
     { key: 'accepted', label: 'Accepted' },
@@ -482,6 +574,7 @@ export default function HiringHistory() {
                   }`}
                 >
                   {tab.key === 'interested' && <HandHeart className="w-4 h-4" />}
+                  {tab.key === 'jobs' && <Briefcase className="w-4 h-4" />}
                   {tab.label}
                   {tab.count !== undefined && tab.count > 0 && (
                     <span className="ml-1 px-2 py-0.5 text-xs font-bold rounded-full bg-green-500 text-white">
@@ -501,6 +594,100 @@ export default function HiringHistory() {
         {loading && (
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          </div>
+        )}
+
+        {/* Empty State for Jobs */}
+        {!loading && activeTab === 'jobs' && jobs.length === 0 && (
+          <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
+            <Briefcase className="w-16 h-16 text-purple-400 dark:text-purple-300 mx-auto mb-4" />
+            <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
+              No job postings yet
+            </h3>
+            <p className="text-gray-600 dark:text-purple-200 mb-6 sm:mb-8 text-xs sm:text-sm">
+              Create a job from your household profile to start attracting applicants.
+            </p>
+            <button
+              onClick={() => { setEditingJob(null); setShowJobModal(true); }}
+              className="inline-flex items-center justify-center px-6 py-1.5 text-sm rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl transition-all"
+            >
+              Create Job
+            </button>
+          </div>
+        )}
+
+        {/* Jobs List */}
+        {!loading && activeTab === 'jobs' && jobs.length > 0 && (
+          <div className="space-y-4">
+            {jobs.map((job) => (
+              <div
+                key={job.id}
+                className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border dark:bg-purple-950/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl dark:border-purple-800/40"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
+                      {job.title || 'Untitled role'}
+                    </h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {job.location || 'Location not specified'}</p>
+                  </div>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
+                    ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
+                    : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'}`}>
+                    {job.status || 'open'}
+                  </span>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(job.job_types || []).length > 0 ? (
+                    job.job_types?.map((type) => (
+                      <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
+                        {type.replace(/_/g, ' ')}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                      Flexible role
+                    </span>
+                  )}
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                    Start {formatJobDate(job.start_date)}
+                  </span>
+                  {job.max_applicants ? (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                      Max {job.max_applicants} applicants
+                    </span>
+                  ) : null}
+                </div>
+
+                <p className="mt-3 text-xs text-gray-600 dark:text-gray-300">
+                  Salary: {formatJobSalary(job.salary_range)}
+                </p>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => { setEditingJob(job); setShowJobModal(true); }}
+                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleToggleJobStatus(job)}
+                    disabled={jobActionLoading === job.id}
+                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50"
+                  >
+                    {job.status === 'closed' ? 'Reopen' : 'Close'}
+                  </button>
+                  <button
+                    onClick={() => setJobToDelete(job)}
+                    disabled={jobActionLoading === job.id}
+                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-red-300 text-red-600 dark:text-red-300 dark:border-red-500/40 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -648,7 +835,7 @@ export default function HiringHistory() {
         )}
 
         {/* Empty State for Hire Requests */}
-        {!loading && activeTab !== 'interested' && hireRequests.length === 0 && (
+        {!loading && activeTab !== 'interested' && activeTab !== 'jobs' && hireRequests.length === 0 && (
           <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <FileText className="w-16 h-16 text-purple-400 dark:text-purple-300 mx-auto mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
@@ -667,7 +854,7 @@ export default function HiringHistory() {
         )}
 
         {/* Hire Requests List */}
-        {!loading && activeTab !== 'interested' && hireRequests.length > 0 && (
+        {!loading && activeTab !== 'interested' && activeTab !== 'jobs' && hireRequests.length > 0 && (
           <div className="space-y-4">
             {hireRequests.map((request) => (
               <div

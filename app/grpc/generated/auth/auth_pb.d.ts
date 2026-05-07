@@ -43,6 +43,12 @@ export class User extends jspb.Message {
   hasUpdatedAt(): boolean;
   clearUpdatedAt(): User;
 
+  getDeviceAuthenticationEnabled(): boolean;
+  setDeviceAuthenticationEnabled(value: boolean): User;
+
+  getDeviceAuthenticationManuallySet(): boolean;
+  setDeviceAuthenticationManuallySet(value: boolean): User;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): User.AsObject;
   static toObject(includeInstance: boolean, msg: User): User.AsObject;
@@ -64,6 +70,8 @@ export namespace User {
     profileImage: string;
     createdAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
     updatedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+    deviceAuthenticationEnabled: boolean;
+    deviceAuthenticationManuallySet: boolean;
   };
 }
 

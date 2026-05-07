@@ -16,17 +16,20 @@
 
 
 
-const grpc = {};
-grpc.web = require('grpc-web');
+import * as grpcWeb from 'grpc-web';
+const grpc = { web: grpcWeb };
 
 
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js')
+import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js';
+const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb
 
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js')
+import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js';
+const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb
 
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js')
-const proto = {};
-proto.auth = require('./auth_pb.js');
+import * as _google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
+const google_protobuf_struct_pb = _google_protobuf_struct_pb.default || _google_protobuf_struct_pb
+import * as auth_pb from './auth_pb.js';
+const proto = { auth: auth_pb.default || auth_pb };
 
 /**
  * @param {string} hostname
@@ -8179,6 +8182,424 @@ proto.auth.JobServicePromiseClient.prototype.getJobsBySalaryRange =
       request,
       metadata || {},
       methodDescriptor_JobService_GetJobsBySalaryRange);
+};
+
+
+/**
+ * @param {string} hostname
+ * @param {?Object} credentials
+ * @param {?grpc.web.ClientOptions} options
+ * @constructor
+ * @struct
+ * @final
+ */
+proto.auth.OpenForWorkServiceClient =
+    function(hostname, credentials, options) {
+  if (!options) options = {};
+  options.format = 'text';
+
+  /**
+   * @private @const {!grpc.web.GrpcWebClientBase} The client
+   */
+  this.client_ = new grpc.web.GrpcWebClientBase(options);
+
+  /**
+   * @private @const {string} The hostname
+   */
+  this.hostname_ = hostname.replace(/\/+$/, '');
+
+};
+
+
+/**
+ * @param {string} hostname
+ * @param {?Object} credentials
+ * @param {?grpc.web.ClientOptions} options
+ * @constructor
+ * @struct
+ * @final
+ */
+proto.auth.OpenForWorkServicePromiseClient =
+    function(hostname, credentials, options) {
+  if (!options) options = {};
+  options.format = 'text';
+
+  /**
+   * @private @const {!grpc.web.GrpcWebClientBase} The client
+   */
+  this.client_ = new grpc.web.GrpcWebClientBase(options);
+
+  /**
+   * @private @const {string} The hostname
+   */
+  this.hostname_ = hostname.replace(/\/+$/, '');
+
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_OpenForWorkService_CreateOpenForWork = new grpc.web.MethodDescriptor(
+  '/auth.OpenForWorkService/CreateOpenForWork',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.OpenForWorkServiceClient.prototype.createOpenForWork =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.OpenForWorkService/CreateOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_CreateOpenForWork,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.OpenForWorkServicePromiseClient.prototype.createOpenForWork =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.OpenForWorkService/CreateOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_CreateOpenForWork);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_OpenForWorkService_GetOpenForWork = new grpc.web.MethodDescriptor(
+  '/auth.OpenForWorkService/GetOpenForWork',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.OpenForWorkServiceClient.prototype.getOpenForWork =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.OpenForWorkService/GetOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_GetOpenForWork,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.OpenForWorkServicePromiseClient.prototype.getOpenForWork =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.OpenForWorkService/GetOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_GetOpenForWork);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_OpenForWorkService_GetOpenForWorkByHousehelp = new grpc.web.MethodDescriptor(
+  '/auth.OpenForWorkService/GetOpenForWorkByHousehelp',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.OpenForWorkServiceClient.prototype.getOpenForWorkByHousehelp =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.OpenForWorkService/GetOpenForWorkByHousehelp',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_GetOpenForWorkByHousehelp,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.OpenForWorkServicePromiseClient.prototype.getOpenForWorkByHousehelp =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.OpenForWorkService/GetOpenForWorkByHousehelp',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_GetOpenForWorkByHousehelp);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.ListRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_OpenForWorkService_ListOpenForWork = new grpc.web.MethodDescriptor(
+  '/auth.OpenForWorkService/ListOpenForWork',
+  grpc.web.MethodType.UNARY,
+  proto.auth.ListRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.ListRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.ListRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.OpenForWorkServiceClient.prototype.listOpenForWork =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.OpenForWorkService/ListOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_ListOpenForWork,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.ListRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.OpenForWorkServicePromiseClient.prototype.listOpenForWork =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.OpenForWorkService/ListOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_ListOpenForWork);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.UpdateByIdPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_OpenForWorkService_UpdateOpenForWork = new grpc.web.MethodDescriptor(
+  '/auth.OpenForWorkService/UpdateOpenForWork',
+  grpc.web.MethodType.UNARY,
+  proto.auth.UpdateByIdPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.UpdateByIdPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.UpdateByIdPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.OpenForWorkServiceClient.prototype.updateOpenForWork =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.OpenForWorkService/UpdateOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_UpdateOpenForWork,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.UpdateByIdPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.OpenForWorkServicePromiseClient.prototype.updateOpenForWork =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.OpenForWorkService/UpdateOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_UpdateOpenForWork);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.IdRequest,
+ *   !proto.google.protobuf.Empty>}
+ */
+const methodDescriptor_OpenForWorkService_DeleteOpenForWork = new grpc.web.MethodDescriptor(
+  '/auth.OpenForWorkService/DeleteOpenForWork',
+  grpc.web.MethodType.UNARY,
+  proto.auth.IdRequest,
+  google_protobuf_empty_pb.Empty,
+  /**
+   * @param {!proto.auth.IdRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  google_protobuf_empty_pb.Empty.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.google.protobuf.Empty)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.google.protobuf.Empty>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.OpenForWorkServiceClient.prototype.deleteOpenForWork =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.OpenForWorkService/DeleteOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_DeleteOpenForWork,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.IdRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.google.protobuf.Empty>}
+ *     Promise that resolves to the response
+ */
+proto.auth.OpenForWorkServicePromiseClient.prototype.deleteOpenForWork =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.OpenForWorkService/DeleteOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_DeleteOpenForWork);
 };
 
 
@@ -19958,5 +20379,37 @@ proto.auth.AdminAuthServicePromiseClient.prototype.checkIsAdmin =
 };
 
 
-module.exports = proto.auth;
+export default proto.auth;
+export const {
+  AdminServiceClient,
+  AuthServiceClient,
+  BureauServiceClient,
+  ProfileServiceClient,
+  HireRequestServiceClient,
+  HireContractServiceClient,
+  HireNegotiationServiceClient,
+  EmploymentServiceClient,
+  JobServiceClient,
+  OpenForWorkServiceClient,
+  ShortlistServiceClient,
+  InterestServiceClient,
+  ReviewServiceClient,
+  LocationServiceClient,
+  ImageServiceClient,
+  DocumentServiceClient,
+  PetsServiceClient,
+  HouseholdKidsServiceClient,
+  HousehelpPreferencesServiceClient,
+  HouseholdPreferencesServiceClient,
+  HouseholdMemberServiceClient,
+  ProfileViewServiceClient,
+  PreferencesServiceClient,
+  ProfileSetupServiceClient,
+  OnboardingOptionsServiceClient,
+  ContactServiceClient,
+  WaitlistServiceClient,
+  EmploymentContractServiceClient,
+  KYCServiceClient,
+  AdminAuthServiceClient,
+} = proto.auth;
 

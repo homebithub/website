@@ -1073,6 +1073,114 @@ export namespace ToggleFeatureFlagResponse {
   };
 }
 
+export class AdminListNotificationsRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): AdminListNotificationsRequest;
+
+  getChannel(): string;
+  setChannel(value: string): AdminListNotificationsRequest;
+
+  getStatus(): string;
+  setStatus(value: string): AdminListNotificationsRequest;
+
+  getSearch(): string;
+  setSearch(value: string): AdminListNotificationsRequest;
+
+  getLimit(): number;
+  setLimit(value: number): AdminListNotificationsRequest;
+
+  getOffset(): number;
+  setOffset(value: number): AdminListNotificationsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListNotificationsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListNotificationsRequest): AdminListNotificationsRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminListNotificationsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListNotificationsRequest;
+  static deserializeBinaryFromReader(message: AdminListNotificationsRequest, reader: jspb.BinaryReader): AdminListNotificationsRequest;
+}
+
+export namespace AdminListNotificationsRequest {
+  export type AsObject = {
+    userId: string;
+    channel: string;
+    status: string;
+    search: string;
+    limit: number;
+    offset: number;
+  };
+}
+
+export class AdminListNotificationsResponse extends jspb.Message {
+  getData(): google_protobuf_struct_pb.Struct | undefined;
+  setData(value?: google_protobuf_struct_pb.Struct): AdminListNotificationsResponse;
+  hasData(): boolean;
+  clearData(): AdminListNotificationsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListNotificationsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListNotificationsResponse): AdminListNotificationsResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminListNotificationsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListNotificationsResponse;
+  static deserializeBinaryFromReader(message: AdminListNotificationsResponse, reader: jspb.BinaryReader): AdminListNotificationsResponse;
+}
+
+export namespace AdminListNotificationsResponse {
+  export type AsObject = {
+    data?: google_protobuf_struct_pb.Struct.AsObject;
+  };
+}
+
+export class AdminListConversationsRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): AdminListConversationsRequest;
+
+  getSearch(): string;
+  setSearch(value: string): AdminListConversationsRequest;
+
+  getLimit(): number;
+  setLimit(value: number): AdminListConversationsRequest;
+
+  getOffset(): number;
+  setOffset(value: number): AdminListConversationsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListConversationsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListConversationsRequest): AdminListConversationsRequest.AsObject;
+  static serializeBinaryToWriter(message: AdminListConversationsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListConversationsRequest;
+  static deserializeBinaryFromReader(message: AdminListConversationsRequest, reader: jspb.BinaryReader): AdminListConversationsRequest;
+}
+
+export namespace AdminListConversationsRequest {
+  export type AsObject = {
+    userId: string;
+    search: string;
+    limit: number;
+    offset: number;
+  };
+}
+
+export class AdminListConversationsResponse extends jspb.Message {
+  getData(): google_protobuf_struct_pb.Struct | undefined;
+  setData(value?: google_protobuf_struct_pb.Struct): AdminListConversationsResponse;
+  hasData(): boolean;
+  clearData(): AdminListConversationsResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): AdminListConversationsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AdminListConversationsResponse): AdminListConversationsResponse.AsObject;
+  static serializeBinaryToWriter(message: AdminListConversationsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AdminListConversationsResponse;
+  static deserializeBinaryFromReader(message: AdminListConversationsResponse, reader: jspb.BinaryReader): AdminListConversationsResponse;
+}
+
+export namespace AdminListConversationsResponse {
+  export type AsObject = {
+    data?: google_protobuf_struct_pb.Struct.AsObject;
+  };
+}
+
 export class GetDeliveryStatsRequest extends jspb.Message {
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetDeliveryStatsRequest.AsObject;

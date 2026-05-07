@@ -16,16 +16,20 @@
 
 
 
-const grpc = {};
-grpc.web = require('grpc-web');
+import * as grpcWeb from 'grpc-web';
+const grpc = { web: grpcWeb };
 
 
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js')
+import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js';
+const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb
 
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js')
+import * as _google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
+const google_protobuf_struct_pb = _google_protobuf_struct_pb.default || _google_protobuf_struct_pb
 
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js')
+import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js';
+const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb
 const proto = {};
+proto.notifications = {};
 proto.notifications = require('./blog_pb.js');
 
 /**
@@ -1849,5 +1853,8 @@ proto.notifications.BlogServicePromiseClient.prototype.getBlogSubscriberCount =
 };
 
 
-module.exports = proto.notifications;
+export default proto.notifications;
+export const {
+  BlogServiceClient,
+} = proto.notifications;
 

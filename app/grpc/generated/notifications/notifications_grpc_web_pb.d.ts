@@ -190,6 +190,20 @@ export class NotificationsServiceClient {
                response: notifications_notifications_pb.ToggleFeatureFlagResponse) => void
   ): grpcWeb.ClientReadableStream<notifications_notifications_pb.ToggleFeatureFlagResponse>;
 
+  adminListNotifications(
+    request: notifications_notifications_pb.AdminListNotificationsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: notifications_notifications_pb.AdminListNotificationsResponse) => void
+  ): grpcWeb.ClientReadableStream<notifications_notifications_pb.AdminListNotificationsResponse>;
+
+  adminListConversations(
+    request: notifications_notifications_pb.AdminListConversationsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: notifications_notifications_pb.AdminListConversationsResponse) => void
+  ): grpcWeb.ClientReadableStream<notifications_notifications_pb.AdminListConversationsResponse>;
+
   getDeliveryStats(
     request: notifications_notifications_pb.GetDeliveryStatsRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -424,6 +438,16 @@ export class NotificationsServicePromiseClient {
     request: notifications_notifications_pb.ToggleFeatureFlagRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<notifications_notifications_pb.ToggleFeatureFlagResponse>;
+
+  adminListNotifications(
+    request: notifications_notifications_pb.AdminListNotificationsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<notifications_notifications_pb.AdminListNotificationsResponse>;
+
+  adminListConversations(
+    request: notifications_notifications_pb.AdminListConversationsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<notifications_notifications_pb.AdminListConversationsResponse>;
 
   getDeliveryStats(
     request: notifications_notifications_pb.GetDeliveryStatsRequest,

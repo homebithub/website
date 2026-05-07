@@ -8,8 +8,8 @@ import { getAuthFromCookies } from "~/utils/cookie";
 import { useAuth } from "~/contexts/useAuth";
 import { getStoredProfileType } from "~/utils/authStorage";
 
-const AuthenticatedHome = lazyLoad(() => import("~/components/AuthenticatedHome"));
-const HousehelpHome = lazyLoad(() => import("~/components/HousehelpHome"));
+const AuthenticatedHome = lazyLoad(() => import("~/components/HouseholdJobsHome"));
+const HousehelpHome = lazyLoad(() => import("~/components/HousehelpJobsHome"));
 const LandingPage = lazyLoad(() => import("~/routes/landing"));
 
 const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> => {

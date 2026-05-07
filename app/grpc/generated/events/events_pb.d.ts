@@ -125,6 +125,74 @@ export namespace UserSignedUp {
   };
 }
 
+export class DevicePendingConfirmation extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): DevicePendingConfirmation;
+
+  getDeviceId(): string;
+  setDeviceId(value: string): DevicePendingConfirmation;
+
+  getDeviceName(): string;
+  setDeviceName(value: string): DevicePendingConfirmation;
+
+  getDeviceType(): string;
+  setDeviceType(value: string): DevicePendingConfirmation;
+
+  getBrowser(): string;
+  setBrowser(value: string): DevicePendingConfirmation;
+
+  getOs(): string;
+  setOs(value: string): DevicePendingConfirmation;
+
+  getIpAddress(): string;
+  setIpAddress(value: string): DevicePendingConfirmation;
+
+  getCountry(): string;
+  setCountry(value: string): DevicePendingConfirmation;
+
+  getCity(): string;
+  setCity(value: string): DevicePendingConfirmation;
+
+  getConfirmationToken(): string;
+  setConfirmationToken(value: string): DevicePendingConfirmation;
+
+  getConfirmationUrl(): string;
+  setConfirmationUrl(value: string): DevicePendingConfirmation;
+
+  getMetadataMap(): jspb.Map<string, string>;
+  clearMetadataMap(): DevicePendingConfirmation;
+
+  getCreatedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setCreatedAt(value?: google_protobuf_timestamp_pb.Timestamp): DevicePendingConfirmation;
+  hasCreatedAt(): boolean;
+  clearCreatedAt(): DevicePendingConfirmation;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DevicePendingConfirmation.AsObject;
+  static toObject(includeInstance: boolean, msg: DevicePendingConfirmation): DevicePendingConfirmation.AsObject;
+  static serializeBinaryToWriter(message: DevicePendingConfirmation, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DevicePendingConfirmation;
+  static deserializeBinaryFromReader(message: DevicePendingConfirmation, reader: jspb.BinaryReader): DevicePendingConfirmation;
+}
+
+export namespace DevicePendingConfirmation {
+  export type AsObject = {
+    userId: string;
+    deviceId: string;
+    deviceName: string;
+    deviceType: string;
+    browser: string;
+    os: string;
+    ipAddress: string;
+    country: string;
+    city: string;
+    confirmationToken: string;
+    confirmationUrl: string;
+    metadataMap: Array<[string, string]>;
+    createdAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
 export class NotificationCreated extends jspb.Message {
   getUserId(): string;
   setUserId(value: string): NotificationCreated;

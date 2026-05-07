@@ -11,15 +11,20 @@
 /* eslint-disable */
 // @ts-nocheck
 
-var jspb = require('google-protobuf');
-var goog = jspb;
+import * as jspb from 'google-protobuf';
+const goog = jspb;
 var global = globalThis;
+const proto = {};
+proto.auth = {};
 
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
+import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js';
+const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb;
 goog.object.extend(proto, google_protobuf_timestamp_pb);
-var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
+import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js';
+const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb;
 goog.object.extend(proto, google_protobuf_empty_pb);
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
+import * as _google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
+const google_protobuf_struct_pb = _google_protobuf_struct_pb.default || _google_protobuf_struct_pb;
 goog.object.extend(proto, google_protobuf_struct_pb);
 goog.exportSymbol('proto.auth.AcceptInvitationRequest', null, global);
 goog.exportSymbol('proto.auth.AddNegotiationReq', null, global);
@@ -4397,7 +4402,9 @@ isVerified: jspb.Message.getBooleanFieldWithDefault(msg, 7, false),
 token: jspb.Message.getFieldWithDefault(msg, 8, ""),
 profileImage: jspb.Message.getFieldWithDefault(msg, 9, ""),
 createdAt: (f = msg.getCreatedAt()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
-updatedAt: (f = msg.getUpdatedAt()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+updatedAt: (f = msg.getUpdatedAt()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+deviceAuthenticationEnabled: jspb.Message.getBooleanFieldWithDefault(msg, 12, false),
+deviceAuthenticationManuallySet: jspb.Message.getBooleanFieldWithDefault(msg, 13, false)
   };
 
   if (includeInstance) {
@@ -4479,6 +4486,14 @@ proto.auth.User.deserializeBinaryFromReader = function(msg, reader) {
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setUpdatedAt(value);
+      break;
+    case 12:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setDeviceAuthenticationEnabled(value);
+      break;
+    case 13:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setDeviceAuthenticationManuallySet(value);
       break;
     default:
       reader.skipField();
@@ -4586,6 +4601,20 @@ proto.auth.User.serializeBinaryToWriter = function(message, writer) {
       11,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
+  f = message.getDeviceAuthenticationEnabled();
+  if (f) {
+    writer.writeBool(
+      12,
+      f
+    );
+  }
+  f = message.getDeviceAuthenticationManuallySet();
+  if (f) {
+    writer.writeBool(
+      13,
+      f
     );
   }
 };
@@ -4824,6 +4853,42 @@ proto.auth.User.prototype.clearUpdatedAt = function() {
  */
 proto.auth.User.prototype.hasUpdatedAt = function() {
   return jspb.Message.getField(this, 11) != null;
+};
+
+
+/**
+ * optional bool device_authentication_enabled = 12;
+ * @return {boolean}
+ */
+proto.auth.User.prototype.getDeviceAuthenticationEnabled = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 12, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.auth.User} returns this
+ */
+proto.auth.User.prototype.setDeviceAuthenticationEnabled = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 12, value);
+};
+
+
+/**
+ * optional bool device_authentication_manually_set = 13;
+ * @return {boolean}
+ */
+proto.auth.User.prototype.getDeviceAuthenticationManuallySet = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 13, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.auth.User} returns this
+ */
+proto.auth.User.prototype.setDeviceAuthenticationManuallySet = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 13, value);
 };
 
 
@@ -46389,4 +46454,4 @@ proto.auth.UpdateRolePermissionsRequest.prototype.clearPermissionIdsList = funct
 };
 
 
-goog.object.extend(exports, proto.auth);
+export default proto.auth;

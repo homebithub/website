@@ -16,13 +16,14 @@
 
 
 
-const grpc = {};
-grpc.web = require('grpc-web');
+import * as grpcWeb from 'grpc-web';
+const grpc = { web: grpcWeb };
 
 
-var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js')
-const proto = {};
-proto.payments = require('./payments_pb.js');
+import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js';
+const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb
+import * as payments_pb from './payments_pb.js';
+const proto = { payments: payments_pb.default || payments_pb };
 
 /**
  * @param {string} hostname
@@ -3614,5 +3615,8 @@ proto.payments.PaymentsServicePromiseClient.prototype.adminUpdatePlan =
 };
 
 
-module.exports = proto.payments;
+export default proto.payments;
+export const {
+  PaymentsServiceClient,
+} = proto.payments;
 

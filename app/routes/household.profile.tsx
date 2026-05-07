@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { profileService as grpcProfileService, householdKidsService, petsService, documentService, householdMemberService } from '~/services/grpc/authServices';
+import { profileService as grpcProfileService, householdKidsService, petsService, documentService, householdMemberService, jobService } from '~/services/grpc/authServices';
 import profileSetupService from '~/services/grpc/profileSetup.service';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -26,6 +26,8 @@ import Religion from '~/components/Religion';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 import { formatOnboardingBudgetRange } from '~/utils/onboardingCompensation';
+import { getStoredUserId } from '~/utils/authStorage';
+import JobPostModal from '~/components/modals/JobPostModal';
 
 interface HouseholdData {
   id?: string;
@@ -48,6 +50,19 @@ interface HouseholdData {
   location_ref?: any;
   town?: string;
   photos?: string[];
+}
+
+interface JobPosting {
+  id: string;
+  title?: string;
+  description?: string;
+  location?: string;
+  job_types?: string[];
+  start_date?: string;
+  max_applicants?: number;
+  status?: string;
+  created_at?: string;
+  salary_range?: { min?: number; max?: number; currency?: string };
 }
 
 const MAX_PHOTOS = 5;
@@ -78,8 +93,16 @@ export default function HouseholdProfile() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
-  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [setupRedirectLoading, setSetupRedirectLoading] = useState(false);
+  const [jobs, setJobs] = useState<JobPosting[]>([]);
+  const [jobsLoading, setJobsLoading] = useState(false);
+  const [jobsError, setJobsError] = useState<string | null>(null);
+  const [jobsSuccess, setJobsSuccess] = useState<string | null>(null);
+  const [showJobModal, setShowJobModal] = useState(false);
+  const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<JobPosting | null>(null);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   
   // Household invitation code state
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
@@ -90,7 +113,6 @@ export default function HouseholdProfile() {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [, setTimeUpdate] = useState(0); // Force re-render for countdown
   const [memberActionSuccess, setMemberActionSuccess] = useState<string | null>(null);
-  const [setupRedirectLoading, setSetupRedirectLoading] = useState(false);
   
   // Household members state
   const [members, setMembers] = useState<any[]>([]);
@@ -182,6 +204,85 @@ export default function HouseholdProfile() {
       fetchMembers();
     }
   }, [profile]);
+
+  const fetchJobs = async (userId: string) => {
+    setJobsLoading(true);
+    setJobsError(null);
+    try {
+      const raw = await jobService.getJobsByUserId(userId);
+      const payload = raw?.data || raw || [];
+      const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
+      setJobs(items as JobPosting[]);
+    } catch (err: any) {
+      setJobsError(err.message || 'Failed to load job postings');
+    } finally {
+      setJobsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const userId = profile?.user_id || getStoredUserId();
+    if (!userId) return;
+    fetchJobs(userId);
+  }, [profile?.user_id]);
+
+  const handleJobSaved = () => {
+    const userId = profile?.user_id || getStoredUserId();
+    if (userId) {
+      fetchJobs(userId);
+    }
+    setJobsSuccess('Job posting updated.');
+  };
+
+  const handleToggleJobStatus = async (job: JobPosting) => {
+    if (!job?.id) return;
+    setJobsError(null);
+    setJobsSuccess(null);
+    try {
+      if (job.status === 'closed') {
+        await jobService.reopenJob(job.id, '');
+        setJobsSuccess('Job reopened.');
+      } else {
+        await jobService.closeJob(job.id, '');
+        setJobsSuccess('Job closed.');
+      }
+      const userId = profile?.user_id || getStoredUserId();
+      if (userId) await fetchJobs(userId);
+    } catch (err: any) {
+      setJobsError(err.message || 'Failed to update job status');
+    }
+  };
+
+  const handleDeleteJob = async () => {
+    if (!jobToDelete?.id) return;
+    setJobsError(null);
+    setJobsSuccess(null);
+    try {
+      await jobService.deleteJob(jobToDelete.id, '');
+      setJobsSuccess('Job deleted.');
+      const userId = profile?.user_id || getStoredUserId();
+      if (userId) await fetchJobs(userId);
+    } catch (err: any) {
+      setJobsError(err.message || 'Failed to delete job');
+    } finally {
+      setJobToDelete(null);
+    }
+  };
+
+  const formatJobDate = (value?: string) => {
+    if (!value) return 'Flexible';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'Flexible';
+    return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatJobSalary = (range?: JobPosting['salary_range']) => {
+    if (!range) return 'Not specified';
+    const min = range.min ? `KES ${range.min.toLocaleString()}` : '';
+    const max = range.max ? `KES ${range.max.toLocaleString()}` : '';
+    if (min && max) return `${min} - ${max}`;
+    return min || max || 'Not specified';
+  };
 
   const handleContinueSetup = async () => {
     if (setupRedirectLoading) return;
@@ -514,7 +615,7 @@ export default function HouseholdProfile() {
         <div className="text-center">
           <svg className="animate-spin h-12 w-12 text-purple-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
           <p className="text-gray-600 dark:text-gray-400">Loading your profile...</p>
         </div>
@@ -602,6 +703,103 @@ export default function HouseholdProfile() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Job Postings */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+          <div>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📋 Job Postings</h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              Manage the roles you are hiring for and keep them updated.
+            </p>
+          </div>
+          <button
+            onClick={() => { setEditingJob(null); setShowJobModal(true); }}
+            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+          >
+            New Job
+          </button>
+        </div>
+
+        {jobsSuccess ? <SuccessAlert message={jobsSuccess ?? ""} className="mb-3" /> : null}
+        {jobsError ? <ErrorAlert message={jobsError ?? ""} className="mb-3" /> : null}
+
+        {jobsLoading ? (
+          <div className="flex items-center gap-3 text-xs text-gray-500">
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+            Loading job postings...
+          </div>
+        ) : jobs.length > 0 ? (
+          <div className="space-y-3">
+            {jobs.map((job) => (
+              <div key={job.id} className="rounded-xl border border-gray-200 dark:border-purple-500/30 p-4">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{job.title || 'Untitled role'}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {job.location || 'Location not specified'}</p>
+                  </div>
+                  <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
+                    ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
+                    : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'}`}>
+                    {job.status || 'open'}
+                  </span>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {(job.job_types || []).length > 0 ? (
+                    job.job_types?.map((type) => (
+                      <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
+                        {type.replace(/_/g, ' ')}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                      Flexible role
+                    </span>
+                  )}
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                    Start {formatJobDate(job.start_date)}
+                  </span>
+                  {job.max_applicants ? (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                      Max {job.max_applicants} applicants
+                    </span>
+                  ) : null}
+                </div>
+
+                <div className="mt-3 text-xs text-gray-600 dark:text-gray-300">
+                  Salary: {formatJobSalary(job.salary_range)}
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button
+                    onClick={() => { setEditingJob(job); setShowJobModal(true); }}
+                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleToggleJobStatus(job)}
+                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-white/5"
+                  >
+                    {job.status === 'closed' ? 'Reopen' : 'Close'}
+                  </button>
+                  <button
+                    onClick={() => setJobToDelete(job)}
+                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-red-300 text-red-600 dark:text-red-300 dark:border-red-500/40 hover:bg-red-50 dark:hover:bg-red-500/10"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-purple-200 dark:border-purple-500/30 p-4 text-xs text-gray-600 dark:text-gray-400">
+            You have not published any job postings yet.
+          </div>
+        )}
       </div>
 
       {/* Location */}
@@ -1198,6 +1396,17 @@ export default function HouseholdProfile() {
         onCancel={() => setMemberToRemove(null)}
       />
 
+      <ConfirmDialog
+        isOpen={jobToDelete !== null}
+        title="Delete Job Posting"
+        message="Are you sure you want to delete this job posting?"
+        confirmText="Delete"
+        cancelText="Cancel"
+        variant="danger"
+        onConfirm={handleDeleteJob}
+        onCancel={() => setJobToDelete(null)}
+      />
+
       {/* Edit Section Modal */}
       {editingSection && EDIT_SECTIONS[editingSection] && (
         <EditSectionModal
@@ -1219,6 +1428,16 @@ export default function HouseholdProfile() {
           onClose={() => setShowViewsModal(false)}
         />
       )}
+
+      <JobPostModal
+        isOpen={showJobModal}
+        onClose={() => {
+          setShowJobModal(false);
+          setEditingJob(null);
+        }}
+        job={editingJob}
+        onSaved={handleJobSaved}
+      />
     </div>
   );
 }
