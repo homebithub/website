@@ -214,6 +214,18 @@ export default function InboxPage() {
 
   const selectedConversationId = searchParams.get('conversation');
   const [activeConversationId, setActiveConversationId] = useState<string | null>(selectedConversationId);
+  const [isDesktopLayout, setIsDesktopLayout] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    const handleChange = () => setIsDesktopLayout(mediaQuery.matches);
+    handleChange();
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
   
   // Conversations list state
   const [items, setItems] = useState<Conversation[]>([]);
@@ -496,6 +508,18 @@ export default function InboxPage() {
     setActiveConversationId(selectedConversationId);
   }, [selectedConversationId]);
 
+  useEffect(() => {
+    if (!isDesktopLayout || selectedConversationId || activeConversationId || deduplicatedItems.length === 0) {
+      return;
+    }
+
+    const firstConversationId = deduplicatedItems[0]?.id;
+    if (!firstConversationId) return;
+
+    setActiveConversationId(firstConversationId);
+    setSearchParams({ conversation: firstConversationId }, { replace: true });
+  }, [activeConversationId, deduplicatedItems, isDesktopLayout, selectedConversationId, setSearchParams]);
+
   const selectedConversation = items.find(c => c.id === activeConversationId);
   const lockMessages = shouldRestrictMessaging && !!selectedConversation;
   
@@ -713,11 +737,6 @@ export default function InboxPage() {
         });
         setHasMore(raw.length === limit);
         
-        // Auto-select the first conversation if none is selected and we have conversations
-        if (offset === 0 && data.length > 0 && !activeConversationId && !selectedConversationId) {
-          setActiveConversationId(data[0].id);
-          setSearchParams({ conversation: data[0].id }, { replace: true });
-        }
       } catch (e: any) {
         if (!cancelled) {
           setError(e?.message || "Failed to load conversations");
