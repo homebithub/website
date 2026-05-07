@@ -2,7 +2,7 @@ import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
-import { profileService as grpcProfileService, documentService, shortlistService } from '~/services/grpc/authServices';
+import { profileService as grpcProfileService, documentService, openForWorkService, shortlistService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -164,6 +164,7 @@ export default function HousehelpPublicProfile() {
   const navigate = useNavigate();
   const location = useLocation();
   const params = new URLSearchParams(location.search);
+  const queryOpenForWorkId = params.get('openForWorkId') || params.get('open_for_work_id');
   const isEmbed = params.get('embed') === '1' || params.get('embed') === 'true';
   const queryProfileId = params.get('profileId');
   const queryBackTo = params.get('backTo');
@@ -180,6 +181,7 @@ export default function HousehelpPublicProfile() {
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [imageLoaded, setImageLoaded] = useState<Record<string, boolean>>({});
   const [isShortlisted, setIsShortlisted] = useState(false);
+  const [openForWorkId, setOpenForWorkId] = useState<string | null>(queryOpenForWorkId);
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
   const [imageError, setImageError] = useState<Record<string, boolean>>({});
   const [isHireModalOpen, setIsHireModalOpen] = useState(false);
@@ -365,10 +367,21 @@ export default function HousehelpPublicProfile() {
 
         setProfile(normalizedProfile);
 
-        // Check if profile is shortlisted (only if viewing someone else's profile)
+        let shortlistTargetId = queryOpenForWorkId;
+        if (!shortlistTargetId && normalizedProfile.id) {
+          try {
+            const listing = await openForWorkService.getOpenForWorkByHousehelp(normalizedProfile.id, '');
+            shortlistTargetId = listing?.id || listing?.data?.id || null;
+          } catch {
+            shortlistTargetId = null;
+          }
+        }
+        setOpenForWorkId(shortlistTargetId || null);
+
+        // Check if the open-for-work listing is shortlisted (only if viewing someone else's profile)
         if (profileId) {
           try {
-            const res = await shortlistService.shortlistExists('', profileId);
+            const res = shortlistTargetId ? await shortlistService.shortlistExists('', shortlistTargetId) : null;
             const exists = res?.getExists?.() ?? res?.exists ?? false;
             setIsShortlisted(exists);
           } catch (err) {
@@ -384,9 +397,10 @@ export default function HousehelpPublicProfile() {
     };
     
     fetchProfile();
-  }, [navigationState.profileId, queryProfileId]);
+  }, [navigationState.profileId, queryOpenForWorkId, queryProfileId]);
 
   const targetProfileId = viewingProfileId || profile?.profile_id || profile?.id;
+  const shortlistTargetId = openForWorkId || queryOpenForWorkId || null;
 
   const handleChat = async () => {
     const househelpUserId = user?.user_id || user?.id || profile?.user_id;
@@ -429,20 +443,24 @@ export default function HousehelpPublicProfile() {
   };
 
   const handleShortlistToggle = async () => {
-    if (!targetProfileId) return;
+    if (!shortlistTargetId) {
+      setActionError('This househelp has not published an open-for-work listing yet.');
+      return;
+    }
     setActionLoading('shortlist');
     setActionError(null);
     setActionSuccess(null);
     try {
       if (isShortlisted) {
-        await shortlistService.deleteShortlist(targetProfileId);
+        await shortlistService.deleteShortlist(shortlistTargetId);
         setIsShortlisted(false);
         setActionSuccess('Removed from shortlist.');
       } else {
-        await shortlistService.createShortlist('', 'household', { profile_id: targetProfileId, profile_type: 'househelp' });
+        await shortlistService.createShortlist('', 'household', { profile_id: shortlistTargetId, profile_type: 'open_for_work' });
         setIsShortlisted(true);
         setActionSuccess('Added to shortlist.');
       }
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (e) {
       console.error('Failed to update shortlist:', e);
       setActionError(e instanceof Error ? e.message : 'Failed to update shortlist');

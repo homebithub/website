@@ -70,6 +70,7 @@ export default function HouseholdPublicProfile() {
   const queryBackTo = params.get("backTo");
   const queryBackLabel = params.get("backLabel");
   const querySource = params.get("from");
+  const queryJobId = params.get("jobId") || params.get("job_id");
   const navigationState = (location.state ?? {}) as {
     profileId?: string;
     backTo?: string;
@@ -202,11 +203,11 @@ export default function HouseholdPublicProfile() {
   const isViewingOwn = !!currentUserId && !!profileOwnerUserId && profileOwnerUserId === currentUserId;
   const viewerType = viewerProfileType?.toLowerCase();
   const canInteract = viewerType === "househelp" && !isViewingOwn;
-  const canShortlist = canInteract && !!profile?.id;
+  const canShortlist = canInteract && !!queryJobId;
   const canChat = canInteract && !!profileOwnerUserId;
 
   useEffect(() => {
-    if (!canShortlist || !profile?.id) {
+    if (!canShortlist || !queryJobId) {
       setIsShortlisted(false);
       return;
     }
@@ -216,13 +217,16 @@ export default function HouseholdPublicProfile() {
       try {
         const token = getAccessTokenFromCookies();
         if (!token) return;
-        const raw = await shortlistService.listByProfile('', 'househelp');
+        const raw = await shortlistService.listByHousehold('');
         const items = raw?.data || raw || [];
         if (!cancelled) {
           const ids = new Set(
-            (Array.isArray(items) ? items : []).map((s: any) => s.profile_id).filter(Boolean)
+            (Array.isArray(items) ? items : [])
+              .filter((s: any) => s.profile_type === 'job')
+              .map((s: any) => s.profile_id)
+              .filter(Boolean)
           );
-          setIsShortlisted(ids.has(profile.id));
+          setIsShortlisted(ids.has(queryJobId));
         }
       } catch (err) {
         console.error("Failed to fetch shortlist status", err);
@@ -232,7 +236,7 @@ export default function HouseholdPublicProfile() {
     return () => {
       cancelled = true;
     };
-  }, [canShortlist, profile?.id]);
+  }, [canShortlist, queryJobId]);
 
   // Check if househelp has already expressed interest
   useEffect(() => {
@@ -313,7 +317,10 @@ export default function HouseholdPublicProfile() {
       : 'Back');
 
   const handleToggleShortlist = async () => {
-    if (!profile?.id) return;
+    if (!queryJobId) {
+      setActionError('Open a specific job before adding it to your shortlist.');
+      return;
+    }
     setActionLoading('shortlist');
     setActionError(null);
     setActionSuccess(null);
@@ -321,13 +328,13 @@ export default function HouseholdPublicProfile() {
       const token = getAccessTokenFromCookies();
       if (!token) throw new Error("Not authenticated");
       if (isShortlisted) {
-        await shortlistService.deleteShortlist(profile.id);
+        await shortlistService.deleteShortlist(queryJobId);
         setIsShortlisted(false);
         setActionSuccess('Removed from shortlist.');
       } else {
-        await shortlistService.createShortlist('', 'household', { profile_id: profile.id, profile_type: 'household' });
+        await shortlistService.createShortlist('', 'househelp', { profile_id: queryJobId, profile_type: 'job' });
         setIsShortlisted(true);
-        setActionSuccess('Added to shortlist.');
+        setActionSuccess('Job added to shortlist.');
       }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (err) {

@@ -38,6 +38,7 @@ interface JobListing {
   status?: string;
   created_at?: string;
   household_id?: string;
+  has_applied?: boolean;
 }
 
 interface HousehelpSummary {
@@ -124,7 +125,8 @@ export default function HousehelpJobsHome() {
   const [applyLoading, setApplyLoading] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
   const [householdProfiles, setHouseholdProfiles] = useState<Record<string, HouseholdProfileLike | null>>({});
-  const [shortlistedHouseholdIds, setShortlistedHouseholdIds] = useState<Set<string>>(() => new Set());
+  const [shortlistedJobIds, setShortlistedJobIds] = useState<Set<string>>(() => new Set());
+  const [appliedJobIds, setAppliedJobIds] = useState<Set<string>>(() => new Set());
   const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
 
@@ -138,10 +140,15 @@ export default function HousehelpJobsHome() {
     let cancelled = false;
     const fetchShortlisted = async () => {
       try {
-        const raw = await shortlistService.listByProfile('', 'househelp');
+        const raw = await shortlistService.listByHousehold('');
         if (cancelled) return;
-        const items = extractArray<{ profile_id?: string }>(raw);
-        setShortlistedHouseholdIds(new Set(items.map((item) => item.profile_id).filter((id): id is string => Boolean(id))));
+        const items = extractArray<{ profile_id?: string; profile_type?: string }>(raw);
+        setShortlistedJobIds(new Set(
+          items
+            .filter((item) => item.profile_type === 'job')
+            .map((item) => item.profile_id)
+            .filter((id): id is string => Boolean(id))
+        ));
       } catch (err) {
         // Silently ignore; shortlist button will still function
       }
@@ -186,6 +193,13 @@ export default function HousehelpJobsHome() {
             : [];
         if (cancelled) return;
         setJobs((prev) => (offset === 0 ? items : [...prev, ...items]));
+        setAppliedJobIds((prev) => {
+          const next = new Set(prev);
+          items.forEach((job: JobListing) => {
+            if (job.has_applied) next.add(job.id);
+          });
+          return next;
+        });
         setHasMore(items.length === limit);
       } catch (err: any) {
         if (!cancelled) setError(err.message || "Failed to load job listings");
@@ -302,10 +316,19 @@ export default function HousehelpJobsHome() {
       }
 
       setSuccess("Application submitted successfully.");
+      setAppliedJobIds((prev) => new Set(prev).add(selectedJob.id));
       setSelectedJob(null);
       setPitch("");
     } catch (err: any) {
-      setApplyError(err?.message || "Failed to submit application. Please try again.");
+      const message = err?.message || "Failed to submit application. Please try again.";
+      if (message.toLowerCase().includes("already applied")) {
+        setAppliedJobIds((prev) => new Set(prev).add(selectedJob.id));
+        setSuccess("You have already applied to this job.");
+        setSelectedJob(null);
+        setPitch("");
+      } else {
+        setApplyError(message);
+      }
     } finally {
       setApplyLoading(false);
     }
@@ -340,33 +363,30 @@ export default function HousehelpJobsHome() {
     }
   };
 
-  const handleShortlistHousehold = async (job: JobListing) => {
-    const profileId = getHouseholdProfileId(job);
-    if (!profileId) {
-      setError("We couldn’t shortlist this household right now. Please try again later.");
-      return;
-    }
-    if (shortlistedHouseholdIds.has(profileId)) {
-      setSuccess("This household is already in your shortlist.");
-      return;
-    }
-
+  const handleShortlistJob = async (job: JobListing) => {
     setShortlistLoadingId(job.id);
+    const shortlisted = shortlistedJobIds.has(job.id);
     try {
-      await shortlistService.createShortlist('', 'househelp', {
-        profile_id: profileId,
-        profile_type: 'household',
-      });
+      if (shortlisted) {
+        await shortlistService.deleteShortlist(job.id);
+        setShortlistedJobIds((prev) => {
+          const next = new Set(prev);
+          next.delete(job.id);
+          return next;
+        });
+        setSuccess("Job removed from your shortlist.");
+      } else {
+        await shortlistService.createShortlist('', 'househelp', {
+          profile_id: job.id,
+          profile_type: 'job',
+        });
 
-      setShortlistedHouseholdIds((prev) => {
-        const next = new Set(prev);
-        next.add(profileId);
-        return next;
-      });
+        setShortlistedJobIds((prev) => new Set(prev).add(job.id));
+        setSuccess("Job added to your shortlist.");
+      }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
-      setSuccess("Household added to your shortlist.");
     } catch (err: any) {
-      setError(err?.message || "Failed to add to shortlist. Please try again.");
+      setError(err?.message || "Failed to update shortlist. Please try again.");
     } finally {
       setShortlistLoadingId(null);
     }
@@ -381,8 +401,8 @@ export default function HousehelpJobsHome() {
     }
 
     const url = householdUserId
-      ? `/household/public-profile?userId=${encodeURIComponent(householdUserId)}&from=jobs&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to jobs')}`
-      : `/household/public-profile?profileId=${encodeURIComponent(profileId!)}&from=jobs&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to jobs')}`;
+      ? `/household/public-profile?userId=${encodeURIComponent(householdUserId)}&jobId=${encodeURIComponent(job.id)}&from=jobs&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to jobs')}`
+      : `/household/public-profile?profileId=${encodeURIComponent(profileId!)}&jobId=${encodeURIComponent(job.id)}&from=jobs&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to jobs')}`;
 
     navigate(url, { state: { backTo: backToPath, backLabel: 'Back to jobs' } });
   };
@@ -424,8 +444,8 @@ export default function HousehelpJobsHome() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {jobs.map((job) => {
                   const householdName = renderHouseholdName(job);
-                  const profileId = getHouseholdProfileId(job);
-                  const shortlisted = profileId ? shortlistedHouseholdIds.has(profileId) : false;
+                  const shortlisted = shortlistedJobIds.has(job.id);
+                  const hasApplied = appliedJobIds.has(job.id) || Boolean(job.has_applied);
                   return (
                     <div
                       key={job.id}
@@ -460,12 +480,12 @@ export default function HousehelpJobsHome() {
                               )}
                             </button>
                             <button
-                              onClick={() => handleShortlistHousehold(job)}
-                              disabled={shortlistLoadingId === job.id || shortlisted}
+                              onClick={() => handleShortlistJob(job)}
+                              disabled={shortlistLoadingId === job.id}
                               className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition ${shortlisted
-                                ? "border-green-500 bg-green-500/90 text-white"
+                                ? "border-pink-400 bg-pink-500 text-white"
                                 : "border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10"} disabled:opacity-60`}
-                              aria-label={shortlisted ? "Household shortlisted" : "Shortlist household"}
+                              aria-label={shortlisted ? "Remove job from shortlist" : "Shortlist job"}
                             >
                               {shortlistLoadingId === job.id ? (
                                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -519,14 +539,20 @@ export default function HousehelpJobsHome() {
                         Salary: {formatSalaryRange(job.salary_range)}
                       </div>
 
+                      {hasApplied && (
+                        <div className="mt-4 rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700 dark:border-green-500/30 dark:bg-green-500/10 dark:text-green-200">
+                          You have already applied to this job.
+                        </div>
+                      )}
+
                       <div className="mt-4 flex items-center justify-between">
                         <span className="text-xs text-gray-400">Posted {formatTimeAgo(job.created_at)}</span>
                         <button
                           onClick={() => handleOpenApplyModal(job)}
-                          disabled={!isJobOpen(job)}
+                          disabled={!isJobOpen(job) || hasApplied}
                           className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Apply
+                          {hasApplied ? "Applied" : "Apply"}
                         </button>
                       </div>
                     </div>

@@ -7,7 +7,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
+import { openForWorkService, profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { fetchPreferences } from "~/utils/preferencesApi";
@@ -49,7 +49,7 @@ export default function HouseholdShortlistPage() {
   const limit = 20;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  // Map of profile_id -> househelp profile data
+  // Map of shortlisted target id -> open-for-work listing data
   const [profilesById, setProfilesById] = useState<Record<string, any>>({});
 
   // Fetch profile photos from documents table
@@ -149,10 +149,10 @@ export default function HouseholdShortlistPage() {
     };
   }, [offset]);
 
-  // Load househelp profiles for shortlist entries (only where profile_type === 'househelp')
+  // Load open-for-work records for shortlisted househelp listings.
   useEffect(() => {
     const missingIds = (items || [])
-      .filter((s) => s.profile_type === "househelp")
+      .filter((s) => s.profile_type === "open_for_work")
       .map((s) => s.profile_id)
       .filter((pid) => pid && !(pid in profilesById));
     if (missingIds.length === 0) return;
@@ -161,15 +161,20 @@ export default function HouseholdShortlistPage() {
     async function loadProfiles() {
       try {
         setLoadingProfiles(true);
-        const response = await grpcProfileService.searchMultipleWithUser('', 'househelp', { profile_ids: missingIds });
-        // Gateway responses can be nested as { data: [...] } or { data: { data: [...] } }
-        const data = response?.data?.data || response?.data || response;
-        const profiles = Array.isArray(data) ? data : [];
+        const profiles = await Promise.all(
+          missingIds.map(async (id) => {
+            try {
+              return await openForWorkService.getOpenForWork(id, '');
+            } catch {
+              return null;
+            }
+          })
+        );
         if (cancelled) return;
         const next: Record<string, any> = { ...profilesById };
-        for (const h of profiles) {
-          if (h.profile_id) next[h.profile_id] = h;
-        }
+        missingIds.forEach((id, index) => {
+          if (profiles[index]) next[id] = profiles[index];
+        });
         setProfilesById(next);
       } catch {
         // noop; show empty
@@ -250,21 +255,24 @@ export default function HouseholdShortlistPage() {
 	
             <div className={`grid grid-cols-1 ${compactView ? 'gap-4' : 'gap-6'}`}>
               {(items || [])
-                .filter((s) => s.profile_type === "househelp")
+                .filter((s) => s.profile_type === "open_for_work")
                 .map((s) => {
-                  const h = profilesById[s.profile_id];
+                  const listing = profilesById[s.profile_id];
+                  const h = listing?.househelp;
+                  const targetProfileId = h?.id || h?.profile_id || '';
+                  const targetUserId = h?.user_id || h?.user?.id || s.user_id;
                   return (
                     <div
                       key={s.id}
-                      onClick={() => navigate(`/househelp/public-profile?profileId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
-                        state: { profileId: s.profile_id, fromShortlist: true },
+                      onClick={() => targetProfileId && navigate(`/househelp/public-profile?profileId=${encodeURIComponent(targetProfileId)}&openForWorkId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
+                        state: { profileId: targetProfileId, fromShortlist: true },
                       })}
                       className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 ${compactView ? 'p-4' : 'p-6'} hover:scale-105 hover:shadow-light-glow-md dark:hover:shadow-glow-md transition-all duration-300 cursor-pointer`}
                     >
                       {/* Top-right actions */}
                       <div className="absolute top-3 right-3 flex items-center gap-2">
                         <button
-                          onClick={(e) => { e.stopPropagation(); handleChatWithHousehelp(s.profile_id, s.user_id); }}
+                          onClick={(e) => { e.stopPropagation(); handleChatWithHousehelp(targetProfileId, targetUserId); }}
                           className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-purple-700 dark:text-purple-200 shadow"
                           aria-label="Chat"
                           title="Chat"
@@ -342,8 +350,8 @@ export default function HouseholdShortlistPage() {
                           {h && (
                             <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-left mb-2">
                               💰 {formatOnboardingAmountWithFrequency(
-                                h.salary_expectation,
-                                h.salary_frequency,
+                                listing?.salary_min ?? h.salary_expectation,
+                                listing?.salary_frequency || h.salary_frequency,
                                 'No salary expectations specified'
                               )}
                             </p>
@@ -398,8 +406,8 @@ export default function HouseholdShortlistPage() {
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                navigate(`/househelp/public-profile?profileId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
-                                  state: { profileId: s.profile_id, fromShortlist: true },
+                                navigate(`/househelp/public-profile?profileId=${encodeURIComponent(targetProfileId)}&openForWorkId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/household/shortlist')}&backLabel=${encodeURIComponent('Back to Shortlist')}`, {
+                                  state: { profileId: targetProfileId, fromShortlist: true },
                                 });
                               }}
                               className="px-4 py-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold rounded-xl hover:from-purple-700 hover:to-pink-700 transition"

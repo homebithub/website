@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { openForWorkService } from "~/services/grpc/authServices";
+import { openForWorkService, shortlistService } from "~/services/grpc/authServices";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { useProfilePhotos } from "~/hooks/useProfilePhotos";
 import { getStoredUserId } from "~/utils/authStorage";
@@ -13,6 +13,8 @@ import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { getInboxRoute, startOrGetConversation } from "~/utils/conversationLauncher";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { formatTimeAgo } from "~/utils/timeAgo";
+import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
+import { Heart } from "lucide-react";
 
 interface HousehelpSummary {
   id?: string;
@@ -87,7 +89,7 @@ interface OpenForWorkListing {
 const formatDate = (value?: string) => {
   if (!value) return "Flexible";
   const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return "Flexible";
+  if (Number.isNaN(parsed.getTime()) || parsed.getFullYear() < 1900) return "Flexible";
   return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
@@ -146,8 +148,11 @@ const normalizeOpenForWorkListing = (raw: unknown, fallbackId: string): OpenForW
 };
 
 const formatSalary = (min?: unknown, max?: unknown, frequency?: unknown) => {
-  const normalizedMin = toFiniteNumber(min);
-  const normalizedMax = toFiniteNumber(max);
+  const frequencyLabel = formatTextValue(frequency);
+  const rawMin = toFiniteNumber(min);
+  const rawMax = toFiniteNumber(max);
+  const normalizedMin = rawMin == null ? undefined : normalizeOnboardingAmountFromStorage(rawMin, frequencyLabel);
+  const normalizedMax = rawMax == null ? undefined : normalizeOnboardingAmountFromStorage(rawMax, frequencyLabel);
   if (normalizedMin == null && normalizedMax == null) return "Not specified";
   const formatter = new Intl.NumberFormat("en-US", {
     style: "currency",
@@ -157,9 +162,13 @@ const formatSalary = (min?: unknown, max?: unknown, frequency?: unknown) => {
   const minLabel = normalizedMin != null ? formatter.format(normalizedMin) : null;
   const maxLabel = normalizedMax != null ? formatter.format(normalizedMax) : null;
   const base = minLabel && maxLabel ? `${minLabel} - ${maxLabel}` : (minLabel || maxLabel || "Not specified");
-  const frequencyLabel = formatTextValue(frequency);
   const freqLabel = frequencyLabel ? ` / ${frequencyLabel}` : "";
   return `${base}${freqLabel}`;
+};
+
+const extractShortlistItems = (raw: any): Array<{ profile_id?: string; profile_type?: string }> => {
+  const payload = raw?.data?.data || raw?.data || raw || [];
+  return Array.isArray(payload) ? payload : [];
 };
 
 const summarizeSchedule = (schedule?: Record<string, { morning?: boolean; afternoon?: boolean; evening?: boolean }>) => {
@@ -184,6 +193,8 @@ export default function HouseholdJobsHome() {
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [shortlistedListingIds, setShortlistedListingIds] = useState<Set<string>>(() => new Set());
+  const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
 
   const limit = 12;
 
@@ -192,6 +203,29 @@ export default function HouseholdJobsHome() {
     [listings]
   );
   const profilePhotos = useProfilePhotos(househelpUserIds);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchShortlist = async () => {
+      try {
+        const raw = await shortlistService.listByHousehold('');
+        if (cancelled) return;
+        const ids = extractShortlistItems(raw)
+          .filter((item) => item.profile_type === 'open_for_work')
+          .map((item) => item.profile_id)
+          .filter((id): id is string => Boolean(id));
+        setShortlistedListingIds(new Set(ids));
+      } catch {
+        // The card can still render and retry on click if this lookup fails.
+      }
+    };
+
+    fetchShortlist();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -253,7 +287,36 @@ export default function HouseholdJobsHome() {
   const handleViewProfile = (listing: OpenForWorkListing) => {
     const profileId = listing.househelp?.id;
     if (!profileId) return;
-    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}`);
+    navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&openForWorkId=${encodeURIComponent(listing.id)}`);
+  };
+
+  const handleShortlist = async (listing: OpenForWorkListing) => {
+    if (!listing.id) return;
+    const isShortlisted = shortlistedListingIds.has(listing.id);
+    setShortlistLoadingId(listing.id);
+    setError(null);
+
+    try {
+      if (isShortlisted) {
+        await shortlistService.deleteShortlist(listing.id);
+        setShortlistedListingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(listing.id);
+          return next;
+        });
+      } else {
+        await shortlistService.createShortlist('', 'household', {
+          profile_id: listing.id,
+          profile_type: 'open_for_work',
+        });
+        setShortlistedListingIds((prev) => new Set(prev).add(listing.id));
+      }
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
+    } catch (err: any) {
+      setError(err?.message || "Failed to update shortlist. Please try again.");
+    } finally {
+      setShortlistLoadingId(null);
+    }
   };
 
   return (
@@ -296,6 +359,7 @@ export default function HouseholdJobsHome() {
                   const jobTypes = toStringArray(listing.job_types);
                   const location = firstString(househelp.town, househelp.location) || "Location not specified";
                   const experienceYears = toFiniteNumber(househelp.years_of_experience);
+                  const shortlisted = shortlistedListingIds.has(listing.id);
 
                   return (
                     <div
@@ -321,9 +385,28 @@ export default function HouseholdJobsHome() {
                               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{name}</h3>
                               <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
                             </div>
-                            <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200">
-                              Open
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => handleShortlist(listing)}
+                                disabled={shortlistLoadingId === listing.id}
+                                className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                                  shortlisted
+                                    ? "border-pink-400 bg-pink-500 text-white"
+                                    : "border-purple-200/70 bg-white text-purple-700 hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                                } disabled:opacity-60`}
+                                aria-label={shortlisted ? "Remove open-for-work listing from shortlist" : "Shortlist open-for-work listing"}
+                                title={shortlisted ? "Remove from shortlist" : "Add to shortlist"}
+                              >
+                                {shortlistLoadingId === listing.id ? (
+                                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                                ) : (
+                                  <Heart className={`h-4 w-4 ${shortlisted ? "fill-current" : ""}`} />
+                                )}
+                              </button>
+                              <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200">
+                                Open
+                              </span>
+                            </div>
                           </div>
 
                           <div className="mt-3 flex flex-wrap gap-2">

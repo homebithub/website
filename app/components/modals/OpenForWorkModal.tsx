@@ -4,6 +4,7 @@ import { XMarkIcon } from "@heroicons/react/24/outline";
 import { openForWorkService } from "~/services/grpc/authServices";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
+import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
 
 const JOB_TYPES = [
   { value: "live_in", label: "Live-in" },
@@ -11,6 +12,21 @@ const JOB_TYPES = [
   { value: "part_time", label: "Part-time" },
   { value: "full_time", label: "Full-time" },
 ];
+
+const toDateInputValue = (value: unknown): string => {
+  if (!value) return "";
+  const text = String(value).split("T")[0];
+  const parsed = new Date(`${text}T00:00:00`);
+  if (Number.isNaN(parsed.getTime()) || parsed.getFullYear() < 1900) return "";
+  return text;
+};
+
+const todayInputValue = () => new Date().toISOString().split("T")[0];
+
+const toSalaryInputValue = (value: unknown, frequency?: string): string => {
+  const normalized = normalizeOnboardingAmountFromStorage(value as string | number | null, frequency);
+  return normalized > 0 ? String(normalized) : "";
+};
 
 interface OpenForWorkModalProps {
   isOpen: boolean;
@@ -36,13 +52,13 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
   useEffect(() => {
     if (!isOpen) return;
     setJobTypes(Array.isArray(listing?.job_types) ? listing.job_types : []);
-    setAvailableFrom(listing?.available_from ? String(listing.available_from).split("T")[0] : "");
+    setAvailableFrom(toDateInputValue(listing?.available_from));
     setCanWorkWithKids(Boolean(listing?.can_work_with_kids));
     setCanWorkWithPets(Boolean(listing?.can_work_with_pets));
     setStatus(listing?.status || "active");
-    setSalaryMin(listing?.salary_min ? String(listing.salary_min) : "");
-    setSalaryMax(listing?.salary_max ? String(listing.salary_max) : "");
     setSalaryFrequency(listing?.salary_frequency || "monthly");
+    setSalaryMin(toSalaryInputValue(listing?.salary_min, listing?.salary_frequency));
+    setSalaryMax(toSalaryInputValue(listing?.salary_max, listing?.salary_frequency));
     setError("");
     setSuccess("");
   }, [isOpen, listing]);
@@ -149,6 +165,7 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
             <input
               type="date"
               value={availableFrom}
+              min={todayInputValue()}
               onChange={(e) => setAvailableFrom(e.target.value)}
               className="mt-2 w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
             />
