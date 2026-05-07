@@ -4,23 +4,17 @@
 
 import { BlogServiceClient } from '~/grpc/generated/notifications/blog_grpc_web_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
-import {
-  LikePostRequest,
+import blog_pb_module from '~/grpc/generated/notifications/blog_pb';
+import type {
   LikePostResponse,
-  UnlikePostRequest,
-  GetLikeStatusRequest,
   LikeStatusResponse,
-  SubscribeToBlogRequest,
   SubscribeToBlogResponse,
-  UnsubscribeFromBlogRequest,
-  TrackViewRequest,
-  TrackShareRequest,
-  CreateCommentRequest,
   CommentResponse,
-  ListCommentsRequest,
   ListCommentsResponse,
 } from '~/grpc/generated/notifications/blog_pb';
 import type { RpcError } from 'grpc-web';
+
+const blog_pb = blog_pb_module as any;
 
 class BlogService {
   private client: BlogServiceClient;
@@ -30,7 +24,7 @@ class BlogService {
   }
 
   async likePost(postId: string, userId: string): Promise<{ totalLikes: number; liked: boolean }> {
-    const request = new LikePostRequest();
+    const request = new blog_pb.LikePostRequest();
     request.setPostId(postId);
     request.setUserId(userId);
 
@@ -51,7 +45,7 @@ class BlogService {
   }
 
   async unlikePost(postId: string, userId: string): Promise<void> {
-    const request = new UnlikePostRequest();
+    const request = new blog_pb.UnlikePostRequest();
     request.setPostId(postId);
     request.setUserId(userId);
 
@@ -67,7 +61,7 @@ class BlogService {
   }
 
   async getLikeStatus(postId: string, userId?: string): Promise<{ totalLikes: number; liked: boolean }> {
-    const request = new GetLikeStatusRequest();
+    const request = new blog_pb.GetLikeStatusRequest();
     request.setPostId(postId);
     if (userId) {
       request.setUserId(userId);
@@ -89,7 +83,7 @@ class BlogService {
     });
   }
   async subscribeToBlog(email: string, name?: string): Promise<{ message: string; alreadySubscribed: boolean }> {
-    const request = new SubscribeToBlogRequest();
+    const request = new blog_pb.SubscribeToBlogRequest();
     request.setEmail(email);
     if (name) request.setName(name);
 
@@ -110,7 +104,7 @@ class BlogService {
   }
 
   async unsubscribeFromBlog(token: string): Promise<void> {
-    const request = new UnsubscribeFromBlogRequest();
+    const request = new blog_pb.UnsubscribeFromBlogRequest();
     request.setToken(token);
 
     return new Promise((resolve, reject) => {
@@ -134,7 +128,7 @@ class BlogService {
     utmMedium?: string,
     utmCampaign?: string,
   ): Promise<void> {
-    const request = new TrackViewRequest();
+    const request = new blog_pb.TrackViewRequest();
     request.setPostId(postId);
     request.setSessionId(sessionId);
     request.setSource(source);
@@ -152,7 +146,7 @@ class BlogService {
   }
 
   async trackShare(postId: string, platform: string, sessionId: string): Promise<void> {
-    const request = new TrackShareRequest();
+    const request = new blog_pb.TrackShareRequest();
     request.setPostId(postId);
     request.setPlatform(platform);
     request.setSessionId(sessionId);
@@ -165,7 +159,7 @@ class BlogService {
   }
 
   async createComment(postId: string, userName: string, content: string, userEmail?: string, userId?: string): Promise<void> {
-    const request = new CreateCommentRequest();
+    const request = new blog_pb.CreateCommentRequest();
     request.setPostId(postId);
     request.setUserName(userName);
     request.setContent(content);
@@ -180,7 +174,7 @@ class BlogService {
   }
 
   async listComments(postId: string, status = 'approved'): Promise<Array<{ id: string; post_id: string; user_id: string; user_name: string; content: string; status: string; created_at: string }>> {
-    const request = new ListCommentsRequest();
+    const request = new blog_pb.ListCommentsRequest();
     request.setPostId(postId);
     request.setStatus(status);
     return new Promise((resolve, reject) => {
