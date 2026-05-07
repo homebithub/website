@@ -141,44 +141,45 @@ export default function HouseholdProfile() {
         const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
         setProfile(profileData);
 
-        // Load existing invitation code if available
-        try {
-          const householdId = profileData.id;
-          const inviteData = await householdMemberService.getOrCreateInvitationCode(householdId);
-          const extracted = inviteData?.data || inviteData;
+        const [inviteResult, kidsResult, petsResult, docsResult] = await Promise.allSettled([
+          householdMemberService.getOrCreateInvitationCode(profileData.id),
+          householdKidsService.listHouseholdKids(''),
+          petsService.listMyPets(''),
+          documentService.getUserDocuments('', 'profile_photo'),
+        ]);
+
+        if (inviteResult.status === 'fulfilled') {
+          const extracted = inviteResult.value?.data || inviteResult.value;
           setInvitationCode(extracted.invite_code);
           setInvitationExpiresAt(extracted.expires_at);
-        } catch (err) {
-          console.error("No existing invitation code or error loading it:", err);
+        } else if (inviteResult.status === 'rejected') {
+          console.error("No existing invitation code or error loading it:", inviteResult.reason);
         }
 
-        // Fetch kids via gRPC
-        try {
-          const kidsData = await householdKidsService.listHouseholdKids('');
+        if (kidsResult.status === 'fulfilled') {
+          const kidsData = kidsResult.value;
           const kidsArray = Array.isArray(kidsData?.data || kidsData) ? (kidsData?.data || kidsData) : [];
           setKids(Array.isArray(kidsArray) ? kidsArray : []);
-        } catch (err) {
-          console.error("Error loading kids:", err);
+        } else if (kidsResult.status === 'rejected') {
+          console.error("Error loading kids:", kidsResult.reason);
         }
 
-        // Fetch pets via gRPC
-        try {
-          const petsData = await petsService.listMyPets('');
+        if (petsResult.status === 'fulfilled') {
+          const petsData = petsResult.value;
           const petsArray = Array.isArray(petsData?.data || petsData) ? (petsData?.data || petsData) : [];
           setPets(Array.isArray(petsArray) ? petsArray : []);
-        } catch (err) {
-          console.error("Error loading pets:", err);
+        } else if (petsResult.status === 'rejected') {
+          console.error("Error loading pets:", petsResult.reason);
         }
 
-        // Fetch photos from documents table via gRPC
-        try {
-          const docsData = await documentService.getUserDocuments('', 'profile_photo');
+        if (docsResult.status === 'fulfilled') {
+          const docsData = docsResult.value;
           const docs = docsData?.data || docsData?.documents || docsData || [];
           const documentsArray = Array.isArray(docs) ? docs : [];
           const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
           setProfile(prev => prev ? { ...prev, photos: photoUrls } : null);
-        } catch (err) {
-          console.error("Error loading photos:", err);
+        } else if (docsResult.status === 'rejected') {
+          console.error("Error loading photos:", docsResult.reason);
         }
       } catch (err: any) {
         console.error("Error loading profile:", err);

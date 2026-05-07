@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { jobService } from "~/services/grpc/authServices";
@@ -11,6 +11,113 @@ const JOB_TYPES = [
   { value: "part_time", label: "Part-time" },
   { value: "full_time", label: "Full-time" },
 ];
+
+const CURRENCIES = [
+  { code: "KES", name: "Kenya Shillings" },
+  { code: "USD", name: "United States Dollar" },
+  { code: "EUR", name: "Euro" },
+  { code: "GBP", name: "British Pound Sterling" },
+  { code: "CNY", name: "Chinese Yuan" },
+  { code: "JPY", name: "Japanese Yen" },
+  { code: "INR", name: "Indian Rupee" },
+  { code: "CAD", name: "Canadian Dollar" },
+  { code: "AUD", name: "Australian Dollar" },
+  { code: "ZAR", name: "South African Rand" },
+];
+
+interface CurrencySelectProps {
+  value: string;
+  onChange: (next: string) => void;
+}
+
+function CurrencySelect({ value, onChange }: CurrencySelectProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const options = useMemo(() => {
+    if (!query.trim()) return CURRENCIES;
+    const lowered = query.toLowerCase();
+    return CURRENCIES.filter((item) =>
+      `${item.code} ${item.name}`.toLowerCase().includes(lowered)
+    );
+  }, [query]);
+
+  const selected = useMemo(() => CURRENCIES.find((item) => item.code === value), [value]);
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (event: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
+  const displayLabel = selected ? `${selected.code} (${selected.name})` : value;
+
+  return (
+    <div className="relative" ref={containerRef}>
+      <button
+        type="button"
+        onClick={() => setOpen((prev) => !prev)}
+        className="mt-2 w-full h-11 px-4 rounded-xl border border-purple-500/40 bg-gradient-to-r from-purple-900/60 via-purple-800/50 to-purple-900/60 text-sm text-gray-100 flex items-center justify-between shadow-[0_0_20px_rgba(147,51,234,0.25)]"
+      >
+        <span>{displayLabel}</span>
+        <svg
+          className={`w-4 h-4 transition-transform ${open ? "rotate-180" : "rotate-0"}`}
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.5}
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute z-10 mt-2 w-full rounded-xl border border-purple-500/40 bg-[#0b0814] shadow-2xl overflow-hidden">
+          <div className="p-3 border-b border-purple-500/20">
+            <input
+              autoFocus
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search currency"
+              className="w-full h-10 px-3 rounded-lg bg-[#140f1f] text-sm text-gray-100 border border-purple-500/30 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
+            />
+          </div>
+          <ul className="max-h-48 overflow-y-auto py-2">
+            {options.length === 0 && (
+              <li className="px-4 py-2 text-xs text-gray-400">No results</li>
+            )}
+            {options.map((item) => (
+              <li key={item.code}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(item.code);
+                    setQuery("");
+                    setOpen(false);
+                  }}
+                  className={`w-full text-left px-4 py-2 text-sm flex items-center justify-between transition ${
+                    item.code === value
+                      ? "bg-gradient-to-r from-purple-600/70 to-pink-600/70 text-white"
+                      : "text-gray-200 hover:bg-purple-600/20"
+                  }`}
+                >
+                  <span>{item.code}</span>
+                  <span className="text-xs text-gray-300 ml-2">{item.name}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface JobPostModalProps {
   isOpen: boolean;
@@ -178,10 +285,10 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
                   key={type.value}
                   type="button"
                   onClick={() => toggleJobType(type.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition shadow-sm ${
                     jobTypes.includes(type.value)
-                      ? "bg-purple-600 text-white border-purple-600"
-                      : "bg-white dark:bg-[#0f0b1a] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-purple-500/30"
+                      ? "bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-600 text-white border-transparent shadow-[0_0_12px_rgba(168,85,247,0.45)]"
+                      : "bg-white/80 dark:bg-[#100a1c] text-gray-600 dark:text-gray-300 border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/10"
                   }`}
                 >
                   {type.label}
@@ -238,11 +345,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
             </div>
             <div>
               <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Currency</label>
-              <input
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value)}
-                className="mt-2 w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
-              />
+              <CurrencySelect value={currency} onChange={setCurrency} />
             </div>
           </div>
 

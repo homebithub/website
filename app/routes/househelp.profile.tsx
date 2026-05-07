@@ -165,21 +165,30 @@ export default function HousehelpProfile() {
           navigate('/login?redirect=' + encodeURIComponent(window.location.pathname));
           return;
         }
-        
-        const profileData = await grpcProfileService.getCurrentHousehelpProfile('');
-        const normalized = normalizeHousehelpProfileResponse(profileData);
 
-        // Fetch photos from documents table via gRPC
-        try {
-          const docsData = await documentService.getUserDocuments('', 'profile_photo');
-          const docs = docsData?.data || docsData?.documents || docsData || [];
+        const [profileResult, docsResult] = await Promise.allSettled([
+          grpcProfileService.getCurrentHousehelpProfile(''),
+          documentService.getUserDocuments('', 'profile_photo'),
+        ]);
+
+        if (profileResult.status !== 'fulfilled') {
+          const reason = profileResult.reason;
+          throw reason instanceof Error
+            ? reason
+            : new Error(typeof reason === 'string' ? reason : 'Failed to load profile');
+        }
+
+        const normalized = normalizeHousehelpProfileResponse(profileResult.value);
+
+        if (docsResult.status === 'fulfilled') {
+          const docs = docsResult.value?.data || docsResult.value?.documents || docsResult.value || [];
           const documentsArray = Array.isArray(docs) ? docs : [];
           const photoUrls = documentsArray.map((doc: any) => doc.public_url || doc.signed_url || doc.url).filter(Boolean);
           if (photoUrls.length > 0) {
             normalized.photos = photoUrls;
           }
-        } catch (err) {
-          console.error('Failed to fetch profile photos:', err);
+        } else if (docsResult.status === 'rejected') {
+          console.error('Failed to fetch profile photos:', docsResult.reason);
         }
 
         setProfile(normalized);
