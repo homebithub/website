@@ -36,10 +36,30 @@ function asString(value: unknown): string {
   return typeof value === "string" ? value : String(value);
 }
 
+function isHtmlLike(value: string): boolean {
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+  return /^<!doctype\s+html/i.test(trimmed)
+    || /^<html[\s>]/i.test(trimmed)
+    || /<body[\s>]/i.test(trimmed)
+    || /<\/(?:div|p|table|section|article|main|h1|h2|h3)>/i.test(trimmed);
+}
+
+function isPushNotification(n: NotificationApiItem): boolean {
+  const channel = asString(n.channel).toLowerCase();
+  if (channel) return channel === "push";
+
+  const provider = asString(n.provider).toLowerCase();
+  if (provider) return provider === "firebase";
+
+  return !isHtmlLike(asString(n.message || n.rendered_content));
+}
+
 function mapToNotification(n: NotificationApiItem): NotificationItem {
   return {
     id: asString(n.id),
     userId: asString(n.user_id),
+    channel: asString(n.channel),
     title: asString(n.title || n.rendered_subject),
     message: asString(n.message || n.rendered_content),
     type: asString(n.type),
@@ -96,7 +116,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       const data = await notificationsService.listNotificationsByUser(userID, pageSize, 0);
       const notifications: NotificationApiItem[] = Array.isArray(data?.notifications) ? data.notifications : [];
       
-      const list: NotificationItem[] = notifications.map((n) => mapToNotification(n));
+      const list: NotificationItem[] = notifications.filter(isPushNotification).map((n) => mapToNotification(n));
 
       setItems(list);
       setHasMore(list.length >= pageSize);
@@ -126,7 +146,7 @@ export function useNotifications({ pollingMs = 15000, pageSize = 20, search = ""
       const data = await notificationsService.listNotificationsByUser(userID, pageSize, items.length);
       const notifications: NotificationApiItem[] = Array.isArray(data?.notifications) ? data.notifications : [];
       
-      const list: NotificationItem[] = notifications.map((n) => mapToNotification(n));
+      const list: NotificationItem[] = notifications.filter(isPushNotification).map((n) => mapToNotification(n));
 
       if (list.length > 0) {
         setItems(prev => {

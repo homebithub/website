@@ -414,6 +414,9 @@ export const profileService = {
 // ══════════════════════════════════════════════════════════════════════════
 export const shortlistService = {
   async createShortlist(userId: string, profileType: string, data: Record<string, any>): Promise<any> {
+    if (['household', 'househelp', 'bureau'].includes(String(data?.profile_type || '').toLowerCase())) {
+      throw new Error('Shortlists can only save job postings or open-for-work listings.');
+    }
     const req = new auth_pb.CreateShortlistReq();
     req.setUserId(resolveUserId(userId));
     req.setProfileType(profileType);
