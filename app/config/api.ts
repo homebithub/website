@@ -14,7 +14,7 @@ const PRODUCTION_GATEWAY = 'https://api.homebit.co.ke';
  * Resolve the gateway base URL. Hierarchy:
  *  1. Browser localhost → http(s)://localhost:3005
  *  2. window.ENV.GATEWAY_API_BASE_URL (injected by root.tsx)
- *  3. process.env.GATEWAY_API_BASE_URL or AUTH_API_BASE_URL (SSR)
+ *  3. process.env.GATEWAY_API_BASE_URL (SSR)
  *  4. Non-production SSR → http://localhost:3005
  *  5. Fallback → https://api.homebit.co.ke
  */
@@ -26,14 +26,13 @@ const getGatewayBaseUrl = (): string => {
       return `${window.location.protocol}//${window.location.hostname}:${LOCAL_GATEWAY_PORT}`;
     }
 
-    const envGateway = (window as any).ENV?.GATEWAY_API_BASE_URL
-      || (window as any).ENV?.AUTH_API_BASE_URL;
+    const envGateway = (window as any).ENV?.GATEWAY_API_BASE_URL;
     if (envGateway) return normalizeUrl(envGateway);
   }
 
   // SSR
   if (typeof process !== 'undefined') {
-    const envUrl = process.env.GATEWAY_API_BASE_URL || process.env.AUTH_API_BASE_URL;
+    const envUrl = process.env.GATEWAY_API_BASE_URL;
     if (envUrl) return normalizeUrl(envUrl);
 
     if (process.env.NODE_ENV !== 'production') {
@@ -44,7 +43,7 @@ const getGatewayBaseUrl = (): string => {
   return PRODUCTION_GATEWAY;
 };
 
-function normalizeUrl(url: string): string {
+export function normalizeGatewayBaseUrl(url: string): string {
   let out = url.replace(/\/+$/, '')
     .replace(/\/(auth|payments|notifications)$/i, '')
     .replace(/\/api(?:\/v1)?$/i, '');
@@ -60,9 +59,12 @@ function normalizeUrl(url: string): string {
   return out;
 }
 
+const normalizeUrl = normalizeGatewayBaseUrl;
+
 // ── Exported base URLs ──────────────────────────────────────────────────
 // All point to the same gateway; separate names kept for backward compat.
 export const API_BASE_URL = getGatewayBaseUrl();
+export const GATEWAY_API_BASE_URL = API_BASE_URL;
 export const AUTH_API_BASE_URL = API_BASE_URL;
 export const NOTIFICATIONS_API_BASE_URL = API_BASE_URL;
 export const PAYMENTS_API_BASE_URL = API_BASE_URL;

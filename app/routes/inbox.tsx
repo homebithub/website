@@ -3,7 +3,6 @@ import { useSearchParams, useNavigate, useLocation } from "react-router";
 import { useAuth } from "~/contexts/useAuth";
 import { Navigation } from "~/components/Navigation";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { API_BASE_URL, API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { profileService as grpcProfileService, hireRequestService } from '~/services/grpc/authServices';
 import { ArrowLeftIcon, PaperAirplaneIcon, FaceSmileIcon, ChevronDownIcon, XMarkIcon, EllipsisVerticalIcon, CheckCircleIcon, ExclamationTriangleIcon, CheckIcon, LockClosedIcon } from '@heroicons/react/24/outline';
@@ -194,11 +193,6 @@ export default function InboxPage() {
   const authUser = (user as any)?.user ?? null;
   const storedUser = getStoredUser();
   const currentUser = authUser ?? storedUser ?? null;
-  const API_BASE = React.useMemo(() => (typeof window !== 'undefined' && (window as any).ENV?.AUTH_API_BASE_URL) || API_BASE_URL, []);
-  const NOTIFICATIONS_BASE = React.useMemo(
-    () => (typeof window !== 'undefined' && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL,
-    []
-  );
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -622,7 +616,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [items, currentUserProfileType, API_BASE, authLoading, user]);
+  }, [items, currentUserProfileType, authLoading, user]);
 
   const fetchHireContext = useCallback(async (conversation?: Conversation) => {
     if (!conversation) {
@@ -676,7 +670,7 @@ export default function InboxPage() {
       setHireRequestStatus(undefined);
       setHireRequestId(undefined);
     }
-  }, [API_BASE]);
+  }, []);
 
   useEffect(() => {
     fetchHireContext(selectedConversation);
@@ -737,7 +731,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [offset, NOTIFICATIONS_BASE, authLoading, user, selectedConversationId]);
+  }, [offset, authLoading, user, selectedConversationId]);
 
   // Load messages when conversation is selected
   useEffect(() => {
@@ -816,7 +810,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeConversationId, NOTIFICATIONS_BASE, messagesLimit, authLoading, user]);
+  }, [activeConversationId, messagesLimit, authLoading, user]);
 
   // Scroll to bottom on conversation load or new message
   useEffect(() => {
@@ -1268,7 +1262,7 @@ export default function InboxPage() {
     } finally {
       setHireActionLoading(null);
     }
-  }, [hireRequestId, API_BASE, pushToast]);
+  }, [hireRequestId, pushToast]);
 
   const handleDeclineHireRequest = useCallback(async () => {
     if (!hireRequestId) return;
@@ -1282,7 +1276,7 @@ export default function InboxPage() {
     } finally {
       setHireActionLoading(null);
     }
-  }, [hireRequestId, API_BASE, pushToast]);
+  }, [hireRequestId, pushToast]);
 
   // Basic WebSocket wiring for new incoming messages
   useEffect(() => {

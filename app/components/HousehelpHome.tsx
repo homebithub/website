@@ -118,10 +118,6 @@ export default function HousehelpHome() {
   const [compactView, setCompactView] = useState(false);
   const [accessibilityMode, setAccessibilityMode] = useState(false);
 
-  const NOTIFICATIONS_BASE = useMemo(
-    () => (typeof window !== "undefined" && (window as any).ENV?.NOTIFICATIONS_API_BASE_URL) || NOTIFICATIONS_API_BASE_URL,
-    []
-  );
   const navigate = useNavigate();
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
@@ -248,7 +244,7 @@ export default function HousehelpHome() {
         payload.household_profile_id = currentHouseholdProfileId;
       }
 
-      const convId = await startOrGetConversation(NOTIFICATIONS_BASE, payload);
+      const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
       navigate(getInboxRoute(convId));
     } catch (err) {
       console.error('Failed to start chat from households list', err);

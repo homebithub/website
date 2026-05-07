@@ -2,7 +2,7 @@ import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import type { JsonObject } from '@protobuf-ts/runtime';
 import { HouseholdMemberServiceClient, ProfileSetupServiceClient, WaitlistServiceClient } from '~/proto/auth/auth.client';
 import { Struct } from '~/proto/google/protobuf/struct';
-import { AUTH_API_BASE_URL } from '~/config/api';
+import { API_BASE_URL, normalizeGatewayBaseUrl } from '~/config/api';
 
 function isJsonObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -32,7 +32,7 @@ function resolveGrpcBaseUrl(requestUrl: string): string {
     return `${url.protocol}//${url.hostname}:3005`;
   }
 
-  return process.env.GATEWAY_API_BASE_URL || AUTH_API_BASE_URL;
+  return normalizeGatewayBaseUrl(process.env.GATEWAY_API_BASE_URL || API_BASE_URL);
 }
 
 function resolveRestBaseUrl(requestUrl: string): string {

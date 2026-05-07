@@ -7,6 +7,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { BlogSubscribeForm } from "~/components/blog/BlogSubscribeForm";
 import { useAuth } from "~/contexts/useAuth";
+import { API_BASE_URL } from "~/config/api";
 
 export const meta: MetaFunction = () => {
   return [
@@ -51,7 +52,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   try {
     // Call gateway API
-    const apiUrl = process.env.GATEWAY_API_BASE_URL || process.env.AUTH_API_BASE_URL || "http://localhost:3005";
+    const apiUrl = API_BASE_URL;
     const params = new URLSearchParams({
       limit: limit.toString(),
       offset: offset.toString(),

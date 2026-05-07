@@ -8,7 +8,7 @@ import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
 import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
 import { WebSocketProvider } from "~/contexts/WebSocketContext";
 import { SSEProvider } from "~/contexts/SSEContext";
-import { AUTH_API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL, PAYMENTS_API_BASE_URL } from '~/config/api';
+import { API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
 export const meta: Route.MetaFunction = () => [
@@ -43,15 +43,10 @@ export function loader({ request }: Route.LoaderArgs) {
 	const isLocalRequest = requestHost === "localhost" || requestHost === "127.0.0.1";
 	const localGatewayBaseUrl = `${requestUrl.protocol}//${requestUrl.hostname}:3005`;
 
-	const gatewayBaseUrl = isLocalRequest
-		? localGatewayBaseUrl
-		: process.env.GATEWAY_API_BASE_URL || AUTH_API_BASE_URL;
-	const authBaseUrl = isLocalRequest ? localGatewayBaseUrl : AUTH_API_BASE_URL;
-	const notificationsBaseUrl = isLocalRequest ? localGatewayBaseUrl : NOTIFICATIONS_API_BASE_URL;
-	const paymentsBaseUrl = isLocalRequest ? localGatewayBaseUrl : PAYMENTS_API_BASE_URL;
+	const gatewayBaseUrl = isLocalRequest ? localGatewayBaseUrl : API_BASE_URL;
 	const notificationsWsBaseUrl = isLocalRequest
 		? `${localGatewayBaseUrl}/ws`
-		: process.env.NOTIFICATIONS_WS_BASE_URL || NOTIFICATIONS_WS_BASE_URL;
+		: NOTIFICATIONS_WS_BASE_URL;
 
 	return {
 		ENV: {
@@ -59,10 +54,10 @@ export function loader({ request }: Route.LoaderArgs) {
 				process.env.GOOGLE_CLIENT_ID ||
 				"180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",
 			GATEWAY_API_BASE_URL: gatewayBaseUrl,
-			AUTH_API_BASE_URL: authBaseUrl,
-			NOTIFICATIONS_API_BASE_URL: notificationsBaseUrl,
+			AUTH_API_BASE_URL: gatewayBaseUrl,
+			NOTIFICATIONS_API_BASE_URL: gatewayBaseUrl,
 			NOTIFICATIONS_WS_BASE_URL: notificationsWsBaseUrl,
-			PAYMENTS_API_BASE_URL: paymentsBaseUrl,
+			PAYMENTS_API_BASE_URL: gatewayBaseUrl,
 		},
 	};
 }
@@ -74,7 +69,7 @@ export async function action() {
 }
 
 export default function App() {
-    const { ENV } = useLoaderData<typeof loader>() || { ENV: { GOOGLE_CLIENT_ID: "", AUTH_API_BASE_URL: "" } };
+    const { ENV } = useLoaderData<typeof loader>() || { ENV: { GOOGLE_CLIENT_ID: "", GATEWAY_API_BASE_URL: "" } };
     return (
         <html lang="en" className="h-full" suppressHydrationWarning>
             <head>

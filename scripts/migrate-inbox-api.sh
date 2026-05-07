@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Inbox API Migration Script
-# This script updates the frontend to use the notifications service for inbox functionality
+# This script is kept for historical migrations. The website now routes inbox
+# calls through the API gateway, not directly to the notifications service.
 
 set -e
 
@@ -30,11 +31,11 @@ echo ""
 # Update .env.development
 echo "📝 Updating .env.development..."
 if [ -f .env.development ]; then
-  if ! grep -q "NOTIFICATIONS_API_BASE_URL" .env.development; then
-    echo "NOTIFICATIONS_API_BASE_URL=http://localhost:8081/notifications" >> .env.development
-    echo -e "${GREEN}✓${NC} Added NOTIFICATIONS_API_BASE_URL to .env.development"
+  if ! grep -q "GATEWAY_API_BASE_URL" .env.development; then
+    echo "GATEWAY_API_BASE_URL=http://localhost:3005" >> .env.development
+    echo -e "${GREEN}✓${NC} Added GATEWAY_API_BASE_URL to .env.development"
   else
-    echo -e "${YELLOW}⚠${NC}  NOTIFICATIONS_API_BASE_URL already exists in .env.development"
+    echo -e "${YELLOW}⚠${NC}  GATEWAY_API_BASE_URL already exists in .env.development"
   fi
 else
   echo -e "${YELLOW}⚠${NC}  .env.development not found, skipping"
@@ -44,11 +45,11 @@ echo ""
 # Update .env.production
 echo "📝 Updating .env.production..."
 if [ -f .env.production ]; then
-  if ! grep -q "NOTIFICATIONS_API_BASE_URL" .env.production; then
-    echo "NOTIFICATIONS_API_BASE_URL=https://api.homebit.co.ke/notifications" >> .env.production
-    echo -e "${GREEN}✓${NC} Added NOTIFICATIONS_API_BASE_URL to .env.production"
+  if ! grep -q "GATEWAY_API_BASE_URL" .env.production; then
+    echo "GATEWAY_API_BASE_URL=https://api.homebit.co.ke" >> .env.production
+    echo -e "${GREEN}✓${NC} Added GATEWAY_API_BASE_URL to .env.production"
   else
-    echo -e "${YELLOW}⚠${NC}  NOTIFICATIONS_API_BASE_URL already exists in .env.production"
+    echo -e "${YELLOW}⚠${NC}  GATEWAY_API_BASE_URL already exists in .env.production"
   fi
 else
   echo -e "${YELLOW}⚠${NC}  .env.production not found, skipping"
@@ -59,9 +60,9 @@ echo "✅ Migration preparation complete!"
 echo ""
 echo "📋 Next steps:"
 echo "  1. Review the changes in app/config/api.ts"
-echo "  2. Update app/routes/inbox.tsx to use NOTIFICATIONS_BASE"
-echo "  3. Update app/root.tsx to include NOTIFICATIONS_API_BASE_URL in ENV"
-echo "  4. Test locally with both services running"
+echo "  2. Update app/routes/inbox.tsx to use gateway-backed clients"
+echo "  3. Update app/root.tsx to expose only gateway-backed base URLs"
+echo "  4. Test locally with the gateway running"
 echo "  5. Deploy to staging and test"
 echo "  6. Deploy to production"
 echo ""

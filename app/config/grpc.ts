@@ -28,7 +28,7 @@ const resolveGatewayBaseCandidate = (url?: string): string | undefined => {
   if (typeof window !== 'undefined') {
     const localHostLike = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i.test(normalized);
     if (localHostLike && normalized === window.location.origin) {
-      const fallback = `${window.location.protocol}//${window.location.hostname}:8080`;
+      const fallback = `${window.location.protocol}//${window.location.hostname}:${LOCAL_GATEWAY_PORT}`;
       return fallback;
     }
   }

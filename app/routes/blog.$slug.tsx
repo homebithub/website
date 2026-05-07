@@ -7,6 +7,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { BlogSubscribeForm } from "~/components/blog/BlogSubscribeForm";
 import { useAuth } from "~/contexts/useAuth";
+import { API_BASE_URL } from "~/config/api";
 import { blogService } from "~/services/grpc/blog.service";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
@@ -94,7 +95,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   try {
-    const apiUrl = process.env.GATEWAY_API_BASE_URL || process.env.AUTH_API_BASE_URL || "http://localhost:3005";
+    const apiUrl = API_BASE_URL;
     
     // Fetch the blog post
     const response = await fetch(`${apiUrl}/api/v1/blog/posts/${slug}`);
