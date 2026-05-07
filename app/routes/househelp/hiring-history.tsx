@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { hireRequestService, hireContractService, employmentContractService, interestService, openForWorkService } from '~/services/grpc/authServices';
+import { hireRequestService, hireContractService, employmentContractService, interestService, openForWorkService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -108,7 +108,20 @@ interface EmploymentContract {
   };
 }
 
-type TabType = 'requests' | 'work-history' | 'employment-contracts' | 'interests';
+interface OpenForWorkListing {
+  id: string;
+  job_types?: string[];
+  available_from?: string;
+  can_work_with_kids?: boolean;
+  can_work_with_pets?: boolean;
+  salary_min?: number;
+  salary_max?: number;
+  salary_frequency?: string;
+  status?: string;
+  created_at?: string;
+}
+
+type TabType = 'open-for-work' | 'requests' | 'work-history' | 'employment-contracts' | 'interests';
 
 const getHouseholdName = (household?: HireRequest['household'] | HireContract['household'] | Interest['household']) => {
   if (!household) return 'Household';
@@ -169,8 +182,8 @@ export default function HousehelpHiringHistory() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['requests', 'work-history', 'employment-contracts', 'interests'];
-    return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'requests';
+    const validTabs: TabType[] = ['open-for-work', 'requests', 'work-history', 'employment-contracts', 'interests'];
+    return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'open-for-work';
   });
   
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
@@ -200,6 +213,9 @@ export default function HousehelpHiringHistory() {
   const [selectedInterest, setSelectedInterest] = useState<Interest | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [househelpProfileId, setHousehelpProfileId] = useState<string | null>(null);
+  const [openForWorkListing, setOpenForWorkListing] = useState<OpenForWorkListing | null>(null);
+  const [openForWorkLoading, setOpenForWorkLoading] = useState(true);
   
   // Confirmation dialog states
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
@@ -234,6 +250,8 @@ export default function HousehelpHiringHistory() {
   useEffect(() => {
     if (activeTab === 'requests') {
       fetchHireRequests();
+    } else if (activeTab === 'open-for-work') {
+      fetchOpenForWorkListing();
     } else if (activeTab === 'work-history') {
       fetchContracts();
     } else if (activeTab === 'employment-contracts') {
@@ -245,12 +263,40 @@ export default function HousehelpHiringHistory() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['requests', 'work-history', 'employment-contracts', 'interests'];
+    const validTabs: TabType[] = ['open-for-work', 'requests', 'work-history', 'employment-contracts', 'interests'];
     if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
       setActiveTab(tabParam as TabType);
       setOffset(0);
     }
   }, [activeTab, searchParams]);
+
+  const fetchOpenForWorkListing = async (silent?: boolean) => {
+    if (!silent) setOpenForWorkLoading(true);
+    setError(null);
+    try {
+      const profile = await grpcProfileService.getCurrentHousehelpProfile('');
+      const resolvedProfile = extractEnvelopeObject<any>(profile);
+      const resolvedId = resolvedProfile?.id || resolvedProfile?.profile_id || househelpProfileId;
+      setHousehelpProfileId(resolvedId || null);
+
+      if (!resolvedId) {
+        setOpenForWorkListing(null);
+        return;
+      }
+
+      const listing = await openForWorkService.getOpenForWorkByHousehelp(resolvedId, '');
+      setOpenForWorkListing(extractEnvelopeObject<OpenForWorkListing>(listing));
+    } catch (err: any) {
+      const message = err?.message || '';
+      if (message.toLowerCase().includes('not found')) {
+        setOpenForWorkListing(null);
+      } else {
+        setError(message || 'Failed to load open-for-work listing');
+      }
+    } finally {
+      if (!silent) setOpenForWorkLoading(false);
+    }
+  };
 
   const fetchHireRequests = async () => {
     setRequestsLoading(true);
@@ -324,6 +370,34 @@ export default function HousehelpHiringHistory() {
       setError(err.message || 'Failed to load interests');
     } finally {
       setInterestsLoading(false);
+    }
+  };
+
+  const handleOpenForWorkSaved = () => {
+    setShowOpenForWorkModal(false);
+    if (activeTab !== 'open-for-work') {
+      handleTabChange('open-for-work');
+    }
+    fetchOpenForWorkListing(true);
+    setSuccessMessage('Open-for-work listing saved.');
+  };
+
+  const handleOpenForWorkStatus = async (nextStatus: string) => {
+    if (!openForWorkListing?.id) {
+      setShowOpenForWorkModal(true);
+      return;
+    }
+    setActionLoading(openForWorkListing.id);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      await openForWorkService.updateOpenForWork(openForWorkListing.id, '', { status: nextStatus });
+      setOpenForWorkListing((prev) => prev ? { ...prev, status: nextStatus } : prev);
+      setSuccessMessage(nextStatus === 'active' ? 'Open-for-work listing activated.' : 'Open-for-work listing set to inactive.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to update open-for-work listing');
+    } finally {
+      setActionLoading(null);
     }
   };
 
@@ -401,6 +475,15 @@ export default function HousehelpHiringHistory() {
   const formatSalary = (amount?: number | null, frequency?: string) =>
     formatOnboardingAmountWithFrequency(amount, frequency, 'Not specified');
 
+  const formatOpenForWorkSalary = (listing?: OpenForWorkListing | null) => {
+    if (!listing?.salary_min && !listing?.salary_max) return 'Not specified';
+    const frequency = listing.salary_frequency || 'monthly';
+    if (listing.salary_min && listing.salary_max) {
+      return `${formatSalary(listing.salary_min, frequency)} - ${formatSalary(listing.salary_max, frequency)}`;
+    }
+    return formatSalary(listing.salary_min || listing.salary_max, frequency);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
@@ -426,13 +509,14 @@ export default function HousehelpHiringHistory() {
   };
 
   const tabs: { key: TabType; label: string; count?: number }[] = [
+    { key: 'open-for-work', label: 'Open for Work' },
     { key: 'requests', label: 'Requests Received', count: pendingCount > 0 ? pendingCount : undefined },
     { key: 'employment-contracts', label: 'Contracts' },
     { key: 'work-history', label: 'Work History' },
     { key: 'interests', label: 'Interests Sent' },
   ];
 
-  const loading = activeTab === 'requests' ? requestsLoading : activeTab === 'work-history' ? contractsLoading : activeTab === 'employment-contracts' ? employmentContractsLoading : interestsLoading;
+  const loading = activeTab === 'open-for-work' ? openForWorkLoading : activeTab === 'requests' ? requestsLoading : activeTab === 'work-history' ? contractsLoading : activeTab === 'employment-contracts' ? employmentContractsLoading : interestsLoading;
 
   return (
     <div>
@@ -452,7 +536,7 @@ export default function HousehelpHiringHistory() {
               onClick={() => setShowOpenForWorkModal(true)}
               className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
             >
-              Open for Work
+              {openForWorkListing ? 'Edit Open for Work' : 'Open for Work'}
             </button>
           </div>
         </div>
@@ -470,6 +554,7 @@ export default function HousehelpHiringHistory() {
                     : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
                 }`}
               >
+                {tab.key === 'open-for-work' && <Briefcase className="w-4 h-4" />}
                 {tab.key === 'requests' && <MessageCircle className="w-4 h-4" />}
                 {tab.key === 'employment-contracts' && <FileText className="w-4 h-4" />}
                 {tab.key === 'work-history' && <Briefcase className="w-4 h-4" />}
@@ -498,6 +583,8 @@ export default function HousehelpHiringHistory() {
               onClick={() => {
                 if (activeTab === 'requests') {
                   fetchHireRequests();
+                } else if (activeTab === 'open-for-work') {
+                  fetchOpenForWorkListing();
                 } else if (activeTab === 'work-history') {
                   fetchContracts();
                 } else if (activeTab === 'employment-contracts') {
@@ -518,6 +605,99 @@ export default function HousehelpHiringHistory() {
           <div className="flex justify-center items-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
           </div>
+        )}
+
+        {/* Open for Work Tab Content */}
+        {activeTab === 'open-for-work' && !loading && (
+          <>
+            {openForWorkListing ? (
+              <div className="p-6">
+                <div className="rounded-xl border border-gray-200 dark:border-purple-500/30 p-5">
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div className="flex-1">
+                      <div className="flex flex-wrap items-center gap-2 mb-2">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">Open-for-work listing</h3>
+                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(openForWorkListing.status || 'active')}`}>
+                          {getStatusIcon(openForWorkListing.status || 'active')}
+                          {openForWorkListing.status || 'active'}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                        <div>
+                          <span className="text-gray-500 dark:text-purple-300">Available From</span>
+                          <p className="font-medium text-gray-900 dark:text-white">
+                            {openForWorkListing.available_from ? formatDate(openForWorkListing.available_from) : 'Flexible'}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-gray-500 dark:text-purple-300">Salary Expectation</span>
+                          <p className="font-medium text-gray-900 dark:text-white">{formatOpenForWorkSalary(openForWorkListing)}</p>
+                        </div>
+                        {openForWorkListing.created_at && (
+                          <div>
+                            <span className="text-gray-500 dark:text-purple-300">Published</span>
+                            <p className="font-medium text-gray-900 dark:text-white">{formatDate(openForWorkListing.created_at)}</p>
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {(openForWorkListing.job_types || []).length > 0 ? (
+                          openForWorkListing.job_types?.map((type) => (
+                            <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
+                              {type.replace(/_/g, ' ')}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                            Flexible roles
+                          </span>
+                        )}
+                        {openForWorkListing.can_work_with_kids && (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                            Kids friendly
+                          </span>
+                        )}
+                        {openForWorkListing.can_work_with_pets && (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                            Pets friendly
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 lg:flex-col lg:items-end">
+                      <button
+                        onClick={() => setShowOpenForWorkModal(true)}
+                        className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+                      >
+                        Edit Listing
+                      </button>
+                      <button
+                        onClick={() => handleOpenForWorkStatus(openForWorkListing.status === 'active' ? 'inactive' : 'active')}
+                        disabled={actionLoading === openForWorkListing.id}
+                        className="px-4 py-1.5 text-xs rounded-xl border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10 disabled:opacity-50"
+                      >
+                        {openForWorkListing.status === 'active' ? 'Set Inactive' : 'Activate'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-12 text-center">
+                <Briefcase className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">No open-for-work listing yet</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">Create one from your profile or publish it here so households can find you.</p>
+                <button
+                  onClick={() => setShowOpenForWorkModal(true)}
+                  className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                >
+                  Create Listing
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Requests Tab Content */}
@@ -1020,6 +1200,8 @@ export default function HousehelpHiringHistory() {
       <OpenForWorkModal
         isOpen={showOpenForWorkModal}
         onClose={() => setShowOpenForWorkModal(false)}
+        listing={openForWorkListing}
+        onSaved={handleOpenForWorkSaved}
       />
     </div>
   );

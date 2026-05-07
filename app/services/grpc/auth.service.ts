@@ -25,6 +25,11 @@ function resolveUserId(userId: string): string {
   return getStoredUserId();
 }
 
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
 /**
  * Get metadata with auth token and profile type
  */
@@ -144,8 +149,13 @@ export const authService = {
    */
   async getCurrentUser(userId?: string): Promise<any> {
     return new Promise((resolve, reject) => {
+      const resolvedUserId = resolveUserId(userId || '');
+      if (!isValidUUID(resolvedUserId)) {
+        reject(new Error('Invalid user_id: must be a valid UUID'));
+        return;
+      }
       const request = new auth_pb.GetCurrentUserRequest();
-      request.setUserId(resolveUserId(userId || ''));
+      request.setUserId(resolvedUserId);
 
       authClient.getCurrentUser(request, getMetadata(), (err: any, response: any) => {
         if (err) {

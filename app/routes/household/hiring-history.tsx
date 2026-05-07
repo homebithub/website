@@ -43,11 +43,20 @@ interface HireRequest {
   };
 }
 
+interface JobLocation {
+  place_type?: string;
+  latitude?: number;
+  longitude?: number;
+  mapbox_id?: string;
+  name?: string;
+  place?: string;
+}
+
 interface JobPosting {
   id: string;
   title?: string;
   description?: string;
-  location?: string;
+  location?: string | JobLocation;
   job_types?: string[];
   start_date?: string;
   max_applicants?: number;
@@ -55,6 +64,12 @@ interface JobPosting {
   created_at?: string;
   salary_range?: { min?: number; max?: number; currency?: string };
 }
+
+const formatJobLocation = (location?: string | JobLocation): string => {
+  if (!location) return 'Location not specified';
+  if (typeof location === 'string') return location;
+  return location.name || location.place || 'Location not specified';
+};
 
 type TabType = 'applicants' | 'jobs' | 'all' | 'pending' | 'accepted' | 'declined' | 'cancelled';
 
@@ -158,6 +173,7 @@ export default function HiringHistory() {
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
   const [jobToDelete, setJobToDelete] = useState<JobPosting | null>(null);
   const [jobActionLoading, setJobActionLoading] = useState<string | null>(null);
+  const [jobsSuccess, setJobsSuccess] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState<string>('');
   const [customCancelReason, setCustomCancelReason] = useState('');
   const [cancelMessage, setCancelMessage] = useState('');
@@ -200,20 +216,28 @@ export default function HiringHistory() {
   };
 
   const handleJobSaved = () => {
+    const message = editingJob ? 'Job posting updated.' : 'Job posting created.';
     fetchJobs();
+    if (activeTab !== 'jobs') {
+      handleTabChange('jobs');
+    }
     setShowJobModal(false);
     setEditingJob(null);
+    setJobsSuccess(message);
   };
 
   const handleToggleJobStatus = async (job: JobPosting) => {
     if (!job?.id) return;
     setJobActionLoading(job.id);
     setError(null);
+    setJobsSuccess(null);
     try {
       if (job.status === 'closed') {
         await jobService.reopenJob(job.id, '');
+        setJobsSuccess('Job reopened.');
       } else {
         await jobService.closeJob(job.id, '');
+        setJobsSuccess('Job closed.');
       }
       await fetchJobs();
     } catch (err: any) {
@@ -227,8 +251,10 @@ export default function HiringHistory() {
     if (!jobToDelete?.id) return;
     setJobActionLoading(jobToDelete.id);
     setError(null);
+    setJobsSuccess(null);
     try {
       await jobService.deleteJob(jobToDelete.id, '');
+      setJobsSuccess('Job deleted.');
       await fetchJobs();
     } catch (err: any) {
       setError(err.message || 'Failed to delete job');
@@ -803,6 +829,7 @@ export default function HiringHistory() {
 
         {/* Error State */}
         {error && <ErrorAlert message={error} className="mb-6" />}
+        {jobsSuccess && <SuccessAlert message={jobsSuccess} className="mb-6" />}
         {chatError && <ErrorAlert message={chatError} className="mb-6" />}
         {shortlistError && <ErrorAlert message={shortlistError} className="mb-6" />}
         {shortlistSuccess && <SuccessAlert message={shortlistSuccess} className="mb-6" />}
@@ -822,7 +849,7 @@ export default function HiringHistory() {
               No job postings yet
             </h3>
             <p className="text-gray-600 dark:text-purple-200 mb-6 sm:mb-8 text-xs sm:text-sm">
-              Create a job from your household profile to start attracting applicants.
+              Create a job here to start attracting applicants.
             </p>
             <button
               onClick={() => { setEditingJob(null); setShowJobModal(true); }}
@@ -846,7 +873,7 @@ export default function HiringHistory() {
                     <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
                       {job.title || 'Untitled role'}
                     </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {job.location || 'Location not specified'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatJobLocation(job.location)}</p>
                   </div>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
                     ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
@@ -1550,5 +1577,22 @@ export default function HiringHistory() {
     </div>
   </div>
 )}
+<JobPostModal
+  isOpen={showJobModal}
+  onClose={() => { setShowJobModal(false); setEditingJob(null); }}
+  job={editingJob}
+  onSaved={handleJobSaved}
+/>
+<ConfirmDialog
+  isOpen={!!jobToDelete}
+  title="Delete Job Posting"
+  message="Delete this job posting? This cannot be undone."
+  confirmText={jobActionLoading === jobToDelete?.id ? 'Deleting...' : 'Delete'}
+  cancelText="Cancel"
+  onConfirm={handleDeleteJob}
+  onCancel={() => setJobToDelete(null)}
+  variant="danger"
+/>
 </div>
-)}
+  );
+}

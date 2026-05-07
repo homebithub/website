@@ -2,6 +2,7 @@ import React, { createContext, useContext, useMemo, useCallback, useState, useEf
 import { useWebSocket } from '~/hooks/useWebSocket';
 import { NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
 import { useAuth } from '~/contexts/useAuth';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 
 type WebSocketContextType = {
@@ -26,9 +27,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     return `${base}`;
   }, []);
 
+  const token = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return getAccessTokenFromCookies() || localStorage.getItem('token') || null;
+  }, []);
+
   const { connectionState, addEventListener } = useWebSocket({
     url: wsUrl,
-    token: null,
+    token,
     enabled: !!currentUserId,
     reconnectInterval: 3000,
     maxReconnectAttempts: 10,

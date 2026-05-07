@@ -5,6 +5,9 @@ export type HouseholdProfileLike = {
   profile_id?: string;
   user_id?: string;
   owner_user_id?: string;
+  display_name?: string;
+  household_name?: string;
+  name?: string;
   owner?: { id?: string };
 };
 

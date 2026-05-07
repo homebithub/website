@@ -20,8 +20,8 @@ import {
 } from "~/utils/conversationLauncher";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import {
-  resolveHouseholdOwnerUserId,
   resolveHouseholdProfile,
+  resolveHouseholdOwnerUserId,
   type HouseholdProfileLike,
 } from "~/utils/householdProfiles";
 import { Heart, MessageCircle, Eye, X } from "lucide-react";
@@ -30,7 +30,7 @@ interface JobListing {
   id: string;
   title?: string;
   description?: string;
-  location?: string;
+  location?: string | JobLocation;
   job_types?: string[];
   start_date?: string;
   salary_range?: { min?: number; max?: number; currency?: string };
@@ -39,6 +39,41 @@ interface JobListing {
   created_at?: string;
   household_id?: string;
 }
+
+interface HousehelpSummary {
+  id?: string;
+  user_id?: string;
+  first_name?: string;
+  last_name?: string;
+  avatar_url?: string;
+  photos?: string[];
+  town?: string;
+  location?: string;
+  years_of_experience?: number;
+  salary_expectation?: number;
+  salary_frequency?: string;
+  user?: {
+    id?: string;
+    first_name?: string;
+    last_name?: string;
+    avatar_url?: string;
+  };
+}
+
+interface JobLocation {
+  place_type?: string;
+  latitude?: number;
+  longitude?: number;
+  mapbox_id?: string;
+  name?: string;
+  place?: string;
+}
+
+const formatJobLocation = (location?: string | JobLocation): string => {
+  if (!location) return "Location not specified";
+  if (typeof location === "string") return location;
+  return location.name || location.place || "Location not specified";
+};
 
 const formatDate = (value?: string) => {
   if (!value) return "Flexible";
@@ -169,7 +204,8 @@ export default function HousehelpJobsHome() {
   useEffect(() => {
     const missingIds = jobs
       .map((job) => job.household_id)
-      .filter((id): id is string => Boolean(id) && !(id in householdProfiles));
+      .filter((id): id is string => Boolean(id))
+      .filter((id) => !(id in householdProfiles));
 
     if (missingIds.length === 0) return;
 
@@ -354,7 +390,7 @@ export default function HousehelpJobsHome() {
   const renderHouseholdName = (job: JobListing) => {
     const profileId = job.household_id;
     const profile = profileId ? householdProfiles[profileId] : null;
-    return profile?.display_name || profile?.name || null;
+    return profile?.display_name || profile?.household_name || profile?.name || null;
   };
 
   return (
@@ -398,7 +434,7 @@ export default function HousehelpJobsHome() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{job.title || "Household Job"}</h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">📍 {job.location || "Location not specified"}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatJobLocation(job.location)}</p>
                           {householdName && (
                             <p className="mt-1 text-xs font-semibold text-purple-600 dark:text-purple-300">Hosted by {householdName}</p>
                           )}
@@ -523,7 +559,7 @@ export default function HousehelpJobsHome() {
                 <p className="text-xs uppercase tracking-widest text-purple-500 dark:text-purple-300 font-semibold mb-1">Apply to household</p>
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">{selectedJob.title || "Household Job"}</h2>
                 <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                  <p>📍 {selectedJob.location || "Location not specified"}</p>
+                  <p>📍 {formatJobLocation(selectedJob.location)}</p>
                   <p>💰 {formatSalaryRange(selectedJob.salary_range)}</p>
                   <p>🗓️ Start {formatDate(selectedJob.start_date)}</p>
                 </div>

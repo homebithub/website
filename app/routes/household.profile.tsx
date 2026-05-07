@@ -59,11 +59,20 @@ interface JobSalaryRange {
   frequency?: string;
 }
 
+interface JobLocation {
+  place_type?: string;
+  latitude?: number;
+  longitude?: number;
+  mapbox_id?: string;
+  name?: string;
+  place?: string;
+}
+
 interface JobPosting {
   id: string;
   title?: string;
   description?: string;
-  location?: string;
+  location?: string | JobLocation;
   job_types?: string[];
   start_date?: string;
   max_applicants?: number;
@@ -71,6 +80,12 @@ interface JobPosting {
   created_at?: string;
   salary_range?: JobSalaryRange;
 }
+
+const formatJobLocation = (location?: string | JobLocation): string => {
+  if (!location) return 'Location not specified';
+  if (typeof location === 'string') return location;
+  return location.name || location.place || 'Location not specified';
+};
 
 const MAX_PHOTOS = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
@@ -753,7 +768,7 @@ export default function HouseholdProfile() {
                 <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                   <div>
                     <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{job.title || 'Untitled role'}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {job.location || 'Location not specified'}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatJobLocation(job.location)}</p>
                   </div>
                   <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
                     ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'

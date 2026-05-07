@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState, useCallb
 import { API_BASE_URL } from '~/config/api';
 import { useAuth } from '~/contexts/useAuth';
 import { isLocalGatewayUrl } from '~/services/grpc/client';
+import { getAccessTokenFromCookies } from '~/utils/cookie';
 
 export type SSEEventHandler = (event: any) => void;
 
@@ -98,7 +99,12 @@ export function SSEProvider({ children }: SSEProviderProps) {
       eventSourceRef.current = null;
     }
 
-    const es = new EventSource(`${API_BASE_URL}/api/v1/notifications/stream`, { withCredentials: true });
+    const token = getAccessTokenFromCookies() || localStorage.getItem('token') || null;
+    const url = token 
+      ? `${API_BASE_URL}/api/v1/notifications/stream?token=${encodeURIComponent(token)}`
+      : `${API_BASE_URL}/api/v1/notifications/stream`;
+
+    const es = new EventSource(url, { withCredentials: true });
     eventSourceRef.current = es;
 
     es.onopen = () => {
