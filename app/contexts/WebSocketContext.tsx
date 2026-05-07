@@ -3,6 +3,7 @@ import { useWebSocket } from '~/hooks/useWebSocket';
 import { NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
 import { useAuth } from '~/contexts/useAuth';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { getStoredUserId } from '~/utils/authStorage';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 
 type WebSocketContextType = {
@@ -19,7 +20,10 @@ const WebSocketContext = createContext<WebSocketContextType | null>(null);
 export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-  const currentUserId = (user as any)?.user?.id || (user as any)?.id || null;
+  const currentUserId = useMemo(() => {
+    const authUser = (user as any)?.user ?? user;
+    return authUser?.user_id || authUser?.id || getStoredUserId() || null;
+  }, [user]);
 
   const wsUrl = useMemo(() => {
     if (typeof window === 'undefined') return '';
@@ -30,7 +34,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const token = useMemo(() => {
     if (typeof window === 'undefined') return null;
     return getAccessTokenFromCookies() || localStorage.getItem('token') || null;
-  }, []);
+  }, [currentUserId, user]);
 
   const { connectionState, addEventListener } = useWebSocket({
     url: wsUrl,
@@ -74,7 +78,8 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
 
       // Only increment if the message is not from the current user
       const eventData = event as any;
-      if (eventData.data?.user_id && eventData.data.user_id !== eventUserId) {
+      const senderId = eventData.data?.user_id || eventData.user_id;
+      if (senderId && senderId !== eventUserId) {
         incrementUnreadCount();
       }
     });

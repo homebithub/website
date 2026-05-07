@@ -42,7 +42,8 @@ export default function ThemeToggle({
   useEffect(() => {
     if (!hasThemeContext) return;
     const handleOutside = (e: MouseEvent | TouchEvent) => {
-      const target = e instanceof TouchEvent ? e.touches[0]?.target : (e as MouseEvent).target;
+      const isTouchEvent = typeof TouchEvent !== 'undefined' && e instanceof TouchEvent;
+      const target = isTouchEvent ? e.touches[0]?.target : (e as MouseEvent).target;
       if (dropdownRef.current && !dropdownRef.current.contains(target as Node)) {
         setOpen(false);
       }
@@ -188,4 +189,3 @@ export function ThemeToggleSwitch({ className = '' }: { className?: string }) {
     </button>
   );
 }
-

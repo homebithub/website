@@ -3,6 +3,7 @@ import { API_BASE_URL } from '~/config/api';
 import { useAuth } from '~/contexts/useAuth';
 import { isLocalGatewayUrl } from '~/services/grpc/client';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { getStoredUserId } from '~/utils/authStorage';
 
 export type SSEEventHandler = (event: any) => void;
 
@@ -87,7 +88,8 @@ export function SSEProvider({ children }: SSEProviderProps) {
       return;
     }
 
-    const currentUserId = (user as any)?.user?.id || (user as any)?.id;
+    const authUser = (user as any)?.user ?? user;
+    const currentUserId = authUser?.user_id || authUser?.id || getStoredUserId();
     if (!currentUserId) {
       disconnect();
       return;
@@ -205,7 +207,8 @@ export function SSEProvider({ children }: SSEProviderProps) {
 
   // Reconnect whenever auth state changes so login/logout updates the shared stream.
   useEffect(() => {
-    const currentUserId = (user as any)?.user?.id || (user as any)?.id;
+    const authUser = (user as any)?.user ?? user;
+    const currentUserId = authUser?.user_id || authUser?.id || getStoredUserId();
     reconnectAttemptsRef.current = 0;
     consecutiveErrorCountRef.current = 0;
     disabledDueToErrorsRef.current = false;
