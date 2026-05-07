@@ -2,25 +2,44 @@
  * Blog Service - gRPC-Web Client
  */
 
-import { BlogServiceClient } from '~/grpc/generated/notifications/blog_grpc_web_pb';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
-import * as blog_pb from '~/grpc/generated/notifications/blog_pb';
 import type { RpcError } from 'grpc-web';
 
-class BlogService {
-  private client: BlogServiceClient;
+interface LoadedDeps {
+  client: any;
+  proto: any;
+}
 
-  constructor() {
-    this.client = new BlogServiceClient(GRPC_WEB_BASE_URL, null, null);
+let loadedDepsPromise: Promise<LoadedDeps> | null = null;
+
+async function loadDeps(): Promise<LoadedDeps> {
+  if (!loadedDepsPromise) {
+    loadedDepsPromise = Promise.all([
+      import('~/grpc/generated/notifications/blog_grpc_web_pb'),
+      import('~/grpc/generated/notifications/blog_pb'),
+    ]).then(([grpcModule, protoModule]) => {
+      const { BlogServiceClient } = grpcModule as any;
+      const proto = (protoModule as any).default ?? protoModule;
+      const client = new BlogServiceClient(GRPC_WEB_BASE_URL, null, null);
+      return { client, proto };
+    });
+  }
+  return loadedDepsPromise;
+}
+
+class BlogService {
+  private async getDeps() {
+    return loadDeps();
   }
 
   async likePost(postId: string, userId: string): Promise<{ totalLikes: number; liked: boolean }> {
-    const request = new blog_pb.LikePostRequest();
+    const { proto, client } = await this.getDeps();
+    const request = new proto.LikePostRequest();
     request.setPostId(postId);
     request.setUserId(userId);
 
     return new Promise((resolve, reject) => {
-      this.client.likePost(request, {}, (err: RpcError, response: blog_pb.LikePostResponse) => {
+      client.likePost(request, {}, (err: RpcError, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else if (response) {
@@ -36,12 +55,13 @@ class BlogService {
   }
 
   async unlikePost(postId: string, userId: string): Promise<void> {
-    const request = new blog_pb.UnlikePostRequest();
+    const { proto, client } = await this.getDeps();
+    const request = new proto.UnlikePostRequest();
     request.setPostId(postId);
     request.setUserId(userId);
 
     return new Promise((resolve, reject) => {
-      this.client.unlikePost(request, {}, (err: RpcError) => {
+      client.unlikePost(request, {}, (err: RpcError) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -52,14 +72,15 @@ class BlogService {
   }
 
   async getLikeStatus(postId: string, userId?: string): Promise<{ totalLikes: number; liked: boolean }> {
-    const request = new blog_pb.GetLikeStatusRequest();
+    const { proto, client } = await this.getDeps();
+    const request = new proto.GetLikeStatusRequest();
     request.setPostId(postId);
     if (userId) {
       request.setUserId(userId);
     }
 
     return new Promise((resolve, reject) => {
-      this.client.getLikeStatus(request, {}, (err: RpcError, response: blog_pb.LikeStatusResponse) => {
+      client.getLikeStatus(request, {}, (err: RpcError, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else if (response) {
@@ -74,12 +95,13 @@ class BlogService {
     });
   }
   async subscribeToBlog(email: string, name?: string): Promise<{ message: string; alreadySubscribed: boolean }> {
-    const request = new blog_pb.SubscribeToBlogRequest();
+    const { proto, client } = await this.getDeps();
+    const request = new proto.SubscribeToBlogRequest();
     request.setEmail(email);
     if (name) request.setName(name);
 
     return new Promise((resolve, reject) => {
-      this.client.subscribeToBlog(request, {}, (err: RpcError, response: blog_pb.SubscribeToBlogResponse) => {
+      client.subscribeToBlog(request, {}, (err: RpcError, response: any) => {
         if (err) {
           reject(handleGrpcError(err));
         } else if (response) {
@@ -95,11 +117,12 @@ class BlogService {
   }
 
   async unsubscribeFromBlog(token: string): Promise<void> {
-    const request = new blog_pb.UnsubscribeFromBlogRequest();
+    const { proto, client } = await this.getDeps();
+    const request = new proto.UnsubscribeFromBlogRequest();
     request.setToken(token);
 
     return new Promise((resolve, reject) => {
-      this.client.unsubscribeFromBlog(request, {}, (err: RpcError) => {
+      client.unsubscribeFromBlog(request, {}, (err: RpcError) => {
         if (err) {
           reject(handleGrpcError(err));
         } else {
@@ -119,7 +142,8 @@ class BlogService {
     utmMedium?: string,
     utmCampaign?: string,
   ): Promise<void> {
-    const request = new blog_pb.TrackViewRequest();
+    const { proto, client } = await this.getDeps();
+    const request = new proto.TrackViewRequest();
     request.setPostId(postId);
     request.setSessionId(sessionId);
     request.setSource(source);
@@ -129,7 +153,7 @@ class BlogService {
     if (utmMedium) request.setUtmMedium(utmMedium);
     if (utmCampaign) request.setUtmCampaign(utmCampaign);
     return new Promise((resolve, reject) => {
-      this.client.trackView(request, {}, (err: RpcError) => {
+      client.trackView(request, {}, (err: RpcError) => {
         if (err) reject(handleGrpcError(err));
         else resolve();
       });
@@ -137,12 +161,13 @@ class BlogService {
   }
 
   async trackShare(postId: string, platform: string, sessionId: string): Promise<void> {
-    const request = new blog_pb.TrackShareRequest();
+    const { proto, client } = await this.getDeps();
+    const request = new proto.TrackShareRequest();
     request.setPostId(postId);
     request.setPlatform(platform);
     request.setSessionId(sessionId);
     return new Promise((resolve, reject) => {
-      this.client.trackShare(request, {}, (err: RpcError) => {
+      client.trackShare(request, {}, (err: RpcError) => {
         if (err) reject(handleGrpcError(err));
         else resolve();
       });
@@ -150,14 +175,15 @@ class BlogService {
   }
 
   async createComment(postId: string, userName: string, content: string, userEmail?: string, userId?: string): Promise<void> {
-    const request = new blog_pb.CreateCommentRequest();
+    const { proto, client } = await this.getDeps();
+    const request = new proto.CreateCommentRequest();
     request.setPostId(postId);
     request.setUserName(userName);
     request.setContent(content);
     if (userEmail) request.setUserEmail(userEmail);
     if (userId) request.setUserId(userId);
     return new Promise<void>((resolve, reject) => {
-      this.client.createComment(request, {}, (err: RpcError, _response: blog_pb.CommentResponse) => {
+      client.createComment(request, {}, (err: RpcError) => {
         if (err) reject(handleGrpcError(err));
         else resolve();
       });
@@ -165,13 +191,14 @@ class BlogService {
   }
 
   async listComments(postId: string, status = 'approved'): Promise<Array<{ id: string; post_id: string; user_id: string; user_name: string; content: string; status: string; created_at: string }>> {
-    const request = new blog_pb.ListCommentsRequest();
+    const { proto, client } = await this.getDeps();
+    const request = new proto.ListCommentsRequest();
     request.setPostId(postId);
     request.setStatus(status);
     return new Promise((resolve, reject) => {
-      this.client.listComments(request, {}, (err: RpcError, response: blog_pb.ListCommentsResponse) => {
+      client.listComments(request, {}, (err: RpcError, response: any) => {
         if (err) reject(handleGrpcError(err));
-        else resolve(response.getCommentsList().map(c => ({
+        else resolve(response.getCommentsList().map((c: any) => ({
           id: c.getId(),
           post_id: c.getPostId(),
           user_id: c.getUserId(),
