@@ -43,6 +43,9 @@ interface OpenForWorkListing {
   can_work_with_pets?: boolean;
   status?: string;
   created_at?: string;
+  salary_min?: number;
+  salary_max?: number;
+  salary_frequency?: string;
   househelp?: HousehelpSummary;
 }
 
@@ -53,10 +56,18 @@ const formatDate = (value?: string) => {
   return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
 
-const formatSalary = (amount?: number, frequency?: string) => {
-  if (!amount) return "Not specified";
+const formatSalary = (min?: number, max?: number, frequency?: string) => {
+  if (min == null && max == null) return "Not specified";
+  const formatter = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "KES",
+    maximumFractionDigits: 0,
+  });
+  const minLabel = min != null ? formatter.format(min) : null;
+  const maxLabel = max != null ? formatter.format(max) : null;
+  const base = minLabel && maxLabel ? `${minLabel} - ${maxLabel}` : (minLabel || maxLabel || "Not specified");
   const freqLabel = frequency ? ` / ${frequency}` : "";
-  return `KES ${amount.toLocaleString()}${freqLabel}`;
+  return `${base}${freqLabel}`;
 };
 
 const summarizeSchedule = (schedule?: Record<string, { morning?: boolean; afternoon?: boolean; evening?: boolean }>) => {
@@ -244,7 +255,9 @@ export default function HouseholdJobsHome() {
 
                           <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
                             <p>Experience: {househelp.years_of_experience ? `${househelp.years_of_experience} yrs` : "Not specified"}</p>
-                            <p>Salary: {formatSalary(househelp.salary_expectation, househelp.salary_frequency)}</p>
+                            <p>
+                              Salary: {formatSalary(listing.salary_min ?? househelp.salary_expectation, listing.salary_max, listing.salary_frequency || househelp.salary_frequency)}
+                            </p>
                             <div className="flex flex-wrap gap-2">
                               {listing.can_work_with_kids && (
                                 <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] dark:bg-blue-500/10 dark:text-blue-200">Kids</span>

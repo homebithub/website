@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { hireRequestService, hireContractService, employmentContractService, interestService } from '~/services/grpc/authServices';
+import { hireRequestService, hireContractService, employmentContractService, interestService, openForWorkService } from '~/services/grpc/authServices';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -10,6 +10,7 @@ import {
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
   Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User, FileText
 } from 'lucide-react';
+import OpenForWorkModal from '~/components/modals/OpenForWorkModal';
 
 interface HireRequest {
   id: string;
@@ -204,6 +205,7 @@ export default function HousehelpHiringHistory() {
   const [showAcceptConfirm, setShowAcceptConfirm] = useState(false);
   const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
   const [pendingActionId, setPendingActionId] = useState<string | null>(null);
+  const [showOpenForWorkModal, setShowOpenForWorkModal] = useState(false);
   const limit = 20;
   const backToPath = `${location.pathname}${location.search || ''}`;
 
@@ -438,11 +440,21 @@ export default function HousehelpHiringHistory() {
       <div className="bg-white dark:bg-purple-950/40 rounded-2xl shadow-lg border border-purple-100 dark:border-purple-800/40 overflow-hidden">
         {/* Header */}
         <div className="px-6 pt-6 pb-4">
-          <p className="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">
-            Househelp • Hiring
-          </p>
-          <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Hiring</h1>
-          <p className="text-gray-600 dark:text-gray-400 text-xs">Manage your hire requests and view their status</p>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1">
+                Househelp • Hiring
+              </p>
+              <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">Hiring</h1>
+              <p className="text-gray-600 dark:text-gray-400 text-xs">Manage your hire requests and view their status</p>
+            </div>
+            <button
+              onClick={() => setShowOpenForWorkModal(true)}
+              className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+            >
+              Open for Work
+            </button>
+          </div>
         </div>
 
         {/* Tabs */}
@@ -1002,6 +1014,12 @@ export default function HousehelpHiringHistory() {
         cancelText="Cancel"
         variant="danger"
         isLoading={actionLoading !== null}
+      />
+
+      {/* Open for Work Modal */}
+      <OpenForWorkModal
+        isOpen={showOpenForWorkModal}
+        onClose={() => setShowOpenForWorkModal(false)}
       />
     </div>
   );

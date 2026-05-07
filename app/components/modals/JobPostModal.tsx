@@ -136,6 +136,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
   const [minSalary, setMinSalary] = useState("");
   const [maxSalary, setMaxSalary] = useState("");
   const [currency, setCurrency] = useState("KES");
+  const [frequency, setFrequency] = useState("monthly");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -152,6 +153,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
     setMinSalary(job?.salary_range?.min ? String(job.salary_range.min) : "");
     setMaxSalary(job?.salary_range?.max ? String(job.salary_range.max) : "");
     setCurrency(job?.salary_range?.currency || "KES");
+    setFrequency(job?.salary_range?.frequency || "monthly");
     setError("");
     setSuccess("");
   }, [isOpen, job]);
@@ -204,6 +206,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
         min: minSalary ? Number(minSalary) : undefined,
         max: maxSalary ? Number(maxSalary) : undefined,
         currency: currency || "KES",
+        frequency,
       };
     }
 
@@ -346,6 +349,30 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
             <div>
               <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Currency</label>
               <CurrencySelect value={currency} onChange={setCurrency} />
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Payment Frequency</label>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {[
+                { value: "daily", label: "Daily" },
+                { value: "weekly", label: "Weekly" },
+                { value: "monthly", label: "Monthly" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setFrequency(option.value)}
+                  className={`h-11 rounded-xl text-xs font-semibold border transition shadow-sm ${
+                    frequency === option.value
+                      ? "bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-600 text-white border-transparent shadow-[0_0_12px_rgba(168,85,247,0.45)]"
+                      : "bg-white/80 dark:bg-[#100a1c] text-gray-600 dark:text-gray-300 border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/10"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
             </div>
           </div>
 

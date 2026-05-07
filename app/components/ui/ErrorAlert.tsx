@@ -1,17 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 export interface ErrorAlertProps {
   message: string;
   title?: string;
   className?: string;
   onClose?: () => void;
+  durationMs?: number;
 }
 
 export const ErrorAlert: React.FC<ErrorAlertProps> = ({
   message,
   title,
   className = '',
+  onClose,
+  durationMs = 10000,
 }) => {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    setVisible(true);
+    const timeout = window.setTimeout(() => {
+      setVisible(false);
+      onClose?.();
+    }, durationMs);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [message, durationMs, onClose]);
+
+  if (!visible) return null;
+
   return (
     <div
       className={`mb-6 rounded-xl border border-purple-300/30 dark:border-purple-500/20 bg-purple-50 dark:bg-purple-950/30 p-4 backdrop-blur-sm ${className}`}

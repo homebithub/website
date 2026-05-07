@@ -1,17 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 export interface SuccessAlertProps {
   message: string;
   title?: string;
   className?: string;
   onClose?: () => void;
+  durationMs?: number;
 }
 
 export const SuccessAlert: React.FC<SuccessAlertProps> = ({
   message,
   title,
   className = '',
+  onClose,
+  durationMs = 5000,
 }) => {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    setVisible(true);
+    const timeout = window.setTimeout(() => {
+      setVisible(false);
+      onClose?.();
+    }, durationMs);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [message, durationMs, onClose]);
+
+  if (!visible) return null;
+
   return (
     <div
       className={`mb-6 rounded-xl border border-green-300/30 dark:border-green-500/20 bg-green-50 dark:bg-green-950/30 p-4 backdrop-blur-sm ${className}`}

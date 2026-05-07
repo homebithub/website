@@ -52,6 +52,13 @@ interface HouseholdData {
   photos?: string[];
 }
 
+interface JobSalaryRange {
+  min?: number;
+  max?: number;
+  currency?: string;
+  frequency?: string;
+}
+
 interface JobPosting {
   id: string;
   title?: string;
@@ -62,7 +69,7 @@ interface JobPosting {
   max_applicants?: number;
   status?: string;
   created_at?: string;
-  salary_range?: { min?: number; max?: number; currency?: string };
+  salary_range?: JobSalaryRange;
 }
 
 const MAX_PHOTOS = 5;
@@ -279,10 +286,18 @@ export default function HouseholdProfile() {
 
   const formatJobSalary = (range?: JobPosting['salary_range']) => {
     if (!range) return 'Not specified';
-    const min = range.min ? `KES ${range.min.toLocaleString()}` : '';
-    const max = range.max ? `KES ${range.max.toLocaleString()}` : '';
-    if (min && max) return `${min} - ${max}`;
-    return min || max || 'Not specified';
+    const currencyCode = range.currency || 'KES';
+    const formatter = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode,
+      maximumFractionDigits: 0,
+    });
+
+    const min = range.min != null ? formatter.format(range.min) : '';
+    const max = range.max != null ? formatter.format(range.max) : '';
+    const base = min && max ? `${min} - ${max}` : (min || max || 'Not specified');
+    const freqLabel = range.frequency ? ` / ${range.frequency}` : '';
+    return `${base}${freqLabel}`;
   };
 
   const handleContinueSetup = async () => {

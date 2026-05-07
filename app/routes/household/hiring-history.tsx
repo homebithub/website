@@ -1,13 +1,17 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { hireRequestService, hireContractService, employmentContractService, interestService, shortlistService, jobService } from '~/services/grpc/authServices';
-import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase } from 'lucide-react';
+import { hireRequestService, hireContractService, employmentContractService, interestService, shortlistService, jobService, profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import JobPostModal from '~/components/modals/JobPostModal';
 import { useSSEContextSafe } from '~/contexts/SSEContext';
 import { buildIdentifierMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
+import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
+import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 
 interface HireRequest {
   id: string;
@@ -52,7 +56,7 @@ interface JobPosting {
   salary_range?: { min?: number; max?: number; currency?: string };
 }
 
-type TabType = 'interested' | 'jobs' | 'all' | 'pending' | 'accepted' | 'declined' | 'cancelled';
+type TabType = 'applicants' | 'jobs' | 'all' | 'pending' | 'accepted' | 'declined' | 'cancelled';
 
 interface Interest {
   id: string;
@@ -137,14 +141,13 @@ export default function HiringHistory() {
   const sseContext = useSSEContextSafe();
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['interested', 'jobs', 'all', 'pending', 'accepted', 'declined', 'cancelled'];
-    return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'interested';
+    const validTabs: TabType[] = ['jobs', 'applicants'];
+    return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'jobs';
   });
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
-  const [interests, setInterests] = useState<Interest[]>([]);
+  const [applicants, setApplicants] = useState<Interest[]>([]);
   const [jobs, setJobs] = useState<JobPosting[]>([]);
-  const [interestsTotal, setInterestsTotal] = useState(0);
-  const [interestsCount, setInterestsCount] = useState(0);
+  const [applicantsCount, setApplicantsCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [total, setTotal] = useState(0);
@@ -161,6 +164,17 @@ export default function HiringHistory() {
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const [contractCreating, setContractCreating] = useState<string | null>(null);
+  const currentUser = useMemo(() => getStoredUser(), []);
+  const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
+  const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
+  const [profilesById, setProfilesById] = useState<Record<string, any>>({});
+  const [loadingProfiles, setLoadingProfiles] = useState(false);
+  const [chatError, setChatError] = useState<string | null>(null);
+  const [shortlistError, setShortlistError] = useState<string | null>(null);
+  const [shortlistSuccess, setShortlistSuccess] = useState<string | null>(null);
+  const [chatLoadingInterestId, setChatLoadingInterestId] = useState<string | null>(null);
+  const [shortlistLoadingInterestId, setShortlistLoadingInterestId] = useState<string | null>(null);
+  const [shortlistedProfileIds, setShortlistedProfileIds] = useState<Set<string>>(() => new Set());
   // Map all known househelp identifiers to the matching employment contract.
   const [employmentContractMap, setEmploymentContractMap] = useState<Record<string, any>>({});
   const limit = 20;
@@ -238,6 +252,132 @@ export default function HiringHistory() {
     fetchECMap();
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadHouseholdProfileId = async () => {
+      if (!currentUserId) return;
+      try {
+        const profile = await grpcProfileService.getCurrentHouseholdProfile('');
+        if (cancelled) return;
+        const profileId = profile?.id || profile?.profile_id || profile?.profileId || null;
+        setCurrentHouseholdProfileId(profileId);
+      } catch (err) {
+        console.error('Failed to fetch household profile ID:', err);
+      }
+    };
+
+    loadHouseholdProfileId();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUserId]);
+
+  const refreshShortlistedProfiles = useCallback(async () => {
+    try {
+      const raw = await shortlistService.listByHousehold('');
+      const shortlistItems = extractEnvelopeArray<{ profile_id?: string }>(raw);
+      setShortlistedProfileIds(new Set(shortlistItems.map((item) => item.profile_id).filter((id): id is string => Boolean(id))));
+    } catch (err) {
+      console.error('Failed to fetch shortlist for applicants view:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadShortlistedProfiles = async () => {
+      try {
+        await refreshShortlistedProfiles();
+      } finally {
+        if (cancelled) return;
+      }
+    };
+
+    loadShortlistedProfiles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshShortlistedProfiles]);
+
+  useEffect(() => {
+    const handleShortlistUpdated = () => {
+      refreshShortlistedProfiles();
+    };
+
+    window.addEventListener('shortlist-updated', handleShortlistUpdated);
+    return () => {
+      window.removeEventListener('shortlist-updated', handleShortlistUpdated);
+    };
+  }, [refreshShortlistedProfiles]);
+
+  useEffect(() => {
+    if (!shortlistSuccess) return;
+    const timeout = window.setTimeout(() => {
+      setShortlistSuccess(null);
+    }, 5000);
+    return () => window.clearTimeout(timeout);
+  }, [shortlistSuccess]);
+
+  useEffect(() => {
+    if (!chatError && !shortlistError) return;
+    const timeout = window.setTimeout(() => {
+      setChatError(null);
+      setShortlistError(null);
+    }, 5000);
+    return () => window.clearTimeout(timeout);
+  }, [chatError, shortlistError]);
+
+  useEffect(() => {
+    const missingIds = applicants.reduce<string[]>((acc, interest) => {
+      const potentialId = interest.househelp_id || interest.househelp?.id;
+      if (typeof potentialId === 'string' && !(potentialId in profilesById)) {
+        acc.push(potentialId);
+      }
+      return acc;
+    }, []);
+
+    if (missingIds.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadProfiles = async () => {
+      try {
+        setLoadingProfiles(true);
+        const raw = await grpcProfileService.searchMultipleWithUser('', 'househelp', { profile_ids: missingIds });
+        if (cancelled) return;
+        const profileList = extractEnvelopeArray<any>(raw);
+        if (!Array.isArray(profileList) || profileList.length === 0) return;
+        setProfilesById((prev) => {
+          const next = { ...prev };
+          for (const profile of profileList) {
+            const profileId = profile?.id || profile?.profile_id;
+            if (profileId) {
+              next[profileId] = profile;
+            }
+          }
+          return next;
+        });
+      } catch (err) {
+        console.error('Failed to load applicant profiles:', err);
+      } finally {
+        if (!cancelled) {
+          setLoadingProfiles(false);
+        }
+      }
+    };
+
+    loadProfiles();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [applicants, profilesById]);
+
   const getDaysRemaining = (expiresAt?: string) => {
     if (!expiresAt) return null;
     const expiry = new Date(expiresAt);
@@ -248,8 +388,8 @@ export default function HiringHistory() {
   };
 
   useEffect(() => {
-    if (activeTab === 'interested') {
-      fetchInterests();
+    if (activeTab === 'applicants') {
+      fetchApplicants();
     } else if (activeTab === 'jobs') {
       fetchJobs();
     } else {
@@ -259,7 +399,7 @@ export default function HiringHistory() {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['interested', 'jobs', 'all', 'pending', 'accepted', 'declined', 'cancelled'];
+    const validTabs: TabType[] = ['jobs', 'applicants'];
     if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
       setActiveTab(tabParam as TabType);
       setOffset(0);
@@ -268,40 +408,40 @@ export default function HiringHistory() {
 
   // Fetch interest count for badge
   useEffect(() => {
-    const fetchInterestCount = async () => {
+    const fetchApplicantCount = async () => {
       try {
         const raw = await interestService.listByHousehold('');
         const items = raw?.data || raw || [];
-        setInterestsCount(Array.isArray(items) ? items.length : 0);
+        setApplicantsCount(Array.isArray(items) ? items.length : 0);
       } catch (err) {
         console.error('Failed to fetch interest count:', err);
       }
     };
-    fetchInterestCount();
+
+    fetchApplicantCount();
   }, []);
 
-  // SSE: auto-refetch interests when a new interest is received
+  // SSE: auto-refetch applicants when a new application is received
   useEffect(() => {
     if (!sseContext) return;
     const unsub = sseContext.subscribe('auth.household.updated', (event: any) => {
       const action = event?.data?.action;
       if (action === 'interest_received') {
-        fetchInterests();
+        fetchApplicants();
       }
     });
     return unsub;
   }, [sseContext]);
 
-  const fetchInterests = async () => {
+  const fetchApplicants = async () => {
     setLoading(true);
     setError(null);
     try {
       const raw = await interestService.listByHousehold('');
       const items = extractEnvelopeArray<Interest>(raw);
-      setInterests(items);
-      setInterestsTotal(extractTotal(raw, items.length));
+      setApplicants(items);
     } catch (err: any) {
-      setError(err.message || 'Failed to load interested househelps');
+      setError(err.message || 'Failed to load applicants');
     } finally {
       setLoading(false);
     }
@@ -494,22 +634,20 @@ export default function HiringHistory() {
     return min || max || 'Not specified';
   };
 
-  const tabs: { key: TabType; label: string; count?: number }[] = [
-    { key: 'interested', label: 'Interested', count: interestsCount },
-    { key: 'jobs', label: 'Jobs' },
-    { key: 'all', label: 'All Requests' },
-    { key: 'pending', label: 'Pending' },
-    { key: 'accepted', label: 'Accepted' },
-    { key: 'declined', label: 'Declined' },
-    { key: 'cancelled', label: 'Cancelled' },
-  ];
+  const tabs: { key: TabType; label: string; count?: number }[] = useMemo(
+    () => [
+      { key: 'jobs', label: 'Jobs' },
+      { key: 'applicants', label: 'Applicants', count: applicantsCount },
+    ],
+    [applicantsCount],
+  );
 
   const handleViewInterest = async (interest: Interest) => {
     // Mark as viewed if not already
     if (!interest.viewed_at) {
       try {
         await interestService.markViewed(interest.id);
-        setInterestsCount(prev => Math.max(0, prev - 1));
+        setApplicantsCount((prev) => Math.max(0, prev - 1));
       } catch (err) {
         console.error('Failed to mark interest as viewed:', err);
       }
@@ -524,8 +662,8 @@ export default function HiringHistory() {
   const handleAcceptInterest = async (interest: Interest) => {
     try {
       await interestService.acceptInterest(interest.id);
-      fetchInterests();
-      setInterestsCount(prev => Math.max(0, prev - 1));
+      fetchApplicants();
+      setApplicantsCount((prev) => Math.max(0, prev - 1));
       window.dispatchEvent(new Event('hiring-updated'));
     } catch (err) {
       console.error('Failed to accept interest:', err);
@@ -535,11 +673,79 @@ export default function HiringHistory() {
   const handleDeclineInterest = async (interest: Interest) => {
     try {
       await interestService.declineInterest(interest.id);
-      fetchInterests();
-      setInterestsCount(prev => Math.max(0, prev - 1));
+      fetchApplicants();
+      setApplicantsCount((prev) => Math.max(0, prev - 1));
       window.dispatchEvent(new Event('hiring-updated'));
     } catch (err) {
       console.error('Failed to decline interest:', err);
+    }
+  };
+
+  const handleChatWithApplicant = async (interest: Interest) => {
+    const profileId = interest.househelp_id || interest.househelp?.id;
+    const profile = profileId ? profilesById[profileId] : undefined;
+    const househelpUserId = profile?.user_id || profile?.user?.id || (profile?.user && 'id' in profile.user ? profile.user.id : undefined) || profile?.userId || (typeof interest.househelp?.user === 'object' ? (interest.househelp.user as any)?.id : undefined);
+    if (!currentUserId || !profileId || !househelpUserId) {
+      setChatError('Missing information to start a chat.');
+      return;
+    }
+
+    setChatLoadingInterestId(interest.id);
+    setChatError(null);
+    try {
+      const payload: StartConversationPayload = {
+        household_user_id: currentUserId,
+        househelp_user_id: househelpUserId,
+        househelp_profile_id: profileId,
+      };
+
+      if (currentHouseholdProfileId) {
+        payload.household_profile_id = currentHouseholdProfileId;
+      }
+
+      const conversationId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      navigate(getInboxRoute(conversationId));
+    } catch (err) {
+      console.error('Failed to start chat from applicants view:', err);
+      setChatError('Could not open conversation. Please try again.');
+    } finally {
+      setChatLoadingInterestId(null);
+    }
+  };
+
+  const handleShortlistApplicant = async (interest: Interest) => {
+    const profileId = interest.househelp_id || interest.househelp?.id;
+    if (!profileId) {
+      setShortlistError('Missing househelp profile information.');
+      return;
+    }
+
+    if (shortlistedProfileIds.has(profileId)) {
+      setShortlistSuccess('Already in your shortlist.');
+      return;
+    }
+
+    setShortlistLoadingInterestId(interest.id);
+    setShortlistError(null);
+    setShortlistSuccess(null);
+    try {
+      await shortlistService.createShortlist('', 'household', {
+        profile_id: profileId,
+        profile_type: 'househelp',
+      });
+      setShortlistedProfileIds((prev) => {
+        const next = new Set(prev);
+        next.add(profileId);
+        return next;
+      });
+      window.dispatchEvent(new CustomEvent('shortlist-updated'));
+      await refreshShortlistedProfiles();
+      setShortlistSuccess('Added to shortlist.');
+    } catch (err: any) {
+      console.error('Failed to shortlist applicant:', err);
+      setShortlistError(err?.message || 'Failed to add to shortlist.');
+    } finally {
+      setShortlistLoadingInterestId(null);
     }
   };
 
@@ -547,16 +753,24 @@ export default function HiringHistory() {
     <div className="w-full">
       <div className="rounded-3xl bg-white shadow-xl border border-purple-100 px-4 sm:px-8 py-8 dark:bg-gradient-to-b dark:from-[#1a102b] dark:via-[#0e0a1a] dark:to-[#07050d] dark:border-purple-800/40 dark:shadow-2xl dark:shadow-purple-900/50 transition-colors">
         {/* Header */}
-        <div className="mb-8">
-          <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-2 dark:text-purple-300">
-            Household • Hiring
-          </p>
-          <h1 className="text-lg font-extrabold text-gray-900 mb-2 dark:text-white">
-            Hiring
-          </h1>
-          <p className="text-gray-600 dark:text-purple-200">
-            Manage all your hire requests and view their status
-          </p>
+        <div className="mb-8 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <p className="text-xs uppercase tracking-widest text-gray-500 font-semibold mb-2 dark:text-purple-300">
+              Household • Hiring
+            </p>
+            <h1 className="text-lg font-extrabold text-gray-900 mb-2 dark:text-white">
+              Hiring
+            </h1>
+            <p className="text-gray-600 dark:text-purple-200">
+              Manage all your hire requests and view their status
+            </p>
+          </div>
+          <button
+            onClick={() => { setEditingJob(null); setShowJobModal(true); }}
+            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+          >
+            Create Job Listing
+          </button>
         </div>
 
         {/* Tabs */}
@@ -573,7 +787,7 @@ export default function HiringHistory() {
                       : 'border-transparent text-gray-400 hover:text-purple-700 dark:hover:text-white hover:border-purple-300'
                   }`}
                 >
-                  {tab.key === 'interested' && <HandHeart className="w-4 h-4" />}
+                  {tab.key === 'applicants' && <HandHeart className="w-4 h-4" />}
                   {tab.key === 'jobs' && <Briefcase className="w-4 h-4" />}
                   {tab.label}
                   {tab.count !== undefined && tab.count > 0 && (
@@ -589,6 +803,9 @@ export default function HiringHistory() {
 
         {/* Error State */}
         {error && <ErrorAlert message={error} className="mb-6" />}
+        {chatError && <ErrorAlert message={chatError} className="mb-6" />}
+        {shortlistError && <ErrorAlert message={shortlistError} className="mb-6" />}
+        {shortlistSuccess && <SuccessAlert message={shortlistSuccess} className="mb-6" />}
 
         {/* Loading State */}
         {loading && (
@@ -691,8 +908,8 @@ export default function HiringHistory() {
           </div>
         )}
 
-        {/* Empty State for Interests */}
-        {!loading && activeTab === 'interested' && interests.length === 0 && (
+        {/* Empty State for Applicants */}
+        {!loading && activeTab === 'applicants' && applicants.length === 0 && (
           <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <HandHeart className="w-16 h-16 text-green-400 dark:text-green-300 mx-auto mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
@@ -704,324 +921,235 @@ export default function HiringHistory() {
           </div>
         )}
 
-        {/* Interests List */}
-        {!loading && activeTab === 'interested' && interests.length > 0 && (
-          <div className="space-y-4">
-            {interests.map((interest) => (
-              <div
-                key={interest.id}
-                className={`bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border dark:bg-purple-950/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl ${
-                  !interest.viewed_at 
-                    ? 'border-green-300 dark:border-green-600/40 ring-2 ring-green-100 dark:ring-green-900/30' 
-                    : 'border-purple-100 dark:border-purple-800/40'
-                }`}
-              >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  {/* Left: Househelp Info */}
-                  <div className="flex items-start gap-4 flex-1">
-                    {/* Avatar */}
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-gradient-to-br from-green-400 to-emerald-400 flex-shrink-0">
-                      {interest.househelp?.avatar_url || interest.househelp?.photos?.[0] ? (
-                        <img
-                          src={interest.househelp.avatar_url || interest.househelp.photos?.[0]}
-                          alt={getHousehelpName(interest.househelp as any)}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">
-                          {getHousehelpInitials(interest.househelp as any)}
-                        </div>
-                      )}
-                    </div>
+        {/* Applicants List */}
+        {!loading && activeTab === 'applicants' && applicants.length > 0 && (
+          <div className="space-y-5">
+            {applicants.map((interest) => {
+              const profileId = interest.househelp_id || interest.househelp?.id;
+              const profile = profileId ? profilesById[profileId] : undefined;
+              const firstName = profile?.first_name || interest.househelp?.first_name || interest.househelp?.user?.first_name;
+              const lastName = profile?.last_name || interest.househelp?.last_name || interest.househelp?.user?.last_name;
+              const displayName = `${firstName || ''} ${lastName || ''}`.trim() || getHousehelpName(interest.househelp as any);
+              const avatarUrl = profile?.avatar_url || profile?.profile_picture || (Array.isArray(profile?.photos) ? profile?.photos?.[0] : undefined) || interest.househelp?.avatar_url || interest.househelp?.photos?.[0];
+              const locationCandidate = [profile?.county_of_residence, profile?.location, (profile as any)?.neighborhood, (profile as any)?.region, (profile as any)?.city].find((value) => typeof value === 'string' && value.length > 0);
+              const experienceValue = profile?.years_of_experience ?? profile?.experience;
+              const experienceYears = typeof experienceValue === 'number' && experienceValue > 0 ? experienceValue : undefined;
+              const primaryRole = interest.job_type || profile?.househelp_type || (profile as any)?.primary_role;
+              const rawSkills = Array.isArray(profile?.skills)
+                ? profile.skills
+                : Array.isArray((profile as any)?.top_skills)
+                  ? (profile as any).top_skills
+                  : [];
+              const normalizedSkills = rawSkills.filter((skill: unknown): skill is string => typeof skill === 'string');
+              const displayedSkills = normalizedSkills.slice(0, 3);
+              const remainingSkills = normalizedSkills.length > 3 ? normalizedSkills.length - 3 : 0;
+              const availabilityDate = interest.available_from
+                ? formatDate(interest.available_from)
+                : profile?.availability_date
+                  ? formatDate(profile.availability_date)
+                  : 'Flexible';
+              const isNew = !interest.viewed_at;
+              const isShortlisted = Boolean(profileId && shortlistedProfileIds.has(profileId));
+              const chatLoading = chatLoadingInterestId === interest.id;
+              const shortlistLoading = shortlistLoadingInterestId === interest.id;
+              const canActOnInterest = interest.status === 'pending' || interest.status === 'viewed';
+              const statusLabel = interest.status
+                ? interest.status.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase())
+                : 'Pending';
+              const ratingValue = typeof profile?.rating === 'number' ? profile.rating : undefined;
+              const reviewCount = typeof profile?.review_count === 'number' ? profile.review_count : undefined;
+              const profileBio = profile?.bio || (profile as any)?.about || (profile as any)?.summary || (profile as any)?.about_me;
 
-                    {/* Details */}
-                    <div className="flex-1">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                        <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
-                          {getHousehelpName(interest.househelp as any)}
-                        </h3>
-                        {!interest.viewed_at && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-200">
-                            <HandHeart className="w-3 h-3" />
-                            New
-                          </span>
-                        )}
-                        {interest.status === 'accepted' && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-200">
-                            <UserCheck className="w-3 h-3" />
-                            Accepted
-                          </span>
-                        )}
-                        {interest.status === 'declined' && (
-                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-200">
-                            <UserX className="w-3 h-3" />
-                            Declined
-                          </span>
+              return (
+                <div
+                  key={interest.id}
+                  className={`relative overflow-hidden rounded-2xl border bg-white p-5 sm:p-7 transition-shadow hover:shadow-xl dark:bg-purple-950/40 ${
+                    isNew
+                      ? 'border-green-300 dark:border-green-600/40 ring-2 ring-green-100 dark:ring-green-900/30'
+                      : 'border-purple-100 dark:border-purple-800/40'
+                  }`}
+                >
+                  <div className="absolute top-4 right-4 flex flex-col gap-2 sm:flex-row">
+                    <button
+                      onClick={() => handleChatWithApplicant(interest)}
+                      disabled={chatLoading}
+                      className="inline-flex items-center gap-2 rounded-full border border-purple-200/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
+                    >
+                      {chatLoading ? (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+                      ) : (
+                        <MessageCircle className="h-4 w-4" />
+                      )}
+                      <span>Chat</span>
+                    </button>
+                    <button
+                      onClick={() => handleShortlistApplicant(interest)}
+                      disabled={shortlistLoading || isShortlisted}
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors ${
+                        isShortlisted
+                          ? 'border-green-500 bg-green-500/90 text-white dark:bg-green-500/70'
+                          : 'border-purple-300 bg-white text-purple-700 hover:bg-purple-50 disabled:hover:bg-white dark:border-purple-700/40 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60'
+                      } disabled:opacity-60`}
+                    >
+                      {shortlistLoading ? (
+                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-current' : ''}`} />
+                      )}
+                      <span>{isShortlisted ? 'Shortlisted' : 'Shortlist'}</span>
+                    </button>
+                  </div>
+
+                  <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:gap-8">
+                    <div className="flex flex-1 items-start gap-4">
+                      <div className="h-16 w-16 shrink-0 overflow-hidden rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-white shadow-lg">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt={displayName} className="h-full w-full object-cover" />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-lg font-bold">
+                            {getHousehelpInitials(interest.househelp as any)}
+                          </div>
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs text-gray-700 dark:text-purple-100">
-                        {interest.job_type && (
-                          <div>
-                            <span className="text-gray-500 dark:text-purple-300">Preferred Job</span>
-                            <p className="font-medium text-gray-900 dark:text-white capitalize">
-                              {interest.job_type.replace('-', ' ')}
-                            </p>
-                          </div>
-                        )}
-                        <div>
-                          <span className="text-gray-500 dark:text-purple-300">Salary Expectation</span>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {formatSalary(interest.salary_expectation, interest.salary_frequency)}
-                          </p>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h3 className="text-base font-semibold text-gray-900 dark:text-white">{displayName}</h3>
+                          {isNew && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-200">
+                              <HandHeart className="h-3 w-3" />
+                              New
+                            </span>
+                          )}
+                          {interest.status && interest.status !== 'pending' && (
+                            <span
+                              className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                                interest.status === 'accepted'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200'
+                                  : interest.status === 'declined'
+                                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-200'
+                                    : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-200'
+                              }`}
+                            >
+                              {statusLabel}
+                            </span>
+                          )}
+                          {isShortlisted && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2.5 py-1 text-[11px] font-semibold text-green-700 dark:bg-green-900/30 dark:text-green-200">
+                              <Heart className="h-3 w-3 fill-current" />
+                              In shortlist
+                            </span>
+                          )}
                         </div>
-                        {interest.available_from && (
+
+                        {locationCandidate && (
+                          <p className="mt-1 text-xs text-gray-500 dark:text-gray-300">📍 {locationCandidate}</p>
+                        )}
+
+                        <div className="mt-4 grid grid-cols-1 gap-4 text-xs text-gray-700 dark:text-purple-100 sm:grid-cols-2 xl:grid-cols-4">
+                          {primaryRole && (
+                            <div>
+                              <span className="text-gray-500 dark:text-purple-300">Preferred Role</span>
+                              <p className="font-medium text-gray-900 dark:text-white capitalize">{primaryRole.replace(/[-_]/g, ' ')}</p>
+                            </div>
+                          )}
+                          <div>
+                            <span className="text-gray-500 dark:text-purple-300">Salary Expectation</span>
+                            <p className="font-medium text-gray-900 dark:text-white">{formatSalary(interest.salary_expectation, interest.salary_frequency)}</p>
+                          </div>
                           <div>
                             <span className="text-gray-500 dark:text-purple-300">Available From</span>
-                            <p className="font-medium text-gray-900 dark:text-white">
-                              {formatDate(interest.available_from)}
-                            </p>
+                            <p className="font-medium text-gray-900 dark:text-white">{availabilityDate}</p>
+                          </div>
+                          <div>
+                            <span className="text-gray-500 dark:text-purple-300">Applied On</span>
+                            <p className="font-medium text-gray-900 dark:text-white">{formatDate(interest.created_at)}</p>
+                          </div>
+                        </div>
+
+                        <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold">
+                          {typeof experienceYears === 'number' && (
+                            <span className="rounded-full bg-purple-100 px-2.5 py-1 text-purple-700 dark:bg-purple-900/30 dark:text-purple-200">{experienceYears} yrs experience</span>
+                          )}
+                          {typeof profile?.can_work_with_kids === 'boolean' && (
+                            <span className="rounded-full bg-blue-100 px-2.5 py-1 text-blue-700 dark:bg-blue-900/30 dark:text-blue-200">
+                              {profile.can_work_with_kids ? 'Good with kids' : 'Prefers no kids'}
+                            </span>
+                          )}
+                          {typeof profile?.can_work_with_pets === 'boolean' && (
+                            <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-200">
+                              {profile.can_work_with_pets ? 'Pet friendly' : 'No pets'}
+                            </span>
+                          )}
+                          {ratingValue !== undefined && (
+                            <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-700 dark:bg-amber-900/30 dark:text-amber-200">
+                              ★ {ratingValue.toFixed(1)}{reviewCount ? ` (${reviewCount})` : ''}
+                            </span>
+                          )}
+                        </div>
+
+                        {displayedSkills.length > 0 && (
+                          <p className="mt-3 text-xs text-gray-600 dark:text-gray-300">
+                            🧹 {displayedSkills.join(', ')}{remainingSkills > 0 ? ` +${remainingSkills} more` : ''}
+                          </p>
+                        )}
+
+                        {interest.comments && (
+                          <div className="mt-3 rounded-xl bg-gray-50 p-3 text-xs text-gray-700 dark:bg-purple-900/20 dark:text-purple-100">
+                            <span className="block text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-purple-300">Message</span>
+                            <p className="mt-1">{interest.comments}</p>
                           </div>
                         )}
-                        <div>
-                          <span className="text-gray-500 dark:text-purple-300">Expressed Interest</span>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {formatDate(interest.created_at)}
-                          </p>
-                        </div>
-                      </div>
 
-                      {interest.comments && (
-                        <div className="mt-3 p-3 bg-gray-50 dark:bg-purple-900/20 rounded-xl">
-                          <span className="text-xs text-gray-500 dark:text-purple-300 block mb-1">Message</span>
-                          <p className="text-xs text-gray-700 dark:text-purple-100">{interest.comments}</p>
-                        </div>
-                      )}
+                        {profileBio && (
+                          <p className="mt-3 line-clamp-3 text-xs text-gray-600 dark:text-gray-300">{profileBio}</p>
+                        )}
+
+                        {loadingProfiles && !profile && (
+                          <p className="mt-3 text-xs text-gray-400 dark:text-gray-500">Loading profile details…</p>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Right: Actions */}
-                  <div className="flex flex-row lg:flex-col gap-2 lg:items-end">
+                  <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                      {canActOnInterest ? (
+                        <>
+                          <button
+                            onClick={() => handleAcceptInterest(interest)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-green-500 px-4 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-green-600"
+                          >
+                            <UserCheck className="h-4 w-4" />
+                            Accept
+                          </button>
+                          <button
+                            onClick={() => handleDeclineInterest(interest)}
+                            className="inline-flex items-center gap-2 rounded-xl bg-red-100 px-4 py-1.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-200 dark:bg-red-900/40 dark:text-red-200 dark:hover:bg-red-800/60"
+                          >
+                            <UserX className="h-4 w-4" />
+                            Decline
+                          </button>
+                        </>
+                      ) : (
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-300">Status: {statusLabel}</p>
+                      )}
+                    </div>
+
                     <button
                       onClick={() => handleViewInterest(interest)}
-                      className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-xs font-medium text-purple-700 bg-purple-100 rounded-xl hover:bg-purple-200 dark:text-purple-200 dark:bg-purple-900/40 dark:hover:bg-purple-800/60 transition-colors"
+                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-rose-500 px-5 py-1.5 text-xs font-semibold text-white shadow-lg transition-colors hover:from-purple-700 hover:via-pink-700 hover:to-rose-500"
                     >
-                      <Eye className="w-4 h-4" />
-                      View Profile
+                      <Eye className="h-4 w-4" />
+                      View More
                     </button>
-                    {(interest.status === 'pending' || interest.status === 'viewed') && (
-                      <>
-                        <button
-                          onClick={() => handleAcceptInterest(interest)}
-                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-xs font-medium text-white bg-green-500 rounded-xl hover:bg-green-600 transition-colors"
-                        >
-                          <UserCheck className="w-4 h-4" />
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleDeclineInterest(interest)}
-                          className="flex-1 lg:flex-none inline-flex items-center justify-center gap-2 px-4 py-1 text-xs font-medium text-red-700 bg-red-100 rounded-xl hover:bg-red-200 dark:text-red-200 dark:bg-red-900/40 dark:hover:bg-red-800/60 transition-colors"
-                        >
-                          <UserX className="w-4 h-4" />
-                          Decline
-                        </button>
-                      </>
-                    )}
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
-        {/* Empty State for Hire Requests */}
-        {!loading && activeTab !== 'interested' && activeTab !== 'jobs' && hireRequests.length === 0 && (
-          <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
-            <FileText className="w-16 h-16 text-purple-400 dark:text-purple-300 mx-auto mb-4" />
-            <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
-              No hire requests yet
-            </h3>
-            <p className="text-gray-600 dark:text-purple-200 mb-6 sm:mb-8 text-xs sm:text-sm">
-              Start hiring by browsing househelps and sending hire requests
-            </p>
-            <button
-              onClick={() => navigate('/')}
-              className="inline-flex items-center justify-center px-6 sm:px-8 py-1.5 text-sm sm:text-base rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 hover:shadow-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500"
-            >
-              Find Househelps
-            </button>
-          </div>
-        )}
-
-        {/* Hire Requests List */}
-        {!loading && activeTab !== 'interested' && activeTab !== 'jobs' && hireRequests.length > 0 && (
-          <div className="space-y-4">
-            {hireRequests.map((request) => (
-              <div
-                key={request.id}
-                className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border border-purple-100 dark:bg-purple-950/40 dark:border-purple-800/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl"
-              >
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  {/* Left: Househelp Info */}
-                  <div className="flex items-start gap-4 flex-1">
-                    {/* Avatar */}
-                    <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-gradient-to-br from-purple-400 to-pink-400 flex-shrink-0">
-                      {request.househelp?.avatar_url || request.househelp?.photos?.[0] ? (
-                        <img
-                          src={request.househelp.avatar_url || request.househelp.photos?.[0]}
-                          alt={getHousehelpName(request.househelp)}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-white text-lg font-bold">
-                          {getHousehelpInitials(request.househelp)}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Details */}
-                    <div className="flex-1">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-2">
-                        <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
-                          {getHousehelpName(request.househelp)}
-                        </h3>
-                        <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
-                          {getStatusIcon(request.status)}
-                          {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 text-xs text-gray-700 dark:text-purple-100">
-                        <div>
-                          <span className="text-gray-500 dark:text-purple-300">Job Type</span>
-                          <p className="font-medium text-gray-900 dark:text-white capitalize">
-                            {request.job_type.replace('-', ' ')}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500 dark:text-purple-300">Salary</span>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {formatSalary(request.salary_offered, request.salary_frequency)}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500 dark:text-purple-300">Start Date</span>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {request.start_date ? formatDate(request.start_date) : 'Not specified'}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500 dark:text-purple-300">Requested</span>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {formatDate(request.created_at)}
-                          </p>
-                        </div>
-                        <div>
-                          <span className="text-gray-500 dark:text-purple-300">Expires</span>
-                          <p className="font-medium text-gray-900 dark:text-white">
-                            {(() => {
-                              const days = getDaysRemaining(request.expires_at);
-                              if (days === null) return '—';
-                              if (days <= 0) return 'Expired';
-                              if (days === 1) return '1 day left';
-                              return `${days} days left`;
-                            })()}
-                          </p>
-                        </div>
-                      </div>
-
-                      {request.special_requirements && (
-                        <div className="mt-3">
-                          <span className="text-xs text-gray-500 dark:text-purple-300">Special Requirements:</span>
-                          <p className="text-xs text-gray-700 dark:text-purple-100 mt-1">
-                            {request.special_requirements}
-                          </p>
-                        </div>
-                      )}
-
-                      {request.decline_reason && (
-                        <div className="mt-3 p-3 bg-red-50 rounded-xl border border-red-200 text-red-700 dark:bg-red-900/30 dark:border-red-700/40 dark:text-red-100">
-                          <span className="text-xs font-medium">Decline Reason:</span>
-                          <p className="text-xs mt-1">
-                            {request.decline_reason}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Right: Actions */}
-                  <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto">
-                    <button
-                      onClick={() => setSelectedRequest(request)}
-                      className="inline-flex items-center justify-center px-4 py-1 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-purple-500 flex-1"
-                    >
-                      View Details
-                    </button>
-
-                    {request.status === 'pending' && (
-                      <button
-                        onClick={() => openCancelModal(request)}
-                        className="inline-flex items-center justify-center px-4 py-1 text-xs rounded-xl bg-gradient-to-r from-red-600 via-red-500 to-orange-400 text-white font-semibold shadow-lg shadow-red-500/40 hover:from-red-700 hover:via-red-500 hover:to-orange-400 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 flex-1"
-                      >
-                        Cancel Request
-                      </button>
-                    )}
-
-                    {request.status === 'accepted' && (
-                      <button
-                        onClick={() => createContract(request)}
-                        disabled={contractCreating === request.id}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-1 text-xs rounded-xl bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold shadow-lg shadow-green-500/30 hover:from-green-700 hover:to-emerald-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-green-500 flex-1 disabled:opacity-50"
-                      >
-                        <FileText className="w-4 h-4" />
-                        {contractCreating === request.id ? 'Creating...' : 'Create Contract'}
-                      </button>
-                    )}
-
-                    {request.status === 'finalized' && (
-                      <button
-                        onClick={() => navigateToEmploymentContract(request)}
-                        className="inline-flex items-center justify-center gap-2 px-4 py-1 text-xs rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold shadow-lg shadow-blue-500/30 hover:from-blue-700 hover:to-purple-700 transition-all whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500 flex-1"
-                      >
-                        <FileText className="w-4 h-4" />
-                        {findByAnyIdentifier(employmentContractMap, getHousehelpCandidateIds(request)) ? 'View Employment Contract' : 'Create Employment Contract'}
-                      </button>
-                    )}
-
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {!loading && total > limit && (
-          <div className="mt-8 flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-            <p className="text-xs text-gray-700 dark:text-gray-300">
-              Showing <span className="font-medium">{offset + 1}</span> to{' '}
-              <span className="font-medium">{Math.min(offset + limit, total)}</span> of{' '}
-              <span className="font-medium">{total}</span> results
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setOffset(Math.max(0, offset - limit))}
-                disabled={offset === 0}
-                className="px-4 py-1 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => setOffset(offset + limit)}
-                disabled={offset + limit >= total}
-                className="px-4 py-1 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
-              >
-                Next
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* Details Modal */}

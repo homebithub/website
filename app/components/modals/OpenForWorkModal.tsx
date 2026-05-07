@@ -25,6 +25,9 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
   const [canWorkWithKids, setCanWorkWithKids] = useState(false);
   const [canWorkWithPets, setCanWorkWithPets] = useState(false);
   const [status, setStatus] = useState("active");
+  const [salaryMin, setSalaryMin] = useState("");
+  const [salaryMax, setSalaryMax] = useState("");
+  const [salaryFrequency, setSalaryFrequency] = useState("monthly");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -37,6 +40,9 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
     setCanWorkWithKids(Boolean(listing?.can_work_with_kids));
     setCanWorkWithPets(Boolean(listing?.can_work_with_pets));
     setStatus(listing?.status || "active");
+    setSalaryMin(listing?.salary_min ? String(listing.salary_min) : "");
+    setSalaryMax(listing?.salary_max ? String(listing.salary_max) : "");
+    setSalaryFrequency(listing?.salary_frequency || "monthly");
     setError("");
     setSuccess("");
   }, [isOpen, listing]);
@@ -75,6 +81,12 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
       can_work_with_pets: canWorkWithPets,
       status,
     };
+
+    if (salaryMin || salaryMax) {
+      payload.salary_min = salaryMin ? Number(salaryMin) : undefined;
+      payload.salary_max = salaryMax ? Number(salaryMax) : undefined;
+    }
+    payload.salary_frequency = salaryFrequency || undefined;
 
     setLoading(true);
     try {
@@ -120,10 +132,10 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
                   key={type.value}
                   type="button"
                   onClick={() => toggleJobType(type.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition ${
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition shadow-sm ${
                     jobTypes.includes(type.value)
-                      ? "bg-purple-600 text-white border-purple-600"
-                      : "bg-white dark:bg-[#0f0b1a] text-gray-600 dark:text-gray-300 border-gray-200 dark:border-purple-500/30"
+                      ? "bg-gradient-to-r from-purple-500 via-fuchsia-500 to-pink-600 text-white border-transparent shadow-[0_0_12px_rgba(168,85,247,0.45)]"
+                      : "bg-white/80 dark:bg-[#100a1c] text-gray-600 dark:text-gray-300 border-purple-500/20 hover:border-purple-500/40 hover:bg-purple-500/10"
                   }`}
                 >
                   {type.label}
@@ -173,6 +185,49 @@ export default function OpenForWorkModal({ isOpen, onClose, listing, onSaved }: 
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
             </select>
+          </div>
+
+          <div>
+            <label className="text-xs font-semibold text-gray-700 dark:text-gray-200">Salary Expectation</label>
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <span className="block text-[11px] text-gray-500 dark:text-gray-400 mb-1">Minimum</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={salaryMin}
+                  onChange={(e) => setSalaryMin(e.target.value)}
+                  placeholder="KES"
+                  className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <span className="block text-[11px] text-gray-500 dark:text-gray-400 mb-1">Maximum</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={salaryMax}
+                  onChange={(e) => setSalaryMax(e.target.value)}
+                  placeholder="KES"
+                  className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
+                />
+              </div>
+              <div>
+                <span className="block text-[11px] text-gray-500 dark:text-gray-400 mb-1">Rate</span>
+                <select
+                  value={salaryFrequency}
+                  onChange={(e) => setSalaryFrequency(e.target.value)}
+                  className="w-full h-11 px-4 rounded-xl border border-gray-200 dark:border-purple-500/30 bg-white dark:bg-[#0f0b1a] text-sm text-gray-900 dark:text-gray-100"
+                >
+                  <option value="daily">Daily</option>
+                  <option value="weekly">Weekly</option>
+                  <option value="monthly">Monthly</option>
+                </select>
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+              Share your preferred pay range so households can match you with the right opportunities.
+            </p>
           </div>
 
           <button
