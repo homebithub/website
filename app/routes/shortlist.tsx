@@ -8,7 +8,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
+import { jobService, profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { formatTimeAgo } from "~/utils/timeAgo";
@@ -133,12 +133,12 @@ export default function ShortlistPage() {
     return () => { cancelled = true; };
   }, [offset]);
 
-  // Fetch household public profiles for newly loaded shortlist items (househelp's own shortlist)
+  // Fetch shortlisted job posts for the househelp shortlist.
   useEffect(() => {
     const neededProfileIds = Array.from(
       new Set(
         (Array.isArray(items) ? items : [])
-          .filter((s) => s.profile_type === 'household')
+          .filter((s) => s.profile_type === 'job')
           .map((s) => s.profile_id)
           .filter(Boolean)
       )
@@ -157,7 +157,7 @@ export default function ShortlistPage() {
         const results = await Promise.all(
           missing.map(async (profileId) => {
             try {
-              const data = await resolveHouseholdProfile(profileId, { identifierType: 'profileId' });
+              const data = await jobService.getJob(profileId, '');
               return { profileId, data };
             } catch {
               return { profileId, data: null };
@@ -257,31 +257,16 @@ export default function ShortlistPage() {
 
             <div className={`grid grid-cols-1 ${compactView ? 'gap-4' : 'gap-6'}`}>
               {(Array.isArray(items) ? items : [])
-                .filter((s) => s.profile_type === "household")
+                .filter((s) => s.profile_type === "job")
                 .map((s) => {
-                  const prof = s.profile_id ? profiles[s.profile_id] : null;
-                  const owner = prof?.owner || prof;
-                  const householdUserId = resolveHouseholdOwnerUserId(prof) || s.user_id;
-                  const kidsCount =
-                    prof?.number_of_children ??
-                    prof?.children_count ??
-                    prof?.kids_count ??
-                    (Array.isArray(prof?.kids) ? prof.kids.length : undefined) ??
-                    (Array.isArray(prof?.children) ? prof.children.length : undefined);
-                  const chores = Array.isArray(prof?.chores)
-                    ? prof.chores
-                    : prof?.chore
-                      ? [prof.chore]
-                      : [];
-                  const serviceTypes = [
-                    prof?.needs_live_in ? 'Live-in' : '',
-                    prof?.needs_day_worker ? 'Day worker' : '',
-                    prof?.service_type || prof?.type_of_househelp || '',
-                  ].filter(Boolean);
-                  const serviceLabel = Array.from(new Set(serviceTypes)).join(', ');
-                  const householdProfileLink = householdUserId
-                    ? `/household/public-profile?userId=${householdUserId}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`
-                    : `/household/public-profile?profileId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`;
+                  const job = s.profile_id ? profiles[s.profile_id] : null;
+                  const householdUserId = job?.household_id || s.user_id;
+                  const salaryRange = job?.salary_range || {};
+                  const salaryLabel = [salaryRange.min, salaryRange.max]
+                    .filter((value) => typeof value === 'number' && value > 0)
+                    .map((value) => `KES ${Number(value).toLocaleString()}`)
+                    .join(' - ');
+                  const householdProfileLink = `/household/public-profile?userId=${encodeURIComponent(householdUserId || '')}&jobId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`;
                   return (
                     <div
                       key={s.id}
@@ -313,7 +298,7 @@ export default function ShortlistPage() {
                         <div className="flex justify-center sm:justify-start mb-4 sm:mb-0 shrink-0">
                           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white text-xl font-bold shadow-lg overflow-hidden relative">
                             {(() => {
-                              const imageUrl = prof?.avatar_url || owner?.avatar_url || (s.user_id && profilePhotos[s.user_id]);
+                          const imageUrl = s.user_id && profilePhotos[s.user_id];
                               if (imageUrl) {
                                 return (
                                   <>
@@ -322,7 +307,7 @@ export default function ShortlistPage() {
                                     )}
                                     <img
                                       src={imageUrl}
-                                      alt={`${owner?.first_name || ""} ${owner?.last_name || ""}`}
+                                      alt={job?.title || "Shortlisted job"}
                                       className={`w-full h-full object-cover transition-opacity duration-300 ${
                                         imageLoadingStates[s.profile_id] === false ? "opacity-100" : "opacity-0"
                                       }`}
@@ -335,78 +320,43 @@ export default function ShortlistPage() {
                                   </>
                                 );
                               }
-                              return `${owner?.first_name?.[0] || "H"}${owner?.last_name?.[0] || "H"}`;
+                              return "JOB";
                             })()}
                           </div>
                         </div>
 
                         <div className="min-w-0 flex-1 sm:pr-8">
                           <h3 className="text-lg font-bold text-left text-gray-900 dark:text-white mb-2">
-                            {prof ? `${owner?.first_name || ""} ${owner?.last_name || ""}`.trim() || "Household" : "Loading..."}
+                            {job ? job.title || "Household Job" : "Loading..."}
                           </h3>
 
                           <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
-                            📍 {prof?.town?.trim() || owner?.town?.trim() || "No location specified"}
+                            📍 {typeof job?.location === 'string' ? job.location : (job?.location?.name || job?.location?.place || "No location specified")}
                           </p>
 
-                          {prof?.house_size && (
-                            <p className="text-xs text-purple-600 dark:text-purple-400 text-left mb-2">🏠 {prof.house_size}</p>
+                          {job?.description && (
+                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left line-clamp-3 mb-2">{job.description}</p>
                           )}
 
-                          {(prof?.budget_min || prof?.budget_max) && (
+                          {salaryLabel && (
                             <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 text-left mb-2">
-                              💰 Budget {formatBudgetAmount(prof?.budget_min)}
-                              {prof?.budget_min && prof?.budget_max ? " - " : ""}
-                              {formatBudgetAmount(prof?.budget_max)}
-                              {prof?.salary_frequency ? ` / ${prof.salary_frequency}` : ""}
+                              💰 {salaryLabel}{salaryRange.frequency ? ` / ${salaryRange.frequency}` : ""}
                             </p>
                           )}
 
-                          {serviceLabel && (
+                          {job?.start_date && (
                             <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
-                              🧰 Service: {serviceLabel}
-                            </p>
-                          )}
-
-                          {prof?.available_from && (
-                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
-                              📅 Available from {prof.available_from}
+                              📅 Starts {new Date(job.start_date).toLocaleDateString()}
                             </p>
                           )}
 
                           <div className="flex flex-wrap gap-2 justify-start mb-3">
-                            {(typeof kidsCount === 'number' || typeof prof?.has_kids === 'boolean') && (
-                              <span className="inline-block text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                                {typeof kidsCount === 'number'
-                                  ? `${kidsCount} kid${kidsCount === 1 ? '' : 's'}`
-                                  : prof?.has_kids
-                                    ? 'Has kids'
-                                    : 'No kids'}
+                            {(job?.job_types || []).map((type: string) => (
+                              <span key={type} className="inline-block text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
+                                {type.replace(/_/g, ' ')}
                               </span>
-                            )}
-                            {typeof prof?.has_pets === 'boolean' && (
-                              <span className="inline-block text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">
-                                {prof.has_pets ? 'Has pets' : 'No pets'}
-                              </span>
-                            )}
-                            {typeof prof?.needs_live_in === 'boolean' && (
-                              <span className="inline-block text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
-                                {prof.needs_live_in ? 'Needs live-in' : 'No live-in'}
-                              </span>
-                            )}
-                            {typeof prof?.needs_day_worker === 'boolean' && (
-                              <span className="inline-block text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">
-                                {prof.needs_day_worker ? 'Day worker' : 'No day worker'}
-                              </span>
-                            )}
+                            ))}
                           </div>
-
-                          {chores.length > 0 && (
-                            <p className="text-xs text-gray-600 dark:text-gray-400 text-left mb-2">
-                              🧹 Chores: {chores.slice(0, 3).join(', ')}
-                              {chores.length > 3 ? ` +${chores.length - 3} more` : ''}
-                            </p>
-                          )}
 
                           <div className="mt-6 flex items-center gap-3">
                             <div className="text-xs font-semibold tracking-wide uppercase text-gray-400">
