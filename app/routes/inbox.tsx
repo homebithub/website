@@ -10,7 +10,7 @@ import EmojiPicker, { type EmojiClickData, Theme } from 'emoji-picker-react';
 import ConversationHireWizard from '~/components/hiring/ConversationHireWizard';
 import HireContextBanner from '~/components/hiring/HireContextBanner';
 import { useWebSocketContext } from '~/contexts/WebSocketContext';
-import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved } from '~/types/websocket';
+import { WSEventNewMessage, WSEventMessageRead, WSEventMessageEdited, WSEventMessageDeleted, WSEventReactionAdded, WSEventReactionRemoved, WSEventTyping } from '~/types/websocket';
 import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 import { notificationsService } from '~/services/grpc/notifications.service';
 import { formatTimeAgo } from "~/utils/timeAgo";
@@ -188,6 +188,32 @@ function normalizeMessageList(rawMessages: any[]): Message[] {
   return rawMessages.map(normalizeMessage).filter((m): m is Message => m !== null);
 }
 
+function isMatchingPendingMessage(pending: Message, incoming: Message): boolean {
+  return (
+    pending.id.startsWith('temp-') &&
+    pending._status === 'sending' &&
+    pending.conversation_id === incoming.conversation_id &&
+    pending.sender_id === incoming.sender_id &&
+    pending.body === incoming.body &&
+    (pending.reply_to_id || null) === (incoming.reply_to_id || null)
+  );
+}
+
+function mergeIncomingMessage(prev: Message[], incoming: Message): Message[] {
+  if (prev.some((m) => m.id === incoming.id)) {
+    return prev.map((m) => (m.id === incoming.id ? { ...m, ...incoming, _status: m._status } : m));
+  }
+
+  const pendingIndex = prev.findIndex((m) => isMatchingPendingMessage(m, incoming));
+  if (pendingIndex !== -1) {
+    const next = [...prev];
+    next[pendingIndex] = { ...incoming, _status: 'sent' };
+    return next;
+  }
+
+  return [...prev, incoming];
+}
+
 export default function InboxPage() {
   const { user, loading: authLoading } = useAuth();
   const authUser = (user as any)?.user ?? null;
@@ -293,6 +319,11 @@ export default function InboxPage() {
   const removeToast = useCallback((id: string) => {
     setToasts((prev) => prev.filter((t) => t.id !== id));
   }, []);
+  const notifyInboxUpdated = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('inbox-updated'));
+    }
+  }, []);
   const [openReactionNames, setOpenReactionNames] = useState<{ msgId: string; emoji: string } | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const deleteTimersRef = useRef<Record<string, number>>({});
@@ -354,10 +385,14 @@ export default function InboxPage() {
   const [hireRequestStatus, setHireRequestStatus] = useState<string | undefined>();
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
   const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
+  const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
   
 
   // Use global WebSocket connection
-  const { connectionState, addEventListener } = useWebSocketContext();
+  const { connectionState, sendMessage: sendWebSocketMessage, addEventListener } = useWebSocketContext();
+  const [typingUserIds, setTypingUserIds] = useState<Set<string>>(() => new Set());
+  const typingTimeoutsRef = useRef<Record<string, number>>({});
+  const lastTypingSentAtRef = useRef(0);
   
   // SSE for real-time inbox updates (redundant with WebSocket for reliability)
   const { isConnected: sseConnected } = useInboxSSE(
@@ -370,12 +405,7 @@ export default function InboxPage() {
           return;
         }
         
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === msg.id)) {
-            return prev;
-          }
-          return [...prev, msg];
-        });
+        setMessages((prev) => mergeIncomingMessage(prev, msg));
         
         // Auto-scroll if at bottom
         if (isAtBottom) {
@@ -391,21 +421,23 @@ export default function InboxPage() {
           return prev.map((conv) => {
             if (conv.id === msg.conversation_id) {
               const isActive = conv.id === activeConversationId;
+              const isMine = msg.sender_id === currentUserId;
               return {
                 ...conv,
                 last_message_at: msg.created_at,
                 last_message_body: msg.body,
                 last_message_sender_id: msg.sender_id,
-                unread_count: isActive ? 0 : (conv.unread_count || 0) + 1,
+                unread_count: isActive || isMine ? 0 : (conv.unread_count || 0) + 1,
               };
             }
             return conv;
           });
         });
+        notifyInboxUpdated();
       } catch (err) {
         console.error('[Inbox SSE] Failed to handle new message', err);
       }
-    }, [isAtBottom, activeConversationId, requestConversationHydration]),
+    }, [isAtBottom, activeConversationId, currentUserId, notifyInboxUpdated, requestConversationHydration]),
     // onMessageRead
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       try {
@@ -418,10 +450,11 @@ export default function InboxPage() {
             m.id === message_id ? { ...m, read_at: read_at || new Date().toISOString() } : m
           ));
         }
+        notifyInboxUpdated();
       } catch (err) {
         console.error('[Inbox SSE] Failed to handle message read', err);
       }
-    }, [requestConversationHydration]),
+    }, [notifyInboxUpdated, requestConversationHydration]),
     // onMessageDeleted
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       try {
@@ -468,7 +501,6 @@ export default function InboxPage() {
     }, [pushToast])
   );
   
-  const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
   const currentUserProfileType = currentUser?.profile_type || getStoredProfileType() || null;
   const isHouseholdUser = currentUserProfileType?.toLowerCase() === 'household';
   const shouldRestrictMessaging = !subscriptionLoading && !hasActiveSubscription && isHouseholdUser;
@@ -507,6 +539,28 @@ export default function InboxPage() {
   useEffect(() => {
     setActiveConversationId(selectedConversationId);
   }, [selectedConversationId]);
+
+  useEffect(() => {
+    setTypingUserIds(new Set());
+    Object.values(typingTimeoutsRef.current).forEach((timeoutId) => window.clearTimeout(timeoutId));
+    typingTimeoutsRef.current = {};
+  }, [activeConversationId]);
+
+  const sendTypingUpdate = useCallback((isTyping: boolean) => {
+    if (!activeConversationId || connectionState !== 'connected') return;
+
+    const now = Date.now();
+    if (isTyping && now - lastTypingSentAtRef.current < 1200) {
+      return;
+    }
+    lastTypingSentAtRef.current = now;
+
+    sendWebSocketMessage({
+      type: WSEventTyping,
+      conversation_id: activeConversationId,
+      is_typing: isTyping,
+    });
+  }, [activeConversationId, connectionState, sendWebSocketMessage]);
 
   useEffect(() => {
     if (!isDesktopLayout || selectedConversationId || activeConversationId || deduplicatedItems.length === 0) {
@@ -804,6 +858,7 @@ export default function InboxPage() {
           setItems((prev) => prev.map((conv) => 
             conv.id === conversationId ? { ...conv, unread_count: 0 } : conv
           ));
+          notifyInboxUpdated();
         } catch (err) {
           console.error('[Inbox] Failed to mark conversation as read:', err);
         }
@@ -829,7 +884,7 @@ export default function InboxPage() {
     return () => {
       cancelled = true;
     };
-  }, [activeConversationId, messagesLimit, authLoading, user]);
+  }, [activeConversationId, messagesLimit, authLoading, user, notifyInboxUpdated]);
 
   // Scroll to bottom on conversation load or new message
   useEffect(() => {
@@ -1240,6 +1295,7 @@ export default function InboxPage() {
       };
       setMessages((prev) => [...prev, optimistic]);
       setInput('');
+      sendTypingUpdate(false);
       const replyToId = replyTo?.id;
       setReplyTo(null);
       scrollToBottom();
@@ -1267,7 +1323,7 @@ export default function InboxPage() {
       console.error(err);
       pushToast('Failed to send message', 'error');
     }
-  }, [activeConversationId, input, currentUserId, replyTo, scrollToBottom, pushToast, hasActiveSubscription, subscriptionLoading]);
+  }, [activeConversationId, input, currentUserId, replyTo, scrollToBottom, pushToast, hasActiveSubscription, subscriptionLoading, sendTypingUpdate]);
 
   const handleAcceptHireRequest = useCallback(async () => {
     if (!hireRequestId) return;
@@ -1314,12 +1370,7 @@ export default function InboxPage() {
           return;
         }
 
-        setMessages((prev) => {
-          if (prev.some((m) => m.id === msg.id)) {
-            return prev;
-          }
-          return [...prev, msg];
-        });
+        setMessages((prev) => mergeIncomingMessage(prev, msg));
         
         // Auto-scroll to bottom when new message arrives (only if user is already at bottom)
         if (isAtBottom) {
@@ -1340,17 +1391,19 @@ export default function InboxPage() {
               // If this is the active conversation, keep unread at 0 (we're viewing it)
               // Otherwise, increment unread count
               const isActive = conv.id === activeConversationId;
+              const isMine = msg.sender_id === currentUserId;
               return {
                 ...conv,
                 last_message_at: msg.created_at,
                 last_message_body: msg.body,
                 last_message_sender_id: msg.sender_id,
-                unread_count: isActive ? 0 : (conv.unread_count || 0) + 1,
+                unread_count: isActive || isMine ? 0 : (conv.unread_count || 0) + 1,
               };
             }
             return conv;
           });
         });
+        notifyInboxUpdated();
       } catch (err) {
         console.error('[Inbox] Failed to handle new_message event', err);
       }
@@ -1416,6 +1469,47 @@ export default function InboxPage() {
         console.error('[Inbox] Failed to handle reaction_removed event', err);
       }
     });
+
+    const offTyping = addEventListener(WSEventTyping, (event: WSMessageEvent) => {
+      try {
+        const inboxEvent = event as any;
+        const conversationId = resolveConversationId(inboxEvent) || resolveConversationId(inboxEvent?.data);
+        const userId = inboxEvent.user_id || inboxEvent?.data?.user_id;
+        const isTyping = inboxEvent.metadata?.is_typing ?? inboxEvent?.data?.metadata?.is_typing ?? true;
+
+        if (!conversationId || conversationId !== activeConversationId || !userId || userId === currentUserId) {
+          return;
+        }
+
+        if (typingTimeoutsRef.current[userId]) {
+          window.clearTimeout(typingTimeoutsRef.current[userId]);
+          delete typingTimeoutsRef.current[userId];
+        }
+
+        setTypingUserIds((prev) => {
+          const next = new Set(prev);
+          if (isTyping) {
+            next.add(userId);
+          } else {
+            next.delete(userId);
+          }
+          return next;
+        });
+
+        if (isTyping) {
+          typingTimeoutsRef.current[userId] = window.setTimeout(() => {
+            setTypingUserIds((prev) => {
+              const next = new Set(prev);
+              next.delete(userId);
+              return next;
+            });
+            delete typingTimeoutsRef.current[userId];
+          }, 3500);
+        }
+      } catch (err) {
+        console.error('[Inbox] Failed to handle typing event', err);
+      }
+    });
     
     return () => {
       offNewMessage?.();
@@ -1423,8 +1517,9 @@ export default function InboxPage() {
       offMessageDeleted?.();
       offReactionAdded?.();
       offReactionRemoved?.();
+      offTyping?.();
     };
-  }, [addEventListener, isAtBottom, activeConversationId, requestConversationHydration]);
+  }, [addEventListener, isAtBottom, activeConversationId, currentUserId, notifyInboxUpdated, requestConversationHydration]);
 
   // Conversations list JSX (left sidebar)
   const conversationsList = (
@@ -1438,7 +1533,7 @@ export default function InboxPage() {
 
       {error && <div className="m-3"><ErrorAlert message={error} /></div>}
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="homebit-scrollbar flex-1 overflow-y-auto">
         {deduplicatedItems.length === 0 && !loading && !error && (
           <div className="py-8 text-center text-xs text-gray-500 dark:text-gray-400">
             No conversations yet.
@@ -1483,7 +1578,7 @@ export default function InboxPage() {
                           <span className="text-[11px] text-gray-500 dark:text-gray-400 flex-shrink-0">{subtitle}</span>
                         )}
                         {unread > 0 && (
-                          <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-purple-600 text-white text-[10px] font-semibold">
+                          <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-1 text-[10px] font-semibold text-white shadow-sm shadow-purple-500/30">
                             {unread > 99 ? '99+' : unread}
                           </span>
                         )}
@@ -1593,7 +1688,7 @@ export default function InboxPage() {
         </div>
 
         {/* Messages - Scrollable */}
-        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="min-h-0 overflow-y-auto p-4 space-y-2 relative">
+        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="homebit-scrollbar relative min-h-0 space-y-2 overflow-y-auto p-4">
           <div className={lockMessages ? 'pointer-events-none select-none blur-sm transition duration-150' : ''}>
             <div ref={messagesSentinelRef} className="h-4" />
             
@@ -1606,25 +1701,6 @@ export default function InboxPage() {
               </div>
             )}
 
-            {showScrollToBottom && (
-              <button
-                onClick={() => {
-                  bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-                  setNewMessageCount(0);
-                  setIsAtBottom(true);
-                }}
-                className="fixed bottom-24 right-4 sm:right-8 z-20 bg-purple-600 text-white p-3 rounded-full shadow-lg hover:bg-purple-700 transition-all flex items-center gap-2"
-                aria-label="Scroll to bottom"
-              >
-                <ChevronDownIcon className="w-6 h-6" />
-                {newMessageCount > 0 && (
-                  <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center">
-                    {newMessageCount > 99 ? '99+' : newMessageCount}
-                  </span>
-                )}
-              </button>
-            )}
-            
             {/* Hire Context Banner */}
             {selectedConversation && (
               <HireContextBanner
@@ -2030,6 +2106,18 @@ export default function InboxPage() {
               })}
             </div>
           ))}
+            {typingUserIds.size > 0 && (
+              <div className="flex justify-start py-1">
+                <div className="inline-flex items-center gap-2 rounded-2xl border border-purple-200/70 bg-purple-50 px-3 py-1.5 text-xs text-purple-700 shadow-sm dark:border-purple-500/30 dark:bg-slate-800 dark:text-purple-200">
+                  <span className="inline-flex items-center gap-1" aria-hidden="true">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-purple-500 [animation-delay:-0.2s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-purple-500 [animation-delay:-0.1s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-purple-500" />
+                  </span>
+                  <span>{selectedConversation?.participant_name || 'User'} is typing</span>
+                </div>
+              </div>
+            )}
             <div ref={bottomRef} />
           </div>
 
@@ -2080,12 +2168,12 @@ export default function InboxPage() {
           <button
             type="button"
             onClick={scrollToBottom}
-            className="fixed right-4 bottom-28 z-[60] p-3 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-xl hover:from-purple-700 hover:to-pink-700 focus:outline-none relative sm:right-6"
+            className="fixed right-3 bottom-24 z-[60] rounded-full bg-gradient-to-r from-purple-600 to-pink-600 p-2 text-white shadow-xl shadow-purple-500/25 hover:from-purple-700 hover:to-pink-700 focus:outline-none sm:right-6 lg:bottom-28 lg:p-3"
             aria-label="Scroll to bottom"
           >
-            <ChevronDownIcon className="w-6 h-6" />
+            <ChevronDownIcon className="h-4 w-4 lg:h-5 lg:w-5" />
             {newMessageCount > 0 && (
-              <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[20px] h-[20px] px-1 rounded-full bg-red-500 text-white text-[11px] font-bold border-2 border-white dark:border-[#13131a]">
+              <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-gradient-to-r from-purple-500 to-pink-500 px-1 text-[10px] font-bold text-white dark:border-[#13131a]">
                 {newMessageCount > 99 ? '99+' : newMessageCount}
               </span>
             )}
@@ -2181,10 +2269,12 @@ export default function InboxPage() {
               value={input}
               onChange={(e) => {
                 setInput(e.target.value);
+                sendTypingUpdate(e.target.value.trim().length > 0);
                 // Auto-resize textarea
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 150) + 'px';
               }}
+              onBlur={() => sendTypingUpdate(false)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
@@ -2198,7 +2288,7 @@ export default function InboxPage() {
                 }
               }}
               placeholder="Type a message..."
-              className="flex-1 rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-900 dark:text-white resize-none overflow-hidden min-h-[40px] max-h-[150px]"
+              className="flex-1 resize-none overflow-hidden rounded-2xl border border-purple-300/80 bg-purple-50/70 px-4 py-2 text-xs text-gray-900 shadow-inner shadow-purple-500/5 placeholder:text-purple-400 focus:border-purple-400 focus:outline-none focus:ring-2 focus:ring-purple-500/60 dark:border-purple-500/40 dark:bg-[#0f0a16] dark:text-white dark:placeholder:text-purple-300/60 sm:text-sm min-h-[40px] max-h-[150px]"
               autoComplete="off"
               rows={1}
             />

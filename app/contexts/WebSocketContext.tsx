@@ -8,6 +8,7 @@ import type { MessageEvent as WSMessageEvent } from '~/types/websocket';
 
 type WebSocketContextType = {
   connectionState: 'connecting' | 'connected' | 'disconnected' | 'error';
+  sendMessage: (message: any) => void;
   addEventListener: (type: string, handler: (event: WSMessageEvent) => void) => () => void;
   unreadCount: number;
   incrementUnreadCount: () => void;
@@ -36,7 +37,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
     return getAccessTokenFromCookies() || localStorage.getItem('token') || null;
   }, [currentUserId, user]);
 
-  const { connectionState, addEventListener } = useWebSocket({
+  const { connectionState, sendMessage, addEventListener } = useWebSocket({
     url: wsUrl,
     token,
     enabled: !!currentUserId,
@@ -90,13 +91,14 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
   const value = useMemo(
     () => ({
       connectionState,
+      sendMessage,
       addEventListener,
       unreadCount,
       incrementUnreadCount,
       decrementUnreadCount,
       resetUnreadCount,
     }),
-    [connectionState, addEventListener, unreadCount, incrementUnreadCount, decrementUnreadCount, resetUnreadCount]
+    [connectionState, sendMessage, addEventListener, unreadCount, incrementUnreadCount, decrementUnreadCount, resetUnreadCount]
   );
 
   return (

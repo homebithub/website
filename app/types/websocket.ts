@@ -13,6 +13,7 @@ export interface EventMeta {
   reader_id?: string;
   emoji?: string;
   is_added?: boolean;
+  is_typing?: boolean;
   edited_at?: string;
   deleted_at?: string;
 }

@@ -16,6 +16,7 @@ import { notificationsService } from '~/services/grpc/notifications.service';
 import authService from '~/services/grpc/auth.service';
 import { getStoredUser } from '~/utils/authStorage';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
+import { useWebSocketContext } from '~/contexts/WebSocketContext';
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -42,6 +43,7 @@ export function Navigation() {
     const { approvals, newestApproval, dismiss, clearAll } = useDeviceAuthPendingApprovals(!isInSetupMode && !!user);
     const navigate = useNavigate();
     const location = useLocation();
+    const { addEventListener } = useWebSocketContext();
     const pendingDeviceApprovals = approvals.length;
 
 
@@ -94,9 +96,7 @@ export function Navigation() {
             const data = await notificationsService.listConversations('', 0, 100);
             const conversations: any[] = data?.conversations || [];
             
-            const totalUnread = conversations.reduce((sum: number, c: any) => {
-                return sum + (c.unread_count || 0);
-            }, 0);
+            const totalUnread = conversations.filter((c: any) => Number(c.unread_count || 0) > 0).length;
             
             setInboxCount(totalUnread);
         } catch (error) {
@@ -228,6 +228,21 @@ export function Navigation() {
         const intervalId = setInterval(pollCounts, 60_000);
         return () => clearInterval(intervalId);
     }, [user, profileType, isInSetupMode]);
+
+    useEffect(() => {
+        if (!user || isInSetupMode) return;
+
+        const refreshInboxCount = () => {
+            fetchInboxCount();
+        };
+
+        const offNewMessage = addEventListener('new_message', refreshInboxCount);
+        const offMessageRead = addEventListener('message_read', refreshInboxCount);
+        return () => {
+            offNewMessage?.();
+            offMessageRead?.();
+        };
+    }, [addEventListener, user, isInSetupMode]);
 
     // Badge helper: 0 = null (hidden), 1-9 = number, >9 = "9+"
     const renderBadge = (count: number, gradient = 'from-purple-600 to-pink-600', shadow = 'shadow-purple-500/50') => {

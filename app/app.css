@@ -769,3 +769,22 @@ i {
     animation: modal-slide-up 0.3s ease-out forwards;
 }
 
+.homebit-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #a855f7 rgba(168, 85, 247, 0.12);
+}
+
+.homebit-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.homebit-scrollbar::-webkit-scrollbar-track {
+    background: rgba(168, 85, 247, 0.08);
+}
+
+.homebit-scrollbar::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #9333ea, #db2777);
+    border-radius: 999px;
+    border: 2px solid rgba(19, 19, 26, 0.9);
+}
