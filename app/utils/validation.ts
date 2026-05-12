@@ -56,6 +56,10 @@ export const signupSchema = Joi.object({
     'string.max': 'Last name is too long (max 50 characters)',
     'any.required': 'Please enter your last name'
   }),
+  referral_code: Joi.string().trim().allow('').max(32).pattern(/^[A-Za-z0-9]+$/).messages({
+    'string.max': 'Referral code is too long',
+    'string.pattern.base': 'Referral code should contain only letters and numbers'
+  }),
   phone: Joi.string().pattern(kenyanPhonePattern).required().messages({
     'string.empty': 'Please enter your phone number',
     'string.pattern.base': 'Please enter a valid Kenyan phone number (e.g., 0712345678, 0112345678, or +254712345678)',

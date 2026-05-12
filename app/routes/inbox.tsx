@@ -386,7 +386,23 @@ export default function InboxPage() {
   const [hireRequestId, setHireRequestId] = useState<string | undefined>();
   const [hireActionLoading, setHireActionLoading] = useState<'accept' | 'decline' | null>(null);
   const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
-  
+
+  const [lastActiveByUserId, setLastActiveByUserId] = useState<Record<string, number>>({});
+  const [presenceNow, setPresenceNow] = useState(() => Date.now());
+  const updateLastActive = useCallback((userId?: string | null, timestamp?: string | number | null) => {
+    if (!userId || userId === currentUserId) return;
+    const ts = typeof timestamp === 'number'
+      ? timestamp
+      : timestamp
+        ? new Date(timestamp).getTime()
+        : Date.now();
+    if (!Number.isFinite(ts)) return;
+    setLastActiveByUserId((prev) => {
+      const existing = prev[userId];
+      if (existing && existing >= ts) return prev;
+      return { ...prev, [userId]: ts };
+    });
+  }, [currentUserId]);
 
   // Use global WebSocket connection
   const { connectionState, sendMessage: sendWebSocketMessage, addEventListener } = useWebSocketContext();
@@ -403,6 +419,10 @@ export default function InboxPage() {
         const msg = normalizeMessage(event.data);
         if (!msg || !msg.id) {
           return;
+        }
+
+        if (msg.sender_id && msg.sender_id !== currentUserId) {
+          updateLastActive(msg.sender_id, msg.created_at || event.data?.created_at);
         }
         
         setMessages((prev) => mergeIncomingMessage(prev, msg));
@@ -437,7 +457,7 @@ export default function InboxPage() {
       } catch (err) {
         console.error('[Inbox SSE] Failed to handle new message', err);
       }
-    }, [isAtBottom, activeConversationId, currentUserId, notifyInboxUpdated, requestConversationHydration]),
+    }, [isAtBottom, activeConversationId, currentUserId, notifyInboxUpdated, requestConversationHydration, updateLastActive]),
     // onMessageRead
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       try {
@@ -450,11 +470,12 @@ export default function InboxPage() {
             m.id === message_id ? { ...m, read_at: read_at || new Date().toISOString() } : m
           ));
         }
+        updateLastActive(event.data?.reader_id || event.data?.user_id, read_at || event.data?.created_at);
         notifyInboxUpdated();
       } catch (err) {
         console.error('[Inbox SSE] Failed to handle message read', err);
       }
-    }, [notifyInboxUpdated, requestConversationHydration]),
+    }, [notifyInboxUpdated, requestConversationHydration, updateLastActive]),
     // onMessageDeleted
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       try {
@@ -467,10 +488,11 @@ export default function InboxPage() {
             m.id === message_id ? { ...m, deleted_at: deleted_at || new Date().toISOString() } : m
           ));
         }
+        updateLastActive(event.data?.sender_id || event.data?.user_id, deleted_at || event.data?.created_at);
       } catch (err) {
         console.error('[Inbox SSE] Failed to handle message deleted', err);
       }
-    }, [requestConversationHydration]),
+    }, [requestConversationHydration, updateLastActive]),
     // onConversationStarted
     useCallback((event: import('~/hooks/useInboxSSE').InboxSSEEvent) => {
       const convId = resolveConversationId(event?.data) || event?.data?.conversation_id;
@@ -563,6 +585,12 @@ export default function InboxPage() {
   }, [activeConversationId, connectionState, sendWebSocketMessage]);
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !activeConversationId) return;
+    const intervalId = window.setInterval(() => setPresenceNow(Date.now()), 30000);
+    return () => window.clearInterval(intervalId);
+  }, [activeConversationId]);
+
+  useEffect(() => {
     if (!isDesktopLayout || selectedConversationId || activeConversationId || deduplicatedItems.length === 0) {
       return;
     }
@@ -576,6 +604,38 @@ export default function InboxPage() {
 
   const selectedConversation = items.find(c => c.id === activeConversationId);
   const lockMessages = shouldRestrictMessaging && !!selectedConversation;
+
+  const otherUserId = useMemo(() => {
+    if (!selectedConversation) return null;
+    const role = currentUserProfileType?.toLowerCase();
+    return role === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id;
+  }, [selectedConversation, currentUserProfileType]);
+
+  const lastSeenAt = useMemo(() => {
+    if (!otherUserId) return null;
+    const tracked = lastActiveByUserId[otherUserId];
+    if (tracked) return tracked;
+    for (let i = messages.length - 1; i >= 0; i -= 1) {
+      if (messages[i].sender_id === otherUserId) {
+        const time = new Date(messages[i].created_at).getTime();
+        if (!Number.isNaN(time)) return time;
+      }
+    }
+    if (selectedConversation?.last_message_sender_id === otherUserId && selectedConversation?.last_message_at) {
+      const time = new Date(selectedConversation.last_message_at).getTime();
+      if (!Number.isNaN(time)) return time;
+    }
+    return null;
+  }, [lastActiveByUserId, messages, otherUserId, selectedConversation]);
+
+  const isTyping = !!otherUserId && typingUserIds.has(otherUserId);
+  const isOnline = !!lastSeenAt && presenceNow - lastSeenAt < 120000;
+  const presenceLabel = useMemo(() => {
+    if (isTyping) return 'typing...';
+    if (isOnline) return 'online';
+    if (lastSeenAt) return `last seen ${formatTimeAgo(new Date(lastSeenAt).toISOString())}`;
+    return 'last seen recently';
+  }, [isTyping, isOnline, lastSeenAt, presenceNow]);
   
   // Track image loading state for avatars
   const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
@@ -1370,6 +1430,11 @@ export default function InboxPage() {
           return;
         }
 
+        updateLastActive(
+          msg.sender_id || inboxEvent.user_id || inboxEvent?.data?.user_id,
+          msg.created_at || inboxEvent.timestamp || inboxEvent?.data?.timestamp
+        );
+
         setMessages((prev) => mergeIncomingMessage(prev, msg));
         
         // Auto-scroll to bottom when new message arrives (only if user is already at bottom)
@@ -1420,6 +1485,10 @@ export default function InboxPage() {
           }
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
+        updateLastActive(
+          inboxEvent.user_id || inboxEvent?.data?.user_id || msg?.sender_id,
+          inboxEvent.timestamp || inboxEvent?.data?.timestamp || msg?.edited_at || msg?.created_at
+        );
       } catch (err) {
         console.error('[Inbox] Failed to handle message_edited event', err);
       }
@@ -1435,6 +1504,10 @@ export default function InboxPage() {
           }
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
+        updateLastActive(
+          inboxEvent.user_id || inboxEvent?.data?.user_id || msg?.sender_id,
+          inboxEvent.timestamp || inboxEvent?.data?.timestamp || msg?.deleted_at || msg?.created_at
+        );
       } catch (err) {
         console.error('[Inbox] Failed to handle message_deleted event', err);
       }
@@ -1450,6 +1523,10 @@ export default function InboxPage() {
           }
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
+        updateLastActive(
+          inboxEvent.user_id || inboxEvent?.data?.user_id || msg?.sender_id,
+          inboxEvent.timestamp || inboxEvent?.data?.timestamp || msg?.created_at
+        );
       } catch (err) {
         console.error('[Inbox] Failed to handle reaction_added event', err);
       }
@@ -1465,6 +1542,10 @@ export default function InboxPage() {
           }
           setMessages((prev) => prev.map((m) => (m.id === msg.id ? { ...m, ...msg } : m)));
         }
+        updateLastActive(
+          inboxEvent.user_id || inboxEvent?.data?.user_id || msg?.sender_id,
+          inboxEvent.timestamp || inboxEvent?.data?.timestamp || msg?.created_at
+        );
       } catch (err) {
         console.error('[Inbox] Failed to handle reaction_removed event', err);
       }
@@ -1480,6 +1561,8 @@ export default function InboxPage() {
         if (!conversationId || conversationId !== activeConversationId || !userId || userId === currentUserId) {
           return;
         }
+
+        updateLastActive(userId, inboxEvent.timestamp || inboxEvent?.data?.timestamp);
 
         if (typingTimeoutsRef.current[userId]) {
           window.clearTimeout(typingTimeoutsRef.current[userId]);
@@ -1519,7 +1602,7 @@ export default function InboxPage() {
       offReactionRemoved?.();
       offTyping?.();
     };
-  }, [addEventListener, isAtBottom, activeConversationId, currentUserId, notifyInboxUpdated, requestConversationHydration]);
+  }, [addEventListener, isAtBottom, activeConversationId, currentUserId, notifyInboxUpdated, requestConversationHydration, updateLastActive]);
 
   // Conversations list JSX (left sidebar)
   const conversationsList = (
@@ -1679,10 +1762,21 @@ export default function InboxPage() {
             </div>
             
             <div className="text-left">
-              <h2 className="font-semibold text-gray-900 dark:text-white">
-                {selectedConversation.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
-              </h2>
-              <p className="text-xs text-gray-500 dark:text-gray-400">View profile</p>
+              <div className="flex items-center gap-2">
+                <h2 className="font-semibold text-gray-900 dark:text-white">
+                  {selectedConversation.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
+                </h2>
+                {isTyping && (
+                  <span className="inline-flex items-center gap-1" aria-hidden="true">
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500 [animation-delay:-0.2s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500 [animation-delay:-0.1s]" />
+                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500" />
+                  </span>
+                )}
+              </div>
+              <p className={`text-[11px] ${isTyping ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                {presenceLabel}
+              </p>
             </div>
           </button>
         </div>
@@ -2106,18 +2200,6 @@ export default function InboxPage() {
               })}
             </div>
           ))}
-            {typingUserIds.size > 0 && (
-              <div className="flex justify-start py-1">
-                <div className="inline-flex items-center gap-2 rounded-2xl border border-purple-200/70 bg-purple-50 px-3 py-1.5 text-xs text-purple-700 shadow-sm dark:border-purple-500/30 dark:bg-slate-800 dark:text-purple-200">
-                  <span className="inline-flex items-center gap-1" aria-hidden="true">
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-purple-500 [animation-delay:-0.2s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-purple-500 [animation-delay:-0.1s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-purple-500" />
-                  </span>
-                  <span>{selectedConversation?.participant_name || 'User'} is typing</span>
-                </div>
-              </div>
-            )}
             <div ref={bottomRef} />
           </div>
 

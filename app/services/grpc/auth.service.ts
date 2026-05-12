@@ -33,13 +33,26 @@ function isValidUUID(uuid: string): boolean {
 /**
  * Get metadata with auth token and profile type
  */
-function getMetadata(): { [key: string]: string } {
+function getMetadata(extra?: { [key: string]: string }): { [key: string]: string } {
   const md: { [key: string]: string } = {};
   const token = getStoredAccessToken();
   if (token) md['authorization'] = `Bearer ${token}`;
   const profileType = getStoredProfileType();
   if (profileType) md['x-profile-type'] = profileType;
+  if (extra) {
+    Object.entries(extra).forEach(([key, value]) => {
+      if (value) md[key] = value;
+    });
+  }
   return md;
+}
+
+function buildReferralMetadata(referralCode?: string): { [key: string]: string } {
+  const normalized = referralCode?.trim();
+  if (!normalized) {
+    return {};
+  }
+  return { 'x-referral-code': normalized.toUpperCase() };
 }
 
 /**
@@ -55,7 +68,8 @@ export const authService = {
     firstName: string,
     lastName: string,
     profileType: string,
-    bureauId?: string
+    bureauId?: string,
+    referralCode?: string
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       try {
@@ -70,7 +84,7 @@ export const authService = {
           request.setBureauId(bureauId);
         }
 
-        authClient.signup(request, getMetadata(), (err: any, response: any) => {
+        authClient.signup(request, getMetadata(buildReferralMetadata(referralCode)), (err: any, response: any) => {
           if (err) {
             console.error('[gRPC-Web] signup error:', err);
             reject(handleGrpcError(err));
@@ -313,7 +327,7 @@ export const authService = {
   /**
    * Complete Google signup (add phone + profile type to Google-authed user)
    */
-  async completeGoogleSignup(googleId: string, email: string, firstName: string, lastName: string, phone: string, profileType: string, bureauId?: string): Promise<any> {
+  async completeGoogleSignup(googleId: string, email: string, firstName: string, lastName: string, phone: string, profileType: string, bureauId?: string, referralCode?: string): Promise<any> {
     return new Promise((resolve, reject) => {
       const request = new auth_pb.CompleteGoogleSignupRequest();
       request.setGoogleId(googleId);
@@ -324,7 +338,7 @@ export const authService = {
       request.setProfileType(profileType);
       if (bureauId) request.setBureauId(bureauId);
 
-      authClient.completeGoogleSignup(request, getMetadata(), (err: any, response: any) => {
+      authClient.completeGoogleSignup(request, getMetadata(buildReferralMetadata(referralCode)), (err: any, response: any) => {
         if (err) reject(handleGrpcError(err));
         else resolve(response);
       });

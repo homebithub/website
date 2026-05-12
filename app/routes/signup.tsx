@@ -4,7 +4,7 @@ import { EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { signupSchema, validateForm, validateField, normalizeKenyanPhoneNumber } from '~/utils/validation';
-import { handleApiError, extractErrorMessage } from '~/utils/errorMessages';
+import { handleApiError } from '~/utils/errorMessages';
 import { useAuth } from '~/contexts/useAuth';
 import { Loading } from '~/components/Loading';
 import { ChevronDownIcon } from '@heroicons/react/20/solid';
@@ -14,7 +14,6 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorage';
-import { API_ENDPOINTS } from '~/config/api';
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
@@ -22,7 +21,6 @@ export const meta = () => [
     { property: "og:title", content: "Sign Up — Homebit" },
     { property: "og:url", content: "https://homebit.co.ke/signup" },
 ];
-import type { LoginResponse as AuthLoginResponse } from "~/routes/login";
 
 // Types for request and response
 export type SignupRequest = {
@@ -31,6 +29,7 @@ export type SignupRequest = {
     first_name: string;
     last_name: string;
     phone: string;
+    referral_code?: string;
     bureau_id?: string;
 };
 
@@ -85,6 +84,7 @@ export default function SignupPage() {
     const googleLastName = searchParams.get('last_name') || '';
     const googleId = searchParams.get('google_id') || '';
     const googlePicture = searchParams.get('picture') || '';
+    const referralCodeParam = searchParams.get('referral_code') || searchParams.get('ref') || searchParams.get('referral') || '';
     
     const [form, setForm] = useState<SignupRequest>({
         profile_type: googleProfileType || '',
@@ -96,6 +96,7 @@ export default function SignupPage() {
         first_name: googleFirstName,
         last_name: googleLastName,
         phone: '',
+        referral_code: referralCodeParam,
     });
     
     const [googleData, setGoogleData] = useState<{
@@ -234,55 +235,83 @@ export default function SignupPage() {
         // Clear any existing auth data before signup
         clearStoredAuthSession();
         localStorage.removeItem('user_id');
+        const normalizedPhone = normalizeKenyanPhoneNumber(form.phone);
         
         try {
             // Check if this is a Google signup completion
             if (googleData) {
-                // Complete Google signup with phone number
-                const googlePayload = {
-                    google_id: googleData.google_id,
-                    email: googleData.email,
-                    first_name: form.first_name,
-                    last_name: form.last_name,
-                    phone: form.phone,
-                    profile_type: form.profile_type,
-                    ...(form.profile_type === 'househelp' && bureauId ? { bureau_id: bureauId } : {})
-                };
-
                 let data: any;
                 try {
-                    const response = await fetch(API_ENDPOINTS.auth.googleComplete, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            Accept: 'application/json',
-                        },
-                        body: JSON.stringify(googlePayload),
-                    });
+                    const { default: authService } = await import('~/services/grpc/auth.service');
+                    const signupResponse = await authService.completeGoogleSignup(
+                        googleData.google_id,
+                        googleData.email,
+                        form.first_name,
+                        form.last_name,
+                        normalizedPhone,
+                        form.profile_type,
+                        form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
+                        form.referral_code
+                    );
 
-                    const payload = await response.json().catch(() => ({}));
-                    if (!response.ok) {
-                        throw new Error(payload?.error || `google_complete_signup_failed:${response.status}`);
-                    }
+                    const userId = signupResponse.getUserId();
+                    const token = signupResponse.getToken();
+                    const verificationProto = signupResponse.getVerification();
 
                     data = {
-                        user: { user_id: payload.user_id || '', profile_type: form.profile_type },
-                        verification: payload.verification,
+                        user: {
+                            user_id: userId,
+                            profile_type: form.profile_type,
+                        },
+                        token: token,
+                        verification: verificationProto ? {
+                            id: verificationProto.getId(),
+                            user_id: verificationProto.getUserId(),
+                            type: verificationProto.getType(),
+                            status: verificationProto.getStatus(),
+                            target: verificationProto.getTarget(),
+                            expires_at: verificationProto.getExpiresAt()?.toDate().toISOString() || '',
+                            next_resend_at: verificationProto.getNextResendAt()?.toDate().toISOString() || '',
+                            attempts: verificationProto.getAttempts(),
+                            max_attempts: verificationProto.getMaxAttempts(),
+                            resends: verificationProto.getResends(),
+                            max_resends: verificationProto.getMaxResends(),
+                            created_at: verificationProto.getCreatedAt()?.toDate().toISOString() || '',
+                            updated_at: verificationProto.getUpdatedAt()?.toDate().toISOString() || '',
+                        } : undefined,
                     };
                 } catch (err: any) {
+                    console.error('[SIGNUP] gRPC error:', err);
+
                     const errorMsg = err.message || 'Google signup completion failed';
+                    const grpcCode = err.grpcCode || '';
                     const lowerMsg = errorMsg.toLowerCase();
-                    if (lowerMsg.includes('already')) {
-                        const friendlyMsg = handleApiError({ message: errorMsg }, 'signup');
+
+                    if (grpcCode === 'ALREADY_EXISTS' || lowerMsg.includes('already')) {
                         if (lowerMsg.includes('phone')) {
-                            setFieldErrors({ phone: friendlyMsg });
+                            setFieldErrors({ phone: 'This phone number is already registered' });
                             setTouchedFields(prev => ({ ...prev, phone: true }));
+                            setError('This phone number is already registered');
+                        } else if (lowerMsg.includes('email')) {
+                            setFieldErrors({ email: 'This email is already registered' });
+                            setTouchedFields(prev => ({ ...prev, email: true }));
+                            setError('This email is already registered');
+                        } else {
+                            setError('Account already exists');
                         }
-                        setError(friendlyMsg);
                         setFormLoading(false);
                         return;
                     }
-                    throw new Error(errorMsg);
+
+                    if (grpcCode === 'INVALID_ARGUMENT') {
+                        setError(errorMsg);
+                        setFormLoading(false);
+                        return;
+                    }
+
+                    setError(errorMsg);
+                    setFormLoading(false);
+                    return;
                 }
                 
                 const userId = data.user?.user_id;
@@ -320,8 +349,6 @@ export default function SignupPage() {
             }
             
             // Regular signup flow - use gRPC-Web
-            const normalizedPhone = normalizeKenyanPhoneNumber(form.phone);
-            
             let data: any;
             try {
                 // Use gRPC-Web instead of REST
@@ -332,7 +359,8 @@ export default function SignupPage() {
                     form.first_name,
                     form.last_name,
                     form.profile_type,
-                    form.profile_type === 'househelp' && bureauId ? bureauId : undefined
+                    form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
+                    form.referral_code
                 );
                 
                 // Extract data from gRPC response
@@ -462,17 +490,13 @@ export default function SignupPage() {
             // Pass profile_type in state to preserve it through OAuth redirect
             const statePayload = {
                 profile_type: form.profile_type,
-                bureau_id: bureauId || undefined
+                bureau_id: bureauId || undefined,
+                referral_code: form.referral_code?.trim() || undefined
             };
             const state = encodeURIComponent(JSON.stringify(statePayload));
-            const response = await fetch(`${API_ENDPOINTS.auth.googleUrl}?flow=${encodeURIComponent(flow)}&state=${encodeURIComponent(state)}`, {
-                method: 'GET',
-                headers: {
-                    Accept: 'application/json',
-                },
-            });
-            const payload = await response.json().catch(() => ({}));
-            const url = payload?.url;
+            const { default: authService } = await import('~/services/grpc/auth.service');
+            const response = await authService.getGoogleAuthURL(flow, state);
+            const url = response?.getUrl?.() || response?.url;
             if (url) {
                 window.location.href = url as string;
             } else {
@@ -764,6 +788,29 @@ export default function SignupPage() {
     />
     {getFieldError('phone') && (
         <p className="text-red-600 text-xs mt-1">{getFieldError('phone')}</p>
+    )}
+</div>
+
+<div>
+    <label htmlFor="referral_code" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Referral code (optional)</label>
+    <input
+        id="referral_code"
+        type="text"
+        name="referral_code"
+        value={form.referral_code || ''}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        className={`w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all placeholder:text-gray-500 dark:placeholder:text-gray-400 ${
+            getFieldError('referral_code') 
+                ? 'border-red-300' 
+                : isFieldValid('referral_code')
+                ? 'border-green-300'
+                : 'border-purple-200'
+        }`}
+        placeholder="AB12CD"
+    />
+    {getFieldError('referral_code') && (
+        <p className="text-red-600 text-xs mt-1">{getFieldError('referral_code')}</p>
     )}
 </div>
 

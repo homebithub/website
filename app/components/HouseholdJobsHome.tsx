@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -182,6 +182,17 @@ const summarizeSchedule = (schedule?: Record<string, { morning?: boolean; aftern
   return activeDays.map((day) => day.slice(0, 3)).join(", ");
 };
 
+const isOpenForWorkListingActive = (listing: OpenForWorkListing) => {
+  const status = (listing.status || "active").toLowerCase();
+  return ["active", "open", "available"].includes(status);
+};
+
+const formatListingStatus = (status?: string) => {
+  const normalized = formatTextValue(status);
+  if (!normalized) return "Open";
+  return normalized.replace(/_/g, " ");
+};
+
 export default function HouseholdJobsHome() {
   const navigate = useNavigate();
   const currentUserId = useMemo(() => getStoredUserId(), []);
@@ -195,6 +206,8 @@ export default function HouseholdJobsHome() {
   const [hasMore, setHasMore] = useState(true);
   const [shortlistedListingIds, setShortlistedListingIds] = useState<Set<string>>(() => new Set());
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
+  const [openOnly, setOpenOnly] = useState(true);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const limit = 12;
 
@@ -203,6 +216,14 @@ export default function HouseholdJobsHome() {
     [listings]
   );
   const profilePhotos = useProfilePhotos(househelpUserIds);
+  const openListingsCount = useMemo(
+    () => listings.filter((listing) => isOpenForWorkListingActive(listing)).length,
+    [listings]
+  );
+  const filteredListings = useMemo(
+    () => (openOnly ? listings.filter((listing) => isOpenForWorkListingActive(listing)) : listings),
+    [listings, openOnly]
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -262,6 +283,22 @@ export default function HouseholdJobsHome() {
       cancelled = true;
     };
   }, [offset]);
+
+  useEffect(() => {
+    if (!sentinelRef.current) return;
+    const el = sentinelRef.current;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && !loading && hasMore) {
+          setOffset((prev) => prev + limit);
+        }
+      },
+      { rootMargin: "240px" }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [loading, hasMore]);
 
   const handleMessage = async (listing: OpenForWorkListing) => {
     const househelpUserId = listing.househelp?.user_id || listing.househelp?.user?.id;
@@ -332,22 +369,67 @@ export default function HouseholdJobsHome() {
               </p>
             </div>
 
+            <div className="mb-6 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/80 dark:bg-[#141020]/80 p-5 shadow-sm">
+              <div className="flex flex-wrap items-center justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Filters</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    Focus on househelps who are ready to start now.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setOpenOnly(true)}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition border ${
+                      openOnly
+                        ? "bg-purple-600 border-purple-500 text-white shadow-sm"
+                        : "bg-white border-purple-200 text-purple-700 hover:bg-purple-50 dark:bg-white/10 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                    }`}
+                  >
+                    Open to work
+                  </button>
+                  <button
+                    onClick={() => setOpenOnly(false)}
+                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition border ${
+                      !openOnly
+                        ? "bg-purple-600 border-purple-500 text-white shadow-sm"
+                        : "bg-white border-purple-200 text-purple-700 hover:bg-purple-50 dark:bg-white/10 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                    }`}
+                  >
+                    All listings
+                  </button>
+                </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3 text-xs">
+                <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200 font-semibold">
+                  {openListingsCount} open now
+                </span>
+                <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                  {listings.length} total listings
+                </span>
+              </div>
+            </div>
+
             {error && <ErrorAlert message={error} className="mb-6" />}
 
-            {loading && listings.length === 0 ? (
+            {loading && filteredListings.length === 0 ? (
               <div className="flex justify-center items-center py-20">
                 <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
               </div>
-            ) : listings.length === 0 ? (
+            ) : filteredListings.length === 0 ? (
               <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No open listings yet</h3>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
+                  {openOnly ? "No open listings yet" : "No listings yet"}
+                </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
-                  When househelps mark themselves as open to work, their listings will appear here.
+                  {openOnly
+                    ? "When househelps mark themselves as open to work, their listings will appear here."
+                    : "When househelps create listings, they will appear here."}
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {listings.map((listing) => {
+                {filteredListings.map((listing) => {
                   const househelp = listing.househelp || {};
                   const user = househelp.user || {};
                   const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || "Househelp";
@@ -360,6 +442,7 @@ export default function HouseholdJobsHome() {
                   const location = firstString(househelp.town, househelp.location) || "Location not specified";
                   const experienceYears = toFiniteNumber(househelp.years_of_experience);
                   const shortlisted = shortlistedListingIds.has(listing.id);
+                  const isOpen = isOpenForWorkListingActive(listing);
 
                   return (
                     <div
@@ -403,8 +486,14 @@ export default function HouseholdJobsHome() {
                                   <Heart className={`h-4 w-4 ${shortlisted ? "fill-current" : ""}`} />
                                 )}
                               </button>
-                              <span className="px-3 py-1 text-xs font-semibold rounded-full bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200">
-                                Open
+                              <span
+                                className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                                  isOpen
+                                    ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200"
+                                    : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300"
+                                }`}
+                              >
+                                {formatListingStatus(listing.status)}
                               </span>
                             </div>
                           </div>
@@ -484,6 +573,7 @@ export default function HouseholdJobsHome() {
                 </button>
               </div>
             )}
+            <div ref={sentinelRef} className="h-1" />
           </div>
         </main>
       </PurpleThemeWrapper>
