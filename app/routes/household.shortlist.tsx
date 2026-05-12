@@ -1,8 +1,7 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
-import { ChatBubbleLeftRightIcon, HeartIcon } from '@heroicons/react/24/outline';
-import { HeartIcon as HeartIconSolid } from '@heroicons/react/24/solid';
+import { Heart } from 'lucide-react';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -12,9 +11,11 @@ import { getInboxRoute, startOrGetConversation, type StartConversationPayload } 
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { OptimizedImage } from '~/components/ui/OptimizedImage';
 import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
-import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
+import { formatTimeAgo } from '~/utils/timeAgo';
+import { normalizeOnboardingAmountFromStorage } from '~/utils/onboardingCompensation';
 
 const formatGender = (value?: string) => {
   if (!value) return '';
@@ -26,6 +27,55 @@ const formatAge = (dob?: string) => {
   const parsed = new Date(dob);
   if (Number.isNaN(parsed.getTime())) return '';
   return Math.floor((Date.now() - parsed.getTime()) / (365.25 * 24 * 60 * 60 * 1000)).toString();
+};
+
+const formatDate = (value?: string) => {
+  if (!value) return 'Flexible';
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime()) || parsed.getFullYear() < 1900) return 'Flexible';
+  return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+const toFiniteNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+};
+
+const formatSalary = (min?: unknown, max?: unknown, frequency?: unknown) => {
+  const frequencyLabel = typeof frequency === 'string' ? frequency : '';
+  const rawMin = toFiniteNumber(min);
+  const rawMax = toFiniteNumber(max);
+  const normalizedMin = rawMin == null ? undefined : normalizeOnboardingAmountFromStorage(rawMin, frequencyLabel);
+  const normalizedMax = rawMax == null ? undefined : normalizeOnboardingAmountFromStorage(rawMax, frequencyLabel);
+  if (normalizedMin == null && normalizedMax == null) return 'Not specified';
+  const formatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'KES', maximumFractionDigits: 0 });
+  const minLabel = normalizedMin != null ? formatter.format(normalizedMin) : null;
+  const maxLabel = normalizedMax != null ? formatter.format(normalizedMax) : null;
+  const base = minLabel && maxLabel ? `${minLabel} - ${maxLabel}` : (minLabel || maxLabel || 'Not specified');
+  const freqLabel = frequencyLabel ? ` / ${frequencyLabel}` : '';
+  return `${base}${freqLabel}`;
+};
+
+const summarizeSchedule = (schedule?: Record<string, { morning?: boolean; afternoon?: boolean; evening?: boolean }>) => {
+  if (!schedule) return null;
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const activeDays = days.filter((day) => schedule[day]?.morning || schedule[day]?.afternoon || schedule[day]?.evening);
+  if (activeDays.length === 0) return null;
+  return activeDays.map((day) => day.slice(0, 3)).join(', ');
+};
+
+const isOpenForWorkListingActive = (listing: { status?: string }) => {
+  const status = (listing.status || 'active').toLowerCase();
+  return ['active', 'open', 'available'].includes(status);
+};
+
+const formatListingStatus = (status?: string) => {
+  if (!status) return 'Open';
+  return status.replace(/_/g, ' ');
 };
 
 // Types

@@ -14,6 +14,7 @@ import { getInboxRoute, startOrGetConversation } from "~/utils/conversationLaunc
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
+import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import { Heart } from "lucide-react";
 
 interface HousehelpSummary {
@@ -35,6 +36,24 @@ interface HousehelpSummary {
     avatar_url?: string;
   };
 }
+
+const normalizeToken = (value?: string) => (value || "").trim().toLowerCase();
+
+const toNumberArray = (value: unknown): number[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (typeof item === "number") return item;
+      if (typeof item === "string" && item.trim() !== "") {
+        const parsed = Number(item);
+        return Number.isFinite(parsed) ? parsed : undefined;
+      }
+      return undefined;
+    })
+    .filter((item): item is number => typeof item === "number");
+};
+
+const toIdString = (value: unknown): string => (value == null ? "" : String(value));
 
 const toRecord = (value: unknown): Record<string, any> | null => (
   value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, any> : null
@@ -76,6 +95,10 @@ interface OpenForWorkListing {
   job_types?: string[];
   available_from?: string;
   work_schedule?: Record<string, { morning?: boolean; afternoon?: boolean; evening?: boolean }>;
+  chores_ids?: number[] | string[];
+  pet_type_ids?: number[] | string[];
+  children_age_range_id?: number | string;
+  children_capacity_id?: number | string;
   can_work_with_kids?: boolean;
   can_work_with_pets?: boolean;
   status?: string;
@@ -85,6 +108,27 @@ interface OpenForWorkListing {
   salary_frequency?: string;
   househelp?: HousehelpSummary;
 }
+
+type SalaryRangeOption = {
+  value: string;
+  label: string;
+  min: number | null;
+  max: number | null;
+  frequency?: string;
+};
+
+const DEFAULT_OPEN_FOR_WORK_FILTERS = {
+  jobType: "",
+  availabilityWindow: "",
+  scheduleSlot: "",
+  salaryRangeId: "",
+  choreId: "",
+  petTypeId: "",
+  childrenAgeRangeId: "",
+  childrenCapacityId: "",
+  canWorkWithKids: "",
+  canWorkWithPets: "",
+};
 
 const formatDate = (value?: string) => {
   if (!value) return "Flexible";
@@ -100,6 +144,52 @@ const toFiniteNumber = (value: unknown): number | undefined => {
     return Number.isFinite(parsed) ? parsed : undefined;
   }
   return undefined;
+};
+
+const hasScheduleSlot = (
+  schedule: OpenForWorkListing["work_schedule"],
+  slot: "morning" | "afternoon" | "evening"
+): boolean => {
+  if (!schedule) return false;
+  return Object.values(schedule).some((day) => day?.[slot]);
+};
+
+const matchesAvailabilityWindow = (value: string | undefined, window: string) => {
+  if (!window) return true;
+  if (!value) return window === "flexible";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return window === "flexible";
+  const now = new Date();
+  const msDiff = parsed.getTime() - now.getTime();
+  const days = msDiff / (1000 * 60 * 60 * 24);
+  switch (window) {
+    case "next_14":
+      return days <= 14;
+    case "next_30":
+      return days <= 30;
+    case "later":
+      return days > 30;
+    case "flexible":
+      return false;
+    default:
+      return true;
+  }
+};
+
+const matchesOpenForWorkSalary = (listing: OpenForWorkListing, selected?: SalaryRangeOption) => {
+  if (!selected) return true;
+  const rawMin = toFiniteNumber(listing.salary_min ?? listing.househelp?.salary_expectation);
+  const rawMax = toFiniteNumber(listing.salary_max ?? listing.househelp?.salary_expectation);
+  if (rawMin == null && rawMax == null) return false;
+  const listingMin = rawMin ?? rawMax ?? 0;
+  const listingMax = rawMax ?? rawMin ?? 0;
+  const listingFrequency = listing.salary_frequency || listing.househelp?.salary_frequency;
+  if (selected.frequency && listingFrequency && normalizeToken(listingFrequency) !== normalizeToken(selected.frequency)) {
+    return false;
+  }
+  if (selected.min != null && listingMax < selected.min) return false;
+  if (selected.max != null && listingMin > selected.max) return false;
+  return true;
 };
 
 const normalizeHousehelp = (raw: unknown): HousehelpSummary | undefined => {
@@ -207,9 +297,12 @@ export default function HouseholdJobsHome() {
   const [shortlistedListingIds, setShortlistedListingIds] = useState<Set<string>>(() => new Set());
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
   const [openOnly, setOpenOnly] = useState(true);
+  const [filters, setFilters] = useState(() => ({ ...DEFAULT_OPEN_FOR_WORK_FILTERS }));
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const limit = 12;
+
+  const { options: onboardingOptions } = useOnboardingOptions("househelp");
 
   const househelpUserIds = useMemo(
     () => listings.map((listing) => firstString(listing.househelp?.user_id, listing.househelp?.user?.id)).filter(Boolean),
@@ -220,10 +313,61 @@ export default function HouseholdJobsHome() {
     () => listings.filter((listing) => isOpenForWorkListingActive(listing)).length,
     [listings]
   );
-  const filteredListings = useMemo(
-    () => (openOnly ? listings.filter((listing) => isOpenForWorkListingActive(listing)) : listings),
-    [listings, openOnly]
+  const jobTypeOptions = useMemo(() => {
+    const options = new Map<string, string>();
+    listings.forEach((listing) => {
+      toStringArray(listing.job_types).forEach((type) => {
+        const normalized = normalizeToken(type);
+        if (normalized) options.set(normalized, type.replace(/_/g, " "));
+      });
+    });
+    return Array.from(options.entries()).map(([value, label]) => ({ value, label }));
+  }, [listings]);
+  const salaryRangeOptions = useMemo<SalaryRangeOption[]>(() => {
+    const ranges = onboardingOptions?.salary_ranges ?? [];
+    return ranges.map((range) => ({
+      value: String(range.id),
+      label: `${range.label}${range.frequency ? ` / ${range.frequency}` : ""}`,
+      min: range.min_amount ?? null,
+      max: range.max_amount ?? null,
+      frequency: range.frequency,
+    }));
+  }, [onboardingOptions]);
+  const selectedSalaryRange = useMemo(
+    () => salaryRangeOptions.find((range) => range.value === filters.salaryRangeId),
+    [salaryRangeOptions, filters.salaryRangeId]
   );
+  const hasActiveFilters = useMemo(
+    () => Object.values(filters).some(Boolean),
+    [filters]
+  );
+  const clearFilters = () => setFilters({ ...DEFAULT_OPEN_FOR_WORK_FILTERS });
+  const filteredListings = useMemo(() => {
+    const choreFilter = filters.choreId ? Number(filters.choreId) : null;
+    const petFilter = filters.petTypeId ? Number(filters.petTypeId) : null;
+    return listings.filter((listing) => {
+      if (openOnly && !isOpenForWorkListingActive(listing)) return false;
+      if (filters.jobType && !toStringArray(listing.job_types).some((type) => normalizeToken(type) === filters.jobType)) {
+        return false;
+      }
+      if (filters.availabilityWindow && !matchesAvailabilityWindow(listing.available_from, filters.availabilityWindow)) {
+        return false;
+      }
+      if (filters.scheduleSlot && !hasScheduleSlot(listing.work_schedule, filters.scheduleSlot as "morning" | "afternoon" | "evening")) {
+        return false;
+      }
+      if (choreFilter && !toNumberArray(listing.chores_ids).includes(choreFilter)) return false;
+      if (petFilter && !toNumberArray(listing.pet_type_ids).includes(petFilter)) return false;
+      if (filters.childrenAgeRangeId && toIdString(listing.children_age_range_id) !== filters.childrenAgeRangeId) return false;
+      if (filters.childrenCapacityId && toIdString(listing.children_capacity_id) !== filters.childrenCapacityId) return false;
+      if (filters.canWorkWithKids === "yes" && !listing.can_work_with_kids) return false;
+      if (filters.canWorkWithKids === "no" && listing.can_work_with_kids) return false;
+      if (filters.canWorkWithPets === "yes" && !listing.can_work_with_pets) return false;
+      if (filters.canWorkWithPets === "no" && listing.can_work_with_pets) return false;
+      if (!matchesOpenForWorkSalary(listing, selectedSalaryRange)) return false;
+      return true;
+    });
+  }, [listings, openOnly, filters, selectedSalaryRange]);
 
   useEffect(() => {
     let cancelled = false;
@@ -370,43 +514,203 @@ export default function HouseholdJobsHome() {
             </div>
 
             <div className="mb-6 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/80 dark:bg-[#141020]/80 p-5 shadow-sm">
-              <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
                   <p className="text-xs uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Filters</p>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                    Focus on househelps who are ready to start now.
+                    Narrow down househelps by availability, skills, and preferences.
                   </p>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/70 dark:bg-white/10 p-1 shadow-inner">
                   <button
                     onClick={() => setOpenOnly(true)}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition border ${
+                    className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
                       openOnly
-                        ? "bg-purple-600 border-purple-500 text-white shadow-sm"
-                        : "bg-white border-purple-200 text-purple-700 hover:bg-purple-50 dark:bg-white/10 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
+                        : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
                     }`}
                   >
                     Open to work
                   </button>
                   <button
                     onClick={() => setOpenOnly(false)}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold transition border ${
+                    className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
                       !openOnly
-                        ? "bg-purple-600 border-purple-500 text-white shadow-sm"
-                        : "bg-white border-purple-200 text-purple-700 hover:bg-purple-50 dark:bg-white/10 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
+                        : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
                     }`}
                   >
                     All listings
                   </button>
                 </div>
               </div>
-              <div className="mt-4 flex flex-wrap gap-3 text-xs">
-                <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200 font-semibold">
-                  {openListingsCount} open now
-                </span>
-                <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                  {listings.length} total listings
-                </span>
+
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Job type
+                  <select
+                    value={filters.jobType}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, jobType: event.target.value }))}
+                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  >
+                    <option value="">Any job type</option>
+                    {jobTypeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Availability
+                  <select
+                    value={filters.availabilityWindow}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, availabilityWindow: event.target.value }))}
+                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  >
+                    <option value="">Any start window</option>
+                    <option value="next_14">Within 2 weeks</option>
+                    <option value="next_30">Within 30 days</option>
+                    <option value="later">Later</option>
+                    <option value="flexible">Flexible</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Schedule slot
+                  <select
+                    value={filters.scheduleSlot}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, scheduleSlot: event.target.value }))}
+                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  >
+                    <option value="">Any slot</option>
+                    <option value="morning">Morning</option>
+                    <option value="afternoon">Afternoon</option>
+                    <option value="evening">Evening</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Salary range
+                  <select
+                    value={filters.salaryRangeId}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, salaryRangeId: event.target.value }))}
+                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  >
+                    <option value="">Any salary</option>
+                    {salaryRangeOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Chore focus
+                  <select
+                    value={filters.choreId}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, choreId: event.target.value }))}
+                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  >
+                    <option value="">Any chores</option>
+                    {onboardingOptions?.chores?.map((chore) => (
+                      <option key={chore.id} value={String(chore.id)}>
+                        {chore.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Pet type
+                  <select
+                    value={filters.petTypeId}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, petTypeId: event.target.value }))}
+                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  >
+                    <option value="">Any pets</option>
+                    {onboardingOptions?.pet_types?.map((pet) => (
+                      <option key={pet.id} value={String(pet.id)}>
+                        {pet.name}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Children age range
+                  <select
+                    value={filters.childrenAgeRangeId}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, childrenAgeRangeId: event.target.value }))}
+                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  >
+                    <option value="">Any age range</option>
+                    {onboardingOptions?.children_age_ranges?.map((range) => (
+                      <option key={range.id} value={String(range.id)}>
+                        {range.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Children capacity
+                  <select
+                    value={filters.childrenCapacityId}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, childrenCapacityId: event.target.value }))}
+                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  >
+                    <option value="">Any capacity</option>
+                    {onboardingOptions?.children_capacities?.map((capacity) => (
+                      <option key={capacity.id} value={String(capacity.id)}>
+                        {capacity.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Work with kids
+                  <select
+                    value={filters.canWorkWithKids}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, canWorkWithKids: event.target.value }))}
+                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  >
+                    <option value="">Any preference</option>
+                    <option value="yes">Can work with kids</option>
+                    <option value="no">Prefers no kids</option>
+                  </select>
+                </label>
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Work with pets
+                  <select
+                    value={filters.canWorkWithPets}
+                    onChange={(event) => setFilters((prev) => ({ ...prev, canWorkWithPets: event.target.value }))}
+                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
+                  >
+                    <option value="">Any preference</option>
+                    <option value="yes">Can work with pets</option>
+                    <option value="no">Prefers no pets</option>
+                  </select>
+                </label>
+              </div>
+
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex flex-wrap gap-2">
+                  <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200 font-semibold">
+                    {openListingsCount} open now
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                    {listings.length} total listings
+                  </span>
+                  {hasActiveFilters && (
+                    <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200 font-semibold">
+                      {filteredListings.length} match your filters
+                    </span>
+                  )}
+                </div>
+                {hasActiveFilters && (
+                  <button
+                    onClick={clearFilters}
+                    className="text-xs font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
             </div>
 
@@ -419,12 +723,14 @@ export default function HouseholdJobsHome() {
             ) : filteredListings.length === 0 ? (
               <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                  {openOnly ? "No open listings yet" : "No listings yet"}
+                  {hasActiveFilters ? "No listings match your filters" : openOnly ? "No open listings yet" : "No listings yet"}
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
-                  {openOnly
-                    ? "When househelps mark themselves as open to work, their listings will appear here."
-                    : "When househelps create listings, they will appear here."}
+                  {hasActiveFilters
+                    ? "Try adjusting your filters or clear them to see more househelps."
+                    : openOnly
+                      ? "When househelps mark themselves as open to work, their listings will appear here."
+                      : "When househelps create listings, they will appear here."}
                 </p>
               </div>
             ) : (
