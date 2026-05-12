@@ -15,6 +15,7 @@ import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
 import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
+import CustomSelect from "~/components/ui/CustomSelect";
 import { Heart, ChevronDown } from "lucide-react";
 
 interface HousehelpSummary {
@@ -131,11 +132,6 @@ const DEFAULT_OPEN_FOR_WORK_FILTERS = {
 };
 
 const HOUSEHOLD_FILTERS_STORAGE_KEY = "homebit_household_filters_open";
-
-const FILTER_SELECT_CLASS =
-  "h-10 w-full appearance-none rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white/90 dark:bg-[#13131a] px-3 pr-10 text-xs font-medium text-gray-900 dark:text-gray-100 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30";
-const FILTER_SELECT_ICON_CLASS =
-  "pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-400 dark:text-purple-300";
 
 const formatDate = (value?: string) => {
   if (!value) return "Flexible";
@@ -636,174 +632,140 @@ export default function HouseholdJobsHome() {
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Job type
-                      <div className="relative">
-                        <select
-                          value={filters.jobType}
-                          onChange={(event) => setFilters((prev) => ({ ...prev, jobType: event.target.value }))}
-                          className={FILTER_SELECT_CLASS}
-                        >
-                          <option value="">Any job type</option>
-                          {jobTypeOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                      </div>
+                      <CustomSelect
+                        value={filters.jobType}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, jobType: value }))}
+                        options={[
+                          { value: "", label: "Any job type" },
+                          ...jobTypeOptions.map((option) => ({ value: option.value, label: option.label })),
+                        ]}
+                        className="w-full"
+                        placeholder="Any job type"
+                      />
                     </label>
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Availability
-                      <div className="relative">
-                        <select
-                          value={filters.availabilityWindow}
-                          onChange={(event) => setFilters((prev) => ({ ...prev, availabilityWindow: event.target.value }))}
-                          className={FILTER_SELECT_CLASS}
-                        >
-                          <option value="">Any start window</option>
-                          <option value="next_14">Within 2 weeks</option>
-                          <option value="next_30">Within 30 days</option>
-                          <option value="later">Later</option>
-                          <option value="flexible">Flexible</option>
-                        </select>
-                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                      </div>
+                      <CustomSelect
+                        value={filters.availabilityWindow}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, availabilityWindow: value }))}
+                        options={[
+                          { value: "", label: "Any start window" },
+                          { value: "next_14", label: "Within 2 weeks" },
+                          { value: "next_30", label: "Within 30 days" },
+                          { value: "later", label: "Later" },
+                          { value: "flexible", label: "Flexible" },
+                        ]}
+                        className="w-full"
+                        placeholder="Any start window"
+                      />
                     </label>
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Schedule slot
-                      <div className="relative">
-                        <select
-                          value={filters.scheduleSlot}
-                          onChange={(event) => setFilters((prev) => ({ ...prev, scheduleSlot: event.target.value }))}
-                          className={FILTER_SELECT_CLASS}
-                        >
-                          <option value="">Any slot</option>
-                          <option value="morning">Morning</option>
-                          <option value="afternoon">Afternoon</option>
-                          <option value="evening">Evening</option>
-                        </select>
-                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                      </div>
+                      <CustomSelect
+                        value={filters.scheduleSlot}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, scheduleSlot: value }))}
+                        options={[
+                          { value: "", label: "Any slot" },
+                          { value: "morning", label: "Morning" },
+                          { value: "afternoon", label: "Afternoon" },
+                          { value: "evening", label: "Evening" },
+                        ]}
+                        className="w-full"
+                        placeholder="Any slot"
+                      />
                     </label>
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Salary range
-                      <div className="relative">
-                        <select
-                          value={filters.salaryRangeId}
-                          onChange={(event) => setFilters((prev) => ({ ...prev, salaryRangeId: event.target.value }))}
-                          className={FILTER_SELECT_CLASS}
-                        >
-                          <option value="">Any salary</option>
-                          {salaryRangeOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                      </div>
+                      <CustomSelect
+                        value={filters.salaryRangeId}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, salaryRangeId: value }))}
+                        options={[
+                          { value: "", label: "Any salary" },
+                          ...salaryRangeOptions.map((option) => ({ value: option.value, label: option.label })),
+                        ]}
+                        className="w-full"
+                        placeholder="Any salary"
+                      />
                     </label>
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Chore focus
-                      <div className="relative">
-                        <select
-                          value={filters.choreId}
-                          onChange={(event) => setFilters((prev) => ({ ...prev, choreId: event.target.value }))}
-                          className={FILTER_SELECT_CLASS}
-                        >
-                          <option value="">Any chores</option>
-                          {onboardingOptions?.chores?.map((chore) => (
-                            <option key={chore.id} value={String(chore.id)}>
-                              {chore.name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                      </div>
+                      <CustomSelect
+                        value={filters.choreId}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, choreId: value }))}
+                        options={[
+                          { value: "", label: "Any chores" },
+                          ...(onboardingOptions?.chores?.map((chore) => ({ value: String(chore.id), label: chore.name })) ?? []),
+                        ]}
+                        className="w-full"
+                        placeholder="Any chores"
+                      />
                     </label>
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Pet type
-                      <div className="relative">
-                        <select
-                          value={filters.petTypeId}
-                          onChange={(event) => setFilters((prev) => ({ ...prev, petTypeId: event.target.value }))}
-                          className={FILTER_SELECT_CLASS}
-                        >
-                          <option value="">Any pets</option>
-                          {onboardingOptions?.pet_types?.map((pet) => (
-                            <option key={pet.id} value={String(pet.id)}>
-                              {pet.name}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                      </div>
+                      <CustomSelect
+                        value={filters.petTypeId}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, petTypeId: value }))}
+                        options={[
+                          { value: "", label: "Any pets" },
+                          ...(onboardingOptions?.pet_types?.map((pet) => ({ value: String(pet.id), label: pet.name })) ?? []),
+                        ]}
+                        className="w-full"
+                        placeholder="Any pets"
+                      />
                     </label>
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Children age range
-                      <div className="relative">
-                        <select
-                          value={filters.childrenAgeRangeId}
-                          onChange={(event) => setFilters((prev) => ({ ...prev, childrenAgeRangeId: event.target.value }))}
-                          className={FILTER_SELECT_CLASS}
-                        >
-                          <option value="">Any age range</option>
-                          {onboardingOptions?.children_age_ranges?.map((range) => (
-                            <option key={range.id} value={String(range.id)}>
-                              {range.label}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                      </div>
+                      <CustomSelect
+                        value={filters.childrenAgeRangeId}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, childrenAgeRangeId: value }))}
+                        options={[
+                          { value: "", label: "Any age range" },
+                          ...(onboardingOptions?.children_age_ranges?.map((range) => ({ value: String(range.id), label: range.label })) ?? []),
+                        ]}
+                        className="w-full"
+                        placeholder="Any age range"
+                      />
                     </label>
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Children capacity
-                      <div className="relative">
-                        <select
-                          value={filters.childrenCapacityId}
-                          onChange={(event) => setFilters((prev) => ({ ...prev, childrenCapacityId: event.target.value }))}
-                          className={FILTER_SELECT_CLASS}
-                        >
-                          <option value="">Any capacity</option>
-                          {onboardingOptions?.children_capacities?.map((capacity) => (
-                            <option key={capacity.id} value={String(capacity.id)}>
-                              {capacity.label}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                      </div>
+                      <CustomSelect
+                        value={filters.childrenCapacityId}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, childrenCapacityId: value }))}
+                        options={[
+                          { value: "", label: "Any capacity" },
+                          ...(onboardingOptions?.children_capacities?.map((capacity) => ({ value: String(capacity.id), label: capacity.label })) ?? []),
+                        ]}
+                        className="w-full"
+                        placeholder="Any capacity"
+                      />
                     </label>
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Work with kids
-                      <div className="relative">
-                        <select
-                          value={filters.canWorkWithKids}
-                          onChange={(event) => setFilters((prev) => ({ ...prev, canWorkWithKids: event.target.value }))}
-                          className={FILTER_SELECT_CLASS}
-                        >
-                          <option value="">Any preference</option>
-                          <option value="yes">Can work with kids</option>
-                          <option value="no">Prefers no kids</option>
-                        </select>
-                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                      </div>
+                      <CustomSelect
+                        value={filters.canWorkWithKids}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, canWorkWithKids: value }))}
+                        options={[
+                          { value: "", label: "Any preference" },
+                          { value: "yes", label: "Can work with kids" },
+                          { value: "no", label: "Prefers no kids" },
+                        ]}
+                        className="w-full"
+                        placeholder="Any preference"
+                      />
                     </label>
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Work with pets
-                      <div className="relative">
-                        <select
-                          value={filters.canWorkWithPets}
-                          onChange={(event) => setFilters((prev) => ({ ...prev, canWorkWithPets: event.target.value }))}
-                          className={FILTER_SELECT_CLASS}
-                        >
-                          <option value="">Any preference</option>
-                          <option value="yes">Can work with pets</option>
-                          <option value="no">Prefers no pets</option>
-                        </select>
-                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                      </div>
+                      <CustomSelect
+                        value={filters.canWorkWithPets}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, canWorkWithPets: value }))}
+                        options={[
+                          { value: "", label: "Any preference" },
+                          { value: "yes", label: "Can work with pets" },
+                          { value: "no", label: "Prefers no pets" },
+                        ]}
+                        className="w-full"
+                        placeholder="Any preference"
+                      />
                     </label>
                   </div>
 
@@ -842,19 +804,18 @@ export default function HouseholdJobsHome() {
               <div className="flex flex-wrap items-center gap-3">
                 <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                   Order
-                  <div className="relative min-w-[220px]">
-                    <select
-                      value={sortBy}
-                      onChange={(event) => setSortBy(event.target.value)}
-                      className={FILTER_SELECT_CLASS}
-                    >
-                      <option value="default">Newest first</option>
-                      <option value="created_asc">Oldest first</option>
-                      <option value="budget_desc">Budget high to low</option>
-                      <option value="budget_asc">Budget low to high</option>
-                    </select>
-                    <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
-                  </div>
+                  <CustomSelect
+                    value={sortBy}
+                    onChange={(value) => setSortBy(value)}
+                    options={[
+                      { value: "default", label: "Newest first" },
+                      { value: "created_asc", label: "Oldest first" },
+                      { value: "budget_desc", label: "Budget high to low" },
+                      { value: "budget_asc", label: "Budget low to high" },
+                    ]}
+                    className="min-w-[220px]"
+                    placeholder="Newest first"
+                  />
                   {sortBy !== "default" && (
                     <button
                       type="button"
