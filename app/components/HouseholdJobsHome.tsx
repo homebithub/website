@@ -15,7 +15,7 @@ import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
 import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
-import { Heart } from "lucide-react";
+import { Heart, ChevronDown } from "lucide-react";
 
 interface HousehelpSummary {
   id?: string;
@@ -130,6 +130,13 @@ const DEFAULT_OPEN_FOR_WORK_FILTERS = {
   canWorkWithPets: "",
 };
 
+const HOUSEHOLD_FILTERS_STORAGE_KEY = "homebit_household_filters_open";
+
+const FILTER_SELECT_CLASS =
+  "h-10 w-full appearance-none rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white/90 dark:bg-[#13131a] px-3 pr-10 text-xs font-medium text-gray-900 dark:text-gray-100 shadow-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30";
+const FILTER_SELECT_ICON_CLASS =
+  "pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-400 dark:text-purple-300";
+
 const formatDate = (value?: string) => {
   if (!value) return "Flexible";
   const parsed = new Date(value);
@@ -190,6 +197,28 @@ const matchesOpenForWorkSalary = (listing: OpenForWorkListing, selected?: Salary
   if (selected.min != null && listingMax < selected.min) return false;
   if (selected.max != null && listingMin > selected.max) return false;
   return true;
+};
+
+const toTimestamp = (value?: string): number | null => {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.getTime();
+};
+
+const compareNumbers = (a: number | null, b: number | null, direction: "asc" | "desc") => {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return direction === "asc" ? a - b : b - a;
+};
+
+const getListingBudgetValue = (listing: OpenForWorkListing): number | null => {
+  const max = toFiniteNumber(listing.salary_max ?? listing.househelp?.salary_expectation);
+  const min = toFiniteNumber(listing.salary_min ?? listing.househelp?.salary_expectation);
+  if (max != null) return max;
+  if (min != null) return min;
+  return null;
 };
 
 const normalizeHousehelp = (raw: unknown): HousehelpSummary | undefined => {
@@ -297,7 +326,9 @@ export default function HouseholdJobsHome() {
   const [shortlistedListingIds, setShortlistedListingIds] = useState<Set<string>>(() => new Set());
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
   const [openOnly, setOpenOnly] = useState(true);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(() => ({ ...DEFAULT_OPEN_FOR_WORK_FILTERS }));
+  const [sortBy, setSortBy] = useState("default");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
   const limit = 12;
@@ -368,6 +399,40 @@ export default function HouseholdJobsHome() {
       return true;
     });
   }, [listings, openOnly, filters, selectedSalaryRange]);
+  const sortedListings = useMemo(() => {
+    if (!sortBy) return filteredListings;
+    const items = [...filteredListings];
+    switch (sortBy) {
+      case "budget_desc":
+        items.sort((a, b) => compareNumbers(getListingBudgetValue(a), getListingBudgetValue(b), "desc"));
+        break;
+      case "budget_asc":
+        items.sort((a, b) => compareNumbers(getListingBudgetValue(a), getListingBudgetValue(b), "asc"));
+        break;
+      case "created_asc":
+        items.sort((a, b) => compareNumbers(toTimestamp(a.created_at), toTimestamp(b.created_at), "asc"));
+        break;
+      case "created_desc":
+      case "default":
+      default:
+        items.sort((a, b) => compareNumbers(toTimestamp(a.created_at), toTimestamp(b.created_at), "desc"));
+        break;
+    }
+    return items;
+  }, [filteredListings, sortBy]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const stored = window.localStorage.getItem(HOUSEHOLD_FILTERS_STORAGE_KEY);
+    if (stored !== null) {
+      setFiltersOpen(stored === "true");
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.localStorage.setItem(HOUSEHOLD_FILTERS_STORAGE_KEY, String(filtersOpen));
+  }, [filtersOpen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -513,214 +578,303 @@ export default function HouseholdJobsHome() {
               </p>
             </div>
 
-            <div className="mb-6 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/80 dark:bg-[#141020]/80 p-5 shadow-sm">
-              <div className="flex flex-wrap items-start justify-between gap-4">
-                <div>
+            <div className="mb-4 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/80 dark:bg-[#141020]/80 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((prev) => !prev)}
+                className="w-full flex flex-wrap items-center justify-between gap-4 px-5 py-4"
+              >
+                <div className="text-left">
                   <p className="text-xs uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Filters</p>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
                     Narrow down househelps by availability, skills, and preferences.
                   </p>
                 </div>
-                <div className="flex items-center gap-2 rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/70 dark:bg-white/10 p-1 shadow-inner">
-                  <button
-                    onClick={() => setOpenOnly(true)}
-                    className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
-                      openOnly
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
-                        : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/70 dark:bg-white/10 p-1 shadow-inner">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setOpenOnly(true);
+                      }}
+                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
+                        openOnly
+                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
+                          : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
+                      }`}
+                    >
+                      Open to work
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setOpenOnly(false);
+                      }}
+                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
+                        !openOnly
+                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
+                          : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
+                      }`}
+                    >
+                      All listings
+                    </button>
+                  </div>
+                  <span
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/80 dark:bg-white/10 text-purple-600 dark:text-purple-200 transition ${
+                      filtersOpen ? "rotate-180" : ""
                     }`}
                   >
-                    Open to work
-                  </button>
-                  <button
-                    onClick={() => setOpenOnly(false)}
-                    className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
-                      !openOnly
-                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
-                        : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
-                    }`}
-                  >
-                    All listings
-                  </button>
+                    <ChevronDown className="h-4 w-4" />
+                  </span>
                 </div>
-              </div>
+              </button>
 
-              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Job type
-                  <select
-                    value={filters.jobType}
-                    onChange={(event) => setFilters((prev) => ({ ...prev, jobType: event.target.value }))}
-                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">Any job type</option>
-                    {jobTypeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Availability
-                  <select
-                    value={filters.availabilityWindow}
-                    onChange={(event) => setFilters((prev) => ({ ...prev, availabilityWindow: event.target.value }))}
-                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">Any start window</option>
-                    <option value="next_14">Within 2 weeks</option>
-                    <option value="next_30">Within 30 days</option>
-                    <option value="later">Later</option>
-                    <option value="flexible">Flexible</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Schedule slot
-                  <select
-                    value={filters.scheduleSlot}
-                    onChange={(event) => setFilters((prev) => ({ ...prev, scheduleSlot: event.target.value }))}
-                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">Any slot</option>
-                    <option value="morning">Morning</option>
-                    <option value="afternoon">Afternoon</option>
-                    <option value="evening">Evening</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Salary range
-                  <select
-                    value={filters.salaryRangeId}
-                    onChange={(event) => setFilters((prev) => ({ ...prev, salaryRangeId: event.target.value }))}
-                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">Any salary</option>
-                    {salaryRangeOptions.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Chore focus
-                  <select
-                    value={filters.choreId}
-                    onChange={(event) => setFilters((prev) => ({ ...prev, choreId: event.target.value }))}
-                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">Any chores</option>
-                    {onboardingOptions?.chores?.map((chore) => (
-                      <option key={chore.id} value={String(chore.id)}>
-                        {chore.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Pet type
-                  <select
-                    value={filters.petTypeId}
-                    onChange={(event) => setFilters((prev) => ({ ...prev, petTypeId: event.target.value }))}
-                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">Any pets</option>
-                    {onboardingOptions?.pet_types?.map((pet) => (
-                      <option key={pet.id} value={String(pet.id)}>
-                        {pet.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Children age range
-                  <select
-                    value={filters.childrenAgeRangeId}
-                    onChange={(event) => setFilters((prev) => ({ ...prev, childrenAgeRangeId: event.target.value }))}
-                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">Any age range</option>
-                    {onboardingOptions?.children_age_ranges?.map((range) => (
-                      <option key={range.id} value={String(range.id)}>
-                        {range.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Children capacity
-                  <select
-                    value={filters.childrenCapacityId}
-                    onChange={(event) => setFilters((prev) => ({ ...prev, childrenCapacityId: event.target.value }))}
-                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">Any capacity</option>
-                    {onboardingOptions?.children_capacities?.map((capacity) => (
-                      <option key={capacity.id} value={String(capacity.id)}>
-                        {capacity.label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Work with kids
-                  <select
-                    value={filters.canWorkWithKids}
-                    onChange={(event) => setFilters((prev) => ({ ...prev, canWorkWithKids: event.target.value }))}
-                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">Any preference</option>
-                    <option value="yes">Can work with kids</option>
-                    <option value="no">Prefers no kids</option>
-                  </select>
-                </label>
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Work with pets
-                  <select
-                    value={filters.canWorkWithPets}
-                    onChange={(event) => setFilters((prev) => ({ ...prev, canWorkWithPets: event.target.value }))}
-                    className="h-10 rounded-xl border-2 border-purple-200/70 dark:border-purple-500/30 bg-white dark:bg-[#13131a] px-3 text-xs font-medium text-gray-900 dark:text-gray-100 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500/30"
-                  >
-                    <option value="">Any preference</option>
-                    <option value="yes">Can work with pets</option>
-                    <option value="no">Prefers no pets</option>
-                  </select>
-                </label>
-              </div>
+              {filtersOpen && (
+                <div className="border-t border-purple-100/70 dark:border-purple-500/20 px-5 pb-5">
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Job type
+                      <div className="relative">
+                        <select
+                          value={filters.jobType}
+                          onChange={(event) => setFilters((prev) => ({ ...prev, jobType: event.target.value }))}
+                          className={FILTER_SELECT_CLASS}
+                        >
+                          <option value="">Any job type</option>
+                          {jobTypeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Availability
+                      <div className="relative">
+                        <select
+                          value={filters.availabilityWindow}
+                          onChange={(event) => setFilters((prev) => ({ ...prev, availabilityWindow: event.target.value }))}
+                          className={FILTER_SELECT_CLASS}
+                        >
+                          <option value="">Any start window</option>
+                          <option value="next_14">Within 2 weeks</option>
+                          <option value="next_30">Within 30 days</option>
+                          <option value="later">Later</option>
+                          <option value="flexible">Flexible</option>
+                        </select>
+                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Schedule slot
+                      <div className="relative">
+                        <select
+                          value={filters.scheduleSlot}
+                          onChange={(event) => setFilters((prev) => ({ ...prev, scheduleSlot: event.target.value }))}
+                          className={FILTER_SELECT_CLASS}
+                        >
+                          <option value="">Any slot</option>
+                          <option value="morning">Morning</option>
+                          <option value="afternoon">Afternoon</option>
+                          <option value="evening">Evening</option>
+                        </select>
+                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Salary range
+                      <div className="relative">
+                        <select
+                          value={filters.salaryRangeId}
+                          onChange={(event) => setFilters((prev) => ({ ...prev, salaryRangeId: event.target.value }))}
+                          className={FILTER_SELECT_CLASS}
+                        >
+                          <option value="">Any salary</option>
+                          {salaryRangeOptions.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Chore focus
+                      <div className="relative">
+                        <select
+                          value={filters.choreId}
+                          onChange={(event) => setFilters((prev) => ({ ...prev, choreId: event.target.value }))}
+                          className={FILTER_SELECT_CLASS}
+                        >
+                          <option value="">Any chores</option>
+                          {onboardingOptions?.chores?.map((chore) => (
+                            <option key={chore.id} value={String(chore.id)}>
+                              {chore.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Pet type
+                      <div className="relative">
+                        <select
+                          value={filters.petTypeId}
+                          onChange={(event) => setFilters((prev) => ({ ...prev, petTypeId: event.target.value }))}
+                          className={FILTER_SELECT_CLASS}
+                        >
+                          <option value="">Any pets</option>
+                          {onboardingOptions?.pet_types?.map((pet) => (
+                            <option key={pet.id} value={String(pet.id)}>
+                              {pet.name}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Children age range
+                      <div className="relative">
+                        <select
+                          value={filters.childrenAgeRangeId}
+                          onChange={(event) => setFilters((prev) => ({ ...prev, childrenAgeRangeId: event.target.value }))}
+                          className={FILTER_SELECT_CLASS}
+                        >
+                          <option value="">Any age range</option>
+                          {onboardingOptions?.children_age_ranges?.map((range) => (
+                            <option key={range.id} value={String(range.id)}>
+                              {range.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Children capacity
+                      <div className="relative">
+                        <select
+                          value={filters.childrenCapacityId}
+                          onChange={(event) => setFilters((prev) => ({ ...prev, childrenCapacityId: event.target.value }))}
+                          className={FILTER_SELECT_CLASS}
+                        >
+                          <option value="">Any capacity</option>
+                          {onboardingOptions?.children_capacities?.map((capacity) => (
+                            <option key={capacity.id} value={String(capacity.id)}>
+                              {capacity.label}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Work with kids
+                      <div className="relative">
+                        <select
+                          value={filters.canWorkWithKids}
+                          onChange={(event) => setFilters((prev) => ({ ...prev, canWorkWithKids: event.target.value }))}
+                          className={FILTER_SELECT_CLASS}
+                        >
+                          <option value="">Any preference</option>
+                          <option value="yes">Can work with kids</option>
+                          <option value="no">Prefers no kids</option>
+                        </select>
+                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                      </div>
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Work with pets
+                      <div className="relative">
+                        <select
+                          value={filters.canWorkWithPets}
+                          onChange={(event) => setFilters((prev) => ({ ...prev, canWorkWithPets: event.target.value }))}
+                          className={FILTER_SELECT_CLASS}
+                        >
+                          <option value="">Any preference</option>
+                          <option value="yes">Can work with pets</option>
+                          <option value="no">Prefers no pets</option>
+                        </select>
+                        <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                      </div>
+                    </label>
+                  </div>
 
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200 font-semibold">
-                    {openListingsCount} open now
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                    {listings.length} total listings
-                  </span>
-                  {hasActiveFilters && (
-                    <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200 font-semibold">
-                      {filteredListings.length} match your filters
-                    </span>
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200 font-semibold">
+                        {openListingsCount} open now
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                        {listings.length} total listings
+                      </span>
+                      {hasActiveFilters && (
+                        <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200 font-semibold">
+                          {filteredListings.length} match your filters
+                        </span>
+                      )}
+                    </div>
+                    {hasActiveFilters && (
+                      <button
+                        onClick={clearFilters}
+                        className="text-xs font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/70 dark:bg-[#141020]/70 px-5 py-4 text-xs shadow-sm">
+              <div>
+                <p className="text-[11px] uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Sort by</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Prioritize househelps by budget or newest listings.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
+                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                  Order
+                  <div className="relative min-w-[220px]">
+                    <select
+                      value={sortBy}
+                      onChange={(event) => setSortBy(event.target.value)}
+                      className={FILTER_SELECT_CLASS}
+                    >
+                      <option value="default">Newest first</option>
+                      <option value="created_asc">Oldest first</option>
+                      <option value="budget_desc">Budget high to low</option>
+                      <option value="budget_asc">Budget low to high</option>
+                    </select>
+                    <ChevronDown className={FILTER_SELECT_ICON_CLASS} />
+                  </div>
+                  {sortBy !== "default" && (
+                    <button
+                      type="button"
+                      onClick={() => setSortBy("default")}
+                      className="text-[11px] font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
+                    >
+                      Clear sort
+                    </button>
                   )}
-                </div>
-                {hasActiveFilters && (
-                  <button
-                    onClick={clearFilters}
-                    className="text-xs font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
-                  >
-                    Clear filters
-                  </button>
-                )}
+                </label>
               </div>
             </div>
 
             {error && <ErrorAlert message={error} className="mb-6" />}
 
-            {loading && filteredListings.length === 0 ? (
+            {loading && sortedListings.length === 0 ? (
               <div className="flex justify-center items-center py-20">
                 <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
               </div>
-            ) : filteredListings.length === 0 ? (
+            ) : sortedListings.length === 0 ? (
               <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
                   {hasActiveFilters ? "No listings match your filters" : openOnly ? "No open listings yet" : "No listings yet"}
@@ -735,7 +889,7 @@ export default function HouseholdJobsHome() {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredListings.map((listing) => {
+                {sortedListings.map((listing) => {
                   const househelp = listing.househelp || {};
                   const user = househelp.user || {};
                   const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || "Househelp";
