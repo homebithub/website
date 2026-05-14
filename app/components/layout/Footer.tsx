@@ -49,6 +49,7 @@ const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
           <Link to="/privacy" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Privacy Policy</Link>
           <Link to="/cookies" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Cookie Policy</Link>
           <Link to="/terms" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Terms of Service</Link>
+          <Link to="/smileid-test" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Smile ID Test</Link>
           <Link to="/contact" prefetch="viewport" className="hover:text-purple-400 transition-colors duration-200">Contact</Link>
         </div>
         
