@@ -16,7 +16,7 @@ import { formatTimeAgo } from "~/utils/timeAgo";
 import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
 import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import CustomSelect from "~/components/ui/CustomSelect";
-import { Heart, ChevronDown } from "lucide-react";
+import { Heart, ChevronDown, X } from "lucide-react";
 
 interface HousehelpSummary {
   id?: string;
@@ -321,6 +321,7 @@ export default function HouseholdJobsHome() {
   const [hasMore, setHasMore] = useState(true);
   const [shortlistedListingIds, setShortlistedListingIds] = useState<Set<string>>(() => new Set());
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
+  const [selectedListing, setSelectedListing] = useState<OpenForWorkListing | null>(null);
   const [openOnly, setOpenOnly] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(() => ({ ...DEFAULT_OPEN_FOR_WORK_FILTERS }));
@@ -559,6 +560,14 @@ export default function HouseholdJobsHome() {
     } finally {
       setShortlistLoadingId(null);
     }
+  };
+
+  const handleOpenListingModal = (listing: OpenForWorkListing) => {
+    setSelectedListing(listing);
+  };
+
+  const handleCloseListingModal = () => {
+    setSelectedListing(null);
   };
 
   return (
@@ -879,7 +888,16 @@ export default function HouseholdJobsHome() {
                   return (
                     <div
                       key={listing.id}
-                      className="bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleOpenListingModal(listing)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handleOpenListingModal(listing);
+                        }
+                      }}
+                      className="bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400"
                     >
                       <div className="flex items-start gap-4">
                         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-lg font-bold overflow-hidden">
@@ -902,7 +920,10 @@ export default function HouseholdJobsHome() {
                             </div>
                             <div className="flex items-center gap-2">
                               <button
-                                onClick={() => handleShortlist(listing)}
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleShortlist(listing);
+                                }}
                                 disabled={shortlistLoadingId === listing.id}
                                 className={`inline-flex h-9 w-9 items-center justify-center rounded-full border transition ${
                                   shortlisted
@@ -976,13 +997,19 @@ export default function HouseholdJobsHome() {
                         <span className="text-xs text-gray-400">Updated {formatTimeAgo(listing.created_at)}</span>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => handleViewProfile(listing)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleViewProfile(listing);
+                            }}
                             className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
                           >
                             View Profile
                           </button>
                           <button
-                            onClick={() => handleMessage(listing)}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleMessage(listing);
+                            }}
                             className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
                           >
                             Message
@@ -1009,6 +1036,164 @@ export default function HouseholdJobsHome() {
           </div>
         </main>
       </PurpleThemeWrapper>
+      {selectedListing && (() => {
+        const househelp = selectedListing.househelp || {};
+        const user = househelp.user || {};
+        const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || "Househelp";
+        const initials = name
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((part) => part[0])
+          .join("")
+          .toUpperCase();
+        const userId = firstString(househelp.user_id, user.id);
+        const photos = toStringArray(househelp.photos);
+        const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
+        const scheduleLabel = summarizeSchedule(selectedListing.work_schedule);
+        const jobTypes = toStringArray(selectedListing.job_types);
+        const location = firstString(househelp.town, househelp.location) || "Location not specified";
+        const experienceYears = toFiniteNumber(househelp.years_of_experience);
+        const shortlisted = shortlistedListingIds.has(selectedListing.id);
+        const isOpen = isOpenForWorkListingActive(selectedListing);
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseListingModal} />
+            <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Open for work</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mt-2">{name}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {location}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseListingModal}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  aria-label="Close details"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-5">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-xl font-bold overflow-hidden">
+                  {avatar ? (
+                    <OptimizedImage
+                      path={avatar}
+                      alt={name}
+                      className="w-full h-full object-cover"
+                      onError={(e: any) => { e.currentTarget.style.display = "none"; }}
+                    />
+                  ) : (
+                    initials || "HW"
+                  )}
+                </div>
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                        isOpen
+                          ? "bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200"
+                          : "bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300"
+                      }`}
+                    >
+                      {formatListingStatus(selectedListing.status)}
+                    </span>
+                    {scheduleLabel && (
+                      <span className="px-3 py-1 text-xs font-semibold rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                        {scheduleLabel}
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Experience</p>
+                      <p className="mt-1">{experienceYears ? `${experienceYears} yrs` : "Not specified"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Availability</p>
+                      <p className="mt-1">{formatDate(selectedListing.available_from)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Salary</p>
+                      <p className="mt-1">
+                        {formatSalary(
+                          selectedListing.salary_min ?? househelp.salary_expectation,
+                          selectedListing.salary_max,
+                          selectedListing.salary_frequency || househelp.salary_frequency
+                        )}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Updated</p>
+                      <p className="mt-1">{formatTimeAgo(selectedListing.created_at)}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {jobTypes.length > 0 ? (
+                  jobTypes.map((type) => (
+                    <span
+                      key={type}
+                      className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
+                    >
+                      {type.replace(/_/g, " ")}
+                    </span>
+                  ))
+                ) : (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                    Flexible role
+                  </span>
+                )}
+                {selectedListing.can_work_with_kids && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                    Kids friendly
+                  </span>
+                )}
+                {selectedListing.can_work_with_pets && (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                    Pets friendly
+                  </span>
+                )}
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleViewProfile(selectedListing)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                >
+                  View Profile
+                </button>
+                <button
+                  onClick={() => handleMessage(selectedListing)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                >
+                  Message
+                </button>
+                <button
+                  onClick={() => handleShortlist(selectedListing)}
+                  disabled={shortlistLoadingId === selectedListing.id}
+                  className={`px-4 py-2 text-xs font-semibold rounded-xl border transition ${
+                    shortlisted
+                      ? "border-pink-400 bg-pink-500 text-white"
+                      : "border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                  } disabled:opacity-60`}
+                >
+                  {shortlistLoadingId === selectedListing.id
+                    ? "Updating..."
+                    : shortlisted
+                      ? "Shortlisted"
+                      : "Shortlist"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
       <SubscriptionRequiredModal
         open={showSubscriptionModal}
         onClose={() => setShowSubscriptionModal(false)}

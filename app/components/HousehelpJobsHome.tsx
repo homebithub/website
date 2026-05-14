@@ -238,6 +238,7 @@ export default function HousehelpJobsHome() {
   const [hasMore, setHasMore] = useState(true);
   const [househelpProfileId, setHousehelpProfileId] = useState<string>("");
   const [selectedJob, setSelectedJob] = useState<JobListing | null>(null);
+  const [selectedJobDetail, setSelectedJobDetail] = useState<JobListing | null>(null);
   const [pitch, setPitch] = useState("");
   const [applyLoading, setApplyLoading] = useState(false);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -506,6 +507,14 @@ export default function HousehelpJobsHome() {
     setSelectedJob(job);
     setPitch("");
     setApplyError(null);
+  };
+
+  const handleOpenJobDetail = (job: JobListing) => {
+    setSelectedJobDetail(job);
+  };
+
+  const handleCloseJobDetail = () => {
+    setSelectedJobDetail(null);
   };
 
   const handleCloseApplyModal = () => {
@@ -937,7 +946,16 @@ export default function HousehelpJobsHome() {
                   return (
                     <div
                       key={job.id}
-                      className="bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => handleOpenJobDetail(job)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter" || event.key === " ") {
+                          event.preventDefault();
+                          handleOpenJobDetail(job);
+                        }
+                      }}
+                      className="bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -956,7 +974,10 @@ export default function HousehelpJobsHome() {
                           </span>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => handleChatWithHousehold(job)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleChatWithHousehold(job);
+                              }}
                               disabled={chatLoadingId === job.id}
                               className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition disabled:opacity-60"
                               aria-label="Chat with household"
@@ -968,7 +989,10 @@ export default function HousehelpJobsHome() {
                               )}
                             </button>
                             <button
-                              onClick={() => handleShortlistJob(job)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleShortlistJob(job);
+                              }}
                               disabled={shortlistLoadingId === job.id}
                               className={`inline-flex items-center justify-center w-9 h-9 rounded-full border transition ${shortlisted
                                 ? "border-pink-400 bg-pink-500 text-white"
@@ -982,7 +1006,10 @@ export default function HousehelpJobsHome() {
                               )}
                             </button>
                             <button
-                              onClick={() => handleViewProfile(job)}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleViewProfile(job);
+                              }}
                               className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition"
                               aria-label="View household profile"
                             >
@@ -1036,7 +1063,10 @@ export default function HousehelpJobsHome() {
                       <div className="mt-4 flex items-center justify-between">
                         <span className="text-xs text-gray-400">Posted {formatTimeAgo(job.created_at)}</span>
                         <button
-                          onClick={() => handleOpenApplyModal(job)}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleOpenApplyModal(job);
+                          }}
                           disabled={!isJobOpen(job) || hasApplied}
                           className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
@@ -1064,6 +1094,129 @@ export default function HousehelpJobsHome() {
         </main>
       </PurpleThemeWrapper>
       <Footer />
+
+      {selectedJobDetail && (() => {
+        const shortlisted = shortlistedJobIds.has(selectedJobDetail.id);
+        const hasApplied = appliedJobIds.has(selectedJobDetail.id) || Boolean(selectedJobDetail.has_applied);
+        const scheduleSlots = [
+          hasScheduleSlot(selectedJobDetail.work_schedule, "morning") && "Morning",
+          hasScheduleSlot(selectedJobDetail.work_schedule, "afternoon") && "Afternoon",
+          hasScheduleSlot(selectedJobDetail.work_schedule, "evening") && "Evening",
+        ].filter(Boolean) as string[];
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseJobDetail} />
+            <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Job opening</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mt-2">{selectedJobDetail.title || "Household Job"}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {formatJobLocation(selectedJobDetail.location)}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseJobDetail}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  aria-label="Close details"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {selectedJobDetail.description && (
+                <p className="mt-4 text-sm text-gray-600 dark:text-gray-300">
+                  {selectedJobDetail.description}
+                </p>
+              )}
+
+              <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Salary</p>
+                  <p className="mt-1">{formatSalaryRange(selectedJobDetail.salary_range)}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Start date</p>
+                  <p className="mt-1">{formatDate(selectedJobDetail.start_date)}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Status</p>
+                  <p className="mt-1 capitalize">{selectedJobDetail.status || "open"}</p>
+                </div>
+                <div>
+                  <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Posted</p>
+                  <p className="mt-1">{formatTimeAgo(selectedJobDetail.created_at)}</p>
+                </div>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                {(selectedJobDetail.job_types || []).length > 0 ? (
+                  selectedJobDetail.job_types?.map((type) => (
+                    <span
+                      key={type}
+                      className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200"
+                    >
+                      {type.replace(/_/g, " ")}
+                    </span>
+                  ))
+                ) : (
+                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                    Flexible role
+                  </span>
+                )}
+                {scheduleSlots.map((slot) => (
+                  <span
+                    key={slot}
+                    className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200"
+                  >
+                    {slot}
+                  </span>
+                ))}
+              </div>
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                <button
+                  onClick={() => handleViewProfile(selectedJobDetail)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                >
+                  View Profile
+                </button>
+                <button
+                  onClick={() => handleChatWithHousehold(selectedJobDetail)}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                >
+                  Message
+                </button>
+                <button
+                  onClick={() => handleShortlistJob(selectedJobDetail)}
+                  disabled={shortlistLoadingId === selectedJobDetail.id}
+                  className={`px-4 py-2 text-xs font-semibold rounded-xl border transition ${
+                    shortlisted
+                      ? "border-pink-400 bg-pink-500 text-white"
+                      : "border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                  } disabled:opacity-60`}
+                >
+                  {shortlistLoadingId === selectedJobDetail.id
+                    ? "Updating..."
+                    : shortlisted
+                      ? "Shortlisted"
+                      : "Shortlist"}
+                </button>
+                <button
+                  onClick={() => {
+                    handleOpenApplyModal(selectedJobDetail);
+                    handleCloseJobDetail();
+                  }}
+                  disabled={!isJobOpen(selectedJobDetail) || hasApplied}
+                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {hasApplied ? "Applied" : "Apply"}
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {selectedJob && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
