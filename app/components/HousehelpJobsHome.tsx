@@ -724,6 +724,7 @@ export default function HousehelpJobsHome() {
                           ...jobTypeOptions.map((option) => ({ value: option.value, label: option.label })),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any job type"
                       />
                     </label>
@@ -737,6 +738,7 @@ export default function HousehelpJobsHome() {
                           ...locationOptions.map((option) => ({ value: option.value, label: option.label })),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any location"
                       />
                     </label>
@@ -753,6 +755,7 @@ export default function HousehelpJobsHome() {
                           { value: "flexible", label: "Flexible" },
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any start date"
                       />
                     </label>
@@ -768,6 +771,7 @@ export default function HousehelpJobsHome() {
                           { value: "evening", label: "Evening" },
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any slot"
                       />
                     </label>
@@ -781,6 +785,7 @@ export default function HousehelpJobsHome() {
                           ...salaryRangeOptions.map((option) => ({ value: option.value, label: option.label })),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any salary"
                       />
                     </label>
@@ -794,6 +799,7 @@ export default function HousehelpJobsHome() {
                           ...(onboardingOptions?.chores?.map((chore) => ({ value: String(chore.id), label: chore.name })) ?? []),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any chores"
                       />
                     </label>
@@ -807,6 +813,7 @@ export default function HousehelpJobsHome() {
                           ...(onboardingOptions?.pet_types?.map((pet) => ({ value: String(pet.id), label: pet.name })) ?? []),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any pets"
                       />
                     </label>
@@ -820,6 +827,7 @@ export default function HousehelpJobsHome() {
                           ...(onboardingOptions?.children_age_ranges?.map((range) => ({ value: String(range.id), label: range.label })) ?? []),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any age range"
                       />
                     </label>
@@ -833,6 +841,7 @@ export default function HousehelpJobsHome() {
                           ...(onboardingOptions?.children_capacities?.map((capacity) => ({ value: String(capacity.id), label: capacity.label })) ?? []),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any capacity"
                       />
                     </label>
@@ -883,6 +892,7 @@ export default function HousehelpJobsHome() {
                       { value: "budget_asc", label: "Budget low to high" },
                     ]}
                     className="min-w-[220px]"
+                    size="sm"
                     placeholder="Newest first"
                   />
                   {sortBy !== "default" && (

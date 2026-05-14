@@ -640,6 +640,7 @@ export default function HouseholdJobsHome() {
                           ...jobTypeOptions.map((option) => ({ value: option.value, label: option.label })),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any job type"
                       />
                     </label>
@@ -656,6 +657,7 @@ export default function HouseholdJobsHome() {
                           { value: "flexible", label: "Flexible" },
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any start window"
                       />
                     </label>
@@ -671,6 +673,7 @@ export default function HouseholdJobsHome() {
                           { value: "evening", label: "Evening" },
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any slot"
                       />
                     </label>
@@ -684,6 +687,7 @@ export default function HouseholdJobsHome() {
                           ...salaryRangeOptions.map((option) => ({ value: option.value, label: option.label })),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any salary"
                       />
                     </label>
@@ -697,6 +701,7 @@ export default function HouseholdJobsHome() {
                           ...(onboardingOptions?.chores?.map((chore) => ({ value: String(chore.id), label: chore.name })) ?? []),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any chores"
                       />
                     </label>
@@ -710,6 +715,7 @@ export default function HouseholdJobsHome() {
                           ...(onboardingOptions?.pet_types?.map((pet) => ({ value: String(pet.id), label: pet.name })) ?? []),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any pets"
                       />
                     </label>
@@ -723,6 +729,7 @@ export default function HouseholdJobsHome() {
                           ...(onboardingOptions?.children_age_ranges?.map((range) => ({ value: String(range.id), label: range.label })) ?? []),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any age range"
                       />
                     </label>
@@ -736,6 +743,7 @@ export default function HouseholdJobsHome() {
                           ...(onboardingOptions?.children_capacities?.map((capacity) => ({ value: String(capacity.id), label: capacity.label })) ?? []),
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any capacity"
                       />
                     </label>
@@ -750,6 +758,7 @@ export default function HouseholdJobsHome() {
                           { value: "no", label: "Prefers no kids" },
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any preference"
                       />
                     </label>
@@ -764,6 +773,7 @@ export default function HouseholdJobsHome() {
                           { value: "no", label: "Prefers no pets" },
                         ]}
                         className="w-full"
+                        size="sm"
                         placeholder="Any preference"
                       />
                     </label>
@@ -814,6 +824,7 @@ export default function HouseholdJobsHome() {
                       { value: "budget_asc", label: "Budget low to high" },
                     ]}
                     className="min-w-[220px]"
+                    size="sm"
                     placeholder="Newest first"
                   />
                   {sortBy !== "default" && (

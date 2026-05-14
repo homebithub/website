@@ -13,6 +13,7 @@ interface CustomSelectProps {
   placeholder?: string;
   className?: string;
   required?: boolean;
+  size?: "sm" | "md";
 }
 
 export default function CustomSelect({
@@ -22,6 +23,7 @@ export default function CustomSelect({
   placeholder = 'Select...',
   className = '',
   required = false,
+  size = "md",
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -49,13 +51,18 @@ export default function CustomSelect({
     setIsOpen(false);
   };
 
+  const buttonSizeClass = size === "sm"
+    ? "h-10 text-xs px-3 py-2"
+    : "h-12 text-sm px-4 py-3";
+  const optionSizeClass = size === "sm" ? "px-3 py-2 text-xs" : "px-4 py-3 text-sm";
+
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
       {/* Select Button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full h-12 text-sm px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all flex items-center justify-between"
+        className={`w-full ${buttonSizeClass} rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm dark:shadow-inner-glow focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all flex items-center justify-between`}
       >
         <span className={selectedOption ? '' : 'text-gray-500 dark:text-gray-400'}>
           {selectedOption ? selectedOption.label : placeholder}
@@ -76,7 +83,7 @@ export default function CustomSelect({
                 key={option.value}
                 type="button"
                 onClick={() => handleSelect(option.value)}
-                className={`w-full px-4 py-3 text-left text-sm transition-colors ${
+                className={`w-full ${optionSizeClass} text-left transition-colors ${
                   value === option.value
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold'
                     : 'text-gray-900 dark:text-white hover:bg-purple-50 dark:hover:bg-purple-900/20'
