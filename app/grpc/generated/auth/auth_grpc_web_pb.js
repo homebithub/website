@@ -18681,6 +18681,128 @@ proto.auth.KYCServicePromiseClient.prototype.listPendingKYC =
 
 
 /**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_KYCService_GetSmileIDToken = new grpc.web.MethodDescriptor(
+  '/auth.KYCService/GetSmileIDToken',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.KYCServiceClient.prototype.getSmileIDToken =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.KYCService/GetSmileIDToken',
+      request,
+      metadata || {},
+      methodDescriptor_KYCService_GetSmileIDToken,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.KYCServicePromiseClient.prototype.getSmileIDToken =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.KYCService/GetSmileIDToken',
+      request,
+      metadata || {},
+      methodDescriptor_KYCService_GetSmileIDToken);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.JsonPayload,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_KYCService_ReceiveSmileIDWebhook = new grpc.web.MethodDescriptor(
+  '/auth.KYCService/ReceiveSmileIDWebhook',
+  grpc.web.MethodType.UNARY,
+  proto.auth.JsonPayload,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.JsonPayload} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.KYCServiceClient.prototype.receiveSmileIDWebhook =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.KYCService/ReceiveSmileIDWebhook',
+      request,
+      metadata || {},
+      methodDescriptor_KYCService_ReceiveSmileIDWebhook,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.JsonPayload} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.KYCServicePromiseClient.prototype.receiveSmileIDWebhook =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.KYCService/ReceiveSmileIDWebhook',
+      request,
+      metadata || {},
+      methodDescriptor_KYCService_ReceiveSmileIDWebhook);
+};
+
+
+/**
  * @param {string} hostname
  * @param {?Object} credentials
  * @param {?grpc.web.ClientOptions} options

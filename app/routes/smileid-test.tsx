@@ -3,8 +3,8 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { Button } from "~/components/ui/Button";
-import { API_BASE_URL } from "~/config/api";
-import { getStoredAccessToken, getStoredUserId } from "~/utils/authStorage";
+import { getStoredUserId } from "~/utils/authStorage";
+import { kycService } from "~/services/grpc/authServices";
 
 declare global {
   interface Window {
@@ -31,6 +31,7 @@ export default function SmileIDTestPage() {
   const [statusMessage, setStatusMessage] = useState("Ready to start");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [flowMode, setFlowMode] = useState<"web" | "upload">("web");
 
   useEffect(() => {
     setUserId(getStoredUserId());
@@ -67,22 +68,13 @@ export default function SmileIDTestPage() {
   }, [sdkReady, sdkError]);
 
   const fetchToken = async (): Promise<TokenResponse> => {
-    const token = getStoredAccessToken();
-    const response = await fetch(`${API_BASE_URL}/api/v1/kyc/smileid/token`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
-      body: JSON.stringify({
-        user_id: userId || undefined,
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      const message = data?.error || "Failed to fetch Smile ID token";
-      throw new Error(message);
+    if (!userId) {
+      throw new Error("Please sign in to start verification.");
+    }
+    const product = flowMode === "upload" ? "enhanced_document_verification" : "biometric_kyc";
+    const data = await kycService.getSmileIDToken(userId, { user_id: userId, product });
+    if (!data?.token) {
+      throw new Error("Failed to fetch Smile ID token");
     }
     return data as TokenResponse;
   };
@@ -157,6 +149,55 @@ export default function SmileIDTestPage() {
                 helps protect our community and prevents fraud.
               </p>
             </div>
+
+            <div className="rounded-2xl border border-purple-100 bg-white p-4 md:p-5 space-y-4">
+              <div className="text-sm font-semibold text-gray-900">Choose verification flow</div>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className={`rounded-xl border px-4 py-3 text-sm cursor-pointer transition ${
+                  flowMode === "web" ? "border-purple-400 bg-purple-50" : "border-gray-200"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="smile-flow"
+                      value="web"
+                      checked={flowMode === "web"}
+                      onChange={() => setFlowMode("web")}
+                      className="mt-1"
+                    />
+                    <div>
+                      <div className="font-semibold text-gray-900">Flow 1: ID number only</div>
+                      <div className="text-xs text-gray-600">Smile ID web capture (ID number + selfie/liveness).</div>
+                    </div>
+                  </div>
+                </label>
+                <label className={`rounded-xl border px-4 py-3 text-sm cursor-pointer transition ${
+                  flowMode === "upload" ? "border-purple-400 bg-purple-50" : "border-gray-200"
+                }`}>
+                  <div className="flex items-start gap-3">
+                    <input
+                      type="radio"
+                      name="smile-flow"
+                      value="upload"
+                      checked={flowMode === "upload"}
+                      onChange={() => setFlowMode("upload")}
+                      className="mt-1"
+                    />
+                    <div>
+                      <div className="font-semibold text-gray-900">Flow 2: ID document + selfie</div>
+                      <div className="text-xs text-gray-600">Uploads front/back + selfie for IPRS + face match.</div>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            {flowMode === "upload" && (
+              <div className="rounded-2xl border border-amber-100 bg-amber-50/60 px-4 py-4 text-sm text-amber-900">
+                Flow 2 uses Smile ID’s hosted capture to collect the ID number, document images, and selfie. No files are
+                uploaded to Homebit — Smile ID uploads directly and returns them via the callback for us to download.
+              </div>
+            )}
 
             <div className="grid gap-5 md:grid-cols-2">
               <div className="rounded-2xl border border-purple-100 bg-purple-50/70 p-4 text-sm text-purple-900 space-y-2">

@@ -996,6 +996,10 @@ export const kycService = {
     const res = await grpcCall((cb) => kycClient.getMyKYC(buildUserIdRequest(userId), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
+  async getSmileIDToken(userId: string, data: Record<string, any> = {}): Promise<any> {
+    const res = await grpcCall((cb) => kycClient.getSmileIDToken(buildJsonPayload(userId, data), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
 };
 
 // ══════════════════════════════════════════════════════════════════════════
