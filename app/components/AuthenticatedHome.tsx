@@ -267,12 +267,15 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   };
   const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
   const [househelps, setHousehelps] = useState<HousehelpProfile[]>([]);
-  const topMatches = useMemo(() => (
-    (Array.isArray(househelps) ? [...househelps] : [])
-      .filter((profile) => typeof profile.fit_score === 'number' && profile.fit_score > 0)
-      .sort((a, b) => (b.fit_score ?? 0) - (a.fit_score ?? 0))
-      .slice(0, 6)
-  ), [househelps]);
+  const topMatches = useMemo(() => househelps.filter((h) => (h?.fit_score ?? 0) >= 10).slice(0, 6), [househelps]);
+  const topMatchProfileIds = useMemo(() => {
+    const ids = new Set<string>();
+    topMatches.forEach((match) => {
+      const key = String(match?.profile_id ?? match?.id ?? "");
+      if (key) ids.add(key);
+    });
+    return ids;
+  }, [topMatches]);
 
   // Fetch profile photos from documents table for all househelps
   const househelpUserIds = useMemo(
@@ -799,98 +802,6 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
               <h2 className={`${isHome3 ? 'text-base' : 'text-lg'} font-bold text-gray-900 dark:text-white mb-6`}>
                 Available Househelps
               </h2>
-              {topMatches.length > 0 && (
-                <section className="mb-8">
-                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Top matches</p>
-                      <p className={`${cardTextClass} text-gray-600 dark:text-gray-300 mt-1`}>
-                        Profiles most compatible with your search criteria.
-                      </p>
-                    </div>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">{topMatches.length} profile{topMatches.length === 1 ? '' : 's'}</span>
-                  </div>
-                  <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
-                    {topMatches.map((househelp) => {
-                      const locationLabel = househelp.county_of_residence || househelp.location || 'No location specified';
-                      const experienceYears = househelp.years_of_experience ?? househelp.experience;
-                      const profileId = String(househelp.profile_id ?? househelp.id ?? '');
-                      const salaryLabel = formatOnboardingAmountWithFrequency(
-                        househelp.salary_expectation,
-                        househelp.salary_frequency,
-                        'Salary not yet specified'
-                      );
-                      return (
-                        <button
-                          key={profileId}
-                          type="button"
-                          onClick={() => profileId && handleViewProfile(profileId)}
-                          className="min-w-[250px] max-w-[280px] text-left rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/90 dark:bg-[#151025]/80 p-4 shadow-sm hover:shadow-lg transition snap-start"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
-                                Match {househelp.fit_score}%
-                              </p>
-                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-1 line-clamp-2">
-                                {househelp.first_name} {househelp.last_name}
-                              </h3>
-                            </div>
-                            {typeof experienceYears === 'number' && experienceYears > 0 && (
-                              <span className="text-[10px] text-purple-600 dark:text-purple-300 font-semibold">
-                                {experienceYears}+ yrs
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">📍 {locationLabel}</p>
-                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">💰 {salaryLabel}</p>
-                          {househelp.match_reasons && househelp.match_reasons.length > 0 && (
-                            <div className="mt-3 flex flex-wrap gap-2">
-                              {househelp.match_reasons.slice(0, 2).map((reason) => (
-                                <span
-                                  key={reason}
-                                  className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] dark:bg-emerald-500/10 dark:text-emerald-200"
-                                >
-                                  {reason}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                          <div className="mt-3 flex flex-wrap gap-2">
-                            {househelp.househelp_type && (
-                              <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[10px] dark:bg-purple-500/10 dark:text-purple-200">
-                                {househelp.househelp_type}
-                              </span>
-                            )}
-                            {househelp.offers_day_worker && (
-                              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] dark:bg-amber-500/10 dark:text-amber-200">
-                                Day worker
-                              </span>
-                            )}
-                            {househelp.offers_live_in && (
-                              <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] dark:bg-blue-500/10 dark:text-blue-200">
-                                Live-in
-                              </span>
-                            )}
-                            {househelp.can_work_with_kids && (
-                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] dark:bg-emerald-500/10 dark:text-emerald-200">
-                                Kids ok
-                              </span>
-                            )}
-                            {househelp.can_work_with_pets && (
-                              <span className="px-2 py-0.5 rounded-full bg-pink-50 text-pink-700 text-[10px] dark:bg-pink-500/10 dark:text-pink-200">
-                                Pets ok
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-              {actionError && <ErrorAlert message={actionError} className="mb-4" />}
-
               {loading ? (
                 <div className="flex justify-center items-center py-20">
                   <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
@@ -899,7 +810,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                 <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                   <div className="mx-auto mb-5 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 dark:bg-gray-800">
                     <svg className="w-8 h-8 text-gray-400 dark:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-1.053M18 8.25a3 3 0 11-6 0 3 3 0 016 0zM3.75 9.75a2.625 2.625 0 115.25 0 2.625 2.625 0 01-5.25 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                   </div>
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">No Househelps Available</h3>
@@ -950,102 +861,112 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                 </div>
               ) : (
                 <div className={gridClass}>
-                  {househelps.map((househelp) => (
-                    <div
-                      key={househelp.id}
-                      onClick={() => househelp.profile_id && handleViewProfile(String(househelp.profile_id))}
-                      className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 ${isHome2 ? 'p-4 sm:p-5 hover:-translate-y-0.5 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : isHome3 ? 'p-4 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : compactView ? 'p-4 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : 'p-6 hover:shadow-light-glow-md dark:hover:shadow-glow-md'} ${isHome2 ? '' : 'hover:scale-105'} transition-all duration-300 cursor-pointer`}
-                    >
-                      {/* Top-right actions */}
-                      <div className="absolute top-3 right-3 flex items-center gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const targetUserId = resolveHousehelpUserId(househelp);
-                            if (targetUserId) {
-                              handleStartChat(String(targetUserId), househelp.profile_id);
-                            }
-                          }}
-                          className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-purple-700 dark:text-purple-200 shadow"
-                          aria-label="Chat"
-                          title="Chat"
-                        >
-                          <ChatBubbleLeftRightIcon className="w-5 h-5" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleShortlist(String(househelp.profile_id), e); }}
-                          className={`inline-flex items-center justify-center w-9 h-9 rounded-full border shadow transition-all ${
-                            shortlistedProfiles.has(househelp.profile_id)
-                              ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white hover:from-purple-700 hover:to-pink-700'
-                              : 'bg-white/80 dark:bg-white/10 border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300'
-                          }`}
-                          aria-label={shortlistedProfiles.has(househelp.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
-                          title={shortlistedProfiles.has(househelp.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
-                        >
-                          {shortlistedProfiles.has(househelp.profile_id) ? (
-                            <HeartIconSolid className="w-5 h-5" />
-                          ) : (
-                            <HeartIcon className="w-5 h-5" />
-                          )}
-                        </button>
-                      </div>
-                      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-                        {/* Profile Picture */}
-                        <div className="flex justify-center sm:justify-start mb-4 sm:mb-0 shrink-0">
-                          <div className={`${isHome2 ? 'w-20 h-20' : isHome3 ? 'w-20 h-20' : 'w-24 h-24'} rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white ${isHome3 ? 'text-base' : 'text-lg'} font-bold shadow-lg overflow-hidden relative`}>
-                            {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) || profilePhotos[househelp.user_id || String(househelp.id)] ? (
-                              <>
-                                {imageLoadingStates[househelp.profile_id] !== false && (
-                                  <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
-                                )}
-                                <OptimizedImage
-                                  path={
-                                    (househelp.avatar_url as string) ||
-                                    (househelp.profile_picture as string) ||
-                                    (househelp.photos && househelp.photos[0]) ||
-                                    profilePhotos[resolveHousehelpUserId(househelp)] ||
-                                    ''
-                                  }
-                                  thumbnailPath={(househelp as any).thumbnail_path}
-                                  mediumPath={(househelp as any).medium_path}
-                                  alt={`${househelp.first_name} ${househelp.last_name}`}
-                                  className={`w-full h-full object-cover transition-opacity duration-300 ${
-                                    imageLoadingStates[househelp.profile_id] === false ? 'opacity-100' : 'opacity-0'
-                                  }`}
-                                  onLoad={() => {
-                                    setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
-                                  }}
-                                  onError={(e: any) => {
-                                    setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
-                                    e.currentTarget.style.display = 'none';
-                                  }}
-                                />
-                              </>
+                  {househelps.map((househelp) => {
+                    const profileKey = String(househelp.profile_id ?? househelp.id ?? '');
+                    const isTopMatch = profileKey && topMatchProfileIds.has(profileKey);
+                    const experienceYears = househelp.years_of_experience ?? househelp.experience;
+                    return (
+                      <div
+                        key={househelp.id}
+                        onClick={() => househelp.profile_id && handleViewProfile(String(househelp.profile_id))}
+                        className={`househelp-card relative bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 ${isHome2 ? 'p-4 sm:p-5 hover:-translate-y-0.5 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : isHome3 ? 'p-4 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : compactView ? 'p-4 hover:shadow-light-glow-md dark:hover:shadow-glow-md' : 'p-6 hover:shadow-light-glow-md dark:hover:shadow-glow-md'} ${isHome2 ? '' : 'hover:scale-105'} transition-all duration-300 cursor-pointer`}
+                      >
+                        {/* Top-right actions */}
+                        <div className="absolute top-3 right-3 flex items-center gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const targetUserId = resolveHousehelpUserId(househelp);
+                              if (targetUserId) {
+                                handleStartChat(String(targetUserId), househelp.profile_id);
+                              }
+                            }}
+                            className="inline-flex items-center justify-center w-9 h-9 rounded-full bg-white/80 dark:bg-white/10 border border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-purple-700 dark:text-purple-200 shadow"
+                            aria-label="Chat"
+                            title="Chat"
+                          >
+                            <ChatBubbleLeftRightIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); if (househelp.profile_id) handleShortlist(String(househelp.profile_id), e); }}
+                            className={`inline-flex items-center justify-center w-9 h-9 rounded-full border shadow transition-all ${
+                              shortlistedProfiles.has(househelp.profile_id)
+                                ? 'bg-gradient-to-r from-purple-600 to-pink-600 border-purple-500 text-white hover:from-purple-700 hover:to-pink-700'
+                                : 'bg-white/80 dark:bg-white/10 border-purple-200/60 dark:border-purple-500/30 hover:bg-white text-pink-600 dark:text-pink-300'
+                            }`}
+                            aria-label={shortlistedProfiles.has(househelp.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
+                            title={shortlistedProfiles.has(househelp.profile_id) ? "Remove from shortlist" : "Add to shortlist"}
+                          >
+                            {shortlistedProfiles.has(househelp.profile_id) ? (
+                              <HeartIconSolid className="w-5 h-5" />
                             ) : (
-                              `${househelp.first_name?.[0] || ''}${househelp.last_name?.[0] || ''}`
+                              <HeartIcon className="w-5 h-5" />
                             )}
-                          </div>
+                          </button>
                         </div>
+                        <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                          {/* Profile Picture */}
+                          <div className="flex justify-center sm:justify-start mb-4 sm:mb-0 shrink-0">
+                            <div className={`${isHome2 ? 'w-20 h-20' : isHome3 ? 'w-20 h-20' : 'w-24 h-24'} rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white ${isHome3 ? 'text-base' : 'text-lg'} font-bold shadow-lg overflow-hidden relative`}>
+                              {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) || profilePhotos[househelp.user_id || String(househelp.id)] ? (
+                                <>
+                                  {imageLoadingStates[househelp.profile_id] !== false && (
+                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                                  )}
+                                  <OptimizedImage
+                                    path={
+                                      (househelp.avatar_url as string) ||
+                                      (househelp.profile_picture as string) ||
+                                      (househelp.photos && househelp.photos[0]) ||
+                                      profilePhotos[resolveHousehelpUserId(househelp)] ||
+                                      ''
+                                    }
+                                    thumbnailPath={(househelp as any).thumbnail_path}
+                                    mediumPath={(househelp as any).medium_path}
+                                    alt={`${househelp.first_name} ${househelp.last_name}`}
+                                    className={`w-full h-full object-cover transition-opacity duration-300 ${
+                                      imageLoadingStates[househelp.profile_id] === false ? 'opacity-100' : 'opacity-0'
+                                    }`}
+                                    onLoad={() => {
+                                      setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
+                                    }}
+                                    onError={(e: any) => {
+                                      setImageLoadingStates(prev => ({ ...prev, [househelp.profile_id]: false }));
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                </>
+                              ) : (
+                                `${househelp.first_name?.[0] || ''}${househelp.last_name?.[0] || ''}`
+                              )}
+                            </div>
+                          </div>
 
-                        <div className="min-w-0 flex-1 sm:pr-8">
-                          {/* Name */}
-                          <h3 className={`${cardTitleClass} font-bold text-left text-gray-900 dark:text-white mb-2`}>
-                            {househelp.first_name} {househelp.last_name}
-                          </h3>
+                          <div className="min-w-0 flex-1 sm:pr-8">
+                            {/* Name */}
+                            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-2">
+                              <div>
+                                <h3 className="text-lg font-bold text-left text-gray-900 dark:text-white">
+                                  {househelp.first_name} {househelp.last_name}
+                                </h3>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-2">
+                                  📍 {househelp.county_of_residence || househelp.location || 'No location specified'}
+                                  {experienceYears ? <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-100 text-[11px]">{experienceYears}+ yrs experience</span> : null}
+                                </p>
+                              </div>
+                              {typeof househelp.fit_score === 'number' && (
+                                <div className={`flex items-center gap-2 rounded-full border px-3 py-1 ${isTopMatch ? 'border-emerald-400 bg-emerald-50/70 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-200' : 'border-gray-200 dark:border-white/10 text-gray-600 dark:text-gray-200'}`}>
+                                  {isTopMatch && <span className="text-[10px] uppercase font-semibold tracking-[0.2em]">Top match</span>}
+                                  <span className="text-sm font-semibold">Match {househelp.fit_score}%</span>
+                                </div>
+                              )}
+                            </div>
 
-                          {(househelp.county_of_residence || househelp.location) && (
-                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
-                              📍 {househelp.county_of_residence || househelp.location}
-                            </p>
-                          )}
-
-                          {(househelp.gender || househelp.date_of_birth) && (
-                            <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
-                              {househelp.gender ? `👤 ${formatGender(househelp.gender)}` : ''}
-                              {househelp.gender && househelp.date_of_birth ? ' • ' : ''}
-                              {househelp.date_of_birth ? `🎂 ${formatAge(househelp.date_of_birth)} yrs` : ''}
-                            </p>
-                          )}
+                            {(househelp.county_of_residence || househelp.location) && (
+                              <p className={`${cardTextClass} text-gray-600 dark:text-gray-400 text-left mb-2`}>
+                                📍 {househelp.county_of_residence || househelp.location}
+                              </p>
+                            )}
 
                           {((househelp.years_of_experience ?? househelp.experience) as number) > 0 && (
                             <p className={`${cardTextClass} text-purple-600 dark:text-purple-400 text-left mb-2`}>
@@ -1149,7 +1070,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                         </div>
                       </div>
                     </div>
-                  ))}
+                  );
+                })}
                 </div>
               )}
               {/* Infinite scroll sentinel */}

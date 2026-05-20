@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
+import { ShimmerListPlaceholder } from "~/components/ShimmerLoader";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { openForWorkService, shortlistService, profileService as grpcProfileService } from "~/services/grpc/authServices";
 import { notificationsService } from "~/services/grpc/notifications.service";
@@ -679,15 +680,9 @@ export default function HouseholdJobsHome() {
         if (sortBy === "best_match") payload.sort = "best_match";
 
         const raw = await openForWorkService.searchOpenForWork(currentUserId, payload);
-        const data = raw?.data || raw || {};
-        const items = Array.isArray(data?.items)
-          ? data.items
-          : Array.isArray(data?.data)
-            ? data.data
-            : Array.isArray(data)
-              ? data
-              : [];
-        const normalizedItems = (items as unknown[]).map((item: unknown, index: number) => (
+        const data = raw?.data || raw || [];
+        const items = Array.isArray(data) ? data : [];
+        const normalizedItems = items.map((item: unknown, index: number) => (
           normalizeOpenForWorkListing(item, `open-for-work-${offset + index}`)
         ));
         if (cancelled) return;
@@ -1275,10 +1270,8 @@ export default function HouseholdJobsHome() {
               </section>
             )}
 
-            {loading && sortedListings.length === 0 ? (
-              <div className="flex justify-center items-center py-20">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
-              </div>
+            {loading ? (
+              <ShimmerListPlaceholder items={4} />
             ) : sortedListings.length === 0 ? (
               <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">

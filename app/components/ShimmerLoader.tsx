@@ -77,6 +77,38 @@ export function ShimmerTileRow({ items = 3, className = "" }: ShimmerTileRowProp
   );
 }
 
+export function ShimmerListPlaceholder({ items = 3, className = "" }: { items?: number; className?: string }) {
+  return (
+    <div className={`space-y-4 ${className}`}>
+      {Array.from({ length: items }).map((_, index) => (
+        <div
+          key={`list-placeholder-${index}`}
+          className="hb-shimmer-surface flex flex-col gap-4 rounded-2xl border border-white/10 p-4 shadow-light-glow-sm dark:border-white/5 dark:shadow-glow-sm sm:flex-row"
+        >
+          <div className="hb-shimmer-piece h-20 w-20 rounded-2xl sm:h-24 sm:w-24" />
+          <div className="flex-1 space-y-3">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <ShimmerLine width="45%" height={16} className="rounded-xl" />
+              <ShimmerLine width="28%" height={12} className="rounded-full" />
+            </div>
+            <ShimmerLine width="70%" height={12} className="rounded-xl" />
+            <ShimmerLine width="60%" height={12} className="rounded-xl" />
+            <div className="flex flex-wrap gap-2">
+              <ShimmerLine width="18%" height={10} />
+              <ShimmerLine width="22%" height={10} />
+              <ShimmerLine width="26%" height={10} />
+            </div>
+            <div className="flex items-center justify-between">
+              <ShimmerLine width="30%" height={10} />
+              <ShimmerLine width="18%" height={28} className="rounded-full" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function ShimmerHeroPanel({ className = "" }: { className?: string }) {
   return (
     <div
