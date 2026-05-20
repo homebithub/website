@@ -1,17 +1,19 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { openForWorkService, shortlistService } from "~/services/grpc/authServices";
+import { openForWorkService, shortlistService, profileService as grpcProfileService } from "~/services/grpc/authServices";
+import { notificationsService } from "~/services/grpc/notifications.service";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { useProfilePhotos } from "~/hooks/useProfilePhotos";
 import { getStoredUserId } from "~/utils/authStorage";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { getInboxRoute, startOrGetConversation } from "~/utils/conversationLauncher";
+import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from "~/utils/conversationLauncher";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
+import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
 import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
@@ -36,6 +38,16 @@ interface HousehelpSummary {
     last_name?: string;
     avatar_url?: string;
   };
+  rating?: number;
+  review_count?: number;
+  completed_jobs?: number;
+  response_rate?: number;
+  responseRate?: number;
+  average_response_minutes?: number;
+  avg_response_minutes?: number;
+  response_minutes_avg?: number;
+  last_active_at?: string;
+  lastActiveAt?: string;
 }
 
 const normalizeToken = (value?: string) => (value || "").trim().toLowerCase();
@@ -107,6 +119,8 @@ interface OpenForWorkListing {
   salary_min?: number;
   salary_max?: number;
   salary_frequency?: string;
+  fit_score?: number;
+  match_reasons?: string[];
   househelp?: HousehelpSummary;
 }
 
@@ -132,6 +146,109 @@ const DEFAULT_OPEN_FOR_WORK_FILTERS = {
 };
 
 const HOUSEHOLD_FILTERS_STORAGE_KEY = "homebit_household_filters_open";
+
+const SAVED_INVITE_STORAGE_KEY = "homebit_household_invite_message";
+
+const loadSavedInviteMessage = (): string => {
+  if (typeof window === "undefined") return "";
+  try {
+    return window.localStorage.getItem(SAVED_INVITE_STORAGE_KEY) || "";
+  } catch {
+    return "";
+  }
+};
+
+const persistSavedInviteMessage = (value: string) => {
+  if (typeof window === "undefined") return;
+  try {
+    if (value) {
+      window.localStorage.setItem(SAVED_INVITE_STORAGE_KEY, value);
+    } else {
+      window.localStorage.removeItem(SAVED_INVITE_STORAGE_KEY);
+    }
+  } catch {
+    // ignore storage issues
+  }
+};
+
+type ResponsivenessBadge = {
+  tone: "fast" | "steady" | "slow";
+  label: string;
+  detail?: string;
+};
+
+const RESPONSIVENESS_BADGE_STYLES: Record<ResponsivenessBadge["tone"], string> = {
+  fast: "bg-emerald-50 text-emerald-700 border border-emerald-200/70 dark:bg-emerald-500/10 dark:text-emerald-200 dark:border-emerald-500/30",
+  steady: "bg-blue-50 text-blue-700 border border-blue-200/70 dark:bg-blue-500/10 dark:text-blue-200 dark:border-blue-500/30",
+  slow: "bg-amber-50 text-amber-700 border border-amber-200/70 dark:bg-amber-500/10 dark:text-amber-200 dark:border-amber-500/30",
+};
+
+const toNumericMetric = (value: unknown): number | undefined => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return undefined;
+};
+
+const minutesSince = (value?: string): number | null => {
+  if (!value) return null;
+  const ts = Date.parse(value);
+  if (Number.isNaN(ts)) return null;
+  return Math.max(0, Math.round((Date.now() - ts) / 60000));
+};
+
+const describeResponseRate = (rate: number) => `${Math.round(rate * 100)}% response rate`;
+const describeAvgMinutes = (minutes: number) => {
+  if (minutes < 60) return `~${Math.max(1, Math.round(minutes))} min avg reply`;
+  const hours = Math.round(minutes / 60);
+  if (hours < 24) return `~${hours} hr response`;
+  const days = Math.round(hours / 24);
+  return `~${Math.max(1, days)} day response`;
+};
+const describeActivity = (minutes: number) => {
+  if (minutes < 60) return "Active this hour";
+  if (minutes < 360) return "Active today";
+  if (minutes < 1440) return "Active this week";
+  const days = Math.floor(minutes / 1440);
+  return days <= 14 ? `Active ${days}d ago` : `Inactive ${days}d`;
+};
+
+const deriveHousehelpResponsivenessBadge = (househelp?: HousehelpSummary): ResponsivenessBadge | null => {
+  if (!househelp) return null;
+  const responseRate = toNumericMetric((househelp as any)?.response_rate ?? (househelp as any)?.responseRate);
+  const avgMinutes = toNumericMetric(
+    (househelp as any)?.average_response_minutes ?? (househelp as any)?.avg_response_minutes ?? (househelp as any)?.response_minutes_avg,
+  );
+  const lastActiveMinutes = minutesSince((househelp as any)?.last_active_at ?? (househelp as any)?.lastActiveAt);
+
+  if (responseRate != null) {
+    if (responseRate >= 0.85) return { tone: "fast", label: "Replies super fast", detail: describeResponseRate(responseRate) };
+    if (responseRate >= 0.6) return { tone: "steady", label: "Usually replies", detail: describeResponseRate(responseRate) };
+    return { tone: "slow", label: "Limited reply data", detail: describeResponseRate(responseRate) };
+  }
+
+  if (avgMinutes != null) {
+    if (avgMinutes <= 60) return { tone: "fast", label: "Replies in under 1h", detail: describeAvgMinutes(avgMinutes) };
+    if (avgMinutes <= 240) return { tone: "steady", label: "Replies same day", detail: describeAvgMinutes(avgMinutes) };
+    return { tone: "slow", label: "Replies in a day+", detail: describeAvgMinutes(avgMinutes) };
+  }
+
+  if (lastActiveMinutes != null) {
+    if (lastActiveMinutes <= 180) return { tone: "fast", label: "Active recently", detail: describeActivity(lastActiveMinutes) };
+    if (lastActiveMinutes <= 1440) return { tone: "steady", label: "Active this week", detail: describeActivity(lastActiveMinutes) };
+    return { tone: "slow", label: "Quiet lately", detail: describeActivity(lastActiveMinutes) };
+  }
+
+  const rating = toNumericMetric(househelp.rating);
+  const reviewCount = toNumericMetric(househelp.review_count);
+  if (rating != null && reviewCount != null && rating >= 4 && reviewCount >= 3) {
+    return { tone: "steady", label: "Highly rated", detail: `${rating.toFixed(1)}★ • ${reviewCount} reviews` };
+  }
+
+  return null;
+};
 
 const formatDate = (value?: string) => {
   if (!value) return "Flexible";
@@ -258,6 +375,8 @@ const normalizeOpenForWorkListing = (raw: unknown, fallbackId: string): OpenForW
     salary_min: toFiniteNumber(listing.salary_min),
     salary_max: toFiniteNumber(listing.salary_max),
     salary_frequency: formatTextValue(listing.salary_frequency) || undefined,
+    fit_score: toFiniteNumber(listing.fit_score),
+    match_reasons: toStringArray(listing.match_reasons),
     househelp: normalizeHousehelp(listing.househelp),
   };
 };
@@ -315,20 +434,40 @@ export default function HouseholdJobsHome() {
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
 
   const [listings, setListings] = useState<OpenForWorkListing[]>([]);
+  const [selectedListing, setSelectedListing] = useState<OpenForWorkListing | null>(null);
+  const [selectedInviteListing, setSelectedInviteListing] = useState<OpenForWorkListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [shortlistedListingIds, setShortlistedListingIds] = useState<Set<string>>(() => new Set());
   const [shortlistLoadingId, setShortlistLoadingId] = useState<string | null>(null);
-  const [selectedListing, setSelectedListing] = useState<OpenForWorkListing | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [openOnly, setOpenOnly] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(() => ({ ...DEFAULT_OPEN_FOR_WORK_FILTERS }));
-  const [sortBy, setSortBy] = useState("default");
+  const [sortBy, setSortBy] = useState("best_match");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const [inviteDraft, setInviteDraft] = useState(loadSavedInviteMessage());
+  const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   const limit = 12;
+  const backToPath = "/household/jobs";
+
+  const buildInviteTemplate = useCallback((listing: OpenForWorkListing, variant: "skills" | "availability" = "skills") => {
+    const househelp = listing.househelp || {};
+    const user = househelp.user || {};
+    const name = firstString(user.first_name, househelp.first_name, "there");
+    const jobTypes = toStringArray(listing.job_types).map((type) => type.replace(/_/g, " ")).join(", ") || "your preferred role";
+    const scheduleLabel = summarizeSchedule(listing.work_schedule) || "your ideal schedule";
+    const location = firstString(househelp.town, househelp.location) || "your area";
+    if (variant === "availability") {
+      return `Hi ${name},\n\nWe have a family in ${location} hoping to hire a ${jobTypes} and they are ready as soon as ${formatDate(listing.available_from)}. Your availability and schedule (${scheduleLabel}) look like a great match. Can we chat this week?`;
+    }
+    return `Hi ${name},\n\nYour profile stood out—especially your ${jobTypes} experience. We think you'd be a perfect fit for a household in ${location} and would love to invite you to apply. Let me know when you're free to discuss details!`;
+  }, []);
 
   const { options: onboardingOptions } = useOnboardingOptions("househelp");
 
@@ -336,6 +475,7 @@ export default function HouseholdJobsHome() {
     () => listings.map((listing) => firstString(listing.househelp?.user_id, listing.househelp?.user?.id)).filter(Boolean),
     [listings]
   );
+
   const profilePhotos = useProfilePhotos(househelpUserIds);
   const openListingsCount = useMemo(
     () => listings.filter((listing) => isOpenForWorkListingActive(listing)).length,
@@ -396,10 +536,44 @@ export default function HouseholdJobsHome() {
       return true;
     });
   }, [listings, openOnly, filters, selectedSalaryRange]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchProfileId = async () => {
+      try {
+        const profile = await grpcProfileService.getCurrentHouseholdProfile('');
+        if (!cancelled) {
+          setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
+        }
+      } catch {
+        if (!cancelled) {
+          setCurrentHouseholdProfileId(null);
+        }
+      }
+    };
+    fetchProfileId();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    persistSavedInviteMessage(inviteDraft);
+  }, [inviteDraft]);
+
   const sortedListings = useMemo(() => {
     if (!sortBy) return filteredListings;
     const items = [...filteredListings];
     switch (sortBy) {
+      case "best_match":
+        items.sort((a, b) =>
+          compareNumbers(
+            (toFiniteNumber(a.fit_score) ?? null),
+            (toFiniteNumber(b.fit_score) ?? null),
+            "desc",
+          ),
+        );
+        break;
       case "budget_desc":
         items.sort((a, b) => compareNumbers(getListingBudgetValue(a), getListingBudgetValue(b), "desc"));
         break;
@@ -417,6 +591,23 @@ export default function HouseholdJobsHome() {
     }
     return items;
   }, [filteredListings, sortBy]);
+  const topMatches = useMemo(() => (
+    (Array.isArray(listings) ? [...listings] : [])
+      .filter((listing) => (listing.fit_score ?? 0) > 0)
+      .sort((a, b) => compareNumbers(a.fit_score ?? null, b.fit_score ?? null, 'desc'))
+      .slice(0, 6)
+  ), [listings]);
+
+  const searchKey = useMemo(
+    () => JSON.stringify({ filters, openOnly, sortBy, salaryRangeId: filters.salaryRangeId }),
+    [filters, openOnly, sortBy]
+  );
+
+  useEffect(() => {
+    setOffset(0);
+    setHasMore(true);
+    setListings([]);
+  }, [searchKey]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -442,8 +633,10 @@ export default function HouseholdJobsHome() {
           .map((item) => item.profile_id)
           .filter((id): id is string => Boolean(id));
         setShortlistedListingIds(new Set(ids));
+        setActionSuccess(null);
       } catch {
         // The card can still render and retry on click if this lookup fails.
+        setActionSuccess(null);
       }
     };
 
@@ -460,22 +653,45 @@ export default function HouseholdJobsHome() {
       setLoading(true);
       setError(null);
       try {
-        const raw = await openForWorkService.listOpenForWork(limit, offset);
-        const payload = raw?.data || raw || {};
-        const items = Array.isArray(payload?.items)
-          ? payload.items
-          : Array.isArray(payload?.data)
-            ? payload.data
-            : Array.isArray(payload)
-              ? payload
+        const payload: Record<string, any> = {
+          limit,
+          offset,
+        };
+        if (openOnly) payload.status = "active";
+        if (filters.jobType) payload.job_type = filters.jobType;
+        if (filters.choreId) payload.chores_ids = [Number(filters.choreId)];
+        if (filters.petTypeId) payload.pet_type_ids = [Number(filters.petTypeId)];
+        if (filters.childrenAgeRangeId) payload.children_age_range_id = Number(filters.childrenAgeRangeId);
+        if (filters.childrenCapacityId) payload.children_capacity_id = Number(filters.childrenCapacityId);
+        if (filters.canWorkWithKids) payload.can_work_with_kids = filters.canWorkWithKids === "yes";
+        if (filters.canWorkWithPets) payload.can_work_with_pets = filters.canWorkWithPets === "yes";
+        if (selectedSalaryRange?.min != null) payload.salary_min = selectedSalaryRange.min;
+        if (selectedSalaryRange?.max != null) payload.salary_max = selectedSalaryRange.max;
+        if (selectedSalaryRange?.frequency) payload.salary_frequency = selectedSalaryRange.frequency;
+        if (filters.availabilityWindow) {
+          const now = new Date();
+          const addDays = (days: number) => new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+          if (filters.availabilityWindow === "next_14") payload.available_from_before = addDays(14);
+          if (filters.availabilityWindow === "next_30") payload.available_from_before = addDays(30);
+          if (filters.availabilityWindow === "later") payload.available_from_after = addDays(30);
+        }
+        if (sortBy === "best_match") payload.sort = "best_match";
+
+        const raw = await openForWorkService.searchOpenForWork(currentUserId, payload);
+        const data = raw?.data || raw || {};
+        const items = Array.isArray(data?.items)
+          ? data.items
+          : Array.isArray(data?.data)
+            ? data.data
+            : Array.isArray(data)
+              ? data
               : [];
-        const total = typeof payload?.total === "number" ? payload.total : (Array.isArray(items) ? items.length : 0);
         const normalizedItems = (items as unknown[]).map((item: unknown, index: number) => (
           normalizeOpenForWorkListing(item, `open-for-work-${offset + index}`)
         ));
         if (cancelled) return;
         setListings((prev) => (offset === 0 ? normalizedItems : [...prev, ...normalizedItems]));
-        setHasMore(offset + normalizedItems.length < total);
+        setHasMore(normalizedItems.length === limit);
       } catch (err: any) {
         if (!cancelled) setError(err.message || "Failed to load open-for-work listings");
       } finally {
@@ -488,7 +704,7 @@ export default function HouseholdJobsHome() {
     return () => {
       cancelled = true;
     };
-  }, [offset]);
+  }, [offset, searchKey, selectedSalaryRange, currentUserId]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -527,6 +743,72 @@ export default function HouseholdJobsHome() {
     }
   };
 
+  const handleOpenInviteModal = (listing: OpenForWorkListing, options?: { template?: "skills" | "availability" }) => {
+    if (!hasActiveSubscription && !subscriptionLoading) {
+      setShowSubscriptionModal(true);
+      return;
+    }
+    setSelectedInviteListing(listing);
+    setInviteError(null);
+    if (options?.template) {
+      setInviteDraft(buildInviteTemplate(listing, options.template));
+    } else if (!inviteDraft.trim()) {
+      setInviteDraft(buildInviteTemplate(listing, "skills"));
+    }
+  };
+
+  const handleCloseInviteModal = () => {
+    if (inviteLoading) return;
+    setSelectedInviteListing(null);
+    setInviteError(null);
+  };
+
+  const handleSendInvite = async (event?: React.FormEvent) => {
+    event?.preventDefault();
+    if (!selectedInviteListing) return;
+    if (!currentUserId) {
+      setInviteError("We couldn’t verify your household profile.");
+      return;
+    }
+    const body = inviteDraft.trim();
+    if (!body) {
+      setInviteError("Please add a short message before sending.");
+      return;
+    }
+    const househelpUserId = firstString(selectedInviteListing.househelp?.user_id, selectedInviteListing.househelp?.user?.id);
+    if (!househelpUserId) {
+      setInviteError("We couldn’t reach this househelp right now.");
+      return;
+    }
+    if (!hasActiveSubscription && !subscriptionLoading) {
+      setShowSubscriptionModal(true);
+      return;
+    }
+
+    setInviteLoading(true);
+    setInviteError(null);
+    try {
+      const payload: StartConversationPayload = {
+        household_user_id: currentUserId,
+        househelp_user_id: househelpUserId,
+      };
+      if (currentHouseholdProfileId) payload.household_profile_id = currentHouseholdProfileId;
+      if (selectedInviteListing.househelp?.id) payload.househelp_profile_id = selectedInviteListing.househelp.id;
+
+      const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
+      if (!convId) throw new Error("We couldn't open a conversation just yet.");
+
+      await notificationsService.sendMessage(convId, body, '', currentUserId, currentHouseholdProfileId || '', 'household');
+      persistSavedInviteMessage(body);
+      setActionSuccess("Invite sent successfully.");
+      setSelectedInviteListing(null);
+    } catch (err: any) {
+      setInviteError(err?.message || "Failed to send invite. Please try again.");
+    } finally {
+      setInviteLoading(false);
+    }
+  };
+
   const handleViewProfile = (listing: OpenForWorkListing) => {
     const profileId = listing.househelp?.id;
     if (!profileId) return;
@@ -547,12 +829,14 @@ export default function HouseholdJobsHome() {
           next.delete(listing.id);
           return next;
         });
+        setActionSuccess("Listing removed from your shortlist.");
       } else {
         await shortlistService.createShortlist('', 'household', {
           profile_id: listing.id,
           profile_type: 'open_for_work',
         });
         setShortlistedListingIds((prev) => new Set(prev).add(listing.id));
+        setActionSuccess("Listing added to your shortlist.");
       }
       window.dispatchEvent(new CustomEvent('shortlist-updated'));
     } catch (err: any) {
@@ -827,6 +1111,7 @@ export default function HouseholdJobsHome() {
                     value={sortBy}
                     onChange={(value) => setSortBy(value)}
                     options={[
+                      { value: "best_match", label: "Best match" },
                       { value: "default", label: "Newest first" },
                       { value: "created_asc", label: "Oldest first" },
                       { value: "budget_desc", label: "Budget high to low" },
@@ -849,7 +1134,141 @@ export default function HouseholdJobsHome() {
               </div>
             </div>
 
-            {error && <ErrorAlert message={error} className="mb-6" />}
+            {error && <ErrorAlert message={error} className="mb-6" onClose={() => setError(null)} />}
+            {actionSuccess && <SuccessAlert message={actionSuccess} className="mb-6" onClose={() => setActionSuccess(null)} />}
+
+            {topMatches.length > 0 && (
+              <section className="mb-8">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Top matches</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Househelps ready now and highly compatible with your preferences.</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{topMatches.length} listing{topMatches.length === 1 ? '' : 's'}</span>
+                    {topMatches[0] && (
+                      <div className="flex items-center gap-2 text-[11px]">
+                        <span className="text-gray-500 dark:text-gray-300">Quick invite:</span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenInviteModal(topMatches[0], { template: "skills" })}
+                          className="px-3 py-1 rounded-full border border-purple-200/70 dark:border-purple-500/30 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+                        >
+                          Skills fit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenInviteModal(topMatches[0], { template: "availability" })}
+                          className="px-3 py-1 rounded-full border border-blue-200/70 dark:border-blue-500/30 text-blue-700 dark:text-blue-200 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                        >
+                          Availability
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
+                  {topMatches.map((listing) => {
+                    const househelp = listing.househelp || {};
+                    const user = househelp.user || {};
+                    const name = `${firstString(househelp.user?.first_name, househelp.first_name)} ${firstString(househelp.user?.last_name, househelp.last_name)}`.trim() || 'Househelp';
+                    const location = firstString(househelp.town, househelp.location) || 'Location not specified';
+                    const jobTypes = toStringArray(listing.job_types);
+                    const scheduleLabel = summarizeSchedule(listing.work_schedule);
+                    const responseBadge = deriveHousehelpResponsivenessBadge(listing.househelp);
+                    return (
+                      <button
+                        key={listing.id}
+                        type="button"
+                        onClick={() => handleOpenListingModal(listing)}
+                        className="min-w-[250px] max-w-[280px] text-left rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/90 dark:bg-[#151025]/80 p-4 shadow-sm hover:shadow-lg transition snap-start"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
+                              Match {listing.fit_score}%
+                            </p>
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-1 line-clamp-2">
+                              {name}
+                            </h3>
+                          </div>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                            isOpenForWorkListingActive(listing)
+                              ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'
+                              : 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
+                          }`}>
+                            {formatListingStatus(listing.status)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">📍 {location}</p>
+                        {responseBadge && (
+                          <div className="mt-2 space-y-1">
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
+                              {responseBadge.label}
+                            </span>
+                            {responseBadge.detail && (
+                              <p className="text-[11px] text-gray-500 dark:text-gray-400">{responseBadge.detail}</p>
+                            )}
+                          </div>
+                        )}
+                        <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">💰 {formatSalary(listing.salary_min, listing.salary_max, listing.salary_frequency)}</p>
+                        {listing.match_reasons && listing.match_reasons.length > 0 && (
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {listing.match_reasons.slice(0, 2).map((reason) => (
+                              <span
+                                key={reason}
+                                className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] dark:bg-emerald-500/10 dark:text-emerald-200"
+                              >
+                                {reason}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        <div className="mt-3 flex flex-wrap gap-2">
+                          {jobTypes.slice(0, 2).map((type) => (
+                            <span key={type} className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[10px] dark:bg-purple-500/10 dark:text-purple-200">
+                              {type.replace(/_/g, ' ')}
+                            </span>
+                          ))}
+                          {scheduleLabel && (
+                            <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] dark:bg-amber-500/10 dark:text-amber-200">
+                              {scheduleLabel}
+                            </span>
+                          )}
+                          {listing.available_from && (
+                            <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] dark:bg-blue-500/10 dark:text-blue-200">
+                              From {formatDate(listing.available_from)}
+                            </span>
+                          )}
+                        </div>
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-semibold">
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleOpenInviteModal(listing, { template: "skills" });
+                            }}
+                            className="rounded-xl border border-green-200/60 dark:border-green-500/30 text-green-700 dark:text-green-200 px-3 py-1 hover:bg-green-50 dark:hover:bg-green-500/10"
+                          >
+                            Invite
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleOpenInviteModal(listing, { template: "availability" });
+                            }}
+                            className="rounded-xl border border-blue-200/60 dark:border-blue-500/30 text-blue-700 dark:text-blue-200 px-3 py-1 hover:bg-blue-50 dark:hover:bg-blue-500/10"
+                          >
+                            Availability
+                          </button>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </section>
+            )}
 
             {loading && sortedListings.length === 0 ? (
               <div className="flex justify-center items-center py-20">
@@ -884,6 +1303,7 @@ export default function HouseholdJobsHome() {
                   const experienceYears = toFiniteNumber(househelp.years_of_experience);
                   const shortlisted = shortlistedListingIds.has(listing.id);
                   const isOpen = isOpenForWorkListingActive(listing);
+                  const responseBadge = deriveHousehelpResponsivenessBadge(listing.househelp);
 
                   return (
                     <div
@@ -917,6 +1337,16 @@ export default function HouseholdJobsHome() {
                             <div>
                               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{name}</h3>
                               <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
+                              {responseBadge && (
+                                <div className="mt-2 space-y-1">
+                                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
+                                    {responseBadge.label}
+                                  </span>
+                                  {responseBadge.detail && (
+                                    <p className="text-[11px] text-gray-500 dark:text-gray-400">{responseBadge.detail}</p>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             <div className="flex items-center gap-2">
                               <button
@@ -966,6 +1396,11 @@ export default function HouseholdJobsHome() {
                                 Flexible role
                               </span>
                             )}
+                            {typeof listing.fit_score === "number" && listing.fit_score > 0 && (
+                              <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                                Match {listing.fit_score}%
+                              </span>
+                            )}
                             <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
                               Available {formatDate(listing.available_from)}
                             </span>
@@ -975,6 +1410,19 @@ export default function HouseholdJobsHome() {
                               </span>
                             )}
                           </div>
+
+                          {listing.match_reasons && listing.match_reasons.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {listing.match_reasons.slice(0, 3).map((reason) => (
+                                <span
+                                  key={reason}
+                                  className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] dark:bg-emerald-500/10 dark:text-emerald-200"
+                                >
+                                  {reason}
+                                </span>
+                              ))}
+                            </div>
+                          )}
 
                           <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
                             <p>Experience: {experienceYears ? `${experienceYears} yrs` : "Not specified"}</p>
@@ -1004,6 +1452,15 @@ export default function HouseholdJobsHome() {
                             className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
                           >
                             View Profile
+                          </button>
+                          <button
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleOpenInviteModal(listing);
+                            }}
+                            className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-green-200/60 dark:border-green-500/30 text-green-700 dark:text-green-200 hover:bg-green-50 dark:hover:bg-green-500/10"
+                          >
+                            Invite
                           </button>
                           <button
                             onClick={(event) => {
@@ -1056,6 +1513,7 @@ export default function HouseholdJobsHome() {
         const experienceYears = toFiniteNumber(househelp.years_of_experience);
         const shortlisted = shortlistedListingIds.has(selectedListing.id);
         const isOpen = isOpenForWorkListingActive(selectedListing);
+        const responseBadge = deriveHousehelpResponsivenessBadge(selectedListing.househelp);
 
         return (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -1066,6 +1524,16 @@ export default function HouseholdJobsHome() {
                   <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Open for work</p>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white mt-2">{name}</h2>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {location}</p>
+                  {responseBadge && (
+                    <div className="mt-3 space-y-1">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
+                        {responseBadge.label}
+                      </span>
+                      {responseBadge.detail && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{responseBadge.detail}</p>
+                      )}
+                    </div>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -1190,6 +1658,85 @@ export default function HouseholdJobsHome() {
                       : "Shortlist"}
                 </button>
               </div>
+            </div>
+          </div>
+        );
+      })()}
+      {selectedInviteListing && (() => {
+        const househelp = selectedInviteListing.househelp || {};
+        const user = househelp.user || {};
+        const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || 'Househelp';
+        const location = firstString(househelp.town, househelp.location) || 'Location not specified';
+        return (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseInviteModal} />
+            <div className="relative w-full sm:max-w-lg bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Invite househelp</p>
+                  <h2 className="text-lg font-bold text-gray-900 dark:text-white">{name}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {location}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseInviteModal}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  aria-label="Close invite"
+                  disabled={inviteLoading}
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {inviteError && (
+                <ErrorAlert message={inviteError} className="mt-4" onClose={() => setInviteError(null)} />
+              )}
+
+              <form onSubmit={handleSendInvite} className="mt-6 space-y-4">
+                <div>
+                  <label className="text-xs uppercase tracking-[0.2em] text-gray-400">Message</label>
+                  <textarea
+                    value={inviteDraft}
+                    onChange={(event) => setInviteDraft(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-purple-200/60 dark:border-purple-700/40 bg-white dark:bg-[#120b1a] p-4 text-sm text-gray-800 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    rows={6}
+                    placeholder="Introduce your household and why they’re a great fit..."
+                  />
+                </div>
+                <div className="flex flex-wrap gap-3 text-xs font-semibold">
+                  <button
+                    type="button"
+                    onClick={() => setInviteDraft(buildInviteTemplate(selectedInviteListing, "skills"))}
+                    className="px-4 py-2 rounded-xl border border-purple-200/70 text-purple-700 hover:bg-purple-50 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                  >
+                    Skills template
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setInviteDraft(buildInviteTemplate(selectedInviteListing, "availability"))}
+                    className="px-4 py-2 rounded-xl border border-blue-200/70 text-blue-700 hover:bg-blue-50 dark:border-blue-500/30 dark:text-blue-200 dark:hover:bg-blue-500/10"
+                  >
+                    Availability template
+                  </button>
+                </div>
+                <div className="flex items-center gap-3 justify-end">
+                  <button
+                    type="button"
+                    onClick={handleCloseInviteModal}
+                    disabled={inviteLoading}
+                    className="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 text-xs font-semibold hover:bg-gray-50 dark:hover:bg-gray-800"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={inviteLoading}
+                    className="px-5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-xs font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700 disabled:opacity-60"
+                  >
+                    {inviteLoading ? "Sending..." : "Send invite"}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         );

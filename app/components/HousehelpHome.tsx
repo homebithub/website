@@ -51,6 +51,8 @@ interface HouseholdItem {
   available_from?: string;
   verified?: boolean;
   created_at?: string;
+  fit_score?: number;
+  match_reasons?: string[];
 };
 
 const getFriendlyErrorMessage = (error?: string | null) => {
@@ -104,6 +106,12 @@ export default function HousehelpHome() {
     return results.map(r => r.id).filter(Boolean) as string[];
   }, [results]);
   const profilePhotos = useProfilePhotos(householdUserIds);
+  const topMatches = useMemo(() => (
+    (Array.isArray(results) ? [...results] : [])
+      .filter((household) => typeof household.fit_score === "number" && household.fit_score > 0)
+      .sort((a, b) => (b.fit_score ?? 0) - (a.fit_score ?? 0))
+      .slice(0, 6)
+  ), [results]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -125,6 +133,7 @@ export default function HousehelpHome() {
   const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const sortBy = 'best_match';
 
   // Fetch household profile ID if current user is a household
   useEffect(() => {
@@ -304,6 +313,7 @@ export default function HousehelpHome() {
       religion: filters.religion || undefined,
       chore: filters.chore || undefined,
       min_rating: toNum(filters.min_rating),
+      sort: sortBy === 'best_match' ? 'best_match' : undefined,
     };
     return Object.fromEntries(Object.entries(base).filter(([_, v]) => v !== undefined && v !== null && v !== ""));
   };
@@ -337,7 +347,7 @@ export default function HousehelpHome() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await grpcProfileService.searchHouseholds('', 'househelp', buildFilters(), 12, 0);
+      const raw = await grpcProfileService.searchHouseholds(currentUserId || '', 'househelp', buildFilters(), 12, 0);
 
       // Try multiple possible response structures
       let data = raw?.data?.data || raw?.data || raw?.profiles || raw;
@@ -395,7 +405,7 @@ export default function HousehelpHome() {
     const payload = buildCountPayload();
     countTimerRef.current = setTimeout(async () => {
       try {
-        const count = await grpcProfileService.countHouseholds('', 'househelp', payload);
+        const count = await grpcProfileService.countHouseholds(currentUserId || '', 'househelp', payload);
         setTotalCount(typeof count === 'number' ? count : 0);
       } catch (e) {
         setTotalCount(null);
@@ -512,6 +522,105 @@ export default function HousehelpHome() {
 
             <div className="mt-6 sm:mt-8">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-6">Households</h2>
+              {topMatches.length > 0 && (
+                <section className="mb-8">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Top matches</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Handpicked households that align with your profile.</p>
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{topMatches.length} household{topMatches.length === 1 ? "" : "s"}</span>
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
+                    {topMatches.map((household) => {
+                      const kidsCount =
+                        household.number_of_children ??
+                        household.children_count ??
+                        household.kids_count ??
+                        (Array.isArray(household.kids) ? household.kids.length : undefined) ??
+                        (Array.isArray(household.children) ? household.children.length : undefined);
+                      const serviceTypes = [
+                        household.needs_live_in ? "Live-in" : "",
+                        household.needs_day_worker ? "Day worker" : "",
+                        household.service_type || household.type_of_househelp || "",
+                      ].filter(Boolean);
+                      const serviceLabel = Array.from(new Set(serviceTypes)).join(", ");
+                      const budgetMin = formatBudgetAmount(household.budget_min);
+                      const budgetMax = formatBudgetAmount(household.budget_max);
+                      const budgetPieces = [budgetMin, budgetMax].filter(Boolean);
+                      const budgetLabel = budgetPieces.length > 0 ? budgetPieces.join(" - ") : "Not specified";
+                      const frequencyLabel = household.salary_frequency ? ` / ${household.salary_frequency}` : "";
+                      const townLabel = household.town?.trim() || "Location not specified";
+                      return (
+                        <button
+                          key={household.profile_id}
+                          type="button"
+                          onClick={() => handleViewMore(household)}
+                          className="min-w-[250px] max-w-[280px] text-left rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/90 dark:bg-[#151025]/80 p-4 shadow-sm hover:shadow-lg transition snap-start"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
+                                Match {household.fit_score}%
+                              </p>
+                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-1 line-clamp-2">
+                                {household.first_name} {household.last_name}
+                              </h3>
+                            </div>
+                            {household.created_at && (
+                              <span className="text-[10px] text-gray-500 dark:text-gray-400">
+                                {formatTimeAgo(household.created_at)}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">📍 {townLabel}</p>
+                          {serviceLabel && (
+                            <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">🧰 {serviceLabel}</p>
+                          )}
+                          {household.match_reasons && household.match_reasons.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {household.match_reasons.slice(0, 2).map((reason) => (
+                                <span
+                                  key={reason}
+                                  className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] dark:bg-emerald-500/10 dark:text-emerald-200"
+                                >
+                                  {reason}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-3">
+                            Budget: {budgetLabel}
+                            {frequencyLabel}
+                          </p>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {typeof kidsCount === "number" && (
+                              <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] dark:bg-blue-500/10 dark:text-blue-200">
+                                {kidsCount} kid{kidsCount === 1 ? "" : "s"}
+                              </span>
+                            )}
+                            {typeof household.has_pets === "boolean" && (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] dark:bg-emerald-500/10 dark:text-emerald-200">
+                                {household.has_pets ? "Has pets" : "No pets"}
+                              </span>
+                            )}
+                            {typeof household.needs_live_in === "boolean" && (
+                              <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[10px] dark:bg-purple-500/10 dark:text-purple-200">
+                                {household.needs_live_in ? "Live-in" : "No live-in"}
+                              </span>
+                            )}
+                            {typeof household.needs_day_worker === "boolean" && (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] dark:bg-amber-500/10 dark:text-amber-200">
+                                {household.needs_day_worker ? "Day worker" : "No day worker"}
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
               {actionSuccess && <SuccessAlert message={actionSuccess} className="mb-4" />}
               {actionError && <ErrorAlert message={actionError} className="mb-4" />}
               {loading ? (
@@ -658,6 +767,11 @@ export default function HousehelpHome() {
                           )}
 
                           <div className="flex flex-wrap gap-2 justify-start mb-3">
+                            {typeof r.fit_score === 'number' && r.fit_score > 0 && (
+                              <span className="inline-block text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">
+                                Match {r.fit_score}%
+                              </span>
+                            )}
                             {r.verified && (
                               <span className="inline-block text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">Verified</span>
                             )}
@@ -692,6 +806,19 @@ export default function HousehelpHome() {
                               🧹 Chores: {chores.slice(0, 3).join(', ')}
                               {chores.length > 3 ? ` +${chores.length - 3} more` : ''}
                             </p>
+                          )}
+
+                          {r.match_reasons && r.match_reasons.length > 0 && (
+                            <div className="flex flex-wrap gap-2 justify-start mb-2">
+                              {r.match_reasons.slice(0, 3).map((reason) => (
+                                <span
+                                  key={reason}
+                                  className="inline-block text-[11px] px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded"
+                                >
+                                  {reason}
+                                </span>
+                              ))}
+                            </div>
                           )}
 
                           {/* Bottom actions */}

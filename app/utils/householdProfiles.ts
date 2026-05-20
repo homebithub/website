@@ -9,6 +9,18 @@ export type HouseholdProfileLike = {
   household_name?: string;
   name?: string;
   owner?: { id?: string };
+  rating?: number;
+  review_count?: number;
+  completed_jobs?: number;
+  response_rate?: number;
+  responseRate?: number;
+  average_response_minutes?: number;
+  avg_response_minutes?: number;
+  response_minutes_avg?: number;
+  last_active_at?: string;
+  lastActiveAt?: string;
+  updated_at?: string;
+  updatedAt?: string;
 };
 
 export function resolveHouseholdOwnerUserId(profile: HouseholdProfileLike | null | undefined): string {

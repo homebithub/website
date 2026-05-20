@@ -8423,6 +8423,67 @@ proto.auth.OpenForWorkServicePromiseClient.prototype.getOpenForWorkByHousehelp =
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.auth.SearchRequest,
+ *   !proto.auth.JsonResponse>}
+ */
+const methodDescriptor_OpenForWorkService_SearchOpenForWork = new grpc.web.MethodDescriptor(
+  '/auth.OpenForWorkService/SearchOpenForWork',
+  grpc.web.MethodType.UNARY,
+  proto.auth.SearchRequest,
+  proto.auth.JsonResponse,
+  /**
+   * @param {!proto.auth.SearchRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.auth.JsonResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.auth.SearchRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.auth.JsonResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.auth.JsonResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.auth.OpenForWorkServiceClient.prototype.searchOpenForWork =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/auth.OpenForWorkService/SearchOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_SearchOpenForWork,
+      callback);
+};
+
+
+/**
+ * @param {!proto.auth.SearchRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.auth.JsonResponse>}
+ *     Promise that resolves to the response
+ */
+proto.auth.OpenForWorkServicePromiseClient.prototype.searchOpenForWork =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/auth.OpenForWorkService/SearchOpenForWork',
+      request,
+      metadata || {},
+      methodDescriptor_OpenForWorkService_SearchOpenForWork);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.auth.ListRequest,
  *   !proto.auth.JsonResponse>}
  */

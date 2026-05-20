@@ -975,6 +975,13 @@ export class OpenForWorkServiceClient {
                response: auth_auth_pb.JsonResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
+  searchOpenForWork(
+    request: auth_auth_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
   listOpenForWork(
     request: auth_auth_pb.ListRequest,
     metadata: grpcWeb.Metadata | undefined,
@@ -3094,6 +3101,11 @@ export class OpenForWorkServicePromiseClient {
 
   getOpenForWorkByHousehelp(
     request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  searchOpenForWork(
+    request: auth_auth_pb.SearchRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 

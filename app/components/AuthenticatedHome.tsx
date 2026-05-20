@@ -48,12 +48,16 @@ interface HousehelpProfile {
   languages?: string[];
   can_work_with_kids?: boolean;
   can_work_with_pets?: boolean;
+  offers_live_in?: boolean;
+  offers_day_worker?: boolean;
   rating?: number;
   review_count?: number;
   availability?: string;
   is_available?: boolean;
   verified?: boolean;
   created_at?: string;
+  fit_score?: number;
+  match_reasons?: string[];
 }
 
 type HouseholdHomeVariant = 'default' | 'home1' | 'home2' | 'home3';
@@ -118,6 +122,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const sortBy: HouseholdHomeVariant | "best_match" = 'best_match';
 
   // Fetch household profile ID if current user is a household
   useEffect(() => {
@@ -262,6 +267,12 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   };
   const [fields, setFields] = useState<HousehelpSearchFields>(initialFields);
   const [househelps, setHousehelps] = useState<HousehelpProfile[]>([]);
+  const topMatches = useMemo(() => (
+    (Array.isArray(househelps) ? [...househelps] : [])
+      .filter((profile) => typeof profile.fit_score === 'number' && profile.fit_score > 0)
+      .sort((a, b) => (b.fit_score ?? 0) - (a.fit_score ?? 0))
+      .slice(0, 6)
+  ), [househelps]);
 
   // Fetch profile photos from documents table for all househelps
   const househelpUserIds = useMemo(
@@ -483,6 +494,8 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
         const merged = { ...row, ...details };
         return {
           ...merged,
+          fit_score: row.fit_score,
+          match_reasons: row.match_reasons,
           id: row.id ?? merged.user_id ?? merged.id,
           profile_id: row.profile_id || merged.profile_id || details.id,
         } as HousehelpProfile;
@@ -532,11 +545,12 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           available_from: f.available_from || undefined,
           min_age: f.min_age ? Number(f.min_age) : undefined,
           max_age: f.max_age ? Number(f.max_age) : undefined,
+          sort: sortBy === 'best_match' ? 'best_match' : undefined,
           limit,
           offset: 0,
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
       );
-      const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, 0);
+      const data = await grpcProfileService.searchHousehelps(currentUserId || '', 'household', payload, limit, 0);
       const inner = data?.data || data;
       const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
       const enrichedRows = await enrichHousehelpProfiles(rows);
@@ -578,11 +592,12 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
           available_from: f.available_from || undefined,
           min_age: f.min_age ? Number(f.min_age) : undefined,
           max_age: f.max_age ? Number(f.max_age) : undefined,
+          sort: sortBy === 'best_match' ? 'best_match' : undefined,
           limit,
           offset: nextOffset,
         }).filter(([, v]) => v !== undefined && v !== null && v !== "")
       );
-      const data = await grpcProfileService.searchHousehelps('', 'household', payload, limit, nextOffset);
+      const data = await grpcProfileService.searchHousehelps(currentUserId || '', 'household', payload, limit, nextOffset);
       const inner = data?.data || data;
       const rows: HousehelpProfile[] = Array.isArray(inner) ? inner : Array.isArray(inner?.data) ? inner.data : [];
       const enrichedRows = await enrichHousehelpProfiles(rows);
@@ -784,6 +799,96 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
               <h2 className={`${isHome3 ? 'text-base' : 'text-lg'} font-bold text-gray-900 dark:text-white mb-6`}>
                 Available Househelps
               </h2>
+              {topMatches.length > 0 && (
+                <section className="mb-8">
+                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Top matches</p>
+                      <p className={`${cardTextClass} text-gray-600 dark:text-gray-300 mt-1`}>
+                        Profiles most compatible with your search criteria.
+                      </p>
+                    </div>
+                    <span className="text-xs text-gray-500 dark:text-gray-400">{topMatches.length} profile{topMatches.length === 1 ? '' : 's'}</span>
+                  </div>
+                  <div className="flex gap-4 overflow-x-auto pb-2 snap-x">
+                    {topMatches.map((househelp) => {
+                      const locationLabel = househelp.county_of_residence || househelp.location || 'No location specified';
+                      const experienceYears = househelp.years_of_experience ?? househelp.experience;
+                      const profileId = String(househelp.profile_id ?? househelp.id ?? '');
+                      const salaryLabel = formatOnboardingAmountWithFrequency(
+                        househelp.salary_expectation,
+                        househelp.salary_frequency,
+                        'Salary not yet specified'
+                      );
+                      return (
+                        <button
+                          key={profileId}
+                          type="button"
+                          onClick={() => profileId && handleViewProfile(profileId)}
+                          className="min-w-[250px] max-w-[280px] text-left rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/90 dark:bg-[#151025]/80 p-4 shadow-sm hover:shadow-lg transition snap-start"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
+                                Match {househelp.fit_score}%
+                              </p>
+                              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mt-1 line-clamp-2">
+                                {househelp.first_name} {househelp.last_name}
+                              </h3>
+                            </div>
+                            {typeof experienceYears === 'number' && experienceYears > 0 && (
+                              <span className="text-[10px] text-purple-600 dark:text-purple-300 font-semibold">
+                                {experienceYears}+ yrs
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">📍 {locationLabel}</p>
+                          <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">💰 {salaryLabel}</p>
+                          {househelp.match_reasons && househelp.match_reasons.length > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {househelp.match_reasons.slice(0, 2).map((reason) => (
+                                <span
+                                  key={reason}
+                                  className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] dark:bg-emerald-500/10 dark:text-emerald-200"
+                                >
+                                  {reason}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {househelp.househelp_type && (
+                              <span className="px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 text-[10px] dark:bg-purple-500/10 dark:text-purple-200">
+                                {househelp.househelp_type}
+                              </span>
+                            )}
+                            {househelp.offers_day_worker && (
+                              <span className="px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] dark:bg-amber-500/10 dark:text-amber-200">
+                                Day worker
+                              </span>
+                            )}
+                            {househelp.offers_live_in && (
+                              <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[10px] dark:bg-blue-500/10 dark:text-blue-200">
+                                Live-in
+                              </span>
+                            )}
+                            {househelp.can_work_with_kids && (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] dark:bg-emerald-500/10 dark:text-emerald-200">
+                                Kids ok
+                              </span>
+                            )}
+                            {househelp.can_work_with_pets && (
+                              <span className="px-2 py-0.5 rounded-full bg-pink-50 text-pink-700 text-[10px] dark:bg-pink-500/10 dark:text-pink-200">
+                                Pets ok
+                              </span>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </section>
+              )}
               {actionError && <ErrorAlert message={actionError} className="mb-4" />}
 
               {loading ? (
@@ -956,10 +1061,36 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                             )}
                           </p>
 
+                          {househelp.match_reasons && househelp.match_reasons.length > 0 && (
+                            <div className="flex flex-wrap gap-2 justify-start mb-3">
+                              {househelp.match_reasons.slice(0, 3).map((reason) => (
+                                <span
+                                  key={reason}
+                                  className="inline-block text-[11px] px-2 py-0.5 bg-emerald-50 text-emerald-700 rounded"
+                                >
+                                  {reason}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+
                           <div className="flex flex-wrap gap-2 justify-start mb-3">
+                            {typeof househelp.fit_score === 'number' && househelp.fit_score > 0 && (
+                              <span className="inline-block text-xs px-2 py-0.5 bg-emerald-100 text-emerald-700 rounded">
+                                Match {househelp.fit_score}%
+                              </span>
+                            )}
+                            {househelp.verified && (
+                              <span className="inline-block text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">Verified</span>
+                            )}
                             {househelp.househelp_type && (
                               <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
                                 {househelp.househelp_type}
+                              </span>
+                            )}
+                            {househelp.offers_day_worker && (
+                              <span className="inline-block text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">
+                                Day worker
                               </span>
                             )}
                             {typeof househelp.can_work_with_kids === 'boolean' && (

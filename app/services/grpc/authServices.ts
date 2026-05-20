@@ -1156,8 +1156,9 @@ export const jobService = {
     const res = await grpcCall((cb) => jobClient.listJobs(buildListRequest(limit, offset), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
-  async searchJobs(filters: Record<string, any>): Promise<any> {
+  async searchJobs(filters: Record<string, any>, userId?: string): Promise<any> {
     const req = new auth_pb.SearchRequest();
+    if (userId) req.setUserId(resolveUserId(userId));
     const struct = toStruct(filters || {});
     if (struct) req.setFilters(struct);
     const res = await grpcCall((cb) => jobClient.searchJobs(req, getMetadata(), cb));
@@ -1230,6 +1231,14 @@ export const openForWorkService = {
   },
   async getOpenForWorkByHousehelp(househelpId: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => openForWorkClient.getOpenForWorkByHousehelp(buildIdRequest(househelpId, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async searchOpenForWork(userId: string | undefined, filters: Record<string, any>): Promise<any> {
+    const req = new auth_pb.SearchRequest();
+    if (userId) req.setUserId(resolveUserId(userId));
+    const struct = toStruct(filters || {});
+    if (struct) req.setFilters(struct);
+    const res = await grpcCall((cb) => openForWorkClient.searchOpenForWork(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
   async listOpenForWork(limit = 20, offset = 0): Promise<any> {
