@@ -8,6 +8,7 @@ import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
 import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
 import { WebSocketProvider } from "~/contexts/WebSocketContext";
 import { SSEProvider } from "~/contexts/SSEContext";
+import { GlobalLoaderOverlay } from "~/components/ShimmerLoader";
 import { API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
@@ -155,6 +156,7 @@ export default function App() {
                                 <ProfileSetupProvider>
                                     <ProfileSetupGuard>
                                         <Outlet/>
+                                        <GlobalLoaderOverlay />
                                     </ProfileSetupGuard>
                                 </ProfileSetupProvider>
                             </WebSocketProvider>

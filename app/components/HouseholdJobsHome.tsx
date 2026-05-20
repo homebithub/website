@@ -452,6 +452,7 @@ export default function HouseholdJobsHome() {
   const sentinelRef = useRef<HTMLDivElement | null>(null);
   const [inviteDraft, setInviteDraft] = useState(loadSavedInviteMessage());
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
+  const [previewHousehelpListing, setPreviewHousehelpListing] = useState<OpenForWorkListing | null>(null);
 
   const limit = 12;
   const backToPath = "/household/jobs";
@@ -810,6 +811,10 @@ export default function HouseholdJobsHome() {
   };
 
   const handleViewProfile = (listing: OpenForWorkListing) => {
+    if (!hasActiveSubscription && !subscriptionLoading) {
+      setPreviewHousehelpListing(listing);
+      return;
+    }
     const profileId = listing.househelp?.id;
     if (!profileId) return;
     navigate(`/househelp/public-profile?profileId=${encodeURIComponent(profileId)}&openForWorkId=${encodeURIComponent(listing.id)}`);
@@ -1737,6 +1742,97 @@ export default function HouseholdJobsHome() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        );
+      })()}
+      {previewHousehelpListing && (() => {
+        const househelp = previewHousehelpListing.househelp || {};
+        const user = househelp.user || {};
+        const profileData = househelp as Record<string, any>;
+        const displayName = firstString(user.first_name, househelp.first_name, "This househelp");
+        const headline = toStringArray(previewHousehelpListing.job_types).join(", ") || "Trusted househelp";
+        const locationLabel = firstString(househelp.town, househelp.location, "Location hidden");
+        const maskedDetails = [
+          {
+            label: "Full experience",
+            value: profileData["experience_summary"] || "Detailed experience timeline unlocks with a plan.",
+          },
+          {
+            label: "References & reviews",
+            value: "Ratings, testimonials, and verification badges are hidden for free accounts.",
+          },
+          {
+            label: "Contact methods",
+            value: "Direct chat, phone, and invite tools unlock once you subscribe.",
+          },
+        ];
+
+        const renderMaskedDetail = (detail: { label: string; value: string }, index: number) => (
+          <div key={`${detail.label}-${index}`} className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">{detail.label}</p>
+            <div className="relative overflow-hidden rounded-2xl border border-purple-100/60 dark:border-white/10 bg-white/80 dark:bg-white/5 px-4 py-3 shadow-inner">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white relative z-10">{detail.value}</p>
+              <div className="absolute inset-0 backdrop-blur-[3px] bg-gradient-to-r from-purple-500/30 via-pink-500/20 to-purple-600/30 opacity-80" aria-hidden="true" />
+              <span className="absolute top-2 right-3 text-[10px] font-semibold uppercase tracking-[0.4em] text-white/80">Locked</span>
+            </div>
+          </div>
+        );
+
+        return (
+          <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setPreviewHousehelpListing(null)} />
+            <div className="relative w-full sm:max-w-xl bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl border border-purple-200/60 dark:border-purple-700/30 shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Limited profile preview</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">{displayName}</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{headline}</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-300 mt-2">Location hint: {locationLabel}</p>
+                  <p className="text-xs text-gray-400 mt-2">Unlock a subscription to reveal work history, badges, and direct contact options.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewHousehelpListing(null)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  aria-label="Close househelp preview"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-4">
+                {maskedDetails.map(renderMaskedDetail)}
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-purple-50/80 dark:bg-purple-900/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-purple-600 dark:text-purple-200">What you unlock</p>
+                <ul className="mt-3 text-sm text-purple-900 dark:text-purple-100 space-y-2">
+                  <li>✔️ Verified references & background checks</li>
+                  <li>✔️ Full availability, salary expectations, and attachments</li>
+                  <li>✔️ Direct invites, chat, and booking workflows</li>
+                </ul>
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewHousehelpListing(null);
+                    setShowSubscriptionModal(true);
+                  }}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700"
+                >
+                  Unlock full profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewHousehelpListing(null)}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Maybe later
+                </button>
+              </div>
             </div>
           </div>
         );

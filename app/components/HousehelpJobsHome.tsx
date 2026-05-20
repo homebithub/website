@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -27,6 +27,9 @@ import {
 import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import CustomSelect from "~/components/ui/CustomSelect";
 import { Heart, ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, X } from "lucide-react";
+import { useAuth } from "~/contexts/useAuth";
+import { useSubscription } from "~/hooks/useSubscription";
+import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 
 interface JobListing {
   id: string;
@@ -338,6 +341,37 @@ const deriveHouseholdResponsivenessBadge = (profile?: HouseholdProfileLike | nul
 
 export default function HousehelpJobsHome() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { user: authUser } = useAuth();
+  const memoizedStoredUser = useMemo(() => getStoredUser(), []);
+  const resolvedUser = (authUser as any)?.user ?? memoizedStoredUser ?? null;
+  const currentUserId: string | undefined = resolvedUser?.user_id || resolvedUser?.id || getStoredUserId() || undefined;
+  const plansHref = useMemo(() => `/pricing?return=${encodeURIComponent(location.pathname)}`, [location.pathname]);
+  const {
+    isActive: hasActiveSubscription,
+    status: subscriptionStatus,
+    loading: subscriptionLoading,
+  } = useSubscription(currentUserId);
+  const [subscriptionModalOpen, setSubscriptionModalOpen] = useState(false);
+  const [subscriptionActionLabel, setSubscriptionActionLabel] = useState("continue");
+  const [previewProfileJob, setPreviewProfileJob] = useState<JobListing | null>(null);
+
+  const openSubscriptionGate = useCallback((actionLabel: string) => {
+    setSubscriptionActionLabel(actionLabel);
+    setSubscriptionModalOpen(true);
+  }, []);
+
+  const requireSubscription = useCallback(
+    (actionLabel: string) => {
+      if (hasActiveSubscription || subscriptionLoading) {
+        return false;
+      }
+      openSubscriptionGate(actionLabel);
+      return true;
+    },
+    [hasActiveSubscription, subscriptionLoading, openSubscriptionGate]
+  );
+
   const [jobs, setJobs] = useState<JobListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -380,9 +414,6 @@ export default function HousehelpJobsHome() {
   const backToPath = "/househelp/jobs";
 
   const { options: onboardingOptions } = useOnboardingOptions("household");
-
-  const currentUser = useMemo(() => getStoredUser(), []);
-  const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
   const openJobsCount = useMemo(() => jobs.filter((job) => isJobOpen(job)).length, [jobs]);
   const jobTypeOptions = useMemo(() => {
     const options = new Map<string, string>();
@@ -671,6 +702,9 @@ export default function HousehelpJobsHome() {
   };
 
   const handleOpenApplyModal = (job: JobListing, options?: { template?: "experience" | "availability" }) => {
+    if (requireSubscription("apply to jobs")) {
+      return;
+    }
     setSelectedJob(job);
     if (options?.template) {
       const template = buildTemplatePitch(job, options.template);
@@ -762,6 +796,9 @@ export default function HousehelpJobsHome() {
   };
 
   const handleChatWithHousehold = async (job: JobListing) => {
+    if (requireSubscription("message households")) {
+      return;
+    }
     const householdUserId = getHouseholdUserId(job);
     if (!householdUserId || !currentUserId) {
       setError("We couldn’t start a chat right now. Please try again later.");
@@ -818,6 +855,11 @@ export default function HousehelpJobsHome() {
   };
 
   const handleViewProfile = (job: JobListing) => {
+    if (requireSubscription("view full household profiles")) {
+      setPreviewProfileJob(job);
+      return;
+    }
+
     const profileId = getHouseholdProfileId(job);
     const householdUserId = getHouseholdUserId(job);
     if (!profileId && !householdUserId) {
@@ -1433,6 +1475,98 @@ export default function HousehelpJobsHome() {
       </PurpleThemeWrapper>
       <Footer />
 
+      {previewProfileJob && (() => {
+        const profile = previewProfileJob.household_id ? householdProfiles[previewProfileJob.household_id] : null;
+        const profileData = (profile ?? {}) as Record<string, any>;
+        const householdName = profile?.display_name || profile?.household_name || profile?.name || profileData["display_name"] || "Verified household";
+        const shortName = householdName.split(" ")[0] || householdName;
+        const locationLabel = formatJobLocation((profileData["location"] as string | JobLocation | undefined) || previewProfileJob.location);
+        const lifestyle = (profileData["household_type"] as string | undefined) || (profileData["vibe"] as string | undefined) || "Family-focused";
+        const maskedDetails = [
+          {
+            label: "Household bio",
+            value: (profileData["about"] as string | undefined) || "Stories, routines, and preferences unlocked with any plan.",
+          },
+          {
+            label: "Contact info",
+            value: "Phone, WhatsApp, and chat access are hidden until you subscribe.",
+          },
+          {
+            label: "Exact location",
+            value: `${locationLabel} • Full neighborhood & directions hidden`,
+          },
+        ];
+
+        const renderMaskedDetail = (detail: { label: string; value: string }, index: number) => (
+          <div key={`${detail.label}-${index}`} className="space-y-1">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">{detail.label}</p>
+            <div className="relative overflow-hidden rounded-2xl border border-purple-100/60 dark:border-white/10 bg-white/80 dark:bg-white/5 px-4 py-3 shadow-inner">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white relative z-10">{detail.value}</p>
+              <div className="absolute inset-0 backdrop-blur-[3px] bg-gradient-to-r from-purple-500/30 via-pink-500/20 to-purple-600/30 opacity-80" aria-hidden="true" />
+              <span className="absolute top-2 right-3 text-[10px] font-semibold uppercase tracking-[0.4em] text-white/80">Locked</span>
+            </div>
+          </div>
+        );
+
+        return (
+          <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setPreviewProfileJob(null)} />
+            <div className="relative w-full sm:max-w-xl bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl border border-purple-200/60 dark:border-purple-700/30 shadow-2xl p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Limited profile preview</p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">{shortName}&apos;s household</h2>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{locationLabel}</p>
+                  <p className="text-xs text-emerald-600 dark:text-emerald-300 mt-2">Lifestyle hint: {lifestyle}</p>
+                  <p className="text-xs text-gray-400 mt-2">Subscribe to reveal verified contact details, reviews, and trust badges.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setPreviewProfileJob(null)}
+                  className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                  aria-label="Close household preview"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <div className="mt-6 grid grid-cols-1 gap-4">
+                {maskedDetails.map(renderMaskedDetail)}
+              </div>
+
+              <div className="mt-6 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-purple-50/80 dark:bg-purple-900/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-purple-600 dark:text-purple-200">What you unlock</p>
+                <ul className="mt-3 text-sm text-purple-900 dark:text-purple-100 space-y-2">
+                  <li>✔️ Full household bio, routines, and amenities</li>
+                  <li>✔️ Direct chat + phone access</li>
+                  <li>✔️ Reviews, verification badges, and trust score</li>
+                </ul>
+              </div>
+
+              <div className="mt-6 flex flex-col sm:flex-row gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPreviewProfileJob(null);
+                    openSubscriptionGate("view full household profiles");
+                  }}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700"
+                >
+                  Unlock full profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPreviewProfileJob(null)}
+                  className="w-full sm:w-auto px-5 py-3 rounded-xl border border-gray-200 dark:border-gray-600 text-sm font-semibold text-gray-600 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  Maybe later
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {selectedJobDetail && (() => {
         const shortlisted = shortlistedJobIds.has(selectedJobDetail.id);
         const hasApplied = appliedJobIds.has(selectedJobDetail.id) || Boolean(selectedJobDetail.has_applied);
@@ -1673,6 +1807,14 @@ export default function HousehelpJobsHome() {
           </div>
         </div>
       )}
+
+      <SubscriptionRequiredModal
+        open={subscriptionModalOpen}
+        onClose={() => setSubscriptionModalOpen(false)}
+        status={subscriptionStatus}
+        actionLabel={subscriptionActionLabel}
+        plansHref={plansHref}
+      />
     </div>
   );
 }
