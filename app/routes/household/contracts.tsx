@@ -3,6 +3,7 @@ import { useNavigate, useLocation, useSearchParams } from "react-router";
 import { hireContractService } from '~/services/grpc/authServices';
 import { FileText, CheckCircle, XCircle, Calendar, DollarSign, Briefcase } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { ListPageSkeleton } from "~/components/ShimmerLoader";
 
 interface HireContract {
   id: string;
@@ -181,8 +182,8 @@ export default function HouseholdContracts() {
 
         {/* Loading State */}
         {loading && (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="py-6">
+            <ListPageSkeleton items={3} />
           </div>
         )}
 

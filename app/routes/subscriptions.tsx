@@ -720,7 +720,7 @@ export default function SubscriptionsPage() {
 
             {dataLoading ? (
               <div className="flex items-center justify-center py-12">
-                <ArrowPathIcon className="w-8 h-8 animate-spin text-purple-500" />
+                <div className="hb-shimmer-piece h-8 w-8 rounded-full" />
               </div>
             ) : (
               <div className="space-y-8">
@@ -1125,7 +1125,7 @@ export default function SubscriptionsPage() {
 
                   {paymentStatus === 'initiating' && (
                     <div className="text-center py-8">
-                      <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-purple-600 animate-spin" />
+                      <div className="hb-shimmer-piece h-16 w-16 rounded-full mx-auto mb-4" />
                       <p className="text-base font-medium text-gray-900 dark:text-white mb-2">
                         Initiating Payment...
                       </p>
@@ -1137,7 +1137,7 @@ export default function SubscriptionsPage() {
 
                   {paymentStatus === 'processing' && (
                     <div className="text-center py-8">
-                      <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-blue-500 animate-spin" />
+                      <div className="hb-shimmer-piece h-16 w-16 rounded-full mx-auto mb-4" />
                       <p className="text-base font-bold text-gray-900 dark:text-white mb-2">
                         Check Your Phone
                       </p>
@@ -1148,7 +1148,7 @@ export default function SubscriptionsPage() {
                         Enter your M-Pesa PIN to complete payment
                       </p>
                       <div className="flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                        <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                        <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
                         <span>Waiting for confirmation...</span>
                       </div>
                     </div>
@@ -1388,7 +1388,7 @@ export default function SubscriptionsPage() {
                           >
                             {downloadingReceipt ? (
                               <>
-                                <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                                <span className="hb-shimmer-piece h-5 w-5 rounded-full" />
                                 Downloading...
                               </>
                             ) : (
@@ -1420,7 +1420,7 @@ export default function SubscriptionsPage() {
                             >
                               {sendingReceipt ? (
                                 <>
-                                  <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                                  <span className="hb-shimmer-piece h-5 w-5 rounded-full" />
                                   Sending...
                                 </>
                               ) : (
@@ -1596,14 +1596,14 @@ export default function SubscriptionsPage() {
 
                   {checkoutStatus === 'initiating' && (
                     <div className="text-center py-8">
-                      <ArrowPathIcon className="w-12 h-12 mx-auto mb-4 text-purple-500 animate-spin" />
+                      <div className="hb-shimmer-piece h-12 w-12 rounded-full mx-auto mb-4" />
                       <p className="text-xs font-medium text-gray-900 dark:text-gray-100">Initiating payment...</p>
                     </div>
                   )}
 
                   {checkoutStatus === 'processing' && (
                     <div className="text-center py-8">
-                      <ArrowPathIcon className="w-12 h-12 mx-auto mb-4 text-blue-500 animate-spin" />
+                      <div className="hb-shimmer-piece h-12 w-12 rounded-full mx-auto mb-4" />
                       <p className="text-xs font-semibold text-gray-900 dark:text-gray-100 mb-1">Check your phone</p>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">
                         You'll receive a prompt from <strong>Fingo Payment Services</strong>

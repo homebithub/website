@@ -21,6 +21,7 @@ import { useInboxSSE } from '~/hooks/useInboxSSE';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { resolveHouseholdProfile } from '~/utils/householdProfiles';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
+import { InboxPageSkeleton, ShimmerLine, ShimmerSection } from "~/components/ShimmerLoader";
 
 type Conversation = {
   id: string;
@@ -1705,152 +1706,148 @@ export default function InboxPage() {
 
   // Messages view JSX
   const messagesView = !selectedConversation ? (
-    <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-[#0a0a0f]">
-      <div className="text-center">
-        <p className="text-gray-500 dark:text-gray-400 text-base">Select a conversation to start messaging</p>
-      </div>
-    </div>
-  ) : (
-      <div className="h-full bg-white dark:bg-[#13131a] grid grid-rows-[auto,1fr,auto] relative overflow-hidden">
-        {/* Header */}
-        <div className="p-4 border-b border-purple-200 dark:border-purple-500/30 flex items-center gap-3">
-          <button
-            onClick={handleBackToList}
-            className="lg:hidden p-2 hover:bg-purple-100 dark:hover:bg-slate-800 rounded-full transition"
-          >
-            <ArrowLeftIcon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-          </button>
-          
-          {/* Clickable profile header */}
-          <button
-            onClick={handleViewProfile}
-            className="flex items-center gap-3 flex-1 hover:bg-purple-50 dark:hover:bg-slate-800/60 rounded-xl p-2 -m-2 transition-colors"
-          >
-            <div className="w-10 h-10 rounded-full relative overflow-hidden border-2 border-purple-300 dark:border-purple-500 flex-shrink-0">
-              {(() => {
-                const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id;
-                const headerPhoto = selectedConversation.participant_avatar || (otherUserId && participantPhotos[otherUserId]);
-                if (headerPhoto) {
-                  return (
-                    <>
-                      {imageLoadingStates[`header-${selectedConversation.id}`] !== false && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
-                      )}
-                      <img
-                        src={headerPhoto}
-                        alt={selectedConversation.participant_name || 'User'}
-                        className={`w-full h-full object-cover transition-opacity duration-300 ${
-                          imageLoadingStates[`header-${selectedConversation.id}`] === false ? 'opacity-100' : 'opacity-0'
-                        }`}
-                        onLoad={() => {
-                          setImageLoadingStates(prev => ({ ...prev, [`header-${selectedConversation.id}`]: false }));
-                        }}
-                        onError={(e) => {
-                          setImageLoadingStates(prev => ({ ...prev, [`header-${selectedConversation.id}`]: false }));
-                          e.currentTarget.style.display = 'none';
-                        }}
-                      />
-                    </>
-                  );
-                }
-                return (
-                  <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
-                    {(selectedConversation.participant_name || 'U')[0].toUpperCase()}
-                  </div>
-                );
-              })()}
-            </div>
-            
-            <div className="text-left">
-              <div className="flex items-center gap-2">
-                <h2 className="font-semibold text-gray-900 dark:text-white">
-                  {selectedConversation.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
-                </h2>
-                {isTyping && (
-                  <span className="inline-flex items-center gap-1" aria-hidden="true">
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500 [animation-delay:-0.2s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500 [animation-delay:-0.1s]" />
-                    <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500" />
-                  </span>
-                )}
-              </div>
-              <p className={`text-[11px] ${isTyping ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                {presenceLabel}
-              </p>
-            </div>
-          </button>
+        <div className="flex items-center justify-center h-full bg-gray-50 dark:bg-[#0a0a0f]">
+          <div className="text-center">
+            <p className="text-gray-500 dark:text-gray-400 text-base">Select a conversation to start messaging</p>
+          </div>
         </div>
-
-        {/* Messages - Scrollable */}
-        <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="homebit-scrollbar relative min-h-0 space-y-2 overflow-y-auto p-4">
-          <div className={lockMessages ? 'pointer-events-none select-none blur-sm transition duration-150' : ''}>
-            <div ref={messagesSentinelRef} className="h-4" />
-            
-            {loadingMore && (
-              <div className="flex justify-center py-2">
-                <svg className="animate-spin h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-              </div>
-            )}
-
-            {/* Hire Context Banner */}
-            {selectedConversation && (
-              <HireContextBanner
-                hireRequestStatus={hireRequestStatus}
-                hireRequestId={hireRequestId}
-                onViewDetails={() => {
-                  if (hireRequestId) {
-                    if (currentUserProfileType?.toLowerCase() === 'household') {
-                      const backTo = `${location.pathname}${location.search || ''}`;
-                      const params = new URLSearchParams({
-                        backTo,
-                        backLabel: 'Back to Inbox',
-                      });
-                      navigate(`/household/hire-request/${hireRequestId}?${params.toString()}`);
-                    } else {
-                      navigate(`/househelp/hiring`);
+      ) : (
+          <div className="h-full bg-white dark:bg-[#13131a] grid grid-rows-[auto,1fr,auto] relative overflow-hidden">
+            {/* Header */}
+            <div className="p-4 border-b border-purple-200 dark:border-purple-500/30 flex items-center gap-3">
+              <button
+                onClick={handleBackToList}
+                className="lg:hidden p-2 hover:bg-purple-100 dark:hover:bg-slate-800 rounded-full transition"
+              >
+                <ArrowLeftIcon className="w-6 h-6 text-gray-700 dark:text-gray-300" />
+              </button>
+              
+              {/* Clickable profile header */}
+              <button
+                onClick={handleViewProfile}
+                className="flex items-center gap-3 flex-1 hover:bg-purple-50 dark:hover:bg-slate-800/60 rounded-xl p-2 -m-2 transition-colors"
+              >
+                <div className="w-10 h-10 rounded-full relative overflow-hidden border-2 border-purple-300 dark:border-purple-500 flex-shrink-0">
+                  {(() => {
+                    const otherUserId = currentUserProfileType?.toLowerCase() === 'household' ? selectedConversation.househelp_id : selectedConversation.household_id;
+                    const headerPhoto = selectedConversation.participant_avatar || (otherUserId && participantPhotos[otherUserId]);
+                    if (headerPhoto) {
+                      return (
+                        <>
+                          {imageLoadingStates[`header-${selectedConversation.id}`] !== false && (
+                            <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                          )}
+                          <img
+                            src={headerPhoto}
+                            alt={selectedConversation.participant_name || 'User'}
+                            className={`w-full h-full object-cover transition-opacity duration-300 ${
+                              imageLoadingStates[`header-${selectedConversation.id}`] === false ? 'opacity-100' : 'opacity-0'
+                            }`}
+                            onLoad={() => {
+                              setImageLoadingStates(prev => ({ ...prev, [`header-${selectedConversation.id}`]: false }));
+                            }}
+                            onError={(e) => {
+                              setImageLoadingStates(prev => ({ ...prev, [`header-${selectedConversation.id}`]: false }));
+                              e.currentTarget.style.display = 'none';
+                            }}
+                          />
+                        </>
+                      );
                     }
-                  }
-                }}
-                onSendHireRequest={async () => {
-                  if (!hasActiveSubscription && !subscriptionLoading) {
-                    setShowSubscriptionModal(true);
-                    return;
-                  }
-                  if (currentUserProfileType?.toLowerCase() === 'household' && selectedConversation) {
-                    const househelpUserId = selectedConversation.househelp_id;
-                    if (selectedConversation.househelp_profile_id) {
-                      setHousehelpProfileIdForHire(selectedConversation.househelp_profile_id);
-                      setShowHireWizard(true);
-                    } else {
-                      try {
-                        const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
-                        setHousehelpProfileIdForHire(profileData?.id || profileData?.profile_id);
-                        setShowHireWizard(true);
-                      } catch (err) {
-                        console.error('Failed to fetch househelp profile:', err);
-                        pushToast('Failed to load profile information', 'error');
+                    return (
+                      <div className="w-full h-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-white font-bold">
+                        {(selectedConversation.participant_name || 'U')[0].toUpperCase()}
+                      </div>
+                    );
+                  })()}
+                </div>
+                
+                <div className="text-left">
+                  <div className="flex items-center gap-2">
+                    <h2 className="font-semibold text-gray-900 dark:text-white">
+                      {selectedConversation.participant_name || (currentUserProfileType?.toLowerCase() === 'househelp' ? 'Household' : 'Househelp')}
+                    </h2>
+                    {isTyping && (
+                      <span className="inline-flex items-center gap-1" aria-hidden="true">
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500 [animation-delay:-0.2s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500 [animation-delay:-0.1s]" />
+                        <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-emerald-500" />
+                      </span>
+                    )}
+                  </div>
+                  <p className={`text-[11px] ${isTyping ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                    {presenceLabel}
+                  </p>
+                </div>
+              </button>
+            </div>
+
+            {/* Messages - Scrollable */}
+            <div ref={messagesContainerRef} onScroll={handleMessagesScroll} className="homebit-scrollbar relative min-h-0 space-y-2 overflow-y-auto p-4">
+              <div className={lockMessages ? 'pointer-events-none select-none blur-sm transition duration-150' : ''}>
+                <div ref={messagesSentinelRef} className="h-4" />
+                
+                {loadingMore && (
+                  <div className="flex justify-center py-2">
+                    <ShimmerLine width="30%" height={8} className="rounded-full" />
+                  </div>
+                )}
+
+                {/* Hire Context Banner */}
+                {selectedConversation && (
+                  <HireContextBanner
+                    hireRequestStatus={hireRequestStatus}
+                    hireRequestId={hireRequestId}
+                    onViewDetails={() => {
+                      if (hireRequestId) {
+                        if (currentUserProfileType?.toLowerCase() === 'household') {
+                          const backTo = `${location.pathname}${location.search || ''}`;
+                          const params = new URLSearchParams({
+                            backTo,
+                            backLabel: 'Back to Inbox',
+                          });
+                          navigate(`/household/hire-request/${hireRequestId}?${params.toString()}`);
+                        } else {
+                          navigate(`/househelp/hiring`);
+                        }
                       }
-                    }
-                  } else {
-                    setShowHireWizard(true);
-                  }
-                }}
-                onAccept={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
-                onDecline={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
-                actionLoading={hireActionLoading}
-                userRole={currentUserProfileType?.toLowerCase() as 'household' | 'househelp'}
-              />
-            )}
-            
+                    }}
+                    onSendHireRequest={async () => {
+                      if (!hasActiveSubscription && !subscriptionLoading) {
+                        setShowSubscriptionModal(true);
+                        return;
+                      }
+                      if (currentUserProfileType?.toLowerCase() === 'household' && selectedConversation) {
+                        const househelpUserId = selectedConversation.househelp_id;
+                        if (selectedConversation.househelp_profile_id) {
+                          setHousehelpProfileIdForHire(selectedConversation.househelp_profile_id);
+                          setShowHireWizard(true);
+                        } else {
+                          try {
+                            const profileData: any = await grpcProfileService.getHousehelpByUserID(househelpUserId);
+                            setHousehelpProfileIdForHire(profileData?.id || profileData?.profile_id);
+                            setShowHireWizard(true);
+                          } catch (err) {
+                            console.error('Failed to fetch househelp profile:', err);
+                            pushToast('Failed to load profile information', 'error');
+                          }
+                        }
+                      } else {
+                        setShowHireWizard(true);
+                      }
+                    }}
+                    onAccept={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleAcceptHireRequest : undefined}
+                    onDecline={currentUserProfileType?.toLowerCase() === 'househelp' && hireRequestStatus === 'pending' ? handleDeclineHireRequest : undefined}
+                    actionLoading={hireActionLoading}
+                    userRole={currentUserProfileType?.toLowerCase() as 'household' | 'househelp'}
+                  />
+                )}
+
             {messagesLoading && messages.length === 0 && (
-              <div className="flex justify-center py-8">
-                <svg className="animate-spin h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+              <div className="space-y-4 py-4">
+                <ShimmerSection lines={2} showTitle={false} />
+                <ShimmerSection lines={3} showTitle={false} />
+                <ShimmerSection lines={2} showTitle={false} />
               </div>
             )}
 
@@ -2394,10 +2391,9 @@ export default function InboxPage() {
       <div className="h-screen flex flex-col overflow-hidden">
         <Navigation />
         <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col overflow-hidden min-h-0">
-          <main className="flex-1 flex items-center justify-center">
-            <div className="text-center">
-              <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
-              <p className="mt-4 text-gray-600 dark:text-gray-400">Loading inbox...</p>
+          <main className="flex-1 py-6">
+            <div className="max-w-7xl mx-auto px-4">
+              <InboxPageSkeleton />
             </div>
           </main>
         </PurpleThemeWrapper>
@@ -2572,26 +2568,7 @@ export default function InboxPage() {
             )}
             {profileModalLoading && (
               <div className="absolute inset-0 z-[72] grid place-items-center bg-black/10">
-                <svg
-                  className="animate-spin h-10 w-10 text-purple-500"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-                  ></path>
-                </svg>
+                <div className="hb-shimmer-piece h-10 w-10 rounded-full" />
               </div>
             )}
             <iframe

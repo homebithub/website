@@ -8,6 +8,7 @@ import { CheckCircle, XCircle, Briefcase, Calendar, DollarSign, MapPin, Eye } fr
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
+import { ListPageSkeleton } from "~/components/ShimmerLoader";
 
 interface HireRequest {
   id: string;
@@ -247,8 +248,8 @@ export default function HousehelpHireRequests() {
 
             {/* Loading */}
             {loading && (
-              <div className="flex justify-center items-center py-20">
-                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-purple-600"></div>
+              <div className="py-6">
+                <ListPageSkeleton items={3} />
               </div>
             )}
 

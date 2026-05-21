@@ -7,6 +7,8 @@ import { profileService as grpcProfileService, profileViewService, shortlistServ
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
+import { formatOnboardingAmountWithFrequency } from "~/utils/onboardingCompensation";
+import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 
 export default function HousehelpProfile() {
     const [shortlistLoading, setShortlistLoading] = useState(false);
@@ -151,7 +153,15 @@ export default function HousehelpProfile() {
       fetchImages(data.User.id);
     }, [data && data.User && data.User.id]);
 
-    if (loading) return <div className="flex justify-center py-12">Loading...</div>;
+    if (loading) {
+      return (
+        <div className="w-full flex justify-center bg-transparent mt-4 sm:mt-2">
+          <div className="w-full mx-2 sm:mx-6 md:mx-16 max-w-4xl">
+            <ProfilePageSkeleton />
+          </div>
+        </div>
+      );
+    }
     if (error) {
       return (
         <div className="flex justify-center py-12 px-4">

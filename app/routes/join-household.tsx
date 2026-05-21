@@ -8,6 +8,7 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Button } from '~/components/ui/Button';
 import { useSSESubscription } from '~/hooks/useSSESubscription';
 import { InviteCodeInput, isInviteCodeComplete } from '~/components/household/InviteCodeInput';
+import { FormPageSkeleton } from "~/components/ShimmerLoader";
 
 export default function JoinHouseholdPage() {
   const navigate = useNavigate();
@@ -142,8 +143,8 @@ export default function JoinHouseholdPage() {
             </div>
 
             {checkingStatus ? (
-              <div className="flex justify-center py-12">
-                <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full" />
+              <div className="py-6">
+                <FormPageSkeleton />
               </div>
             ) : success ? (
               <div className="space-y-6">
@@ -162,8 +163,8 @@ export default function JoinHouseholdPage() {
                     </div>
                   </>
                 ) : (
-                  <div className="flex justify-center py-12">
-                    <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full" />
+                  <div className="py-6">
+                    <FormPageSkeleton />
                   </div>
                 )}
               </div>

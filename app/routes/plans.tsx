@@ -459,7 +459,7 @@ export default function PlansPage() {
         {/* Plans */}
         {plansLoading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <ArrowPathIcon className="w-8 h-8 text-purple-400 animate-spin" />
+            <span className="hb-shimmer-piece h-8 w-8 rounded-full" />
             <p className="text-gray-400 text-xs">Loading plans...</p>
           </div>
         ) : plansError ? (
@@ -577,7 +577,7 @@ export default function PlansPage() {
                         {/* Plan resolving */}
                         {planResolving && (
                           <div className="flex items-center gap-2 text-xs text-gray-400">
-                            <ArrowPathIcon className="w-4 h-4 animate-spin text-purple-400" />
+                            <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
                             Verifying plan details...
                           </div>
                         )}
@@ -619,7 +619,7 @@ export default function PlansPage() {
                   {/* initiating */}
                   {paymentStatus === "initiating" && (
                     <div className="text-center py-10">
-                      <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-purple-500 animate-spin" />
+                      <div className="hb-shimmer-piece h-16 w-16 rounded-full mx-auto mb-4" />
                       <p className="text-base font-semibold text-white mb-1">Initiating Payment...</p>
                       <p className="text-xs text-gray-400">Please wait while we process your request</p>
                     </div>

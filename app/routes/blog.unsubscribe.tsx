@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams, Link } from "react-router";
 import type { MetaFunction } from "react-router";
-import { CheckCircle, XCircle, Loader2, Mail } from "lucide-react";
+import { CheckCircle, XCircle, Mail } from "lucide-react";
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
@@ -34,7 +34,7 @@ export default function BlogUnsubscribePage() {
         <div className="max-w-md w-full text-center space-y-6">
           {status === "loading" && (
             <>
-              <Loader2 className="w-12 h-12 animate-spin text-purple-500 mx-auto" />
+              <div className="hb-shimmer-piece h-12 w-12 rounded-full mx-auto" />
               <p className="text-gray-600">Processing your unsubscribe request…</p>
             </>
           )}

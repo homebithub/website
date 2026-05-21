@@ -28,6 +28,7 @@ import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 import { formatOnboardingBudgetRange } from '~/utils/onboardingCompensation';
 import { getStoredUserId } from '~/utils/authStorage';
 import JobPostModal from '~/components/modals/JobPostModal';
+import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 
 interface HouseholdData {
   id?: string;
@@ -642,14 +643,16 @@ export default function HouseholdProfile() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <svg className="animate-spin h-12 w-12 text-purple-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <p className="text-gray-600 dark:text-gray-400">Loading your profile...</p>
-        </div>
+      <div className="min-h-screen flex flex-col">
+        <Navigation />
+        <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
+          <main className="flex-1 py-8">
+            <div className="max-w-5xl mx-auto px-4">
+              <ProfilePageSkeleton />
+            </div>
+          </main>
+        </PurpleThemeWrapper>
+        <Footer />
       </div>
     );
   }
@@ -758,7 +761,7 @@ export default function HouseholdProfile() {
 
         {jobsLoading ? (
           <div className="flex items-center gap-3 text-xs text-gray-500">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+            <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
             Loading job postings...
           </div>
         ) : jobs.length > 0 ? (
@@ -887,10 +890,7 @@ export default function HouseholdProfile() {
 
         {invitationLoading && (
           <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-800 rounded-xl">
-            <svg className="animate-spin h-5 w-5 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+            <span className="hb-shimmer-piece h-5 w-5 rounded-full" />
             <span className="text-gray-600 dark:text-gray-400">Generating code...</span>
           </div>
         )}
@@ -960,10 +960,7 @@ export default function HouseholdProfile() {
 
         {membersLoading ? (
           <div className="flex items-center justify-center py-8">
-            <svg className="animate-spin h-8 w-8 text-purple-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+            <span className="hb-shimmer-piece h-8 w-8 rounded-full" />
           </div>
         ) : members.length === 0 ? (
           <div className="text-center py-8">
@@ -1010,10 +1007,7 @@ export default function HouseholdProfile() {
                     className="px-4 py-1 bg-red-600 text-white font-semibold rounded-xl hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                   >
                     {removingMemberId === member.user_id ? (
-                      <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      <span className="hb-shimmer-piece h-5 w-5 rounded-full" />
                     ) : (
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -1067,10 +1061,7 @@ export default function HouseholdProfile() {
         {deleteStatus && (
           <div className="mb-4 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-500/30">
             <div className="flex items-center gap-2">
-              <svg className="animate-spin h-4 w-4 text-orange-600 dark:text-orange-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+              <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
               <span className="text-xs font-semibold text-orange-800 dark:text-orange-400">
                 {deleteStatus}
               </span>
@@ -1095,10 +1086,7 @@ export default function HouseholdProfile() {
             >
               {uploading ? (
                 <>
-                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <span className="hb-shimmer-piece h-5 w-5 rounded-full" />
                   Uploading...
                 </>
               ) : (
@@ -1121,10 +1109,7 @@ export default function HouseholdProfile() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="w-full h-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 animate-pulse" />
                     <div className="absolute">
-                      <svg className="animate-spin h-8 w-8 text-purple-600 dark:text-purple-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      <span className="hb-shimmer-piece h-8 w-8 rounded-full" />
                     </div>
                   </div>
                 )}
@@ -1158,10 +1143,7 @@ export default function HouseholdProfile() {
                     title="Delete photo"
                   >
                     {deleteLoading === photo ? (
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
                     ) : (
                       <TrashIcon className="h-4 w-4" />
                     )}

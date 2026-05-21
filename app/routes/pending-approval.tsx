@@ -5,6 +5,7 @@ import { getAccessTokenFromCookies } from "~/utils/cookie";
 import { householdMemberService } from '~/services/grpc/authServices';
 import { Button } from '~/components/ui/Button';
 import { useSSESubscription } from '~/hooks/useSSESubscription';
+import { FormPageSkeleton } from "~/components/ShimmerLoader";
 
 export default function PendingApprovalPage() {
   const navigate = useNavigate();
@@ -60,8 +61,10 @@ export default function PendingApprovalPage() {
     return (
       <div className="min-h-screen flex flex-col">
         <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
-          <main className="flex-1 flex items-center justify-center">
-            <div className="animate-spin h-12 w-12 border-4 border-purple-500 border-t-transparent rounded-full" />
+          <main className="flex-1 py-12">
+            <div className="max-w-2xl mx-auto px-4">
+              <FormPageSkeleton />
+            </div>
           </main>
         </PurpleThemeWrapper>
       </div>
@@ -88,7 +91,7 @@ export default function PendingApprovalPage() {
                     You've been added to {householdName}. Redirecting you to your household profile...
                   </p>
                   <div className="flex justify-center">
-                    <div className="animate-spin h-8 w-8 border-4 border-purple-500 border-t-transparent rounded-full" />
+                    <div className="hb-shimmer-piece h-8 w-8 rounded-full" />
                   </div>
                 </div>
               </div>

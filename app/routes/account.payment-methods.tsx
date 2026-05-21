@@ -272,7 +272,7 @@ export default function PaymentMethodsPage() {
             {/* Payment Methods Grid */}
             {dataLoading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+                <div className="hb-shimmer-piece h-12 w-12 rounded-full" />
               </div>
             ) : paymentMethods.length === 0 ? (
               <div className="bg-white dark:bg-[#13131a] rounded-2xl shadow-lg dark:shadow-glow-md border-2 border-purple-100 dark:border-purple-500/30 p-12 text-center">

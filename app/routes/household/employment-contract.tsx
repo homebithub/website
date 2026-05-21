@@ -5,9 +5,10 @@ import { employmentContractService } from '~/services/grpc/authServices';
 import { useAuth } from '~/contexts/useAuth';
 import {
   FileText, CheckCircle, XCircle, Download, Mail, Send,
-  ChevronLeft, Edit3, Check, AlertCircle, Loader2, Plus, Trash2
+  ChevronLeft, Edit3, Check, AlertCircle, Plus, Trash2
 } from 'lucide-react';
 import { resolveHousehelpProfile, resolveHousehelpProfileId } from '~/utils/househelpProfiles';
+import { FormPageSkeleton } from "~/components/ShimmerLoader";
 
 interface ContractClause {
   id: string;
@@ -503,8 +504,8 @@ export default function EmploymentContractPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <Loader2 className="w-8 h-8 animate-spin text-purple-600" />
+      <div className="py-10">
+        <FormPageSkeleton />
       </div>
     );
   }
@@ -708,7 +709,7 @@ export default function EmploymentContractPage() {
                 disabled={saving}
                 className="px-6 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg shadow-purple-500/30 disabled:opacity-50 flex items-center gap-2"
               >
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                {saving && <span className="hb-shimmer-piece h-4 w-4 rounded-full" />}
                 {contract ? 'Update & Preview' : 'Create & Preview'}
               </button>
             </div>
@@ -851,7 +852,7 @@ export default function EmploymentContractPage() {
                             : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-50'
                         }`}
                       >
-                        {savingNames && isHousehold ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        {savingNames && isHousehold ? <span className="hb-shimmer-piece h-4 w-4 rounded-full" /> : <Check className="w-4 h-4" />}
                         {isHousehold ? 'Accept & Sign' : 'Awaiting Employer'}
                       </button>
                     )}
@@ -884,7 +885,7 @@ export default function EmploymentContractPage() {
                             : 'bg-gray-400 dark:bg-gray-600 cursor-not-allowed opacity-50'
                         }`}
                       >
-                        {savingNames && isHousehelp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        {savingNames && isHousehelp ? <span className="hb-shimmer-piece h-4 w-4 rounded-full" /> : <Check className="w-4 h-4" />}
                         {isHousehelp ? 'Accept & Sign' : 'Awaiting Employee'}
                       </button>
                     )}
@@ -958,7 +959,7 @@ export default function EmploymentContractPage() {
                 </button>
                 <button onClick={handleSign} disabled={saving || !signerName.trim()}
                   className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg shadow-purple-500/30 disabled:opacity-50 flex items-center gap-2">
-                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                  {saving ? <span className="hb-shimmer-piece h-4 w-4 rounded-full" /> : <Check className="w-4 h-4" />}
                   Sign Contract
                 </button>
               </div>
@@ -996,7 +997,7 @@ export default function EmploymentContractPage() {
                 </button>
                 <button onClick={handleSendContractEmail} disabled={emailSending || !emailAddress.trim()}
                   className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all font-semibold shadow-lg shadow-purple-500/30 disabled:opacity-50 flex items-center gap-2">
-                  {emailSending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Mail className="w-4 h-4" />}
+                  {emailSending ? <span className="hb-shimmer-piece h-4 w-4 rounded-full" /> : <Mail className="w-4 h-4" />}
                   {emailSending ? 'Sending...' : 'Send Email'}
                 </button>
               </div>

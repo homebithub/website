@@ -310,7 +310,7 @@ export default function ShortlistPage() {
                               aria-label="Chat with household"
                             >
                               {chatLoadingId === (job?.id || s.profile_id) ? (
-                                <span className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+                                <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
                               ) : (
                                 <MessageCircle className="w-4 h-4" />
                               )}

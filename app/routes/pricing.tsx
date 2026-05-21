@@ -757,7 +757,7 @@ export default function Pricing() {
 
                         {planResolving && (
                           <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                            <ArrowPathIcon className="w-4 h-4 animate-spin text-purple-500" />
+                            <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
                             Verifying plan details...
                           </div>
                         )}
@@ -802,7 +802,7 @@ export default function Pricing() {
 
                   {paymentStatus === 'initiating' && (
                     <div className="text-center py-8">
-                      <ArrowPathIcon className="w-16 h-16 mx-auto mb-4 text-purple-600 animate-spin" />
+                      <div className="hb-shimmer-piece h-16 w-16 rounded-full mx-auto mb-4" />
                       <p className="text-base font-medium text-gray-900 dark:text-white mb-2">
                         Initiating Payment...
                       </p>
@@ -840,7 +840,7 @@ export default function Pricing() {
                         </ul>
                       </div>
                       <div className="mt-4 flex items-center justify-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                        <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                        <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
                         <span>Waiting for payment confirmation...</span>
                       </div>
                     </div>

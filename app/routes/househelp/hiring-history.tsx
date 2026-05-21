@@ -4,8 +4,9 @@ import { hireRequestService, hireContractService, employmentContractService, int
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { buildIdentifierMap, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
+import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
+import { ListPageSkeleton } from "~/components/ShimmerLoader";
 import { 
   Clock, CheckCircle, XCircle, MessageCircle, Briefcase, 
   Eye, HandHeart, Building2, Star, Ban, X, Calendar, DollarSign, MapPin, User, FileText
@@ -602,8 +603,8 @@ export default function HousehelpHiringHistory() {
 
         {/* Loading State */}
         {loading && (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="py-6">
+            <ListPageSkeleton items={4} />
           </div>
         )}
 

@@ -52,6 +52,100 @@ export function ShimmerSection({
   );
 }
 
+type PageSkeletonProps = {
+  className?: string;
+};
+
+export function ProfilePageSkeleton({ className = "" }: PageSkeletonProps) {
+  return (
+    <div className={`space-y-6 ${className}`}>
+      <ShimmerHeroPanel />
+      <ShimmerTileRow items={3} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ShimmerSection lines={4} showAction />
+        <ShimmerSection lines={3} />
+      </div>
+      <ShimmerSection lines={5} showTitle={false} />
+    </div>
+  );
+}
+
+export function ListPageSkeleton({ className = "", items = 4 }: { className?: string; items?: number }) {
+  return (
+    <div className={`space-y-6 ${className}`}>
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ShimmerSection lines={2} showAction />
+        <ShimmerSection lines={3} />
+      </div>
+      <ShimmerTileRow items={3} />
+      <ShimmerListPlaceholder items={items} />
+    </div>
+  );
+}
+
+export function FormPageSkeleton({ className = "" }: PageSkeletonProps) {
+  return (
+    <div className={`space-y-6 ${className}`}>
+      <ShimmerHeroPanel />
+      <ShimmerSection lines={4} showAction />
+      <ShimmerSection lines={3} showTitle={false} />
+    </div>
+  );
+}
+
+export function DetailPageSkeleton({ className = "" }: PageSkeletonProps) {
+  return (
+    <div className={`space-y-6 ${className}`}>
+      <ShimmerHeroPanel />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ShimmerSection lines={4} showAction />
+        <ShimmerSection lines={4} />
+      </div>
+      <ShimmerTileRow items={2} />
+      <ShimmerSection lines={4} showTitle={false} />
+    </div>
+  );
+}
+
+export function PricingPageSkeleton({ className = "" }: PageSkeletonProps) {
+  return (
+    <div className={`space-y-6 ${className}`}>
+      <ShimmerHeroPanel />
+      <ShimmerTileRow items={3} />
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ShimmerSection lines={4} showAction />
+        <ShimmerSection lines={4} />
+      </div>
+    </div>
+  );
+}
+
+export function SettingsPageSkeleton({ className = "" }: PageSkeletonProps) {
+  return (
+    <div className={`space-y-6 ${className}`}>
+      <ShimmerSection lines={2} showAction />
+      <ShimmerTileRow items={3} />
+      <ShimmerSection lines={4} />
+    </div>
+  );
+}
+
+export function InboxPageSkeleton({ className = "" }: PageSkeletonProps) {
+  return (
+    <div className={`grid gap-6 lg:grid-cols-[1.1fr_1.9fr] ${className}`}>
+      <div className="space-y-4">
+        <ShimmerSection lines={2} showAction />
+        <ShimmerListPlaceholder items={5} />
+      </div>
+      <div className="space-y-4">
+        <ShimmerSection lines={2} showAction />
+        <ShimmerSection lines={4} showTitle={false} />
+        <ShimmerSection lines={3} showTitle={false} />
+      </div>
+    </div>
+  );
+}
+
 type ShimmerTileRowProps = {
   items?: number;
   className?: string;

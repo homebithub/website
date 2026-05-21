@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
-import { Loading } from '~/components/Loading';
+import { ListPageSkeleton } from "~/components/ShimmerLoader";
 import { useAuth } from '~/contexts/useAuth';
 import { InviteCodeGenerator } from '~/components/household/InviteCodeGenerator';
 import { formatTimeAgo } from "~/utils/timeAgo";
@@ -245,7 +245,14 @@ export default function HouseholdMembersPage() {
   const canTransferOwnership = currentUserRole === 'owner';
 
   if (loading) {
-    return <Loading text="Loading household members..." />;
+    return (
+      <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-[#0a0a0f]">
+        <Navigation />
+        <main className="flex-1 px-4 py-8 max-w-7xl mx-auto w-full">
+          <ListPageSkeleton items={4} />
+        </main>
+      </div>
+    );
   }
 
   return (

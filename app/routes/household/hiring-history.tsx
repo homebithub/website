@@ -12,6 +12,7 @@ import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensat
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
+import { ListPageSkeleton } from "~/components/ShimmerLoader";
 
 interface HireRequest {
   id: string;
@@ -836,8 +837,8 @@ export default function HiringHistory() {
 
         {/* Loading State */}
         {loading && (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="py-6">
+            <ListPageSkeleton items={4} />
           </div>
         )}
 
@@ -1003,7 +1004,7 @@ export default function HiringHistory() {
                       className="inline-flex items-center gap-2 rounded-full border border-purple-200/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-700 shadow-sm transition-colors hover:bg-purple-100 disabled:opacity-60 dark:border-purple-700/50 dark:bg-purple-900/40 dark:text-purple-100 dark:hover:bg-purple-800/60"
                     >
                       {chatLoading ? (
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+                        <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
                       ) : (
                         <MessageCircle className="h-4 w-4" />
                       )}
@@ -1019,7 +1020,7 @@ export default function HiringHistory() {
                       } disabled:opacity-60`}
                     >
                       {shortlistLoading ? (
-                        <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
                       ) : (
                         <Heart className={`h-4 w-4 ${isShortlisted ? 'fill-current' : ''}`} />
                       )}

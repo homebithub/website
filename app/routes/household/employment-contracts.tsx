@@ -5,6 +5,7 @@ import {
   FileText, CheckCircle, Clock, Send, Plus, ChevronRight, AlertCircle
 } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { ListPageSkeleton } from "~/components/ShimmerLoader";
 
 interface EmploymentContract {
   id: string;
@@ -162,8 +163,8 @@ export default function EmploymentContractsList() {
         )}
 
         {loading && (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+          <div className="py-6">
+            <ListPageSkeleton items={3} />
           </div>
         )}
 

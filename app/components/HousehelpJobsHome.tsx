@@ -889,6 +889,222 @@ export default function HousehelpJobsHome() {
               </p>
             </div>
 
+            <div className="mb-4 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/80 dark:bg-[#141020]/80 shadow-sm">
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((prev) => !prev)}
+                className="w-full flex flex-wrap items-center justify-between gap-4 px-5 py-4"
+              >
+                <div className="text-left">
+                  <p className="text-xs uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Filters</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                    Narrow down roles by schedule, location, and pay.
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-2 rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/70 dark:bg-white/10 p-1 shadow-inner">
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setOpenOnly(true);
+                      }}
+                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
+                        openOnly
+                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
+                          : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
+                      }`}
+                    >
+                      Open roles
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setOpenOnly(false);
+                      }}
+                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
+                        !openOnly
+                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
+                          : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
+                      }`}
+                    >
+                      All jobs
+                    </button>
+                  </div>
+                  <span
+                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/80 dark:bg-white/10 text-purple-600 dark:text-purple-200 transition ${
+                      filtersOpen ? "rotate-180" : ""
+                    }`}
+                  >
+                    <ChevronDown className="h-4 w-4" />
+                  </span>
+                </div>
+              </button>
+
+              {filtersOpen && (
+                <div className="border-t border-purple-100/70 dark:border-purple-500/20 px-5 pb-5">
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Job type
+                      <CustomSelect
+                        value={filters.jobType}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, jobType: value }))}
+                        options={[
+                          { value: "", label: "Any job type" },
+                          ...jobTypeOptions.map((option) => ({ value: option.value, label: option.label })),
+                        ]}
+                        className="w-full"
+                        size="sm"
+                        placeholder="Any job type"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Location
+                      <CustomSelect
+                        value={filters.location}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, location: value }))}
+                        options={[
+                          { value: "", label: "Any location" },
+                          ...locationOptions.map((option) => ({ value: option.value, label: option.label })),
+                        ]}
+                        className="w-full"
+                        size="sm"
+                        placeholder="Any location"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Start window
+                      <CustomSelect
+                        value={filters.startWindow}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, startWindow: value }))}
+                        options={[
+                          { value: "", label: "Any start window" },
+                          { value: "next_14", label: "Within 2 weeks" },
+                          { value: "next_30", label: "Within 30 days" },
+                          { value: "later", label: "Later" },
+                          { value: "flexible", label: "Flexible" },
+                        ]}
+                        className="w-full"
+                        size="sm"
+                        placeholder="Any start window"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Schedule slot
+                      <CustomSelect
+                        value={filters.scheduleSlot}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, scheduleSlot: value }))}
+                        options={[
+                          { value: "", label: "Any slot" },
+                          { value: "morning", label: "Morning" },
+                          { value: "afternoon", label: "Afternoon" },
+                          { value: "evening", label: "Evening" },
+                        ]}
+                        className="w-full"
+                        size="sm"
+                        placeholder="Any slot"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Salary range
+                      <CustomSelect
+                        value={filters.salaryRangeId}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, salaryRangeId: value }))}
+                        options={[
+                          { value: "", label: "Any salary" },
+                          ...salaryRangeOptions.map((option) => ({ value: option.value, label: option.label })),
+                        ]}
+                        className="w-full"
+                        size="sm"
+                        placeholder="Any salary"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Chore focus
+                      <CustomSelect
+                        value={filters.choreId}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, choreId: value }))}
+                        options={[
+                          { value: "", label: "Any chores" },
+                          ...(onboardingOptions?.chores?.map((chore) => ({ value: String(chore.id), label: chore.name })) ?? []),
+                        ]}
+                        className="w-full"
+                        size="sm"
+                        placeholder="Any chores"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Pet type
+                      <CustomSelect
+                        value={filters.petTypeId}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, petTypeId: value }))}
+                        options={[
+                          { value: "", label: "Any pets" },
+                          ...(onboardingOptions?.pet_types?.map((pet) => ({ value: String(pet.id), label: pet.name })) ?? []),
+                        ]}
+                        className="w-full"
+                        size="sm"
+                        placeholder="Any pets"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Children age range
+                      <CustomSelect
+                        value={filters.childrenAgeRangeId}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, childrenAgeRangeId: value }))}
+                        options={[
+                          { value: "", label: "Any age range" },
+                          ...(onboardingOptions?.children_age_ranges?.map((range) => ({ value: String(range.id), label: range.label })) ?? []),
+                        ]}
+                        className="w-full"
+                        size="sm"
+                        placeholder="Any age range"
+                      />
+                    </label>
+                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      Children capacity
+                      <CustomSelect
+                        value={filters.childrenCapacityId}
+                        onChange={(value) => setFilters((prev) => ({ ...prev, childrenCapacityId: value }))}
+                        options={[
+                          { value: "", label: "Any capacity" },
+                          ...(onboardingOptions?.children_capacities?.map((capacity) => ({ value: String(capacity.id), label: capacity.label })) ?? []),
+                        ]}
+                        className="w-full"
+                        size="sm"
+                        placeholder="Any capacity"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200 font-semibold">
+                        {openJobsCount} open now
+                      </span>
+                      <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                        {jobs.length} total roles
+                      </span>
+                      {hasActiveFilters && (
+                        <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200 font-semibold">
+                          {filteredJobs.length} match your filters
+                        </span>
+                      )}
+                    </div>
+                    {hasActiveFilters && (
+                      <button
+                        onClick={clearFilters}
+                        className="text-xs font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
             {topMatches.length > 0 && (
               <section className="mb-8">
                 <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
@@ -1074,7 +1290,14 @@ export default function HousehelpJobsHome() {
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{job.title || "Household Job"}</h3>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{job.title || "Household Job"}</h3>
+                            {typeof job.fit_score === "number" && job.fit_score > 0 && (
+                              <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
+                                Match {job.fit_score}%
+                              </span>
+                            )}
+                          </div>
                           <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatJobLocation(job.location)}</p>
                           {householdName && (
                             <p className="mt-1 text-xs font-semibold text-purple-600 dark:text-purple-300">Hosted by {householdName}</p>
@@ -1163,11 +1386,6 @@ export default function HousehelpJobsHome() {
                         ) : (
                           <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
                             Flexible role
-                          </span>
-                        )}
-                        {typeof job.fit_score === "number" && job.fit_score > 0 && (
-                          <span className="px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
-                            Match {job.fit_score}%
                           </span>
                         )}
                         <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">

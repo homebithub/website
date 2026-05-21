@@ -29,6 +29,7 @@ import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 import { formatOnboardingAmount } from '~/utils/onboardingCompensation';
 import OpenForWorkModal from '~/components/modals/OpenForWorkModal';
+import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 
 interface HousehelpData {
   id?: string;
@@ -478,14 +479,16 @@ export default function HousehelpProfile() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <svg className="animate-spin h-12 w-12 text-purple-600 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
-          <p className="text-gray-600 dark:text-gray-400">Loading your profile...</p>
-        </div>
+      <div className="min-h-screen flex flex-col">
+        <Navigation />
+        <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low">
+          <main className="flex-1 py-8">
+            <div className="max-w-5xl mx-auto px-4">
+              <ProfilePageSkeleton />
+            </div>
+          </main>
+        </PurpleThemeWrapper>
+        <Footer />
       </div>
     );
   }
@@ -592,7 +595,7 @@ export default function HousehelpProfile() {
 
         {openForWorkLoading ? (
           <div className="flex items-center gap-3 text-xs text-gray-500">
-            <div className="h-4 w-4 animate-spin rounded-full border-2 border-purple-400 border-t-transparent" />
+            <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
             Loading listing...
           </div>
         ) : openForWorkListing ? (
@@ -686,10 +689,7 @@ export default function HousehelpProfile() {
         {deleteStatus && (
           <div className="mb-4 p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-500/30">
             <div className="flex items-center gap-2">
-              <svg className="animate-spin h-4 w-4 text-orange-600 dark:text-orange-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
+              <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
               <span className="text-xs font-semibold text-orange-800 dark:text-orange-400">
                 {deleteStatus}
               </span>
@@ -714,10 +714,7 @@ export default function HousehelpProfile() {
             >
               {uploading ? (
                 <>
-                  <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <span className="hb-shimmer-piece h-5 w-5 rounded-full" />
                   Uploading...
                 </>
               ) : (
@@ -757,10 +754,7 @@ export default function HousehelpProfile() {
                     title="Delete photo"
                   >
                     {deleteLoading === photo ? (
-                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
+                      <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
                     ) : (
                       <TrashIcon className="h-4 w-4" />
                     )}

@@ -10,6 +10,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
+import { DetailPageSkeleton } from "~/components/ShimmerLoader";
 
 interface HireRequest {
   id: string;
@@ -293,8 +294,10 @@ export default function HireRequestDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <DetailPageSkeleton />
+        </div>
       </div>
     );
   }
