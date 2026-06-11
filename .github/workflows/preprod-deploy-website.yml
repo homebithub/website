@@ -25,7 +25,7 @@ jobs:
       - name: Extract Current TAG
         id: extract-tag
         run: |
-          CURRENT_TAG=$(grep -oP "ghcr.io/${{ github.repository_owner }}/website:\K\d+" ./k8s/deployment.yaml)
+          CURRENT_TAG=$(grep -oP "ghcr.io/${{ github.repository_owner }}/preprod-website:\K\d+" ./k8s/deployment.yaml)
           echo "CURRENT_TAG=$CURRENT_TAG" >> $GITHUB_ENV
 
       # Login to GHCR
@@ -37,24 +37,24 @@ jobs:
         run: |
           NEW_TAG=$(date +%Y%m%d%H%M%S)
           echo "NEW_TAG=$NEW_TAG" >> $GITHUB_ENV
-          docker build -t ghcr.io/${{ github.repository_owner }}/website:${NEW_TAG} .
+          docker build -t ghcr.io/${{ github.repository_owner }}/preprod-website:${NEW_TAG} .
 
       # Push image to GHCR
       - name: Push Docker Image
         run: |
-          docker push ghcr.io/${{ github.repository_owner }}/website:${{ env.NEW_TAG }}
+          docker push ghcr.io/${{ github.repository_owner }}/preprod-website:${{ env.NEW_TAG }}
 
       # Replace TAG in deployment YAML
       - name: Replace TAG in Deployment YAML
         run: |
-          sed -i "s|ghcr.io/${{ github.repository_owner }}/website:${{ env.CURRENT_TAG }}|ghcr.io/${{ github.repository_owner }}/website:${{ env.NEW_TAG }}|g" ./k8s/deployment.yaml
+          sed -i "s|ghcr.io/${{ github.repository_owner }}/preprod-website:${{ env.CURRENT_TAG }}|ghcr.io/${{ github.repository_owner }}/preprod-website:${{ env.NEW_TAG }}|g" ./k8s/preprod-deployment.yaml
 
       # Commit updated deployment
       - name: Commit Updated Deployment YAML
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git add ./k8s/deployment.yaml
+          git add ./k8s/preprod-deployment.yaml
           git commit -m "Update deployment tag to ${{ env.NEW_TAG }}" || echo "No changes to commit"
           git push
 
