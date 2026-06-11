@@ -16,6 +16,40 @@ const app = express();
 // Compress all HTTP responses (gzip/deflate)
 app.use(compression());
 
+const defaultAllowedOrigins = [
+    "https://homebit.co.ke",
+    "https://www.homebit.co.ke",
+    "https://api.homebit.co.ke",
+    "https://preprod.homebit.co.ke",
+    "https://preprod-api.homebit.co.ke",
+    "https://hba.homebit.co.ke",
+    "https://admin.homebit.co.ke",
+];
+
+const allowedOrigins = new Set([
+    ...defaultAllowedOrigins,
+    ...(process.env.CORS_ALLOWED_ORIGINS || "")
+        .split(",")
+        .map((origin) => origin.trim())
+        .filter(Boolean),
+]);
+
+function isAllowedOrigin(origin) {
+    if (allowedOrigins.has(origin)) {
+        return true;
+    }
+
+    try {
+        const url = new URL(origin);
+        return url.protocol === "https:" && (
+            url.hostname === "homebit.co.ke" ||
+            url.hostname.endsWith(".homebit.co.ke")
+        );
+    } catch {
+        return false;
+    }
+}
+
 // Enable CORS with restricted origins
 app.use(cors({
     origin: (origin, callback) => {
@@ -23,21 +57,15 @@ app.use(cors({
         if (!origin) {
             return callback(null, true);
         }
-        
-        const allowedOrigins = [
-            "https://homebit.co.ke",
-            "https://www.homebit.co.ke",
-            "https://preprod-api.homebit.co.ke"
-        ];
-        
+
         // In development, allow localhost
         if (process.env.NODE_ENV !== "production") {
             if (origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:")) {
                 return callback(null, true);
             }
         }
-        
-        if (allowedOrigins.includes(origin)) {
+
+        if (isAllowedOrigin(origin)) {
             callback(null, true);
         } else {
             callback(new Error("Not allowed by CORS"));
