@@ -50,6 +50,21 @@ function isConnectionRefused(error: unknown): boolean {
   return false;
 }
 
+async function readJSONOrNull(response: Response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!response.ok || !contentType.includes("application/json")) {
+    const body = await response.text().catch(() => "");
+    console.warn("Blog API returned non-JSON response", {
+      status: response.status,
+      contentType,
+      bodyPreview: body.slice(0, 120),
+    });
+    return null;
+  }
+
+  return response.json();
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const search = url.searchParams.get("search") || "";
@@ -74,18 +89,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (sort === "newest") params.append("sort_by", "published_at");
 
     const response = await fetch(`${apiUrl}/api/v1/blog/posts?${params}`);
-    const data = await response.json();
+    const data = await readJSONOrNull(response);
 
     // Get categories
     const categoriesResponse = await fetch(`${apiUrl}/api/v1/blog/categories`);
-    const categoriesData = await categoriesResponse.json();
+    const categoriesData = await readJSONOrNull(categoriesResponse);
 
     return Response.json({
-      posts: data.posts || [],
-      total: data.total || 0,
-      limit: data.limit || limit,
-      offset: data.offset || offset,
-      categories: categoriesData.categories?.map((c: any) => c.name) || [],
+      posts: data?.posts || [],
+      total: data?.total || 0,
+      limit: data?.limit || limit,
+      offset: data?.offset || offset,
+      categories: categoriesData?.categories?.map((c: any) => c.name) || [],
     });
   } catch (error) {
     if (!isConnectionRefused(error)) {

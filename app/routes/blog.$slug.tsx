@@ -58,6 +58,21 @@ function isConnectionRefused(error: unknown): boolean {
   return false;
 }
 
+async function readJSONOrNull(response: Response) {
+  const contentType = response.headers.get("content-type") || "";
+  if (!response.ok || !contentType.includes("application/json")) {
+    const body = await response.text().catch(() => "");
+    console.warn("Blog API returned non-JSON response", {
+      status: response.status,
+      contentType,
+      bodyPreview: body.slice(0, 120),
+    });
+    return null;
+  }
+
+  return response.json();
+}
+
 export const meta: MetaFunction = ({ data }) => {
   const loaderData = data as LoaderData | undefined;
   if (!loaderData?.post) {
@@ -109,19 +124,22 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     // Fetch the blog post
     const response = await fetch(`${apiUrl}/api/v1/blog/posts/${slug}`);
     
-    if (!response.ok) {
+    const data = await readJSONOrNull(response);
+    if (!data) {
       return Response.json({ post: null, relatedPosts: [] }, { status: 404 });
     }
 
-    const data = await response.json();
     const post = data.post;
+    if (!post) {
+      return Response.json({ post: null, relatedPosts: [] }, { status: 404 });
+    }
 
     // Fetch related posts (same category, limit 3)
     const relatedResponse = await fetch(
       `${apiUrl}/api/v1/blog/posts?category=${post.category}&limit=3&status=published`
     );
-    const relatedData = await relatedResponse.json();
-    const relatedPosts = (relatedData.posts || []).filter((p: BlogPost) => p.slug !== slug);
+    const relatedData = await readJSONOrNull(relatedResponse);
+    const relatedPosts = (relatedData?.posts || []).filter((p: BlogPost) => p.slug !== slug);
 
     return Response.json({ post, relatedPosts });
   } catch (error) {
