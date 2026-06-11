@@ -9,7 +9,7 @@ import { getStoredAccessToken } from '~/utils/authStorage';
 
 const LOCAL_GATEWAY_PORT = '3005';
 const LOCAL_AUTH_GRPC_PORT = '5004';
-const PRODUCTION_GATEWAY = 'https://api.homebit.co.ke';
+const PRODUCTION_GATEWAY = 'https://preprod-api.homebit.co.ke';
 
 /**
  * Resolve the gateway base URL. Hierarchy:
@@ -17,7 +17,7 @@ const PRODUCTION_GATEWAY = 'https://api.homebit.co.ke';
  *  2. window.ENV.GATEWAY_API_BASE_URL (injected by root.tsx)
  *  3. process.env.GATEWAY_API_BASE_URL (SSR)
  *  4. Non-production SSR → http://localhost:3005
- *  5. Fallback → https://api.homebit.co.ke
+ *  5. Fallback → https://preprod-api.homebit.co.ke
  */
 const getGatewayBaseUrl = (): string => {
   // Browser: force localhost when running locally
@@ -76,7 +76,7 @@ export function normalizeGatewayBaseUrl(url: string): string {
     const parsed = new URL(out);
     const host = parsed.hostname.toLowerCase();
     if (host === 'homebit.co.ke' || host === 'www.homebit.co.ke') {
-      return `${parsed.protocol}//api.homebit.co.ke`;
+      return `${parsed.protocol}//preprod-api.homebit.co.ke`;
     }
   } catch { /* ignore */ }
 

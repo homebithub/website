@@ -69,7 +69,7 @@ const USER_COOKIE_NAME = "hb_user";
 
 const IS_PROD = process.env.NODE_ENV === "production";
 
-// In production, set domain so cookies are sent to api.homebit.co.ke too.
+// In production, set domain so cookies are sent to preprod-api.homebit.co.ke too.
 const COOKIE_DOMAIN = IS_PROD ? ".homebit.co.ke" : undefined;
 
 export const cookieOptions: SerializeOptions = {

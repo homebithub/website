@@ -54,5 +54,5 @@ export const getGrpcBaseUrl = (): string => {
     return `http://localhost:${LOCAL_GATEWAY_PORT}`;
   }
   
-  return 'https://api.homebit.co.ke';
+  return 'https://preprod-api.homebit.co.ke';
 };

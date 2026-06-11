@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: website
+  name: preprod-website
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: website
+      app: preprod-website
   template:
     metadata:
       labels:
-        app: website
+        app: preprod-website
     spec:
 
       affinity:
@@ -22,12 +22,12 @@ spec:
                     - key: app
                       operator: In
                       values:
-                        - website
+                        - preprod-website
                 topologyKey: failure-domain.beta.kubernetes.io/zone
               weight: 100
       containers:
-        - name: website
-          image: ghcr.io/homebithub/website:20260611172545
+        - name: preprod-website
+          image: ghcr.io/homebithub/preprod-website:20260521112504
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
@@ -52,12 +52,12 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: website-srv
+  name: preprod-website-srv
 spec:
   selector:
-    app: website
+    app: preprod-website
   ports:
-    - name: website
+    - name: preprod-website
       protocol: TCP
       port: 80
       targetPort: 3000

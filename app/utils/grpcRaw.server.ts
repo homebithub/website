@@ -34,7 +34,7 @@ export function resolveAuthGrpcBaseUrl(request: Request): string {
     return `${url.protocol}//${url.hostname}:5004`;
   }
 
-  return 'https://api.homebit.co.ke';
+  return 'https://preprod-api.homebit.co.ke';
 }
 
 export function encodeStringField(fieldNo: number, value: string): Uint8Array {

@@ -46,7 +46,7 @@ echo ""
 echo "📝 Updating .env.production..."
 if [ -f .env.production ]; then
   if ! grep -q "GATEWAY_API_BASE_URL" .env.production; then
-    echo "GATEWAY_API_BASE_URL=https://api.homebit.co.ke" >> .env.production
+    echo "GATEWAY_API_BASE_URL=https://preprod-api.homebit.co.ke" >> .env.production
     echo -e "${GREEN}✓${NC} Added GATEWAY_API_BASE_URL to .env.production"
   else
     echo -e "${YELLOW}⚠${NC}  GATEWAY_API_BASE_URL already exists in .env.production"
