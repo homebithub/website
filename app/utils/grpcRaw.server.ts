@@ -24,6 +24,10 @@ const GRPC_CODE_NAMES: Record<string, string> = {
 };
 
 export function resolveAuthGrpcBaseUrl(request: Request): string {
+  if (process.env.AUTH_GRPC_BASE_URL) {
+    return process.env.AUTH_GRPC_BASE_URL.replace(/\/+$/, '');
+  }
+
   if (process.env.AUTH_API_BASE_URL) {
     return process.env.AUTH_API_BASE_URL.replace(/\/+$/, '');
   }

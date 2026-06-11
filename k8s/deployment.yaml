@@ -34,6 +34,12 @@ spec:
           env:
             - name: NOTIFICATIONS_WS_BASE_URL
               value: "https://homebit.co.ke/ws"
+            - name: AUTH_GRPC_BASE_URL
+              value: "http://auth-srv-headless:5004"
+            - name: GATEWAY_API_BASE_URL
+              value: "https://api.homebit.co.ke"
+            - name: NOTIFICATIONS_API_BASE_URL
+              value: "https://api.homebit.co.ke"
           livenessProbe:
             httpGet:
               path: /health
