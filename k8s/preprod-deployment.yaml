@@ -1,0 +1,64 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: preprod-website
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: preprod-website
+  template:
+    metadata:
+      labels:
+        app: preprod-website
+    spec:
+
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - preprod-website
+                topologyKey: failure-domain.beta.kubernetes.io/zone
+              weight: 100
+      containers:
+        - name: preprod-website
+          image: ghcr.io/homebithub/preprod-website:20260521112504
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NOTIFICATIONS_WS_BASE_URL
+              value: "https://homebit.co.ke/ws"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            failureThreshold: 3
+      imagePullSecrets:
+        - name: ghcr-secret
+      restartPolicy: Always
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: preprod-website-srv
+spec:
+  selector:
+    app: preprod-website
+  ports:
+    - name: preprod-website
+      protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: LoadBalancer
