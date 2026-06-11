@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { profileService as grpcProfileService, householdKidsService, petsService, documentService, householdMemberService, jobService } from '~/services/grpc/authServices';
+import { profileService as grpcProfileService, documentService, householdMemberService, jobService } from '~/services/grpc/authServices';
 import profileSetupService from '~/services/grpc/profileSetup.service';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -10,25 +10,17 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { Eye } from 'lucide-react';
+import { ClipboardCheck, Eye } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import EditSectionModal from '~/components/ui/EditSectionModal';
 import Location from '~/components/Location';
-import Children from '~/components/Children';
-import NannyType from '~/components/NanyType';
-import Chores from '~/components/Chores';
-import Pets from '~/components/Pets';
-import Budget from '~/components/Budget';
-import HouseSize from '~/components/HouseSize';
-import Bio from '~/components/Bio';
-import Religion from '~/components/Religion';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
-import { formatOnboardingBudgetRange } from '~/utils/onboardingCompensation';
-import { getStoredUserId } from '~/utils/authStorage';
+import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import JobPostModal from '~/components/modals/JobPostModal';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
+import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
 
 interface HouseholdData {
   id?: string;
@@ -82,6 +74,124 @@ interface JobPosting {
   salary_range?: JobSalaryRange;
 }
 
+type UnknownRecord = Record<string, any>;
+
+interface FeaturePropertyChoice {
+  id: number;
+  name: string;
+  description?: string;
+}
+
+interface SelectedFeatureGroup {
+  featureId: number;
+  featureName: string;
+  properties: FeaturePropertyChoice[];
+}
+
+const HOUSEHOLD_PROFILE_ID = '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1';
+
+const getStoredValue = (key: string) => {
+  if (typeof window === 'undefined') return '';
+  return window.localStorage.getItem(key) || '';
+};
+
+const normalizeArray = (value: unknown): UnknownRecord[] => {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') {
+    const record = value as UnknownRecord;
+    if (Array.isArray(record.data)) return record.data;
+    if (Array.isArray(record.picks)) return record.picks;
+    if (Array.isArray(record.items)) return record.items;
+  }
+  return [];
+};
+
+const nestedRecord = (value: unknown): UnknownRecord =>
+  value && typeof value === 'object' ? value as UnknownRecord : {};
+
+const pickPropertyId = (pick: UnknownRecord): number => {
+  const featureProperty = nestedRecord(pick.feature_property || pick.featureProperty);
+  const property = nestedRecord(pick.property);
+  return Number(
+    pick.feature_property_id ||
+    pick.featurePropertyId ||
+    pick.property_id ||
+    pick.propertyId ||
+    featureProperty.id ||
+    property.id ||
+    0,
+  );
+};
+
+const buildSelectedFeatureGroups = (featuresPayload: unknown, picksPayload: unknown): SelectedFeatureGroup[] => {
+  const features = normalizeArray(featuresPayload);
+  const picks = normalizeArray(picksPayload);
+  const propertiesById = new Map<number, { featureId: number; featureName: string; property: FeaturePropertyChoice }>();
+  const groups = new Map<number, SelectedFeatureGroup>();
+
+  features.forEach((bundle) => {
+    const feature = nestedRecord(bundle.feature);
+    const featureId = Number(bundle.feature_id || bundle.featureId || feature.id || 0);
+    if (!featureId) return;
+
+    const featureName = String(feature.name || bundle.name || `Feature ${featureId}`);
+    normalizeArray(bundle.properties).forEach((propertyRecord) => {
+      const propertyId = Number(propertyRecord.id || propertyRecord.feature_property_id || propertyRecord.featurePropertyId || 0);
+      if (!propertyId) return;
+      propertiesById.set(propertyId, {
+        featureId,
+        featureName,
+        property: {
+          id: propertyId,
+          name: String(propertyRecord.name || propertyRecord.description || `Option ${propertyId}`),
+          description: propertyRecord.description ? String(propertyRecord.description) : undefined,
+        },
+      });
+    });
+  });
+
+  picks.forEach((pick) => {
+    const propertyId = pickPropertyId(pick);
+    if (!propertyId) return;
+
+    const feature = nestedRecord(pick.feature);
+    const featureProperty = nestedRecord(pick.feature_property || pick.featureProperty);
+    const property = nestedRecord(pick.property);
+    const mapped = propertiesById.get(propertyId);
+    const featureId = Number(
+      pick.feature_id ||
+      pick.featureId ||
+      feature.id ||
+      featureProperty.feature_id ||
+      featureProperty.featureId ||
+      property.feature_id ||
+      property.featureId ||
+      mapped?.featureId ||
+      0,
+    );
+    if (!featureId) return;
+
+    const featureName = String(feature.name || mapped?.featureName || `Feature ${featureId}`);
+    const selectedProperty: FeaturePropertyChoice = mapped?.property || {
+      id: propertyId,
+      name: String(featureProperty.name || property.name || pick.name || `Option ${propertyId}`),
+      description: String(featureProperty.description || property.description || pick.description || ''),
+    };
+
+    const group = groups.get(featureId) || {
+      featureId,
+      featureName,
+      properties: [],
+    };
+    if (!group.properties.some((item) => item.id === selectedProperty.id)) {
+      group.properties.push(selectedProperty);
+    }
+    groups.set(featureId, group);
+  });
+
+  return Array.from(groups.values()).sort((a, b) => a.featureName.localeCompare(b.featureName));
+};
+
 const formatJobLocation = (location?: string | JobLocation): string => {
   if (!location) return 'Location not specified';
   if (typeof location === 'string') return location;
@@ -95,8 +205,6 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 export default function HouseholdProfile() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<HouseholdData | null>(null);
-  const [kids, setKids] = useState<any[]>([]);
-  const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasError, setHasError] = useState(false);
@@ -126,6 +234,9 @@ export default function HouseholdProfile() {
   const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
   const [jobToDelete, setJobToDelete] = useState<JobPosting | null>(null);
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [selectedFeatureGroups, setSelectedFeatureGroups] = useState<SelectedFeatureGroup[]>([]);
+  const [selectedFeaturesLoading, setSelectedFeaturesLoading] = useState(false);
+  const [selectedFeaturesError, setSelectedFeaturesError] = useState<string | null>(null);
   
   // Household invitation code state
   const [invitationCode, setInvitationCode] = useState<string | null>(null);
@@ -142,6 +253,13 @@ export default function HouseholdProfile() {
   const [membersLoading, setMembersLoading] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
   const [memberToRemove, setMemberToRemove] = useState<{ userId: string } | null>(null);
+
+  useEffect(() => {
+    const canonicalProfileType = getStoredCanonicalProfileType();
+    if (canonicalProfileType === 'househelp') {
+      navigate('/househelp/profile', { replace: true });
+    }
+  }, [navigate]);
 
   // Update countdown every minute
   useEffect(() => {
@@ -160,14 +278,28 @@ export default function HouseholdProfile() {
       setError(null);
       setHasError(false);
       try {
-        // Fetch household profile via gRPC
-        const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
+        const canonicalProfileType = getStoredCanonicalProfileType();
+        if (canonicalProfileType === 'househelp') {
+          navigate('/househelp/profile', { replace: true });
+          return;
+        }
+
+        // Fetch household profile via gRPC. If the legacy profile endpoint is
+        // unavailable, keep the account page usable with cached auth details.
+        let profileData: HouseholdData;
+        try {
+          profileData = await grpcProfileService.getCurrentHouseholdProfile('');
+        } catch (profileError) {
+          const storedUser = getStoredUser() || {};
+          profileData = {
+            id: String(storedUser.user_profile_id || storedUser.userProfileId || storedUser.profile_id || ''),
+            user_id: String(storedUser.user_id || storedUser.id || getStoredUserId() || ''),
+          };
+        }
         setProfile(profileData);
 
-        const [inviteResult, kidsResult, petsResult, docsResult] = await Promise.allSettled([
-          householdMemberService.getOrCreateInvitationCode(profileData.id),
-          householdKidsService.listHouseholdKids(''),
-          petsService.listMyPets(''),
+        const [inviteResult, docsResult] = await Promise.allSettled([
+          householdMemberService.getOrCreateInvitationCode(profileData.id || ''),
           documentService.getUserDocuments('', 'profile_photo'),
         ]);
 
@@ -177,22 +309,6 @@ export default function HouseholdProfile() {
           setInvitationExpiresAt(extracted.expires_at);
         } else if (inviteResult.status === 'rejected') {
           console.error("No existing invitation code or error loading it:", inviteResult.reason);
-        }
-
-        if (kidsResult.status === 'fulfilled') {
-          const kidsData = kidsResult.value;
-          const kidsArray = Array.isArray(kidsData?.data || kidsData) ? (kidsData?.data || kidsData) : [];
-          setKids(Array.isArray(kidsArray) ? kidsArray : []);
-        } else if (kidsResult.status === 'rejected') {
-          console.error("Error loading kids:", kidsResult.reason);
-        }
-
-        if (petsResult.status === 'fulfilled') {
-          const petsData = petsResult.value;
-          const petsArray = Array.isArray(petsData?.data || petsData) ? (petsData?.data || petsData) : [];
-          setPets(Array.isArray(petsArray) ? petsArray : []);
-        } else if (petsResult.status === 'rejected') {
-          console.error("Error loading pets:", petsResult.reason);
         }
 
         if (docsResult.status === 'fulfilled') {
@@ -229,11 +345,11 @@ export default function HouseholdProfile() {
     }
   }, [profile]);
 
-  const fetchJobs = async (userId: string) => {
+  const fetchJobs = async () => {
     setJobsLoading(true);
     setJobsError(null);
     try {
-      const raw = await jobService.getJobsByUserId(userId);
+      const raw = await jobService.listJobs(20, 0, getStoredUserProfileId());
       const payload = raw?.data || raw || [];
       const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
       setJobs(items as JobPosting[]);
@@ -245,15 +361,13 @@ export default function HouseholdProfile() {
   };
 
   useEffect(() => {
-    const userId = profile?.user_id || getStoredUserId();
-    if (!userId) return;
-    fetchJobs(userId);
+    if (!getStoredUserProfileId()) return;
+    fetchJobs();
   }, [profile?.user_id]);
 
   const handleJobSaved = () => {
-    const userId = profile?.user_id || getStoredUserId();
-    if (userId) {
-      fetchJobs(userId);
+    if (getStoredUserProfileId()) {
+      fetchJobs();
     }
     setJobsSuccess('Job posting updated.');
   };
@@ -270,8 +384,7 @@ export default function HouseholdProfile() {
         await jobService.closeJob(job.id, '');
         setJobsSuccess('Job closed.');
       }
-      const userId = profile?.user_id || getStoredUserId();
-      if (userId) await fetchJobs(userId);
+      if (getStoredUserProfileId()) await fetchJobs();
     } catch (err: any) {
       setJobsError(err.message || 'Failed to update job status');
     }
@@ -284,8 +397,7 @@ export default function HouseholdProfile() {
     try {
       await jobService.deleteJob(jobToDelete.id, '');
       setJobsSuccess('Job deleted.');
-      const userId = profile?.user_id || getStoredUserId();
-      if (userId) await fetchJobs(userId);
+      if (getStoredUserProfileId()) await fetchJobs();
     } catch (err: any) {
       setJobsError(err.message || 'Failed to delete job');
     } finally {
@@ -345,19 +457,70 @@ export default function HouseholdProfile() {
     }
   };
 
+  const handleCompleteFeaturePicks = () => {
+    const storedProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('profile_id') || '' : '';
+    const storedUserProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('user_profile_id') || '' : '';
+
+    navigate('/onboarding/features', {
+      state: {
+        profileId: storedProfileId || HOUSEHOLD_PROFILE_ID,
+        userProfileId: storedUserProfileId,
+        profileType: 'household',
+      },
+    });
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadSelectedFeatures = async () => {
+      const profileId = getStoredValue('profile_id') || HOUSEHOLD_PROFILE_ID;
+      const userProfileId = getStoredUserProfileId() || getStoredValue('user_profile_id');
+
+      if (!profileId || !userProfileId) {
+        setSelectedFeatureGroups([]);
+        setSelectedFeaturesLoading(false);
+        setSelectedFeaturesError(null);
+        return;
+      }
+
+      setSelectedFeaturesLoading(true);
+      setSelectedFeaturesError(null);
+
+      try {
+        const [featuresResponse, picksResponse] = await Promise.all([
+          fetch(`/api/profile-features?profile_id=${encodeURIComponent(profileId)}`),
+          fetch(`/api/profile-picks?user_profile_id=${encodeURIComponent(userProfileId)}`),
+        ]);
+        const featuresPayload = await featuresResponse.json().catch(() => ({}));
+        const picksPayload = await picksResponse.json().catch(() => ({}));
+
+        if (!featuresResponse.ok) throw new Error(featuresPayload.message || 'Unable to load profile features');
+        if (!picksResponse.ok) throw new Error(picksPayload.message || 'Unable to load profile choices');
+
+        const groups = buildSelectedFeatureGroups(featuresPayload.data, picksPayload.data);
+        if (!cancelled) setSelectedFeatureGroups(groups);
+      } catch (err: any) {
+        if (!cancelled) {
+          setSelectedFeatureGroups([]);
+          setSelectedFeaturesError(err.message || 'Unable to load selected profile choices');
+        }
+      } finally {
+        if (!cancelled) setSelectedFeaturesLoading(false);
+      }
+    };
+
+    loadSelectedFeatures();
+    return () => {
+      cancelled = true;
+    };
+  }, [retryKey]);
+
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [showViewsModal, setShowViewsModal] = useState(false);
 
   const EDIT_SECTIONS: Record<string, { title: string; component: React.FC }> = {
     location: { title: '📍 Edit Location', component: Location },
-    housesize: { title: '🏠 Edit House Size', component: HouseSize },
-    nannytype: { title: '👥 Edit Service Type', component: NannyType },
-    children: { title: '👶 Edit Children', component: Children },
-    pets: { title: '🐾 Edit Pets', component: Pets },
-    chores: { title: '🧹 Edit Chores & Duties', component: Chores },
-    budget: { title: '💰 Edit Budget', component: Budget },
-    religion: { title: '🙏 Edit Religion & Beliefs', component: Religion },
-    bio: { title: '✍️ Edit About', component: Bio },
   };
 
   const handleEditSection = (section: string) => {
@@ -371,12 +534,6 @@ export default function HouseholdProfile() {
       try {
         const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
         setProfile(profileData);
-        const kidsData = await householdKidsService.listHouseholdKids('');
-        const kidsArr = kidsData?.data?.data || kidsData?.data || kidsData;
-        setKids(Array.isArray(kidsArr) ? kidsArr : []);
-        const petsData = await petsService.listMyPets('');
-        const petsArr = petsData?.data?.data || petsData?.data || petsData;
-        setPets(Array.isArray(petsArr) ? petsArr : []);
       } catch (err) {
         console.error('Failed to refresh profile after edit:', err);
       }
@@ -718,6 +875,14 @@ export default function HouseholdProfile() {
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your household information</p>
           </div>
           <div className="flex items-center gap-2 self-start">
+            <button
+              onClick={handleCompleteFeaturePicks}
+              className="h-8 w-8 rounded-xl flex items-center justify-center border border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-500/10 hover:scale-105 transition-all"
+              aria-label="Complete Profile Choices"
+              title="Complete Profile Choices"
+            >
+              <ClipboardCheck className="w-4 h-4" />
+            </button>
             {profile?.id && (
               <button
                 onClick={() => setShowViewsModal(true)}
@@ -738,6 +903,12 @@ export default function HouseholdProfile() {
           </div>
         </div>
       </div>
+
+      <ProfileAccountSummary
+        profile={profile as Record<string, unknown>}
+        fallbackProfileId="11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1"
+        fallbackProfileType="household"
+      />
 
       {/* Job Postings */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
@@ -1160,213 +1331,62 @@ export default function HouseholdProfile() {
         )}
       </div>
 
-      {/* House Size & Notes */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🏠 House Information</h2>
-          <button
-            onClick={() => handleEditSection('housesize')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">House Size</span>
-            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
-          </div>
-          {profile.household_notes && (
-            <div className="md:col-span-2">
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
-              <p className="text-xs text-gray-900 dark:text-gray-100 mt-1">{profile.household_notes}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Service Type */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">👥 Service Type Needed</h2>
-          <button
-            onClick={() => handleEditSection('nannytype')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        <div className="space-y-3">
-          {profile.needs_live_in && (
-            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">🌙 Live-in Help</p>
-              {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Off days: {profile.live_in_off_days.join(', ')}</p>
-              )}
-            </div>
-          )}
-          {profile.needs_day_worker && (
-            <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-              <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">☀️ Day Worker</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Schedule configured</p>
-            </div>
-          )}
-          {!profile.needs_live_in && !profile.needs_day_worker && (
-            <p className="text-gray-500 dark:text-gray-400">No service type specified</p>
-          )}
-          {profile.available_from && (
-            <div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Available From</span>
-              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString()}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Children */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">👶 Children</h2>
-          <button
-            onClick={() => handleEditSection('children')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        {kids.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {kids.map((kid, idx) => (
-              <div key={kid.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <p className="font-semibold text-purple-900 dark:text-purple-100">
-                  {kid.is_expecting ? '🤰 Expecting' : `👶 Child ${idx + 1}`}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Gender: {kid.gender}</p>
-                {kid.date_of_birth && <p className="text-xs text-gray-600 dark:text-gray-400">DOB: {new Date(kid.date_of_birth).toLocaleDateString()}</p>}
-                {kid.expected_date && <p className="text-xs text-gray-600 dark:text-gray-400">Expected: {new Date(kid.expected_date).toLocaleDateString()}</p>}
-                {kid.traits && kid.traits.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {kid.traits.map((trait: string, i: number) => (
-                      <span key={i} className="text-xs px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full">{trait}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No children added</p>
-        )}
-      </div>
-
-      {/* Pets */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🐾 Pets</h2>
-          <button
-            onClick={() => handleEditSection('pets')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        {pets.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {pets.map((pet, idx) => (
-              <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <p className="font-semibold text-purple-900 dark:text-purple-100 capitalize">🐾 {pet.pet_type}</p>
-                {pet.requires_care && <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">⚠️ Requires care</p>}
-                {pet.care_details && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{pet.care_details}</p>}
-                {pet.traits && pet.traits.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {pet.traits.map((trait: string, i: number) => (
-                      <span key={i} className="text-xs px-2 py-1 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full capitalize">{trait}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No pets added</p>
-        )}
-      </div>
-
-      {/* Chores */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🧹 Chores & Duties</h2>
-          <button
-            onClick={() => handleEditSection('chores')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        {profile.chores && profile.chores.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {profile.chores.map((chore, idx) => (
-              <span key={idx} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-xl font-medium">
-                {chore}
-              </span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No chores specified</p>
-        )}
-      </div>
-
-      {/* Budget */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">💰 Budget</h2>
-          <button
-            onClick={() => handleEditSection('budget')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        {profile.budget_min || profile.budget_max ? (
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-purple-900 dark:text-purple-100">
-              {formatOnboardingBudgetRange(profile.budget_min, profile.budget_max, profile.salary_frequency)}
-            </p>
-            {profile.salary_frequency && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">Per {profile.salary_frequency.replace('ly', '')}</p>
-            )}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No budget specified</p>
-        )}
-      </div>
-
-      {/* Religion */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🙏 Religion & Beliefs</h2>
-          <button
-            onClick={() => handleEditSection('religion')}
-            className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
-          >
-            Edit
-          </button>
-        </div>
-        <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{profile.religion || 'Not specified'}</p>
-      </div>
-
-      {/* Bio */}
+      {/* Selected Profile Choices */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">✍️ About Your Household</h2>
+        <div className="flex justify-between items-start gap-4 mb-5">
+          <div>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">✨ Profile Choices</h2>
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              The features and options selected for this household profile.
+            </p>
+          </div>
           <button
-            onClick={() => handleEditSection('bio')}
+            onClick={handleCompleteFeaturePicks}
             className="px-3 py-0.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white hover:scale-105 transition-all"
           >
             Edit
           </button>
         </div>
-        <p className="text-xs text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio || 'No bio added yet'}</p>
+
+        {selectedFeaturesLoading ? (
+          <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
+            <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
+            Loading profile choices...
+          </div>
+        ) : selectedFeaturesError ? (
+          <ErrorAlert message={selectedFeaturesError} />
+        ) : selectedFeatureGroups.length > 0 ? (
+          <div className="divide-y divide-purple-200/60 dark:divide-purple-500/30">
+            {selectedFeatureGroups.map((group) => (
+              <div key={group.featureId} className="py-5 first:pt-0 last:pb-0">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">{group.featureName}</h3>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {group.properties.map((property) => (
+                    <span
+                      key={property.id}
+                      className="inline-flex items-center gap-2 rounded-full border border-purple-300/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-100"
+                    >
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-600 text-[10px] font-bold text-white dark:bg-purple-500">
+                        {property.name.slice(0, 1).toUpperCase()}
+                      </span>
+                      {property.name}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-purple-200 dark:border-purple-500/30 p-4">
+            <p className="text-xs text-gray-600 dark:text-gray-400">No profile choices selected yet.</p>
+            <button
+              onClick={handleCompleteFeaturePicks}
+              className="mt-3 px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+            >
+              Complete Profile Choices
+            </button>
+          </div>
+        )}
       </div>
     </div>
       </main>

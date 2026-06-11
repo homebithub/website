@@ -10,8 +10,190 @@ import { authService } from '~/services/grpc/auth.service';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Button, Input, BaseModal } from '~/components/ui';
-import { cacheAuthSession, getStoredUserId } from "~/utils/authStorage";
+import { cacheAuthSession, getStoredProfileType, getStoredUser, getStoredUserId } from "~/utils/authStorage";
 
+const PROFILE_IDS_BY_TYPE: Record<string, string> = {
+  househelp: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
+  household: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1',
+};
+
+const PROFILE_LABELS_BY_ID: Record<string, string> = {
+  '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff': 'HouseHelp',
+  '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1': 'Household',
+};
+
+type CompletionState = {
+  loading: boolean;
+  selectedFeatures: number;
+  selectedProperties: number;
+  totalFeatures: number;
+};
+
+type UnknownRecord = Record<string, unknown>;
+
+type FeatureProperty = {
+  id: number;
+  name: string;
+  description?: string;
+  display_order?: number;
+};
+
+type FeatureBundle = {
+  feature_id: number;
+  feature?: {
+    id?: number;
+    name?: string;
+    display_order?: number;
+  };
+  display_order?: number;
+  properties?: FeatureProperty[];
+};
+
+function getStoredValue(key: string) {
+  if (typeof window === 'undefined') return '';
+  return window.localStorage.getItem(key) || '';
+}
+
+function setStoredValue(key: string, value: string) {
+  if (typeof window === 'undefined' || !value) return;
+  window.localStorage.setItem(key, value);
+}
+
+function resolveProfileId(profileType?: string) {
+  const storedProfileId = getStoredValue('profile_id');
+  if (storedProfileId) return storedProfileId;
+  return PROFILE_IDS_BY_TYPE[String(profileType || '').toLowerCase()] || '';
+}
+
+function resolveUserProfileId(...sources: unknown[]) {
+  for (const source of sources) {
+    const record = asRecord(source);
+    const value = String(record.user_profile_id || record.userProfileId || '');
+    if (value) return value;
+  }
+  return getStoredValue('user_profile_id');
+}
+
+function resolveProfileLabel(profileId?: string, profileType?: string) {
+  if (profileId && PROFILE_LABELS_BY_ID[profileId]) return PROFILE_LABELS_BY_ID[profileId];
+  const normalized = String(profileType || '').toLowerCase();
+  if (normalized === 'househelp') return 'HouseHelp';
+  if (normalized === 'household') return 'Household';
+  return profileType || '-';
+}
+
+function asRecord(value: unknown): UnknownRecord {
+  return value && typeof value === 'object' ? value as UnknownRecord : {};
+}
+
+function normalizeArray(value: unknown): UnknownRecord[] {
+  if (Array.isArray(value)) return value;
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    if (Array.isArray(record.data)) return record.data as UnknownRecord[];
+    if (Array.isArray(record.picks)) return record.picks as UnknownRecord[];
+    if (Array.isArray(record.items)) return record.items as UnknownRecord[];
+  }
+  return [];
+}
+
+function getFeatureId(feature: UnknownRecord) {
+  const nestedFeature = asRecord(feature.feature);
+  return Number(feature.feature_id || feature.featureId || nestedFeature.id || 0);
+}
+
+function getFeatureName(feature: FeatureBundle) {
+  return feature.feature?.name || `Feature ${feature.feature_id}`;
+}
+
+function normalizeFeaturePayload(payload: unknown): FeatureBundle[] {
+  const envelope = asRecord(payload);
+  const nestedData = asRecord(envelope.data);
+  const raw = Array.isArray(envelope.data)
+    ? envelope.data
+    : Array.isArray(nestedData.data)
+      ? nestedData.data
+      : Array.isArray(envelope.features)
+        ? envelope.features
+        : Array.isArray(payload)
+          ? payload
+          : [];
+
+  return raw
+    .map((bundle) => {
+      const record = asRecord(bundle);
+      const feature = asRecord(record.feature);
+      const properties = Array.isArray(record.properties) ? record.properties : [];
+      return {
+        feature_id: Number(record.feature_id || record.featureId || feature.id || 0),
+        feature: {
+          id: Number(feature.id || record.feature_id || record.featureId || 0),
+          name: String(feature.name || ''),
+          display_order: Number(feature.display_order || feature.displayOrder || 0),
+        },
+        display_order: Number(record.display_order || record.displayOrder || feature.display_order || 0),
+        properties: properties
+          .map((property) => {
+            const propertyRecord = asRecord(property);
+            return {
+              id: Number(propertyRecord.id || 0),
+              name: String(propertyRecord.name || ''),
+              description: String(propertyRecord.description || ''),
+              display_order: Number(propertyRecord.display_order || propertyRecord.displayOrder || 0),
+            };
+          })
+          .filter((property) => property.id && property.name)
+          .sort((a, b) => Number(a.display_order || 0) - Number(b.display_order || 0)),
+      };
+    })
+    .filter((bundle) => bundle.feature_id && (bundle.properties || []).length > 0)
+    .sort((a, b) => Number(a.display_order || a.feature?.display_order || 0) - Number(b.display_order || b.feature?.display_order || 0));
+}
+
+function getPickPropertyId(pick: UnknownRecord) {
+  const featureProperty = asRecord(pick.feature_property);
+  const property = asRecord(pick.property);
+  return Number(
+    pick.feature_property_id ||
+    pick.featurePropertyId ||
+    pick.property_id ||
+    pick.propertyId ||
+    featureProperty.id ||
+    property.id ||
+    0,
+  );
+}
+
+function formatMemberSince(value: unknown) {
+  if (!value) return null;
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return String(value);
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function buildCachedProfile(contextUser: unknown) {
+  const authUser = asRecord(asRecord(contextUser).user || contextUser);
+  const storedUser = getStoredUser() || {};
+  const profileType = String(authUser.profile_type || storedUser.profile_type || getStoredProfileType() || '');
+  const profileId = resolveProfileId(profileType);
+  const createdAt = storedUser.user_profile_created_at || getStoredValue('user_profile_created_at') || authUser.created_at || storedUser.created_at;
+
+  return {
+    id: String(authUser.user_id || authUser.id || storedUser.user_id || storedUser.id || getStoredUserId() || ''),
+    email: String(authUser.email || storedUser.email || ''),
+    first_name: String(authUser.first_name || authUser.firstName || storedUser.first_name || storedUser.firstName || ''),
+    last_name: String(authUser.last_name || authUser.lastName || storedUser.last_name || storedUser.lastName || ''),
+    phone: String(authUser.phone || storedUser.phone || ''),
+    profile_type: profileType,
+    profile_id: profileId,
+    user_profile_id: resolveUserProfileId(authUser, storedUser),
+    user_profile_created_at: formatMemberSince(createdAt),
+    is_verified: Boolean(authUser.is_verified ?? authUser.isVerified ?? storedUser.is_verified ?? storedUser.isVerified ?? false),
+    profile_image: String(authUser.profile_image || authUser.profileImage || storedUser.profile_image || storedUser.profileImage || ''),
+    country: String(authUser.country || storedUser.country || 'Kenya'),
+    created_at: formatMemberSince(authUser.created_at || storedUser.created_at || createdAt),
+  };
+}
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
@@ -29,6 +211,19 @@ export default function ProfilePage() {
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string|null>(null);
   const [success, setSuccess] = React.useState<string|null>(null);
+  const [completionRefreshKey, setCompletionRefreshKey] = React.useState(0);
+  const [completion, setCompletion] = React.useState<CompletionState>({
+    loading: true,
+    selectedFeatures: 0,
+    selectedProperties: 0,
+    totalFeatures: 0,
+  });
+  const [showFeatureModal, setShowFeatureModal] = React.useState(false);
+  const [featureLoading, setFeatureLoading] = React.useState(false);
+  const [featureSaving, setFeatureSaving] = React.useState(false);
+  const [featureError, setFeatureError] = React.useState<string | null>(null);
+  const [features, setFeatures] = React.useState<FeatureBundle[]>([]);
+  const [selectedFeatureProperties, setSelectedFeatureProperties] = React.useState<Record<number, number[]>>({});
 
   // OTP Modal States
   const [showEmailModal, setShowEmailModal] = React.useState(false);
@@ -62,21 +257,9 @@ export default function ProfilePage() {
       try {
         setError(null);
         setSuccess(null);
-        const userData = await authService.getCurrentUser();
-        const createdAtTs = userData.getCreatedAt?.();
-        const createdAtDate = createdAtTs?.toDate?.() ?? (createdAtTs?.getSeconds?.() ? new Date(createdAtTs.getSeconds() * 1000) : null);
-        const data = {
-          id: userData.getId(),
-          email: userData.getEmail(),
-          first_name: userData.getFirstName(),
-          last_name: userData.getLastName(),
-          phone: userData.getPhone(),
-          profile_type: userData.getProfileType(),
-          is_verified: userData.getIsVerified(),
-          profile_image: userData.getProfileImage(),
-          country: 'Kenya',
-          created_at: createdAtDate ? createdAtDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null,
-        };
+        const data = buildCachedProfile(user);
+        setStoredValue('user_profile_id', data.user_profile_id);
+        setStoredValue('profile_id', data.profile_id);
 
         setProfile(data);
         setForm({
@@ -95,6 +278,94 @@ export default function ProfilePage() {
     else setProfileLoading(false);
   }, [user]);
 
+  React.useEffect(() => {
+    let cancelled = false;
+
+    async function loadCompletion() {
+      const profileId = profile?.profile_id || resolveProfileId(profile?.profile_type);
+      const userProfileId = profile?.user_profile_id || getStoredValue('user_profile_id');
+
+      if (!profileId || !userProfileId) {
+        setCompletion({
+          loading: false,
+          selectedFeatures: 0,
+          selectedProperties: 0,
+          totalFeatures: 0,
+        });
+        return;
+      }
+
+      setCompletion((prev) => ({ ...prev, loading: true }));
+
+      try {
+        const [featuresResponse, picksResponse] = await Promise.all([
+          fetch(`/api/profile-features?profile_id=${encodeURIComponent(profileId)}`),
+          fetch(`/api/profile-picks?user_profile_id=${encodeURIComponent(userProfileId)}`),
+        ]);
+        const featuresPayload = await featuresResponse.json().catch(() => ({}));
+        const picksPayload = await picksResponse.json().catch(() => ({}));
+
+        if (!featuresResponse.ok) throw new Error(featuresPayload.message || 'Unable to load profile features');
+        if (!picksResponse.ok) throw new Error(picksPayload.message || 'Unable to load profile picks');
+
+        const features = normalizeArray(featuresPayload.data);
+        const picks = normalizeArray(picksPayload.data);
+        const propertyToFeature = new Map<number, number>();
+
+        features.forEach((feature) => {
+          const featureId = getFeatureId(feature);
+          const properties = Array.isArray(feature.properties) ? feature.properties : [];
+          properties.forEach((property) => {
+            const propertyRecord = asRecord(property);
+            const propertyId = Number(propertyRecord.id || 0);
+            if (featureId && propertyId) propertyToFeature.set(propertyId, featureId);
+          });
+        });
+
+        const selectedPropertyIds = new Set<number>();
+        const selectedFeatureIds = new Set<number>();
+
+        picks.forEach((pick) => {
+          const propertyId = getPickPropertyId(pick);
+          if (!propertyId) return;
+          selectedPropertyIds.add(propertyId);
+          const feature = asRecord(pick.feature);
+          const featureProperty = asRecord(pick.feature_property);
+          const property = asRecord(pick.property);
+
+          const featureId = Number(
+            pick.feature_id ||
+            pick.featureId ||
+            feature.id ||
+            featureProperty.feature_id ||
+            property.feature_id ||
+            propertyToFeature.get(propertyId) ||
+            0,
+          );
+          if (featureId) selectedFeatureIds.add(featureId);
+        });
+
+        if (!cancelled) {
+          setCompletion({
+            loading: false,
+            selectedFeatures: selectedFeatureIds.size,
+            selectedProperties: selectedPropertyIds.size,
+            totalFeatures: features.length,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setCompletion((prev) => ({ ...prev, loading: false }));
+        }
+      }
+    }
+
+    if (profile) loadCompletion();
+    return () => {
+      cancelled = true;
+    };
+  }, [profile, completionRefreshKey]);
+
   // Countdown timer for OTP resend
   React.useEffect(() => {
     if (resendSeconds <= 0) {
@@ -109,7 +380,76 @@ export default function ProfilePage() {
     return () => clearTimeout(timer);
   }, [resendSeconds]);
 
-  const handleEdit = () => setEditMode(true);
+  const selectedFeatureCount = React.useMemo(
+    () => features.filter((feature) => (selectedFeatureProperties[feature.feature_id] || []).length > 0).length,
+    [features, selectedFeatureProperties],
+  );
+  const featureProgress = features.length ? Math.round((selectedFeatureCount / features.length) * 100) : 0;
+  const selectedPropertyIds = React.useMemo(
+    () => Object.values(selectedFeatureProperties).flat(),
+    [selectedFeatureProperties],
+  );
+  const canSaveFeaturePicks = selectedPropertyIds.length > 0;
+
+  const loadFeaturePicker = React.useCallback(async () => {
+    const resolvedProfileId = profile?.profile_id || resolveProfileId(profile?.profile_type);
+    const userProfileId = profile?.user_profile_id || getStoredValue('user_profile_id');
+
+    if (!resolvedProfileId) {
+      setFeatureError('Profile information is missing. Please sign in again.');
+      return;
+    }
+
+    setFeatureLoading(true);
+    setFeatureError(null);
+
+    try {
+      const [featuresResponse, picksResponse] = await Promise.all([
+        fetch(`/api/profile-features?profile_id=${encodeURIComponent(resolvedProfileId)}`),
+        userProfileId
+          ? fetch(`/api/profile-picks?user_profile_id=${encodeURIComponent(userProfileId)}`)
+          : Promise.resolve(null),
+      ]);
+      const featuresPayload = await featuresResponse.json().catch(() => ({}));
+      if (!featuresResponse.ok) {
+        throw new Error(featuresPayload.message || 'Unable to load profile features');
+      }
+
+      const nextFeatures = normalizeFeaturePayload(featuresPayload);
+      const nextSelected: Record<number, number[]> = {};
+
+      if (picksResponse) {
+        const picksPayload = await picksResponse.json().catch(() => ({}));
+        if (!picksResponse.ok) {
+          throw new Error(picksPayload.message || 'Unable to load selected profile features');
+        }
+
+        const propertyToFeature = new Map<number, number>();
+        nextFeatures.forEach((feature) => {
+          (feature.properties || []).forEach((property) => propertyToFeature.set(property.id, feature.feature_id));
+        });
+
+        normalizeArray(picksPayload.data).forEach((pick) => {
+          const propertyId = getPickPropertyId(pick);
+          const featureId = Number(pick.feature_id || pick.featureId || propertyToFeature.get(propertyId) || 0);
+          if (!propertyId || !featureId) return;
+          nextSelected[featureId] = Array.from(new Set([...(nextSelected[featureId] || []), propertyId]));
+        });
+      }
+
+      setFeatures(nextFeatures);
+      setSelectedFeatureProperties(nextSelected);
+    } catch (err: unknown) {
+      setFeatureError(err instanceof Error ? err.message : 'Unable to load profile features');
+    } finally {
+      setFeatureLoading(false);
+    }
+  }, [profile?.profile_id, profile?.profile_type, profile?.user_profile_id]);
+
+  const handleEdit = () => {
+    setShowFeatureModal(true);
+    void loadFeaturePicker();
+  };
   const handleCancel = () => {
     setEditMode(false);
     setForm({
@@ -120,6 +460,53 @@ export default function ProfilePage() {
     });
     setError(null);
     setSuccess(null);
+  };
+
+  const toggleFeatureProperty = (featureId: number, propertyId: number) => {
+    setSelectedFeatureProperties((prev) => {
+      const current = prev[featureId] || [];
+      const next = current.includes(propertyId)
+        ? current.filter((id) => id !== propertyId)
+        : [...current, propertyId];
+      return { ...prev, [featureId]: next };
+    });
+  };
+
+  const saveFeaturePicks = async () => {
+    const userProfileId = profile?.user_profile_id || getStoredValue('user_profile_id');
+    if (!userProfileId) {
+      setFeatureError('User profile information is missing. Please sign in again.');
+      return;
+    }
+
+    setFeatureSaving(true);
+    setFeatureError(null);
+
+    try {
+      const response = await fetch('/api/profile-picks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_profile_id: userProfileId,
+          picks: selectedPropertyIds.map((featurePropertyId) => ({
+            feature_property_id: featurePropertyId,
+            weight: 1,
+          })),
+        }),
+      });
+      const payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(payload.message || 'Unable to save profile picks');
+      }
+
+      setSuccess('Profile choices saved.');
+      setShowFeatureModal(false);
+      setCompletionRefreshKey((prev) => prev + 1);
+    } catch (err: unknown) {
+      setFeatureError(err instanceof Error ? err.message : 'Unable to save profile picks');
+    } finally {
+      setFeatureSaving(false);
+    }
   };
 
   // Handle email change - send OTP
@@ -289,21 +676,9 @@ export default function ProfilePage() {
     if (!token) return;
 
     try {
-      const userData = await authService.getCurrentUser();
-      const createdAtTs = userData.getCreatedAt?.();
-      const createdAtDate = createdAtTs?.toDate?.() ?? (createdAtTs?.getSeconds?.() ? new Date(createdAtTs.getSeconds() * 1000) : null);
-      const data = {
-        id: userData.getId(),
-        email: userData.getEmail(),
-        first_name: userData.getFirstName(),
-        last_name: userData.getLastName(),
-        phone: userData.getPhone(),
-        profile_type: userData.getProfileType(),
-        is_verified: userData.getIsVerified(),
-        profile_image: userData.getProfileImage(),
-        country: 'Kenya',
-        created_at: createdAtDate ? createdAtDate.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : null,
-      };
+      const data = buildCachedProfile(user);
+      setStoredValue('user_profile_id', data.user_profile_id);
+      setStoredValue('profile_id', data.profile_id);
       setProfile(data);
       setForm({
         email: data.email || '',
@@ -341,6 +716,13 @@ export default function ProfilePage() {
       setSaving(false);
     }
   };
+
+  const profileId = profile?.profile_id || resolveProfileId(profile?.profile_type);
+  const profileLabel = resolveProfileLabel(profileId, profile?.profile_type);
+  const memberSince = profile?.user_profile_created_at || profile?.created_at || '-';
+  const completionPercent = completion.totalFeatures
+    ? Math.min(100, Math.round((completion.selectedFeatures / completion.totalFeatures) * 100))
+    : 0;
 
   if (loading || profileLoading) {
     return <Loading text="Loading profile..." />;
@@ -455,7 +837,7 @@ export default function ProfilePage() {
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                   <div>
                     <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Profile Type</span>
-                    <span className="text-xs text-gray-900 dark:text-gray-100 font-medium capitalize">{profile?.profile_type || '-'}</span>
+                    <span className="text-xs text-gray-900 dark:text-gray-100 font-medium">{profileLabel}</span>
                   </div>
                   <div>
                     <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Email Verified</span>
@@ -467,12 +849,35 @@ export default function ProfilePage() {
                   </div>
                   <div>
                     <span className="block text-xs font-semibold mb-1 text-gray-500 dark:text-gray-500">Member Since</span>
-                    <span className="text-xs text-gray-900 dark:text-gray-100 font-medium">{profile?.created_at || '-'}</span>
+                    <span className="text-xs text-gray-900 dark:text-gray-100 font-medium">{memberSince}</span>
+                  </div>
+                </div>
+
+                <div className="mt-5 rounded-2xl border border-purple-200/40 dark:border-purple-500/20 bg-purple-50/60 dark:bg-purple-950/20 p-4">
+                  <div className="flex items-center justify-between gap-4 mb-2">
+                    <div>
+                      <span className="block text-xs font-semibold text-purple-700 dark:text-purple-300">Profile Completed</span>
+                      <span className="block text-[11px] text-gray-500 dark:text-gray-400 mt-1">
+                        {completion.loading
+                          ? 'Loading feature selections...'
+                          : `${completion.selectedFeatures} of ${completion.totalFeatures} features, ${completion.selectedProperties} properties selected`}
+                      </span>
+                    </div>
+                    <span className="text-lg font-bold text-purple-700 dark:text-purple-300">
+                      {completion.loading ? '...' : `${completionPercent}%`}
+                    </span>
+                  </div>
+                  <div className="h-2.5 rounded-full bg-white dark:bg-[#0a0a0f] overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all"
+                      style={{ width: `${completionPercent}%` }}
+                    />
                   </div>
                 </div>
               </div>
               {!editMode && (
                 <Button
+                  type="button"
                   onClick={handleEdit}
                   leftIcon={<span>✏️</span>}
                 >
@@ -482,6 +887,7 @@ export default function ProfilePage() {
               {editMode && (
                 <div className="flex gap-3">
                   <Button
+                    type="button"
                     onClick={handleSave}
                     isLoading={saving}
                     className="flex-1"
@@ -490,6 +896,7 @@ export default function ProfilePage() {
                     Save Changes
                   </Button>
                   <Button
+                    type="button"
                     variant="secondary"
                     onClick={handleCancel}
                     disabled={saving}
@@ -502,6 +909,136 @@ export default function ProfilePage() {
           </div>
         </main>
       </PurpleThemeWrapper>
+
+      <BaseModal
+        isOpen={showFeatureModal}
+        onClose={() => {
+          if (!featureSaving) setShowFeatureModal(false);
+        }}
+        title="Edit Profile"
+        description="Choose the profile options that match you."
+        size="full"
+      >
+        <div className="space-y-5">
+          {featureError && <ErrorAlert message={featureError} />}
+
+          {featureLoading ? (
+            <div className="min-h-[360px] flex items-center justify-center">
+              <div className="text-center">
+                <div className="mx-auto mb-4 h-10 w-10 rounded-full border-4 border-purple-200 border-t-purple-600 animate-spin" />
+                <p className="text-xs font-semibold text-purple-700 dark:text-purple-300">Loading profile features...</p>
+              </div>
+            </div>
+          ) : features.length === 0 ? (
+            <div className="rounded-2xl border border-purple-200/50 dark:border-purple-500/30 p-6 text-center">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">No profile features configured.</p>
+            </div>
+          ) : (
+            <>
+              <div className="rounded-2xl border border-purple-200/50 bg-purple-50/70 p-4 dark:border-purple-500/30 dark:bg-purple-950/20">
+                <div className="mb-2 flex items-center justify-between text-xs font-semibold text-purple-700 dark:text-purple-300">
+                  <span>{selectedFeatureCount} of {features.length} features</span>
+                  <span>{featureProgress}%</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-white dark:bg-[#0a0a0f]">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all"
+                    style={{ width: `${featureProgress}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className="max-h-[58vh] space-y-4 overflow-y-auto pr-1">
+                {features.map((feature) => {
+                  const properties = feature.properties || [];
+                  const visibleProperties = properties.slice(0, 10);
+                  const hiddenCount = Math.max(0, properties.length - visibleProperties.length);
+                  const selectedCount = (selectedFeatureProperties[feature.feature_id] || []).length;
+
+                  return (
+                    <section
+                      key={feature.feature_id}
+                      className="rounded-2xl border border-purple-200/50 bg-white p-4 dark:border-purple-500/25 dark:bg-[#13131a]"
+                    >
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <h2 className="text-base font-extrabold text-gray-950 dark:text-white">
+                          {getFeatureName(feature)}
+                        </h2>
+                        <span className="shrink-0 rounded-full bg-purple-100 px-2.5 py-1 text-[11px] font-bold text-purple-700 dark:bg-purple-950 dark:text-purple-200">
+                          {selectedCount} selected
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {visibleProperties.map((property) => {
+                          const active = (selectedFeatureProperties[feature.feature_id] || []).includes(Number(property.id));
+                          return (
+                            <button
+                              key={property.id}
+                              type="button"
+                              onClick={() => toggleFeatureProperty(feature.feature_id, Number(property.id))}
+                              className={`inline-flex max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-left text-[11px] font-semibold transition-all ${
+                                active
+                                  ? 'border-purple-500 bg-purple-600 text-white shadow-sm'
+                                  : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-purple-300 hover:bg-purple-50 dark:border-gray-700 dark:bg-gray-950/40 dark:text-gray-200 dark:hover:border-purple-500/60'
+                              }`}
+                            >
+                              <span
+                                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-black ${
+                                  active
+                                    ? 'bg-white text-purple-700'
+                                    : 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-200'
+                                }`}
+                              >
+                                {active ? '✓' : property.name.slice(0, 1).toUpperCase()}
+                              </span>
+                              <span className="truncate">
+                                {property.name}
+                              </span>
+                            </button>
+                          );
+                        })}
+                        {hiddenCount > 0 && (
+                          <button
+                            type="button"
+                            disabled
+                            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-purple-300 bg-purple-50 px-2.5 py-1.5 text-[11px] font-bold text-purple-700 disabled:cursor-default dark:border-purple-500/50 dark:bg-purple-950/30 dark:text-purple-200"
+                          >
+                            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-[10px] dark:bg-purple-900">
+                              +
+                            </span>
+                            {hiddenCount} more
+                          </button>
+                        )}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+
+              <div className="flex flex-col gap-3 border-t border-purple-200/40 pt-4 dark:border-purple-500/20 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowFeatureModal(false)}
+                  disabled={featureSaving}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  onClick={saveFeaturePicks}
+                  isLoading={featureSaving}
+                  disabled={!canSaveFeaturePicks}
+                  className="flex-1"
+                >
+                  Save Choices
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      </BaseModal>
 
       {/* Email Change Modal */}
       <BaseModal

@@ -41,6 +41,15 @@ interface LoaderData {
   categories: string[];
 }
 
+function isConnectionRefused(error: unknown): boolean {
+  const cause = (error as any)?.cause;
+  if (cause?.code === "ECONNREFUSED") return true;
+  if (Array.isArray(cause?.errors)) {
+    return cause.errors.some((err: any) => err?.code === "ECONNREFUSED");
+  }
+  return false;
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const url = new URL(request.url);
   const search = url.searchParams.get("search") || "";
@@ -79,7 +88,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
       categories: categoriesData.categories?.map((c: any) => c.name) || [],
     });
   } catch (error) {
-    console.error("Error loading blog posts:", error);
+    if (!isConnectionRefused(error)) {
+      console.error("Error loading blog posts:", error);
+    }
     return Response.json({
       posts: [],
       total: 0,

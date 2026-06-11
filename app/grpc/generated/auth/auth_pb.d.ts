@@ -610,7 +610,12 @@ export class SignupRequest extends jspb.Message {
   getPassword(): string;
   setPassword(value: string): SignupRequest;
 
+  getProfileId(): string;
+  setProfileId(value: string): SignupRequest;
+
+  /** @deprecated Use getProfileId(). */
   getProfileType(): string;
+  /** @deprecated Use setProfileId(). */
   setProfileType(value: string): SignupRequest;
 
   getBureauId(): string;
@@ -639,6 +644,7 @@ export namespace SignupRequest {
     lastName: string;
     phone: string;
     password: string;
+    profileId: string;
     profileType: string;
     bureauId: string;
     householdId: string;
@@ -5616,4 +5622,3 @@ export namespace UpdateRolePermissionsRequest {
     permissionIdsList: Array<string>;
   };
 }
-

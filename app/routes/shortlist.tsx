@@ -1,4 +1,3 @@
-import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router";
 import { Eye, Heart, MessageCircle } from "lucide-react";
@@ -6,13 +5,12 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
-import { jobService, profileService as grpcProfileService, shortlistService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { fetchPreferences } from "~/utils/preferencesApi";
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 
 type JobLocation = {
   name?: string;
@@ -42,35 +40,46 @@ const formatSalaryRange = (range?: { min?: number; max?: number }) => {
 
 const isJobOpen = (job: { status?: string }) => (job.status || "open").toLowerCase() === "open";
 
-type ShortlistItem = {
+type ShortlistedJob = {
   id: string;
-  profile_id: string;
-  profile_type: string;
-  user_id: string;
-  household_id: string;
-  created_at: string;
+  title?: string;
+  description?: string;
+  status?: string;
+  location?: string | JobLocation;
+  job_types?: string[];
+  created_at?: string;
+  start_date?: string;
+  max_applicants?: number;
+  salary_range?: { min?: number; max?: number };
+  has_applied?: boolean;
+  household_id?: string;
+  user_id?: string;
+  user_profile_id?: string;
+  household_profile_id?: string;
+  household?: {
+    id?: string;
+    user_id?: string;
+    profile_id?: string;
+  };
 };
 
 export default function ShortlistPage() {
   const navigate = useNavigate();
-  const [items, setItems] = useState<ShortlistItem[]>([]);
+  const [items, setItems] = useState<ShortlistedJob[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const limit = 20;
   const sentinelRef = useRef<HTMLDivElement | null>(null);
-  const [profiles, setProfiles] = useState<Record<string, any>>({});
-
-  const [loadingProfiles, setLoadingProfiles] = useState(false);
-  const fetchedProfilesRef = useRef<Set<string>>(new Set());
   const [compactView, setCompactView] = useState(false);
   const [accessibilityMode, setAccessibilityMode] = useState(false);
+  const loadingProfiles = false;
   const [chatLoadingId, setChatLoadingId] = useState<string | null>(null);
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
+  const currentUserProfileId: string | undefined = currentUser?.user_profile_id || currentUser?.userProfileId || getStoredUserProfileId() || undefined;
   const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
-  const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   // Load UI preferences (compact view, accessibility)
   useEffect(() => {
@@ -98,103 +107,43 @@ export default function ShortlistPage() {
     };
   }, []);
 
-  // Fetch household profile ID if current user is a household
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchHouseholdProfileId = async () => {
-      if (currentProfileType?.toLowerCase() === 'household' && currentUserId) {
-        try {
-          const token = getAccessTokenFromCookies();
-          if (!token) return;
-          
-          const profile = await grpcProfileService.getCurrentHouseholdProfile('');
-          if (profile && !cancelled) {
-            setCurrentHouseholdProfileId(profile?.id || profile?.profile_id || null);
-          }
-        } catch (err) {
-          console.error('Failed to fetch household profile ID:', err);
-        }
-      }
-    };
-
-    fetchHouseholdProfileId();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [currentProfileType, currentUserId]);
-
   useEffect(() => {
     let cancelled = false;
     async function load() {
+      if (!currentUserProfileId) {
+        setItems([]);
+        setHasMore(false);
+        setError("User profile information is missing. Please sign in again.");
+        return;
+      }
+
       try {
         setLoading(true);
         setError(null);
-        const raw = await shortlistService.listByHousehold('');
-        const data = raw?.data?.data || raw?.data || raw || [];
+        const params = new URLSearchParams({
+          limit: String(limit),
+          offset: String(offset),
+          status: "shortlisted",
+          applicant_profile_id: currentUserProfileId,
+        });
+        const res = await fetch(`/api/job-applications?${params.toString()}`);
+        const raw = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(raw?.message || "Failed to load shortlisted jobs");
+        }
+        const data = Array.isArray(raw?.data) ? raw.data : [];
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));
         setHasMore(data.length === limit);
       } catch (e: any) {
-        if (!cancelled) setError(e?.message || "Failed to load shortlist");
+        if (!cancelled) setError(e?.message || "Failed to load shortlisted jobs");
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
     load();
     return () => { cancelled = true; };
-  }, [offset]);
-
-  // Fetch shortlisted job posts for the househelp shortlist.
-  useEffect(() => {
-    const neededProfileIds = Array.from(
-      new Set(
-        (Array.isArray(items) ? items : [])
-          .filter((s) => s.profile_type === 'job')
-          .map((s) => s.profile_id)
-          .filter(Boolean)
-      )
-    );
-
-    const missing = neededProfileIds.filter(
-      (profileId) => profileId && !fetchedProfilesRef.current.has(profileId)
-    );
-
-    if (missing.length === 0) return;
-
-    let cancelled = false;
-    async function fetchProfiles() {
-      try {
-        setLoadingProfiles(true);
-        const results = await Promise.all(
-          missing.map(async (profileId) => {
-            try {
-              const data = await jobService.getJob(profileId, '');
-              return { profileId, data };
-            } catch {
-              return { profileId, data: null };
-            }
-          })
-        );
-        if (cancelled) return;
-        setProfiles((prev) => {
-          const next = { ...prev } as Record<string, any>;
-          for (const r of results) {
-            if (r.profileId && r.data) {
-              next[r.profileId] = r.data;
-              fetchedProfilesRef.current.add(r.profileId);
-            }
-          }
-          return next;
-        });
-      } finally {
-        if (!cancelled) setLoadingProfiles(false);
-      }
-    }
-    fetchProfiles();
-    return () => { cancelled = true; };
-  }, [items]);
+  }, [offset, currentUserProfileId]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -209,14 +158,9 @@ export default function ShortlistPage() {
     return () => io.disconnect();
   }, [loading, hasMore]);
 
-  async function handleRemove(profileId: string) {
-    try {
-      await shortlistService.deleteShortlist(profileId);
-      setItems((prev) => prev.filter((s) => s.profile_id !== profileId));
-      window.dispatchEvent(new CustomEvent('shortlist-updated'));
-    } catch (e) {
-      // optionally surface error
-    }
+  async function handleRemove(jobId: string) {
+    setItems((prev) => prev.filter((job) => job.id !== jobId));
+    window.dispatchEvent(new CustomEvent('shortlist-updated'));
   }
 
   async function handleChatWithHousehold(targetUserId?: string, householdProfileId?: string, jobId?: string) {
@@ -237,11 +181,8 @@ export default function ShortlistPage() {
         househelp_user_id: househelpId,
       };
       
-      // Use passed householdProfileId or the fetched one for current household user
       if (householdProfileId) {
         payload.household_profile_id = householdProfileId;
-      } else if (profileType === 'household' && currentHouseholdProfileId) {
-        payload.household_profile_id = currentHouseholdProfileId;
       }
 
       const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, payload);
@@ -265,7 +206,7 @@ export default function ShortlistPage() {
             {(!items || items.length === 0) && !loading && !error && (
               <div className="rounded-2xl border-2 border-purple-200 dark:border-purple-500/30 bg-white dark:bg-[#13131a] p-8 text-center">
                 <ShortlistPlaceholderIcon className="w-20 h-20 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-300 text-base">No shortlisted households yet.</p>
+                <p className="text-gray-600 dark:text-gray-300 text-base">No shortlisted jobs yet.</p>
               </div>
             )}
 
@@ -273,16 +214,16 @@ export default function ShortlistPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {(Array.isArray(items) ? items : [])
-                .filter((s) => s.profile_type === "job")
-                .map((s) => {
-                  const job = s.profile_id ? profiles[s.profile_id] : null;
-                  const householdUserId = job?.household_id || s.user_id;
+                .map((job) => {
+                  const jobId = String(job.id || '');
+                  const householdUserId = job.household?.user_id || job.household_id || job.user_id;
+                  const householdProfileId = job.household?.profile_id || job.household?.id || job.household_profile_id || job.user_profile_id;
                   const isOpen = isJobOpen(job || {});
                   const hasApplied = Boolean(job?.has_applied);
-                  const householdProfileLink = `/household/public-profile?userId=${encodeURIComponent(householdUserId || '')}&jobId=${encodeURIComponent(s.profile_id)}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`;
+                  const householdProfileLink = `/household/public-profile?userId=${encodeURIComponent(householdUserId || '')}&jobId=${encodeURIComponent(jobId)}&from=shortlist&backTo=${encodeURIComponent('/shortlist')}&backLabel=${encodeURIComponent('Back to shortlist')}`;
                   return (
                     <div
-                      key={s.id}
+                      key={jobId}
                       className="bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all"
                     >
                       <div className="flex items-start justify-between gap-3">
@@ -304,19 +245,19 @@ export default function ShortlistPage() {
                           </span>
                           <div className="flex items-center gap-2">
                             <button
-                              onClick={() => handleChatWithHousehold(householdUserId, s.profile_id, job?.id || s.profile_id)}
-                              disabled={chatLoadingId === (job?.id || s.profile_id)}
+                              onClick={() => handleChatWithHousehold(householdUserId, householdProfileId, jobId)}
+                              disabled={chatLoadingId === jobId}
                               className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition disabled:opacity-60"
                               aria-label="Chat with household"
                             >
-                              {chatLoadingId === (job?.id || s.profile_id) ? (
+                              {chatLoadingId === jobId ? (
                                 <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
                               ) : (
                                 <MessageCircle className="w-4 h-4" />
                               )}
                             </button>
                             <button
-                              onClick={() => handleRemove(s.profile_id)}
+                              onClick={() => handleRemove(jobId)}
                               className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-pink-400 bg-pink-500 text-white transition"
                               aria-label="Remove job from shortlist"
                             >
@@ -325,7 +266,7 @@ export default function ShortlistPage() {
                             <button
                               onClick={() =>
                                 navigate(householdProfileLink, {
-                                  state: { profileId: s.profile_id, backTo: '/shortlist', backLabel: 'Back to shortlist' },
+                                  state: { profileId: householdProfileId, backTo: '/shortlist', backLabel: 'Back to shortlist' },
                                 })
                               }
                               className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-purple-200/60 dark:border-purple-500/30 bg-white dark:bg-white/10 text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-purple-500/10 transition"
@@ -379,11 +320,11 @@ export default function ShortlistPage() {
                       )}
 
                       <div className="mt-4 flex items-center justify-between">
-                        <span className="text-xs text-gray-400">Posted {formatTimeAgo(job?.created_at || s.created_at)}</span>
+                        <span className="text-xs text-gray-400">Posted {formatTimeAgo(job?.created_at)}</span>
                         <button
                           onClick={() =>
                             navigate(householdProfileLink, {
-                              state: { profileId: s.profile_id, backTo: '/shortlist', backLabel: 'Back to shortlist' },
+                              state: { profileId: householdProfileId, backTo: '/shortlist', backLabel: 'Back to shortlist' },
                             })
                           }
                           className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
@@ -397,7 +338,7 @@ export default function ShortlistPage() {
             </div>
 
             <div ref={sentinelRef} className="h-8" />
-            {(loading || loadingProfiles) && (
+            {loading && (
               <div className="mt-4 text-center text-gray-600 dark:text-gray-300">Loading...</div>
             )}
           </div>

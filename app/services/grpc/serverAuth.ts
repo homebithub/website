@@ -1,6 +1,6 @@
 import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import type { JsonObject } from '@protobuf-ts/runtime';
-import { HouseholdMemberServiceClient, ProfileSetupServiceClient, WaitlistServiceClient } from '~/proto/auth/auth.client';
+import { HouseholdMemberServiceClient, WaitlistServiceClient } from '~/proto/auth/auth.client';
 import { Struct } from '~/proto/google/protobuf/struct';
 import { API_BASE_URL, normalizeGatewayBaseUrl } from '~/config/api';
 
@@ -102,12 +102,12 @@ export async function getProfileSetupProgressOnServer(
   userId: string,
   profileType: string,
 ) {
-  const client = new ProfileSetupServiceClient(createTransport(requestUrl));
-  const { response } = await client.getProgress(
-    { userId, profileType },
-    { meta: buildMetadata(token, profileType) },
-  );
-  return structToJson(response.data);
+  return {
+    status: 'completed',
+    total_steps: 0,
+    last_completed_step: 0,
+    profile_type: profileType,
+  };
 }
 
 export async function getJoinRequestStatusOnServer(

@@ -86,12 +86,7 @@ export const notificationsService = {
   // ── Conversations ──────────────────────────────────────
 
   async listConversations(userId: string, offset = 0, limit = 100): Promise<any> {
-    const request = new notifications_pb.ListConversationsRequest();
-    request.setUserId(resolveUserId(userId));
-    request.setOffset(offset);
-    request.setLimit(limit);
-    const res = await grpcCall((cb) => notificationsClient.listConversations(request, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return { conversations: [], total: 0, offset, limit };
   },
 
   async startConversation(payload: {

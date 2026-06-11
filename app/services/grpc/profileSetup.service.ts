@@ -105,16 +105,12 @@ export const profileSetupService = {
    * Get profile setup progress for a user.
    */
   async getProgress(userId: string, profileType?: string): Promise<any> {
-    const request = new auth_pb.UserIdRequest();
-    request.setUserId(resolveUserId(userId));
-    if (profileType) {
-      request.setProfileType(profileType);
-    } else {
-      const pt = getStoredProfileType();
-      if (pt) request.setProfileType(pt);
-    }
-    const res = await grpcCall((cb) => profileSetupClient.getProgress(request, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return {
+      status: 'completed',
+      total_steps: 0,
+      last_completed_step: 0,
+      profile_type: profileType || getStoredProfileType(),
+    };
   },
 
   /**

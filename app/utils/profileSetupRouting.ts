@@ -1,5 +1,6 @@
 import { householdMemberService } from '~/services/grpc/authServices';
 import profileSetupService from '~/services/grpc/profileSetup.service';
+import { normalizeProfileType } from '~/utils/authStorage';
 
 type SupportedProfileType = 'household' | 'househelp';
 
@@ -39,7 +40,8 @@ export async function resolveProfileSetupDestination(options: {
   profileType: string;
   completedPath?: string;
 }): Promise<string> {
-  const { userId = '', profileType, completedPath = '/' } = options;
+  const { userId = '', completedPath = '/' } = options;
+  const profileType = normalizeProfileType(options.profileType);
 
   if (!isSupportedProfileType(profileType)) {
     return completedPath;

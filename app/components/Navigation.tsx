@@ -5,18 +5,14 @@ import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon
 import { useAuth } from "~/contexts/useAuth";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { API_BASE_URL } from "~/config/api";
-import DeviceApprovalBanner from '~/components/notifications/DeviceApprovalBanner';
-import { useDeviceAuthPendingApprovals } from '~/hooks/useDeviceAuthPendingApprovals';
 import { useProfileSetupStatus } from "~/hooks/useProfileSetupStatus";
 import { useNotifications } from "~/hooks/useNotifications";
 import NotificationsModal from "~/components/notifications/NotificationsModal";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { shortlistService, interestService, hireRequestService } from '~/services/grpc/authServices';
-import { notificationsService } from '~/services/grpc/notifications.service';
+import { hireRequestService } from '~/services/grpc/authServices';
 import authService from '~/services/grpc/auth.service';
 import { getStoredUser } from '~/utils/authStorage';
 import { shouldSilenceGatewayError } from '~/services/grpc/client';
-import { useWebSocketContext } from '~/contexts/WebSocketContext';
 
 const navigation = [
     { name: "Services", href: "/services" },
@@ -26,9 +22,21 @@ const navigation = [
     { name: "Pricing", href: "/pricing" },
 ];
 
+function normalizeProfileRole(profileType?: string | null): 'client' | 'service-provider' | 'bureau' | null {
+    const normalized = String(profileType || '').trim().toUpperCase();
+    if (!normalized) return null;
+    if (normalized === 'CLT' || normalized === 'CLIENT' || normalized === 'HOUSEHOLD') return 'client';
+    if (normalized === 'SVC_PVD' || normalized === 'SVD_PDD' || normalized === 'SERVICE_PROVIDER' || normalized === 'HOUSEHELP') return 'service-provider';
+    if (normalized === 'BUREAU') return 'bureau';
+    return null;
+}
+
 export function Navigation() {
     const { user, logout, loading } = useAuth();
     const { isInSetupMode } = useProfileSetupStatus();
+    const location = useLocation();
+    const isAccountProfileRoute = location.pathname === '/profile';
+    const allowAuxiliaryAccountCalls = !isAccountProfileRoute;
     const authUser = (user as any)?.user ?? null;
     const storedUser = getStoredUser();
     const currentUser = authUser ?? storedUser ?? null;
@@ -39,12 +47,8 @@ export function Navigation() {
     const [hireRequestCount, setHireRequestCount] = useState<number>(0);
     const [isAdmin, setIsAdmin] = useState(false);
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-    const { unreadCount } = useNotifications({ pollingMs: 30000, pageSize: 20 });
-    const { approvals, newestApproval, dismiss, clearAll } = useDeviceAuthPendingApprovals(!isInSetupMode && !!user);
+    const { unreadCount } = useNotifications({ pollingMs: 30000, pageSize: 20, enabled: allowAuxiliaryAccountCalls });
     const navigate = useNavigate();
-    const location = useLocation();
-    const { addEventListener } = useWebSocketContext();
-    const pendingDeviceApprovals = approvals.length;
 
 
     // Detect if running on app subdomain
@@ -57,55 +61,40 @@ export function Navigation() {
 
     // Memoized dashboard path based on profile type
     const dashboardPath = React.useMemo(() => {
-        if (!profileType) return null;
-        if (profileType === "household" || profileType === "household") return "/household";
-        if (profileType === "househelp") return "/househelp";
+        const role = normalizeProfileRole(profileType);
+        if (!role) return null;
+        if (role === "client") return "/household";
+        if (role === "service-provider") return "/househelp";
         // Bureau users should not access regular navigation
         return null;
     }, [profileType]);
 
     const authLinks = React.useMemo(() => {
-        const shortlistHref = profileType === 'household' ? '/household/shortlist' : '/shortlist';
-        const hiringHistoryHref = profileType === 'household' ? '/household/hiring' : '/househelp/hiring';
+        const role = normalizeProfileRole(profileType);
+        const isClient = role === 'client';
+        const isServiceProvider = role === 'service-provider';
+        const shortlistHref = isClient ? '/household/shortlist' : '/shortlist';
+        const hiringHistoryHref = isClient ? '/household/hiring' : '/househelp/hiring';
+        const hiringLabel = isServiceProvider ? 'Job Openings' : 'Hiring';
         return [
             { name: 'Shortlist', href: shortlistHref, count: shortlistCount },
             { name: 'Inbox', href: '/inbox', count: inboxCount },
-            { name: 'Hiring', href: hiringHistoryHref, count: hireRequestCount },
+            { name: hiringLabel, href: hiringHistoryHref, count: hireRequestCount },
             { name: 'Blog', href: '/blog', count: 0 },
         ];
     }, [profileType, shortlistCount, inboxCount, hireRequestCount]);
 
-    // Fetch shortlist count
-    const fetchShortlistCount = async () => {
-        try {
-            if (!getAccessTokenFromCookies()) return;
-            const data = await shortlistService.getShortlistCount('', '');
-            const count = Number(data?.count) || 0;
-            setShortlistCount(count);
-        } catch (error) {
-            if (!shouldSilenceGatewayError(error)) {
-                console.error("[Shortlist Count] Failed to fetch:", error);
-            }
-        }
-    };
-
-    // Fetch inbox unread count
-    const fetchInboxCount = async () => {
-        try {
-            if (!getAccessTokenFromCookies()) return;
-            const data = await notificationsService.listConversations('', 0, 100);
-            const conversations: any[] = data?.conversations || [];
-            
-            const totalUnread = conversations.filter((c: any) => Number(c.unread_count || 0) > 0).length;
-            
-            setInboxCount(totalUnread);
-        } catch (error) {
-            setInboxCount(0);
-            if (!shouldSilenceGatewayError(error)) {
-                console.error("Failed to fetch inbox count:", error);
-            }
-        }
-    };
+    const profileRole = normalizeProfileRole(profileType);
+    const accountProfileHref = profileRole === 'client'
+        ? '/household/profile'
+        : profileRole === 'service-provider'
+            ? '/househelp/profile'
+            : '/profile';
+    const accountProfileLabel = profileRole === 'client'
+        ? 'My Household'
+        : profileRole === 'service-provider'
+            ? 'My Profile'
+            : 'Profile';
 
     // Fetch hiring badge count: pending items the user has NOT acted upon
     const fetchHireRequestCount = async (overrideProfileType?: string | null) => {
@@ -114,19 +103,13 @@ export function Navigation() {
             const pt = overrideProfileType ?? profileType;
             let total = 0;
 
-            if (pt === 'household') {
-                // 1. Count pending/viewed interests from househelps
-                const iData = await interestService.listByHousehold('', '');
-                const interests: any[] = iData?.data || [];
-                total += interests.filter((i: any) => {
-                    const status = i.status || "";
-                    return status === 'pending' || status === 'viewed';
-                }).length;
+            const role = normalizeProfileRole(pt);
 
-                // 2. Count pending hire requests
+            if (role === 'client') {
+                // Count pending hire requests without calling interest ListByHousehold.
                 const hData = await hireRequestService.listHireRequests('', '', 'pending');
                 total += hData?.total || (Array.isArray(hData?.data) ? hData.data.length : 0);
-            } else if (pt === 'househelp') {
+            } else if (role === 'service-provider') {
                 // Count pending hire requests received from households
                 const data = await hireRequestService.listHireRequests('', '', 'pending');
                 total = data?.total || (Array.isArray(data?.data) ? data.data.length : 0);
@@ -155,12 +138,12 @@ export function Navigation() {
 
                 // Check admin status using the canonical current user email
                 const email = currentUser.email || '';
-                if (email) {
+                if (email && allowAuxiliaryAccountCalls) {
                     authService.checkIsAdmin(email).then((admin) => setIsAdmin(admin)).catch(() => setIsAdmin(false));
                 }
 
                 // Bureau users should not access regular navigation
-                if (resolvedProfileType === "bureau") {
+                if (normalizeProfileRole(resolvedProfileType) === "bureau") {
                     setProfileType(null);
                     setUserName(null);
                     return;
@@ -172,9 +155,7 @@ export function Navigation() {
                 setUserName(firstName);
 
                 // Fetch counts only for authenticated users who finished onboarding
-                if (!isInSetupMode) {
-                    fetchShortlistCount();
-                    fetchInboxCount();
+                if (!isInSetupMode && allowAuxiliaryAccountCalls) {
                     fetchHireRequestCount(resolvedProfileType);
                 }
             } catch {
@@ -187,62 +168,33 @@ export function Navigation() {
             setShortlistCount(0);
             setInboxCount(0);
         }
-    }, [user, currentUser, isInSetupMode]);
+    }, [user, currentUser, isInSetupMode, allowAuxiliaryAccountCalls]);
 
-    // Listen for shortlist and inbox updates (only when not in setup mode)
+    // Listen for hiring updates (only when not in setup mode)
     useEffect(() => {
-        if (isInSetupMode) return;
-
-        const handleShortlistUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchShortlistCount();
-        };
-
-        const handleInboxUpdate = () => {
-            if (getAccessTokenFromCookies()) fetchInboxCount();
-        };
+        if (isInSetupMode || !allowAuxiliaryAccountCalls) return;
 
         const handleHiringUpdate = () => {
             if (getAccessTokenFromCookies()) fetchHireRequestCount();
         };
 
-        window.addEventListener('shortlist-updated', handleShortlistUpdate);
-        window.addEventListener('inbox-updated', handleInboxUpdate);
         window.addEventListener('hiring-updated', handleHiringUpdate);
         return () => {
-            window.removeEventListener('shortlist-updated', handleShortlistUpdate);
-            window.removeEventListener('inbox-updated', handleInboxUpdate);
             window.removeEventListener('hiring-updated', handleHiringUpdate);
         };
-    }, [isInSetupMode]);
+    }, [isInSetupMode, allowAuxiliaryAccountCalls]);
 
-    // Poll all counts every 60 seconds (skip during onboarding)
+    // Poll hiring count every 60 seconds (skip during onboarding)
     useEffect(() => {
-        if (!user || !profileType || isInSetupMode) return;
+        if (!user || !profileType || isInSetupMode || !allowAuxiliaryAccountCalls) return;
 
         const pollCounts = () => {
-            fetchShortlistCount();
-            fetchInboxCount();
             fetchHireRequestCount();
         };
 
         const intervalId = setInterval(pollCounts, 60_000);
         return () => clearInterval(intervalId);
-    }, [user, profileType, isInSetupMode]);
-
-    useEffect(() => {
-        if (!user || isInSetupMode) return;
-
-        const refreshInboxCount = () => {
-            fetchInboxCount();
-        };
-
-        const offNewMessage = addEventListener('new_message', refreshInboxCount);
-        const offMessageRead = addEventListener('message_read', refreshInboxCount);
-        return () => {
-            offNewMessage?.();
-            offMessageRead?.();
-        };
-    }, [addEventListener, user, isInSetupMode]);
+    }, [user, profileType, isInSetupMode, allowAuxiliaryAccountCalls]);
 
     // Badge helper: 0 = null (hidden), 1-9 = number, >9 = "9+"
     const renderBadge = (count: number, gradient = 'from-purple-600 to-pink-600', shadow = 'shadow-purple-500/50') => {
@@ -282,7 +234,6 @@ export function Navigation() {
 
     return (
         <nav className="sticky top-0 z-40 shadow-xl shadow-purple-200/50 bg-gradient-to-br from-primary-100 via-white to-purple-200 dark:from-[#0a0a0f] dark:via-[#13131a] dark:to-[#0a0a0f]  overflow-visible border-b border-primary-200/60 dark:border-purple-500/20 transition-all duration-300 dark:shadow-glow-sm">
-            <DeviceApprovalBanner approval={newestApproval} onDismiss={dismiss} onClearAll={clearAll} />
             <div className="flex justify-between items-center px-8 sm:px-16 lg:px-32 min-h-[64px] sm:min-h-[72px]">
                 {/* Logo */}
                 <div className="relative flex items-center">
@@ -309,7 +260,7 @@ export function Navigation() {
                                 {item.name}
                                 {'count' in item && item.name === 'Shortlist' && renderBadge((item as any).count)}
                                 {'count' in item && item.name === 'Inbox' && renderBadge((item as any).count)}
-                                {'count' in item && item.name === 'Hiring' && renderBadge((item as any).count)}
+                                {'count' in item && (item.href === '/household/hiring' || item.href === '/househelp/hiring') && renderBadge((item as any).count)}
                             </Link>
                             );
                         })}
@@ -332,7 +283,7 @@ export function Navigation() {
                                 {item.name}
                                 {item.name === 'Shortlist' && renderBadge(shortlistCount)}
                                 {item.name === 'Inbox' && renderBadge(inboxCount)}
-                                {item.name === 'Hiring' && renderBadge(hireRequestCount)}
+                                {(item.href === '/household/hiring' || item.href === '/househelp/hiring') && renderBadge(hireRequestCount)}
                             </Link>
                             );
                         })}
@@ -352,14 +303,6 @@ export function Navigation() {
                         >
                             <BellIcon className="h-6 w-6 text-purple-700 dark:text-purple-200" />
                             {renderBadge(unreadCount)}
-                            {pendingDeviceApprovals > 0 && (
-                                <span
-                                    className="absolute -bottom-1.5 -right-1.5 min-w-[22px] px-1.5 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-semibold shadow-lg shadow-amber-400/60"
-                                    data-testid="device-approval-count"
-                                >
-                                    {pendingDeviceApprovals > 9 ? '9+' : pendingDeviceApprovals}
-                                </span>
-                            )}
                         </button>
                     )}
 
@@ -421,11 +364,11 @@ export function Navigation() {
                                         <Menu.Item>
                                             {({ active }) => (
                                                 <Link
-                                                    to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
+                                                    to={accountProfileHref}
                                                     className={`${active ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white' : 'text-gray-700 dark:text-gray-300'} flex items-center px-4 py-1.5 text-xs font-semibold rounded-xl mx-2 transition-all`}
                                                 >
                                                     <UserIcon className="mr-3 h-5 w-5" />
-                                                    {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
+                                                    {accountProfileLabel}
                                                 </Link>
                                             )}
                                         </Menu.Item>
@@ -544,11 +487,6 @@ export function Navigation() {
                                                                 {unreadCount > 9 ? '9+' : unreadCount}
                                                             </span>
                                                         )}
-                                                        {pendingDeviceApprovals > 0 && (
-                                                            <span className="bg-amber-500/90 text-white text-[10px] font-bold rounded-full min-w-[20px] h-[18px] flex items-center justify-center px-1" data-testid="device-approval-count-mobile">
-                                                                {pendingDeviceApprovals > 9 ? '9+' : pendingDeviceApprovals}
-                                                            </span>
-                                                        )}
                                                     </span>
                                                 </button>
                                             )}
@@ -589,7 +527,7 @@ export function Navigation() {
                                                                         {inboxCount > 9 ? '9+' : inboxCount}
                                                                     </span>
                                                                 )}
-                                                                {item.name === 'Hiring' && hireRequestCount > 0 && (
+                                                                {(item.href === '/household/hiring' || item.href === '/househelp/hiring') && hireRequestCount > 0 && (
                                                                     <span className="bg-gradient-to-r from-purple-600 to-pink-600 text-white text-[10px] font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center shadow-md shadow-purple-500/40 px-1">
                                                                         {hireRequestCount > 9 ? '9+' : hireRequestCount}
                                                                     </span>
@@ -604,13 +542,13 @@ export function Navigation() {
                                             <Menu.Item>
                                                 {({ active }) => (
                                                     <Link
-                                                        to={profileType === 'household' ? '/household/profile' : profileType === 'househelp' ? '/househelp/profile' : '/profile'}
+                                                        to={accountProfileHref}
                                                         className={`${
                                                             active ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300' : 'text-gray-700 dark:text-gray-300'
                                                         } flex items-center px-4 py-1 text-xs`}
                                                     >
                                                         <UserIcon className="mr-3 h-5 w-5" />
-                                                        {profileType === 'household' ? 'My Household' : profileType === 'househelp' ? 'My Profile' : 'Profile'}
+                                                        {accountProfileLabel}
                                                     </Link>
                                                 )}
                                             </Menu.Item>

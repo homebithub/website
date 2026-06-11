@@ -106,28 +106,7 @@ export const deviceService = {
     userId: string,
     currentDeviceId?: string
   ): Promise<{ devices: any[]; totalCount: number; activeCount: number; pendingCount: number }> {
-    return new Promise((resolve, reject) => {
-      try {
-        const request = new device_pb.GetUserDevicesRequest();
-        request.setUserId(resolveUserId(userId));
-        if (currentDeviceId) request.setCurrentDeviceId(currentDeviceId);
-
-        deviceClient.getUserDevices(request, getMetadata(), (err: any, response: any) => {
-          if (err) {
-            reject(handleGrpcError(err));
-          } else {
-            resolve({
-              devices: response.getDevicesList().map((d: any) => d.toObject()),
-              totalCount: response.getTotalCount(),
-              activeCount: response.getActiveCount(),
-              pendingCount: response.getPendingCount(),
-            });
-          }
-        });
-      } catch (error) {
-        reject(error);
-      }
-    });
+    return { devices: [], totalCount: 0, activeCount: 0, pendingCount: 0 };
   },
 
   /**

@@ -4,13 +4,11 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { ShimmerListPlaceholder } from "~/components/ShimmerLoader";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { openForWorkService, shortlistService, profileService as grpcProfileService } from "~/services/grpc/authServices";
+import { shortlistService, profileService as grpcProfileService } from "~/services/grpc/authServices";
 import { notificationsService } from "~/services/grpc/notifications.service";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { useProfilePhotos } from "~/hooks/useProfilePhotos";
-import { getStoredUserId } from "~/utils/authStorage";
-import { useSubscription } from "~/hooks/useSubscription";
-import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
+import { getStoredCanonicalProfileType, getStoredUserId, getStoredUserProfileId } from "~/utils/authStorage";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from "~/utils/conversationLauncher";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
@@ -106,6 +104,17 @@ const firstString = (...values: unknown[]): string => {
 
 interface OpenForWorkListing {
   id: string;
+  title?: string;
+  description?: string;
+  user_profile_id?: string;
+  userProfileId?: string;
+  listing_feature_groups?: Array<{
+    feature_id?: number | string;
+    feature_name?: string;
+    name?: string;
+    properties?: string[];
+  }>;
+  listing_features?: Array<Record<string, any>>;
   job_types?: string[];
   available_from?: string;
   work_schedule?: Record<string, { morning?: boolean; afternoon?: boolean; evening?: boolean }>;
@@ -365,11 +374,30 @@ const normalizeHousehelp = (raw: unknown): HousehelpSummary | undefined => {
 
 const normalizeOpenForWorkListing = (raw: unknown, fallbackId: string): OpenForWorkListing => {
   const listing = toRecord(raw) || {};
+  const featureGroups = Array.isArray(listing.listing_feature_groups)
+    ? listing.listing_feature_groups
+    : [];
+  const flattenedFeatureValues = featureGroups.flatMap((group: any) => (
+    Array.isArray(group?.properties) ? group.properties.map((property: unknown) => formatTextValue(property)) : []
+  )).filter(Boolean);
+  const jobTypeName = firstString(
+    listing.job_type_name,
+    toRecord(listing.job_type)?.name,
+    toRecord(listing.jobType)?.name,
+    listing.title,
+  );
 
   return {
     ...listing,
     id: formatTextValue(listing.id) || fallbackId,
-    job_types: toStringArray(listing.job_types),
+    title: formatTextValue(listing.title) || undefined,
+    description: formatTextValue(listing.description) || undefined,
+    user_profile_id: formatTextValue(listing.user_profile_id || listing.userProfileId) || undefined,
+    job_types: toStringArray(listing.job_types).length > 0
+      ? toStringArray(listing.job_types)
+      : jobTypeName
+        ? [jobTypeName]
+        : flattenedFeatureValues.slice(0, 2),
     available_from: formatTextValue(listing.available_from) || undefined,
     status: formatTextValue(listing.status) || undefined,
     created_at: formatTextValue(listing.created_at) || undefined,
@@ -378,7 +406,9 @@ const normalizeOpenForWorkListing = (raw: unknown, fallbackId: string): OpenForW
     salary_frequency: formatTextValue(listing.salary_frequency) || undefined,
     fit_score: toFiniteNumber(listing.fit_score),
     match_reasons: toStringArray(listing.match_reasons),
-    househelp: normalizeHousehelp(listing.househelp),
+    listing_feature_groups: featureGroups,
+    listing_features: Array.isArray(listing.listing_features) ? listing.listing_features : [],
+    househelp: normalizeHousehelp(listing.househelp || listing.user_profile || listing.userProfile),
   };
 };
 
@@ -422,6 +452,17 @@ const isOpenForWorkListingActive = (listing: OpenForWorkListing) => {
   return ["active", "open", "available"].includes(status);
 };
 
+const listingFeatureGroups = (listing: OpenForWorkListing) => (
+  Array.isArray(listing.listing_feature_groups)
+    ? listing.listing_feature_groups
+        .map((group) => ({
+          name: formatTextValue(group.feature_name || group.name, "Feature"),
+          properties: Array.isArray(group.properties) ? group.properties.map((property) => formatTextValue(property)).filter(Boolean) : [],
+        }))
+        .filter((group) => group.properties.length > 0)
+    : []
+);
+
 const formatListingStatus = (status?: string) => {
   const normalized = formatTextValue(status);
   if (!normalized) return "Open";
@@ -431,8 +472,8 @@ const formatListingStatus = (status?: string) => {
 export default function HouseholdJobsHome() {
   const navigate = useNavigate();
   const currentUserId = useMemo(() => getStoredUserId(), []);
-  const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
-  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
+  const profileType = useMemo(() => getStoredCanonicalProfileType(), []);
+  const isServiceProvider = profileType === "househelp";
 
   const [listings, setListings] = useState<OpenForWorkListing[]>([]);
   const [selectedListing, setSelectedListing] = useState<OpenForWorkListing | null>(null);
@@ -515,7 +556,7 @@ export default function HouseholdJobsHome() {
     const choreFilter = filters.choreId ? Number(filters.choreId) : null;
     const petFilter = filters.petTypeId ? Number(filters.petTypeId) : null;
     return listings.filter((listing) => {
-      if (openOnly && !isOpenForWorkListingActive(listing)) return false;
+      if (!isServiceProvider && openOnly && !isOpenForWorkListingActive(listing)) return false;
       if (filters.jobType && !toStringArray(listing.job_types).some((type) => normalizeToken(type) === filters.jobType)) {
         return false;
       }
@@ -536,7 +577,7 @@ export default function HouseholdJobsHome() {
       if (!matchesOpenForWorkSalary(listing, selectedSalaryRange)) return false;
       return true;
     });
-  }, [listings, openOnly, filters, selectedSalaryRange]);
+  }, [listings, openOnly, filters, selectedSalaryRange, isServiceProvider]);
 
   useEffect(() => {
     let cancelled = false;
@@ -594,8 +635,8 @@ export default function HouseholdJobsHome() {
   }, [filteredListings, sortBy]);
 
   const searchKey = useMemo(
-    () => JSON.stringify({ filters, openOnly, sortBy, salaryRangeId: filters.salaryRangeId }),
-    [filters, openOnly, sortBy]
+    () => JSON.stringify({ filters, openOnly, sortBy, salaryRangeId: filters.salaryRangeId, isServiceProvider }),
+    [filters, openOnly, sortBy, isServiceProvider]
   );
 
   useEffect(() => {
@@ -648,31 +689,18 @@ export default function HouseholdJobsHome() {
       setLoading(true);
       setError(null);
       try {
-        const payload: Record<string, any> = {
-          limit,
-          offset,
-        };
-        if (openOnly) payload.status = "active";
-        if (filters.jobType) payload.job_type = filters.jobType;
-        if (filters.choreId) payload.chores_ids = [Number(filters.choreId)];
-        if (filters.petTypeId) payload.pet_type_ids = [Number(filters.petTypeId)];
-        if (filters.childrenAgeRangeId) payload.children_age_range_id = Number(filters.childrenAgeRangeId);
-        if (filters.childrenCapacityId) payload.children_capacity_id = Number(filters.childrenCapacityId);
-        if (filters.canWorkWithKids) payload.can_work_with_kids = filters.canWorkWithKids === "yes";
-        if (filters.canWorkWithPets) payload.can_work_with_pets = filters.canWorkWithPets === "yes";
-        if (selectedSalaryRange?.min != null) payload.salary_min = selectedSalaryRange.min;
-        if (selectedSalaryRange?.max != null) payload.salary_max = selectedSalaryRange.max;
-        if (selectedSalaryRange?.frequency) payload.salary_frequency = selectedSalaryRange.frequency;
-        if (filters.availabilityWindow) {
-          const now = new Date();
-          const addDays = (days: number) => new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-          if (filters.availabilityWindow === "next_14") payload.available_from_before = addDays(14);
-          if (filters.availabilityWindow === "next_30") payload.available_from_before = addDays(30);
-          if (filters.availabilityWindow === "later") payload.available_from_after = addDays(30);
-        }
-        if (sortBy === "best_match") payload.sort = "best_match";
+        const params = new URLSearchParams({
+          limit: String(limit),
+          offset: String(offset),
+          hydrate: "get",
+        });
+        if (isServiceProvider || openOnly) params.set("status", "active");
 
-        const raw = await openForWorkService.searchOpenForWork(currentUserId, payload);
+        const res = await fetch(`/api/job-listings?${params.toString()}`);
+        const raw = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(raw?.message || "Failed to load listings");
+        }
         const data = raw?.data || raw || [];
         const items = Array.isArray(data) ? data : [];
         const normalizedItems = items.map((item: unknown, index: number) => (
@@ -693,7 +721,7 @@ export default function HouseholdJobsHome() {
     return () => {
       cancelled = true;
     };
-  }, [offset, searchKey, selectedSalaryRange, currentUserId]);
+  }, [offset, searchKey, selectedSalaryRange, currentUserId, isServiceProvider]);
 
   useEffect(() => {
     if (!sentinelRef.current) return;
@@ -715,10 +743,6 @@ export default function HouseholdJobsHome() {
     const househelpUserId = listing.househelp?.user_id || listing.househelp?.user?.id;
     const househelpProfileId = listing.househelp?.id;
     if (!househelpUserId || !currentUserId) return;
-    if (!hasActiveSubscription && !subscriptionLoading) {
-      setShowSubscriptionModal(true);
-      return;
-    }
     try {
       const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, {
         household_user_id: currentUserId,
@@ -733,10 +757,6 @@ export default function HouseholdJobsHome() {
   };
 
   const handleOpenInviteModal = (listing: OpenForWorkListing, options?: { template?: "skills" | "availability" }) => {
-    if (!hasActiveSubscription && !subscriptionLoading) {
-      setShowSubscriptionModal(true);
-      return;
-    }
     setSelectedInviteListing(listing);
     setInviteError(null);
     if (options?.template) {
@@ -767,10 +787,6 @@ export default function HouseholdJobsHome() {
     const househelpUserId = firstString(selectedInviteListing.househelp?.user_id, selectedInviteListing.househelp?.user?.id);
     if (!househelpUserId) {
       setInviteError("We couldn’t reach this househelp right now.");
-      return;
-    }
-    if (!hasActiveSubscription && !subscriptionLoading) {
-      setShowSubscriptionModal(true);
       return;
     }
 
@@ -812,6 +828,16 @@ export default function HouseholdJobsHome() {
 
     try {
       if (isShortlisted) {
+        if (isServiceProvider) {
+          setShortlistedListingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(listing.id);
+            return next;
+          });
+          setActionSuccess("Listing removed from your shortlist.");
+          return;
+        }
+
         await shortlistService.deleteShortlist(listing.id);
         setShortlistedListingIds((prev) => {
           const next = new Set(prev);
@@ -820,10 +846,30 @@ export default function HouseholdJobsHome() {
         });
         setActionSuccess("Listing removed from your shortlist.");
       } else {
-        await shortlistService.createShortlist('', 'household', {
-          profile_id: listing.id,
-          profile_type: 'open_for_work',
-        });
+        if (isServiceProvider) {
+          const serviceProviderId = getStoredUserProfileId();
+          if (!serviceProviderId) {
+            throw new Error("User profile information is missing. Please sign in again.");
+          }
+
+          const res = await fetch('/api/job-shortlist', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              listing_id: listing.id,
+              service_provider_id: serviceProviderId,
+            }),
+          });
+          const payload = await res.json().catch(() => ({}));
+          if (!res.ok) {
+            throw new Error(payload?.message || "Failed to shortlist listing.");
+          }
+        } else {
+          await shortlistService.createShortlist('', 'household', {
+            profile_id: listing.id,
+            profile_type: 'open_for_work',
+          });
+        }
         setShortlistedListingIds((prev) => new Set(prev).add(listing.id));
         setActionSuccess("Listing added to your shortlist.");
       }
@@ -850,9 +896,13 @@ export default function HouseholdJobsHome() {
         <main className="flex-1 py-10">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Open for Work</h1>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                {isServiceProvider ? "Job Listings" : "Open for Work"}
+              </h1>
               <p className="text-gray-600 dark:text-gray-300 mt-1">
-                Browse househelps who are actively looking for their next role.
+                {isServiceProvider
+                  ? "Browse household job listings that are open for applications."
+                  : "Browse househelps who are actively looking for their next role."}
               </p>
             </div>
 
@@ -865,40 +915,44 @@ export default function HouseholdJobsHome() {
                 <div className="text-left">
                   <p className="text-xs uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Filters</p>
                   <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                    Narrow down househelps by availability, skills, and preferences.
+                    {isServiceProvider
+                      ? "Narrow down job listings by role details and preferences."
+                      : "Narrow down househelps by availability, skills, and preferences."}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/70 dark:bg-white/10 p-1 shadow-inner">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setOpenOnly(true);
-                      }}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
-                        openOnly
-                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
-                          : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
-                      }`}
-                    >
-                      Open to work
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setOpenOnly(false);
-                      }}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
-                        !openOnly
-                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
-                          : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
-                      }`}
-                    >
-                      All listings
-                    </button>
-                  </div>
+                  {!isServiceProvider && (
+                    <div className="flex items-center gap-2 rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/70 dark:bg-white/10 p-1 shadow-inner">
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setOpenOnly(true);
+                        }}
+                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
+                          openOnly
+                            ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
+                            : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
+                        }`}
+                      >
+                        Open to work
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setOpenOnly(false);
+                        }}
+                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
+                          !openOnly
+                            ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
+                            : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
+                        }`}
+                      >
+                        All listings
+                      </button>
+                    </div>
+                  )}
                   <span
                     className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/80 dark:bg-white/10 text-purple-600 dark:text-purple-200 transition ${
                       filtersOpen ? "rotate-180" : ""
@@ -1064,7 +1118,7 @@ export default function HouseholdJobsHome() {
                   <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
                     <div className="flex flex-wrap gap-2">
                       <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200 font-semibold">
-                        {openListingsCount} open now
+                        {isServiceProvider ? `${listings.length} active listings` : `${openListingsCount} open now`}
                       </span>
                       <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
                         {listings.length} total listings
@@ -1091,7 +1145,11 @@ export default function HouseholdJobsHome() {
             <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/70 dark:bg-[#141020]/70 px-5 py-4 text-xs shadow-sm">
               <div>
                 <p className="text-[11px] uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Sort by</p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Prioritize househelps by budget or newest listings.</p>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                  {isServiceProvider
+                    ? "Prioritize job listings by budget or newest posts."
+                    : "Prioritize househelps by budget or newest listings."}
+                </p>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
@@ -1131,12 +1189,22 @@ export default function HouseholdJobsHome() {
             ) : sortedListings.length === 0 ? (
               <div className="bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-2xl p-10 sm:p-14 text-center">
                 <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">
-                  {hasActiveFilters ? "No listings match your filters" : openOnly ? "No open listings yet" : "No listings yet"}
+                  {hasActiveFilters
+                    ? "No listings match your filters"
+                    : isServiceProvider
+                      ? "No job listings yet"
+                      : openOnly
+                        ? "No open listings yet"
+                        : "No listings yet"}
                 </h3>
                 <p className="text-gray-500 dark:text-gray-400 text-sm max-w-sm mx-auto">
                   {hasActiveFilters
-                    ? "Try adjusting your filters or clear them to see more househelps."
-                    : openOnly
+                    ? isServiceProvider
+                      ? "Try adjusting your filters or clear them to see more job listings."
+                      : "Try adjusting your filters or clear them to see more househelps."
+                    : isServiceProvider
+                      ? "When households create active job listings, they will appear here."
+                      : openOnly
                       ? "When househelps mark themselves as open to work, their listings will appear here."
                       : "When househelps create listings, they will appear here."}
                 </p>
@@ -1147,17 +1215,19 @@ export default function HouseholdJobsHome() {
                   const househelp = listing.househelp || {};
                   const user = househelp.user || {};
                   const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || "Househelp";
-                  const initials = name.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "HW";
+                  const jobTypes = toStringArray(listing.job_types);
+                  const cardTitle = isServiceProvider ? (listing.title || jobTypes[0] || "Job listing") : name;
+                  const initials = cardTitle.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || (isServiceProvider ? "JL" : "HW");
                   const userId = firstString(househelp.user_id, user.id);
                   const photos = toStringArray(househelp.photos);
                   const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
                   const scheduleLabel = summarizeSchedule(listing.work_schedule);
-                  const jobTypes = toStringArray(listing.job_types);
                   const location = firstString(househelp.town, househelp.location) || "Location not specified";
                   const experienceYears = toFiniteNumber(househelp.years_of_experience);
                   const shortlisted = shortlistedListingIds.has(listing.id);
                   const isOpen = isOpenForWorkListingActive(listing);
                   const responseBadge = deriveHousehelpResponsivenessBadge(listing.househelp);
+                  const featureGroups = listingFeatureGroups(listing);
 
                   return (
                     <div
@@ -1175,7 +1245,7 @@ export default function HouseholdJobsHome() {
                     >
                       <div className="flex items-start gap-4">
                         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-lg font-bold overflow-hidden">
-                          {avatar ? (
+                          {!isServiceProvider && avatar ? (
                             <OptimizedImage
                               path={avatar}
                               alt={name}
@@ -1190,15 +1260,20 @@ export default function HouseholdJobsHome() {
                           <div className="flex items-start justify-between gap-3">
                             <div>
                               <div className="flex flex-wrap items-center gap-2">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{name}</h3>
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{cardTitle}</h3>
                                 {typeof listing.fit_score === "number" && listing.fit_score > 0 && (
                                   <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
                                     Match {listing.fit_score}%
                                   </span>
                                 )}
                               </div>
-                              <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
-                              {responseBadge && (
+                              {!isServiceProvider && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">📍 {location}</p>
+                              )}
+                              {isServiceProvider && listing.description && (
+                                <p className="mt-1 line-clamp-2 text-sm text-gray-500 dark:text-gray-300">{listing.description}</p>
+                              )}
+                              {!isServiceProvider && responseBadge && (
                                 <div className="mt-2 space-y-1">
                                   <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
                                     {responseBadge.label}
@@ -1221,7 +1296,7 @@ export default function HouseholdJobsHome() {
                                     ? "border-pink-400 bg-pink-500 text-white"
                                     : "border-purple-200/70 bg-white text-purple-700 hover:bg-purple-50 dark:border-purple-500/30 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
                                 } disabled:opacity-60`}
-                                aria-label={shortlisted ? "Remove open-for-work listing from shortlist" : "Shortlist open-for-work listing"}
+                                aria-label={shortlisted ? "Remove listing from shortlist" : "Shortlist listing"}
                                 title={shortlisted ? "Remove from shortlist" : "Add to shortlist"}
                               >
                                 {shortlistLoadingId === listing.id ? (
@@ -1253,13 +1328,17 @@ export default function HouseholdJobsHome() {
                                 </span>
                               ))
                             ) : (
-                              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                                Flexible role
+                              !isServiceProvider && (
+                                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                                  Flexible role
+                                </span>
+                              )
+                            )}
+                            {!isServiceProvider && (
+                              <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
+                                Available {formatDate(listing.available_from)}
                               </span>
                             )}
-                            <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                              Available {formatDate(listing.available_from)}
-                            </span>
                             {scheduleLabel && (
                               <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
                                 {scheduleLabel}
@@ -1280,20 +1359,37 @@ export default function HouseholdJobsHome() {
                             </div>
                           )}
 
-                          <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
-                            <p>Experience: {experienceYears ? `${experienceYears} yrs` : "Not specified"}</p>
-                            <p>
-                              Salary: {formatSalary(listing.salary_min ?? househelp.salary_expectation, listing.salary_max, listing.salary_frequency || househelp.salary_frequency)}
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {listing.can_work_with_kids && (
-                                <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] dark:bg-blue-500/10 dark:text-blue-200">Kids</span>
-                              )}
-                              {listing.can_work_with_pets && (
-                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] dark:bg-emerald-500/10 dark:text-emerald-200">Pets</span>
-                              )}
+                          {isServiceProvider && featureGroups.length > 0 ? (
+                            <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                              {featureGroups.slice(0, 4).map((group) => (
+                                <div key={group.name} className="rounded-xl border border-purple-500/20 bg-purple-950/20 p-2">
+                                  <p className="text-[10px] font-bold uppercase tracking-wide text-purple-200">{group.name}</p>
+                                  <div className="mt-1 flex flex-wrap gap-1.5">
+                                    {group.properties.slice(0, 3).map((property) => (
+                                      <span key={property} className="rounded-full bg-purple-500/20 px-2 py-0.5 text-[11px] font-semibold text-purple-50">
+                                        {property}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          </div>
+                          ) : (
+                            <div className="mt-3 text-xs text-gray-600 dark:text-gray-300 space-y-1">
+                              <p>Experience: {experienceYears ? `${experienceYears} yrs` : "Not specified"}</p>
+                              <p>
+                                Salary: {formatSalary(listing.salary_min ?? househelp.salary_expectation, listing.salary_max, listing.salary_frequency || househelp.salary_frequency)}
+                              </p>
+                              <div className="flex flex-wrap gap-2">
+                                {listing.can_work_with_kids && (
+                                  <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 text-[11px] dark:bg-blue-500/10 dark:text-blue-200">Kids</span>
+                                )}
+                                {listing.can_work_with_pets && (
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[11px] dark:bg-emerald-500/10 dark:text-emerald-200">Pets</span>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
@@ -1303,30 +1399,38 @@ export default function HouseholdJobsHome() {
                           <button
                             onClick={(event) => {
                               event.stopPropagation();
-                              handleViewProfile(listing);
+                              if (isServiceProvider) {
+                                handleOpenListingModal(listing);
+                              } else {
+                                handleViewProfile(listing);
+                              }
                             }}
                             className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
                           >
-                            View Profile
+                            {isServiceProvider ? "View Details" : "View Profile"}
                           </button>
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleOpenInviteModal(listing);
-                            }}
-                            className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-green-200/60 dark:border-green-500/30 text-green-700 dark:text-green-200 hover:bg-green-50 dark:hover:bg-green-500/10"
-                          >
-                            Invite
-                          </button>
-                          <button
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleMessage(listing);
-                            }}
-                            className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-                          >
-                            Message
-                          </button>
+                          {!isServiceProvider && (
+                            <>
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleOpenInviteModal(listing);
+                                }}
+                                className="px-4 py-1.5 text-xs font-semibold rounded-xl border border-green-200/60 dark:border-green-500/30 text-green-700 dark:text-green-200 hover:bg-green-50 dark:hover:bg-green-500/10"
+                              >
+                                Invite
+                              </button>
+                              <button
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  handleMessage(listing);
+                                }}
+                                className="px-4 py-1.5 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                              >
+                                Message
+                              </button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1353,6 +1457,8 @@ export default function HouseholdJobsHome() {
         const househelp = selectedListing.househelp || {};
         const user = househelp.user || {};
         const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || "Househelp";
+        const jobTypes = toStringArray(selectedListing.job_types);
+        const modalTitle = isServiceProvider ? (selectedListing.title || jobTypes[0] || "Job listing") : name;
         const initials = name
           .split(" ")
           .filter(Boolean)
@@ -1364,12 +1470,12 @@ export default function HouseholdJobsHome() {
         const photos = toStringArray(househelp.photos);
         const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
         const scheduleLabel = summarizeSchedule(selectedListing.work_schedule);
-        const jobTypes = toStringArray(selectedListing.job_types);
         const location = firstString(househelp.town, househelp.location) || "Location not specified";
         const experienceYears = toFiniteNumber(househelp.years_of_experience);
         const shortlisted = shortlistedListingIds.has(selectedListing.id);
         const isOpen = isOpenForWorkListingActive(selectedListing);
         const responseBadge = deriveHousehelpResponsivenessBadge(selectedListing.househelp);
+        const featureGroups = listingFeatureGroups(selectedListing);
 
         return (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
@@ -1377,10 +1483,15 @@ export default function HouseholdJobsHome() {
             <div className="relative w-full sm:max-w-2xl bg-white dark:bg-[#1b1524] rounded-t-3xl sm:rounded-3xl shadow-2xl border border-purple-200/50 dark:border-purple-700/40 p-6 sm:p-8 max-h-[90vh] overflow-y-auto">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Open for work</p>
-                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mt-2">{name}</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {location}</p>
-                  {responseBadge && (
+                  <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">
+                    {isServiceProvider ? "Job listing" : "Open for work"}
+                  </p>
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white mt-2">{modalTitle}</h2>
+                  {!isServiceProvider && <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {location}</p>}
+                  {isServiceProvider && selectedListing.description && (
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-300">{selectedListing.description}</p>
+                  )}
+                  {!isServiceProvider && responseBadge && (
                     <div className="mt-3 space-y-1">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
                         {responseBadge.label}
@@ -1403,16 +1514,14 @@ export default function HouseholdJobsHome() {
 
               <div className="mt-6 flex flex-col sm:flex-row gap-5">
                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-xl font-bold overflow-hidden">
-                  {avatar ? (
+                  {!isServiceProvider && avatar ? (
                     <OptimizedImage
                       path={avatar}
                       alt={name}
                       className="w-full h-full object-cover"
                       onError={(e: any) => { e.currentTarget.style.display = "none"; }}
                     />
-                  ) : (
-                    initials || "HW"
-                  )}
+                  ) : isServiceProvider ? "JL" : (initials || "HW")}
                 </div>
                 <div className="flex-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -1432,24 +1541,28 @@ export default function HouseholdJobsHome() {
                     )}
                   </div>
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-300">
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Experience</p>
-                      <p className="mt-1">{experienceYears ? `${experienceYears} yrs` : "Not specified"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Availability</p>
-                      <p className="mt-1">{formatDate(selectedListing.available_from)}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Salary</p>
-                      <p className="mt-1">
-                        {formatSalary(
-                          selectedListing.salary_min ?? househelp.salary_expectation,
-                          selectedListing.salary_max,
-                          selectedListing.salary_frequency || househelp.salary_frequency
-                        )}
-                      </p>
-                    </div>
+                    {!isServiceProvider && (
+                      <>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Experience</p>
+                          <p className="mt-1">{experienceYears ? `${experienceYears} yrs` : "Not specified"}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Availability</p>
+                          <p className="mt-1">{formatDate(selectedListing.available_from)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Salary</p>
+                          <p className="mt-1">
+                            {formatSalary(
+                              selectedListing.salary_min ?? househelp.salary_expectation,
+                              selectedListing.salary_max,
+                              selectedListing.salary_frequency || househelp.salary_frequency
+                            )}
+                          </p>
+                        </div>
+                      </>
+                    )}
                     <div>
                       <p className="text-xs uppercase tracking-[0.2em] text-gray-400">Updated</p>
                       <p className="mt-1">{formatTimeAgo(selectedListing.created_at)}</p>
@@ -1484,35 +1597,55 @@ export default function HouseholdJobsHome() {
                   </span>
                 )}
               </div>
+              {isServiceProvider && featureGroups.length > 0 && (
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  {featureGroups.map((group) => (
+                    <div key={group.name} className="rounded-2xl border border-purple-500/20 bg-purple-950/20 p-3">
+                      <p className="text-xs font-bold uppercase tracking-wide text-purple-200">{group.name}</p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {group.properties.map((property) => (
+                          <span key={property} className="rounded-full bg-purple-500/20 px-2.5 py-1 text-xs font-semibold text-purple-50">
+                            {property}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <button
-                  onClick={() => handleViewProfile(selectedListing)}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
-                >
-                  View Profile
-                </button>
-                <button
-                  onClick={() => handleMessage(selectedListing)}
-                  className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
-                >
-                  Message
-                </button>
-                <button
-                  onClick={() => handleShortlist(selectedListing)}
-                  disabled={shortlistLoadingId === selectedListing.id}
-                  className={`px-4 py-2 text-xs font-semibold rounded-xl border transition ${
-                    shortlisted
-                      ? "border-pink-400 bg-pink-500 text-white"
-                      : "border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
-                  } disabled:opacity-60`}
-                >
-                  {shortlistLoadingId === selectedListing.id
-                    ? "Updating..."
-                    : shortlisted
-                      ? "Shortlisted"
-                      : "Shortlist"}
-                </button>
+                {!isServiceProvider && (
+                  <>
+                    <button
+                      onClick={() => handleViewProfile(selectedListing)}
+                      className="px-4 py-2 text-xs font-semibold rounded-xl border border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                    >
+                      View Profile
+                    </button>
+                    <button
+                      onClick={() => handleMessage(selectedListing)}
+                      className="px-4 py-2 text-xs font-semibold rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700"
+                    >
+                      Message
+                    </button>
+                    <button
+                      onClick={() => handleShortlist(selectedListing)}
+                      disabled={shortlistLoadingId === selectedListing.id}
+                      className={`px-4 py-2 text-xs font-semibold rounded-xl border transition ${
+                        shortlisted
+                          ? "border-pink-400 bg-pink-500 text-white"
+                          : "border-purple-300 text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                      } disabled:opacity-60`}
+                    >
+                      {shortlistLoadingId === selectedListing.id
+                        ? "Updating..."
+                        : shortlisted
+                          ? "Shortlisted"
+                          : "Shortlist"}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1597,13 +1730,6 @@ export default function HouseholdJobsHome() {
           </div>
         );
       })()}
-      <SubscriptionRequiredModal
-        open={showSubscriptionModal}
-        onClose={() => setShowSubscriptionModal(false)}
-        status={subscriptionStatus}
-        actionLabel="message househelps"
-        plansHref="/plans"
-      />
       <Footer />
     </div>
   );

@@ -397,9 +397,9 @@ export interface SignupRequest {
      */
     password: string;
     /**
-     * @generated from protobuf field: string profile_type = 5
+     * @generated from protobuf field: string profile_id = 5
      */
-    profileType: string;
+    profileId: string;
     /**
      * @generated from protobuf field: string bureau_id = 6
      */
@@ -3248,7 +3248,7 @@ class SignupRequest$Type extends MessageType<SignupRequest> {
             { no: 2, name: "last_name", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 3, name: "phone", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 4, name: "password", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
-            { no: 5, name: "profile_type", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
+            { no: 5, name: "profile_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 6, name: "bureau_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 7, name: "household_id", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
             { no: 8, name: "date_of_birth", kind: "scalar", T: 9 /*ScalarType.STRING*/ },
@@ -3261,7 +3261,7 @@ class SignupRequest$Type extends MessageType<SignupRequest> {
         message.lastName = "";
         message.phone = "";
         message.password = "";
-        message.profileType = "";
+        message.profileId = "";
         message.bureauId = "";
         message.householdId = "";
         message.dateOfBirth = "";
@@ -3287,8 +3287,8 @@ class SignupRequest$Type extends MessageType<SignupRequest> {
                 case /* string password */ 4:
                     message.password = reader.string();
                     break;
-                case /* string profile_type */ 5:
-                    message.profileType = reader.string();
+                case /* string profile_id */ 5:
+                    message.profileId = reader.string();
                     break;
                 case /* string bureau_id */ 6:
                     message.bureauId = reader.string();
@@ -3326,9 +3326,9 @@ class SignupRequest$Type extends MessageType<SignupRequest> {
         /* string password = 4; */
         if (message.password !== "")
             writer.tag(4, WireType.LengthDelimited).string(message.password);
-        /* string profile_type = 5; */
-        if (message.profileType !== "")
-            writer.tag(5, WireType.LengthDelimited).string(message.profileType);
+        /* string profile_id = 5; */
+        if (message.profileId !== "")
+            writer.tag(5, WireType.LengthDelimited).string(message.profileId);
         /* string bureau_id = 6; */
         if (message.bureauId !== "")
             writer.tag(6, WireType.LengthDelimited).string(message.bureauId);

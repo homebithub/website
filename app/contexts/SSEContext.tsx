@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { useLocation } from 'react-router';
 import { API_BASE_URL } from '~/config/api';
 import { useAuth } from '~/contexts/useAuth';
 import { isLocalGatewayUrl } from '~/services/grpc/client';
@@ -35,6 +36,8 @@ interface SSEProviderProps {
 
 export function SSEProvider({ children }: SSEProviderProps) {
   const { user } = useAuth();
+  const location = useLocation();
+  const disabledOnProfileAccount = location.pathname === '/profile';
   const [isConnected, setIsConnected] = useState(false);
   const [connectionUptime, setConnectionUptime] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
@@ -85,6 +88,10 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const connect = useCallback(() => {
     if (typeof window === 'undefined') return;
     if (disabledDueToErrorsRef.current) {
+      return;
+    }
+    if (disabledOnProfileAccount) {
+      disconnect();
       return;
     }
 
@@ -176,7 +183,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
         console.error('[SSE] Max reconnection attempts reached');
       }
     };
-	  }, [disconnect, user]);
+  }, [disconnect, disabledOnProfileAccount, user]);
 
   const reconnect = useCallback(() => {
     if (disabledDueToErrorsRef.current) {
@@ -213,7 +220,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
     consecutiveErrorCountRef.current = 0;
     disabledDueToErrorsRef.current = false;
 
-    if (currentUserId) {
+    if (currentUserId && !disabledOnProfileAccount) {
       hasConnectedRef.current = false;
       connect();
     } else {
@@ -224,7 +231,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
     return () => {
       disconnect();
     };
-  }, [connect, disconnect, user]);
+  }, [connect, disconnect, disabledOnProfileAccount, user]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;

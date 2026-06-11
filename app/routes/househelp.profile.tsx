@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { profileService as grpcProfileService, documentService, openForWorkService } from '~/services/grpc/authServices';
+import { profileService as grpcProfileService, documentService } from '~/services/grpc/authServices';
 import profileSetupService from '~/services/grpc/profileSetup.service';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -10,9 +10,8 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
-import { Eye } from 'lucide-react';
+import { ClipboardCheck, Eye } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import EditSectionModal from '~/components/ui/EditSectionModal';
 import Location from '~/components/Location';
 import Gender from '~/components/Gender';
@@ -28,8 +27,9 @@ import Bio from '~/components/Bio';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 import { formatOnboardingAmount } from '~/utils/onboardingCompensation';
-import OpenForWorkModal from '~/components/modals/OpenForWorkModal';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
+import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
+import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
 
 interface HousehelpData {
   id?: string;
@@ -149,11 +149,13 @@ export default function HousehelpProfile() {
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [setupRedirectLoading, setSetupRedirectLoading] = useState(false);
-  const [openForWorkListing, setOpenForWorkListing] = useState<any | null>(null);
-  const [openForWorkLoading, setOpenForWorkLoading] = useState(false);
-  const [openForWorkError, setOpenForWorkError] = useState<string | null>(null);
-  const [openForWorkSuccess, setOpenForWorkSuccess] = useState<string | null>(null);
-  const [showOpenForWorkModal, setShowOpenForWorkModal] = useState(false);
+
+  useEffect(() => {
+    const canonicalProfileType = getStoredCanonicalProfileType();
+    if (canonicalProfileType === 'household') {
+      navigate('/household/profile', { replace: true });
+    }
+  }, [navigate]);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -167,19 +169,24 @@ export default function HousehelpProfile() {
           return;
         }
 
+        const canonicalProfileType = getStoredCanonicalProfileType();
+        if (canonicalProfileType === 'household') {
+          navigate('/household/profile', { replace: true });
+          return;
+        }
+
         const [profileResult, docsResult] = await Promise.allSettled([
           grpcProfileService.getCurrentHousehelpProfile(''),
           documentService.getUserDocuments('', 'profile_photo'),
         ]);
 
-        if (profileResult.status !== 'fulfilled') {
-          const reason = profileResult.reason;
-          throw reason instanceof Error
-            ? reason
-            : new Error(typeof reason === 'string' ? reason : 'Failed to load profile');
-        }
-
-        const normalized = normalizeHousehelpProfileResponse(profileResult.value);
+        const normalized = profileResult.status === 'fulfilled'
+          ? normalizeHousehelpProfileResponse(profileResult.value)
+          : normalizeHousehelpProfileResponse({
+              id: (getStoredUser() || {}).user_profile_id || (getStoredUser() || {}).userProfileId || (getStoredUser() || {}).profile_id || '',
+              user_id: (getStoredUser() || {}).user_id || (getStoredUser() || {}).id || getStoredUserId() || '',
+              user: getStoredUser() || {},
+            });
 
         if (docsResult.status === 'fulfilled') {
           const docs = docsResult.value?.data || docsResult.value?.documents || docsResult.value || [];
@@ -205,60 +212,6 @@ export default function HousehelpProfile() {
     fetchProfile();
   }, [navigate, retryKey]);
 
-  const fetchOpenForWorkListing = async (househelpId: string, silent?: boolean) => {
-    if (!silent) {
-      setOpenForWorkLoading(true);
-    }
-    setOpenForWorkError(null);
-    try {
-      const listing = await openForWorkService.getOpenForWorkByHousehelp(househelpId, '');
-      setOpenForWorkListing(listing);
-    } catch (err: any) {
-      const message = err?.message || '';
-      if (!message.toLowerCase().includes('not found')) {
-        setOpenForWorkError(message || 'Failed to load open-for-work listing');
-      } else {
-        setOpenForWorkListing(null);
-      }
-    } finally {
-      if (!silent) {
-        setOpenForWorkLoading(false);
-      }
-    }
-  };
-
-  useEffect(() => {
-    const househelpId = profile?.id;
-    if (!househelpId) return;
-    let cancelled = false;
-    const run = async (resolvedId: string) => {
-      if (cancelled) return;
-      setOpenForWorkLoading(true);
-      await fetchOpenForWorkListing(resolvedId, true);
-      if (!cancelled) setOpenForWorkLoading(false);
-    };
-    run(househelpId);
-    return () => {
-      cancelled = true;
-    };
-  }, [profile?.id]);
-
-  const handleOpenForWorkStatus = async (nextStatus: string) => {
-    if (!openForWorkListing?.id) {
-      setShowOpenForWorkModal(true);
-      return;
-    }
-    setOpenForWorkError(null);
-    setOpenForWorkSuccess(null);
-    try {
-      await openForWorkService.updateOpenForWork(openForWorkListing.id, '', { status: nextStatus });
-      setOpenForWorkListing((prev: any) => prev ? { ...prev, status: nextStatus } : prev);
-      setOpenForWorkSuccess(nextStatus === 'active' ? 'Listing activated.' : 'Listing set to inactive.');
-    } catch (err: any) {
-      setOpenForWorkError(err.message || 'Failed to update listing status');
-    }
-  };
-
   const handleContinueSetup = async () => {
     if (setupRedirectLoading) return;
     setSetupRedirectLoading(true);
@@ -282,6 +235,19 @@ export default function HousehelpProfile() {
     } finally {
       setSetupRedirectLoading(false);
     }
+  };
+
+  const handleCompleteFeaturePicks = () => {
+    const storedProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('profile_id') || '' : '';
+    const storedUserProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('user_profile_id') || '' : '';
+
+    navigate('/onboarding/features', {
+      state: {
+        profileId: storedProfileId || '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
+        userProfileId: storedUserProfileId,
+        profileType: 'househelp',
+      },
+    });
   };
 
   const [editingSection, setEditingSection] = useState<string | null>(null);
@@ -553,6 +519,14 @@ export default function HousehelpProfile() {
             <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">View and manage your professional information</p>
           </div>
           <div className="flex items-center gap-2 self-start">
+            <button
+              onClick={handleCompleteFeaturePicks}
+              className="h-8 w-8 rounded-xl flex items-center justify-center border border-purple-300 dark:border-purple-500/30 text-purple-600 dark:text-purple-400 hover:bg-purple-100 dark:hover:bg-purple-500/10 hover:scale-105 transition-all"
+              aria-label="Complete Profile Choices"
+              title="Complete Profile Choices"
+            >
+              <ClipboardCheck className="w-4 h-4" />
+            </button>
             {profile?.id && (
               <button
                 onClick={() => setShowViewsModal(true)}
@@ -573,81 +547,11 @@ export default function HousehelpProfile() {
         </div>
       </div>
 
-      {/* Open for Work */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
-          <div>
-            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">💼 Open for Work</h2>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-              Share your availability with households looking to hire.
-            </p>
-          </div>
-          <button
-            onClick={() => setShowOpenForWorkModal(true)}
-            className="px-4 py-1.5 text-xs rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
-          >
-            {openForWorkListing ? 'Edit Listing' : 'Create Listing'}
-          </button>
-        </div>
-
-        {openForWorkSuccess && <SuccessAlert message={openForWorkSuccess} className="mb-3" />}
-        {openForWorkError && <ErrorAlert message={openForWorkError} className="mb-3" />}
-
-        {openForWorkLoading ? (
-          <div className="flex items-center gap-3 text-xs text-gray-500">
-            <span className="hb-shimmer-piece h-4 w-4 rounded-full" />
-            Loading listing...
-          </div>
-        ) : openForWorkListing ? (
-          <div className="rounded-xl border border-gray-200 dark:border-purple-500/30 p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-200">
-                  Status: <span className={`ml-1 ${openForWorkListing.status === 'inactive' ? 'text-gray-500' : 'text-green-600 dark:text-green-400'}`}>
-                    {openForWorkListing.status || 'active'}
-                  </span>
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                  Available from: {openForWorkListing.available_from ? String(openForWorkListing.available_from).split('T')[0] : 'Flexible'}
-                </p>
-              </div>
-              <button
-                onClick={() => handleOpenForWorkStatus(openForWorkListing.status === 'active' ? 'inactive' : 'active')}
-                className="px-4 py-1.5 text-xs rounded-xl border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10"
-              >
-                {openForWorkListing.status === 'active' ? 'Set Inactive' : 'Activate'}
-              </button>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {(openForWorkListing.job_types || []).length > 0 ? (
-                openForWorkListing.job_types.map((type: string) => (
-                  <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
-                    {type.replace(/_/g, ' ')}
-                  </span>
-                ))
-              ) : (
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                  Flexible roles
-                </span>
-              )}
-              {openForWorkListing.can_work_with_kids && (
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                  Kids friendly
-                </span>
-              )}
-              {openForWorkListing.can_work_with_pets && (
-                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200">
-                  Pets friendly
-                </span>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-dashed border-purple-200 dark:border-purple-500/30 p-4 text-xs text-gray-600 dark:text-gray-400">
-            You have not published an open-for-work listing yet.
-          </div>
-        )}
-      </div>
+      <ProfileAccountSummary
+        profile={profile as Record<string, unknown>}
+        fallbackProfileId="6dbd5104-d314-4ef1-a7d3-37d7eb26ddff"
+        fallbackProfileType="househelp"
+      />
 
       {/* Profile Photos */}
       <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
@@ -1367,17 +1271,6 @@ export default function HousehelpProfile() {
         />
       )}
 
-      <OpenForWorkModal
-        isOpen={showOpenForWorkModal}
-        onClose={() => setShowOpenForWorkModal(false)}
-        listing={openForWorkListing}
-        onSaved={() => {
-          if (profile?.id) {
-            fetchOpenForWorkListing(profile.id, true);
-          }
-          setOpenForWorkSuccess('Listing updated successfully.');
-        }}
-      />
     </div>
   );
 }

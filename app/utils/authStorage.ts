@@ -67,6 +67,15 @@ export const getStoredUserId = (): string => {
   return safeGet("user_id") || "";
 };
 
+export const getStoredUserProfileId = (): string => {
+  const user = getStoredUser();
+  if (user?.user_profile_id || user?.userProfileId) {
+    return user.user_profile_id || user.userProfileId;
+  }
+
+  return safeGet("user_profile_id") || "";
+};
+
 export const getStoredProfileType = (): string => {
   const user = getStoredUser();
   if (typeof user?.profile_type === "string" && user.profile_type) {
@@ -75,6 +84,20 @@ export const getStoredProfileType = (): string => {
 
   return safeGet("profile_type") || safeGet("userType") || "";
 };
+
+export const normalizeProfileType = (profileType: string | null | undefined): string => {
+  const normalized = String(profileType || "").trim().toUpperCase();
+  if (normalized === "CLT" || normalized === "CLIENT" || normalized === "HOUSEHOLD") {
+    return "household";
+  }
+  if (normalized === "SVC_PVD" || normalized === "SVD_PDD" || normalized === "SERVICE_PROVIDER" || normalized === "HOUSEHELP") {
+    return "househelp";
+  }
+  if (normalized === "BUREAU") return "bureau";
+  return String(profileType || "").trim().toLowerCase();
+};
+
+export const getStoredCanonicalProfileType = (): string => normalizeProfileType(getStoredProfileType());
 
 export const setStoredProfileType = (profileType: string | null | undefined) => {
   if (profileType) {

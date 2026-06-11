@@ -11,7 +11,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
 import ShowInterestModal from '~/components/modals/ShowInterestModal';
 import { MessageCircle, Heart, HandHeart } from "lucide-react";
-import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { resolveHouseholdOwnerUserId, resolveHouseholdProfile } from '~/utils/householdProfiles';
@@ -334,7 +334,23 @@ export default function HouseholdPublicProfile() {
         setIsShortlisted(false);
         setActionSuccess('Removed from shortlist.');
       } else {
-        await shortlistService.createShortlist('', 'househelp', { profile_id: queryJobId, profile_type: 'job' });
+        const serviceProviderId = getStoredUserProfileId();
+        if (!serviceProviderId) {
+          throw new Error('User profile information is missing. Please sign in again.');
+        }
+
+        const res = await fetch('/api/job-shortlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            listing_id: queryJobId,
+            service_provider_id: serviceProviderId,
+          }),
+        });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(payload?.message || 'Failed to shortlist job.');
+        }
         setIsShortlisted(true);
         setActionSuccess('Job added to shortlist.');
       }

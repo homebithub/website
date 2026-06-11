@@ -8809,6 +8809,7 @@ firstName: jspb.Message.getFieldWithDefault(msg, 1, ""),
 lastName: jspb.Message.getFieldWithDefault(msg, 2, ""),
 phone: jspb.Message.getFieldWithDefault(msg, 3, ""),
 password: jspb.Message.getFieldWithDefault(msg, 4, ""),
+profileId: jspb.Message.getFieldWithDefault(msg, 5, ""),
 profileType: jspb.Message.getFieldWithDefault(msg, 5, ""),
 bureauId: jspb.Message.getFieldWithDefault(msg, 6, ""),
 householdId: jspb.Message.getFieldWithDefault(msg, 7, ""),
@@ -8868,7 +8869,7 @@ proto.auth.SignupRequest.deserializeBinaryFromReader = function(msg, reader) {
       break;
     case 5:
       var value = /** @type {string} */ (reader.readStringRequireUtf8());
-      msg.setProfileType(value);
+      msg.setProfileId(value);
       break;
     case 6:
       var value = /** @type {string} */ (reader.readStringRequireUtf8());
@@ -8943,7 +8944,7 @@ proto.auth.SignupRequest.serializeBinaryToWriter = function(message, writer) {
       f
     );
   }
-  f = message.getProfileType();
+  f = message.getProfileId();
   if (f.length > 0) {
     writer.writeString(
       5,
@@ -9054,8 +9055,27 @@ proto.auth.SignupRequest.prototype.setPassword = function(value) {
 
 
 /**
+ * optional string profile_id = 5;
+ * @return {string}
+ */
+proto.auth.SignupRequest.prototype.getProfileId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.auth.SignupRequest} returns this
+ */
+proto.auth.SignupRequest.prototype.setProfileId = function(value) {
+  return jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
+/**
  * optional string profile_type = 5;
  * @return {string}
+ * @deprecated Use getProfileId().
  */
 proto.auth.SignupRequest.prototype.getProfileType = function() {
   return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
@@ -9065,6 +9085,7 @@ proto.auth.SignupRequest.prototype.getProfileType = function() {
 /**
  * @param {string} value
  * @return {!proto.auth.SignupRequest} returns this
+ * @deprecated Use setProfileId().
  */
 proto.auth.SignupRequest.prototype.setProfileType = function(value) {
   return jspb.Message.setProto3StringField(this, 5, value);

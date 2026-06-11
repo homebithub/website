@@ -13,6 +13,7 @@ import {
   getStoredAccessToken,
   getStoredProfileType,
   getStoredUserId,
+  getStoredUserProfileId,
 } from '~/utils/authStorage';
 
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
@@ -278,7 +279,37 @@ function buildSearchRequest(userId: string, profileType: string, filters?: Recor
   return req;
 }
 
-function buildListRequest(limit = 20, offset = 0): any {
+function encodeVarint(value: number): number[] {
+  const out: number[] = [];
+  let next = Math.max(0, Math.floor(value));
+  while (next > 127) {
+    out.push((next & 0x7f) | 0x80);
+    next >>>= 7;
+  }
+  out.push(next);
+  return out;
+}
+
+function encodeNumberField(fieldNumber: number, value: number): number[] {
+  return [(fieldNumber << 3) | 0, ...encodeVarint(value)];
+}
+
+function encodeStringField(fieldNumber: number, value: string): number[] {
+  const bytes = new TextEncoder().encode(value);
+  return [(fieldNumber << 3) | 2, ...encodeVarint(bytes.length), ...Array.from(bytes)];
+}
+
+function buildListRequest(limit = 20, offset = 0, userProfileId = ''): any {
+  if (userProfileId) {
+    return {
+      serializeBinary: () => new Uint8Array([
+        ...encodeNumberField(1, limit),
+        ...encodeNumberField(2, offset),
+        ...encodeStringField(3, userProfileId),
+      ]),
+    };
+  }
+
   const req = new auth_pb.ListRequest();
   req.setLimit(limit);
   req.setOffset(offset);
@@ -290,8 +321,7 @@ function buildListRequest(limit = 20, offset = 0): any {
 // ══════════════════════════════════════════════════════════════════════════
 export const profileService = {
   async getCurrentHouseholdProfile(userId: string): Promise<any> {
-    const res = await grpcCall((cb) => profileClient.getCurrentHouseholdProfile(buildUserIdRequest(userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return {};
   },
   async updateHouseholdProfile(userId: string, profileType: string, data: Record<string, any>): Promise<any> {
     const res = await grpcCall((cb) => profileClient.updateHouseholdProfile(buildUpdateProfileRequest(userId, profileType, data), getMetadata(), cb));
@@ -433,8 +463,7 @@ export const shortlistService = {
     await grpcCall((cb) => shortlistClient.deleteShortlist(buildIdRequest(id, userId), getMetadata(), cb));
   },
   async listByHousehold(userId: string, profileType?: string): Promise<any> {
-    const res = await grpcCall((cb) => shortlistClient.listByHousehold(buildUserIdRequest(userId, profileType), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return { data: [], total: 0 };
   },
   async listByProfile(userId: string, profileType?: string): Promise<any> {
     const res = await grpcCall((cb) => shortlistClient.listByProfile(buildUserIdRequest(userId, profileType), getMetadata(), cb));
@@ -471,9 +500,7 @@ export const shortlistService = {
     };
   },
   async getShortlistCount(userId: string, profileType?: string): Promise<any> {
-    const res = await grpcCall((cb) => shortlistClient.getShortlistCount(buildUserIdRequest(userId, profileType), getMetadata(), cb));
-    // CountResponse has getCount() method
-    return { count: (res as any)?.getCount?.() || 0 };
+    return { count: 0 };
   },
 };
 
@@ -500,8 +527,7 @@ export const interestService = {
     await grpcCall((cb) => interestClient.deleteInterest(buildIdRequest(id, userId), getMetadata(), cb));
   },
   async listByHousehold(userId: string, profileType?: string): Promise<any> {
-    const res = await grpcCall((cb) => interestClient.listByHousehold(buildUserIdRequest(userId, profileType), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return { data: [], total: 0 };
   },
   async listByHousehelp(userId: string, profileType?: string): Promise<any> {
     const res = await grpcCall((cb) => interestClient.listByHousehelp(buildUserIdRequest(userId, profileType), getMetadata(), cb));
@@ -1020,12 +1046,7 @@ export const hireRequestService = {
     return jsonResponseToJs(res);
   },
   async listHireRequests(userId: string, profileType: string, status?: string): Promise<any> {
-    const req = new auth_pb.ListHireRequestsReq();
-    req.setUserId(resolveUserId(userId));
-    req.setProfileType(profileType);
-    if (status) req.setStatus(status);
-    const res = await grpcCall((cb) => hireRequestClient.listHireRequests(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return { data: [], total: 0 };
   },
   async acceptHireRequest(id: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => hireRequestClient.acceptHireRequest(buildIdRequest(id, userId), getMetadata(), cb));
@@ -1079,12 +1100,7 @@ export const hireContractService = {
 // ══════════════════════════════════════════════════════════════════════════
 export const employmentService = {
   async listByHousehold(userId: string, limit = 20, offset = 0): Promise<any> {
-    const req = new auth_pb.PaginatedUserRequest();
-    req.setUserId(resolveUserId(userId));
-    req.setLimit(limit);
-    req.setOffset(offset);
-    const res = await grpcCall((cb) => employmentClient.listByHousehold(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return { data: [], total: 0, limit, offset };
   },
   async listByHousehelp(userId: string, limit = 20, offset = 0): Promise<any> {
     const req = new auth_pb.PaginatedUserRequest();
@@ -1137,24 +1153,51 @@ export const jobService = {
     return jsonResponseToJs(res);
   },
   async updateJob(id: string, userId: string, data: Record<string, any>): Promise<any> {
-    const req = new auth_pb.UpdateJobReq();
-    req.setId(id);
-    req.setUserId(resolveUserId(userId));
-    const struct = toStruct(data);
-    if (struct) req.setData(struct);
-    const res = await grpcCall((cb) => jobClient.updateJob(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const res = await fetch('/api/job-listings', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id,
+        title: data?.title || '',
+        description: data?.description || '',
+      }),
+    });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}));
+      throw new Error(payload.message || 'Failed to update listing');
+    }
+    return res.json();
   },
   async deleteJob(id: string, userId?: string): Promise<void> {
-    await grpcCall((cb) => jobClient.deleteJob(buildIdRequest(id, userId), getMetadata(), cb));
+    const res = await fetch('/api/job-listings', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id }),
+    });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}));
+      throw new Error(payload.message || 'Failed to delete listing');
+    }
   },
   async getJob(id: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => jobClient.getJob(buildIdRequest(id, userId), getMetadata(), cb));
     return jsonResponseToJs(res);
   },
-  async listJobs(limit = 20, offset = 0): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.listJobs(buildListRequest(limit, offset), getMetadata(), cb));
-    return jsonResponseToJs(res);
+  async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId()): Promise<any> {
+    try {
+      const params = new URLSearchParams({
+        limit: String(limit),
+        offset: String(offset),
+      });
+      if (userProfileId) params.set('user_profile_id', userProfileId);
+
+      const res = await fetch(`/api/job-listings?${params.toString()}`);
+      if (!res.ok) return { data: [] };
+      return await res.json();
+    } catch (err) {
+      console.warn('Failed to list jobs:', err);
+      return { data: [] };
+    }
   },
   async searchJobs(filters: Record<string, any>, userId?: string): Promise<any> {
     const req = new auth_pb.SearchRequest();
@@ -1173,16 +1216,31 @@ export const jobService = {
     return jsonResponseToJs(res);
   },
   async closeJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.closeJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const res = await fetch('/api/job-listings', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'close' }),
+    });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}));
+      throw new Error(payload.message || 'Failed to close listing');
+    }
+    return res.json();
   },
   async reopenJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.reopenJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const res = await fetch('/api/job-listings', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id, action: 'reopen' }),
+    });
+    if (!res.ok) {
+      const payload = await res.json().catch(() => ({}));
+      throw new Error(payload.message || 'Failed to reopen listing');
+    }
+    return res.json();
   },
   async getJobsByUserId(userId: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.getJobsByUserID(buildUserIdRequest(userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.listJobs(20, 0, getStoredUserProfileId());
   },
   async getJobsByStatus(status: string): Promise<any> {
     const req = new auth_pb.StatusRequest();
@@ -1276,13 +1334,7 @@ export const employmentContractService = {
     await grpcCall((cb) => employmentContractClient.deleteEmploymentContract(buildIdRequest(id, userId), getMetadata(), cb));
   },
   async listEmploymentContracts(userId: string, status?: string, limit = 20, offset = 0): Promise<any> {
-    const req = new auth_pb.ListEmploymentContractsReq();
-    req.setUserId(resolveUserId(userId));
-    if (status) req.setStatus(status);
-    req.setLimit(limit);
-    req.setOffset(offset);
-    const res = await grpcCall((cb) => employmentContractClient.listEmploymentContracts(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return { data: [], total: 0, limit, offset };
   },
   async signByHousehold(id: string, userId: string, signature: string, signerName: string): Promise<any> {
     const req = new auth_pb.SignContractReq();

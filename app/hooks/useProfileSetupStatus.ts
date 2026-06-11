@@ -2,6 +2,7 @@ import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router';
 import { profileSetupService } from '~/services/grpc/profileSetup.service';
+import { normalizeProfileType } from '~/utils/authStorage';
 
 interface ProfileSetupStatus {
   isComplete: boolean;
@@ -47,9 +48,10 @@ export function useProfileSetupStatus(): ProfileSetupStatus & { isInSetupMode: b
     if (typeof window === 'undefined') return;
 
     const token = getAccessTokenFromCookies();
-    const profileType = localStorage.getItem('profile_type');
+    const rawProfileType = localStorage.getItem('profile_type');
+    const profileType = normalizeProfileType(rawProfileType);
 
-    if (!token || !profileType) {
+    if (!token || !rawProfileType) {
       setStatus({ isComplete: true, isChecking: false, lastStep: 0, profileType: null });
       setHasFetched(true);
       return;

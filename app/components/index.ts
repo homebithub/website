@@ -1,6 +1,6 @@
 // Shared UI Components
 export { Error } from './Error';
-export { Loading, Spinner, Dots, Pulse, Wave, Bounce, Ring } from './Loading';
+export { Loading, FullscreenLoading, InlineShimmer } from './Loading';
 export { Modal } from './Modal';
 export { ProtectedRoute } from './ProtectedRoute';
 

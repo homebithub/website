@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router';
 import { Loading } from './Loading';
-import { getStoredProfileType } from '~/utils/authStorage';
+import { getStoredCanonicalProfileType } from '~/utils/authStorage';
 import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
 
 interface ProfileSetupGuardProps {
@@ -58,7 +58,7 @@ export function ProfileSetupGuard({ children }: ProfileSetupGuardProps) {
       return;
     }
 
-    const profileType = getStoredProfileType();
+    const profileType = getStoredCanonicalProfileType();
     try {
       if (!profileType) {
         // Not logged in, allow navigation (auth guard will handle)

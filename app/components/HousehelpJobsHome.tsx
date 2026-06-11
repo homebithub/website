@@ -839,10 +839,22 @@ export default function HousehelpJobsHome() {
         });
         setSuccess("Job removed from your shortlist.");
       } else {
-        await shortlistService.createShortlist('', 'househelp', {
-          profile_id: job.id,
-          profile_type: 'job',
+        if (!househelpProfileId) {
+          throw new Error("User profile information is missing. Please sign in again.");
+        }
+
+        const res = await fetch('/api/job-shortlist', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            listing_id: job.id,
+            service_provider_id: househelpProfileId,
+          }),
         });
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(payload?.message || "Failed to shortlist job.");
+        }
 
         setShortlistedJobIds((prev) => new Set(prev).add(job.id));
         setSuccess("Job added to your shortlist.");

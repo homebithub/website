@@ -25,6 +25,7 @@ export const meta = () => [
 // Types for request and response
 export type SignupRequest = {
     profile_type: string;
+    profile_id?: string;
     password: string;
     first_name: string;
     last_name: string;
@@ -61,10 +62,15 @@ export type SignupResponse = {
 };
 
 
-// Profile type options - Bureau removed as they should not sign up through regular flow
-const profileOptions = [
-    { value: 'household', label: 'Household' },
-    { value: 'househelp', label: 'Househelp/Nanny' }
+type ProfileOption = {
+    id: string;
+    value: string;
+    label: string;
+};
+
+const profileOptions: ProfileOption[] = [
+    { id: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1', value: 'household', label: 'Household' },
+    { id: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff', value: 'househelp', label: 'Househelp/Nanny' }
 ];
 
 export default function SignupPage() {
@@ -88,6 +94,7 @@ export default function SignupPage() {
     
     const [form, setForm] = useState<SignupRequest>({
         profile_type: googleProfileType || '',
+        profile_id: profileOptions.find((option) => option.value === googleProfileType)?.id || '',
         // For Google signups we don't actually use the password field,
         // but the shared validation schema expects a non-empty value.
         // Use a dummy value so validation and UI enablement pass while
@@ -196,7 +203,8 @@ export default function SignupPage() {
     };
 
     const handleProfileTypeSelect = (value: string) => {
-        setForm({...form, profile_type: value});
+        const selected = profileOptions.find((option) => option.value === value);
+        setForm({...form, profile_type: value, profile_id: selected?.id || ''});
         // Don't auto-close modal - user must click Continue button after accepting terms
         
         // Clear field error when user selects an option
@@ -236,6 +244,13 @@ export default function SignupPage() {
         clearStoredAuthSession();
         localStorage.removeItem('user_id');
         const normalizedPhone = normalizeKenyanPhoneNumber(form.phone);
+        const signupPhone = normalizedPhone.replace(/^\+/, '');
+
+        if (!form.profile_id && !googleData) {
+            setError('Please choose an account profile');
+            setFormLoading(false);
+            return;
+        }
         
         try {
             // Check if this is a Google signup completion
@@ -248,7 +263,7 @@ export default function SignupPage() {
                         googleData.email,
                         form.first_name,
                         form.last_name,
-                        normalizedPhone,
+                        signupPhone,
                         form.profile_type,
                         form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
                         form.referral_code
@@ -348,48 +363,31 @@ export default function SignupPage() {
                 return;
             }
             
-            // Regular signup flow - use gRPC-Web
+            // Regular signup flow. The web server proxies this to homebit-auth
+            // over raw gRPC because browsers cannot call the gRPC port directly.
             let data: any;
             try {
-                // Use gRPC-Web instead of REST
-                const { default: authService } = await import('~/services/grpc/auth.service');
-                const signupResponse = await authService.signup(
-                    normalizedPhone,
-                    form.password,
-                    form.first_name,
-                    form.last_name,
-                    form.profile_type,
-                    form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
-                    form.referral_code
-                );
-                
-                // Extract data from gRPC response
-                const userId = signupResponse.getUserId();
-                const token = signupResponse.getToken();
-                const verificationProto = signupResponse.getVerification();
-
-                data = {
-                    user: {
-                        user_id: userId,
+                const response = await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        phone: signupPhone,
+                        password: form.password,
+                        first_name: form.first_name,
+                        last_name: form.last_name,
                         profile_type: form.profile_type,
-                    },
-                    token: token,
-                    verification: verificationProto ? {
-                        id: verificationProto.getId(),
-                        user_id: verificationProto.getUserId(),
-                        type: verificationProto.getType(),
-                        status: verificationProto.getStatus(),
-                        target: verificationProto.getTarget(),
-                        expires_at: verificationProto.getExpiresAt()?.toDate().toISOString() || '',
-                        next_resend_at: verificationProto.getNextResendAt()?.toDate().toISOString() || '',
-                        attempts: verificationProto.getAttempts(),
-                        max_attempts: verificationProto.getMaxAttempts(),
-                        resends: verificationProto.getResends(),
-                        max_resends: verificationProto.getMaxResends(),
-                        created_at: verificationProto.getCreatedAt()?.toDate().toISOString() || '',
-                        updated_at: verificationProto.getUpdatedAt()?.toDate().toISOString() || '',
-                    } : undefined,
-                };
+                        profile_id: form.profile_id,
+                        bureau_id: form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
+                        referral_code: form.referral_code,
+                    }),
+                });
+
+                data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    const err = new Error(data.message || 'Signup failed');
+                    (err as any).grpcCode = data.grpcCode || '';
+                    throw err;
+                }
             } catch (err: any) {
                 console.error('[SIGNUP] gRPC error:', err);
                 
@@ -427,18 +425,24 @@ export default function SignupPage() {
                 return;
             }
 
-            // Extract user_id from either { user: { user_id } } or { user_id } shape
-            const userId = data.user?.user_id || data.user_id;
-            const profileType = data.user?.profile_type || form.profile_type;
+            const userId = data.auth_id || data.user?.user_id || data.user_id;
+            const profileType = data.profile_type || data.user?.profile_type || form.profile_type;
+            const userProfileId = data.user_profile_id || data.userProfileId || '';
             
             if (!userId) {
-                console.error('[SIGNUP] No user_id in response:', data);
+                console.error('[SIGNUP] No auth_id/user_id in response:', data);
                 setError('Signup succeeded but response was unexpected. Please try logging in.');
                 return;
             }
             
             // Store user data temporarily (before verification)
             localStorage.setItem('user_id', userId);
+            if (data.profile_id || form.profile_id) {
+                localStorage.setItem('profile_id', data.profile_id || form.profile_id || '');
+            }
+            if (userProfileId) {
+                localStorage.setItem('user_profile_id', userProfileId);
+            }
             setStoredProfileType(profileType);
             
             // DO NOT store token yet - wait until after OTP verification
@@ -449,8 +453,10 @@ export default function SignupPage() {
             if (data.verification) {
                 navigate('/verify-otp', { 
                     state: { 
-                        verification: data.verification,
-                        profileType: profileType 
+                            verification: data.verification,
+                            profileType: profileType,
+                            profileId: data.profile_id || form.profile_id,
+                            userProfileId,
                 } 
                 });
             } else {
@@ -459,7 +465,9 @@ export default function SignupPage() {
                 navigate('/verify-otp', {
                     state: {
                         userId: userId,
-                        profileType: profileType
+                        profileType: profileType,
+                        profileId: data.profile_id || form.profile_id,
+                        userProfileId,
                     }
                 });
             }
@@ -490,6 +498,7 @@ export default function SignupPage() {
             // Pass profile_type in state to preserve it through OAuth redirect
             const statePayload = {
                 profile_type: form.profile_type,
+                profile_id: form.profile_id,
                 bureau_id: bureauId || undefined,
                 referral_code: form.referral_code?.trim() || undefined
             };

@@ -10,7 +10,7 @@ import { useSSEContextSafe } from '~/contexts/SSEContext';
 import { buildIdentifierMap, findByAnyIdentifier, getHousehelpCandidateIds } from '~/utils/hiringIdentifiers';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
-import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
 
@@ -64,12 +64,47 @@ interface JobPosting {
   status?: string;
   created_at?: string;
   salary_range?: { min?: number; max?: number; currency?: string };
+  listing_feature_groups?: Array<{
+    feature_id?: number | string;
+    feature_name?: string;
+    name?: string;
+    properties?: string[];
+  }>;
+  listing_features?: Array<Record<string, any>>;
 }
 
-const formatJobLocation = (location?: string | JobLocation): string => {
-  if (!location) return 'Location not specified';
-  if (typeof location === 'string') return location;
-  return location.name || location.place || 'Location not specified';
+const normalizeListingFeatureGroups = (job: JobPosting) => {
+  if (Array.isArray(job.listing_feature_groups) && job.listing_feature_groups.length > 0) {
+    return job.listing_feature_groups
+      .map((group) => ({
+        featureName: group.feature_name || group.name || 'Feature',
+        properties: Array.isArray(group.properties) ? group.properties.filter(Boolean) : [],
+      }))
+      .filter((group) => group.properties.length > 0);
+  }
+
+  const groups = new Map<string, { featureName: string; properties: string[] }>();
+  for (const row of job.listing_features || []) {
+    const feature = row.feature && typeof row.feature === 'object' ? row.feature as Record<string, any> : {};
+    const property = row.property && typeof row.property === 'object' ? row.property as Record<string, any> : {};
+    const featureId = String(row.feature_id || row.featureId || feature.id || 'feature');
+    const featureName = String(feature.name || feature.title || row.feature_name || `Feature #${featureId}`);
+    const propertyName = String(
+      row.value ||
+      property.name ||
+      property.title ||
+      row.property_name ||
+      row.feature_property_name ||
+      (row.feature_property_id || row.featurePropertyId ? `Property #${row.feature_property_id || row.featurePropertyId}` : ''),
+    );
+
+    if (!propertyName) continue;
+    const group = groups.get(featureId) || { featureName, properties: [] };
+    if (!group.properties.includes(propertyName)) group.properties.push(propertyName);
+    groups.set(featureId, group);
+  }
+
+  return Array.from(groups.values()).filter((group) => group.properties.length > 0);
 };
 
 type TabType = 'applicants' | 'jobs' | 'all' | 'pending' | 'accepted' | 'declined' | 'cancelled';
@@ -478,7 +513,7 @@ export default function HiringHistory() {
     setLoading(true);
     setError(null);
     try {
-      const raw = await jobService.getJobsByUserId('');
+      const raw = await jobService.listJobs(limit, offset, getStoredUserProfileId());
       const payload = raw?.data || raw || [];
       const items = Array.isArray(payload?.data) ? payload.data : Array.isArray(payload) ? payload : [];
       setJobs(items as JobPosting[]);
@@ -651,14 +686,6 @@ export default function HiringHistory() {
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return 'Flexible';
     return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
-
-  const formatJobSalary = (range?: JobPosting['salary_range']) => {
-    if (!range) return 'Not specified';
-    const min = range.min ? `KES ${range.min.toLocaleString()}` : '';
-    const max = range.max ? `KES ${range.max.toLocaleString()}` : '';
-    if (min && max) return `${min} - ${max}`;
-    return min || max || 'Not specified';
   };
 
   const tabs: { key: TabType; label: string; count?: number }[] = useMemo(
@@ -864,75 +891,82 @@ export default function HiringHistory() {
         {/* Jobs List */}
         {!loading && activeTab === 'jobs' && jobs.length > 0 && (
           <div className="space-y-4">
-            {jobs.map((job) => (
-              <div
-                key={job.id}
-                className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border dark:bg-purple-950/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl dark:border-purple-800/40"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                  <div>
-                    <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
-                      {job.title || 'Untitled role'}
-                    </h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatJobLocation(job.location)}</p>
+            {jobs.map((job) => {
+              const featureGroups = normalizeListingFeatureGroups(job);
+
+              return (
+                <div
+                  key={job.id}
+                  className="bg-white rounded-xl shadow-sm p-4 sm:p-6 hover:shadow-md transition-shadow border dark:bg-purple-950/40 dark:shadow-purple-900/40 dark:hover:shadow-2xl dark:border-purple-800/40"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-semibold text-gray-900 dark:text-white">
+                        {job.title || 'Untitled role'}
+                      </h3>
+                    </div>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
+                      ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
+                      : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'}`}>
+                      {job.status || 'open'}
+                    </span>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${job.status === 'closed'
-                    ? 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
-                    : 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-200'}`}>
-                    {job.status || 'open'}
-                  </span>
-                </div>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {(job.job_types || []).length > 0 ? (
-                    job.job_types?.map((type) => (
-                      <span key={type} className="px-2.5 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200">
-                        {type.replace(/_/g, ' ')}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                      Flexible role
-                    </span>
+                  {featureGroups.length > 0 && (
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {featureGroups.map((group) => (
+                        <div key={group.featureName} className="rounded-2xl border border-purple-500/20 bg-purple-950/20 p-3">
+                          <p className="mb-2 text-xs font-bold uppercase tracking-wide text-purple-200">
+                            {group.featureName}
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {group.properties.map((property) => (
+                              <span
+                                key={property}
+                                className="rounded-full bg-purple-500/20 px-2.5 py-1 text-xs font-semibold text-purple-50 ring-1 ring-purple-400/30"
+                              >
+                                {property}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   )}
-                  <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-200">
-                    Start {formatJobDate(job.start_date)}
-                  </span>
+
                   {job.max_applicants ? (
-                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
-                      Max {job.max_applicants} applicants
-                    </span>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                        Max {job.max_applicants} applicants
+                      </span>
+                    </div>
                   ) : null}
-                </div>
 
-                <p className="mt-3 text-xs text-gray-600 dark:text-gray-300">
-                  Salary: {formatJobSalary(job.salary_range)}
-                </p>
-
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <button
-                    onClick={() => { setEditingJob(job); setShowJobModal(true); }}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => handleToggleJobStatus(job)}
-                    disabled={jobActionLoading === job.id}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50"
-                  >
-                    {job.status === 'closed' ? 'Reopen' : 'Close'}
-                  </button>
-                  <button
-                    onClick={() => setJobToDelete(job)}
-                    disabled={jobActionLoading === job.id}
-                    className="px-3 py-1 text-xs font-semibold rounded-lg border border-red-300 text-red-600 dark:text-red-300 dark:border-red-500/40 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50"
-                  >
-                    Delete
-                  </button>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => { setEditingJob(job); setShowJobModal(true); }}
+                      className="px-3 py-1 text-xs font-semibold rounded-lg border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleToggleJobStatus(job)}
+                      disabled={jobActionLoading === job.id}
+                      className="px-3 py-1 text-xs font-semibold rounded-lg border border-gray-300 text-gray-600 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-white/5 disabled:opacity-50"
+                    >
+                      {job.status === 'closed' ? 'Reopen' : 'Close'}
+                    </button>
+                    <button
+                      onClick={() => setJobToDelete(job)}
+                      disabled={jobActionLoading === job.id}
+                      className="px-3 py-1 text-xs font-semibold rounded-lg border border-red-300 text-red-600 dark:text-red-300 dark:border-red-500/40 hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 

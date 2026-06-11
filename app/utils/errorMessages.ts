@@ -49,6 +49,8 @@ const ERROR_MAPPINGS: { [key: string]: string } = {
   'a user with the same phone number already exists': 'An account with this phone number already exists. Please log in instead.',
   'a user with the same email already exists': 'An account with this email address already exists. Please log in instead.',
   'Account not verified': 'Please verify your phone number before signing in',
+  'method Login not implemented': 'Password login is not available right now. Please use OTP verification or contact support.',
+  'Login not implemented': 'Password login is not available right now. Please use OTP verification or contact support.',
   'password must be at least 4 characters': 'Password must be at least 4 characters',
   'first_name, last_name, phone, password, and profile_type are required': 'Please fill in all required fields',
   

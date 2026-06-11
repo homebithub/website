@@ -4,9 +4,10 @@
  * Provides base URL and error handling for gRPC-Web clients (google-protobuf style).
  */
 
-import { API_BASE_URL } from '~/config/api';
+import { API_BASE_URL, AUTH_API_BASE_URL } from '~/config/api';
 
 export const GRPC_WEB_BASE_URL = API_BASE_URL;
+export const AUTH_GRPC_WEB_BASE_URL = AUTH_API_BASE_URL;
 
 export function getGrpcErrorMessage(error: unknown): string {
   if (error instanceof Error) return error.message || '';

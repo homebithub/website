@@ -39,6 +39,9 @@ export const signupSchema = Joi.object({
     'any.required': 'Please select your profile type',
     'any.only': 'Please choose a valid profile type from the list'
   }),
+  profile_id: Joi.string().guid({ version: ['uuidv4'] }).allow('').optional().messages({
+    'string.guid': 'Please choose a valid profile'
+  }),
   password: Joi.string().min(4).required().messages({
     'string.empty': 'Please enter your password',
     'string.min': 'Password must be at least 4 characters',

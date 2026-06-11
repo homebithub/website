@@ -6,10 +6,11 @@
 
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import { AUTH_GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
   getStoredAccessToken,
   getStoredProfileType,
+  getStoredUser,
   getStoredUserId,
 } from '~/utils/authStorage';
 
@@ -17,8 +18,8 @@ import {
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const { AuthServiceClient, AdminAuthServiceClient } = auth_grpc_web_module as any;
 
-const authClient = new AuthServiceClient(GRPC_WEB_BASE_URL, null, null);
-const adminAuthClient = new AdminAuthServiceClient(GRPC_WEB_BASE_URL, null, null);
+const authClient = new AuthServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
+const adminAuthClient = new AdminAuthServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
 
 function resolveUserId(userId: string): string {
   if (userId) return userId;
@@ -28,6 +29,40 @@ function resolveUserId(userId: string): string {
 function isValidUUID(uuid: string): boolean {
   const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
   return uuidRegex.test(uuid);
+}
+
+const SIGNUP_PROFILE_ID_ENV_KEYS: Record<string, string[]> = {
+  household: ['HOUSEHOLD_PROFILE_ID', 'VITE_HOUSEHOLD_PROFILE_ID', 'PUBLIC_HOUSEHOLD_PROFILE_ID'],
+  househelp: ['HOUSEHELP_PROFILE_ID', 'VITE_HOUSEHELP_PROFILE_ID', 'PUBLIC_HOUSEHELP_PROFILE_ID'],
+};
+
+const FALLBACK_SIGNUP_PROFILE_IDS: Record<string, string> = {
+  household: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1',
+  househelp: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
+};
+
+function getRuntimeEnvValue(key: string): string {
+  const windowEnv = typeof window !== 'undefined' ? (window as any).ENV?.[key] : undefined;
+  const processEnv = typeof process !== 'undefined' ? (process as any).env?.[key] : undefined;
+  return String(windowEnv || processEnv || '').trim();
+}
+
+function resolveSignupProfileId(profileTypeOrId: string): string {
+  const value = profileTypeOrId.trim();
+  if (isValidUUID(value)) {
+    return value;
+  }
+
+  const envKeys = SIGNUP_PROFILE_ID_ENV_KEYS[value.toLowerCase()];
+  const profileId = envKeys?.map(getRuntimeEnvValue).find(Boolean) || FALLBACK_SIGNUP_PROFILE_IDS[value.toLowerCase()] || '';
+
+  if (isValidUUID(profileId)) {
+    return profileId;
+  }
+
+  throw new Error(
+    `Signup profile ID is not configured for "${value}". Set ${envKeys?.[0] || 'HOUSEHOLD_PROFILE_ID'} to the matching homebit-auth profile.id.`
+  );
 }
 
 /**
@@ -67,18 +102,23 @@ export const authService = {
     password: string,
     firstName: string,
     lastName: string,
-    profileType: string,
+    profileTypeOrId: string,
     bureauId?: string,
     referralCode?: string
   ): Promise<any> {
     return new Promise((resolve, reject) => {
       try {
+        const profileId = resolveSignupProfileId(profileTypeOrId);
         const request = new auth_pb.SignupRequest();
         request.setPhone(phone);
         request.setPassword(password);
         request.setFirstName(firstName);
         request.setLastName(lastName);
-        request.setProfileType(profileType);
+        if (typeof request.setProfileId === 'function') {
+          request.setProfileId(profileId);
+        } else {
+          request.setProfileType(profileId);
+        }
         
         if (bureauId) {
           request.setBureauId(bureauId);
@@ -162,23 +202,19 @@ export const authService = {
    * Get current user
    */
   async getCurrentUser(userId?: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const resolvedUserId = resolveUserId(userId || '');
-      if (!isValidUUID(resolvedUserId)) {
-        reject(new Error('Invalid user_id: must be a valid UUID'));
-        return;
-      }
-      const request = new auth_pb.GetCurrentUserRequest();
-      request.setUserId(resolvedUserId);
+    const cachedUser = getStoredUser();
+    const resolvedUserId = userId || cachedUser?.user_id || cachedUser?.id || getStoredUserId();
 
-      authClient.getCurrentUser(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
-        }
-      });
-    });
+    return {
+      getId: () => resolvedUserId || '',
+      getEmail: () => cachedUser?.email || '',
+      getPhone: () => cachedUser?.phone || cachedUser?.phone_number || '',
+      getFirstName: () => cachedUser?.first_name || cachedUser?.firstName || '',
+      getLastName: () => cachedUser?.last_name || cachedUser?.lastName || '',
+      getProfileType: () => cachedUser?.profile_type || cachedUser?.profileType || getStoredProfileType() || '',
+      getIsVerified: () => Boolean(cachedUser?.is_verified ?? cachedUser?.isVerified ?? true),
+      getProfileImage: () => cachedUser?.profile_image || cachedUser?.profileImage || '',
+    };
   },
 
   /**

@@ -22,6 +22,8 @@ type VerifyOtpLocationState = {
   afterAddPhone?: boolean;
   redirectTo?: string;
   profileType?: string;
+  profileId?: string;
+  userProfileId?: string;
   from?: string;
 };
 
@@ -262,25 +264,39 @@ export default function VerifyOtpPage() {
     setSuccess(false);
     setOtpError(null);
     try {
-      // Use gRPC-Web instead of REST
-      const { default: authService } = await import('~/services/grpc/auth.service');
-      const verifyResponse = await authService.verifyOTP(resolveVerificationUserId(), verification.type, otp);
-      // Extract data from gRPC response
-      const token = verifyResponse.getToken();
-      const refreshToken = verifyResponse.getRefreshToken();
-      const userProto = verifyResponse.getUser();
-      
-      // Convert proto User to plain object
+      const verifyHttpResponse = await fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          user_id: resolveVerificationUserId(),
+          verification_type: verification.type,
+          otp,
+        }),
+      });
+      const verifyData = await verifyHttpResponse.json().catch(() => ({}));
+      if (!verifyHttpResponse.ok) {
+        const err = new Error(verifyData.message || 'OTP verification failed');
+        (err as any).grpcCode = verifyData.grpcCode || '';
+        throw err;
+      }
+
+      const token = verifyData.token || verifyData.access_token || '';
+      const refreshToken = verifyData.refresh_token || verifyData.refreshToken || '';
+      const storedProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('profile_id') || '' : '';
+      const storedUserProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('user_profile_id') || '' : '';
       const flatUser = {
-        user_id: userProto?.getId() || user_id,
-        email: userProto?.getEmail() || '',
-        phone: userProto?.getPhone() || '',
-        first_name: userProto?.getFirstName() || '',
-        last_name: userProto?.getLastName() || '',
-        profile_type: userProto?.getProfileType() || getStoredProfileType() || '',
-        is_verified: userProto?.getIsVerified() || false,
-        profile_image: userProto?.getProfileImage() || '',
+        ...(verifyData.user || {}),
+        user_id: verifyData.user?.user_id || verifyData.user?.id || user_id,
+        profile_type: verifyData.user?.profile_type || getStoredProfileType() || verificationState.profileType || '',
+        profile_id: verifyData.profile_id || verifyData.user?.profile_id || verificationState.profileId || storedProfileId || '',
+        user_profile_id: verifyData.user_profile_id || verifyData.user?.user_profile_id || verificationState.userProfileId || storedUserProfileId || '',
       };
+      if (flatUser.profile_id && typeof window !== 'undefined') {
+        window.localStorage.setItem('profile_id', flatUser.profile_id);
+      }
+      if (flatUser.user_profile_id && typeof window !== 'undefined') {
+        window.localStorage.setItem('user_profile_id', flatUser.user_profile_id);
+      }
       // Store token and user_object in localStorage
       if (token) {
         cacheAuthSession({
@@ -290,22 +306,6 @@ export default function VerifyOtpPage() {
           provider: 'password',
         });
       }
-      // Register device after successful verification via gRPC-Web (non-blocking)
-      try {
-        const { getDeviceId, getDeviceName } = await import('~/utils/deviceFingerprint');
-        const { default: deviceService } = await import('~/services/grpc/device.service');
-        const devId = await getDeviceId();
-        const uid = flatUser.user_id || user_id;
-        if (uid) {
-          const result = await deviceService.registerDevice(
-            uid, devId, getDeviceName(), navigator.userAgent, ''
-          );
-          void result;
-        }
-      } catch (deviceError) {
-        console.error('[Device] Registration failed:', deviceError);
-      }
-
       setSuccess(true);
       setLocalFailedAttempts(0); // reset on success
       setLastTriedOtp('');
@@ -313,6 +313,8 @@ export default function VerifyOtpPage() {
       
       const profileType = flatUser.profile_type;
       const userId = flatUser.user_id;
+      const profileId = flatUser.profile_id;
+      const userProfileId = flatUser.user_profile_id;
 
       if (isPasswordResetFlow) {
         navigate(`/reset-password?userId=${encodeURIComponent(userId)}`, {
@@ -380,6 +382,18 @@ export default function VerifyOtpPage() {
         // Step 2: After email OTP, go to next onboarding step
         let path = '/';
         if (profileType === 'household' || profileType === 'househelp') {
+          if (profileId) {
+            navigate('/onboarding/features', {
+              replace: true,
+              state: {
+                profileId,
+                userProfileId,
+                profileType,
+              },
+            });
+            return;
+          }
+
           try {
             const destination = await resolveProfileSetupDestination({
               userId,

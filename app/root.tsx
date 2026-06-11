@@ -43,8 +43,12 @@ export function loader({ request }: Route.LoaderArgs) {
 	const requestHost = requestUrl.hostname.toLowerCase();
 	const isLocalRequest = requestHost === "localhost" || requestHost === "127.0.0.1";
 	const localGatewayBaseUrl = `${requestUrl.protocol}//${requestUrl.hostname}:3005`;
+	const localAuthBaseUrl = `${requestUrl.protocol}//${requestUrl.hostname}:5004`;
 
 	const gatewayBaseUrl = isLocalRequest ? localGatewayBaseUrl : API_BASE_URL;
+	const authBaseUrl = isLocalRequest
+		? localAuthBaseUrl
+		: process.env.AUTH_API_BASE_URL || gatewayBaseUrl;
 	const notificationsWsBaseUrl = isLocalRequest
 		? `${localGatewayBaseUrl}/ws`
 		: NOTIFICATIONS_WS_BASE_URL;
@@ -55,10 +59,12 @@ export function loader({ request }: Route.LoaderArgs) {
 				process.env.GOOGLE_CLIENT_ID ||
 				"180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",
 			GATEWAY_API_BASE_URL: gatewayBaseUrl,
-			AUTH_API_BASE_URL: gatewayBaseUrl,
+			AUTH_API_BASE_URL: authBaseUrl,
 			NOTIFICATIONS_API_BASE_URL: gatewayBaseUrl,
 			NOTIFICATIONS_WS_BASE_URL: notificationsWsBaseUrl,
 			PAYMENTS_API_BASE_URL: gatewayBaseUrl,
+			HOUSEHOLD_PROFILE_ID: process.env.HOUSEHOLD_PROFILE_ID || "",
+			HOUSEHELP_PROFILE_ID: process.env.HOUSEHELP_PROFILE_ID || "",
 		},
 	};
 }

@@ -49,6 +49,15 @@ interface LoaderData {
   relatedPosts: BlogPost[];
 }
 
+function isConnectionRefused(error: unknown): boolean {
+  const cause = (error as any)?.cause;
+  if (cause?.code === "ECONNREFUSED") return true;
+  if (Array.isArray(cause?.errors)) {
+    return cause.errors.some((err: any) => err?.code === "ECONNREFUSED");
+  }
+  return false;
+}
+
 export const meta: MetaFunction = ({ data }) => {
   const loaderData = data as LoaderData | undefined;
   if (!loaderData?.post) {
@@ -116,7 +125,9 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
     return Response.json({ post, relatedPosts });
   } catch (error) {
-    console.error("Error loading blog post:", error);
+    if (!isConnectionRefused(error)) {
+      console.error("Error loading blog post:", error);
+    }
     return Response.json({ post: null, relatedPosts: [] }, { status: 500 });
   }
 }

@@ -1,11 +1,10 @@
 /**
- * Preferences API Client
- * 
- * Handles all interactions with the user preferences backend API
+ * Local preferences store.
+ *
+ * The old auth.PreferencesService RPCs are deprecated. Keep the same small API
+ * surface for existing UI code, but persist preferences locally so no
+ * GetPreferences/UpdatePreferences calls are made from the frontend.
  */
-
-import { preferencesService } from '~/services/grpc/authServices';
-import { getOrCreateSessionId, isAuthenticated, getAuthenticatedUserId } from './userTracking';
 
 export interface UserPreferences {
   theme?: 'light' | 'dark' | 'system';
@@ -30,73 +29,63 @@ export interface PreferencesResponse {
   updated_at: string;
 }
 
-/**
- * Fetch user preferences
- */
-export const fetchPreferences = async (): Promise<PreferencesResponse | null> => {
-  try {
-    const authenticated = isAuthenticated();
-    const userId = authenticated ? (getAuthenticatedUserId() || '') : '';
-    const sessionId = authenticated ? undefined : getOrCreateSessionId();
+const STORAGE_KEY = 'homebit_preferences';
 
-    const data = await preferencesService.getPreferences(userId, sessionId);
-    return data;
-  } catch (error) {
-    console.error('Error fetching preferences:', error);
-    return null;
+const isBrowser = () => typeof window !== 'undefined';
+
+const defaultPreferences = (): UserPreferences => ({
+  theme: 'system',
+  email_notifs: false,
+  show_onboarding: false,
+  compact_view: false,
+  accessibility_mode: false,
+});
+
+const readStoredPreferences = (): UserPreferences => {
+  if (!isBrowser()) return defaultPreferences();
+
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return defaultPreferences();
+    const parsed = JSON.parse(raw);
+    return { ...defaultPreferences(), ...(parsed && typeof parsed === 'object' ? parsed : {}) };
+  } catch {
+    return defaultPreferences();
   }
 };
 
-/**
- * Update user preferences
- */
+const writeStoredPreferences = (settings: UserPreferences) => {
+  if (!isBrowser()) return;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+};
+
+const toResponse = (settings: UserPreferences): PreferencesResponse => {
+  const now = new Date().toISOString();
+  return {
+    id: 'local-preferences',
+    settings,
+    created_at: now,
+    updated_at: now,
+  };
+};
+
+export const fetchPreferences = async (): Promise<PreferencesResponse | null> => {
+  return toResponse(readStoredPreferences());
+};
+
 export const updatePreferences = async (
   settings: Partial<UserPreferences>
 ): Promise<PreferencesResponse | null> => {
-  try {
-    const authenticated = isAuthenticated();
-    const userId = authenticated ? (getAuthenticatedUserId() || '') : '';
-    const sessionId = authenticated ? undefined : getOrCreateSessionId();
-
-    const data = await preferencesService.updatePreferences(userId, {
-      settings,
-      ...(sessionId ? { session_id: sessionId } : {}),
-    });
-    return data;
-  } catch (error) {
-    console.error('Error updating preferences:', error);
-    return null;
-  }
+  const next = { ...readStoredPreferences(), ...settings };
+  writeStoredPreferences(next);
+  return toResponse(next);
 };
 
-/**
- * Migrate anonymous preferences to authenticated user
- * Call this after successful login/signup
- */
 export const migratePreferences = async (): Promise<boolean> => {
-  try {
-    const sessionId = getOrCreateSessionId();
-    const userId = getAuthenticatedUserId() || '';
-    await preferencesService.migrateAnonymousToUser(userId, sessionId);
-    return true;
-  } catch (error) {
-    console.error('Error migrating preferences:', error);
-    return false;
-  }
+  return true;
 };
 
-/**
- * Delete user preferences
- */
 export const deletePreferences = async (): Promise<boolean> => {
-  try {
-    const authenticated = isAuthenticated();
-    const userId = authenticated ? (getAuthenticatedUserId() || '') : '';
-    const sessionId = authenticated ? undefined : getOrCreateSessionId();
-    await preferencesService.deletePreferences(userId, sessionId);
-    return true;
-  } catch (error) {
-    console.error('Error deleting preferences:', error);
-    return false;
-  }
+  if (isBrowser()) window.localStorage.removeItem(STORAGE_KEY);
+  return true;
 };

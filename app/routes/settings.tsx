@@ -126,11 +126,6 @@ export default function SettingsPage() {
 							<div className="text-gray-500 dark:text-gray-400 text-xs">Change your password and security options.</div>
 						</a>
 						
-						<a href="/account/devices" className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5 hover:border-purple-400 dark:hover:border-purple-400 transition-colors block">
-							<div className="text-xl mb-2">📱</div>
-							<div className="font-semibold text-purple-700 dark:text-purple-300 text-xs mb-0.5">Devices</div>
-							<div className="text-gray-500 dark:text-gray-400 text-xs">View and manage your logged-in devices.</div>
-						</a>
 					</div>
 					
 					<div className="bg-white dark:bg-[#13131a] rounded-2xl border border-purple-200/40 dark:border-purple-500/30 p-5">

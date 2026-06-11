@@ -8,6 +8,7 @@
 import { getStoredAccessToken } from '~/utils/authStorage';
 
 const LOCAL_GATEWAY_PORT = '3005';
+const LOCAL_AUTH_GRPC_PORT = '5004';
 const PRODUCTION_GATEWAY = 'https://api.homebit.co.ke';
 
 /**
@@ -43,6 +44,29 @@ const getGatewayBaseUrl = (): string => {
   return PRODUCTION_GATEWAY;
 };
 
+const getAuthBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return `${window.location.protocol}//${window.location.hostname}:${LOCAL_AUTH_GRPC_PORT}`;
+    }
+
+    const envAuth = (window as any).ENV?.AUTH_API_BASE_URL;
+    if (envAuth) return normalizeUrl(envAuth);
+  }
+
+  if (typeof process !== 'undefined') {
+    const envUrl = process.env.AUTH_API_BASE_URL;
+    if (envUrl) return normalizeUrl(envUrl);
+
+    if (process.env.NODE_ENV !== 'production') {
+      return `http://localhost:${LOCAL_AUTH_GRPC_PORT}`;
+    }
+  }
+
+  return PRODUCTION_GATEWAY;
+};
+
 export function normalizeGatewayBaseUrl(url: string): string {
   let out = url.replace(/\/+$/, '')
     .replace(/\/(auth|payments|notifications)$/i, '')
@@ -65,7 +89,7 @@ const normalizeUrl = normalizeGatewayBaseUrl;
 // All point to the same gateway; separate names kept for backward compat.
 export const API_BASE_URL = getGatewayBaseUrl();
 export const GATEWAY_API_BASE_URL = API_BASE_URL;
-export const AUTH_API_BASE_URL = API_BASE_URL;
+export const AUTH_API_BASE_URL = getAuthBaseUrl();
 export const NOTIFICATIONS_API_BASE_URL = API_BASE_URL;
 export const PAYMENTS_API_BASE_URL = API_BASE_URL;
 export const NOTIFICATIONS_WS_BASE_URL = `${API_BASE_URL}/ws`;

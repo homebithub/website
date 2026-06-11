@@ -12,7 +12,6 @@ import { handleApiError } from '~/utils/errorMessages';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { getDeviceId, getDeviceName } from '~/utils/deviceFingerprint';
 import { cacheAuthSession, getStoredAccessToken } from '~/utils/authStorage';
 import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
 import { API_ENDPOINTS } from '~/config/api';
@@ -78,14 +77,9 @@ export default function LoginPage() {
     const googleLogin = params.get('google_login');
     const token = params.get('token') || getStoredAccessToken() || null;
     const errorParam = params.get('error');
-    const deviceRevoked = params.get('device_revoked');
 
     if (errorParam && !loginError) {
       setLoginError('Google login failed. Please try again or use phone and password.');
-    }
-
-    if (deviceRevoked === '1' && !loginError) {
-      setLoginError('This device is no longer approved for your account. Please sign in again on an authorized device.');
     }
 
     if (googleLogin === 'success' && token && !processingGoogleRef.current) {
@@ -124,20 +118,6 @@ export default function LoginPage() {
             provider: "google",
           });
           const profileType: string = userData.profile_type || '';
-
-          // Register device after successful Google login (non-blocking)
-          try {
-            const { default: deviceService } = await import('~/services/grpc/device.service');
-            const deviceId = await getDeviceId();
-            if (userData.user_id) {
-              const result = await deviceService.registerDevice(
-                userData.user_id, deviceId, getDeviceName(), navigator.userAgent, ''
-              );
-              void result;
-            }
-          } catch (deviceError) {
-            console.error('[Device] Registration failed after Google login:', deviceError);
-          }
 
           // If user has no phone number, redirect to add-phone page
           if (!userData.phone) {
