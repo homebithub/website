@@ -7,7 +7,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { BlogSubscribeForm } from "~/components/blog/BlogSubscribeForm";
 import { useAuth } from "~/contexts/useAuth";
-import { API_BASE_URL } from "~/config/api";
+import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 import { blogService } from "~/services/grpc/blog.service";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
@@ -62,11 +62,14 @@ async function readJSONOrNull(response: Response) {
   const contentType = response.headers.get("content-type") || "";
   if (!response.ok || !contentType.includes("application/json")) {
     const body = await response.text().catch(() => "");
-    console.warn("Blog API returned non-JSON response", {
-      status: response.status,
-      contentType,
-      bodyPreview: body.slice(0, 120),
-    });
+    const upstreamUnavailable = [502, 503, 504].includes(response.status);
+    if (!upstreamUnavailable) {
+      console.warn("Blog API returned non-JSON response", {
+        status: response.status,
+        contentType,
+        bodyPreview: body.slice(0, 120),
+      });
+    }
     return null;
   }
 
@@ -119,7 +122,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   }
 
   try {
-    const apiUrl = API_BASE_URL;
+    const apiUrl = NOTIFICATIONS_API_BASE_URL;
     
     // Fetch the blog post
     const response = await fetch(`${apiUrl}/api/v1/blog/posts/${slug}`);

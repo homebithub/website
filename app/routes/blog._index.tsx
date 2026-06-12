@@ -7,7 +7,7 @@ import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { BlogSubscribeForm } from "~/components/blog/BlogSubscribeForm";
 import { useAuth } from "~/contexts/useAuth";
-import { API_BASE_URL } from "~/config/api";
+import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
 
 export const meta: MetaFunction = () => {
   return [
@@ -54,11 +54,14 @@ async function readJSONOrNull(response: Response) {
   const contentType = response.headers.get("content-type") || "";
   if (!response.ok || !contentType.includes("application/json")) {
     const body = await response.text().catch(() => "");
-    console.warn("Blog API returned non-JSON response", {
-      status: response.status,
-      contentType,
-      bodyPreview: body.slice(0, 120),
-    });
+    const upstreamUnavailable = [502, 503, 504].includes(response.status);
+    if (!upstreamUnavailable) {
+      console.warn("Blog API returned non-JSON response", {
+        status: response.status,
+        contentType,
+        bodyPreview: body.slice(0, 120),
+      });
+    }
     return null;
   }
 
@@ -75,8 +78,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const offset = (page - 1) * limit;
 
   try {
-    // Call gateway API
-    const apiUrl = API_BASE_URL;
+    // Blog is served by the notifications service through the configured API surface.
+    const apiUrl = NOTIFICATIONS_API_BASE_URL;
     const params = new URLSearchParams({
       limit: limit.toString(),
       offset: offset.toString(),

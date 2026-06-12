@@ -67,6 +67,25 @@ const getAuthBaseUrl = (): string => {
   return PRODUCTION_GATEWAY;
 };
 
+const getNotificationsBaseUrl = (): string => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return `${window.location.protocol}//${window.location.hostname}:${LOCAL_GATEWAY_PORT}`;
+    }
+
+    const envNotifications = (window as any).ENV?.NOTIFICATIONS_API_BASE_URL;
+    if (envNotifications) return normalizeUrl(envNotifications);
+  }
+
+  if (typeof process !== 'undefined') {
+    const envUrl = process.env.NOTIFICATIONS_API_BASE_URL;
+    if (envUrl) return normalizeUrl(envUrl);
+  }
+
+  return getGatewayBaseUrl();
+};
+
 export function normalizeGatewayBaseUrl(url: string): string {
   let out = url.replace(/\/+$/, '')
     .replace(/\/(auth|payments|notifications)$/i, '')
@@ -97,9 +116,9 @@ const normalizeUrl = normalizeGatewayBaseUrl;
 export const API_BASE_URL = getGatewayBaseUrl();
 export const GATEWAY_API_BASE_URL = API_BASE_URL;
 export const AUTH_API_BASE_URL = getAuthBaseUrl();
-export const NOTIFICATIONS_API_BASE_URL = API_BASE_URL;
+export const NOTIFICATIONS_API_BASE_URL = getNotificationsBaseUrl();
 export const PAYMENTS_API_BASE_URL = API_BASE_URL;
-export const NOTIFICATIONS_WS_BASE_URL = `${API_BASE_URL}/ws`;
+export const NOTIFICATIONS_WS_BASE_URL = `${NOTIFICATIONS_API_BASE_URL}/ws`;
 
 export const gatewayApiUrl = (path: string): string => {
   if (/^https?:\/\//i.test(path)) return path;

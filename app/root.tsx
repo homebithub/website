@@ -9,7 +9,7 @@ import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
 import { WebSocketProvider } from "~/contexts/WebSocketContext";
 import { SSEProvider } from "~/contexts/SSEContext";
 import { GlobalLoaderOverlay } from "~/components/ShimmerLoader";
-import { API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
+import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
 import "./tailwind.css";
 
 export const meta: Route.MetaFunction = () => [
@@ -52,6 +52,9 @@ export function loader({ request }: Route.LoaderArgs) {
 	const notificationsWsBaseUrl = isLocalRequest
 		? `${localGatewayBaseUrl}/ws`
 		: NOTIFICATIONS_WS_BASE_URL;
+	const notificationsBaseUrl = isLocalRequest
+		? localGatewayBaseUrl
+		: process.env.NOTIFICATIONS_API_BASE_URL || NOTIFICATIONS_API_BASE_URL;
 
 	return {
 		ENV: {
@@ -60,7 +63,7 @@ export function loader({ request }: Route.LoaderArgs) {
 				"180303040990-6ad3ap3mpgteebuh89ni6orqno9tecje.apps.googleusercontent.com",
 			GATEWAY_API_BASE_URL: gatewayBaseUrl,
 			AUTH_API_BASE_URL: authBaseUrl,
-			NOTIFICATIONS_API_BASE_URL: gatewayBaseUrl,
+			NOTIFICATIONS_API_BASE_URL: notificationsBaseUrl,
 			NOTIFICATIONS_WS_BASE_URL: notificationsWsBaseUrl,
 			PAYMENTS_API_BASE_URL: gatewayBaseUrl,
 			HOUSEHOLD_PROFILE_ID: process.env.HOUSEHOLD_PROFILE_ID || "",
