@@ -11,11 +11,6 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Loading } from '~/components/Loading';
 import { cacheAuthSession, getStoredProfileType, getStoredUserId } from '~/utils/authStorage';
 import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
-import { GATEWAY_API_BASE_URL } from '~/config/api';
-import { callGenericGrpcWeb } from '~/utils/grpcWebGeneric';
-import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
-
-const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 
 const PENDING_VERIFICATION_KEY = 'homebit.pendingVerification';
 
@@ -62,6 +57,23 @@ function clearPendingVerificationState() {
 
 function normalizeUser(raw: any) {
   if (!raw) return null;
+  if (typeof raw.getId === 'function') {
+    const userId = raw.getId() || '';
+    return {
+      id: userId,
+      user_id: userId,
+      email: raw.getEmail?.() || '',
+      phone: raw.getPhone?.() || '',
+      first_name: raw.getFirstName?.() || '',
+      last_name: raw.getLastName?.() || '',
+      profile_type: raw.getProfileType?.() || '',
+      profile_id: raw.getProfileId?.() || '',
+      user_profile_id: raw.getUserProfileId?.() || '',
+      is_verified: Boolean(raw.getIsVerified?.() || false),
+      profile_image: raw.getProfileImage?.() || '',
+    };
+  }
+
   const userId = raw.id || raw.user_id || raw.userId || '';
   return {
     id: userId,
@@ -287,31 +299,23 @@ export default function VerifyOtpPage() {
     setSuccess(false);
     setOtpError(null);
     try {
-      const verifyRequest = new auth_pb.VerifyOTPRequest();
-      verifyRequest.setUserId(resolveVerificationUserId());
-      verifyRequest.setVerificationType(verification.type || 'phone');
-      verifyRequest.setOtp(otp);
-
-      const { body: responseBody } = await callGenericGrpcWeb(
-        GATEWAY_API_BASE_URL,
-        '/auth.AuthService/VerifyOTP',
-        verifyRequest.serializeBinary(),
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const response = await authService.verifyOTP(
+        resolveVerificationUserId(),
+        verification.type || 'phone',
+        otp,
       );
 
-      const normalizedUser = normalizeUser(responseBody.user);
+      const normalizedUser = normalizeUser(response.getUser?.());
       const verifyData = {
-        verified: Boolean(responseBody.verified),
-        token: responseBody.access_token || responseBody.accessToken || '',
-        refresh_token: responseBody.refresh_token || responseBody.refreshToken || '',
+        verified: true,
+        token: response.getToken?.() || '',
+        refresh_token: response.getRefreshToken?.() || '',
         user: normalizedUser,
         user_profile_id:
-          responseBody.user_profile_id ||
-          responseBody.userProfileId ||
           normalizedUser?.user_profile_id ||
           '',
         profile_id:
-          responseBody.profile_id ||
-          responseBody.profileId ||
           normalizedUser?.profile_id ||
           '',
       };

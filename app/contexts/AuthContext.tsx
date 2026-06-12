@@ -13,11 +13,6 @@ import {
   normalizeProfileType,
 } from "~/utils/authStorage";
 import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
-import { GATEWAY_API_BASE_URL } from '~/config/api';
-import { callGenericGrpcWeb } from '~/utils/grpcWebGeneric';
-import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
-
-const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 
 interface User {
   id: string;
@@ -25,24 +20,6 @@ interface User {
   firstName: string;
   lastName: string;
   role: string;
-}
-
-function createPhoneVerification(authId: string, target: string) {
-  return {
-    id: '',
-    user_id: authId,
-    type: 'phone',
-    status: 'pending',
-    target,
-    expires_at: '',
-    next_resend_at: '',
-    attempts: 0,
-    max_attempts: 3,
-    resends: 0,
-    max_resends: 3,
-    created_at: '',
-    updated_at: '',
-  };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -182,47 +159,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       const normalizedPhone = normalizeKenyanPhoneNumber(phone);
-      const loginRequest = new auth_pb.LoginRequest();
-      loginRequest.setPhone(normalizedPhone.replace(/^\+/, ''));
-      loginRequest.setPassword(password);
+      const { default: authService } = await import('~/services/grpc/auth.service');
+      const loginResponse = await authService.login(normalizedPhone.replace(/^\+/, ''), password);
 
-      const { body: payload } = await callGenericGrpcWeb(
-        GATEWAY_API_BASE_URL,
-        '/auth.AuthService/Login',
-        loginRequest.serializeBinary(),
-      );
-
-      const authId = payload.auth_id || payload.authId || payload.user_id || '';
-      if (authId) {
-        const verification = payload.verification || createPhoneVerification(String(authId), normalizedPhone.replace(/^\+/, ''));
-        if (typeof window !== 'undefined') {
-          window.localStorage.setItem('user_id', authId);
-        }
-        navigate('/verify-otp', {
-          state: {
-            verification: {
-              ...verification,
-              user_id: authId,
-            },
-            userId: authId,
-            from: 'login',
-          },
-        });
-        return;
-      }
-
-      const token = payload.token || payload.access_token || '';
-      const refreshToken = payload.refresh_token || payload.refreshToken || '';
+      const token = loginResponse.getToken?.() || '';
+      const refreshToken = loginResponse.getRefreshToken?.() || '';
+      const userProto = loginResponse.getUser?.();
       const userData = {
-        id: payload.user?.id || payload.user?.user_id || '',
-        user_id: payload.user?.user_id || payload.user?.id || '',
-        email: payload.user?.email || '',
-        phone: payload.user?.phone || '',
-        first_name: payload.user?.first_name || payload.user?.firstName || '',
-        last_name: payload.user?.last_name || payload.user?.lastName || '',
-        profile_type: payload.user?.profile_type || payload.user?.profileType || '',
-        is_verified: payload.user?.is_verified ?? payload.user?.isVerified ?? false,
-        profile_image: payload.user?.profile_image || payload.user?.profileImage || '',
+        id: userProto?.getId?.() || '',
+        user_id: userProto?.getId?.() || '',
+        email: userProto?.getEmail?.() || '',
+        phone: userProto?.getPhone?.() || '',
+        first_name: userProto?.getFirstName?.() || '',
+        last_name: userProto?.getLastName?.() || '',
+        profile_type: userProto?.getProfileType?.() || '',
+        is_verified: userProto?.getIsVerified?.() || false,
+        profile_image: userProto?.getProfileImage?.() || '',
       };
 
       if (!token || !userData.user_id) {

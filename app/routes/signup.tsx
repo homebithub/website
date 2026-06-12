@@ -14,11 +14,6 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorage';
-import { GATEWAY_API_BASE_URL } from '~/config/api';
-import { callGenericGrpcWeb } from '~/utils/grpcWebGeneric';
-import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
-
-const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
@@ -88,6 +83,24 @@ function createPhoneVerification(authId: string, target: string) {
         max_resends: 3,
         created_at: '',
         updated_at: '',
+    };
+}
+
+function verificationProtoToState(verificationProto: any) {
+    return {
+        id: verificationProto.getId(),
+        user_id: verificationProto.getUserId(),
+        type: verificationProto.getType(),
+        status: verificationProto.getStatus(),
+        target: verificationProto.getTarget(),
+        expires_at: verificationProto.getExpiresAt()?.toDate?.().toISOString() || '',
+        next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
+        attempts: verificationProto.getAttempts(),
+        max_attempts: verificationProto.getMaxAttempts(),
+        resends: verificationProto.getResends(),
+        max_resends: verificationProto.getMaxResends(),
+        created_at: verificationProto.getCreatedAt()?.toDate?.().toISOString() || '',
+        updated_at: verificationProto.getUpdatedAt()?.toDate?.().toISOString() || '',
     };
 }
 
@@ -302,21 +315,7 @@ export default function SignupPage() {
                             profile_type: form.profile_type,
                         },
                         token: token,
-                        verification: verificationProto ? {
-                            id: verificationProto.getId(),
-                            user_id: verificationProto.getUserId(),
-                            type: verificationProto.getType(),
-                            status: verificationProto.getStatus(),
-                            target: verificationProto.getTarget(),
-                            expires_at: verificationProto.getExpiresAt()?.toDate().toISOString() || '',
-                            next_resend_at: verificationProto.getNextResendAt()?.toDate().toISOString() || '',
-                            attempts: verificationProto.getAttempts(),
-                            max_attempts: verificationProto.getMaxAttempts(),
-                            resends: verificationProto.getResends(),
-                            max_resends: verificationProto.getMaxResends(),
-                            created_at: verificationProto.getCreatedAt()?.toDate().toISOString() || '',
-                            updated_at: verificationProto.getUpdatedAt()?.toDate().toISOString() || '',
-                        } : undefined,
+                        verification: verificationProto ? verificationProtoToState(verificationProto) : undefined,
                     };
                 } catch (err: any) {
                     console.error('[SIGNUP] gRPC error:', err);
@@ -386,30 +385,29 @@ export default function SignupPage() {
                 return;
             }
             
-            // Regular signup flow goes through the public gateway gRPC-Web endpoint.
+            // Regular signup flow uses the generated browser gRPC-Web client.
             let data: any;
             try {
-                const signupRequest = new auth_pb.SignupRequest();
-                signupRequest.setPhone(signupPhone);
-                signupRequest.setPassword(form.password);
-                signupRequest.setFirstName(form.first_name);
-                signupRequest.setLastName(form.last_name);
-                signupRequest.setProfileId(form.profile_id);
-
-                const { body: responseBody } = await callGenericGrpcWeb(
-                    GATEWAY_API_BASE_URL,
-                    '/auth.AuthService/Signup',
-                    signupRequest.serializeBinary(),
-                    form.referral_code ? { 'x-referral-code': form.referral_code.trim().toUpperCase() } : undefined,
+                const { default: authService } = await import('~/services/grpc/auth.service');
+                const signupResponse = await authService.signup(
+                    signupPhone,
+                    form.password,
+                    form.first_name,
+                    form.last_name,
+                    form.profile_id || form.profile_type,
+                    form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
+                    form.referral_code,
                 );
 
-                const authId = String(responseBody.auth_id || responseBody.authId || '');
+                const authId = String(signupResponse.getUserId?.() || '');
+                const verificationProto = signupResponse.getVerification?.();
                 data = {
                     auth_id: authId,
-                    user_profile_id: responseBody.user_profile_id || responseBody.userProfileId || '',
-                    profile_id: responseBody.profile_id || responseBody.profileId || form.profile_id,
+                    profile_id: form.profile_id,
                     profile_type: form.profile_type,
-                    verification: createPhoneVerification(authId, signupPhone),
+                    verification: verificationProto
+                        ? verificationProtoToState(verificationProto)
+                        : createPhoneVerification(authId, signupPhone),
                 };
             } catch (err: any) {
                 console.error('[SIGNUP] gRPC error:', err);
