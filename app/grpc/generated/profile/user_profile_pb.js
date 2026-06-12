@@ -11,11 +11,14 @@
 /* eslint-disable */
 // @ts-nocheck
 
-var jspb = require('google-protobuf');
-var goog = jspb;
+import * as jspb from 'google-protobuf';
+const goog = jspb;
 var global = globalThis;
+const proto = {};
+proto.profile = {};
 
-var shared_shared_pb = require('../shared/shared_pb.js');
+import * as _shared_shared_pb from '../shared/shared_pb.js';
+const shared_shared_pb = _shared_shared_pb.default || _shared_shared_pb;
 goog.object.extend(proto, shared_shared_pb);
 goog.exportSymbol('proto.profile.PickInput', null, global);
 goog.exportSymbol('proto.profile.PicksRequest', null, global);
@@ -745,4 +748,5 @@ proto.profile.RemovePickRequest.prototype.setFeaturePropertyId = function(value)
 };
 
 
-goog.object.extend(exports, proto.profile);
+
+export default proto.profile;

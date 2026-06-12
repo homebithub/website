@@ -59,6 +59,8 @@ protoc \
     $PROTO_DIR/events/events.proto \
     $PROTO_DIR/shared/shared.proto
 
+node scripts/convert-grpc-generated-to-esm.mjs
+
 echo -e "${GREEN}✅ TypeScript gRPC-Web clients generated successfully!${NC}"
 echo -e "${GREEN}Output directory: $OUT_DIR${NC}"
 echo -e "${YELLOW}Generated files:${NC}"

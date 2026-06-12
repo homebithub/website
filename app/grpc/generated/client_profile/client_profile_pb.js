@@ -11,11 +11,14 @@
 /* eslint-disable */
 // @ts-nocheck
 
-var jspb = require('google-protobuf');
-var goog = jspb;
+import * as jspb from 'google-protobuf';
+const goog = jspb;
 var global = globalThis;
+const proto = {};
+proto.client_profile = {};
 
-var shared_shared_pb = require('../shared/shared_pb.js');
+import * as _shared_shared_pb from '../shared/shared_pb.js';
+const shared_shared_pb = _shared_shared_pb.default || _shared_shared_pb;
 goog.object.extend(proto, shared_shared_pb);
 goog.exportSymbol('proto.client_profile.AttachJobTypeFeaturesRequest', null, global);
 goog.exportSymbol('proto.client_profile.CreateJobTypeRequest', null, global);
@@ -1982,4 +1985,5 @@ proto.client_profile.ListingFeaturePropertyIdRequest.prototype.setId = function(
 };
 
 
-goog.object.extend(exports, proto.client_profile);
+
+export default proto.client_profile;

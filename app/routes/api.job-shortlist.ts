@@ -9,7 +9,6 @@ function encodeCreateApplication(body: Record<string, unknown>) {
   return concatBytes([
     encodeStringField(1, String(body.listing_id || body.listingId || '')),
     encodeStringField(2, String(body.service_provider_id || body.serviceProviderId || '')),
-    encodeStringField(3, String(body.message || '')),
   ]);
 }
 
@@ -40,7 +39,7 @@ export async function action({ request }: { request: Request }) {
 
     const { body: responseBody } = await callUnaryGrpc(
       baseUrl,
-      '/auth.ListingService/ShortlistListing',
+      '/auth.JobService/ApplyForJob',
       requestBytes,
     );
 

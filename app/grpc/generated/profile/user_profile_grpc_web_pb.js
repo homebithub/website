@@ -16,13 +16,14 @@
 
 
 
-const grpc = {};
-grpc.web = require('grpc-web');
+import * as grpcWeb from 'grpc-web';
+const grpc = { web: grpcWeb };
 
 
-var shared_shared_pb = require('../shared/shared_pb.js')
-const proto = {};
-proto.profile = require('./user_profile_pb.js');
+import * as _shared_shared_pb from '../shared/shared_pb.js';
+const shared_shared_pb = _shared_shared_pb.default || _shared_shared_pb
+import * as profile_pb from './user_profile_pb.js';
+const proto = { profile: profile_pb.default || profile_pb };
 
 /**
  * @param {string} hostname
@@ -564,5 +565,9 @@ proto.profile.UserProfileServicePromiseClient.prototype.isComplete =
 };
 
 
-module.exports = proto.profile;
+export default proto.profile;
+export const {
+  UserProfileServiceClient,
+  UserProfileServicePromiseClient,
+} = proto.profile;
 

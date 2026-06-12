@@ -28,7 +28,7 @@ const catalog_profile_pb = (catalog_profile_pb_module as any).default ?? catalog
 const user_profile_pb = (user_profile_pb_module as any).default ?? user_profile_pb_module;
 const {
   ProfileServiceClient,
-  ListingServiceClient,
+  JobServiceClient,
   ShortlistServiceClient,
   InterestServiceClient,
   ReviewServiceClient,
@@ -311,7 +311,7 @@ const hireContractClient = new HireContractServiceClient(GRPC_WEB_BASE_URL, null
 const hireNegotiationClient = new HireNegotiationServiceClient(GRPC_WEB_BASE_URL, null, null);
 const employmentClient = new EmploymentServiceClient(GRPC_WEB_BASE_URL, null, null);
 const employmentContractClient = new EmploymentContractServiceClient(GRPC_WEB_BASE_URL, null, null);
-const listingClient = new ListingServiceClient(GRPC_WEB_BASE_URL, null, null);
+const jobClient = new JobServiceClient(GRPC_WEB_BASE_URL, null, null);
 const openForWorkClient = new OpenForWorkServiceClient(GRPC_WEB_BASE_URL, null, null);
 const bureauClient = new BureauServiceClient(GRPC_WEB_BASE_URL, null, null);
 const waitlistClient = new WaitlistServiceClient(GRPC_WEB_BASE_URL, null, null);
@@ -1311,12 +1311,8 @@ async function enrichListingsWithFeatures(listings: Record<string, any>[]) {
 
 export const listingApplicationService = {
   async shortlistListing(listingId: string, serviceProviderId: string, message = ''): Promise<any> {
-    const req = new auth_pb.CreateApplication();
-    req.setListingId(String(listingId || ''));
-    req.setServiceProviderId(String(serviceProviderId || ''));
-    req.setMessage(message);
-    const res = await grpcCall((cb) => listingClient.shortlistListing(req, getMetadata(), cb));
-    return dataEnvelope(res);
+    const res = await grpcCall((cb) => jobClient.applyForJob(buildIdRequest(listingId, serviceProviderId), getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
 
   async listApplications(options: {
@@ -1326,28 +1322,8 @@ export const listingApplicationService = {
     limit?: number;
     offset?: number;
   }): Promise<any> {
-    const req = new auth_pb.ListApplicationsRequest();
-    if (options.listingId) req.setListingId(options.listingId);
-    if (options.applicantProfileId) req.setApplicantProfileId(options.applicantProfileId);
-    req.setStatusesList(options.statuses || []);
-    req.setLimit(options.limit ?? 20);
-    req.setOffset(options.offset ?? 0);
-
-    const res = await grpcCall((cb) => listingClient.listApplications(req, getMetadata(), cb));
-    const applications = normalizeArray(genericResponseToJs(res));
-    const data = await Promise.all(applications.map(async (application) => {
-      const listingId = String(application.listing_id || application.listingId || '');
-      const listing = listingId ? await jobService.getJob(listingId).catch(() => ({})) : {};
-      return {
-        ...listing,
-        application,
-        application_id: application.id,
-        application_status: application.status,
-        id: String((listing as Record<string, any>).id || listingId),
-        listing_id: listingId,
-      };
-    }));
-    return { data };
+    console.warn('Listing applications are not available in the current auth gRPC contract:', options);
+    return { data: [] };
   },
 };
 
@@ -1357,38 +1333,36 @@ export const listingApplicationService = {
 export const jobService = {
   async createJob(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreateJobReq();
-    req.setUserProfileId(String(data.user_profile_id || data.userProfileId || getStoredUserProfileId() || ''));
-    req.setTitle(String(data.title || ''));
-    req.setDescription(String(data.description || ''));
-    req.setJobTypeId(Number(data.job_type_id || data.jobTypeId || 0));
-    req.setFeaturesList(Array.isArray(data.features) ? data.features.map(buildFeaturePickInput) : []);
-    const res = await grpcCall((cb) => listingClient.createListing(req, getMetadata(), cb));
-    return dataEnvelope(res);
+    req.setUserId(resolveUserId(userId));
+    const struct = toStruct(data);
+    if (struct) req.setData(struct);
+    const res = await grpcCall((cb) => jobClient.createJob(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
 
   async updateJob(id: string, userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.UpdateJobReq();
     req.setId(id);
-    req.setTitle(String(data?.title || ''));
-    req.setDescription(String(data?.description || ''));
-    const res = await grpcCall((cb) => listingClient.updateJob(req, getMetadata(), cb));
-    return dataEnvelope(res);
+    req.setUserId(resolveUserId(userId));
+    const struct = toStruct(data);
+    if (struct) req.setData(struct);
+    const res = await grpcCall((cb) => jobClient.updateJob(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
 
   async deleteJob(id: string, userId?: string): Promise<void> {
-    await grpcCall((cb) => listingClient.deleteJob(buildIdRequest(id, userId), getMetadata(), cb));
+    await grpcCall((cb) => jobClient.deleteJob(buildIdRequest(id, userId), getMetadata(), cb));
   },
 
   async getJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => listingClient.getJobListing(buildIdRequest(id, userId), getMetadata(), cb));
-    const payload = genericResponseToJs(res);
-    return payload?.data ?? payload ?? {};
+    const res = await grpcCall((cb) => jobClient.getJob(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
 
   async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId(), status = ''): Promise<any> {
     try {
-      const res = await grpcCall((cb) => listingClient.listJobs(buildListRequest(limit, offset, userProfileId || '', status), getMetadata(), cb));
-      const listings = normalizeArray(genericResponseToJs(res));
+      const res = await grpcCall((cb) => jobClient.listJobs(buildListRequest(limit, offset), getMetadata(), cb));
+      const listings = normalizeArray(jsonResponseToJs(res));
       return { data: await enrichListingsWithFeatures(listings) };
     } catch (err) {
       console.warn('Failed to list jobs:', err);
@@ -1397,30 +1371,32 @@ export const jobService = {
   },
 
   async searchJobs(filters: Record<string, any>, userId?: string): Promise<any> {
-    return jobService.listJobs(
-      Number(filters?.limit || 20),
-      Number(filters?.offset || 0),
-      String(filters?.user_profile_id || filters?.userProfileId || ''),
-      String(filters?.status || ''),
-    );
+    const req = new auth_pb.SearchRequest();
+    if (userId) req.setUserId(resolveUserId(userId));
+    const struct = toStruct(filters || {});
+    if (struct) req.setFilters(struct);
+    const res = await grpcCall((cb) => jobClient.searchJobs(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
 
   async getLatestJobs(limit = 10): Promise<any> {
-    return jobService.listJobs(limit, 0, '');
+    const res = await grpcCall((cb) => jobClient.getLatestJobs(buildListRequest(limit, 0), getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
 
   async applyForJob(id: string, userId?: string): Promise<any> {
-    return listingApplicationService.shortlistListing(id, userId || getStoredUserProfileId() || '');
+    const res = await grpcCall((cb) => jobClient.applyForJob(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
 
   async closeJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => listingClient.closeListing(buildIdRequest(id, userId), getMetadata(), cb));
-    return dataEnvelope(res);
+    const res = await grpcCall((cb) => jobClient.closeJob(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
 
   async reopenJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => listingClient.reopenListing(buildIdRequest(id, userId), getMetadata(), cb));
-    return dataEnvelope(res);
+    const res = await grpcCall((cb) => jobClient.reopenJob(buildIdRequest(id, userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
 
   async getJobsByUserId(userId: string): Promise<any> {

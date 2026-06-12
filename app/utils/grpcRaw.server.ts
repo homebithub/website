@@ -62,6 +62,11 @@ export function encodeMessageField(fieldNo: number, value: Uint8Array): Uint8Arr
   return concatBytes([encodeVarint((fieldNo << 3) | 2), encodeVarint(value.length), value]);
 }
 
+export function encodeStructField(fieldNo: number, value: Record<string, unknown>): Uint8Array {
+  const struct = Struct.fromJavaScript(stripUndefined(value || {}) as Record<string, never>);
+  return encodeMessageField(fieldNo, struct.serializeBinary());
+}
+
 export function concatBytes(parts: Uint8Array[]): Uint8Array {
   const length = parts.reduce((sum, part) => sum + part.length, 0);
   const out = new Uint8Array(length);
@@ -71,6 +76,19 @@ export function concatBytes(parts: Uint8Array[]): Uint8Array {
     offset += part.length;
   }
   return out;
+}
+
+function stripUndefined(value: unknown): unknown {
+  if (value === undefined || value === null) return null;
+  if (Array.isArray(value)) return value.map(stripUndefined);
+  if (typeof value === 'object') {
+    const clean: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      if (item !== undefined) clean[key] = stripUndefined(item);
+    }
+    return clean;
+  }
+  return value;
 }
 
 function encodeVarint(value: number): Uint8Array {

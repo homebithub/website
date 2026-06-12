@@ -16,13 +16,14 @@
 
 
 
-const grpc = {};
-grpc.web = require('grpc-web');
+import * as grpcWeb from 'grpc-web';
+const grpc = { web: grpcWeb };
 
 
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js')
-const proto = {};
-proto.notifications = require('./notifications_pb.js');
+import * as _google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
+const google_protobuf_struct_pb = _google_protobuf_struct_pb.default || _google_protobuf_struct_pb
+import * as notifications_pb from './notifications_pb.js';
+const proto = { notifications: notifications_pb.default || notifications_pb };
 
 /**
  * @param {string} hostname
@@ -2638,5 +2639,9 @@ proto.notifications.NotificationsServicePromiseClient.prototype.purgeUserData =
 };
 
 
-module.exports = proto.notifications;
+export default proto.notifications;
+export const {
+  NotificationsServiceClient,
+  NotificationsServicePromiseClient,
+} = proto.notifications;
 

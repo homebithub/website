@@ -2,7 +2,6 @@ import * as grpcWeb from 'grpc-web';
 
 import * as auth_auth_pb from '../auth/auth_pb'; // proto import: "auth/auth.proto"
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
-import * as shared_shared_pb from '../shared/shared_pb'; // proto import: "shared/shared.proto"
 
 
 export class AdminServiceClient {
@@ -140,15 +139,15 @@ export class AuthServiceClient {
     request: auth_auth_pb.SignupRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.SignupResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.SignupResponse>;
 
   login(
     request: auth_auth_pb.LoginRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.LoginResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.LoginResponse>;
 
   logout(
     request: auth_auth_pb.LogoutRequest,
@@ -266,15 +265,15 @@ export class AuthServiceClient {
     request: auth_auth_pb.VerifyOTPRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.VerifyOTPResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.VerifyOTPResponse>;
 
   resendOTP(
     request: auth_auth_pb.ResendOTPRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.ResendOTPResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.ResendOTPResponse>;
 
   checkVerificationStatus(
     request: auth_auth_pb.CheckVerificationStatusRequest,
@@ -387,6 +386,216 @@ export class BureauServiceClient {
     callback: (err: grpcWeb.RpcError,
                response: auth_auth_pb.BureauHousehelpLinkResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.BureauHousehelpLinkResponse>;
+
+}
+
+export class ProfileServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  getCurrentHouseholdProfile(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateHouseholdProfile(
+    request: auth_auth_pb.UpdateProfileRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHouseholdByUserID(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  searchHouseholds(
+    request: auth_auth_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  countHouseholds(
+    request: auth_auth_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.CountResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.CountResponse>;
+
+  getCurrentHousehelpProfile(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHousehelpByID(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHousehelpByUserID(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHousehelpProfileWithUser(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  searchHousehelpByPhone(
+    request: auth_auth_pb.PhoneRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHousehelpsByBureau(
+    request: auth_auth_pb.GetByBureauRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listHousehelps(
+    request: auth_auth_pb.ListRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  searchHousehelps(
+    request: auth_auth_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  countHousehelps(
+    request: auth_auth_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.CountResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.CountResponse>;
+
+  searchMultipleWithUser(
+    request: auth_auth_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHousehelpsByStatus(
+    request: auth_auth_pb.StatusRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHousehelpsBySkill(
+    request: auth_auth_pb.StringFieldRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHousehelpsByLocation(
+    request: auth_auth_pb.StringFieldRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHousehelpsByMinRating(
+    request: auth_auth_pb.RatingRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getPopularHousehelps(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateProfileOverview(
+    request: auth_auth_pb.UpdateProfileFieldRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updatePersonalDetails(
+    request: auth_auth_pb.UpdateProfileFieldRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateFamilyContacts(
+    request: auth_auth_pb.UpdateProfileFieldRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateEducationHealth(
+    request: auth_auth_pb.UpdateProfileFieldRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateEmploymentSalary(
+    request: auth_auth_pb.UpdateProfileFieldRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deleteHousehelp(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  updateHousehelpFields(
+    request: auth_auth_pb.UpdateHousehelpFieldsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  saveUserLocation(
+    request: auth_auth_pb.SaveUserLocationRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getProfileDocuments(
+    request: auth_auth_pb.GetProfileDocumentsRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
 }
 
@@ -516,38 +725,143 @@ export class HireNegotiationServiceClient {
 
 }
 
-export class ListingServiceClient {
+export class EmploymentServiceClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: any; });
 
-  createListing(
-    request: auth_auth_pb.CreateJobReq,
+  listByHousehold(
+    request: auth_auth_pb.PaginatedUserRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
-  getJobListing(
+  listByHousehelp(
+    request: auth_auth_pb.PaginatedUserRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  hire(
+    request: auth_auth_pb.HireEmploymentReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  terminate(
+    request: auth_auth_pb.TerminateEmploymentReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  transitionStatus(
+    request: auth_auth_pb.TransitionStatusReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getCurrentStatus(
     request: auth_auth_pb.IdRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getStatusHistory(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getLatestByProfileID(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getByHouseholdID(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getByProfileID(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getByStatus(
+    request: auth_auth_pb.StatusRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  createProfileStatus(
+    request: auth_auth_pb.CreateProfileStatusReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateProfileStatus(
+    request: auth_auth_pb.UpdateProfileStatusReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deleteProfileStatus(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+}
+
+export class JobServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createJob(
+    request: auth_auth_pb.CreateJobReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getJob(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
   listJobs(
     request: auth_auth_pb.ListRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
   updateJob(
     request: auth_auth_pb.UpdateJobReq,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
   deleteJob(
     request: auth_auth_pb.IdRequest,
@@ -556,68 +870,292 @@ export class ListingServiceClient {
                response: google_protobuf_empty_pb.Empty) => void
   ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
 
-  closeListing(
+  searchJobs(
+    request: auth_auth_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getLatestJobs(
+    request: auth_auth_pb.ListRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  applyForJob(
     request: auth_auth_pb.IdRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
-  reopenListing(
+  closeJob(
     request: auth_auth_pb.IdRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
-  shortlistListing(
-    request: auth_auth_pb.CreateApplication,
+  reopenJob(
+    request: auth_auth_pb.IdRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
-  promoteToInitiated(
-    request: auth_auth_pb.ApplicationActionRequest,
+  getJobsByUserID(
+    request: auth_auth_pb.UserIdRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
-  unshortlistListing(
-    request: auth_auth_pb.ApplicationActionRequest,
+  getJobsByStatus(
+    request: auth_auth_pb.StatusRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
-  initiateListing(
-    request: auth_auth_pb.CreateApplication,
+  getJobsByType(
+    request: auth_auth_pb.StringFieldRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
-  respondApplication(
-    request: auth_auth_pb.RespondApplicationRequest,
+  getJobsByLocation(
+    request: auth_auth_pb.StringFieldRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
-  approveApplication(
-    request: auth_auth_pb.ApplicationActionRequest,
+  getJobsBySkill(
+    request: auth_auth_pb.StringFieldRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
-  listApplications(
-    request: auth_auth_pb.ListApplicationsRequest,
+  getJobsBySalaryRange(
+    request: auth_auth_pb.SalaryRangeRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: shared_shared_pb.GenericResponse) => void
-  ): grpcWeb.ClientReadableStream<shared_shared_pb.GenericResponse>;
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+}
+
+export class OpenForWorkServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createOpenForWork(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getOpenForWork(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getOpenForWorkByHousehelp(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  searchOpenForWork(
+    request: auth_auth_pb.SearchRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listOpenForWork(
+    request: auth_auth_pb.ListRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateOpenForWork(
+    request: auth_auth_pb.UpdateByIdPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deleteOpenForWork(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+}
+
+export class ShortlistServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createShortlist(
+    request: auth_auth_pb.CreateShortlistReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getShortlist(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateShortlist(
+    request: auth_auth_pb.UpdateShortlistReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deleteShortlist(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  listByHousehold(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listByProfile(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getShortlistCount(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.CountResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.CountResponse>;
+
+  shortlistExists(
+    request: auth_auth_pb.ShortlistExistsReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.BoolResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.BoolResponse>;
+
+  unlockShortlist(
+    request: auth_auth_pb.ShortlistUnlockReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.ShortlistContactResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.ShortlistContactResponse>;
+
+  getUnlockedContact(
+    request: auth_auth_pb.ShortlistUnlockReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.ShortlistContactResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.ShortlistContactResponse>;
+
+}
+
+export class InterestServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createInterest(
+    request: auth_auth_pb.CreateInterestReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getInterest(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deleteInterest(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  listByHousehold(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listByHousehelp(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  interestExists(
+    request: auth_auth_pb.InterestExistsReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.BoolResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.BoolResponse>;
+
+  getInterestCount(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.CountResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.CountResponse>;
+
+  markViewed(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  acceptInterest(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  declineInterest(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
 
 }
 
@@ -726,6 +1264,62 @@ export class ReviewServiceClient {
 
 }
 
+export class LocationServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createLocation(
+    request: auth_auth_pb.CreateLocationReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getLocationSuggestions(
+    request: auth_auth_pb.LocationQueryReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  searchLocations(
+    request: auth_auth_pb.LocationQueryReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getLocationByID(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getLocationByMapboxID(
+    request: auth_auth_pb.StringFieldRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateLocation(
+    request: auth_auth_pb.UpdateLocationReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deleteLocation(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+}
+
 export class ImageServiceClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
@@ -803,6 +1397,300 @@ export class DocumentServiceClient {
 
 }
 
+export class PetsServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createPet(
+    request: auth_auth_pb.CreatePetReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getPetByID(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listMyPets(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updatePet(
+    request: auth_auth_pb.UpdatePetReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deletePet(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  listPetsByUserID(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+}
+
+export class HouseholdKidsServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createHouseholdKid(
+    request: auth_auth_pb.CreateHouseholdKidReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHouseholdKid(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listHouseholdKids(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateHouseholdKid(
+    request: auth_auth_pb.UpdateHouseholdKidReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deleteHouseholdKid(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+}
+
+export class HousehelpPreferencesServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createHousehelpPreference(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHousehelpPreference(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listHousehelpPreferences(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateHousehelpPreference(
+    request: auth_auth_pb.UpdateByIdPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deleteHousehelpPreference(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  addChores(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateBudget(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateAvailability(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+}
+
+export class HouseholdPreferencesServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  updateBudget(
+    request: auth_auth_pb.HouseholdPrefReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateHouseSize(
+    request: auth_auth_pb.HouseholdPrefReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+}
+
+export class HouseholdMemberServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  validateInviteCode(
+    request: auth_auth_pb.StringFieldRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getOrCreateInvitationCode(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  createInvitation(
+    request: auth_auth_pb.CreateInvitationReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listInvitations(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  revokeInvitation(
+    request: auth_auth_pb.RevokeInvitationReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  joinHousehold(
+    request: auth_auth_pb.JoinHouseholdReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getJoinRequestStatus(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listPendingRequests(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  approveRequest(
+    request: auth_auth_pb.ApproveRejectReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  rejectRequest(
+    request: auth_auth_pb.ApproveRejectReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  listMembers(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateMemberRole(
+    request: auth_auth_pb.UpdateMemberRoleReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  removeMember(
+    request: auth_auth_pb.RemoveMemberReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  transferOwnership(
+    request: auth_auth_pb.TransferOwnershipReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getUserHouseholds(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  leaveHousehold(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+}
+
 export class ProfileViewServiceClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
@@ -831,6 +1719,244 @@ export class ProfileViewServiceClient {
 
   getProfileViews(
     request: auth_auth_pb.GetProfileViewsReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+}
+
+export class PreferencesServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  getPreferences(
+    request: auth_auth_pb.PreferencesReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updatePreferences(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deletePreferences(
+    request: auth_auth_pb.PreferencesReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  migrateAnonymousToUser(
+    request: auth_auth_pb.MigratePrefsReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getAnalytics(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+}
+
+export class ProfileSetupServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  getProgress(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateProgress(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getSteps(
+    request: auth_auth_pb.UserIdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateStep(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getSetupAnalytics(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getDropoffAnalysis(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getUsersAtStep(
+    request: auth_auth_pb.StepRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  markAbandoned(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+}
+
+export class OnboardingOptionsServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  getLanguages(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getCertifications(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getSkills(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getChores(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHouseSizes(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getReligions(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getExperienceLevels(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getSalaryRanges(
+    request: auth_auth_pb.SalaryFrequencyRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getPetTypes(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getPetTraits(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getChildrenAgeRanges(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getChildrenCapacities(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getHouseholdSizePreferences(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getLocationTypePreferences(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getFamilyTypePreferences(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getReferenceRelationships(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getOnboardingSteps(
+    request: auth_auth_pb.ProfileTypeRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getAllOptions(
+    request: auth_auth_pb.ProfileTypeRequest,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
                response: auth_auth_pb.JsonResponse) => void
@@ -943,6 +2069,76 @@ export class WaitlistServiceClient {
 
 }
 
+export class EmploymentContractServiceClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createEmploymentContract(
+    request: auth_auth_pb.JsonPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getEmploymentContract(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  updateEmploymentContract(
+    request: auth_auth_pb.UpdateByIdPayload,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  deleteEmploymentContract(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: google_protobuf_empty_pb.Empty) => void
+  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
+
+  listEmploymentContracts(
+    request: auth_auth_pb.ListEmploymentContractsReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  signByHousehold(
+    request: auth_auth_pb.SignContractReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  signByHousehelp(
+    request: auth_auth_pb.SignContractReq,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  forwardToHousehelp(
+    request: auth_auth_pb.IdRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+  getDefaultClauses(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.JsonResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.JsonResponse>;
+
+}
+
 export class KYCServiceClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
@@ -1010,6 +2206,20 @@ export class AdminAuthServiceClient {
     callback: (err: grpcWeb.RpcError,
                response: auth_auth_pb.AdminLoginResponse) => void
   ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminLoginResponse>;
+
+  adminVerifyOTP(
+    request: auth_auth_pb.AdminVerifyOTPRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.AdminVerifyOTPResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminVerifyOTPResponse>;
+
+  adminResendOTP(
+    request: auth_auth_pb.AdminResendOTPRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: auth_auth_pb.AdminResendOTPResponse) => void
+  ): grpcWeb.ClientReadableStream<auth_auth_pb.AdminResendOTPResponse>;
 
   adminRefreshToken(
     request: auth_auth_pb.AdminRefreshTokenRequest,
@@ -1281,12 +2491,12 @@ export class AuthServicePromiseClient {
   signup(
     request: auth_auth_pb.SignupRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.SignupResponse>;
 
   login(
     request: auth_auth_pb.LoginRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.LoginResponse>;
 
   logout(
     request: auth_auth_pb.LogoutRequest,
@@ -1371,12 +2581,12 @@ export class AuthServicePromiseClient {
   verifyOTP(
     request: auth_auth_pb.VerifyOTPRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.VerifyOTPResponse>;
 
   resendOTP(
     request: auth_auth_pb.ResendOTPRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.ResendOTPResponse>;
 
   checkVerificationStatus(
     request: auth_auth_pb.CheckVerificationStatusRequest,
@@ -1459,6 +2669,158 @@ export class BureauServicePromiseClient {
     request: auth_auth_pb.BureauHousehelpLinkIdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.BureauHousehelpLinkResponse>;
+
+}
+
+export class ProfileServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  getCurrentHouseholdProfile(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateHouseholdProfile(
+    request: auth_auth_pb.UpdateProfileRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHouseholdByUserID(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  searchHouseholds(
+    request: auth_auth_pb.SearchRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  countHouseholds(
+    request: auth_auth_pb.SearchRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.CountResponse>;
+
+  getCurrentHousehelpProfile(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHousehelpByID(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHousehelpByUserID(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHousehelpProfileWithUser(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  searchHousehelpByPhone(
+    request: auth_auth_pb.PhoneRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHousehelpsByBureau(
+    request: auth_auth_pb.GetByBureauRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listHousehelps(
+    request: auth_auth_pb.ListRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  searchHousehelps(
+    request: auth_auth_pb.SearchRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  countHousehelps(
+    request: auth_auth_pb.SearchRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.CountResponse>;
+
+  searchMultipleWithUser(
+    request: auth_auth_pb.SearchRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHousehelpsByStatus(
+    request: auth_auth_pb.StatusRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHousehelpsBySkill(
+    request: auth_auth_pb.StringFieldRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHousehelpsByLocation(
+    request: auth_auth_pb.StringFieldRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHousehelpsByMinRating(
+    request: auth_auth_pb.RatingRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getPopularHousehelps(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateProfileOverview(
+    request: auth_auth_pb.UpdateProfileFieldRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updatePersonalDetails(
+    request: auth_auth_pb.UpdateProfileFieldRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateFamilyContacts(
+    request: auth_auth_pb.UpdateProfileFieldRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateEducationHealth(
+    request: auth_auth_pb.UpdateProfileFieldRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateEmploymentSalary(
+    request: auth_auth_pb.UpdateProfileFieldRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deleteHousehelp(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  updateHousehelpFields(
+    request: auth_auth_pb.UpdateHousehelpFieldsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  saveUserLocation(
+    request: auth_auth_pb.SaveUserLocationRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getProfileDocuments(
+    request: auth_auth_pb.GetProfileDocumentsRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
 
 }
 
@@ -1558,80 +2920,323 @@ export class HireNegotiationServicePromiseClient {
 
 }
 
-export class ListingServicePromiseClient {
+export class EmploymentServicePromiseClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
                options?: null | { [index: string]: any; });
 
-  createListing(
-    request: auth_auth_pb.CreateJobReq,
+  listByHousehold(
+    request: auth_auth_pb.PaginatedUserRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
-  getJobListing(
+  listByHousehelp(
+    request: auth_auth_pb.PaginatedUserRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  hire(
+    request: auth_auth_pb.HireEmploymentReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  terminate(
+    request: auth_auth_pb.TerminateEmploymentReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  transitionStatus(
+    request: auth_auth_pb.TransitionStatusReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getCurrentStatus(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getStatusHistory(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getLatestByProfileID(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getByHouseholdID(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getByProfileID(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getByStatus(
+    request: auth_auth_pb.StatusRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  createProfileStatus(
+    request: auth_auth_pb.CreateProfileStatusReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateProfileStatus(
+    request: auth_auth_pb.UpdateProfileStatusReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deleteProfileStatus(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+}
+
+export class JobServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createJob(
+    request: auth_auth_pb.CreateJobReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getJob(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
 
   listJobs(
     request: auth_auth_pb.ListRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
   updateJob(
     request: auth_auth_pb.UpdateJobReq,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
   deleteJob(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<google_protobuf_empty_pb.Empty>;
 
-  closeListing(
+  searchJobs(
+    request: auth_auth_pb.SearchRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getLatestJobs(
+    request: auth_auth_pb.ListRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  applyForJob(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
-  reopenListing(
+  closeJob(
     request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
-  shortlistListing(
-    request: auth_auth_pb.CreateApplication,
+  reopenJob(
+    request: auth_auth_pb.IdRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
-  promoteToInitiated(
-    request: auth_auth_pb.ApplicationActionRequest,
+  getJobsByUserID(
+    request: auth_auth_pb.UserIdRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
-  unshortlistListing(
-    request: auth_auth_pb.ApplicationActionRequest,
+  getJobsByStatus(
+    request: auth_auth_pb.StatusRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
-  initiateListing(
-    request: auth_auth_pb.CreateApplication,
+  getJobsByType(
+    request: auth_auth_pb.StringFieldRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
-  respondApplication(
-    request: auth_auth_pb.RespondApplicationRequest,
+  getJobsByLocation(
+    request: auth_auth_pb.StringFieldRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
-  approveApplication(
-    request: auth_auth_pb.ApplicationActionRequest,
+  getJobsBySkill(
+    request: auth_auth_pb.StringFieldRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
 
-  listApplications(
-    request: auth_auth_pb.ListApplicationsRequest,
+  getJobsBySalaryRange(
+    request: auth_auth_pb.SalaryRangeRequest,
     metadata?: grpcWeb.Metadata
-  ): Promise<shared_shared_pb.GenericResponse>;
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+}
+
+export class OpenForWorkServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createOpenForWork(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getOpenForWork(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getOpenForWorkByHousehelp(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  searchOpenForWork(
+    request: auth_auth_pb.SearchRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listOpenForWork(
+    request: auth_auth_pb.ListRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateOpenForWork(
+    request: auth_auth_pb.UpdateByIdPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deleteOpenForWork(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+}
+
+export class ShortlistServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createShortlist(
+    request: auth_auth_pb.CreateShortlistReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getShortlist(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateShortlist(
+    request: auth_auth_pb.UpdateShortlistReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deleteShortlist(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  listByHousehold(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listByProfile(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getShortlistCount(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.CountResponse>;
+
+  shortlistExists(
+    request: auth_auth_pb.ShortlistExistsReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.BoolResponse>;
+
+  unlockShortlist(
+    request: auth_auth_pb.ShortlistUnlockReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.ShortlistContactResponse>;
+
+  getUnlockedContact(
+    request: auth_auth_pb.ShortlistUnlockReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.ShortlistContactResponse>;
+
+}
+
+export class InterestServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createInterest(
+    request: auth_auth_pb.CreateInterestReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getInterest(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deleteInterest(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  listByHousehold(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listByHousehelp(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  interestExists(
+    request: auth_auth_pb.InterestExistsReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.BoolResponse>;
+
+  getInterestCount(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.CountResponse>;
+
+  markViewed(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  acceptInterest(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  declineInterest(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
 
 }
 
@@ -1712,6 +3317,48 @@ export class ReviewServicePromiseClient {
 
 }
 
+export class LocationServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createLocation(
+    request: auth_auth_pb.CreateLocationReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getLocationSuggestions(
+    request: auth_auth_pb.LocationQueryReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  searchLocations(
+    request: auth_auth_pb.LocationQueryReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getLocationByID(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getLocationByMapboxID(
+    request: auth_auth_pb.StringFieldRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateLocation(
+    request: auth_auth_pb.UpdateLocationReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deleteLocation(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+}
+
 export class ImageServicePromiseClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
@@ -1771,6 +3418,226 @@ export class DocumentServicePromiseClient {
 
 }
 
+export class PetsServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createPet(
+    request: auth_auth_pb.CreatePetReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getPetByID(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listMyPets(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updatePet(
+    request: auth_auth_pb.UpdatePetReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deletePet(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  listPetsByUserID(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+}
+
+export class HouseholdKidsServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createHouseholdKid(
+    request: auth_auth_pb.CreateHouseholdKidReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHouseholdKid(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listHouseholdKids(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateHouseholdKid(
+    request: auth_auth_pb.UpdateHouseholdKidReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deleteHouseholdKid(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+}
+
+export class HousehelpPreferencesServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createHousehelpPreference(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHousehelpPreference(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listHousehelpPreferences(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateHousehelpPreference(
+    request: auth_auth_pb.UpdateByIdPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deleteHousehelpPreference(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  addChores(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateBudget(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateAvailability(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+}
+
+export class HouseholdPreferencesServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  updateBudget(
+    request: auth_auth_pb.HouseholdPrefReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateHouseSize(
+    request: auth_auth_pb.HouseholdPrefReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+}
+
+export class HouseholdMemberServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  validateInviteCode(
+    request: auth_auth_pb.StringFieldRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getOrCreateInvitationCode(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  createInvitation(
+    request: auth_auth_pb.CreateInvitationReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listInvitations(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  revokeInvitation(
+    request: auth_auth_pb.RevokeInvitationReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  joinHousehold(
+    request: auth_auth_pb.JoinHouseholdReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getJoinRequestStatus(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listPendingRequests(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  approveRequest(
+    request: auth_auth_pb.ApproveRejectReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  rejectRequest(
+    request: auth_auth_pb.ApproveRejectReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  listMembers(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateMemberRole(
+    request: auth_auth_pb.UpdateMemberRoleReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  removeMember(
+    request: auth_auth_pb.RemoveMemberReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  transferOwnership(
+    request: auth_auth_pb.TransferOwnershipReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getUserHouseholds(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  leaveHousehold(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+}
+
 export class ProfileViewServicePromiseClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
@@ -1793,6 +3660,182 @@ export class ProfileViewServicePromiseClient {
 
   getProfileViews(
     request: auth_auth_pb.GetProfileViewsReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+}
+
+export class PreferencesServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  getPreferences(
+    request: auth_auth_pb.PreferencesReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updatePreferences(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deletePreferences(
+    request: auth_auth_pb.PreferencesReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  migrateAnonymousToUser(
+    request: auth_auth_pb.MigratePrefsReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getAnalytics(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+}
+
+export class ProfileSetupServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  getProgress(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateProgress(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getSteps(
+    request: auth_auth_pb.UserIdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateStep(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getSetupAnalytics(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getDropoffAnalysis(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getUsersAtStep(
+    request: auth_auth_pb.StepRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  markAbandoned(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+}
+
+export class OnboardingOptionsServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  getLanguages(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getCertifications(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getSkills(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getChores(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHouseSizes(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getReligions(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getExperienceLevels(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getSalaryRanges(
+    request: auth_auth_pb.SalaryFrequencyRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getPetTypes(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getPetTraits(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getChildrenAgeRanges(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getChildrenCapacities(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getHouseholdSizePreferences(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getLocationTypePreferences(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getFamilyTypePreferences(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getReferenceRelationships(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getOnboardingSteps(
+    request: auth_auth_pb.ProfileTypeRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getAllOptions(
+    request: auth_auth_pb.ProfileTypeRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.JsonResponse>;
 
@@ -1877,6 +3920,58 @@ export class WaitlistServicePromiseClient {
 
 }
 
+export class EmploymentContractServicePromiseClient {
+  constructor (hostname: string,
+               credentials?: null | { [index: string]: string; },
+               options?: null | { [index: string]: any; });
+
+  createEmploymentContract(
+    request: auth_auth_pb.JsonPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getEmploymentContract(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  updateEmploymentContract(
+    request: auth_auth_pb.UpdateByIdPayload,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  deleteEmploymentContract(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<google_protobuf_empty_pb.Empty>;
+
+  listEmploymentContracts(
+    request: auth_auth_pb.ListEmploymentContractsReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  signByHousehold(
+    request: auth_auth_pb.SignContractReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  signByHousehelp(
+    request: auth_auth_pb.SignContractReq,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  forwardToHousehelp(
+    request: auth_auth_pb.IdRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+  getDefaultClauses(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.JsonResponse>;
+
+}
+
 export class KYCServicePromiseClient {
   constructor (hostname: string,
                credentials?: null | { [index: string]: string; },
@@ -1928,6 +4023,16 @@ export class AdminAuthServicePromiseClient {
     request: auth_auth_pb.AdminLoginRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<auth_auth_pb.AdminLoginResponse>;
+
+  adminVerifyOTP(
+    request: auth_auth_pb.AdminVerifyOTPRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.AdminVerifyOTPResponse>;
+
+  adminResendOTP(
+    request: auth_auth_pb.AdminResendOTPRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<auth_auth_pb.AdminResendOTPResponse>;
 
   adminRefreshToken(
     request: auth_auth_pb.AdminRefreshTokenRequest,

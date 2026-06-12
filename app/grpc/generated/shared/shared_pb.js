@@ -11,11 +11,14 @@
 /* eslint-disable */
 // @ts-nocheck
 
-var jspb = require('google-protobuf');
-var goog = jspb;
+import * as jspb from 'google-protobuf';
+const goog = jspb;
 var global = globalThis;
+const proto = {};
+proto.shared = {};
 
-var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
+import * as _google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
+const google_protobuf_struct_pb = _google_protobuf_struct_pb.default || _google_protobuf_struct_pb;
 goog.object.extend(proto, google_protobuf_struct_pb);
 goog.exportSymbol('proto.shared.GenericHeader', null, global);
 goog.exportSymbol('proto.shared.GenericResponse', null, global);
@@ -483,4 +486,5 @@ proto.shared.GenericHeader.prototype.setDisplayMessage = function(value) {
 };
 
 
-goog.object.extend(exports, proto.shared);
+
+export default proto.shared;

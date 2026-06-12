@@ -1,12 +1,67 @@
-import {
-  callUnaryGrpc,
-  concatBytes,
-  encodeInt32Field,
-  encodeInt64Field,
-  encodeMessageField,
-  encodeStringField,
-  resolveAuthGrpcBaseUrl,
-} from '~/utils/grpcRaw.server';
+import structPb from 'google-protobuf/google/protobuf/struct_pb.js';
+
+const { Struct } = structPb;
+
+function encodeStringField(fieldNo: number, value: string): Uint8Array {
+  if (!value) return new Uint8Array();
+  const encoded = new TextEncoder().encode(value);
+  return concatBytes([encodeVarint((fieldNo << 3) | 2), encodeVarint(encoded.length), encoded]);
+}
+
+function encodeInt32Field(fieldNo: number, value: number): Uint8Array {
+  if (!Number.isFinite(value) || value === 0) return new Uint8Array();
+  return concatBytes([encodeVarint((fieldNo << 3) | 0), encodeVarint(value)]);
+}
+
+function encodeInt64Field(fieldNo: number, value: number): Uint8Array {
+  if (!Number.isFinite(value) || value === 0) return new Uint8Array();
+  return concatBytes([encodeVarint((fieldNo << 3) | 0), encodeVarint(value)]);
+}
+
+function encodeMessageField(fieldNo: number, value: Uint8Array): Uint8Array {
+  if (!value.length) return new Uint8Array();
+  return concatBytes([encodeVarint((fieldNo << 3) | 2), encodeVarint(value.length), value]);
+}
+
+function encodeStructField(fieldNo: number, value: Record<string, unknown>) {
+  const struct = Struct.fromJavaScript(stripUndefined(value || {}) as Record<string, never>);
+  return encodeMessageField(fieldNo, struct.serializeBinary());
+}
+
+function concatBytes(parts: Uint8Array[]): Uint8Array {
+  const length = parts.reduce((sum, part) => sum + part.length, 0);
+  const out = new Uint8Array(length);
+  let offset = 0;
+  for (const part of parts) {
+    out.set(part, offset);
+    offset += part.length;
+  }
+  return out;
+}
+
+function encodeVarint(value: number): Uint8Array {
+  const out: number[] = [];
+  let next = value >>> 0;
+  while (next > 127) {
+    out.push((next & 0x7f) | 0x80);
+    next >>>= 7;
+  }
+  out.push(next);
+  return Uint8Array.from(out);
+}
+
+function stripUndefined(value: unknown): unknown {
+  if (value === undefined || value === null) return null;
+  if (Array.isArray(value)) return value.map(stripUndefined);
+  if (typeof value === 'object') {
+    const clean: Record<string, unknown> = {};
+    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
+      if (item !== undefined) clean[key] = stripUndefined(item);
+    }
+    return clean;
+  }
+  return value;
+}
 
 function encodeListRequest(params: URLSearchParams) {
   const limit = Number(params.get('limit') || '20');
@@ -17,28 +72,25 @@ function encodeListRequest(params: URLSearchParams) {
   return concatBytes([
     encodeInt32Field(1, Number.isFinite(limit) ? limit : 20),
     encodeInt32Field(2, Number.isFinite(offset) ? offset : 0),
-    encodeStringField(3, userProfileId),
-    encodeStringField(4, status),
   ]);
 }
 
 function encodeCreateJobReq(body: Record<string, unknown>) {
-  const features = Array.isArray(body.features) ? body.features : [];
-
+  const data = {
+    ...body,
+    user_profile_id: body.user_profile_id || body.userProfileId,
+  };
   return concatBytes([
-    encodeStringField(1, String(body.user_profile_id || body.userProfileId || '')),
-    encodeStringField(2, String(body.title || '')),
-    encodeStringField(3, String(body.description || '')),
-    encodeInt32Field(4, Number(body.job_type_id || body.jobTypeId || 0)),
-    ...features.map((feature) => encodeMessageField(5, encodeFeaturePick(feature))),
+    encodeStringField(1, String(body.user_id || body.userId || body.user_profile_id || body.userProfileId || '')),
+    encodeStructField(2, data),
   ]);
 }
 
 function encodeUpdateJobReq(body: Record<string, unknown>) {
   return concatBytes([
     encodeStringField(1, String(body.id || '')),
-    encodeStringField(2, String(body.title || '')),
-    encodeStringField(3, String(body.description || '')),
+    encodeStringField(2, String(body.user_id || body.userId || '')),
+    encodeStructField(3, body),
   ]);
 }
 
@@ -152,7 +204,7 @@ function groupListingFeatures(rows: Record<string, unknown>[], bundles: Record<s
   return Array.from(groups.values()).filter((group) => group.properties.length > 0);
 }
 
-async function getListingFeatureRows(baseUrl: string, listingId: number) {
+async function getListingFeatureRows(baseUrl: string, listingId: number, callUnaryGrpc: any) {
   const { body } = await callUnaryGrpc(
     baseUrl,
     '/client_profile.ClientProfileService/GetListingFeatureProperties',
@@ -161,7 +213,7 @@ async function getListingFeatureRows(baseUrl: string, listingId: number) {
   return normalizeArray(body.data ?? body);
 }
 
-async function getJobTypeBundles(baseUrl: string, jobTypeId: number) {
+async function getJobTypeBundles(baseUrl: string, jobTypeId: number, callUnaryGrpc: any) {
   if (!jobTypeId) return [];
   const { body } = await callUnaryGrpc(
     baseUrl,
@@ -171,10 +223,10 @@ async function getJobTypeBundles(baseUrl: string, jobTypeId: number) {
   return normalizeArray(body.data ?? body);
 }
 
-async function getJobListing(baseUrl: string, id: number) {
+async function getJobListing(baseUrl: string, id: number, callUnaryGrpc: any) {
   const { body } = await callUnaryGrpc(
     baseUrl,
-    '/auth.ListingService/GetJobListing',
+    '/auth.JobService/GetJob',
     encodeIdRequest(String(id)),
   );
   const payload = body.data ?? body;
@@ -183,15 +235,15 @@ async function getJobListing(baseUrl: string, id: number) {
     : {};
 }
 
-async function enrichListingsWithFeatures(baseUrl: string, listings: Record<string, unknown>[]) {
+async function enrichListingsWithFeatures(baseUrl: string, listings: Record<string, unknown>[], callUnaryGrpc: any) {
   return Promise.all(listings.map(async (listing) => {
     const listingId = extractListingId(listing);
     if (!listingId) return listing;
 
     try {
-      const rows = await getListingFeatureRows(baseUrl, listingId);
+      const rows = await getListingFeatureRows(baseUrl, listingId, callUnaryGrpc);
       const jobTypeID = Number(listing.job_type_id || listing.jobTypeId || 0);
-      const bundles = await getJobTypeBundles(baseUrl, jobTypeID).catch(() => []);
+      const bundles = await getJobTypeBundles(baseUrl, jobTypeID, callUnaryGrpc).catch(() => []);
 
       return {
         ...listing,
@@ -210,20 +262,21 @@ async function enrichListingsWithFeatures(baseUrl: string, listings: Record<stri
 
 export async function loader({ request }: { request: Request }) {
   try {
+    const { callUnaryGrpc, resolveAuthGrpcBaseUrl } = await import('~/utils/grpcRaw.server');
     const url = new URL(request.url);
     const baseUrl = resolveAuthGrpcBaseUrl(request);
     const requestedId = Number(url.searchParams.get('id') || url.searchParams.get('listing_id') || 0);
     const hydrateWithGetListing = url.searchParams.get('hydrate') === 'get';
 
     if (requestedId) {
-      const listing = await getJobListing(baseUrl, requestedId);
-      const enriched = await enrichListingsWithFeatures(baseUrl, [listing]);
+      const listing = await getJobListing(baseUrl, requestedId, callUnaryGrpc);
+      const enriched = await enrichListingsWithFeatures(baseUrl, [listing], callUnaryGrpc);
       return Response.json({ data: enriched[0] ?? listing });
     }
 
     const { body: responseBody } = await callUnaryGrpc(
       baseUrl,
-      '/auth.ListingService/ListJobs',
+      '/auth.JobService/ListJobs',
       encodeListRequest(url.searchParams),
     );
 
@@ -233,10 +286,10 @@ export async function loader({ request }: { request: Request }) {
       ? await Promise.all(listings.map(async (listing) => {
         const listingId = extractListingId(listing);
         if (!listingId) return listing;
-        return { ...listing, ...await getJobListing(baseUrl, listingId).catch(() => ({})) };
+        return { ...listing, ...await getJobListing(baseUrl, listingId, callUnaryGrpc).catch(() => ({})) };
       }))
       : listings;
-    const enriched = await enrichListingsWithFeatures(baseUrl, hydratedListings);
+    const enriched = await enrichListingsWithFeatures(baseUrl, hydratedListings, callUnaryGrpc);
 
     return Response.json({ data: enriched });
   } catch (err: unknown) {
@@ -251,6 +304,7 @@ export async function action({ request }: { request: Request }) {
   }
 
   try {
+    const { callUnaryGrpc, resolveAuthGrpcBaseUrl } = await import('~/utils/grpcRaw.server');
     const body = await request.json();
     const action = String(body.action || '').trim();
     const id = String(body.id || '').trim();
@@ -269,8 +323,8 @@ export async function action({ request }: { request: Request }) {
 
       const { body: responseBody } = await callUnaryGrpc(
         resolveAuthGrpcBaseUrl(request),
-        '/auth.ListingService/UpdateJob',
-        encodeUpdateJobReq({ id, title, description }),
+        '/auth.JobService/UpdateJob',
+        encodeUpdateJobReq({ ...body, id, title, description }),
       );
 
       return Response.json({ data: responseBody.data ?? responseBody });
@@ -282,10 +336,10 @@ export async function action({ request }: { request: Request }) {
       }
 
       const rpcPath = action === 'close'
-        ? '/auth.ListingService/CloseListing'
+        ? '/auth.JobService/CloseJob'
         : action === 'reopen'
-          ? '/auth.ListingService/ReopenListing'
-          : '/auth.ListingService/DeleteJob';
+          ? '/auth.JobService/ReopenJob'
+          : '/auth.JobService/DeleteJob';
 
       const { body: responseBody } = await callUnaryGrpc(
         resolveAuthGrpcBaseUrl(request),
@@ -310,7 +364,7 @@ export async function action({ request }: { request: Request }) {
 
     const { body: responseBody } = await callUnaryGrpc(
       resolveAuthGrpcBaseUrl(request),
-      '/auth.ListingService/CreateListing',
+      '/auth.JobService/CreateJob',
       encodeCreateJobReq({
         user_profile_id: userProfileId,
         title,
