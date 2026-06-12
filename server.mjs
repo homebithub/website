@@ -84,14 +84,39 @@ app.use(cors({
 app.get("/health", (req, res) => res.json({ status: "ok" }));
 app.get("/healthz", (req, res) => res.json({ status: "ok" }));
 
-// Proxy backend API calls
-app.use("/api", createProxyMiddleware({
+const websiteApiRoutes = new Set([
+    "/api/job-applications",
+    "/api/job-listings",
+    "/api/job-shortlist",
+    "/api/job-types",
+    "/api/login",
+    "/api/profile-features",
+    "/api/profile-picks",
+    "/api/signup",
+    "/api/verify-otp",
+]);
+
+function isWebsiteApiRoute(req) {
+    const pathname = new URL(req.originalUrl, "http://localhost").pathname;
+    return websiteApiRoutes.has(pathname);
+}
+
+const backendApiProxy = createProxyMiddleware({
     target: "http://auth-srv:3000",
     changeOrigin: true,
     pathRewrite: {
         "^/api": "/api",
     },
-}));
+});
+
+// Proxy backend API calls, but let React Router handle website-owned API routes.
+app.use("/api", (req, res, next) => {
+    if (isWebsiteApiRoute(req)) {
+        return next();
+    }
+
+    return backendApiProxy(req, res, next);
+});
 
 // Serve static assets from build/client (includes /assets/* and root files like favicon, images, etc.)
 app.use(express.static(BUILD_CLIENT_DIR, {
