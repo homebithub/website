@@ -14,6 +14,11 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorage';
+import { GATEWAY_API_BASE_URL } from '~/config/api';
+import { callGenericGrpcWeb } from '~/utils/grpcWebGeneric';
+import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
+
+const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
@@ -67,6 +72,24 @@ type ProfileOption = {
     value: string;
     label: string;
 };
+
+function createPhoneVerification(authId: string, target: string) {
+    return {
+        id: '',
+        user_id: authId,
+        type: 'phone',
+        status: 'pending',
+        target,
+        expires_at: '',
+        next_resend_at: '',
+        attempts: 0,
+        max_attempts: 3,
+        resends: 0,
+        max_resends: 3,
+        created_at: '',
+        updated_at: '',
+    };
+}
 
 const profileOptions: ProfileOption[] = [
     { id: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1', value: 'household', label: 'Household' },
@@ -363,31 +386,31 @@ export default function SignupPage() {
                 return;
             }
             
-            // Regular signup flow. The web server proxies this to homebit-auth
-            // over raw gRPC because browsers cannot call the gRPC port directly.
+            // Regular signup flow goes through the public gateway gRPC-Web endpoint.
             let data: any;
             try {
-                const response = await fetch('/api/signup', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        phone: signupPhone,
-                        password: form.password,
-                        first_name: form.first_name,
-                        last_name: form.last_name,
-                        profile_type: form.profile_type,
-                        profile_id: form.profile_id,
-                        bureau_id: form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
-                        referral_code: form.referral_code,
-                    }),
-                });
+                const signupRequest = new auth_pb.SignupRequest();
+                signupRequest.setPhone(signupPhone);
+                signupRequest.setPassword(form.password);
+                signupRequest.setFirstName(form.first_name);
+                signupRequest.setLastName(form.last_name);
+                signupRequest.setProfileId(form.profile_id);
 
-                data = await response.json().catch(() => ({}));
-                if (!response.ok) {
-                    const err = new Error(data.message || 'Signup failed');
-                    (err as any).grpcCode = data.grpcCode || '';
-                    throw err;
-                }
+                const { body: responseBody } = await callGenericGrpcWeb(
+                    GATEWAY_API_BASE_URL,
+                    '/auth.AuthService/Signup',
+                    signupRequest.serializeBinary(),
+                    form.referral_code ? { 'x-referral-code': form.referral_code.trim().toUpperCase() } : undefined,
+                );
+
+                const authId = String(responseBody.auth_id || responseBody.authId || '');
+                data = {
+                    auth_id: authId,
+                    user_profile_id: responseBody.user_profile_id || responseBody.userProfileId || '',
+                    profile_id: responseBody.profile_id || responseBody.profileId || form.profile_id,
+                    profile_type: form.profile_type,
+                    verification: createPhoneVerification(authId, signupPhone),
+                };
             } catch (err: any) {
                 console.error('[SIGNUP] gRPC error:', err);
                 

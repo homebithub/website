@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { profileService as grpcProfileService, documentService, householdMemberService, jobService } from '~/services/grpc/authServices';
+import { profileService as grpcProfileService, documentService, householdMemberService, jobService, profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 import profileSetupService from '~/services/grpc/profileSetup.service';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -488,15 +488,10 @@ export default function HouseholdProfile() {
       setSelectedFeaturesError(null);
 
       try {
-        const [featuresResponse, picksResponse] = await Promise.all([
-          fetch(`/api/profile-features?profile_id=${encodeURIComponent(profileId)}`),
-          fetch(`/api/profile-picks?user_profile_id=${encodeURIComponent(userProfileId)}`),
+        const [featuresPayload, picksPayload] = await Promise.all([
+          profileFeatureService.getProfileFeatures(profileId),
+          userProfilePicksService.listPicks(userProfileId),
         ]);
-        const featuresPayload = await featuresResponse.json().catch(() => ({}));
-        const picksPayload = await picksResponse.json().catch(() => ({}));
-
-        if (!featuresResponse.ok) throw new Error(featuresPayload.message || 'Unable to load profile features');
-        if (!picksResponse.ok) throw new Error(picksPayload.message || 'Unable to load profile choices');
 
         const groups = buildSelectedFeatureGroups(featuresPayload.data, picksPayload.data);
         if (!cancelled) setSelectedFeatureGroups(groups);

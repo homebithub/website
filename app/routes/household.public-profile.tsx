@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useSubscription } from '~/hooks/useSubscription';
 import { API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
-import { householdKidsService, petsService, documentService, shortlistService, interestService } from '~/services/grpc/authServices';
+import { householdKidsService, petsService, documentService, shortlistService, interestService, listingApplicationService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -339,18 +339,7 @@ export default function HouseholdPublicProfile() {
           throw new Error('User profile information is missing. Please sign in again.');
         }
 
-        const res = await fetch('/api/job-shortlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            listing_id: queryJobId,
-            service_provider_id: serviceProviderId,
-          }),
-        });
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(payload?.message || 'Failed to shortlist job.');
-        }
+        await listingApplicationService.shortlistListing(queryJobId, serviceProviderId);
         setIsShortlisted(true);
         setActionSuccess('Job added to shortlist.');
       }

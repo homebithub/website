@@ -5,6 +5,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import { listingApplicationService } from "~/services/grpc/authServices";
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import ShortlistPlaceholderIcon from "~/components/features/ShortlistPlaceholderIcon";
 import { formatTimeAgo } from "~/utils/timeAgo";
@@ -120,17 +121,12 @@ export default function ShortlistPage() {
       try {
         setLoading(true);
         setError(null);
-        const params = new URLSearchParams({
-          limit: String(limit),
-          offset: String(offset),
-          status: "shortlisted",
-          applicant_profile_id: currentUserProfileId,
+        const raw = await listingApplicationService.listApplications({
+          limit,
+          offset,
+          statuses: ["shortlisted"],
+          applicantProfileId: currentUserProfileId,
         });
-        const res = await fetch(`/api/job-applications?${params.toString()}`);
-        const raw = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(raw?.message || "Failed to load shortlisted jobs");
-        }
         const data = Array.isArray(raw?.data) ? raw.data : [];
         if (cancelled) return;
         setItems((prev) => (offset === 0 ? data : [...prev, ...data]));

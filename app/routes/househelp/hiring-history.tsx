@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { hireRequestService, hireContractService, employmentContractService, interestService } from '~/services/grpc/authServices';
+import { hireRequestService, hireContractService, employmentContractService, interestService, jobService } from '~/services/grpc/authServices';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -308,16 +308,7 @@ export default function HousehelpHiringHistory() {
     setJobListingsLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams({
-        limit: String(limit),
-        offset: String(offset),
-        hydrate: 'get',
-      });
-      const res = await fetch(`/api/job-listings?${params.toString()}`);
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(payload?.message || 'Failed to load job listings');
-      }
+      const payload = await jobService.listJobs(limit, offset, '');
       const rawItems = payload?.data || payload || [];
       const items = Array.isArray(rawItems) ? rawItems : [];
       setJobListings(items as JobListing[]);

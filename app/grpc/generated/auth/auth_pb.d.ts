@@ -3,6 +3,8 @@ import * as jspb from 'google-protobuf'
 import * as google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb'; // proto import: "google/protobuf/timestamp.proto"
 import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
 import * as google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb'; // proto import: "google/protobuf/struct.proto"
+import * as shared_shared_pb from '../shared/shared_pb'; // proto import: "shared/shared.proto"
+import * as client_profile_client_profile_pb from '../client_profile/client_profile_pb'; // proto import: "client_profile/client_profile.proto"
 
 
 export class User extends jspb.Message {
@@ -346,6 +348,12 @@ export class ListRequest extends jspb.Message {
   getOffset(): number;
   setOffset(value: number): ListRequest;
 
+  getUserProfileId(): string;
+  setUserProfileId(value: string): ListRequest;
+
+  getStatus(): string;
+  setStatus(value: string): ListRequest;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListRequest.AsObject;
   static toObject(includeInstance: boolean, msg: ListRequest): ListRequest.AsObject;
@@ -358,6 +366,8 @@ export namespace ListRequest {
   export type AsObject = {
     limit: number;
     offset: number;
+    userProfileId: string;
+    status: string;
   };
 }
 
@@ -613,23 +623,6 @@ export class SignupRequest extends jspb.Message {
   getProfileId(): string;
   setProfileId(value: string): SignupRequest;
 
-  /** @deprecated Use getProfileId(). */
-  getProfileType(): string;
-  /** @deprecated Use setProfileId(). */
-  setProfileType(value: string): SignupRequest;
-
-  getBureauId(): string;
-  setBureauId(value: string): SignupRequest;
-
-  getHouseholdId(): string;
-  setHouseholdId(value: string): SignupRequest;
-
-  getDateOfBirth(): string;
-  setDateOfBirth(value: string): SignupRequest;
-
-  getSignedDate(): string;
-  setSignedDate(value: string): SignupRequest;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): SignupRequest.AsObject;
   static toObject(includeInstance: boolean, msg: SignupRequest): SignupRequest.AsObject;
@@ -645,11 +638,6 @@ export namespace SignupRequest {
     phone: string;
     password: string;
     profileId: string;
-    profileType: string;
-    bureauId: string;
-    householdId: string;
-    dateOfBirth: string;
-    signedDate: string;
   };
 }
 
@@ -2354,13 +2342,22 @@ export namespace UpdateProfileStatusReq {
 }
 
 export class CreateJobReq extends jspb.Message {
-  getUserId(): string;
-  setUserId(value: string): CreateJobReq;
+  getUserProfileId(): string;
+  setUserProfileId(value: string): CreateJobReq;
 
-  getData(): google_protobuf_struct_pb.Struct | undefined;
-  setData(value?: google_protobuf_struct_pb.Struct): CreateJobReq;
-  hasData(): boolean;
-  clearData(): CreateJobReq;
+  getTitle(): string;
+  setTitle(value: string): CreateJobReq;
+
+  getDescription(): string;
+  setDescription(value: string): CreateJobReq;
+
+  getJobTypeId(): number;
+  setJobTypeId(value: number): CreateJobReq;
+
+  getFeaturesList(): Array<client_profile_client_profile_pb.FeaturePickInput>;
+  setFeaturesList(value: Array<client_profile_client_profile_pb.FeaturePickInput>): CreateJobReq;
+  clearFeaturesList(): CreateJobReq;
+  addFeatures(value?: client_profile_client_profile_pb.FeaturePickInput, index?: number): client_profile_client_profile_pb.FeaturePickInput;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateJobReq.AsObject;
@@ -2372,8 +2369,11 @@ export class CreateJobReq extends jspb.Message {
 
 export namespace CreateJobReq {
   export type AsObject = {
-    userId: string;
-    data?: google_protobuf_struct_pb.Struct.AsObject;
+    userProfileId: string;
+    title: string;
+    description: string;
+    jobTypeId: number;
+    featuresList: Array<client_profile_client_profile_pb.FeaturePickInput.AsObject>;
   };
 }
 
@@ -2381,13 +2381,11 @@ export class UpdateJobReq extends jspb.Message {
   getId(): string;
   setId(value: string): UpdateJobReq;
 
-  getUserId(): string;
-  setUserId(value: string): UpdateJobReq;
+  getTitle(): string;
+  setTitle(value: string): UpdateJobReq;
 
-  getData(): google_protobuf_struct_pb.Struct | undefined;
-  setData(value?: google_protobuf_struct_pb.Struct): UpdateJobReq;
-  hasData(): boolean;
-  clearData(): UpdateJobReq;
+  getDescription(): string;
+  setDescription(value: string): UpdateJobReq;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UpdateJobReq.AsObject;
@@ -2400,8 +2398,122 @@ export class UpdateJobReq extends jspb.Message {
 export namespace UpdateJobReq {
   export type AsObject = {
     id: string;
-    userId: string;
-    data?: google_protobuf_struct_pb.Struct.AsObject;
+    title: string;
+    description: string;
+  };
+}
+
+export class CreateApplication extends jspb.Message {
+  getListingId(): string;
+  setListingId(value: string): CreateApplication;
+
+  getServiceProviderId(): string;
+  setServiceProviderId(value: string): CreateApplication;
+
+  getMessage(): string;
+  setMessage(value: string): CreateApplication;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): CreateApplication.AsObject;
+  static toObject(includeInstance: boolean, msg: CreateApplication): CreateApplication.AsObject;
+  static serializeBinaryToWriter(message: CreateApplication, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): CreateApplication;
+  static deserializeBinaryFromReader(message: CreateApplication, reader: jspb.BinaryReader): CreateApplication;
+}
+
+export namespace CreateApplication {
+  export type AsObject = {
+    listingId: string;
+    serviceProviderId: string;
+    message: string;
+  };
+}
+
+export class ApplicationActionRequest extends jspb.Message {
+  getApplicationId(): number;
+  setApplicationId(value: number): ApplicationActionRequest;
+
+  getActorProfileId(): string;
+  setActorProfileId(value: string): ApplicationActionRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ApplicationActionRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ApplicationActionRequest): ApplicationActionRequest.AsObject;
+  static serializeBinaryToWriter(message: ApplicationActionRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ApplicationActionRequest;
+  static deserializeBinaryFromReader(message: ApplicationActionRequest, reader: jspb.BinaryReader): ApplicationActionRequest;
+}
+
+export namespace ApplicationActionRequest {
+  export type AsObject = {
+    applicationId: number;
+    actorProfileId: string;
+  };
+}
+
+export class RespondApplicationRequest extends jspb.Message {
+  getApplicationId(): number;
+  setApplicationId(value: number): RespondApplicationRequest;
+
+  getActorProfileId(): string;
+  setActorProfileId(value: string): RespondApplicationRequest;
+
+  getResponse(): string;
+  setResponse(value: string): RespondApplicationRequest;
+
+  getNote(): string;
+  setNote(value: string): RespondApplicationRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): RespondApplicationRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: RespondApplicationRequest): RespondApplicationRequest.AsObject;
+  static serializeBinaryToWriter(message: RespondApplicationRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): RespondApplicationRequest;
+  static deserializeBinaryFromReader(message: RespondApplicationRequest, reader: jspb.BinaryReader): RespondApplicationRequest;
+}
+
+export namespace RespondApplicationRequest {
+  export type AsObject = {
+    applicationId: number;
+    actorProfileId: string;
+    response: string;
+    note: string;
+  };
+}
+
+export class ListApplicationsRequest extends jspb.Message {
+  getListingId(): string;
+  setListingId(value: string): ListApplicationsRequest;
+
+  getApplicantProfileId(): string;
+  setApplicantProfileId(value: string): ListApplicationsRequest;
+
+  getStatusesList(): Array<string>;
+  setStatusesList(value: Array<string>): ListApplicationsRequest;
+  clearStatusesList(): ListApplicationsRequest;
+  addStatuses(value: string, index?: number): ListApplicationsRequest;
+
+  getLimit(): number;
+  setLimit(value: number): ListApplicationsRequest;
+
+  getOffset(): number;
+  setOffset(value: number): ListApplicationsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListApplicationsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListApplicationsRequest): ListApplicationsRequest.AsObject;
+  static serializeBinaryToWriter(message: ListApplicationsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListApplicationsRequest;
+  static deserializeBinaryFromReader(message: ListApplicationsRequest, reader: jspb.BinaryReader): ListApplicationsRequest;
+}
+
+export namespace ListApplicationsRequest {
+  export type AsObject = {
+    listingId: string;
+    applicantProfileId: string;
+    statusesList: Array<string>;
+    limit: number;
+    offset: number;
   };
 }
 
@@ -5622,3 +5734,4 @@ export namespace UpdateRolePermissionsRequest {
     permissionIdsList: Array<string>;
   };
 }
+

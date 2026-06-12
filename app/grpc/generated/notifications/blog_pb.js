@@ -11,20 +11,15 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import * as jspb from 'google-protobuf';
-const goog = jspb;
+var jspb = require('google-protobuf');
+var goog = jspb;
 var global = globalThis;
-const proto = {};
-proto.notifications = {};
 
-import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js';
-const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb;
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 goog.object.extend(proto, google_protobuf_timestamp_pb);
-import * as _google_protobuf_struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
-const google_protobuf_struct_pb = _google_protobuf_struct_pb.default || _google_protobuf_struct_pb;
+var google_protobuf_struct_pb = require('google-protobuf/google/protobuf/struct_pb.js');
 goog.object.extend(proto, google_protobuf_struct_pb);
-import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js';
-const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb;
+var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
 goog.exportSymbol('proto.notifications.AnalyticsBreakdown', null, global);
 goog.exportSymbol('proto.notifications.AnalyticsSummaryResponse', null, global);
@@ -14176,4 +14171,4 @@ proto.notifications.BlogPostPublishedEvent.prototype.hasPublishedAt = function()
 };
 
 
-export default proto.notifications;
+goog.object.extend(exports, proto.notifications);

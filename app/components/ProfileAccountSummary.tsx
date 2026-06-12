@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Phone, UserRound } from 'lucide-react';
 import { getStoredUser } from '~/utils/authStorage';
+import { profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -180,14 +181,10 @@ export function ProfileAccountSummary({
       }
 
       try {
-        const [featuresResponse, picksResponse] = await Promise.all([
-          fetch(`/api/profile-features?profile_id=${encodeURIComponent(profileId)}`),
-          fetch(`/api/profile-picks?user_profile_id=${encodeURIComponent(userProfileId)}`),
+        const [featuresPayload, picksPayload] = await Promise.all([
+          profileFeatureService.getProfileFeatures(profileId),
+          userProfilePicksService.listPicks(userProfileId),
         ]);
-        const featuresPayload = await featuresResponse.json().catch(() => ({}));
-        const picksPayload = await picksResponse.json().catch(() => ({}));
-        if (!featuresResponse.ok) throw new Error(featuresPayload.message || 'Unable to load features');
-        if (!picksResponse.ok) throw new Error(picksPayload.message || 'Unable to load picks');
 
         const features = normalizeArray(featuresPayload.data) as FeatureBundle[];
         const picks = normalizeArray(picksPayload.data);

@@ -11,6 +11,11 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Loading } from '~/components/Loading';
 import { cacheAuthSession, getStoredProfileType, getStoredUserId } from '~/utils/authStorage';
 import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
+import { GATEWAY_API_BASE_URL } from '~/config/api';
+import { callGenericGrpcWeb } from '~/utils/grpcWebGeneric';
+import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
+
+const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 
 const PENDING_VERIFICATION_KEY = 'homebit.pendingVerification';
 
@@ -53,6 +58,24 @@ function clearPendingVerificationState() {
   } catch {
     // Ignore session storage failures.
   }
+}
+
+function normalizeUser(raw: any) {
+  if (!raw) return null;
+  const userId = raw.id || raw.user_id || raw.userId || '';
+  return {
+    id: userId,
+    user_id: userId,
+    email: raw.email || '',
+    phone: raw.phone || raw.phone_number || raw.phoneNumber || '',
+    first_name: raw.first_name || raw.firstName || '',
+    last_name: raw.last_name || raw.lastName || '',
+    profile_type: raw.profile_type || raw.profileType || '',
+    profile_id: raw.profile_id || raw.profileId || '',
+    user_profile_id: raw.user_profile_id || raw.userProfileId || '',
+    is_verified: Boolean(raw.is_verified ?? raw.isVerified ?? raw.email_verified ?? raw.emailVerified ?? false),
+    profile_image: raw.profile_image || raw.profileImage || '',
+  };
 }
 
 export default function VerifyOtpPage() {
@@ -264,24 +287,37 @@ export default function VerifyOtpPage() {
     setSuccess(false);
     setOtpError(null);
     try {
-      const verifyHttpResponse = await fetch('/api/verify-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_id: resolveVerificationUserId(),
-          verification_type: verification.type,
-          otp,
-        }),
-      });
-      const verifyData = await verifyHttpResponse.json().catch(() => ({}));
-      if (!verifyHttpResponse.ok) {
-        const err = new Error(verifyData.message || 'OTP verification failed');
-        (err as any).grpcCode = verifyData.grpcCode || '';
-        throw err;
-      }
+      const verifyRequest = new auth_pb.VerifyOTPRequest();
+      verifyRequest.setUserId(resolveVerificationUserId());
+      verifyRequest.setVerificationType(verification.type || 'phone');
+      verifyRequest.setOtp(otp);
 
-      const token = verifyData.token || verifyData.access_token || '';
-      const refreshToken = verifyData.refresh_token || verifyData.refreshToken || '';
+      const { body: responseBody } = await callGenericGrpcWeb(
+        GATEWAY_API_BASE_URL,
+        '/auth.AuthService/VerifyOTP',
+        verifyRequest.serializeBinary(),
+      );
+
+      const normalizedUser = normalizeUser(responseBody.user);
+      const verifyData = {
+        verified: Boolean(responseBody.verified),
+        token: responseBody.access_token || responseBody.accessToken || '',
+        refresh_token: responseBody.refresh_token || responseBody.refreshToken || '',
+        user: normalizedUser,
+        user_profile_id:
+          responseBody.user_profile_id ||
+          responseBody.userProfileId ||
+          normalizedUser?.user_profile_id ||
+          '',
+        profile_id:
+          responseBody.profile_id ||
+          responseBody.profileId ||
+          normalizedUser?.profile_id ||
+          '',
+      };
+
+      const token = verifyData.token || '';
+      const refreshToken = verifyData.refresh_token || '';
       const storedProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('profile_id') || '' : '';
       const storedUserProfileId = typeof window !== 'undefined' ? window.localStorage.getItem('user_profile_id') || '' : '';
       const flatUser = {

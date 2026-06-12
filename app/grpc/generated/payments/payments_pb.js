@@ -11,14 +11,11 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import * as jspb from 'google-protobuf';
-const goog = jspb;
+var jspb = require('google-protobuf');
+var goog = jspb;
 var global = globalThis;
-const proto = {};
-proto.payments = {};
 
-import * as _google_protobuf_timestamp_pb from 'google-protobuf/google/protobuf/timestamp_pb.js';
-const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _google_protobuf_timestamp_pb;
+var google_protobuf_timestamp_pb = require('google-protobuf/google/protobuf/timestamp_pb.js');
 goog.object.extend(proto, google_protobuf_timestamp_pb);
 goog.exportSymbol('proto.payments.AcceptRetentionOfferRequest', null, global);
 goog.exportSymbol('proto.payments.AcceptRetentionOfferResponse', null, global);
@@ -33344,4 +33341,4 @@ proto.payments.AdminUpdatePlanResponse.prototype.setMessage = function(value) {
 };
 
 
-export default proto.payments;
+goog.object.extend(exports, proto.payments);

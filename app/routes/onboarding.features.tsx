@@ -7,6 +7,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
+import { profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 
 type FeatureProperty = {
   id: number;
@@ -107,11 +108,7 @@ export default function OnboardingFeaturesPage() {
       }
 
       try {
-        const response = await fetch(`/api/profile-features?profile_id=${encodeURIComponent(profileId)}`);
-        const payload = await response.json().catch(() => ({}));
-        if (!response.ok) {
-          throw new Error(payload.message || 'Unable to load profile features');
-        }
+        const payload = await profileFeatureService.getProfileFeatures(profileId);
 
         if (!cancelled) {
           setFeatures(normalizeFeaturePayload(payload));
@@ -164,21 +161,10 @@ export default function OnboardingFeaturesPage() {
     setError(null);
     setSaved(false);
     try {
-      const response = await fetch('/api/profile-picks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_profile_id: userProfileId,
-          picks: selectedPropertyIds.map((featurePropertyId) => ({
-            feature_property_id: featurePropertyId,
-            weight: 1,
-          })),
-        }),
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload.message || 'Unable to save your choices');
-      }
+      await userProfilePicksService.addPicks(userProfileId, selectedPropertyIds.map((featurePropertyId) => ({
+        feature_property_id: featurePropertyId,
+        weight: 1,
+      })));
 
       setSaved(true);
       navigate(profileType === 'household' ? '/household-choice' : '/profile-setup/househelp?step=1', {

@@ -50,10 +50,14 @@ protoc \
     --proto_path=$PROTO_DIR/.. \
     $PROTO_DIR/auth/auth.proto \
     $PROTO_DIR/auth/device.proto \
+    $PROTO_DIR/client_profile/client_profile.proto \
+    $PROTO_DIR/profile/profile.proto \
+    $PROTO_DIR/profile/user_profile.proto \
     $PROTO_DIR/notifications/notifications.proto \
     $PROTO_DIR/notifications/blog.proto \
     $PROTO_DIR/payments/payments.proto \
-    $PROTO_DIR/events/events.proto
+    $PROTO_DIR/events/events.proto \
+    $PROTO_DIR/shared/shared.proto
 
 echo -e "${GREEN}✅ TypeScript gRPC-Web clients generated successfully!${NC}"
 echo -e "${GREEN}Output directory: $OUT_DIR${NC}"

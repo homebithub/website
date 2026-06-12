@@ -7,6 +7,12 @@
 
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
+import * as client_profile_grpc_web_module from '~/grpc/generated/client_profile/client_profile_grpc_web_pb';
+import * as client_profile_pb_module from '~/grpc/generated/client_profile/client_profile_pb';
+import * as catalog_profile_grpc_web_module from '~/grpc/generated/profile/profile_grpc_web_pb';
+import * as catalog_profile_pb_module from '~/grpc/generated/profile/profile_pb';
+import * as user_profile_grpc_web_module from '~/grpc/generated/profile/user_profile_grpc_web_pb';
+import * as user_profile_pb_module from '~/grpc/generated/profile/user_profile_pb';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
@@ -17,8 +23,12 @@ import {
 } from '~/utils/authStorage';
 
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
+const client_profile_pb = (client_profile_pb_module as any).default ?? client_profile_pb_module;
+const catalog_profile_pb = (catalog_profile_pb_module as any).default ?? catalog_profile_pb_module;
+const user_profile_pb = (user_profile_pb_module as any).default ?? user_profile_pb_module;
 const {
   ProfileServiceClient,
+  ListingServiceClient,
   ShortlistServiceClient,
   InterestServiceClient,
   ReviewServiceClient,
@@ -40,11 +50,13 @@ const {
   HireNegotiationServiceClient,
   EmploymentServiceClient,
   EmploymentContractServiceClient,
-  JobServiceClient,
   OpenForWorkServiceClient,
   BureauServiceClient,
   WaitlistServiceClient,
 } = auth_grpc_web_module as any;
+const { ClientProfileServiceClient } = client_profile_grpc_web_module as any;
+const { ProfileServiceClient: CatalogProfileServiceClient } = catalog_profile_grpc_web_module as any;
+const { UserProfileServiceClient } = user_profile_grpc_web_module as any;
 
 function getMetadata(): { [key: string]: string } {
   const md: { [key: string]: string } = {};
@@ -100,6 +112,108 @@ function jsonResponseToJs(response: any): any {
     return struct.toJavaScript();
   }
   return response;
+}
+
+function genericResponseToJs(response: any): any {
+  if (!response) return null;
+  const struct = response.getBody?.();
+  if (struct && struct.toJavaScript) {
+    return struct.toJavaScript();
+  }
+  return response;
+}
+
+function dataEnvelope(response: any, ...arrayKeys: string[]): { data: any } {
+  const payload = genericResponseToJs(response);
+  if (!payload || typeof payload !== 'object') return { data: payload };
+  if (Array.isArray(payload)) return { data: payload };
+
+  const record = payload as Record<string, any>;
+  for (const key of ['data', ...arrayKeys]) {
+    if (Array.isArray(record[key])) return { data: record[key] };
+  }
+  return { data: record.data ?? payload };
+}
+
+function normalizeArray(value: unknown): Record<string, any>[] {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is Record<string, any> => Boolean(item) && typeof item === 'object');
+  }
+  if (!value || typeof value !== 'object') return [];
+
+  const record = value as Record<string, any>;
+  for (const key of ['data', 'items', 'features', 'listings', 'applications', 'job_types']) {
+    if (Array.isArray(record[key])) return normalizeArray(record[key]);
+  }
+  return [];
+}
+
+function extractListingId(value: unknown): number {
+  if (!value || typeof value !== 'object') return 0;
+  const record = value as Record<string, any>;
+  const nested = record.data && typeof record.data === 'object' ? record.data as Record<string, any> : {};
+  return Number(record.id || record.listing_id || record.listingId || nested.id || nested.listing_id || nested.listingId || 0);
+}
+
+function featureID(value: Record<string, any>): number {
+  const feature = value.feature && typeof value.feature === 'object' ? value.feature as Record<string, any> : {};
+  return Number(value.feature_id || value.featureId || feature.id || 0);
+}
+
+function propertyID(value: Record<string, any>): number {
+  const property = value.property && typeof value.property === 'object' ? value.property as Record<string, any> : {};
+  return Number(value.feature_property_id || value.featurePropertyId || value.property_id || value.propertyId || property.id || 0);
+}
+
+function displayName(value: unknown, fallback: string): string {
+  if (!value || typeof value !== 'object') return fallback;
+  const record = value as Record<string, any>;
+  return String(record.name || record.title || record.description || fallback);
+}
+
+function groupListingFeatures(rows: Record<string, any>[], bundles: Record<string, any>[]) {
+  const featureNames = new Map<number, string>();
+  const propertyNames = new Map<number, string>();
+
+  for (const bundle of bundles) {
+    const id = featureID(bundle);
+    if (id) featureNames.set(id, displayName(bundle.feature, displayName(bundle, `Feature #${id}`)));
+
+    for (const property of normalizeArray(bundle.properties || bundle.feature_properties || bundle.options)) {
+      const pid = propertyID(property);
+      if (pid) propertyNames.set(pid, displayName(property, `Property #${pid}`));
+    }
+  }
+
+  const groups = new Map<number, { feature_id: number; feature_name: string; properties: string[] }>();
+  for (const row of rows) {
+    const fid = featureID(row);
+    const pid = propertyID(row);
+    if (!fid && !pid && !row.value) continue;
+
+    const rowFeature = row.feature && typeof row.feature === 'object' ? row.feature as Record<string, any> : null;
+    const rowProperty = row.property && typeof row.property === 'object' ? row.property as Record<string, any> : null;
+    const featureName = featureNames.get(fid) || displayName(rowFeature, fid ? `Feature #${fid}` : 'Feature');
+    const propertyName = String(row.value || propertyNames.get(pid) || displayName(rowProperty, pid ? `Property #${pid}` : 'Value'));
+    const group = groups.get(fid) || { feature_id: fid, feature_name: featureName, properties: [] };
+    if (propertyName && !group.properties.includes(propertyName)) group.properties.push(propertyName);
+    groups.set(fid, group);
+  }
+  return Array.from(groups.values()).filter((group) => group.properties.length > 0);
+}
+
+function buildFeaturePickInput(feature: Record<string, any>): any {
+  const input = new client_profile_pb.FeaturePickInput();
+  input.setFeatureId(Number(feature.feature_id || feature.featureId || 0));
+  const propertyIds = Array.isArray(feature.property_ids)
+    ? feature.property_ids
+    : Array.isArray(feature.propertyIds)
+      ? feature.propertyIds
+      : [];
+  input.setPropertyIdsList(propertyIds.map((id: unknown) => Number(id)).filter((id: number) => Number.isFinite(id) && id > 0));
+  input.setWeight(Number(feature.weight || 1));
+  input.setValue(String(feature.value || ''));
+  return input;
 }
 
 function verificationInfoToJs(verification: any): any {
@@ -197,10 +311,13 @@ const hireContractClient = new HireContractServiceClient(GRPC_WEB_BASE_URL, null
 const hireNegotiationClient = new HireNegotiationServiceClient(GRPC_WEB_BASE_URL, null, null);
 const employmentClient = new EmploymentServiceClient(GRPC_WEB_BASE_URL, null, null);
 const employmentContractClient = new EmploymentContractServiceClient(GRPC_WEB_BASE_URL, null, null);
-const jobClient = new JobServiceClient(GRPC_WEB_BASE_URL, null, null);
+const listingClient = new ListingServiceClient(GRPC_WEB_BASE_URL, null, null);
 const openForWorkClient = new OpenForWorkServiceClient(GRPC_WEB_BASE_URL, null, null);
 const bureauClient = new BureauServiceClient(GRPC_WEB_BASE_URL, null, null);
 const waitlistClient = new WaitlistServiceClient(GRPC_WEB_BASE_URL, null, null);
+const clientProfileClient = new ClientProfileServiceClient(GRPC_WEB_BASE_URL, null, null);
+const catalogProfileClient = new CatalogProfileServiceClient(GRPC_WEB_BASE_URL, null, null);
+const userProfileClient = new UserProfileServiceClient(GRPC_WEB_BASE_URL, null, null);
 
 // ── Helper: resolve userId from stored user data when not provided ────
 function resolveUserId(userId: string): string {
@@ -279,40 +396,12 @@ function buildSearchRequest(userId: string, profileType: string, filters?: Recor
   return req;
 }
 
-function encodeVarint(value: number): number[] {
-  const out: number[] = [];
-  let next = Math.max(0, Math.floor(value));
-  while (next > 127) {
-    out.push((next & 0x7f) | 0x80);
-    next >>>= 7;
-  }
-  out.push(next);
-  return out;
-}
-
-function encodeNumberField(fieldNumber: number, value: number): number[] {
-  return [(fieldNumber << 3) | 0, ...encodeVarint(value)];
-}
-
-function encodeStringField(fieldNumber: number, value: string): number[] {
-  const bytes = new TextEncoder().encode(value);
-  return [(fieldNumber << 3) | 2, ...encodeVarint(bytes.length), ...Array.from(bytes)];
-}
-
-function buildListRequest(limit = 20, offset = 0, userProfileId = ''): any {
-  if (userProfileId) {
-    return {
-      serializeBinary: () => new Uint8Array([
-        ...encodeNumberField(1, limit),
-        ...encodeNumberField(2, offset),
-        ...encodeStringField(3, userProfileId),
-      ]),
-    };
-  }
-
+function buildListRequest(limit = 20, offset = 0, userProfileId = '', status = ''): any {
   const req = new auth_pb.ListRequest();
   req.setLimit(limit);
   req.setOffset(offset);
+  if (userProfileId && typeof req.setUserProfileId === 'function') req.setUserProfileId(userProfileId);
+  if (status && typeof req.setStatus === 'function') req.setStatus(status);
   return req;
 }
 
@@ -1140,138 +1229,222 @@ export const hireNegotiationService = {
   },
 };
 
+export const clientProfileService = {
+  async listJobTypes(activeOnly = true): Promise<any> {
+    const req = new client_profile_pb.ListJobTypesRequest();
+    req.setActiveOnly(activeOnly);
+    const res = await grpcCall((cb) => clientProfileClient.listJobTypes(req, getMetadata(), cb));
+    return dataEnvelope(res, 'job_types');
+  },
+
+  async getJobTypeFeatureBundles(jobTypeId: number | string): Promise<any> {
+    const req = new client_profile_pb.JobTypeIdRequest();
+    req.setId(Number(jobTypeId || 0));
+    const res = await grpcCall((cb) => clientProfileClient.getJobTypeFeatureBundles(req, getMetadata(), cb));
+    return dataEnvelope(res, 'features');
+  },
+
+  async getListingFeatureProperties(listingId: number | string): Promise<any> {
+    const req = new client_profile_pb.ListingIdRequest();
+    req.setListingId(Number(listingId || 0));
+    const res = await grpcCall((cb) => clientProfileClient.getListingFeatureProperties(req, getMetadata(), cb));
+    return dataEnvelope(res, 'features');
+  },
+};
+
+export const profileFeatureService = {
+  async getProfileFeatures(profileId: string): Promise<any> {
+    const req = new catalog_profile_pb.GetProfileFeature();
+    req.setProfileId(profileId);
+    const res = await grpcCall((cb) => catalogProfileClient.getProfileFeatures(req, getMetadata(), cb));
+    return dataEnvelope(res, 'features');
+  },
+};
+
+export const userProfilePicksService = {
+  async listPicks(userProfileId: string): Promise<any> {
+    const req = new user_profile_pb.UserProfileIdRequest();
+    req.setId(userProfileId);
+    const res = await grpcCall((cb) => userProfileClient.listPicks(req, getMetadata(), cb));
+    return dataEnvelope(res);
+  },
+
+  async addPicks(userProfileId: string, picks: Array<{ feature_property_id?: number; featurePropertyId?: number; weight?: number }>): Promise<any> {
+    const req = new user_profile_pb.PicksRequest();
+    req.setUserProfileId(userProfileId);
+    req.setPicksList((picks || []).map((pick) => {
+      const next = new user_profile_pb.PickInput();
+      next.setFeaturePropertyId(Number(pick.feature_property_id || pick.featurePropertyId || 0));
+      next.setWeight(Number(pick.weight || 1));
+      return next;
+    }));
+    const res = await grpcCall((cb) => userProfileClient.addPicks(req, getMetadata(), cb));
+    return dataEnvelope(res);
+  },
+};
+
+async function enrichListingsWithFeatures(listings: Record<string, any>[]) {
+  return Promise.all(listings.map(async (listing) => {
+    const listingId = extractListingId(listing);
+    if (!listingId) return listing;
+
+    try {
+      const rows = normalizeArray((await clientProfileService.getListingFeatureProperties(listingId)).data);
+      const jobTypeId = Number(listing.job_type_id || listing.jobTypeId || 0);
+      const bundles = jobTypeId
+        ? normalizeArray((await clientProfileService.getJobTypeFeatureBundles(jobTypeId)).data)
+        : [];
+      return {
+        ...listing,
+        listing_features: rows,
+        listing_feature_groups: groupListingFeatures(rows, bundles),
+      };
+    } catch {
+      return {
+        ...listing,
+        listing_features: [],
+        listing_feature_groups: [],
+      };
+    }
+  }));
+}
+
+export const listingApplicationService = {
+  async shortlistListing(listingId: string, serviceProviderId: string, message = ''): Promise<any> {
+    const req = new auth_pb.CreateApplication();
+    req.setListingId(String(listingId || ''));
+    req.setServiceProviderId(String(serviceProviderId || ''));
+    req.setMessage(message);
+    const res = await grpcCall((cb) => listingClient.shortlistListing(req, getMetadata(), cb));
+    return dataEnvelope(res);
+  },
+
+  async listApplications(options: {
+    listingId?: string;
+    applicantProfileId?: string;
+    statuses?: string[];
+    limit?: number;
+    offset?: number;
+  }): Promise<any> {
+    const req = new auth_pb.ListApplicationsRequest();
+    if (options.listingId) req.setListingId(options.listingId);
+    if (options.applicantProfileId) req.setApplicantProfileId(options.applicantProfileId);
+    req.setStatusesList(options.statuses || []);
+    req.setLimit(options.limit ?? 20);
+    req.setOffset(options.offset ?? 0);
+
+    const res = await grpcCall((cb) => listingClient.listApplications(req, getMetadata(), cb));
+    const applications = normalizeArray(genericResponseToJs(res));
+    const data = await Promise.all(applications.map(async (application) => {
+      const listingId = String(application.listing_id || application.listingId || '');
+      const listing = listingId ? await jobService.getJob(listingId).catch(() => ({})) : {};
+      return {
+        ...listing,
+        application,
+        application_id: application.id,
+        application_status: application.status,
+        id: String((listing as Record<string, any>).id || listingId),
+        listing_id: listingId,
+      };
+    }));
+    return { data };
+  },
+};
+
 // ══════════════════════════════════════════════════════════════════════════
-// Job Service
+// Job Listing Service
 // ══════════════════════════════════════════════════════════════════════════
 export const jobService = {
   async createJob(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreateJobReq();
-    req.setUserId(resolveUserId(userId));
-    const struct = toStruct(data);
-    if (struct) req.setData(struct);
-    const res = await grpcCall((cb) => jobClient.createJob(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    req.setUserProfileId(String(data.user_profile_id || data.userProfileId || getStoredUserProfileId() || ''));
+    req.setTitle(String(data.title || ''));
+    req.setDescription(String(data.description || ''));
+    req.setJobTypeId(Number(data.job_type_id || data.jobTypeId || 0));
+    req.setFeaturesList(Array.isArray(data.features) ? data.features.map(buildFeaturePickInput) : []);
+    const res = await grpcCall((cb) => listingClient.createListing(req, getMetadata(), cb));
+    return dataEnvelope(res);
   },
-  async updateJob(id: string, userId: string, data: Record<string, any>): Promise<any> {
-    const res = await fetch('/api/job-listings', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id,
-        title: data?.title || '',
-        description: data?.description || '',
-      }),
-    });
-    if (!res.ok) {
-      const payload = await res.json().catch(() => ({}));
-      throw new Error(payload.message || 'Failed to update listing');
-    }
-    return res.json();
-  },
-  async deleteJob(id: string, userId?: string): Promise<void> {
-    const res = await fetch('/api/job-listings', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id }),
-    });
-    if (!res.ok) {
-      const payload = await res.json().catch(() => ({}));
-      throw new Error(payload.message || 'Failed to delete listing');
-    }
-  },
-  async getJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.getJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId()): Promise<any> {
-    try {
-      const params = new URLSearchParams({
-        limit: String(limit),
-        offset: String(offset),
-      });
-      if (userProfileId) params.set('user_profile_id', userProfileId);
 
-      const res = await fetch(`/api/job-listings?${params.toString()}`);
-      if (!res.ok) return { data: [] };
-      return await res.json();
+  async updateJob(id: string, userId: string, data: Record<string, any>): Promise<any> {
+    const req = new auth_pb.UpdateJobReq();
+    req.setId(id);
+    req.setTitle(String(data?.title || ''));
+    req.setDescription(String(data?.description || ''));
+    const res = await grpcCall((cb) => listingClient.updateJob(req, getMetadata(), cb));
+    return dataEnvelope(res);
+  },
+
+  async deleteJob(id: string, userId?: string): Promise<void> {
+    await grpcCall((cb) => listingClient.deleteJob(buildIdRequest(id, userId), getMetadata(), cb));
+  },
+
+  async getJob(id: string, userId?: string): Promise<any> {
+    const res = await grpcCall((cb) => listingClient.getJobListing(buildIdRequest(id, userId), getMetadata(), cb));
+    const payload = genericResponseToJs(res);
+    return payload?.data ?? payload ?? {};
+  },
+
+  async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId(), status = ''): Promise<any> {
+    try {
+      const res = await grpcCall((cb) => listingClient.listJobs(buildListRequest(limit, offset, userProfileId || '', status), getMetadata(), cb));
+      const listings = normalizeArray(genericResponseToJs(res));
+      return { data: await enrichListingsWithFeatures(listings) };
     } catch (err) {
       console.warn('Failed to list jobs:', err);
       return { data: [] };
     }
   },
+
   async searchJobs(filters: Record<string, any>, userId?: string): Promise<any> {
-    const req = new auth_pb.SearchRequest();
-    if (userId) req.setUserId(resolveUserId(userId));
-    const struct = toStruct(filters || {});
-    if (struct) req.setFilters(struct);
-    const res = await grpcCall((cb) => jobClient.searchJobs(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.listJobs(
+      Number(filters?.limit || 20),
+      Number(filters?.offset || 0),
+      String(filters?.user_profile_id || filters?.userProfileId || ''),
+      String(filters?.status || ''),
+    );
   },
+
   async getLatestJobs(limit = 10): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.getLatestJobs(buildListRequest(limit, 0), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.listJobs(limit, 0, '');
   },
+
   async applyForJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.applyForJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return listingApplicationService.shortlistListing(id, userId || getStoredUserProfileId() || '');
   },
+
   async closeJob(id: string, userId?: string): Promise<any> {
-    const res = await fetch('/api/job-listings', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, action: 'close' }),
-    });
-    if (!res.ok) {
-      const payload = await res.json().catch(() => ({}));
-      throw new Error(payload.message || 'Failed to close listing');
-    }
-    return res.json();
+    const res = await grpcCall((cb) => listingClient.closeListing(buildIdRequest(id, userId), getMetadata(), cb));
+    return dataEnvelope(res);
   },
+
   async reopenJob(id: string, userId?: string): Promise<any> {
-    const res = await fetch('/api/job-listings', {
-      method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, action: 'reopen' }),
-    });
-    if (!res.ok) {
-      const payload = await res.json().catch(() => ({}));
-      throw new Error(payload.message || 'Failed to reopen listing');
-    }
-    return res.json();
+    const res = await grpcCall((cb) => listingClient.reopenListing(buildIdRequest(id, userId), getMetadata(), cb));
+    return dataEnvelope(res);
   },
+
   async getJobsByUserId(userId: string): Promise<any> {
     return jobService.listJobs(20, 0, getStoredUserProfileId());
   },
+
   async getJobsByStatus(status: string): Promise<any> {
-    const req = new auth_pb.StatusRequest();
-    req.setStatus(status);
-    const res = await grpcCall((cb) => jobClient.getJobsByStatus(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.listJobs(20, 0, getStoredUserProfileId(), status);
   },
+
   async getJobsByType(jobType: string): Promise<any> {
-    const req = new auth_pb.StringFieldRequest();
-    req.setValue(jobType);
-    const res = await grpcCall((cb) => jobClient.getJobsByType(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.listJobs(20, 0, getStoredUserProfileId());
   },
+
   async getJobsByLocation(location: string): Promise<any> {
-    const req = new auth_pb.StringFieldRequest();
-    req.setValue(location);
-    const res = await grpcCall((cb) => jobClient.getJobsByLocation(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.listJobs(20, 0, getStoredUserProfileId());
   },
+
   async getJobsBySkill(skill: string): Promise<any> {
-    const req = new auth_pb.StringFieldRequest();
-    req.setValue(skill);
-    const res = await grpcCall((cb) => jobClient.getJobsBySkill(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.listJobs(20, 0, getStoredUserProfileId());
   },
+
   async getJobsBySalaryRange(min: number, max: number): Promise<any> {
-    const req = new auth_pb.SalaryRangeRequest();
-    req.setMinSalary(min);
-    req.setMaxSalary(max);
-    const res = await grpcCall((cb) => jobClient.getJobsBySalaryRange(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.listJobs(20, 0, getStoredUserProfileId());
   },
 };
 

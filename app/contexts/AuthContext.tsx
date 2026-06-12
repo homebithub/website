@@ -13,6 +13,11 @@ import {
   normalizeProfileType,
 } from "~/utils/authStorage";
 import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
+import { GATEWAY_API_BASE_URL } from '~/config/api';
+import { callGenericGrpcWeb } from '~/utils/grpcWebGeneric';
+import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
+
+const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 
 interface User {
   id: string;
@@ -20,6 +25,24 @@ interface User {
   firstName: string;
   lastName: string;
   role: string;
+}
+
+function createPhoneVerification(authId: string, target: string) {
+  return {
+    id: '',
+    user_id: authId,
+    type: 'phone',
+    status: 'pending',
+    target,
+    expires_at: '',
+    next_resend_at: '',
+    attempts: 0,
+    max_attempts: 3,
+    resends: 0,
+    max_resends: 3,
+    created_at: '',
+    updated_at: '',
+  };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -159,29 +182,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
 
       const normalizedPhone = normalizeKenyanPhoneNumber(phone);
-      
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: normalizedPhone,
-          password,
-        }),
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload.message || 'Invalid phone number or password. Please try again.');
-      }
+      const loginRequest = new auth_pb.LoginRequest();
+      loginRequest.setPhone(normalizedPhone.replace(/^\+/, ''));
+      loginRequest.setPassword(password);
+
+      const { body: payload } = await callGenericGrpcWeb(
+        GATEWAY_API_BASE_URL,
+        '/auth.AuthService/Login',
+        loginRequest.serializeBinary(),
+      );
 
       const authId = payload.auth_id || payload.authId || payload.user_id || '';
-      if (authId && payload.verification) {
+      if (authId) {
+        const verification = payload.verification || createPhoneVerification(String(authId), normalizedPhone.replace(/^\+/, ''));
         if (typeof window !== 'undefined') {
           window.localStorage.setItem('user_id', authId);
         }
         navigate('/verify-otp', {
           state: {
             verification: {
-              ...payload.verification,
+              ...verification,
               user_id: authId,
             },
             userId: authId,

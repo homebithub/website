@@ -11,6 +11,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Button, Input, BaseModal } from '~/components/ui';
 import { cacheAuthSession, getStoredProfileType, getStoredUser, getStoredUserId } from "~/utils/authStorage";
+import { profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 
 const PROFILE_IDS_BY_TYPE: Record<string, string> = {
   househelp: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
@@ -298,15 +299,10 @@ export default function ProfilePage() {
       setCompletion((prev) => ({ ...prev, loading: true }));
 
       try {
-        const [featuresResponse, picksResponse] = await Promise.all([
-          fetch(`/api/profile-features?profile_id=${encodeURIComponent(profileId)}`),
-          fetch(`/api/profile-picks?user_profile_id=${encodeURIComponent(userProfileId)}`),
+        const [featuresPayload, picksPayload] = await Promise.all([
+          profileFeatureService.getProfileFeatures(profileId),
+          userProfilePicksService.listPicks(userProfileId),
         ]);
-        const featuresPayload = await featuresResponse.json().catch(() => ({}));
-        const picksPayload = await picksResponse.json().catch(() => ({}));
-
-        if (!featuresResponse.ok) throw new Error(featuresPayload.message || 'Unable to load profile features');
-        if (!picksResponse.ok) throw new Error(picksPayload.message || 'Unable to load profile picks');
 
         const features = normalizeArray(featuresPayload.data);
         const picks = normalizeArray(picksPayload.data);
@@ -404,26 +400,17 @@ export default function ProfilePage() {
     setFeatureError(null);
 
     try {
-      const [featuresResponse, picksResponse] = await Promise.all([
-        fetch(`/api/profile-features?profile_id=${encodeURIComponent(resolvedProfileId)}`),
+      const [featuresPayload, picksPayload] = await Promise.all([
+        profileFeatureService.getProfileFeatures(resolvedProfileId),
         userProfileId
-          ? fetch(`/api/profile-picks?user_profile_id=${encodeURIComponent(userProfileId)}`)
+          ? userProfilePicksService.listPicks(userProfileId)
           : Promise.resolve(null),
       ]);
-      const featuresPayload = await featuresResponse.json().catch(() => ({}));
-      if (!featuresResponse.ok) {
-        throw new Error(featuresPayload.message || 'Unable to load profile features');
-      }
 
       const nextFeatures = normalizeFeaturePayload(featuresPayload);
       const nextSelected: Record<number, number[]> = {};
 
-      if (picksResponse) {
-        const picksPayload = await picksResponse.json().catch(() => ({}));
-        if (!picksResponse.ok) {
-          throw new Error(picksPayload.message || 'Unable to load selected profile features');
-        }
-
+      if (picksPayload) {
         const propertyToFeature = new Map<number, number>();
         nextFeatures.forEach((feature) => {
           (feature.properties || []).forEach((property) => propertyToFeature.set(property.id, feature.feature_id));
@@ -483,21 +470,10 @@ export default function ProfilePage() {
     setFeatureError(null);
 
     try {
-      const response = await fetch('/api/profile-picks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          user_profile_id: userProfileId,
-          picks: selectedPropertyIds.map((featurePropertyId) => ({
-            feature_property_id: featurePropertyId,
-            weight: 1,
-          })),
-        }),
-      });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(payload.message || 'Unable to save profile picks');
-      }
+      await userProfilePicksService.addPicks(userProfileId, selectedPropertyIds.map((featurePropertyId) => ({
+        feature_property_id: featurePropertyId,
+        weight: 1,
+      })));
 
       setSuccess('Profile choices saved.');
       setShowFeatureModal(false);

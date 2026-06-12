@@ -4,7 +4,7 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { ShimmerListPlaceholder } from "~/components/ShimmerLoader";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
-import { shortlistService, profileService as grpcProfileService } from "~/services/grpc/authServices";
+import { jobService, listingApplicationService, shortlistService, profileService as grpcProfileService } from "~/services/grpc/authServices";
 import { notificationsService } from "~/services/grpc/notifications.service";
 import { OptimizedImage } from "~/components/ui/OptimizedImage";
 import { useProfilePhotos } from "~/hooks/useProfilePhotos";
@@ -696,11 +696,7 @@ export default function HouseholdJobsHome() {
         });
         if (isServiceProvider || openOnly) params.set("status", "active");
 
-        const res = await fetch(`/api/job-listings?${params.toString()}`);
-        const raw = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(raw?.message || "Failed to load listings");
-        }
+        const raw = await jobService.listJobs(limit, offset, "", isServiceProvider || openOnly ? "active" : "");
         const data = raw?.data || raw || [];
         const items = Array.isArray(data) ? data : [];
         const normalizedItems = items.map((item: unknown, index: number) => (
@@ -852,18 +848,7 @@ export default function HouseholdJobsHome() {
             throw new Error("User profile information is missing. Please sign in again.");
           }
 
-          const res = await fetch('/api/job-shortlist', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              listing_id: listing.id,
-              service_provider_id: serviceProviderId,
-            }),
-          });
-          const payload = await res.json().catch(() => ({}));
-          if (!res.ok) {
-            throw new Error(payload?.message || "Failed to shortlist listing.");
-          }
+          await listingApplicationService.shortlistListing(listing.id, serviceProviderId);
         } else {
           await shortlistService.createShortlist('', 'household', {
             profile_id: listing.id,

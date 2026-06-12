@@ -1639,3 +1639,255 @@ export namespace ContractTerminated {
   };
 }
 
+export class ListingCreated extends jspb.Message {
+  getListingId(): number;
+  setListingId(value: number): ListingCreated;
+
+  getUserProfileId(): string;
+  setUserProfileId(value: string): ListingCreated;
+
+  getTitle(): string;
+  setTitle(value: string): ListingCreated;
+
+  getJobTypeId(): number;
+  setJobTypeId(value: number): ListingCreated;
+
+  getCreatedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setCreatedAt(value?: google_protobuf_timestamp_pb.Timestamp): ListingCreated;
+  hasCreatedAt(): boolean;
+  clearCreatedAt(): ListingCreated;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListingCreated.AsObject;
+  static toObject(includeInstance: boolean, msg: ListingCreated): ListingCreated.AsObject;
+  static serializeBinaryToWriter(message: ListingCreated, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListingCreated;
+  static deserializeBinaryFromReader(message: ListingCreated, reader: jspb.BinaryReader): ListingCreated;
+}
+
+export namespace ListingCreated {
+  export type AsObject = {
+    listingId: number;
+    userProfileId: string;
+    title: string;
+    jobTypeId: number;
+    createdAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class ListingFeaturesSaved extends jspb.Message {
+  getListingId(): number;
+  setListingId(value: number): ListingFeaturesSaved;
+
+  getUserProfileId(): string;
+  setUserProfileId(value: string): ListingFeaturesSaved;
+
+  getFeatureCount(): number;
+  setFeatureCount(value: number): ListingFeaturesSaved;
+
+  getSavedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setSavedAt(value?: google_protobuf_timestamp_pb.Timestamp): ListingFeaturesSaved;
+  hasSavedAt(): boolean;
+  clearSavedAt(): ListingFeaturesSaved;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListingFeaturesSaved.AsObject;
+  static toObject(includeInstance: boolean, msg: ListingFeaturesSaved): ListingFeaturesSaved.AsObject;
+  static serializeBinaryToWriter(message: ListingFeaturesSaved, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListingFeaturesSaved;
+  static deserializeBinaryFromReader(message: ListingFeaturesSaved, reader: jspb.BinaryReader): ListingFeaturesSaved;
+}
+
+export namespace ListingFeaturesSaved {
+  export type AsObject = {
+    listingId: number;
+    userProfileId: string;
+    featureCount: number;
+    savedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class ListingClosed extends jspb.Message {
+  getListingId(): number;
+  setListingId(value: number): ListingClosed;
+
+  getUserProfileId(): string;
+  setUserProfileId(value: string): ListingClosed;
+
+  getTitle(): string;
+  setTitle(value: string): ListingClosed;
+
+  getClosedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setClosedAt(value?: google_protobuf_timestamp_pb.Timestamp): ListingClosed;
+  hasClosedAt(): boolean;
+  clearClosedAt(): ListingClosed;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListingClosed.AsObject;
+  static toObject(includeInstance: boolean, msg: ListingClosed): ListingClosed.AsObject;
+  static serializeBinaryToWriter(message: ListingClosed, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListingClosed;
+  static deserializeBinaryFromReader(message: ListingClosed, reader: jspb.BinaryReader): ListingClosed;
+}
+
+export namespace ListingClosed {
+  export type AsObject = {
+    listingId: number;
+    userProfileId: string;
+    title: string;
+    closedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class ListingReopened extends jspb.Message {
+  getListingId(): number;
+  setListingId(value: number): ListingReopened;
+
+  getUserProfileId(): string;
+  setUserProfileId(value: string): ListingReopened;
+
+  getTitle(): string;
+  setTitle(value: string): ListingReopened;
+
+  getReopenedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setReopenedAt(value?: google_protobuf_timestamp_pb.Timestamp): ListingReopened;
+  hasReopenedAt(): boolean;
+  clearReopenedAt(): ListingReopened;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListingReopened.AsObject;
+  static toObject(includeInstance: boolean, msg: ListingReopened): ListingReopened.AsObject;
+  static serializeBinaryToWriter(message: ListingReopened, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListingReopened;
+  static deserializeBinaryFromReader(message: ListingReopened, reader: jspb.BinaryReader): ListingReopened;
+}
+
+export namespace ListingReopened {
+  export type AsObject = {
+    listingId: number;
+    userProfileId: string;
+    title: string;
+    reopenedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class ApplicationSubmitted extends jspb.Message {
+  getApplicationId(): number;
+  setApplicationId(value: number): ApplicationSubmitted;
+
+  getListingId(): number;
+  setListingId(value: number): ApplicationSubmitted;
+
+  getApplicantProfileId(): string;
+  setApplicantProfileId(value: string): ApplicationSubmitted;
+
+  getClientProfileId(): string;
+  setClientProfileId(value: string): ApplicationSubmitted;
+
+  getInitiatedBy(): string;
+  setInitiatedBy(value: string): ApplicationSubmitted;
+
+  getMessage(): string;
+  setMessage(value: string): ApplicationSubmitted;
+
+  getSubmittedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setSubmittedAt(value?: google_protobuf_timestamp_pb.Timestamp): ApplicationSubmitted;
+  hasSubmittedAt(): boolean;
+  clearSubmittedAt(): ApplicationSubmitted;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ApplicationSubmitted.AsObject;
+  static toObject(includeInstance: boolean, msg: ApplicationSubmitted): ApplicationSubmitted.AsObject;
+  static serializeBinaryToWriter(message: ApplicationSubmitted, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ApplicationSubmitted;
+  static deserializeBinaryFromReader(message: ApplicationSubmitted, reader: jspb.BinaryReader): ApplicationSubmitted;
+}
+
+export namespace ApplicationSubmitted {
+  export type AsObject = {
+    applicationId: number;
+    listingId: number;
+    applicantProfileId: string;
+    clientProfileId: string;
+    initiatedBy: string;
+    message: string;
+    submittedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class ApplicationAccepted extends jspb.Message {
+  getApplicationId(): number;
+  setApplicationId(value: number): ApplicationAccepted;
+
+  getListingId(): number;
+  setListingId(value: number): ApplicationAccepted;
+
+  getApplicantProfileId(): string;
+  setApplicantProfileId(value: string): ApplicationAccepted;
+
+  getActorProfileId(): string;
+  setActorProfileId(value: string): ApplicationAccepted;
+
+  getAcceptedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setAcceptedAt(value?: google_protobuf_timestamp_pb.Timestamp): ApplicationAccepted;
+  hasAcceptedAt(): boolean;
+  clearAcceptedAt(): ApplicationAccepted;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ApplicationAccepted.AsObject;
+  static toObject(includeInstance: boolean, msg: ApplicationAccepted): ApplicationAccepted.AsObject;
+  static serializeBinaryToWriter(message: ApplicationAccepted, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ApplicationAccepted;
+  static deserializeBinaryFromReader(message: ApplicationAccepted, reader: jspb.BinaryReader): ApplicationAccepted;
+}
+
+export namespace ApplicationAccepted {
+  export type AsObject = {
+    applicationId: number;
+    listingId: number;
+    applicantProfileId: string;
+    actorProfileId: string;
+    acceptedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+
+export class ApplicationDeclined extends jspb.Message {
+  getApplicationId(): number;
+  setApplicationId(value: number): ApplicationDeclined;
+
+  getListingId(): number;
+  setListingId(value: number): ApplicationDeclined;
+
+  getApplicantProfileId(): string;
+  setApplicantProfileId(value: string): ApplicationDeclined;
+
+  getActorProfileId(): string;
+  setActorProfileId(value: string): ApplicationDeclined;
+
+  getReason(): string;
+  setReason(value: string): ApplicationDeclined;
+
+  getDeclinedAt(): google_protobuf_timestamp_pb.Timestamp | undefined;
+  setDeclinedAt(value?: google_protobuf_timestamp_pb.Timestamp): ApplicationDeclined;
+  hasDeclinedAt(): boolean;
+  clearDeclinedAt(): ApplicationDeclined;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ApplicationDeclined.AsObject;
+  static toObject(includeInstance: boolean, msg: ApplicationDeclined): ApplicationDeclined.AsObject;
+  static serializeBinaryToWriter(message: ApplicationDeclined, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ApplicationDeclined;
+  static deserializeBinaryFromReader(message: ApplicationDeclined, reader: jspb.BinaryReader): ApplicationDeclined;
+}
+
+export namespace ApplicationDeclined {
+  export type AsObject = {
+    applicationId: number;
+    listingId: number;
+    applicantProfileId: string;
+    actorProfileId: string;
+    reason: string;
+    declinedAt?: google_protobuf_timestamp_pb.Timestamp.AsObject;
+  };
+}
+

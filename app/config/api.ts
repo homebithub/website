@@ -75,8 +75,15 @@ export function normalizeGatewayBaseUrl(url: string): string {
   try {
     const parsed = new URL(out);
     const host = parsed.hostname.toLowerCase();
-    if (host === 'homebit.co.ke' || host === 'www.homebit.co.ke') {
-      return `${parsed.protocol}//preprod-api.homebit.co.ke`;
+    const apiHostByFrontendHost: Record<string, string> = {
+      'homebit.co.ke': 'api.homebit.co.ke',
+      'www.homebit.co.ke': 'api.homebit.co.ke',
+      'preprod.homebit.co.ke': 'preprod-api.homebit.co.ke',
+      'hba.homebit.co.ke': 'hba-api.homebit.co.ke',
+    };
+    const apiHost = apiHostByFrontendHost[host];
+    if (apiHost) {
+      return `${parsed.protocol}//${apiHost}`;
     }
   } catch { /* ignore */ }
 
@@ -93,6 +100,11 @@ export const AUTH_API_BASE_URL = getAuthBaseUrl();
 export const NOTIFICATIONS_API_BASE_URL = API_BASE_URL;
 export const PAYMENTS_API_BASE_URL = API_BASE_URL;
 export const NOTIFICATIONS_WS_BASE_URL = `${API_BASE_URL}/ws`;
+
+export const gatewayApiUrl = (path: string): string => {
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`;
+};
 
 // ── REST endpoints still in use (file uploads, SSR loaders, etc.) ───────
 export const API_ENDPOINTS = {

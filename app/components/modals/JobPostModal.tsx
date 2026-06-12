@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
-import { jobService } from "~/services/grpc/authServices";
+import { clientProfileService, jobService } from "~/services/grpc/authServices";
 import { getStoredUserProfileId } from "~/utils/authStorage";
 
 type JobPostModalProps = {
@@ -153,12 +153,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
     let cancelled = false;
     setLoadingJobTypes(true);
 
-    fetch("/api/job-types?active_only=true")
-      .then(async (res) => {
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(payload.message || "Unable to load job types");
-        return payload;
-      })
+    clientProfileService.listJobTypes(true)
       .then((payload) => {
         if (!cancelled) setJobTypes(asArray(payload.data ?? payload));
       })
@@ -184,12 +179,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
     setLoadingFeatures(true);
     setError("");
 
-    fetch(`/api/job-types?job_type_id=${encodeURIComponent(selectedJobTypeId)}`)
-      .then(async (res) => {
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(payload.message || "Unable to load job type features");
-        return payload;
-      })
+    clientProfileService.getJobTypeFeatureBundles(selectedJobTypeId)
       .then((payload) => {
         if (!cancelled) {
           setFeatureBundles(asArray(payload.data ?? payload));
@@ -310,20 +300,13 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
           description: trimmedDescription,
         });
       } else {
-        const res = await fetch("/api/job-listings", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            user_profile_id: userProfileId,
-            title: trimmedTitle,
-            description: trimmedDescription,
-            job_type_id: Number(selectedJobTypeId),
-            features: buildFeaturePayload(),
-          }),
+        await jobService.createJob("", {
+          user_profile_id: userProfileId,
+          title: trimmedTitle,
+          description: trimmedDescription,
+          job_type_id: Number(selectedJobTypeId),
+          features: buildFeaturePayload(),
         });
-
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(payload.message || "Unable to create listing");
       }
 
       setSuccess(editing ? "Listing updated." : "Listing created.");

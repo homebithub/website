@@ -7,6 +7,7 @@ import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import {
   interestService,
   jobService,
+  listingApplicationService,
   profileService as grpcProfileService,
   shortlistService,
 } from "~/services/grpc/authServices";
@@ -843,18 +844,7 @@ export default function HousehelpJobsHome() {
           throw new Error("User profile information is missing. Please sign in again.");
         }
 
-        const res = await fetch('/api/job-shortlist', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            listing_id: job.id,
-            service_provider_id: househelpProfileId,
-          }),
-        });
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(payload?.message || "Failed to shortlist job.");
-        }
+        await listingApplicationService.shortlistListing(job.id, househelpProfileId);
 
         setShortlistedJobIds((prev) => new Set(prev).add(job.id));
         setSuccess("Job added to your shortlist.");
