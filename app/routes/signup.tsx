@@ -108,6 +108,13 @@ function verificationProtoToState(verificationProto: any) {
     };
 }
 
+function genericResponseBodyToJs(response: any) {
+    const body = response?.getBody?.();
+    if (body?.toJavaScript) return body.toJavaScript();
+    if (body?.toObject) return body.toObject();
+    return body || {};
+}
+
 const fallbackProfileOptions: ProfileOption[] = [
     {
         id: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1',
@@ -498,7 +505,8 @@ export default function SignupPage() {
                     form.referral_code,
                 );
 
-                const authId = String(signupResponse.getUserId?.() || '');
+                const responseBody = genericResponseBodyToJs(signupResponse);
+                const authId = String(signupResponse.getUserId?.() || responseBody.auth_id || responseBody.authId || '');
                 const verificationProto = signupResponse.getVerification?.();
                 data = {
                     auth_id: authId,

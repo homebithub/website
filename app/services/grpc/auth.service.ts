@@ -6,6 +6,7 @@
 
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
+import * as shared_pb_module from '~/grpc/generated/shared/shared_pb';
 import * as grpcWeb from 'grpc-web';
 import { AUTH_GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
@@ -17,6 +18,7 @@ import {
 
 // Extract proto.auth from the default export
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
+const shared_pb = (shared_pb_module as any).default ?? shared_pb_module;
 const { AuthServiceClient, AdminAuthServiceClient } = auth_grpc_web_module as any;
 
 const authClient = new AuthServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
@@ -28,9 +30,9 @@ const methodDescriptorAuthSignup = new (grpcWeb as any).MethodDescriptor(
   '/auth.AuthService/Signup',
   (grpcWeb as any).MethodType.UNARY,
   auth_pb.SignupRequest,
-  auth_pb.SignupResponse,
+  shared_pb.GenericResponse,
   (request: any) => request.serializeBinary(),
-  auth_pb.SignupResponse.deserializeBinary
+  shared_pb.GenericResponse.deserializeBinary
 );
 
 const methodDescriptorAuthCompleteGoogleSignup = new (grpcWeb as any).MethodDescriptor(
