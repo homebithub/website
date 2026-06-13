@@ -46,6 +46,24 @@ function normalizeLoginUser(raw: any, fallbackPhone = '') {
   };
 }
 
+function normalizeVerificationState(raw: any, userId: string, target: string) {
+  return {
+    id: raw?.id || raw?.verification_id || raw?.verificationId || '',
+    user_id: raw?.user_id || raw?.userId || userId,
+    type: raw?.type || raw?.verification_type || raw?.verificationType || 'phone',
+    status: raw?.status || 'pending',
+    target: raw?.target || target,
+    expires_at: raw?.expires_at || raw?.expiresAt || '',
+    next_resend_at: raw?.next_resend_at || raw?.nextResendAt || '',
+    attempts: Number(raw?.attempts ?? 0),
+    max_attempts: Number(raw?.max_attempts ?? raw?.maxAttempts ?? 3),
+    resends: Number(raw?.resends ?? 0),
+    max_resends: Number(raw?.max_resends ?? raw?.maxResends ?? 3),
+    created_at: raw?.created_at || raw?.createdAt || '',
+    updated_at: raw?.updated_at || raw?.updatedAt || '',
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [user, setUser] = useState<LoginResponse | null>(null);
@@ -187,62 +205,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const loginResponse = await authService.login(normalizedPhone.replace(/^\+/, ''), password);
 
       const responseBody = genericResponseBodyToJs(loginResponse);
-      const token = loginResponse.getToken?.() || responseBody.access_token || responseBody.accessToken || responseBody.token || '';
-      const refreshToken = loginResponse.getRefreshToken?.() || responseBody.refresh_token || responseBody.refreshToken || '';
       const userData = normalizeLoginUser(
         loginResponse.getUser?.() || responseBody.user || responseBody,
         normalizedPhone.replace(/^\+/, ''),
       );
+      const authId = responseBody.auth_id || responseBody.authId || responseBody.user_id || responseBody.userId || userData.user_id;
 
-      if (!token || !userData.user_id) {
-        throw new Error('Login response is missing session details.');
+      if (!authId) {
+        throw new Error('Login response is missing verification details.');
       }
-      cacheAuthSession({
-        token,
-        refreshToken,
-        user: userData,
-        provider: "password",
-      });
-      
+
       const profileType = normalizeProfileType(userData.profile_type || "");
-      
-      setUser({ token, user: userData } as unknown as LoginResponse);
-      
-      migratePreferences().catch(err => console.error("Failed to migrate preferences:", err));
 
-      // If user has no phone number, redirect to add-phone page
-      if (!userData.phone) {
-        navigate('/add-phone', {
-          replace: true,
-          state: {
-            user_id: userData.id,
-            profileType,
-            redirectTo: '/',
-          },
-        });
-        return;
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem('user_id', authId);
       }
 
-      if (profileType === "bureau") {
-        navigate("/");
-        return;
-      }
-
-      if (profileType === "household" || profileType === "househelp") {
-        try {
-          const destination = await resolveProfileSetupDestination({
-            userId: userData.id,
-            profileType,
-            completedPath: '/',
-          });
-          navigate(destination);
-          return;
-        } catch (err: any) {
-          console.error('Failed to check profile setup status:', err);
-        }
-      }
-
-      navigate("/");
+      navigate('/verify-otp', {
+        state: {
+          verification: normalizeVerificationState(
+            responseBody.verification || responseBody.data?.verification,
+            authId,
+            normalizedPhone.replace(/^\+/, ''),
+          ),
+          profileType,
+          profileId: responseBody.profile_id || responseBody.profileId || userData.profile_id || '',
+          userProfileId: responseBody.user_profile_id || responseBody.userProfileId || userData.user_profile_id || '',
+          redirectTo: '/',
+        },
+      });
+      return;
     } catch (error: any) {
       const errorMsg = error.message || "An error occurred during login";
       setError(transformErrorMessage(errorMsg));
