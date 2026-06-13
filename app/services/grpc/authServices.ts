@@ -1253,6 +1253,15 @@ export const clientProfileService = {
 };
 
 export const profileFeatureService = {
+  async listProfiles(): Promise<any> {
+    const response = await fetch('/api/profiles');
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new Error(payload?.message || 'Unable to load profiles');
+    }
+    return response.json();
+  },
+
   async getProfileFeatures(profileId: string): Promise<any> {
     const req = new catalog_profile_pb.GetProfileFeature();
     req.setProfileId(profileId);

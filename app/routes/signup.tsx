@@ -14,6 +14,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorage';
+import { profileFeatureService } from '~/services/grpc/authServices';
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
@@ -66,6 +67,9 @@ type ProfileOption = {
     id: string;
     value: string;
     label: string;
+    description: string;
+    type?: string;
+    slug?: string;
 };
 
 function createPhoneVerification(authId: string, target: string) {
@@ -104,10 +108,72 @@ function verificationProtoToState(verificationProto: any) {
     };
 }
 
-const profileOptions: ProfileOption[] = [
-    { id: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1', value: 'household', label: 'Household' },
-    { id: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff', value: 'househelp', label: 'Househelp/Nanny' }
+const fallbackProfileOptions: ProfileOption[] = [
+    {
+        id: '11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1',
+        value: 'household',
+        label: 'Household',
+        description: 'House Hold',
+        type: 'CLT',
+        slug: 'household',
+    },
+    {
+        id: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
+        value: 'househelp',
+        label: 'Househelp/Nanny',
+        description: 'House Help',
+        type: 'SVC_PVD',
+        slug: 'househelp',
+    }
 ];
+
+function normalizeProfileRole(profile: any): 'household' | 'househelp' | '' {
+    const type = String(profile?.type || profile?.profile_type || profile?.profileType || '').toUpperCase();
+    const slug = String(profile?.slug || '').toLowerCase();
+    const name = String(profile?.name || '').toLowerCase();
+
+    if (type === 'CLT' || slug.includes('household') || name.includes('household')) return 'household';
+    if (type === 'SVC_PVD' || slug.includes('househelp') || slug.includes('house-help') || name.includes('househelp') || name.includes('house help')) {
+        return 'househelp';
+    }
+    return '';
+}
+
+function normalizeProfileLabel(profile: any, role: 'household' | 'househelp') {
+    const label = String(profile?.name || '').trim();
+    if (!label) return role === 'household' ? 'Household' : 'Househelp/Nanny';
+    if (role === 'househelp' && /^house\s*help$/i.test(label.replace(/[-_]/g, ' '))) return 'Househelp/Nanny';
+    return label;
+}
+
+function normalizeSignupProfileOptions(rawProfiles: any[]): ProfileOption[] {
+    const byRole = new Map<string, ProfileOption>();
+
+    for (const profile of rawProfiles) {
+        const role = normalizeProfileRole(profile);
+        const id = String(profile?.id || profile?.profile_id || profile?.profileId || '').trim();
+        if (!role || !id || byRole.has(role)) continue;
+
+        byRole.set(role, {
+            id,
+            value: role,
+            label: normalizeProfileLabel(profile, role),
+            description: String(profile?.description || '').trim() || (
+                role === 'household'
+                    ? 'House Hold'
+                    : 'House Help'
+            ),
+            type: String(profile?.type || ''),
+            slug: String(profile?.slug || ''),
+        });
+    }
+
+    const ordered = ['household', 'househelp']
+        .map((role) => byRole.get(role))
+        .filter(Boolean) as ProfileOption[];
+
+    return ordered.length ? ordered : fallbackProfileOptions;
+}
 
 export default function SignupPage() {
     const { user, loading: authLoading } = useAuth();
@@ -130,7 +196,7 @@ export default function SignupPage() {
     
     const [form, setForm] = useState<SignupRequest>({
         profile_type: googleProfileType || '',
-        profile_id: profileOptions.find((option) => option.value === googleProfileType)?.id || '',
+        profile_id: fallbackProfileOptions.find((option) => option.value === googleProfileType)?.id || '',
         // For Google signups we don't actually use the password field,
         // but the shared validation schema expects a non-empty value.
         // Use a dummy value so validation and UI enablement pass while
@@ -157,6 +223,8 @@ export default function SignupPage() {
     const [touchedFields, setTouchedFields] = useState<{ [key: string]: boolean }>({});
     const [showPassword, setShowPassword] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [profileOptions, setProfileOptions] = useState<ProfileOption[]>(fallbackProfileOptions);
+    const [profilesLoading, setProfilesLoading] = useState(false);
     
     // Modal state - check if profile_type is in URL params from Google callback
     const [isProfileModalOpen, setIsProfileModalOpen] = useState(!googleProfileType);
@@ -183,6 +251,38 @@ export default function SignupPage() {
             }
         }
     }, [user, navigate]);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function loadProfiles() {
+            setProfilesLoading(true);
+            try {
+                const response = await profileFeatureService.listProfiles();
+                const profiles = Array.isArray(response?.data) ? response.data : [];
+                const options = normalizeSignupProfileOptions(profiles);
+                if (cancelled) return;
+
+                setProfileOptions(options);
+                setForm((current) => {
+                    if (!current.profile_type) return current;
+                    const selected = options.find((option) => option.value === current.profile_type);
+                    if (!selected || current.profile_id === selected.id) return current;
+                    return { ...current, profile_id: selected.id };
+                });
+            } catch (err) {
+                console.error('[SIGNUP] Failed to load profiles:', err);
+                if (!cancelled) setProfileOptions(fallbackProfileOptions);
+            } finally {
+                if (!cancelled) setProfilesLoading(false);
+            }
+        }
+
+        loadProfiles();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     // No longer needed since we're using a modal instead of dropdown
     // useEffect(() => {
@@ -238,9 +338,8 @@ export default function SignupPage() {
         }
     };
 
-    const handleProfileTypeSelect = (value: string) => {
-        const selected = profileOptions.find((option) => option.value === value);
-        setForm({...form, profile_type: value, profile_id: selected?.id || ''});
+    const handleProfileSelect = (option: ProfileOption) => {
+        setForm({...form, profile_type: option.value, profile_id: option.id});
         // Don't auto-close modal - user must click Continue button after accepting terms
         
         // Clear field error when user selects an option
@@ -300,7 +399,7 @@ export default function SignupPage() {
                         form.first_name,
                         form.last_name,
                         signupPhone,
-                        form.profile_type,
+                        form.profile_id || form.profile_type,
                         form.profile_type === 'househelp' && bureauId ? bureauId : undefined,
                         form.referral_code
                     );
@@ -510,7 +609,8 @@ export default function SignupPage() {
     };
 
     const getSelectedProfileLabel = () => {
-        const selected = profileOptions.find(option => option.value === form.profile_type);
+        const selected = profileOptions.find(option => option.id === form.profile_id)
+            || profileOptions.find(option => option.value === form.profile_type);
         return selected ? selected.label : 'Select profile type';
     };
 
@@ -563,38 +663,40 @@ export default function SignupPage() {
                     <div className="flex flex-col gap-4">
                         {profileOptions.map((option) => (
                             <button
-                                key={option.value}
+                                key={option.id}
                                 type="button"
-                                onClick={() => handleProfileTypeSelect(option.value)}
+                                onClick={() => handleProfileSelect(option)}
                                 className={`group relative p-5 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] ${
-                                    form.profile_type === option.value 
+                                    form.profile_id === option.id
                                         ? 'border-purple-500 dark:border-purple-400 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/40 dark:to-pink-900/40 shadow-lg dark:shadow-glow-md' 
                                         : 'border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-pink-50/50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 hover:shadow-md dark:hover:shadow-glow-sm bg-gray-50/50 dark:bg-gray-800/30'
                                 }`}
                             > 
                                 <div className="flex items-start gap-4">
                                     <div className={`flex-shrink-0 flex items-center justify-center w-6 h-6 border-2 rounded-full mt-0.5 transition-all duration-200 ${
-                                        form.profile_type === option.value 
+                                        form.profile_id === option.id
                                             ? 'bg-gradient-to-br from-purple-600 to-pink-600 border-purple-600 dark:border-purple-500 shadow-md' 
                                             : 'border-gray-400 dark:border-gray-500 group-hover:border-purple-500 dark:group-hover:border-purple-400'
                                     }`}>
-                                        {form.profile_type === option.value && (
+                                        {form.profile_id === option.id && (
                                             <div className="w-2.5 h-2.5 bg-white rounded-full"></div>
                                         )}
                                     </div>
                                     <div className="flex-1">
                                         <h4 className="text-base font-bold text-gray-900 dark:text-white mb-1.5">{option.label}</h4>
                                         <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
-                                            {option.value === 'household' 
-                                                ? 'I need to hire help for my home and family needs' 
-                                                : 'I\'m looking for work opportunities and want to offer my services'
-                                            }
+                                            {option.description}
                                         </p>
                                     </div>
                                 </div>
                             </button>
                         ))}
                     </div>
+                    {profilesLoading && (
+                        <p className="mt-3 text-center text-xs text-gray-500 dark:text-gray-400">
+                            Loading account types...
+                        </p>
+                    )}
                     
                     {/* Terms Acceptance Checkbox */}
                     <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-500/30">
@@ -622,10 +724,10 @@ export default function SignupPage() {
                         <button
                             type="button"
                             onClick={() => setIsProfileModalOpen(false)}
-                            disabled={!form.profile_type || !acceptedTerms}
+                            disabled={!form.profile_id || !acceptedTerms}
                             className="glow-button px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold shadow-lg dark:shadow-glow-md hover:from-purple-700 hover:to-pink-700 dark:hover:shadow-glow-lg hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
                         >
-                            Continue as {profileOptions.find(opt => opt.value === form.profile_type)?.label || 'User'}
+                            Continue as {getSelectedProfileLabel() === 'Select profile type' ? 'User' : getSelectedProfileLabel()}
                         </button>
                         <button
                             type="button"
