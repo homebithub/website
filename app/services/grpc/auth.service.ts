@@ -35,6 +35,15 @@ const methodDescriptorAuthSignup = new (grpcWeb as any).MethodDescriptor(
   shared_pb.GenericResponse.deserializeBinary
 );
 
+const methodDescriptorAuthLogin = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/Login',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.LoginRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
+
 const methodDescriptorAuthCompleteGoogleSignup = new (grpcWeb as any).MethodDescriptor(
   '/auth.AuthService/CompleteGoogleSignup',
   (grpcWeb as any).MethodType.UNARY,
@@ -195,13 +204,19 @@ export const authService = {
       request.setPhone(phone);
       request.setPassword(password);
 
-      authClient.login(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/Login',
+        request,
+        getMetadata(),
+        methodDescriptorAuthLogin,
+        (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve(response);
+          }
         }
-      });
+      );
     });
   },
 

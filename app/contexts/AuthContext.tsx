@@ -22,6 +22,30 @@ interface User {
   role: string;
 }
 
+function genericResponseBodyToJs(response: any) {
+  const body = response?.getBody?.();
+  if (body?.toJavaScript) return body.toJavaScript();
+  if (body?.toObject) return body.toObject();
+  return body || response || {};
+}
+
+function normalizeLoginUser(raw: any, fallbackPhone = '') {
+  const userId = raw?.getId?.() || raw?.id || raw?.user_id || raw?.userId || raw?.auth_id || raw?.authId || '';
+  return {
+    id: userId,
+    user_id: userId,
+    email: raw?.getEmail?.() || raw?.email || '',
+    phone: raw?.getPhone?.() || raw?.phone || raw?.phone_number || raw?.phoneNumber || fallbackPhone,
+    first_name: raw?.getFirstName?.() || raw?.first_name || raw?.firstName || '',
+    last_name: raw?.getLastName?.() || raw?.last_name || raw?.lastName || '',
+    profile_type: raw?.getProfileType?.() || raw?.profile_type || raw?.profileType || '',
+    profile_id: raw?.getProfileId?.() || raw?.profile_id || raw?.profileId || '',
+    user_profile_id: raw?.getUserProfileId?.() || raw?.user_profile_id || raw?.userProfileId || '',
+    is_verified: Boolean(raw?.getIsVerified?.() || raw?.is_verified || raw?.isVerified || false),
+    profile_image: raw?.getProfileImage?.() || raw?.profile_image || raw?.profileImage || '',
+  };
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [user, setUser] = useState<LoginResponse | null>(null);
@@ -162,20 +186,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { default: authService } = await import('~/services/grpc/auth.service');
       const loginResponse = await authService.login(normalizedPhone.replace(/^\+/, ''), password);
 
-      const token = loginResponse.getToken?.() || '';
-      const refreshToken = loginResponse.getRefreshToken?.() || '';
-      const userProto = loginResponse.getUser?.();
-      const userData = {
-        id: userProto?.getId?.() || '',
-        user_id: userProto?.getId?.() || '',
-        email: userProto?.getEmail?.() || '',
-        phone: userProto?.getPhone?.() || '',
-        first_name: userProto?.getFirstName?.() || '',
-        last_name: userProto?.getLastName?.() || '',
-        profile_type: userProto?.getProfileType?.() || '',
-        is_verified: userProto?.getIsVerified?.() || false,
-        profile_image: userProto?.getProfileImage?.() || '',
-      };
+      const responseBody = genericResponseBodyToJs(loginResponse);
+      const token = loginResponse.getToken?.() || responseBody.access_token || responseBody.accessToken || responseBody.token || '';
+      const refreshToken = loginResponse.getRefreshToken?.() || responseBody.refresh_token || responseBody.refreshToken || '';
+      const userData = normalizeLoginUser(
+        loginResponse.getUser?.() || responseBody.user || responseBody,
+        normalizedPhone.replace(/^\+/, ''),
+      );
 
       if (!token || !userData.user_id) {
         throw new Error('Login response is missing session details.');
