@@ -13,8 +13,11 @@ import * as catalog_profile_grpc_web_module from '~/grpc/generated/profile/profi
 import * as catalog_profile_pb_module from '~/grpc/generated/profile/profile_pb';
 import * as user_profile_grpc_web_module from '~/grpc/generated/profile/user_profile_grpc_web_pb';
 import * as user_profile_pb_module from '~/grpc/generated/profile/user_profile_pb';
+import * as shared_pb_module from '~/grpc/generated/shared/shared_pb';
+import * as empty_pb_module from 'google-protobuf/google/protobuf/empty_pb.js';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import * as grpcWeb from 'grpc-web';
+import { AUTH_GRPC_WEB_BASE_URL, GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
   getStoredAccessToken,
   getStoredProfileType,
@@ -26,6 +29,8 @@ const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const client_profile_pb = (client_profile_pb_module as any).default ?? client_profile_pb_module;
 const catalog_profile_pb = (catalog_profile_pb_module as any).default ?? catalog_profile_pb_module;
 const user_profile_pb = (user_profile_pb_module as any).default ?? user_profile_pb_module;
+const shared_pb = (shared_pb_module as any).default ?? shared_pb_module;
+const empty_pb = (empty_pb_module as any).default ?? empty_pb_module;
 const {
   ProfileServiceClient,
   JobServiceClient,
@@ -316,8 +321,17 @@ const openForWorkClient = new OpenForWorkServiceClient(GRPC_WEB_BASE_URL, null, 
 const bureauClient = new BureauServiceClient(GRPC_WEB_BASE_URL, null, null);
 const waitlistClient = new WaitlistServiceClient(GRPC_WEB_BASE_URL, null, null);
 const clientProfileClient = new ClientProfileServiceClient(GRPC_WEB_BASE_URL, null, null);
-const catalogProfileClient = new CatalogProfileServiceClient(GRPC_WEB_BASE_URL, null, null);
-const userProfileClient = new UserProfileServiceClient(GRPC_WEB_BASE_URL, null, null);
+const catalogProfileClient = new CatalogProfileServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
+const userProfileClient = new UserProfileServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
+
+const methodDescriptorProfileServiceListProfiles = new (grpcWeb as any).MethodDescriptor(
+  '/profile.ProfileService/ListProfiles',
+  (grpcWeb as any).MethodType.UNARY,
+  empty_pb.Empty,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
 
 // ── Helper: resolve userId from stored user data when not provided ────
 function resolveUserId(userId: string): string {
@@ -1254,12 +1268,16 @@ export const clientProfileService = {
 
 export const profileFeatureService = {
   async listProfiles(): Promise<any> {
-    const response = await fetch('/api/profiles');
-    if (!response.ok) {
-      const payload = await response.json().catch(() => null);
-      throw new Error(payload?.message || 'Unable to load profiles');
-    }
-    return response.json();
+    const req = new empty_pb.Empty();
+    const client = catalogProfileClient as any;
+    const res = await grpcCall((cb) => client.client_.rpcCall(
+      client.hostname_ + '/profile.ProfileService/ListProfiles',
+      req,
+      getMetadata(),
+      methodDescriptorProfileServiceListProfiles,
+      cb
+    ));
+    return dataEnvelope(res, 'profiles', 'items');
   },
 
   async getProfileFeatures(profileId: string): Promise<any> {
