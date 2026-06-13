@@ -6,6 +6,7 @@
 
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
+import * as grpcWeb from 'grpc-web';
 import { AUTH_GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
   getStoredAccessToken,
@@ -20,6 +21,26 @@ const { AuthServiceClient, AdminAuthServiceClient } = auth_grpc_web_module as an
 
 const authClient = new AuthServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
 const adminAuthClient = new AdminAuthServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
+const authBinaryClient = new (grpcWeb as any).GrpcWebClientBase({ format: 'binary' });
+const authHostname = AUTH_GRPC_WEB_BASE_URL.replace(/\/+$/, '');
+
+const methodDescriptorAuthSignup = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/Signup',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.SignupRequest,
+  auth_pb.SignupResponse,
+  (request: any) => request.serializeBinary(),
+  auth_pb.SignupResponse.deserializeBinary
+);
+
+const methodDescriptorAuthCompleteGoogleSignup = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/CompleteGoogleSignup',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.CompleteGoogleSignupRequest,
+  auth_pb.SignupResponse,
+  (request: any) => request.serializeBinary(),
+  auth_pb.SignupResponse.deserializeBinary
+);
 
 function resolveUserId(userId: string): string {
   if (userId) return userId;
@@ -124,14 +145,20 @@ export const authService = {
           request.setBureauId(bureauId);
         }
 
-        authClient.signup(request, getMetadata(buildReferralMetadata(referralCode)), (err: any, response: any) => {
-          if (err) {
-            console.error('[gRPC-Web] signup error:', err);
-            reject(handleGrpcError(err));
-          } else {
-            resolve(response);
+        authBinaryClient.rpcCall(
+          authHostname + '/auth.AuthService/Signup',
+          request,
+          getMetadata(buildReferralMetadata(referralCode)),
+          methodDescriptorAuthSignup,
+          (err: any, response: any) => {
+            if (err) {
+              console.error('[gRPC-Web] signup error:', err);
+              reject(handleGrpcError(err));
+            } else {
+              resolve(response);
+            }
           }
-        });
+        );
       } catch (error) {
         console.error('[gRPC-Web] signup exception:', error);
         reject(error);
@@ -374,10 +401,16 @@ export const authService = {
       request.setProfileType(profileType);
       if (bureauId) request.setBureauId(bureauId);
 
-      authClient.completeGoogleSignup(request, getMetadata(buildReferralMetadata(referralCode)), (err: any, response: any) => {
-        if (err) reject(handleGrpcError(err));
-        else resolve(response);
-      });
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/CompleteGoogleSignup',
+        request,
+        getMetadata(buildReferralMetadata(referralCode)),
+        methodDescriptorAuthCompleteGoogleSignup,
+        (err: any, response: any) => {
+          if (err) reject(handleGrpcError(err));
+          else resolve(response);
+        }
+      );
     });
   },
 
