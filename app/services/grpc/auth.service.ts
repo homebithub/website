@@ -44,6 +44,24 @@ const methodDescriptorAuthCompleteGoogleSignup = new (grpcWeb as any).MethodDesc
   auth_pb.SignupResponse.deserializeBinary
 );
 
+const methodDescriptorAuthVerifyOTP = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/VerifyOTP',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.VerifyOTPRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
+
+const methodDescriptorAuthResendOTP = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/ResendOTP',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.ResendOTPRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
+
 function resolveUserId(userId: string): string {
   if (userId) return userId;
   return getStoredUserId();
@@ -217,13 +235,19 @@ export const authService = {
       request.setVerificationType(verificationType);
       request.setOtp(otp);
 
-      authClient.verifyOTP(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/VerifyOTP',
+        request,
+        getMetadata(),
+        methodDescriptorAuthVerifyOTP,
+        (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve(response);
+          }
         }
-      });
+      );
     });
   },
 
@@ -311,13 +335,19 @@ export const authService = {
       request.setUserId(resolveUserId(userId));
       request.setVerificationType(verificationType);
 
-      authClient.resendOTP(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/ResendOTP',
+        request,
+        getMetadata(),
+        methodDescriptorAuthResendOTP,
+        (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve(response);
+          }
         }
-      });
+      );
     });
   },
 
