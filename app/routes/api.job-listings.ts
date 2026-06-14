@@ -72,10 +72,12 @@ function encodeListRequest(params: URLSearchParams) {
   return concatBytes([
     encodeInt32Field(1, Number.isFinite(limit) ? limit : 20),
     encodeInt32Field(2, Number.isFinite(offset) ? offset : 0),
+    encodeStringField(3, userProfileId),
+    encodeStringField(4, status),
   ]);
 }
 
-function encodeCreateJobReq(body: Record<string, unknown>) {
+function encodeCreateListingReq(body: Record<string, unknown>) {
   const data = {
     ...body,
     user_profile_id: body.user_profile_id || body.userProfileId,
@@ -226,7 +228,7 @@ async function getJobTypeBundles(baseUrl: string, jobTypeId: number, callUnaryGr
 async function getJobListing(baseUrl: string, id: number, callUnaryGrpc: any) {
   const { body } = await callUnaryGrpc(
     baseUrl,
-    '/auth.JobService/GetJob',
+    '/auth.ListingService/GetJobListing',
     encodeIdRequest(String(id)),
   );
   const payload = body.data ?? body;
@@ -276,7 +278,7 @@ export async function loader({ request }: { request: Request }) {
 
     const { body: responseBody } = await callUnaryGrpc(
       baseUrl,
-      '/auth.JobService/ListJobs',
+      '/auth.ListingService/ListJobs',
       encodeListRequest(url.searchParams),
     );
 
@@ -323,7 +325,7 @@ export async function action({ request }: { request: Request }) {
 
       const { body: responseBody } = await callUnaryGrpc(
         resolveAuthGrpcBaseUrl(request),
-        '/auth.JobService/UpdateJob',
+        '/auth.ListingService/UpdateJob',
         encodeUpdateJobReq({ ...body, id, title, description }),
       );
 
@@ -336,10 +338,10 @@ export async function action({ request }: { request: Request }) {
       }
 
       const rpcPath = action === 'close'
-        ? '/auth.JobService/CloseJob'
+        ? '/auth.ListingService/CloseListing'
         : action === 'reopen'
-          ? '/auth.JobService/ReopenJob'
-          : '/auth.JobService/DeleteJob';
+          ? '/auth.ListingService/ReopenListing'
+          : '/auth.ListingService/DeleteJob';
 
       const { body: responseBody } = await callUnaryGrpc(
         resolveAuthGrpcBaseUrl(request),
@@ -364,8 +366,8 @@ export async function action({ request }: { request: Request }) {
 
     const { body: responseBody } = await callUnaryGrpc(
       resolveAuthGrpcBaseUrl(request),
-      '/auth.JobService/CreateJob',
-      encodeCreateJobReq({
+      '/auth.ListingService/CreateListing',
+      encodeCreateListingReq({
         user_profile_id: userProfileId,
         title,
         description,

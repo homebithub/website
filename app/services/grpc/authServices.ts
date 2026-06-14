@@ -1357,40 +1357,73 @@ export const listingApplicationService = {
 // ══════════════════════════════════════════════════════════════════════════
 // Job Listing Service
 // ══════════════════════════════════════════════════════════════════════════
+async function jobListingsApi(path = '', init?: RequestInit): Promise<any> {
+  const res = await fetch(`/api/job-listings${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init?.headers || {}),
+    },
+  });
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(payload.message || 'Unable to process job listing request');
+  }
+  return payload;
+}
+
 export const jobService = {
+  async createListing(userId: string, data: Record<string, any>): Promise<any> {
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...data,
+        user_id: userId || data.user_id || data.userId || data.user_profile_id || data.userProfileId || '',
+      }),
+    });
+    return payload.data ?? payload;
+  },
+
   async createJob(userId: string, data: Record<string, any>): Promise<any> {
-    const req = new auth_pb.CreateJobReq();
-    req.setUserId(resolveUserId(userId));
-    const struct = toStruct(data);
-    if (struct) req.setData(struct);
-    const res = await grpcCall((cb) => jobClient.createJob(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.createListing(userId, data);
   },
 
   async updateJob(id: string, userId: string, data: Record<string, any>): Promise<any> {
-    const req = new auth_pb.UpdateJobReq();
-    req.setId(id);
-    req.setUserId(resolveUserId(userId));
-    const struct = toStruct(data);
-    if (struct) req.setData(struct);
-    const res = await grpcCall((cb) => jobClient.updateJob(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const payload = await jobListingsApi('', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ...data,
+        id,
+        user_id: userId || data.user_id || data.userId || '',
+      }),
+    });
+    return payload.data ?? payload;
   },
 
   async deleteJob(id: string, userId?: string): Promise<void> {
-    await grpcCall((cb) => jobClient.deleteJob(buildIdRequest(id, userId), getMetadata(), cb));
+    await jobListingsApi('', {
+      method: 'DELETE',
+      body: JSON.stringify({ id, user_id: userId || '' }),
+    });
   },
 
   async getJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.getJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const params = new URLSearchParams({ id, hydrate: 'get' });
+    const payload = await jobListingsApi(`?${params.toString()}`);
+    return payload.data ?? payload;
   },
 
   async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId(), status = ''): Promise<any> {
     try {
-      const res = await grpcCall((cb) => jobClient.listJobs(buildListRequest(limit, offset), getMetadata(), cb));
-      const listings = normalizeArray(jsonResponseToJs(res));
-      return { data: await enrichListingsWithFeatures(listings) };
+      const params = new URLSearchParams({
+        limit: String(limit),
+        offset: String(offset),
+      });
+      if (userProfileId) params.set('user_profile_id', userProfileId);
+      if (status) params.set('status', status);
+      const payload = await jobListingsApi(`?${params.toString()}`);
+      return { data: normalizeArray(payload.data ?? payload) };
     } catch (err) {
       console.warn('Failed to list jobs:', err);
       return { data: [] };
@@ -1417,13 +1450,19 @@ export const jobService = {
   },
 
   async closeJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.closeJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const payload = await jobListingsApi('', {
+      method: 'DELETE',
+      body: JSON.stringify({ id, user_id: userId || '', action: 'close' }),
+    });
+    return payload.data ?? payload;
   },
 
   async reopenJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.reopenJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const payload = await jobListingsApi('', {
+      method: 'DELETE',
+      body: JSON.stringify({ id, user_id: userId || '', action: 'reopen' }),
+    });
+    return payload.data ?? payload;
   },
 
   async getJobsByUserId(userId: string): Promise<any> {
