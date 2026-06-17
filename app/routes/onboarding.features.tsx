@@ -238,8 +238,8 @@ export default function OnboardingFeaturesPage() {
                   </div>
                 </div>
 
-                <div className="max-h-[calc(100vh-250px)] overflow-y-auto px-5 py-5 sm:px-6">
-                  <div className="grid gap-5">
+                <div className="max-h-[calc(100vh-220px)] overflow-y-auto px-4 py-4 sm:px-5">
+                  <div className="grid gap-3">
                     {features.map((feature, featureIndex) => {
                       const featureSelections = selected[feature.feature_id] || [];
                       const featureComplete = featureSelections.length > 0;
@@ -247,28 +247,28 @@ export default function OnboardingFeaturesPage() {
                       return (
                         <section
                           key={feature.feature_id}
-                          className={`rounded-2xl border-2 bg-white/80 p-4 transition-colors dark:bg-gray-900/40 sm:p-5 ${
+                          className={`rounded-xl border-2 bg-white/80 p-3 transition-colors dark:bg-gray-900/40 sm:p-4 ${
                             featureComplete
                               ? 'border-purple-300 dark:border-purple-500/60'
                               : 'border-gray-200 dark:border-gray-700'
                           }`}
                         >
-                          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                            <div className="flex items-center gap-3">
+                          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                            <div className="flex items-center gap-2">
                               <span
-                                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border text-sm font-bold ${
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold ${
                                   featureComplete
                                     ? 'border-purple-600 bg-purple-600 text-white'
                                     : 'border-purple-200 text-purple-600 dark:border-purple-500/40 dark:text-purple-300'
                                 }`}
                               >
-                                {featureComplete ? <Check className="h-4 w-4" /> : featureIndex + 1}
+                                {featureComplete ? <Check className="h-3 w-3" /> : featureIndex + 1}
                               </span>
                               <div>
-                                <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                                <h2 className="text-sm font-bold text-gray-900 dark:text-white">
                                   {getFeatureName(feature)}
                                 </h2>
-                                <p className="text-xs text-gray-500 dark:text-gray-400">
+                                <p className="text-[10px] text-gray-500 dark:text-gray-400">
                                   {(feature.properties || []).length} options
                                 </p>
                               </div>
@@ -284,7 +284,7 @@ export default function OnboardingFeaturesPage() {
                             </span>
                           </div>
 
-                          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                          <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             {(feature.properties || []).map((property) => {
                               const active = featureSelections.includes(Number(property.id));
                               return (
@@ -292,26 +292,26 @@ export default function OnboardingFeaturesPage() {
                                   key={property.id}
                                   type="button"
                                   onClick={() => toggleProperty(feature.feature_id, Number(property.id))}
-                                  className={`group relative min-h-[104px] rounded-2xl border-2 p-4 text-left transition-all ${
+                                  className={`group relative min-h-[64px] rounded-xl border-2 p-3 text-left transition-all ${
                                     active
-                                      ? 'border-purple-500 bg-purple-50 shadow-md dark:bg-purple-900/40'
+                                      ? 'border-purple-500 bg-purple-50 shadow-sm dark:bg-purple-900/40'
                                       : 'border-gray-200 bg-white/80 hover:border-purple-300 hover:bg-purple-50/70 dark:border-gray-700 dark:bg-gray-950/30 dark:hover:border-purple-500/60 dark:hover:bg-purple-950/20'
                                   }`}
                                 >
                                   <span
-                                    className={`absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full border transition-all ${
+                                    className={`absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full border transition-all ${
                                       active
                                         ? 'border-purple-600 bg-purple-600 text-white'
                                         : 'border-gray-300 text-transparent group-hover:border-purple-400 dark:border-gray-600'
                                     }`}
                                   >
-                                    <Check className="h-4 w-4" />
+                                    <Check className="h-3 w-3" />
                                   </span>
-                                  <span className="block pr-9 text-base font-semibold leading-snug text-gray-900 dark:text-white">
+                                  <span className="block pr-7 text-sm font-semibold leading-snug text-gray-900 dark:text-white">
                                     {property.name}
                                   </span>
                                   {property.description && property.description !== property.name && (
-                                    <span className="mt-2 block text-sm leading-relaxed text-gray-500 dark:text-gray-400">
+                                    <span className="mt-1 block text-xs leading-relaxed text-gray-500 dark:text-gray-400">
                                       {property.description}
                                     </span>
                                   )}
