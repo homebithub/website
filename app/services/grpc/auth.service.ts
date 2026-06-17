@@ -6,6 +6,8 @@
 
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
 import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
+import * as shared_pb_module from '~/grpc/generated/shared/shared_pb';
+import * as grpcWeb from 'grpc-web';
 import { AUTH_GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
   getStoredAccessToken,
@@ -16,10 +18,58 @@ import {
 
 // Extract proto.auth from the default export
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
+const shared_pb = (shared_pb_module as any).default ?? shared_pb_module;
 const { AuthServiceClient, AdminAuthServiceClient } = auth_grpc_web_module as any;
 
 const authClient = new AuthServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
 const adminAuthClient = new AdminAuthServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
+const authBinaryClient = new (grpcWeb as any).GrpcWebClientBase({ format: 'binary' });
+const authHostname = AUTH_GRPC_WEB_BASE_URL.replace(/\/+$/, '');
+
+const methodDescriptorAuthSignup = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/Signup',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.SignupRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
+
+const methodDescriptorAuthLogin = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/Login',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.LoginRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
+
+const methodDescriptorAuthCompleteGoogleSignup = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/CompleteGoogleSignup',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.CompleteGoogleSignupRequest,
+  auth_pb.SignupResponse,
+  (request: any) => request.serializeBinary(),
+  auth_pb.SignupResponse.deserializeBinary
+);
+
+const methodDescriptorAuthVerifyOTP = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/VerifyOTP',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.VerifyOTPRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
+
+const methodDescriptorAuthResendOTP = new (grpcWeb as any).MethodDescriptor(
+  '/auth.AuthService/ResendOTP',
+  (grpcWeb as any).MethodType.UNARY,
+  auth_pb.ResendOTPRequest,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
 
 function resolveUserId(userId: string): string {
   if (userId) return userId;
@@ -124,14 +174,20 @@ export const authService = {
           request.setBureauId(bureauId);
         }
 
-        authClient.signup(request, getMetadata(buildReferralMetadata(referralCode)), (err: any, response: any) => {
-          if (err) {
-            console.error('[gRPC-Web] signup error:', err);
-            reject(handleGrpcError(err));
-          } else {
-            resolve(response);
+        authBinaryClient.rpcCall(
+          authHostname + '/auth.AuthService/Signup',
+          request,
+          getMetadata(buildReferralMetadata(referralCode)),
+          methodDescriptorAuthSignup,
+          (err: any, response: any) => {
+            if (err) {
+              console.error('[gRPC-Web] signup error:', err);
+              reject(handleGrpcError(err));
+            } else {
+              resolve(response);
+            }
           }
-        });
+        );
       } catch (error) {
         console.error('[gRPC-Web] signup exception:', error);
         reject(error);
@@ -148,13 +204,19 @@ export const authService = {
       request.setPhone(phone);
       request.setPassword(password);
 
-      authClient.login(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/Login',
+        request,
+        getMetadata(),
+        methodDescriptorAuthLogin,
+        (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve(response);
+          }
         }
-      });
+      );
     });
   },
 
@@ -188,13 +250,19 @@ export const authService = {
       request.setVerificationType(verificationType);
       request.setOtp(otp);
 
-      authClient.verifyOTP(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/VerifyOTP',
+        request,
+        getMetadata(),
+        methodDescriptorAuthVerifyOTP,
+        (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve(response);
+          }
         }
-      });
+      );
     });
   },
 
@@ -282,13 +350,19 @@ export const authService = {
       request.setUserId(resolveUserId(userId));
       request.setVerificationType(verificationType);
 
-      authClient.resendOTP(request, getMetadata(), (err: any, response: any) => {
-        if (err) {
-          reject(handleGrpcError(err));
-        } else {
-          resolve(response);
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/ResendOTP',
+        request,
+        getMetadata(),
+        methodDescriptorAuthResendOTP,
+        (err: any, response: any) => {
+          if (err) {
+            reject(handleGrpcError(err));
+          } else {
+            resolve(response);
+          }
         }
-      });
+      );
     });
   },
 
@@ -374,10 +448,16 @@ export const authService = {
       request.setProfileType(profileType);
       if (bureauId) request.setBureauId(bureauId);
 
-      authClient.completeGoogleSignup(request, getMetadata(buildReferralMetadata(referralCode)), (err: any, response: any) => {
-        if (err) reject(handleGrpcError(err));
-        else resolve(response);
-      });
+      authBinaryClient.rpcCall(
+        authHostname + '/auth.AuthService/CompleteGoogleSignup',
+        request,
+        getMetadata(buildReferralMetadata(referralCode)),
+        methodDescriptorAuthCompleteGoogleSignup,
+        (err: any, response: any) => {
+          if (err) reject(handleGrpcError(err));
+          else resolve(response);
+        }
+      );
     });
   },
 

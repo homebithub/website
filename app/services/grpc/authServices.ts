@@ -13,8 +13,11 @@ import * as catalog_profile_grpc_web_module from '~/grpc/generated/profile/profi
 import * as catalog_profile_pb_module from '~/grpc/generated/profile/profile_pb';
 import * as user_profile_grpc_web_module from '~/grpc/generated/profile/user_profile_grpc_web_pb';
 import * as user_profile_pb_module from '~/grpc/generated/profile/user_profile_pb';
+import * as shared_pb_module from '~/grpc/generated/shared/shared_pb';
+import * as empty_pb_module from 'google-protobuf/google/protobuf/empty_pb.js';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
-import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
+import * as grpcWeb from 'grpc-web';
+import { AUTH_GRPC_WEB_BASE_URL, GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
   getStoredAccessToken,
   getStoredProfileType,
@@ -26,6 +29,8 @@ const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const client_profile_pb = (client_profile_pb_module as any).default ?? client_profile_pb_module;
 const catalog_profile_pb = (catalog_profile_pb_module as any).default ?? catalog_profile_pb_module;
 const user_profile_pb = (user_profile_pb_module as any).default ?? user_profile_pb_module;
+const shared_pb = (shared_pb_module as any).default ?? shared_pb_module;
+const empty_pb = (empty_pb_module as any).default ?? empty_pb_module;
 const {
   ProfileServiceClient,
   JobServiceClient,
@@ -316,8 +321,17 @@ const openForWorkClient = new OpenForWorkServiceClient(GRPC_WEB_BASE_URL, null, 
 const bureauClient = new BureauServiceClient(GRPC_WEB_BASE_URL, null, null);
 const waitlistClient = new WaitlistServiceClient(GRPC_WEB_BASE_URL, null, null);
 const clientProfileClient = new ClientProfileServiceClient(GRPC_WEB_BASE_URL, null, null);
-const catalogProfileClient = new CatalogProfileServiceClient(GRPC_WEB_BASE_URL, null, null);
-const userProfileClient = new UserProfileServiceClient(GRPC_WEB_BASE_URL, null, null);
+const catalogProfileClient = new CatalogProfileServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
+const userProfileClient = new UserProfileServiceClient(AUTH_GRPC_WEB_BASE_URL, null, null);
+
+const methodDescriptorProfileServiceListProfiles = new (grpcWeb as any).MethodDescriptor(
+  '/profile.ProfileService/ListProfiles',
+  (grpcWeb as any).MethodType.UNARY,
+  empty_pb.Empty,
+  shared_pb.GenericResponse,
+  (request: any) => request.serializeBinary(),
+  shared_pb.GenericResponse.deserializeBinary
+);
 
 // ── Helper: resolve userId from stored user data when not provided ────
 function resolveUserId(userId: string): string {
@@ -1253,6 +1267,19 @@ export const clientProfileService = {
 };
 
 export const profileFeatureService = {
+  async listProfiles(): Promise<any> {
+    const req = new empty_pb.Empty();
+    const client = catalogProfileClient as any;
+    const res = await grpcCall((cb) => client.client_.rpcCall(
+      client.hostname_ + '/profile.ProfileService/ListProfiles',
+      req,
+      getMetadata(),
+      methodDescriptorProfileServiceListProfiles,
+      cb
+    ));
+    return dataEnvelope(res, 'profiles', 'items');
+  },
+
   async getProfileFeatures(profileId: string): Promise<any> {
     const req = new catalog_profile_pb.GetProfileFeature();
     req.setProfileId(profileId);
@@ -1330,40 +1357,73 @@ export const listingApplicationService = {
 // ══════════════════════════════════════════════════════════════════════════
 // Job Listing Service
 // ══════════════════════════════════════════════════════════════════════════
+async function jobListingsApi(path = '', init?: RequestInit): Promise<any> {
+  const res = await fetch(`/api/job-listings${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(init?.headers || {}),
+    },
+  });
+
+  const payload = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(payload.message || 'Unable to process job listing request');
+  }
+  return payload;
+}
+
 export const jobService = {
+  async createListing(userId: string, data: Record<string, any>): Promise<any> {
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({
+        ...data,
+        user_id: userId || data.user_id || data.userId || data.user_profile_id || data.userProfileId || '',
+      }),
+    });
+    return payload.data ?? payload;
+  },
+
   async createJob(userId: string, data: Record<string, any>): Promise<any> {
-    const req = new auth_pb.CreateJobReq();
-    req.setUserId(resolveUserId(userId));
-    const struct = toStruct(data);
-    if (struct) req.setData(struct);
-    const res = await grpcCall((cb) => jobClient.createJob(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.createListing(userId, data);
   },
 
   async updateJob(id: string, userId: string, data: Record<string, any>): Promise<any> {
-    const req = new auth_pb.UpdateJobReq();
-    req.setId(id);
-    req.setUserId(resolveUserId(userId));
-    const struct = toStruct(data);
-    if (struct) req.setData(struct);
-    const res = await grpcCall((cb) => jobClient.updateJob(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const payload = await jobListingsApi('', {
+      method: 'PATCH',
+      body: JSON.stringify({
+        ...data,
+        id,
+        user_id: userId || data.user_id || data.userId || '',
+      }),
+    });
+    return payload.data ?? payload;
   },
 
   async deleteJob(id: string, userId?: string): Promise<void> {
-    await grpcCall((cb) => jobClient.deleteJob(buildIdRequest(id, userId), getMetadata(), cb));
+    await jobListingsApi('', {
+      method: 'DELETE',
+      body: JSON.stringify({ id, user_id: userId || '' }),
+    });
   },
 
   async getJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.getJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const params = new URLSearchParams({ id, hydrate: 'get' });
+    const payload = await jobListingsApi(`?${params.toString()}`);
+    return payload.data ?? payload;
   },
 
   async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId(), status = ''): Promise<any> {
     try {
-      const res = await grpcCall((cb) => jobClient.listJobs(buildListRequest(limit, offset), getMetadata(), cb));
-      const listings = normalizeArray(jsonResponseToJs(res));
-      return { data: await enrichListingsWithFeatures(listings) };
+      const params = new URLSearchParams({
+        limit: String(limit),
+        offset: String(offset),
+      });
+      if (userProfileId) params.set('user_profile_id', userProfileId);
+      if (status) params.set('status', status);
+      const payload = await jobListingsApi(`?${params.toString()}`);
+      return { data: normalizeArray(payload.data ?? payload) };
     } catch (err) {
       console.warn('Failed to list jobs:', err);
       return { data: [] };
@@ -1390,13 +1450,19 @@ export const jobService = {
   },
 
   async closeJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.closeJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const payload = await jobListingsApi('', {
+      method: 'DELETE',
+      body: JSON.stringify({ id, user_id: userId || '', action: 'close' }),
+    });
+    return payload.data ?? payload;
   },
 
   async reopenJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.reopenJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const payload = await jobListingsApi('', {
+      method: 'DELETE',
+      body: JSON.stringify({ id, user_id: userId || '', action: 'reopen' }),
+    });
+    return payload.data ?? payload;
   },
 
   async getJobsByUserId(userId: string): Promise<any> {

@@ -1,7 +1,3 @@
-import structPb from 'google-protobuf/google/protobuf/struct_pb.js';
-
-const { Struct } = structPb;
-
 function encodeStringField(fieldNo: number, value: string): Uint8Array {
   if (!value) return new Uint8Array();
   const encoded = new TextEncoder().encode(value);
@@ -21,11 +17,6 @@ function encodeInt64Field(fieldNo: number, value: number): Uint8Array {
 function encodeMessageField(fieldNo: number, value: Uint8Array): Uint8Array {
   if (!value.length) return new Uint8Array();
   return concatBytes([encodeVarint((fieldNo << 3) | 2), encodeVarint(value.length), value]);
-}
-
-function encodeStructField(fieldNo: number, value: Record<string, unknown>) {
-  const struct = Struct.fromJavaScript(stripUndefined(value || {}) as Record<string, never>);
-  return encodeMessageField(fieldNo, struct.serializeBinary());
 }
 
 function concatBytes(parts: Uint8Array[]): Uint8Array {
@@ -50,19 +41,6 @@ function encodeVarint(value: number): Uint8Array {
   return Uint8Array.from(out);
 }
 
-function stripUndefined(value: unknown): unknown {
-  if (value === undefined || value === null) return null;
-  if (Array.isArray(value)) return value.map(stripUndefined);
-  if (typeof value === 'object') {
-    const clean: Record<string, unknown> = {};
-    for (const [key, item] of Object.entries(value as Record<string, unknown>)) {
-      if (item !== undefined) clean[key] = stripUndefined(item);
-    }
-    return clean;
-  }
-  return value;
-}
-
 function encodeListRequest(params: URLSearchParams) {
   const limit = Number(params.get('limit') || '20');
   const offset = Number(params.get('offset') || '0');
@@ -72,25 +50,27 @@ function encodeListRequest(params: URLSearchParams) {
   return concatBytes([
     encodeInt32Field(1, Number.isFinite(limit) ? limit : 20),
     encodeInt32Field(2, Number.isFinite(offset) ? offset : 0),
+    encodeStringField(3, userProfileId),
+    encodeStringField(4, status),
   ]);
 }
 
-function encodeCreateJobReq(body: Record<string, unknown>) {
-  const data = {
-    ...body,
-    user_profile_id: body.user_profile_id || body.userProfileId,
-  };
+function encodeCreateListingReq(body: Record<string, unknown>) {
+  const features = Array.isArray(body.features) ? body.features : [];
   return concatBytes([
-    encodeStringField(1, String(body.user_id || body.userId || body.user_profile_id || body.userProfileId || '')),
-    encodeStructField(2, data),
+    encodeStringField(1, String(body.user_profile_id || body.userProfileId || '')),
+    encodeStringField(2, String(body.title || '')),
+    encodeStringField(3, String(body.description || '')),
+    encodeInt32Field(4, Number(body.job_type_id || body.jobTypeId || 0)),
+    ...features.map((feature) => encodeMessageField(5, encodeFeaturePick(feature as Record<string, unknown>))),
   ]);
 }
 
 function encodeUpdateJobReq(body: Record<string, unknown>) {
   return concatBytes([
     encodeStringField(1, String(body.id || '')),
-    encodeStringField(2, String(body.user_id || body.userId || '')),
-    encodeStructField(3, body),
+    encodeStringField(2, String(body.title || '')),
+    encodeStringField(3, String(body.description || '')),
   ]);
 }
 
@@ -226,7 +206,7 @@ async function getJobTypeBundles(baseUrl: string, jobTypeId: number, callUnaryGr
 async function getJobListing(baseUrl: string, id: number, callUnaryGrpc: any) {
   const { body } = await callUnaryGrpc(
     baseUrl,
-    '/auth.JobService/GetJob',
+    '/auth.ListingService/GetJobListing',
     encodeIdRequest(String(id)),
   );
   const payload = body.data ?? body;
@@ -276,7 +256,7 @@ export async function loader({ request }: { request: Request }) {
 
     const { body: responseBody } = await callUnaryGrpc(
       baseUrl,
-      '/auth.JobService/ListJobs',
+      '/auth.ListingService/ListJobs',
       encodeListRequest(url.searchParams),
     );
 
@@ -323,7 +303,7 @@ export async function action({ request }: { request: Request }) {
 
       const { body: responseBody } = await callUnaryGrpc(
         resolveAuthGrpcBaseUrl(request),
-        '/auth.JobService/UpdateJob',
+        '/auth.ListingService/UpdateJob',
         encodeUpdateJobReq({ ...body, id, title, description }),
       );
 
@@ -336,10 +316,10 @@ export async function action({ request }: { request: Request }) {
       }
 
       const rpcPath = action === 'close'
-        ? '/auth.JobService/CloseJob'
+        ? '/auth.ListingService/CloseListing'
         : action === 'reopen'
-          ? '/auth.JobService/ReopenJob'
-          : '/auth.JobService/DeleteJob';
+          ? '/auth.ListingService/ReopenListing'
+          : '/auth.ListingService/DeleteJob';
 
       const { body: responseBody } = await callUnaryGrpc(
         resolveAuthGrpcBaseUrl(request),
@@ -364,8 +344,8 @@ export async function action({ request }: { request: Request }) {
 
     const { body: responseBody } = await callUnaryGrpc(
       resolveAuthGrpcBaseUrl(request),
-      '/auth.JobService/CreateJob',
-      encodeCreateJobReq({
+      '/auth.ListingService/CreateListing',
+      encodeCreateListingReq({
         user_profile_id: userProfileId,
         title,
         description,

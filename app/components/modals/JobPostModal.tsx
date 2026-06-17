@@ -300,7 +300,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
           description: trimmedDescription,
         });
       } else {
-        await jobService.createJob("", {
+        await jobService.createListing("", {
           user_profile_id: userProfileId,
           title: trimmedTitle,
           description: trimmedDescription,

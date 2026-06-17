@@ -90,6 +90,13 @@ function normalizeUser(raw: any) {
   };
 }
 
+function genericResponseBodyToJs(response: any) {
+  const body = response?.getBody?.();
+  if (body?.toJavaScript) return body.toJavaScript();
+  if (body?.toObject) return body.toObject();
+  return body || response || {};
+}
+
 export default function VerifyOtpPage() {
   // UI state for changing phone
   const [showChangePhone, setShowChangePhone] = React.useState(false);
@@ -142,6 +149,18 @@ export default function VerifyOtpPage() {
     max_attempts: verificationProto.getMaxAttempts(),
     attempts: verificationProto.getAttempts(),
     next_resend_at: verificationProto.getNextResendAt()?.toDate?.().toISOString() || '',
+  });
+
+  const verificationRecordToState = (record: any) => ({
+    id: record?.id || '',
+    user_id: record?.user_id || record?.userId || '',
+    type: record?.type || record?.verification_type || record?.verificationType || '',
+    status: record?.status || '',
+    target: record?.target || '',
+    expires_at: record?.expires_at || record?.expiresAt || '',
+    max_attempts: Number(record?.max_attempts ?? record?.maxAttempts ?? 3),
+    attempts: Number(record?.attempts ?? 0),
+    next_resend_at: record?.next_resend_at || record?.nextResendAt || '',
   });
 
   const resolveVerificationUserId = () => verification?.user_id || getStoredUserId() || '';
@@ -306,17 +325,22 @@ export default function VerifyOtpPage() {
         otp,
       );
 
-      const normalizedUser = normalizeUser(response.getUser?.());
+      const responseBody = genericResponseBodyToJs(response);
+      const normalizedUser = normalizeUser(response.getUser?.() || responseBody.user);
       const verifyData = {
-        verified: true,
-        token: response.getToken?.() || '',
-        refresh_token: response.getRefreshToken?.() || '',
+        verified: Boolean(responseBody.verified ?? true),
+        token: response.getToken?.() || responseBody.access_token || responseBody.accessToken || responseBody.token || '',
+        refresh_token: response.getRefreshToken?.() || responseBody.refresh_token || responseBody.refreshToken || '',
         user: normalizedUser,
         user_profile_id:
           normalizedUser?.user_profile_id ||
+          responseBody.user_profile_id ||
+          responseBody.userProfileId ||
           '',
         profile_id:
           normalizedUser?.profile_id ||
+          responseBody.profile_id ||
+          responseBody.profileId ||
           '',
       };
 
@@ -470,10 +494,14 @@ export default function VerifyOtpPage() {
       const { default: authService } = await import('~/services/grpc/auth.service');
       const response = await authService.resendOTP(resolveVerificationUserId(), verification?.type || 'phone');
       const verificationProto = response.getVerification();
-      if (verificationProto) {
+      const responseBody = genericResponseBodyToJs(response);
+      const verificationRecord = responseBody.verification || responseBody.data?.verification;
+      if (verificationProto || verificationRecord) {
         setVerificationState((prev) => ({
           ...prev,
-          verification: verificationToState(verificationProto),
+          verification: verificationProto
+            ? verificationToState(verificationProto)
+            : verificationRecordToState(verificationRecord),
         }));
         setLocalFailedAttempts(0);
         setOtp('');
