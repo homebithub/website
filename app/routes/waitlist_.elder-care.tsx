@@ -32,6 +32,16 @@ const SERVICE_OPTIONS = [
   "Plumbing",
 ];
 
+const CONCERNS = [
+  "Trust",
+  "Speed",
+  "Experience",
+  "Affordability",
+  "Education",
+  "Driver's License",
+  "Professionally Trained",
+];
+
 const COUNTRY_CODES = [
   { name: "Afghanistan", dialCode: "+93", iso: "AF" },
   { name: "Albania", dialCode: "+355", iso: "AL" },
@@ -282,6 +292,7 @@ interface ElderCareFormData {
   whatsapp_opt_in: boolean;
   message: string;
   services: string[];
+  concerns: string[];
 }
 
 const emptyForm: ElderCareFormData = {
@@ -293,20 +304,23 @@ const emptyForm: ElderCareFormData = {
   whatsapp_opt_in: false,
   message: "",
   services: ["Elderly Care"],
+  concerns: [],
 };
 
-const PROFILE_COPY: Record<ProfileType, { heading: string; paragraph: string; servicePrompt: string }> = {
+const PROFILE_COPY: Record<ProfileType, { heading: string; paragraph: string; servicePrompt: string; concernPrompt: string }> = {
   household: {
     heading: "Looking for help for your elders?",
     paragraph:
       "Join the elder-care waitlist to get early access to Homebit's trusted caregivers and household support professionals. We know how hard it is to find someone you can invite into a parent or grandparent's home with complete peace of mind. Homebit is building a safer, faster way for families to find dependable care for seniors at home by combining real human vetting with smart matching. Every caregiver and househelp on our platform goes through identity checks, reference reviews, and skills screening, so you are not starting from scratch or guessing based on a few text messages. We focus on care that respects dignity, culture, and routines, whether you need daily companionship, overnight support, or help with household tasks that keep your loved one comfortable. You will be able to describe your elder's needs, the kind of personality that works best for your home, preferred schedules, and any medical or mobility considerations. As the waitlist moves forward, we will share updates, service availability, and onboarding timelines so you can plan with confidence. Homebit is not just a list of names; it is a care experience built around trust, safety, and reliability. If you want a single place to find elder care, househelp, and additional support services without the stress of endless searching, this is the right place to start.",
     servicePrompt: "Would you need additional services?",
+    concernPrompt: "Biggest concern",
   },
   househelp: {
     heading: "You offer elder care?",
     paragraph:
       "Join the elder-care waitlist to be among the first care professionals households discover on Homebit. We are creating a trusted marketplace where caregivers and househelps can present their skills with confidence and be matched to families who value quality care. If you have experience with elder support, companionship, medication reminders, mobility assistance, or household routines that keep seniors safe and comfortable, Homebit will help you highlight that expertise. Our onboarding focuses on verification, references, and service details so families can trust you from the first interaction, and so you do not have to keep proving yourself repeatedly for every inquiry. You will be able to list the services you offer, your preferred schedules, and the kind of care environments you work best in. As we open access, we will prioritize waitlisted professionals, share new family requests early, and provide guidance on how to stand out with clear profiles and professional communication. Homebit is more than a job board; it is a long-term platform for caregivers who want stable opportunities, fair treatment, and a respectful relationship with the families they serve. If you are ready to build consistent elder-care work with families who appreciate reliability and heart, the waitlist is the first step.",
     servicePrompt: "What other services can you offer?",
+    concernPrompt: "What should families value most about your profile?",
   },
 };
 
@@ -405,7 +419,7 @@ function DialCodePicker({
 }
 
 export default function ElderCareWaitlistPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const profile: ProfileType = searchParams.get("profile") === "househelp" ? "househelp" : "household";
   const copy = PROFILE_COPY[profile];
 
@@ -434,8 +448,13 @@ export default function ElderCareWaitlistPage() {
     }));
   }
 
-  function switchProfile(next: ProfileType) {
-    setSearchParams({ profile: next });
+  function toggleConcern(concern: string) {
+    setForm((prev) => ({
+      ...prev,
+      concerns: prev.concerns.includes(concern)
+        ? prev.concerns.filter((c) => c !== concern)
+        : [...prev.concerns, concern],
+    }));
   }
 
   async function createWaitlistEntry(payload: Record<string, any>) {
@@ -508,6 +527,7 @@ export default function ElderCareWaitlistPage() {
       email: form.email.trim(),
       whatsapp_opt_in: form.whatsapp_opt_in,
       message: form.message.trim(),
+      concerns: form.concerns,
       help_types: profile === "household" ? form.services : [],
       roles_sought: profile === "househelp" ? form.services : [],
     };
@@ -563,31 +583,6 @@ export default function ElderCareWaitlistPage() {
                 {copy.heading}
               </h1>
               <p className="text-sm text-gray-600 dark:text-gray-300">{copy.paragraph}</p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                type="button"
-                onClick={() => switchProfile("household")}
-                className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
-                  profile === "household"
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent"
-                    : "border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                }`}
-              >
-                Household
-              </button>
-              <button
-                type="button"
-                onClick={() => switchProfile("househelp")}
-                className={`flex-1 py-3 rounded-xl border-2 text-sm font-semibold transition-all ${
-                  profile === "househelp"
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white border-transparent"
-                    : "border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-900/20"
-                }`}
-              >
-                Househelp
-              </button>
             </div>
 
             <div className="space-y-3">
@@ -685,6 +680,20 @@ export default function ElderCareWaitlistPage() {
                       : "Tell us about your elder-care background and availability..."
                   }
                 />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">{copy.concernPrompt} <span className="font-normal text-gray-500 dark:text-gray-400">(select all that apply)</span></p>
+              <div className="flex flex-wrap gap-2">
+                {CONCERNS.map((concern) => (
+                  <ToggleChip
+                    key={concern}
+                    label={concern}
+                    selected={form.concerns.includes(concern)}
+                    onClick={() => toggleConcern(concern)}
+                  />
+                ))}
               </div>
             </div>
 
