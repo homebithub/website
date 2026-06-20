@@ -242,6 +242,23 @@ function buildJsonPayload(userId: string, data: Record<string, any>, profileType
   return req;
 }
 
+function buildPublicJsonPayload(data: Record<string, any>, profileType?: string): any {
+  const req = new auth_pb.JsonPayload();
+  const resolvedProfileType =
+    profileType || (typeof data?.profile_type === "string" ? data.profile_type : "");
+  if (resolvedProfileType) req.setProfileType(resolvedProfileType);
+  const struct = toStruct(data);
+  if (struct) req.setData(struct);
+
+  console.groupCollapsed("[WAITLIST_DEBUG] Public JsonPayload build");
+  console.log("[WAITLIST_DEBUG] profileType", resolvedProfileType);
+  console.log("[WAITLIST_DEBUG] data", data);
+  console.log("[WAITLIST_DEBUG] request object", typeof req.toObject === "function" ? req.toObject(false) : req);
+  console.groupEnd();
+
+  return req;
+}
+
 function buildUpdateByIdPayload(id: string, userId: string, data: Record<string, any>): any {
   const req = new auth_pb.UpdateByIdPayload();
   req.setId(id);
@@ -1338,7 +1355,7 @@ export const waitlistService = {
     console.groupEnd();
 
     try {
-      const res = await grpcCall((cb) => waitlistClient.createWaitlist(buildJsonPayload(userId, data), getMetadata(), cb));
+      const res = await grpcCall((cb) => waitlistClient.createWaitlist(buildPublicJsonPayload(data), getMetadata(), cb));
       const parsed = jsonResponseToJs(res);
       console.log("[WAITLIST_DEBUG] createWaitlist response", parsed);
       return parsed;
