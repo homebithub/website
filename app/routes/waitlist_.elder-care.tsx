@@ -6,7 +6,6 @@ import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { waitlistService } from "~/services/grpc/authServices";
-import authService from "~/services/grpc/auth.service";
 
 export const meta = () => [
   { title: "Elder Care Waitlist — Homebit" },
@@ -414,12 +413,17 @@ export default function ElderCareWaitlistPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [shareCopied, setShareCopied] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
-  const [showOtpModal, setShowOtpModal] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [otpSubmitting, setOtpSubmitting] = useState(false);
-  const [otpError, setOtpError] = useState<string | null>(null);
-  const [pendingPayload, setPendingPayload] = useState<Record<string, any> | null>(null);
+  const defaultShareUrl = useMemo(
+    () => `https://homebit.co.ke/waitlist/elder-care?profile=${profile}`,
+    [profile],
+  );
+  const activeShareUrl = shareUrl || defaultShareUrl;
+  const shareText =
+    "I just joined Homebit's elder-care waitlist. If you know a family looking for trusted home care, share this with them.";
 
   function toggleService(service: string) {
     setForm((prev) => ({
@@ -435,12 +439,45 @@ export default function ElderCareWaitlistPage() {
   }
 
   async function createWaitlistEntry(payload: Record<string, any>) {
-    await waitlistService.createWaitlist("", payload);
+    const result = await waitlistService.createWaitlist("", payload);
+    const returnedShareUrl =
+      result?.referral_url || result?.referralUrl || result?.share_url || result?.shareUrl;
+
+    setShareUrl(
+      typeof returnedShareUrl === "string" && returnedShareUrl.trim()
+        ? returnedShareUrl.trim()
+        : defaultShareUrl,
+    );
     setSuccess(true);
     setError(null);
-    setShowOtpModal(false);
-    setOtp("");
-    setPendingPayload(null);
+    setShowShareModal(true);
+    setShareCopied(false);
+  }
+
+  async function handleCopyShareLink() {
+    try {
+      await navigator.clipboard.writeText(activeShareUrl);
+      setShareCopied(true);
+    } catch {
+      setShareCopied(false);
+    }
+  }
+
+  async function handleShare() {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Join Homebit's elder-care waitlist",
+          text: shareText,
+          url: activeShareUrl,
+        });
+        return;
+      } catch {
+        // Falling back to copy keeps the modal useful when native sharing is cancelled or blocked.
+      }
+    }
+
+    await handleCopyShareLink();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -477,51 +514,13 @@ export default function ElderCareWaitlistPage() {
 
     setSubmitting(true);
     try {
-      if (form.phone_dial_code === "+254") {
-        await authService.sendOTP("", "phone", fullPhone);
-        setPendingPayload(payload);
-        setShowOtpModal(true);
-      } else {
-        await createWaitlistEntry(payload);
-      }
+      await createWaitlistEntry(payload);
     } catch (err: any) {
       const msg =
         err?.message || err?.toString() || "Something went wrong. Please try again.";
       setError(String(msg).replace(/^\d+\s*/, ""));
     } finally {
       setSubmitting(false);
-    }
-  }
-
-  async function handleVerifyOtp() {
-    if (!pendingPayload) return;
-    if (!otp.trim()) {
-      setOtpError("Please enter the OTP code.");
-      return;
-    }
-
-    setOtpSubmitting(true);
-    setOtpError(null);
-    try {
-      await authService.verifyOTP("", "phone", otp.trim());
-      await createWaitlistEntry(pendingPayload);
-    } catch (err: any) {
-      const msg =
-        err?.message || err?.toString() || "OTP verification failed. Please try again.";
-      setOtpError(String(msg).replace(/^\d+\s*/, ""));
-    } finally {
-      setOtpSubmitting(false);
-    }
-  }
-
-  async function handleResendOtp() {
-    if (!pendingPayload?.phone) return;
-    setOtpError(null);
-    try {
-      await authService.sendOTP("", "phone", pendingPayload.phone);
-    } catch (err: any) {
-      const msg = err?.message || err?.toString() || "Failed to resend OTP.";
-      setOtpError(String(msg).replace(/^\d+\s*/, ""));
     }
   }
 
@@ -543,6 +542,13 @@ export default function ElderCareWaitlistPage() {
                 Thank you. We will notify you as soon as elder-care onboarding opens.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={() => setShowShareModal(true)}
+              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:from-purple-700 hover:to-pink-700 transition-all"
+            >
+              Share Homebit
+            </button>
             <Link to="/" className="inline-block text-xs text-purple-600 dark:text-purple-400 hover:underline">
               Return to homepage
             </Link>
@@ -697,51 +703,48 @@ export default function ElderCareWaitlistPage() {
 
       <Footer />
 
-      {showOtpModal && (
+      {showShareModal && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="w-full max-w-md rounded-2xl bg-white dark:bg-[#13131a] border border-purple-100 dark:border-purple-900/30 p-6 space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Verify your phone number</h3>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              We sent an OTP to {pendingPayload?.phone}. Enter it below to complete your waitlist request.
-            </p>
+            <div className="flex justify-center">
+              <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/30 dark:to-pink-900/30 flex items-center justify-center">
+                <CheckCircleIcon className="w-8 h-8 text-purple-600 dark:text-purple-400" />
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">You are on the list.</h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Help another family discover trusted elder care. Share this waitlist link with someone who needs reliable support at home.
+              </p>
+            </div>
 
-            <input
-              type="text"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-              className="w-full rounded-xl border-2 border-purple-100 dark:border-purple-900/30 bg-white dark:bg-[#0f0f16] text-gray-900 dark:text-white px-3 py-2.5 focus:outline-none focus:border-purple-500 text-sm"
-              placeholder="Enter OTP"
-            />
+            <div className="rounded-xl border border-purple-100 dark:border-purple-900/30 bg-purple-50 dark:bg-purple-900/20 p-3">
+              <p className="break-all text-xs text-purple-800 dark:text-purple-200">{activeShareUrl}</p>
+            </div>
 
-            {otpError && <ErrorAlert message={otpError} />}
-
-            <div className="flex gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <button
                 type="button"
-                onClick={handleResendOtp}
+                onClick={handleCopyShareLink}
                 className="flex-1 py-2.5 rounded-xl border-2 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 text-sm font-medium hover:bg-purple-50 dark:hover:bg-purple-900/20 transition-all"
               >
-                Resend OTP
+                {shareCopied ? "Copied" : "Copy Link"}
               </button>
               <button
                 type="button"
-                onClick={handleVerifyOtp}
-                disabled={otpSubmitting}
+                onClick={handleShare}
                 className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-40"
               >
-                {otpSubmitting ? "Verifying..." : "Verify & Submit"}
+                Share
               </button>
             </div>
 
             <button
               type="button"
-              onClick={() => {
-                if (otpSubmitting) return;
-                setShowOtpModal(false);
-              }}
+              onClick={() => setShowShareModal(false)}
               className="w-full text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
             >
-              Close
+              Maybe later
             </button>
           </div>
         </div>
