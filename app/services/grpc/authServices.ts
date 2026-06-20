@@ -230,6 +230,15 @@ function buildJsonPayload(userId: string, data: Record<string, any>, profileType
   if (profileType) req.setProfileType(profileType);
   const struct = toStruct(data);
   if (struct) req.setData(struct);
+
+  console.groupCollapsed("[WAITLIST_DEBUG] JsonPayload build");
+  console.log("[WAITLIST_DEBUG] input userId", userId);
+  console.log("[WAITLIST_DEBUG] resolved userId", resolved);
+  console.log("[WAITLIST_DEBUG] profileType", profileType);
+  console.log("[WAITLIST_DEBUG] data", data);
+  console.log("[WAITLIST_DEBUG] request object", typeof req.toObject === "function" ? req.toObject(false) : req);
+  console.groupEnd();
+
   return req;
 }
 
@@ -1323,8 +1332,27 @@ export const employmentContractService = {
 // ══════════════════════════════════════════════════════════════════════════
 export const waitlistService = {
   async createWaitlist(userId: string, data: Record<string, any>): Promise<any> {
-    const res = await grpcCall((cb) => waitlistClient.createWaitlist(buildJsonPayload(userId, data), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    console.groupCollapsed("[WAITLIST_DEBUG] waitlistService.createWaitlist");
+    console.log("[WAITLIST_DEBUG] userId arg", userId);
+    console.log("[WAITLIST_DEBUG] data arg", data);
+    console.groupEnd();
+
+    try {
+      const res = await grpcCall((cb) => waitlistClient.createWaitlist(buildJsonPayload(userId, data), getMetadata(), cb));
+      const parsed = jsonResponseToJs(res);
+      console.log("[WAITLIST_DEBUG] createWaitlist response", parsed);
+      return parsed;
+    } catch (err: any) {
+      console.error("[WAITLIST_DEBUG] createWaitlist grpc error", {
+        error: err,
+        message: err?.message,
+        code: err?.code,
+        metadata: err?.metadata,
+        stack: err?.stack,
+        data,
+      });
+      throw err;
+    }
   },
   async getAllWaitlists(limit = 20, offset = 0): Promise<any> {
     const res = await grpcCall((cb) => waitlistClient.getAllWaitlists(buildListRequest(limit, offset), getMetadata(), cb));

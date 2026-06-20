@@ -329,6 +329,16 @@ function normalizeFullPhone(dialCode: string, phoneNumber: string): string {
   return `${dialCode}${digits}`;
 }
 
+function getEmptyPayloadFields(payload: Record<string, any>): string[] {
+  return Object.entries(payload)
+    .filter(([, value]) => {
+      if (typeof value === "string") return value.trim() === "";
+      if (Array.isArray(value)) return value.length === 0;
+      return value === null || value === undefined;
+    })
+    .map(([key]) => key);
+}
+
 function ToggleChip({
   label,
   selected,
@@ -532,10 +542,26 @@ export default function ElderCareWaitlistPage() {
       roles_sought: profile === "househelp" ? form.services : [],
     };
 
+    console.groupCollapsed("[WAITLIST_DEBUG] Elder-care waitlist submit");
+    console.log("[WAITLIST_DEBUG] profile", profile);
+    console.log("[WAITLIST_DEBUG] raw form", form);
+    console.log("[WAITLIST_DEBUG] normalized phone", fullPhone);
+    console.log("[WAITLIST_DEBUG] payload", payload);
+    console.warn("[WAITLIST_DEBUG] empty payload fields", getEmptyPayloadFields(payload));
+    console.groupEnd();
+
     setSubmitting(true);
     try {
       await createWaitlistEntry(payload);
     } catch (err: any) {
+      console.error("[WAITLIST_DEBUG] createWaitlist failed", {
+        error: err,
+        message: err?.message,
+        code: err?.code,
+        metadata: err?.metadata,
+        stack: err?.stack,
+        payload,
+      });
       const msg =
         err?.message || err?.toString() || "Something went wrong. Please try again.";
       setError(String(msg).replace(/^\d+\s*/, ""));
