@@ -225,7 +225,8 @@ function buildUserIdRequest(userId: string, profileType?: string): any {
 
 function buildJsonPayload(userId: string, data: Record<string, any>, profileType?: string): any {
   const req = new auth_pb.JsonPayload();
-  req.setUserId(resolveUserId(userId));
+  const resolved = resolveUserId(userId);
+  if (resolved) req.setUserId(resolved);
   if (profileType) req.setProfileType(profileType);
   const struct = toStruct(data);
   if (struct) req.setData(struct);
