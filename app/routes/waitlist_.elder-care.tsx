@@ -588,16 +588,18 @@ export default function ElderCareWaitlistPage() {
                 Thank you. We will notify you as soon as elder-care onboarding opens.
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowShareModal(true)}
-              className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:from-purple-700 hover:to-pink-700 transition-all"
-            >
-              Share Homebit
-            </button>
-            <Link to="/" className="inline-block text-xs text-purple-600 dark:text-purple-400 hover:underline">
-              Return to homepage
-            </Link>
+            <div className="flex flex-col items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowShareModal(true)}
+                className="inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-3 text-sm font-semibold text-white shadow-md hover:from-purple-700 hover:to-pink-700 transition-all"
+              >
+                Share Homebit
+              </button>
+              <Link to="/" className="inline-block text-sm text-purple-600 dark:text-purple-400 hover:underline">
+                Return to homepage
+              </Link>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-8">
