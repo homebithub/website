@@ -8,6 +8,10 @@ All waitlist pages support both household and househelp profiles via the `profil
 - Household: https://homebit.co.ke/waitlist/elder-care?profile=household
 - Househelp: https://homebit.co.ke/waitlist/elder-care?profile=househelp
 
+### Express Cleaning Waitlist
+- Household: https://homebit.co.ke/waitlist/express-cleaning?profile=household
+- Househelp: https://homebit.co.ke/waitlist/express-cleaning?profile=househelp
+
 ### Special Needs Care Waitlist
 - Household: https://homebit.co.ke/waitlist/special-needs?profile=household
 - Househelp: https://homebit.co.ke/waitlist/special-needs?profile=househelp
@@ -52,6 +56,30 @@ All waitlist pages support both household and househelp profiles via the `profil
 - Household: https://homebit.co.ke/waitlist/post-party-cleaning?profile=household
 - Househelp: https://homebit.co.ke/waitlist/post-party-cleaning?profile=househelp
 
+### Outdoor Cleaning Waitlist
+- Household: https://homebit.co.ke/waitlist/outdoor-cleaning?profile=household
+- Househelp: https://homebit.co.ke/waitlist/outdoor-cleaning?profile=househelp
+
+### Office Cleaning Waitlist
+- Household: https://homebit.co.ke/waitlist/office-cleaning?profile=household
+- Househelp: https://homebit.co.ke/waitlist/office-cleaning?profile=househelp
+
+### Moving Cleaning Waitlist
+- Household: https://homebit.co.ke/waitlist/moving-cleaning?profile=household
+- Househelp: https://homebit.co.ke/waitlist/moving-cleaning?profile=househelp
+
+### New Mothers Help Waitlist
+- Household: https://homebit.co.ke/waitlist/new-mothers-help?profile=household
+- Househelp: https://homebit.co.ke/waitlist/new-mothers-help?profile=househelp
+
+### Airbnb Cleaning Waitlist
+- Household: https://homebit.co.ke/waitlist/airbnb-cleaning?profile=household
+- Househelp: https://homebit.co.ke/waitlist/airbnb-cleaning?profile=househelp
+
+### Night Nurse Waitlist
+- Household: https://homebit.co.ke/waitlist/night-nurse?profile=household
+- Househelp: https://homebit.co.ke/waitlist/night-nurse?profile=househelp
+
 ### Plumbing Waitlist
 - Household: https://homebit.co.ke/waitlist/plumbing?profile=household
 - Househelp: https://homebit.co.ke/waitlist/plumbing?profile=househelp
@@ -84,3 +112,10 @@ All waitlist pages include the following service options (users can select multi
 - Early Childhood Care
 - Post Party Cleaning
 - Plumbing
+- Outdoor Cleaning
+- Office Cleaning
+- Moving Cleaning
+- New Mothers Help
+- Airbnb Cleaning
+- Express Cleaning
+- Night Nurse
