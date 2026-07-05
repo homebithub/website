@@ -21,6 +21,7 @@ export interface MarketingService {
   description: string;
   icon: MarketingServiceIcon;
   comingSoon?: boolean;
+  waitlistSlug?: string;
 }
 
 export const MARKETING_SERVICES: MarketingService[] = [
@@ -28,6 +29,7 @@ export const MARKETING_SERVICES: MarketingService[] = [
     name: "Indoor Cleaning",
     description: "Trusted home cleaners for the everyday indoor work households rely on.",
     icon: HomeModernIcon,
+    waitlistSlug: "indoor-cleaning",
   },
   {
     name: "Outdoor Cleaning",
@@ -51,6 +53,7 @@ export const MARKETING_SERVICES: MarketingService[] = [
     name: "Laundry and Ironing",
     description: "Laundry help that keeps clothes washed, pressed, folded, and ready to wear.",
     icon: SparklesIcon,
+    waitlistSlug: "laundry",
   },
   {
     name: "New Mothers Help",
@@ -68,6 +71,7 @@ export const MARKETING_SERVICES: MarketingService[] = [
     name: "Elder Care",
     description: "Dependable care support for older adults who need extra attention at home.",
     icon: ShieldCheckIcon,
+    waitlistSlug: "elder-care",
   },
   {
     name: "Express Cleaning",
@@ -79,12 +83,13 @@ export const MARKETING_SERVICES: MarketingService[] = [
     name: "Special Needs Children Care",
     description: "Support for families seeking caregivers experienced with special needs children.",
     icon: PuzzlePieceIcon,
+    waitlistSlug: "special-needs",
   },
   {
     name: "Post Party Clean Up",
     description: "After-event cleanup so your home gets back to normal without the extra stress.",
     icon: CakeIcon,
-    comingSoon: true,
+    waitlistSlug: "post-party-cleaning",
   },
   {
     name: "Night Nurse",
