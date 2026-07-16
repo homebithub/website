@@ -16,7 +16,9 @@ import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { formatTimeAgo } from "~/utils/timeAgo";
 import { normalizeOnboardingAmountFromStorage } from "~/utils/onboardingCompensation";
 import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
+import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionReminder";
 import CustomSelect from "~/components/ui/CustomSelect";
+import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
 import { Heart, ChevronDown, X } from "lucide-react";
 
 interface HousehelpSummary {
@@ -497,6 +499,7 @@ export default function HouseholdJobsHome() {
 
   const limit = 12;
   const backToPath = "/household/jobs";
+  const profileCompletionReminder = useProfileCompletionReminder(currentUserId || "", "household");
 
   const buildInviteTemplate = useCallback((listing: OpenForWorkListing, variant: "skills" | "availability" = "skills") => {
     const househelp = listing.househelp || {};
@@ -890,6 +893,19 @@ export default function HouseholdJobsHome() {
                   : "Browse househelps who are actively looking for their next role."}
               </p>
             </div>
+
+            {profileCompletionReminder.shouldShow && (
+              <ProfileCompletionBanner
+                title={profileCompletionReminder.title}
+                description={profileCompletionReminder.description}
+                ctaLabel={profileCompletionReminder.ctaLabel}
+                completedSteps={profileCompletionReminder.completedSteps}
+                totalSteps={profileCompletionReminder.totalSteps}
+                nextStep={profileCompletionReminder.nextStep}
+                progressValue={profileCompletionReminder.progressValue}
+                onContinue={() => navigate(profileCompletionReminder.destination)}
+              />
+            )}
 
             <div className="mb-4 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/80 dark:bg-[#141020]/80 shadow-sm">
               <button
