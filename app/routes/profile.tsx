@@ -60,6 +60,13 @@ function setStoredValue(key: string, value: string) {
   window.localStorage.setItem(key, value);
 }
 
+function genericResponseBodyToJs(response: any) {
+  const body = response?.getBody?.();
+  if (body?.toJavaScript) return body.toJavaScript();
+  if (body?.toObject) return body.toObject();
+  return body || response || {};
+}
+
 function resolveProfileId(profileType?: string) {
   const storedProfileId = getStoredValue('profile_id');
   if (storedProfileId) return storedProfileId;
@@ -620,9 +627,21 @@ export default function ProfilePage() {
     try {
       const response = await authService.resendOTP(resolveCurrentUserId(), currentVerificationType);
       const verification = response?.getVerification?.();
+      const responseBody = genericResponseBodyToJs(response);
+      const responseData = responseBody.data && typeof responseBody.data === 'object'
+        ? responseBody.data
+        : responseBody;
 
       setOtpCode('');
-      const nextResendAt = verification?.getNextResendAt?.()?.toDate?.()?.getTime?.() || null;
+      const nextResendAtValue = verification?.getNextResendAt?.()?.toDate?.()?.getTime?.()
+        || responseData.next_resend_at
+        || responseData.nextResendAt
+        || null;
+      const nextResendAt = typeof nextResendAtValue === 'number'
+        ? nextResendAtValue
+        : nextResendAtValue
+          ? new Date(String(nextResendAtValue)).getTime()
+          : null;
       const waitSeconds = nextResendAt ? Math.max(0, Math.ceil((nextResendAt - Date.now()) / 1000)) : 60;
       setResendSeconds(waitSeconds);
       setCanResend(waitSeconds <= 0);

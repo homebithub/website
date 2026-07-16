@@ -163,6 +163,13 @@ export default function VerifyOtpPage() {
     next_resend_at: record?.next_resend_at || record?.nextResendAt || '',
   });
 
+  const resendRecordToState = (record: any) => ({
+    expires_at: record?.expires_at || record?.expiresAt || '',
+    max_resends: Number(record?.max_resends ?? record?.maxResends ?? 0),
+    resends: Number(record?.resends ?? 0),
+    next_resend_at: record?.next_resend_at || record?.nextResendAt || '',
+  });
+
   const resolveVerificationUserId = () => verification?.user_id || getStoredUserId() || '';
   
   // Handler for phone change submit
@@ -493,9 +500,13 @@ export default function VerifyOtpPage() {
     try {
       const { default: authService } = await import('~/services/grpc/auth.service');
       const response = await authService.resendOTP(resolveVerificationUserId(), verification?.type || 'phone');
-      const verificationProto = response.getVerification();
+      const verificationProto = response?.getVerification?.();
       const responseBody = genericResponseBodyToJs(response);
-      const verificationRecord = responseBody.verification || responseBody.data?.verification;
+      const responseData = responseBody.data && typeof responseBody.data === 'object'
+        ? responseBody.data
+        : responseBody;
+      const verificationRecord = responseData.verification;
+      const resendRecord = verificationRecord ? null : resendRecordToState(responseData);
       if (verificationProto || verificationRecord) {
         setVerificationState((prev) => ({
           ...prev,
@@ -503,10 +514,22 @@ export default function VerifyOtpPage() {
             ? verificationToState(verificationProto)
             : verificationRecordToState(verificationRecord),
         }));
-        setLocalFailedAttempts(0);
-        setOtp('');
-        setLastTriedOtp('');
+      } else if (resendRecord) {
+        setVerificationState((prev) => ({
+          ...prev,
+          verification: {
+            ...prev.verification,
+            status: prev.verification?.status || 'pending',
+            expires_at: resendRecord.expires_at || prev.verification?.expires_at || '',
+            max_resends: resendRecord.max_resends || prev.verification?.max_resends,
+            resends: resendRecord.resends,
+            next_resend_at: resendRecord.next_resend_at || prev.verification?.next_resend_at || '',
+          },
+        }));
       }
+      setLocalFailedAttempts(0);
+      setOtp('');
+      setLastTriedOtp('');
       setResent(true);
     } catch (err: any) {
       const errorMessage = handleApiError(err, 'otp');

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { Check, ClipboardCheck } from 'lucide-react';
+import { AlertCircle, BriefcaseBusiness, Check, ClipboardCheck } from 'lucide-react';
 import { Navigation } from '~/components/Navigation';
 import { Loading } from '~/components/Loading';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -33,6 +33,8 @@ type LocationState = {
   userProfileId?: string;
   profileType?: string;
 };
+
+const JOB_ELIGIBILITY_THRESHOLD = 70;
 
 function getFeatureName(bundle: FeatureBundle) {
   return bundle.feature?.name || `Feature ${bundle.feature_id}`;
@@ -131,14 +133,14 @@ export default function OnboardingFeaturesPage() {
     [features, selected],
   );
   const progress = features.length ? Math.round((selectedCount / features.length) * 100) : 0;
-  const canFinish = useMemo(
-    () => features.length > 0 && features.every((feature) => (selected[feature.feature_id] || []).length > 0),
-    [features, selected],
-  );
   const selectedPropertyIds = useMemo(
     () => Object.values(selected).flat(),
     [selected],
   );
+  const canSave = selectedPropertyIds.length > 0;
+  const isJobEligible = progress >= JOB_ELIGIBILITY_THRESHOLD;
+  const remainingEligibilityPercent = Math.max(0, JOB_ELIGIBILITY_THRESHOLD - progress);
+  const nextDestination = profileType === 'household' ? '/household-choice' : '/profile-setup/househelp?step=1';
 
   const toggleProperty = (featureId: number, propertyId: number) => {
     setSaved(false);
@@ -167,14 +169,16 @@ export default function OnboardingFeaturesPage() {
       })));
 
       setSaved(true);
-      navigate(profileType === 'household' ? '/household-choice' : '/profile-setup/househelp?step=1', {
-        replace: true,
-      });
+      navigate(nextDestination, { replace: true });
     } catch (err: unknown) {
       setError(getErrorMessage(err, 'Unable to save your choices'));
     } finally {
       setSaving(false);
     }
+  };
+
+  const skipPicks = () => {
+    navigate(nextDestination, { replace: true });
   };
 
   if (loading) {
@@ -233,6 +237,38 @@ export default function OnboardingFeaturesPage() {
                           className="h-full rounded-full bg-gradient-to-r from-purple-600 to-pink-600 transition-all"
                           style={{ width: `${progress}%` }}
                         />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`mt-5 rounded-2xl border p-4 ${
+                      isJobEligible
+                        ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/30 dark:text-emerald-100'
+                        : 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-100'
+                    }`}
+                  >
+                    <div className="flex gap-3">
+                      <div
+                        className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
+                          isJobEligible
+                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200'
+                        }`}
+                      >
+                        {isJobEligible ? <BriefcaseBusiness className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold">
+                          {isJobEligible
+                            ? 'You are eligible to receive job matches'
+                            : `Complete ${JOB_ELIGIBILITY_THRESHOLD}% of your profile choices to unlock job eligibility`}
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed opacity-85">
+                          {isJobEligible
+                            ? 'Households can use your profile choices to match you with better opportunities.'
+                            : `You can skip this for now, but add ${remainingEligibilityPercent}% more profile choices to become eligible for stronger job matching.`}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -326,14 +362,24 @@ export default function OnboardingFeaturesPage() {
                 </div>
 
                 <div className="border-t border-purple-100 bg-white/95 p-5 backdrop-blur dark:border-purple-500/20 dark:bg-[#13131a]/95 sm:p-6">
-                  <button
-                    type="button"
-                    onClick={savePicks}
-                    disabled={!canFinish || saving}
-                    className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 font-semibold text-white shadow-lg transition-opacity disabled:opacity-50"
-                  >
-                    {saving ? 'Saving...' : `Save ${selectedPropertyIds.length} choices`}
-                  </button>
+                  <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+                    <button
+                      type="button"
+                      onClick={skipPicks}
+                      disabled={saving}
+                      className="inline-flex h-12 items-center justify-center rounded-xl border border-purple-200 px-5 font-semibold text-purple-700 transition-colors hover:bg-purple-50 disabled:opacity-50 dark:border-purple-500/30 dark:text-purple-200 dark:hover:bg-purple-950/30"
+                    >
+                      Skip for now
+                    </button>
+                    <button
+                      type="button"
+                      onClick={savePicks}
+                      disabled={!canSave || saving}
+                      className="inline-flex h-12 items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 font-semibold text-white shadow-lg transition-opacity disabled:opacity-50"
+                    >
+                      {saving ? 'Saving...' : `Save ${selectedPropertyIds.length} choices`}
+                    </button>
+                  </div>
                 </div>
               </PurpleCard>
             )}
