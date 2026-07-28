@@ -246,6 +246,7 @@ export default function HousehelpProfile() {
         profileId: storedProfileId || '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
         userProfileId: storedUserProfileId,
         profileType: 'househelp',
+        returnTo: '/househelp/profile',
       },
     });
   };

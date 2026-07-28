@@ -12,6 +12,7 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Button, Input, BaseModal } from '~/components/ui';
 import { cacheAuthSession, getStoredProfileType, getStoredUser, getStoredUserId } from "~/utils/authStorage";
 import { profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
+import { profileFeatureLabel } from '~/utils/profileFeatures';
 
 const PROFILE_IDS_BY_TYPE: Record<string, string> = {
   househelp: '6dbd5104-d314-4ef1-a7d3-37d7eb26ddff',
@@ -111,7 +112,8 @@ function getFeatureId(feature: UnknownRecord) {
 }
 
 function getFeatureName(feature: FeatureBundle) {
-  return feature.feature?.name || `Feature ${feature.feature_id}`;
+  const name = feature.feature?.name || '';
+  return profileFeatureLabel(name) || `Feature ${feature.feature_id}`;
 }
 
 function normalizeFeaturePayload(payload: unknown): FeatureBundle[] {
@@ -232,6 +234,7 @@ export default function ProfilePage() {
   const [featureError, setFeatureError] = React.useState<string | null>(null);
   const [features, setFeatures] = React.useState<FeatureBundle[]>([]);
   const [selectedFeatureProperties, setSelectedFeatureProperties] = React.useState<Record<number, number[]>>({});
+  const [expandedFeatures, setExpandedFeatures] = React.useState<Record<number, boolean>>({});
 
   // OTP Modal States
   const [showEmailModal, setShowEmailModal] = React.useState(false);
@@ -392,8 +395,6 @@ export default function ProfilePage() {
     () => Object.values(selectedFeatureProperties).flat(),
     [selectedFeatureProperties],
   );
-  const canSaveFeaturePicks = selectedPropertyIds.length > 0;
-
   const loadFeaturePicker = React.useCallback(async () => {
     const resolvedProfileId = profile?.profile_id || resolveProfileId(profile?.profile_type);
     const userProfileId = profile?.user_profile_id || getStoredValue('user_profile_id');
@@ -477,7 +478,7 @@ export default function ProfilePage() {
     setFeatureError(null);
 
     try {
-      await userProfilePicksService.addPicks(userProfileId, selectedPropertyIds.map((featurePropertyId) => ({
+      await userProfilePicksService.replacePicks(userProfileId, selectedPropertyIds.map((featurePropertyId) => ({
         feature_property_id: featurePropertyId,
         weight: 1,
       })));
@@ -946,7 +947,8 @@ export default function ProfilePage() {
               <div className="max-h-[58vh] space-y-4 overflow-y-auto pr-1">
                 {features.map((feature) => {
                   const properties = feature.properties || [];
-                  const visibleProperties = properties.slice(0, 10);
+                  const expanded = Boolean(expandedFeatures[feature.feature_id]);
+                  const visibleProperties = expanded ? properties : properties.slice(0, 10);
                   const hiddenCount = Math.max(0, properties.length - visibleProperties.length);
                   const selectedCount = (selectedFeatureProperties[feature.feature_id] || []).length;
 
@@ -996,13 +998,28 @@ export default function ProfilePage() {
                         {hiddenCount > 0 && (
                           <button
                             type="button"
-                            disabled
-                            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-purple-300 bg-purple-50 px-2.5 py-1.5 text-[11px] font-bold text-purple-700 disabled:cursor-default dark:border-purple-500/50 dark:bg-purple-950/30 dark:text-purple-200"
+                            onClick={() => setExpandedFeatures((previous) => ({
+                              ...previous,
+                              [feature.feature_id]: true,
+                            }))}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-purple-300 bg-purple-50 px-2.5 py-1.5 text-[11px] font-bold text-purple-700 transition-colors hover:border-purple-500 hover:bg-purple-100 dark:border-purple-500/50 dark:bg-purple-950/30 dark:text-purple-200"
                           >
                             <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-100 text-[10px] dark:bg-purple-900">
                               +
                             </span>
                             {hiddenCount} more
+                          </button>
+                        )}
+                        {expanded && properties.length > 10 && (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedFeatures((previous) => ({
+                              ...previous,
+                              [feature.feature_id]: false,
+                            }))}
+                            className="inline-flex items-center rounded-full border border-purple-200 px-2.5 py-1.5 text-[11px] font-bold text-purple-700 hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200"
+                          >
+                            Show less
                           </button>
                         )}
                       </div>
@@ -1024,7 +1041,6 @@ export default function ProfilePage() {
                   type="button"
                   onClick={saveFeaturePicks}
                   isLoading={featureSaving}
-                  disabled={!canSaveFeaturePicks}
                   className="flex-1"
                 >
                   Save Choices

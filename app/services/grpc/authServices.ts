@@ -1312,6 +1312,19 @@ export const userProfilePicksService = {
     const res = await grpcCall((cb) => userProfileClient.addPicks(req, getMetadata(), cb));
     return dataEnvelope(res);
   },
+
+  async replacePicks(userProfileId: string, picks: Array<{ feature_property_id?: number; featurePropertyId?: number; weight?: number }>): Promise<any> {
+    const req = new user_profile_pb.PicksRequest();
+    req.setUserProfileId(userProfileId);
+    req.setPicksList((picks || []).map((pick) => {
+      const next = new user_profile_pb.PickInput();
+      next.setFeaturePropertyId(Number(pick.feature_property_id || pick.featurePropertyId || 0));
+      next.setWeight(Number(pick.weight || 1));
+      return next;
+    }));
+    const res = await grpcCall((cb) => userProfileClient.replacePicks(req, getMetadata(), cb));
+    return dataEnvelope(res);
+  },
 };
 
 async function enrichListingsWithFeatures(listings: Record<string, any>[]) {

@@ -21,6 +21,7 @@ import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStore
 import JobPostModal from '~/components/modals/JobPostModal';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
+import { profileFeatureLabel } from '~/utils/profileFeatures';
 
 interface HouseholdData {
   id?: string;
@@ -134,7 +135,7 @@ const buildSelectedFeatureGroups = (featuresPayload: unknown, picksPayload: unkn
     const featureId = Number(bundle.feature_id || bundle.featureId || feature.id || 0);
     if (!featureId) return;
 
-    const featureName = String(feature.name || bundle.name || `Feature ${featureId}`);
+    const featureName = profileFeatureLabel(String(feature.name || bundle.name || `Feature ${featureId}`));
     normalizeArray(bundle.properties).forEach((propertyRecord) => {
       const propertyId = Number(propertyRecord.id || propertyRecord.feature_property_id || propertyRecord.featurePropertyId || 0);
       if (!propertyId) return;
@@ -171,7 +172,7 @@ const buildSelectedFeatureGroups = (featuresPayload: unknown, picksPayload: unkn
     );
     if (!featureId) return;
 
-    const featureName = String(feature.name || mapped?.featureName || `Feature ${featureId}`);
+    const featureName = profileFeatureLabel(String(feature.name || mapped?.featureName || `Feature ${featureId}`));
     const selectedProperty: FeaturePropertyChoice = mapped?.property || {
       id: propertyId,
       name: String(featureProperty.name || property.name || pick.name || `Option ${propertyId}`),
@@ -466,6 +467,7 @@ export default function HouseholdProfile() {
         profileId: storedProfileId || HOUSEHOLD_PROFILE_ID,
         userProfileId: storedUserProfileId,
         profileType: 'household',
+        returnTo: '/household/profile',
       },
     });
   };

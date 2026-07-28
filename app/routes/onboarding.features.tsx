@@ -8,6 +8,7 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
+import { profileFeatureLabel } from '~/utils/profileFeatures';
 
 type FeatureProperty = {
   id: number;
@@ -32,12 +33,13 @@ type LocationState = {
   profileId?: string;
   userProfileId?: string;
   profileType?: string;
+  returnTo?: string;
 };
 
 const JOB_ELIGIBILITY_THRESHOLD = 70;
 
 function getFeatureName(bundle: FeatureBundle) {
-  return bundle.feature?.name || `Feature ${bundle.feature_id}`;
+  return profileFeatureLabel(bundle.feature?.name || '') || `Feature ${bundle.feature_id}`;
 }
 
 function getStoredValue(key: string) {
@@ -78,6 +80,22 @@ function normalizeFeaturePayload(payload: unknown): FeatureBundle[] {
     ));
 }
 
+function normalizePicks(payload: unknown): Array<Record<string, unknown>> {
+  if (Array.isArray(payload)) return payload as Array<Record<string, unknown>>;
+  if (!payload || typeof payload !== 'object') return [];
+  const record = payload as Record<string, unknown>;
+  if (Array.isArray(record.data)) return record.data as Array<Record<string, unknown>>;
+  if (Array.isArray(record.picks)) return record.picks as Array<Record<string, unknown>>;
+  return [];
+}
+
+function pickPropertyId(pick: Record<string, unknown>) {
+  const nested = pick.feature_property && typeof pick.feature_property === 'object'
+    ? pick.feature_property as Record<string, unknown>
+    : {};
+  return Number(pick.feature_property_id || pick.featurePropertyId || nested.id || 0);
+}
+
 export default function OnboardingFeaturesPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -110,10 +128,30 @@ export default function OnboardingFeaturesPage() {
       }
 
       try {
-        const payload = await profileFeatureService.getProfileFeatures(profileId);
+        const [payload, picksPayload] = await Promise.all([
+          profileFeatureService.getProfileFeatures(profileId),
+          userProfileId
+            ? userProfilePicksService.listPicks(userProfileId)
+            : Promise.resolve(null),
+        ]);
 
         if (!cancelled) {
-          setFeatures(normalizeFeaturePayload(payload));
+          const nextFeatures = normalizeFeaturePayload(payload);
+          const propertyToFeature = new Map<number, number>();
+          nextFeatures.forEach((feature) => {
+            (feature.properties || []).forEach((property) => {
+              propertyToFeature.set(property.id, feature.feature_id);
+            });
+          });
+          const nextSelected: Record<number, number[]> = {};
+          normalizePicks(picksPayload?.data).forEach((pick) => {
+            const propertyId = pickPropertyId(pick);
+            const featureId = Number(pick.feature_id || pick.featureId || propertyToFeature.get(propertyId) || 0);
+            if (!propertyId || !featureId) return;
+            nextSelected[featureId] = Array.from(new Set([...(nextSelected[featureId] || []), propertyId]));
+          });
+          setFeatures(nextFeatures);
+          setSelected(nextSelected);
         }
       } catch (err: unknown) {
         if (!cancelled) setError(getErrorMessage(err, 'Unable to load profile features'));
@@ -126,7 +164,7 @@ export default function OnboardingFeaturesPage() {
     return () => {
       cancelled = true;
     };
-  }, [profileId]);
+  }, [profileId, userProfileId]);
 
   const selectedCount = useMemo(
     () => features.filter((feature) => (selected[feature.feature_id] || []).length > 0).length,
@@ -140,7 +178,8 @@ export default function OnboardingFeaturesPage() {
   const canSave = selectedPropertyIds.length > 0;
   const isJobEligible = progress >= JOB_ELIGIBILITY_THRESHOLD;
   const remainingEligibilityPercent = Math.max(0, JOB_ELIGIBILITY_THRESHOLD - progress);
-  const nextDestination = profileType === 'household' ? '/household-choice' : '/profile-setup/househelp?step=1';
+  const nextDestination = locationState.returnTo ||
+    (profileType === 'household' ? '/household-choice' : '/profile-setup/househelp?step=1');
 
   const toggleProperty = (featureId: number, propertyId: number) => {
     setSaved(false);
@@ -163,7 +202,7 @@ export default function OnboardingFeaturesPage() {
     setError(null);
     setSaved(false);
     try {
-      await userProfilePicksService.addPicks(userProfileId, selectedPropertyIds.map((featurePropertyId) => ({
+      await userProfilePicksService.replacePicks(userProfileId, selectedPropertyIds.map((featurePropertyId) => ({
         feature_property_id: featurePropertyId,
         weight: 1,
       })));
