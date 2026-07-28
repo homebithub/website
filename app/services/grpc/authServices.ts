@@ -424,7 +424,8 @@ function buildListRequest(limit = 20, offset = 0, userProfileId = '', status = '
 // ══════════════════════════════════════════════════════════════════════════
 export const profileService = {
   async getCurrentHouseholdProfile(userId: string): Promise<any> {
-    return {};
+    const res = await grpcCall((cb) => profileClient.getCurrentHouseholdProfile(buildUserIdRequest(userId), getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
   async updateHouseholdProfile(userId: string, profileType: string, data: Record<string, any>): Promise<any> {
     const res = await grpcCall((cb) => profileClient.updateHouseholdProfile(buildUpdateProfileRequest(userId, profileType, data), getMetadata(), cb));
@@ -465,12 +466,10 @@ export const profileService = {
     return jsonResponseToJs(res);
   },
   async getHousehelpsByBureau(bureauId: string, limit: number = 20, offset: number = 0): Promise<any> {
-    const req = new auth_pb.GetByBureauRequest();
-    req.setBureauId(bureauId);
-    req.setLimit(limit);
-    req.setOffset(offset);
-    const res = await grpcCall((cb) => profileClient.getHousehelpsByBureau(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+    void bureauId;
+    void limit;
+    void offset;
+    return { data: [], deprecated: true };
   },
   async searchHousehelps(userId: string, profileType: string, filters?: Record<string, any>, limit?: number, offset?: number): Promise<any> {
     const res = await grpcCall((cb) => profileClient.searchHousehelps(buildSearchRequest(userId, profileType, filters, limit, offset), getMetadata(), cb));
@@ -1203,7 +1202,12 @@ export const hireContractService = {
 // ══════════════════════════════════════════════════════════════════════════
 export const employmentService = {
   async listByHousehold(userId: string, limit = 20, offset = 0): Promise<any> {
-    return { data: [], total: 0, limit, offset };
+    const req = new auth_pb.PaginatedUserRequest();
+    req.setUserId(resolveUserId(userId));
+    req.setLimit(limit);
+    req.setOffset(offset);
+    const res = await grpcCall((cb) => employmentClient.listByHousehold(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
   async listByHousehelp(userId: string, limit = 20, offset = 0): Promise<any> {
     const req = new auth_pb.PaginatedUserRequest();
@@ -1549,7 +1553,13 @@ export const employmentContractService = {
     await grpcCall((cb) => employmentContractClient.deleteEmploymentContract(buildIdRequest(id, userId), getMetadata(), cb));
   },
   async listEmploymentContracts(userId: string, status?: string, limit = 20, offset = 0): Promise<any> {
-    return { data: [], total: 0, limit, offset };
+    const req = new auth_pb.ListEmploymentContractsReq();
+    req.setUserId(resolveUserId(userId));
+    if (status) req.setStatus(status);
+    req.setLimit(limit);
+    req.setOffset(offset);
+    const res = await grpcCall((cb) => employmentContractClient.listEmploymentContracts(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
   async signByHousehold(id: string, userId: string, signature: string, signerName: string): Promise<any> {
     const req = new auth_pb.SignContractReq();
