@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
-import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { uploadDocuments } from '~/utils/documentUploads';
 import { profileService as grpcProfileService, documentService, householdMemberService, jobService, profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 import profileSetupService from '~/services/grpc/profileSetup.service';
 import { Navigation } from "~/components/Navigation";
@@ -200,7 +200,7 @@ const formatJobLocation = (location?: string | JobLocation): string => {
 };
 
 const MAX_PHOTOS = 5;
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export default function HouseholdProfile() {
@@ -657,56 +657,24 @@ export default function HouseholdProfile() {
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      setUploadError('File size must be less than 10MB');
+      setUploadError('File size must be less than 5MB');
       return;
     }
 
     setUploading(true);
     setUploadError(null);
-    setUploadProgress(0);
+    setUploadProgress(1);
 
     try {
       const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
-      // Upload to documents service with progress tracking
-      const formData = new FormData();
-      formData.append('files', file);
-      formData.append('document_type', 'profile_photo');
-      formData.append('is_public', 'true');
-      formData.append('description', 'Household profile photo');
-
-      // Use XMLHttpRequest for upload progress tracking
-      const uploadData = await new Promise<any>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        
-        // Track upload progress
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(percentComplete);
-          }
-        });
-        
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              resolve(JSON.parse(xhr.responseText));
-            } catch (err) {
-              reject(new Error('Invalid response from server'));
-            }
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
-          }
-        });
-        
-        xhr.addEventListener('error', () => {
-          reject(new Error('Network error during upload'));
-        });
-        
-        xhr.open('POST', `${API_BASE_URL}/api/v1/documents/upload`);
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        xhr.send(formData);
+      const uploadData = await uploadDocuments({
+        files: [file],
+        documentType: 'profile_photo',
+        profileId: profile?.id,
+        description: 'Household profile photo',
+        onProgress: setUploadProgress,
       });
       const docs = uploadData.data || uploadData.documents || [];
       const firstDoc = Array.isArray(docs) ? docs[0] : null;
@@ -731,7 +699,7 @@ export default function HouseholdProfile() {
       }
     } catch (err: any) {
       console.error('Error uploading photo:', err);
-      setUploadError(err.message || 'Failed to upload photo');
+      setUploadError(err.message || 'We couldn’t upload your photo. Please try again.');
     } finally {
       setUploading(false);
       setUploadProgress(0);

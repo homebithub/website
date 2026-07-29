@@ -1,6 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
-import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { profileService as grpcProfileService, documentService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
@@ -21,6 +20,8 @@ import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId } from '~
 import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 import { IdentityVerificationPrompt } from '~/components/verification/IdentityVerificationPrompt';
 import { useIdentityVerification } from '~/hooks/useIdentityVerification';
+import { CertificationDocuments } from '~/components/profile/CertificationDocuments';
+import { uploadDocuments } from '~/utils/documentUploads';
 
 interface HousehelpData {
   id?: string;
@@ -112,7 +113,7 @@ function normalizeHousehelpProfileResponse(response: any): HousehelpData {
 }
 
 const MAX_PHOTOS = 5;
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export default function HousehelpProfile() {
@@ -239,56 +240,24 @@ export default function HousehelpProfile() {
 
     // Validate file size
     if (file.size > MAX_FILE_SIZE) {
-      setUploadError('File size must be less than 10MB');
+      setUploadError('File size must be less than 5MB');
       return;
     }
 
     setUploading(true);
     setUploadError(null);
-    setUploadProgress(0);
+    setUploadProgress(1);
 
     try {
       const token = getAccessTokenFromCookies();
       if (!token) throw new Error('Not authenticated');
 
-      // Upload to documents service with progress tracking
-      const formData = new FormData();
-      formData.append('files', file);
-      formData.append('document_type', 'profile_photo');
-      formData.append('is_public', 'true');
-      formData.append('description', 'Profile photo');
-
-      // Use XMLHttpRequest for upload progress tracking
-      const uploadData = await new Promise<any>((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        
-        // Track upload progress
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = Math.round((e.loaded / e.total) * 100);
-            setUploadProgress(percentComplete);
-          }
-        });
-        
-        xhr.addEventListener('load', () => {
-          if (xhr.status >= 200 && xhr.status < 300) {
-            try {
-              resolve(JSON.parse(xhr.responseText));
-            } catch (err) {
-              reject(new Error('Invalid response from server'));
-            }
-          } else {
-            reject(new Error(`Upload failed with status ${xhr.status}`));
-          }
-        });
-        
-        xhr.addEventListener('error', () => {
-          reject(new Error('Network error during upload'));
-        });
-        
-        xhr.open('POST', `${API_BASE_URL}/api/v1/documents/upload`);
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
-        xhr.send(formData);
+      const uploadData = await uploadDocuments({
+        files: [file],
+        documentType: 'profile_photo',
+        profileId: profile?.id,
+        description: 'Profile photo',
+        onProgress: setUploadProgress,
       });
       const uploadedDocs = uploadData.data || uploadData.documents || [];
       const firstDoc = Array.isArray(uploadedDocs) ? uploadedDocs[0] : null;
@@ -314,7 +283,7 @@ export default function HousehelpProfile() {
       }
     } catch (err: any) {
       console.error('Error uploading photo:', err);
-      setUploadError(err.message || 'Failed to upload photo');
+      setUploadError(err.message || 'We couldn’t upload your photo. Please try again.');
     } finally {
       setUploading(false);
       setUploadProgress(0);
@@ -603,6 +572,8 @@ export default function HousehelpProfile() {
         editable
         onEdit={handleCompleteFeaturePicks}
       />
+
+      <CertificationDocuments profileId={profile.id} />
 
       {profile.user_id && (
         <section className="border-t border-purple-200/40 bg-white p-6 dark:border-purple-500/30 dark:bg-[#13131a]">
