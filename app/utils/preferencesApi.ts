@@ -1,9 +1,10 @@
+import { preferencesService } from '~/services/grpc/authServices';
+import { getStoredUserId } from '~/utils/authStorage';
+
 /**
- * Local preferences store.
- *
- * The old auth.PreferencesService RPCs are deprecated. Keep the same small API
- * surface for existing UI code, but persist preferences locally so no
- * GetPreferences/UpdatePreferences calls are made from the frontend.
+ * Application preferences use auth.PreferencesService for signed-in users.
+ * The local copy remains an immediate cache and anonymous fallback.
+ * Delivery-channel preferences live separately in Notifications.
  */
 
 export interface UserPreferences {
@@ -70,7 +71,21 @@ const toResponse = (settings: UserPreferences): PreferencesResponse => {
 };
 
 export const fetchPreferences = async (): Promise<PreferencesResponse | null> => {
-  return toResponse(readStoredPreferences());
+  const cached = readStoredPreferences();
+  const userId = getStoredUserId();
+  if (!userId) return toResponse(cached);
+
+  const remote = await preferencesService.getPreferences(userId);
+  const settings = {
+    ...cached,
+    ...(remote?.preferences || remote?.data || {}),
+  };
+  writeStoredPreferences(settings);
+  return {
+    ...toResponse(settings),
+    id: remote?.id || 'user-preferences',
+    user_id: userId,
+  };
 };
 
 export const updatePreferences = async (
@@ -78,14 +93,34 @@ export const updatePreferences = async (
 ): Promise<PreferencesResponse | null> => {
   const next = { ...readStoredPreferences(), ...settings };
   writeStoredPreferences(next);
-  return toResponse(next);
+  const userId = getStoredUserId();
+  if (!userId) return toResponse(next);
+
+  const remote = await preferencesService.updatePreferences(userId, settings);
+  const saved = {
+    ...next,
+    ...(remote?.preferences || remote?.data || {}),
+  };
+  writeStoredPreferences(saved);
+  return {
+    ...toResponse(saved),
+    id: remote?.id || 'user-preferences',
+    user_id: userId,
+  };
 };
 
 export const migratePreferences = async (): Promise<boolean> => {
+  const userId = getStoredUserId();
+  if (!userId || !isBrowser()) return false;
+  const sessionId = window.localStorage.getItem('homebit_session_id');
+  if (!sessionId) return true;
+  await preferencesService.migrateAnonymousToUser(userId, sessionId);
   return true;
 };
 
 export const deletePreferences = async (): Promise<boolean> => {
+  const userId = getStoredUserId();
+  if (userId) await preferencesService.deletePreferences(userId);
   if (isBrowser()) window.localStorage.removeItem(STORAGE_KEY);
   return true;
 };

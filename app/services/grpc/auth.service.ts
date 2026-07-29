@@ -272,17 +272,17 @@ export const authService = {
   async getCurrentUser(userId?: string): Promise<any> {
     const cachedUser = getStoredUser();
     const resolvedUserId = userId || cachedUser?.user_id || cachedUser?.id || getStoredUserId();
-
-    return {
-      getId: () => resolvedUserId || '',
-      getEmail: () => cachedUser?.email || '',
-      getPhone: () => cachedUser?.phone || cachedUser?.phone_number || '',
-      getFirstName: () => cachedUser?.first_name || cachedUser?.firstName || '',
-      getLastName: () => cachedUser?.last_name || cachedUser?.lastName || '',
-      getProfileType: () => cachedUser?.profile_type || cachedUser?.profileType || getStoredProfileType() || '',
-      getIsVerified: () => Boolean(cachedUser?.is_verified ?? cachedUser?.isVerified ?? true),
-      getProfileImage: () => cachedUser?.profile_image || cachedUser?.profileImage || '',
-    };
+    if (!resolvedUserId) {
+      throw new Error('User ID is required to load the current account.');
+    }
+    const request = new auth_pb.GetCurrentUserRequest();
+    request.setUserId(resolvedUserId);
+    return new Promise((resolve, reject) => {
+      authClient.getCurrentUser(request, getMetadata(), (err: any, response: any) => {
+        if (err) reject(handleGrpcError(err));
+        else resolve(response);
+      });
+    });
   },
 
   /**

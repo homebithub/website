@@ -5,14 +5,14 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useSalaryRanges, type SalaryRange } from '~/hooks/useOnboardingOptions';
 import CustomSelect from '~/components/ui/CustomSelect';
 
 type SalaryFrequency = 'daily' | 'weekly' | 'monthly';
 
 const SalaryExpectations: React.FC = () => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+    const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const [frequency, setFrequency] = useState<SalaryFrequency>('monthly');
   const { ranges: salaryRanges, loading: rangesLoading } = useSalaryRanges(frequency);
   const [selectedRange, setSelectedRange] = useState<string>('');
@@ -102,12 +102,10 @@ const SalaryExpectations: React.FC = () => {
         updates.salary_expectation = normalizedExpectation;
       }
 
-      await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
-        { step_id: 'salary', step_number: 6, is_completed: true }
-      );
+      await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
 
       markClean();
-      updateStepData('salary', {
+      updateProfileDraft('salary', {
         expectation: range,
         amount: normalizedExpectation ?? 0,
         min_amount: selectedSalaryRange?.min_amount ?? 0,

@@ -1,9 +1,9 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useSubscription } from '~/hooks/useSubscription';
-import { API_ENDPOINTS, NOTIFICATIONS_API_BASE_URL } from '~/config/api';
-import { householdKidsService, petsService, documentService, shortlistService, interestService, listingApplicationService } from '~/services/grpc/authServices';
+import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
+import { documentService, shortlistService, interestService, listingApplicationService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -16,50 +16,22 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { resolveHouseholdOwnerUserId, resolveHouseholdProfile } from '~/utils/householdProfiles';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
-import { formatOnboardingBudgetRange } from '~/utils/onboardingCompensation';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
+import ProfileReviews from "~/components/ProfileReviews";
+import { useProfileViewTracking } from "~/hooks/useProfileViewTracking";
+import { ProfileChoicesSection } from '~/components/profile/ProfileChoicesSection';
 
 interface HouseholdData {
   id?: string;
+  profile_id?: string;
+  user_profile_id?: string;
   user_id?: string;
   owner_user_id?: string;
-  owner?: { id?: string; first_name?: string; last_name?: string; avatar_url?: string };
+  owner?: { id?: string; first_name?: string; last_name?: string };
   first_name?: string;
   last_name?: string;
   owner_first_name?: string;
   owner_last_name?: string;
-  // From embedded Profile
-  town?: string;
-  address?: string;
-  bio?: string;
-  status?: string;
-  avatar_url?: string;
-  location?: any;
-  verified?: boolean;
-  premium?: boolean;
-  rating?: number;
-  review_count?: number;
-  created_at?: string;
-  updated_at?: string;
-  // Household-specific
-  house_size?: string;
-  household_notes?: string;
-  is_shared?: boolean;
-  member_count?: number;
-  // Service Requirements
-  needs_live_in?: boolean;
-  live_in_off_days?: string[];
-  needs_day_worker?: boolean;
-  day_worker_schedule?: any;
-  available_from?: string;
-  chores?: string[];
-  househelp_ids?: string[];
-  // Budget
-  budget_min?: number;
-  budget_max?: number;
-  salary_frequency?: string;
-  // Preferences
-  religion?: string;
   photos?: string[];
 }
 
@@ -82,7 +54,7 @@ export default function HouseholdPublicProfile() {
   };
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId = currentUser?.user_id || currentUser?.id || getStoredUserId() || null;
-  const [viewerProfileType, setViewerProfileType] = useState<string | null>(() => currentUser?.profile_type || getStoredProfileType() || null);
+  const viewerProfileType = currentUser?.profile_type || getStoredProfileType() || null;
   const hasExplicitUserId = params.has("userId") || params.has("user_id");
   const hasExplicitProfileId = params.has("profileId") || params.has("profile_id");
   const stateSource =
@@ -98,8 +70,6 @@ export default function HouseholdPublicProfile() {
     navigationState.profileId ||
     currentUserId;
   const [profile, setProfile] = useState<HouseholdData | null>(null);
-  const [kids, setKids] = useState<any[]>([]);
-  const [pets, setPets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -175,22 +145,6 @@ export default function HouseholdPublicProfile() {
         }
 
         setProfile(profileData);
-
-        try {
-          const petsData = await petsService.listMyPets(ownerUserId);
-          const petsArray = petsData?.data || petsData;
-          setPets(Array.isArray(petsArray) ? petsArray : []);
-        } catch (err) {
-          console.error("Failed to fetch pets:", err);
-        }
-
-        try {
-          const kidsData = await householdKidsService.listHouseholdKids(ownerUserId);
-          const kidsArray = kidsData?.data || kidsData;
-          setKids(Array.isArray(kidsArray) ? kidsArray : []);
-        } catch (err) {
-          console.error("Failed to fetch kids:", err);
-        }
       } catch (err: any) {
         console.error("Error loading household profile:", err);
         setError(err.message || "Failed to load profile");
@@ -203,6 +157,12 @@ export default function HouseholdPublicProfile() {
   }, [resolvedUserId, currentUserId, hasExplicitProfileId, hasExplicitUserId]);
 
   const isViewingOwn = !!currentUserId && !!profileOwnerUserId && profileOwnerUserId === currentUserId;
+  useProfileViewTracking({
+    profileId: profile?.id || '',
+    profileType: 'household',
+    viewerUserId: currentUserId || undefined,
+    enabled: Boolean(profile?.id && !isViewingOwn),
+  });
   const viewerType = viewerProfileType?.toLowerCase();
   const canInteract = viewerType === "househelp" && !isViewingOwn;
   const canShortlist = canInteract && !!queryJobId;
@@ -412,227 +372,6 @@ export default function HouseholdPublicProfile() {
   const ownerFirstName = profile.owner?.first_name || profile.owner_first_name || profile.first_name;
   const ownerLastName = profile.owner?.last_name || profile.owner_last_name || profile.last_name;
   const householdDisplayName = [ownerFirstName, ownerLastName].filter(Boolean).join(' ').trim();
-  const shouldBlurProfile = !isViewingOwn && !hasActiveSubscription && !subscriptionLoading;
-
-  const lockedSections = (
-    <>
-      {/* Location & House Info */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📍 Location & House</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Location</span>
-            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
-              {typeof profile.location === 'string'
-                ? (profile.location || profile.town || 'Not specified')
-                : (profile.location?.place || profile.location?.name || profile.town || 'Not specified')}
-            </p>
-          </div>
-          <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">House Size</span>
-            <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.house_size || 'Not specified'}</p>
-          </div>
-          {profile.address && (
-            <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Address</span>
-              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.address}</p>
-            </div>
-          )}
-        </div>
-        {profile.household_notes && (
-          <div className="mt-4 p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-            <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Household Notes</span>
-            <p className="text-xs text-gray-900 dark:text-gray-100 mt-1 whitespace-pre-wrap">{profile.household_notes}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Service Type & Schedule */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">👥 Service Requirements</h2>
-        {!profile.needs_live_in && !profile.needs_day_worker && !profile.available_from ? (
-          <p className="text-gray-500 dark:text-gray-400">No service requirements specified yet</p>
-        ) : (
-          <div className="space-y-4">
-            {profile.needs_live_in && (
-              <div className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200/50 dark:border-indigo-500/20">
-                <p className="text-xs font-semibold text-indigo-900 dark:text-indigo-100 mb-1">🌙 Live-in Help Needed</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">This household needs a househelp who can live on the premises.</p>
-                {profile.live_in_off_days && profile.live_in_off_days.length > 0 && (
-                  <div className="mt-2">
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Off days:</span>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {profile.live_in_off_days.map((day, i) => (
-                        <span key={i} className="px-2 py-0.5 bg-indigo-100 dark:bg-indigo-800/40 text-indigo-800 dark:text-indigo-200 rounded-full text-xs capitalize">{day}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            {profile.needs_day_worker && (
-              <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200/50 dark:border-amber-500/20">
-                <p className="text-xs font-semibold text-amber-900 dark:text-amber-100 mb-1">☀️ Day Worker Needed</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">This household needs a househelp for daytime work.</p>
-                {profile.day_worker_schedule && (() => {
-                  try {
-                    const schedule = typeof profile.day_worker_schedule === 'string' ? JSON.parse(profile.day_worker_schedule) : profile.day_worker_schedule;
-                    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-                    const activeDays = days.filter(d => schedule[d]?.morning || schedule[d]?.afternoon || schedule[d]?.evening);
-                    if (activeDays.length === 0) return null;
-                    return (
-                      <div className="mt-3">
-                        <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Weekly Schedule</span>
-                        <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                          {activeDays.map(day => {
-                            const d = schedule[day];
-                            const slots = [d?.morning && 'Morning', d?.afternoon && 'Afternoon', d?.evening && 'Evening'].filter(Boolean);
-                            return (
-                              <div key={day} className="p-2 bg-amber-100/60 dark:bg-amber-800/20 rounded-lg">
-                                <p className="text-[11px] font-semibold text-amber-900 dark:text-amber-200 capitalize">{day}</p>
-                                <p className="text-[11px] text-gray-600 dark:text-gray-400 mt-0.5">{slots.join(', ')}</p>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  } catch { return null; }
-                })()}
-              </div>
-            )}
-            {profile.available_from && (
-              <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-xl">
-                <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Service Needed From</span>
-                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{new Date(profile.available_from).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Budget & Compensation */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">💰 Budget & Compensation</h2>
-        {(profile.budget_min != null && profile.budget_min > 0) || (profile.budget_max != null && profile.budget_max > 0) ? (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200/50 dark:border-green-500/20 sm:col-span-2">
-              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Salary Range</span>
-              <p className="text-base font-bold text-green-800 dark:text-green-200 mt-1">
-                {formatOnboardingBudgetRange(profile.budget_min, profile.budget_max, profile.salary_frequency).replace(' - ', ' – ')}
-              </p>
-            </div>
-            <div className="p-4 bg-gray-50 dark:bg-white/5 rounded-xl">
-              <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Pay Frequency</span>
-              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">
-                {profile.salary_frequency === 'daily' ? 'Daily'
-                  : profile.salary_frequency === 'weekly' ? 'Weekly'
-                  : profile.salary_frequency === 'monthly' ? 'Monthly'
-                  : profile.salary_frequency === 'yearly' ? 'Yearly'
-                  : profile.salary_frequency || 'Monthly'}
-              </p>
-            </div>
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">Budget not specified yet — you can discuss compensation directly.</p>
-        )}
-      </div>
-
-      {/* Chores & Duties */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">🧹 Chores & Duties</h2>
-        {profile.chores && profile.chores.length > 0 ? (
-          <div className="flex flex-wrap gap-2">
-            {profile.chores.map((chore, idx) => (
-              <span key={idx} className="px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-xl text-xs font-medium">{chore}</span>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No specific chores listed — duties can be discussed.</p>
-        )}
-      </div>
-
-      {/* Children */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">👶 Children ({kids.length})</h2>
-        {kids.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {kids.map((kid, idx) => (
-              <div key={kid.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200/30 dark:border-purple-500/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-base">{kid.is_expecting ? '🤰' : '👶'}</span>
-                  <p className="font-semibold text-purple-900 dark:text-purple-100">
-                    {kid.is_expecting ? 'Expecting a child' : `Child ${idx + 1}`}
-                  </p>
-                  {kid.gender && <span className="text-xs px-2 py-0.5 bg-purple-200 dark:bg-purple-800 text-purple-800 dark:text-purple-200 rounded-full capitalize">{kid.gender}</span>}
-                </div>
-                {kid.date_of_birth && (
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Born: {new Date(kid.date_of_birth).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
-                )}
-                {kid.is_expecting && kid.expected_date && (
-                  <p className="text-xs text-gray-600 dark:text-gray-400">Expected: {new Date(kid.expected_date).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })}</p>
-                )}
-                {kid.notes && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{kid.notes}</p>}
-                {kid.traits && kid.traits.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {kid.traits.map((trait: string, i: number) => (
-                      <span key={i} className="text-xs px-2 py-0.5 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full capitalize">{trait}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No children in this household</p>
-        )}
-      </div>
-
-      {/* Pets */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">🐾 Pets ({pets.length})</h2>
-        {pets.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {pets.map((pet, idx) => (
-              <div key={pet.id || idx} className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200/30 dark:border-purple-500/20">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-base">🐾</span>
-                  <p className="font-semibold text-purple-900 dark:text-purple-100 capitalize">{pet.pet_type}</p>
-                  {pet.requires_care && <span className="text-xs px-2 py-0.5 bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200 rounded-full">Needs care</span>}
-                </div>
-                {pet.care_details && <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{pet.care_details}</p>}
-                {pet.traits && pet.traits.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-2">
-                    {pet.traits.map((trait: string, i: number) => (
-                      <span key={i} className="text-xs px-2 py-0.5 bg-purple-200 dark:bg-purple-800 text-purple-900 dark:text-purple-100 rounded-full capitalize">{trait}</span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No pets in this household</p>
-        )}
-      </div>
-
-      {/* Religion */}
-      {profile.religion && (
-        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">🙏 Religion & Beliefs</h2>
-          <p className="text-xs font-medium text-gray-900 dark:text-gray-100 capitalize">{profile.religion}</p>
-        </div>
-      )}
-
-      {/* Currently Employed Househelps */}
-      {profile.househelp_ids && profile.househelp_ids.length > 0 && (
-        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">👤 Current Staff</h2>
-          <p className="text-xs text-gray-600 dark:text-gray-400">This household currently has {profile.househelp_ids.length} househelp{profile.househelp_ids.length > 1 ? 's' : ''} employed.</p>
-        </div>
-      )}
-    </>
-  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -660,7 +399,6 @@ export default function HouseholdPublicProfile() {
                         <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-3">
                           🏠 {householdDisplayName || 'Household Profile'}
                         </h1>
-                        {profile.town && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">📍 {profile.town}</p>}
                       </div>
                     </div>
 
@@ -720,39 +458,6 @@ export default function HouseholdPublicProfile() {
               </div>
             )}
 
-      {/* Quick Info Badges */}
-      <div className="bg-white dark:bg-[#13131a] p-4 sm:p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <div className="flex flex-wrap gap-2">
-          {profile.verified && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-xs font-semibold">✅ Verified</span>
-          )}
-          {profile.premium && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 rounded-full text-xs font-semibold">⭐ Premium</span>
-          )}
-          {profile.is_shared && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 rounded-full text-xs font-semibold">👨‍👩‍👧 Shared Household ({profile.member_count || 1} members)</span>
-          )}
-          {profile.house_size && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 rounded-full text-xs font-semibold">🏠 {profile.house_size}</span>
-          )}
-          {profile.rating != null && profile.rating > 0 && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 rounded-full text-xs font-semibold">⭐ {profile.rating}/5 ({profile.review_count || 0} reviews)</span>
-          )}
-          {profile.needs_live_in && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-300 rounded-full text-xs font-semibold">🌙 Needs Live-in</span>
-          )}
-          {profile.needs_day_worker && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-800 dark:text-amber-300 rounded-full text-xs font-semibold">☀️ Needs Day Worker</span>
-          )}
-          {profile.religion && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-xs font-semibold">🙏 {profile.religion}</span>
-          )}
-          {profile.created_at && (
-            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded-full text-xs">Member since {new Date(profile.created_at).toLocaleDateString('en-GB', { month: 'short', year: 'numeric' })}</span>
-          )}
-        </div>
-      </div>
-
       {/* Profile Photos */}
       {profile.photos && profile.photos.length > 0 && (
         <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
@@ -775,44 +480,22 @@ export default function HouseholdPublicProfile() {
         </div>
       )}
 
-      {/* About / Bio */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Household</h2>
-        {profile.bio ? (
-          <p className="text-xs text-gray-900 dark:text-gray-100 whitespace-pre-wrap leading-relaxed">{profile.bio}</p>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">No bio added yet</p>
-        )}
-      </div>
+      <ProfileChoicesSection
+        profile={profile as Record<string, any>}
+        fallbackProfileId="11d1c188-33fa-4eef-b1e7-2e09a2e8d2f1"
+        profileType="household"
+        title="Profile Details"
+      />
 
-      {shouldBlurProfile ? (
-        <div className="relative">
-          <div className="pointer-events-none select-none blur-sm">
-            {lockedSections}
-          </div>
-          <div className="absolute inset-0 flex items-end justify-center pointer-events-none">
-            <div className="w-full bg-gradient-to-t from-[#0f0b1a] via-[#0f0b1a]/90 to-transparent pt-24 pb-8 px-6 pointer-events-auto">
-              <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center">
-                <p className="text-sm font-semibold text-white">Unlock full profile information</p>
-                <p className="text-xs text-purple-100/80">
-                  View service requirements, budgets, chores, and household details when you subscribe.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSubscriptionActionLabel('unlock full profile information');
-                    setShowSubscriptionModal(true);
-                  }}
-                  className="mt-2 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-xs font-semibold text-white shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700"
-                >
-                  Unlock full profile information
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        lockedSections
+      {profile.id && (
+        <section className="mt-6">
+          <h2 className="mb-4 text-sm font-semibold text-purple-300">Ratings & reviews</h2>
+          <ProfileReviews
+            profileId={profile.id}
+            profileType="household"
+            isOwnProfile={isViewingOwn}
+          />
+        </section>
       )}
     </div>
       </main>

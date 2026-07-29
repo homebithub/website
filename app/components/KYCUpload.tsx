@@ -2,11 +2,10 @@ import { getAccessTokenFromCookies } from '~/utils/cookie';
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { API_BASE_URL } from '~/config/api';
 import { kycService, profileService as grpcProfileService } from '~/services/grpc/authServices';
-import { profileSetupService } from '~/services/grpc/profileSetup.service';
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 
 type IDType = 'national_id' | 'alien_card' | 'passport';
 
@@ -52,7 +51,6 @@ const validateFile = (file: File): { valid: boolean; message?: string } => {
 };
 
 const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplete }) => {
-  const { markDirty, markClean, updateStepData } = useProfileSetup();
   const [subStep, setSubStep] = useState<number>(SUB_STEPS.ID_TYPE);
   const [idType, setIdType] = useState<IDType | null>(null);
   const [idNumber, setIdNumber] = useState('');
@@ -66,9 +64,33 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
   const [isUploading, setIsUploading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [checkingExisting, setCheckingExisting] = useState(true);
+  const [existingKYC, setExistingKYC] = useState<any | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const requiresBackImage = idType === 'national_id' || idType === 'alien_card';
+
+  useEffect(() => {
+    let active = true;
+    kycService.getMyKYC('')
+      .then((response) => {
+        if (!active) return;
+        const record = response?.data ?? response;
+        setExistingKYC(record?.id ? record : null);
+      })
+      .catch((loadError) => {
+        if (active) {
+          console.warn('Could not load existing KYC status', loadError);
+          setExistingKYC(null);
+        }
+      })
+      .finally(() => {
+        if (active) setCheckingExisting(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Total sub-steps depends on whether back image is required
   const totalSubSteps = requiresBackImage ? 5 : 4;
@@ -294,8 +316,7 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
         if (imageUrls.length > 0) {
           try {
             await grpcProfileService.updateHousehelpFields('', 'househelp',
-              { photos: imageUrls },
-              { step_id: 'photos', step_number: 14, is_completed: true }
+              { photos: imageUrls }
             );
           } catch (err) {
             console.error('Failed to save profile photos, but KYC was submitted successfully');
@@ -303,15 +324,8 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
         }
       }
 
-      // Mark KYC step as complete (KYC data is stored in its own table, not on the profile)
-      await grpcProfileService.updateHousehelpFields('', 'househelp',
-        {},
-        { step_id: 'kyc', step_number: 13, is_completed: true }
-      );
-
-      markClean();
-      updateStepData('kyc', { submitted: true });
       setSuccess('Your KYC documents and photos have been uploaded successfully!');
+      notifyProfileProgressChanged();
       if (onComplete) {
         setTimeout(() => onComplete(), 500);
       }
@@ -321,23 +335,6 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
     } finally {
       setIsSubmitting(false);
       setIsUploading(false);
-    }
-  };
-
-  const handleSkip = async () => {
-    try {
-      // Mark step as skipped via gRPC
-      await profileSetupService.updateStep('', {
-        step_id: 'kyc',
-        step_number: 13,
-        is_completed: false,
-        is_skipped: true,
-        data: {},
-      });
-      if (onComplete) onComplete();
-    } catch (err) {
-      console.error('Failed to skip KYC step:', err);
-      if (onComplete) onComplete();
     }
   };
 
@@ -600,6 +597,74 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
 
   const isLastSubStep = subStep === SUB_STEPS.PROFILE_PHOTOS;
 
+  if (checkingExisting) {
+    return (
+      <div className="rounded-2xl border border-purple-200/60 bg-purple-50/60 p-6 text-center dark:border-purple-500/30 dark:bg-purple-500/10">
+        <div className="mx-auto mb-3 h-7 w-7 animate-spin rounded-full border-2 border-purple-500 border-t-transparent" />
+        <p className="text-xs text-gray-600 dark:text-gray-300">Checking your verification status…</p>
+      </div>
+    );
+  }
+
+  if (existingKYC) {
+    const status = String(existingKYC.status || 'pending').toLowerCase();
+    const statusClasses = status === 'approved'
+      ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300'
+      : status === 'rejected'
+        ? 'bg-red-100 text-red-700 dark:bg-red-500/15 dark:text-red-300'
+        : 'bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300';
+    const idNumber = String(existingKYC.id_number || '');
+    const maskedID = idNumber.length > 4 ? `${'•'.repeat(Math.min(6, idNumber.length - 4))}${idNumber.slice(-4)}` : idNumber;
+    return (
+      <div className="rounded-2xl border border-purple-200/60 bg-white p-6 shadow-sm dark:border-purple-500/30 dark:bg-[#13131a]">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-purple-600 dark:text-purple-300">
+              Identity verification
+            </p>
+            <h3 className="mt-1 text-base font-bold text-gray-900 dark:text-white">
+              Your documents have been submitted
+            </h3>
+          </div>
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold capitalize ${statusClasses}`}>
+            {status}
+          </span>
+        </div>
+        <div className="mt-5 grid gap-3 rounded-xl bg-purple-50/70 p-4 text-xs dark:bg-purple-500/10 sm:grid-cols-2">
+          <div>
+            <span className="block text-gray-500 dark:text-gray-400">Document type</span>
+            <span className="mt-1 block font-medium capitalize text-gray-900 dark:text-white">
+              {String(existingKYC.id_type || 'identity document').replaceAll('_', ' ')}
+            </span>
+          </div>
+          <div>
+            <span className="block text-gray-500 dark:text-gray-400">Document number</span>
+            <span className="mt-1 block font-medium text-gray-900 dark:text-white">{maskedID || 'Stored securely'}</span>
+          </div>
+        </div>
+        {status === 'rejected' && existingKYC.reject_reason && (
+          <ErrorAlert message={`Verification was not approved: ${existingKYC.reject_reason}`} />
+        )}
+        <p className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+          {status === 'approved'
+            ? 'Your identity is verified.'
+            : status === 'rejected'
+              ? 'Contact support before submitting replacement documents so the rejected record can be reopened.'
+              : 'Review is in progress. You do not need to upload the same documents again.'}
+        </p>
+        {onComplete && (
+          <button
+            type="button"
+            onClick={onComplete}
+            className="mt-5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-xs font-bold text-white shadow-lg"
+          >
+            Continue
+          </button>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {renderSubStepProgress()}
@@ -643,9 +708,9 @@ const KYCUpload: React.FC<KYCUploadProps> = ({ userType = 'househelp', onComplet
         </button>
 
         <div className="flex gap-3">
-          {isLastSubStep && (
+          {isLastSubStep && onComplete && (
             <button
-              onClick={handleSkip}
+              onClick={onComplete}
               disabled={isSubmitting}
               className="px-4 py-2 rounded-xl text-xs text-gray-500 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 underline"
             >

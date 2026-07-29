@@ -5,7 +5,7 @@ import { Bars3Icon, UserIcon, CogIcon, ArrowRightOnRectangleIcon, CreditCardIcon
 import { useAuth } from "~/contexts/useAuth";
 import ThemeToggle from "~/components/ui/ThemeToggle";
 import { API_BASE_URL } from "~/config/api";
-import { useProfileSetupStatus } from "~/hooks/useProfileSetupStatus";
+import { useAccountChoiceStatus } from "~/hooks/useAccountChoiceStatus";
 import { useNotifications } from "~/hooks/useNotifications";
 import NotificationsModal from "~/components/notifications/NotificationsModal";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
@@ -33,7 +33,7 @@ function normalizeProfileRole(profileType?: string | null): 'client' | 'service-
 
 export function Navigation() {
     const { user, logout, loading } = useAuth();
-    const { isInSetupMode } = useProfileSetupStatus();
+    const { isInSetupMode } = useAccountChoiceStatus();
     const location = useLocation();
     const isAccountProfileRoute = location.pathname === '/profile';
     const allowAuxiliaryAccountCalls = !isAccountProfileRoute;
@@ -227,7 +227,7 @@ export function Navigation() {
         return null;
     }
 
-    // Hide navbar during profile setup flow
+    // Hide account navigation while a household is choosing or joining a household.
     if (isInSetupMode) {
         return null;
     }

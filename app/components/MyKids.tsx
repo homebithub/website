@@ -7,10 +7,10 @@ import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 
 const MyKids = () => {
-    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+    const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
     const [kidOption, setKidOption] = useState<string>('');
     const [children, setChildren] = useState<Child[]>([]);
     const [error, setError] = useState('');
@@ -73,12 +73,10 @@ const MyKids = () => {
                 ...(option === 'needs_accommodation' && kids.length > 0 ? { children: kids } : {})
             };
 
-            await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
-                { step_id: 'mykids', step_number: 10, is_completed: true }
-            );
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
             
             markClean();
-            updateStepData('mykids', { kidOption: option, children: kids });
+            updateProfileDraft('mykids', { kidOption: option, children: kids });
             setSuccess('Your preference has been saved successfully!');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {

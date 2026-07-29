@@ -13,7 +13,7 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { cacheAuthSession, getStoredAccessToken } from '~/utils/authStorage';
-import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
+import { registerCurrentDevice } from '~/utils/deviceFingerprint';
 import { API_ENDPOINTS } from '~/config/api';
 
 export const meta = () => [
@@ -117,6 +117,9 @@ export default function LoginPage() {
             user: userData,
             provider: "google",
           });
+          registerCurrentDevice(userData.user_id).catch((deviceError) => {
+            console.warn('Device registration failed:', deviceError);
+          });
           const profileType: string = userData.profile_type || '';
 
           // If user has no phone number, redirect to add-phone page
@@ -137,22 +140,6 @@ export default function LoginPage() {
             return;
           }
 
-          // Mirror the profile-setup redirect logic used in AuthContext.login
-          if (profileType === 'household' || profileType === 'househelp') {
-            try {
-              const destination = await resolveProfileSetupDestination({
-                userId: userData.user_id,
-                profileType,
-                completedPath: '/',
-              });
-              navigate(destination, { replace: true });
-              return;
-            } catch (err: any) {
-              console.error('Failed to check profile setup status after Google login:', err);
-            }
-          }
-
-          // If profile is complete or setup check failed, redirect
           if (redirectUrl) {
             navigate(redirectUrl, { replace: true });
           } else {

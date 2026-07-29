@@ -19,7 +19,7 @@ interface OnboardingOptionsProviderProps {
 
 /**
  * Provider component that fetches and caches onboarding options
- * Should wrap the profile setup flow to avoid refetching on every component
+ * Wraps profile editors to avoid refetching catalogue options in every component.
  */
 export function OnboardingOptionsProvider({ children, profileType }: OnboardingOptionsProviderProps) {
   const { options, loading, error, refetch } = useOnboardingOptions(profileType);

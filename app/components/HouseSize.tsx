@@ -5,13 +5,13 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 type HouseSizeOption = string;
 
 const HouseSize: React.FC = () => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedSize, setSelectedSize] = useState<string>('');
   const [additionalDetails, setAdditionalDetails] = useState<string>('');
@@ -69,15 +69,10 @@ const HouseSize: React.FC = () => {
       await grpcProfileService.updateHouseholdProfile('', 'household', {
         house_size: sizeToSave,
         household_notes: additionalDetails.trim() || '',
-        _step_metadata: {
-          step_id: 'housesize',
-          step_number: 1,
-          is_completed: true
-        }
       });
 
       markClean();
-      updateStepData('housesize', { size: sizeToSave, notes: additionalDetails.trim() });
+      updateProfileDraft('housesize', { size: sizeToSave, notes: additionalDetails.trim() });
       setSuccess('House size saved automatically!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {

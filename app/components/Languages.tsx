@@ -5,13 +5,13 @@ import { handleApiError } from '../utils/errorMessages';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 // Languages are now fetched from backend via context
 
 const Languages = () => {
-    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+    const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
     const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [selectedLanguages, setSelectedLanguages] = useState<string[]>([]);
     const [showOtherLanguages, setShowOtherLanguages] = useState(false);
@@ -80,12 +80,10 @@ const Languages = () => {
                 languages: langs.join(',')
             };
 
-            await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
-                { step_id: 'languages', step_number: 9, is_completed: true }
-            );
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
             
             markClean();
-            updateStepData('languages', { languages: langs });
+            updateProfileDraft('languages', { languages: langs });
             setSuccess('Your language preferences have been saved successfully!');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {

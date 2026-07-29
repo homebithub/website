@@ -136,10 +136,10 @@ export default function ProfileViewsAnalytics({ profileId, profileType, isOpen, 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className="animate-pulse h-20 bg-purple-900/10 dark:bg-purple-900/20 rounded-xl" />
+                  <div key={i} className="hb-shimmer-piece h-20 rounded-xl" />
                 ))}
               </div>
-              <div className="animate-pulse h-16 bg-purple-900/10 dark:bg-purple-900/20 rounded-xl" />
+              <div className="hb-shimmer-piece h-16 rounded-xl" />
             </div>
           )}
 

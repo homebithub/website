@@ -10,7 +10,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { Loading } from '~/components/Loading';
 import { cacheAuthSession, getStoredProfileType, getStoredUserId } from '~/utils/authStorage';
-import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
+import { registerCurrentDevice } from '~/utils/deviceFingerprint';
 
 const PENDING_VERIFICATION_KEY = 'homebit.pendingVerification';
 
@@ -376,6 +376,9 @@ export default function VerifyOtpPage() {
           user: flatUser,
           provider: 'password',
         });
+        registerCurrentDevice(flatUser.user_id).catch((deviceError) => {
+          console.warn('Device registration failed:', deviceError);
+        });
       }
       setSuccess(true);
       setLocalFailedAttempts(0); // reset on success
@@ -384,8 +387,7 @@ export default function VerifyOtpPage() {
       
       const profileType = flatUser.profile_type;
       const userId = flatUser.user_id;
-      const profileId = flatUser.profile_id;
-      const userProfileId = flatUser.user_profile_id;
+      const isNewSignup = verificationState.from === 'signup';
 
       if (isPasswordResetFlow) {
         navigate(`/reset-password?userId=${encodeURIComponent(userId)}`, {
@@ -399,7 +401,7 @@ export default function VerifyOtpPage() {
         navigate('/bureau/househelps');
       } else if (afterAddPhone) {
         // Coming from /add-phone flow (e.g. Google login user adding phone)
-        // Next: email verification if no email, or profile setup / redirect
+        // Next: email verification if no email, otherwise the role-specific destination.
         const pt = profileType || verificationState.profileType || '';
         if (!flatUser.email && (pt === 'household' || pt === 'househelp')) {
           const params = new URLSearchParams({
@@ -411,19 +413,15 @@ export default function VerifyOtpPage() {
             });
             return;
         }
-        // If they have email already, go to profile setup or redirectTo
+        // If they have email already, continue to the requested destination.
         const redirectTo = verificationState.redirectTo || '/';
-        if (pt === 'household' || pt === 'househelp') {
-          try {
-            const destination = await resolveProfileSetupDestination({
-              userId,
-              profileType: pt,
-              completedPath: redirectTo,
-            });
-            navigate(destination, { replace: true });
-            return;
-          } catch (err: any) {
-          }
+        if (isNewSignup && pt === 'household') {
+          navigate('/household-choice', { replace: true });
+          return;
+        }
+        if (isNewSignup && pt === 'househelp') {
+          navigate('/househelp/profile', { replace: true });
+          return;
         }
         navigate(redirectTo, { replace: true });
       } else {
@@ -438,50 +436,29 @@ export default function VerifyOtpPage() {
           if (profileType === 'household' || profileType === 'househelp') {
             const params = new URLSearchParams({
               userId,
-              from: 'phone-verification',
+              from: verificationState.from || 'phone-verification',
             });
             navigate(`/verify-email?${params.toString()}`, {
               state: {
                 user_id: userId,
-                from: 'phone-verification',
+                from: verificationState.from || 'phone-verification',
               },
             });
             return;
           }
         }
 
-        // Step 2: After email OTP, go to next onboarding step
-        let path = '/';
-        if (profileType === 'household' || profileType === 'househelp') {
-          if (profileId) {
-            navigate('/onboarding/features', {
-              replace: true,
-              state: {
-                profileId,
-                userProfileId,
-                profileType,
-              },
-            });
-            return;
-          }
-
-          try {
-            const destination = await resolveProfileSetupDestination({
-              userId,
-              profileType,
-              completedPath: '/',
-            });
-            navigate(destination, { replace: true });
-            return;
-          } catch (err: any) {
-            console.error('[VERIFY-OTP] GetProgress error:', err);
-            console.error('[VERIFY-OTP] Failed to check profile setup status:', err);
-          }
-
-          // Fallback
-          path = profileType === 'household' ? '/household-choice' : '/profile-setup/househelp?step=1';
+        // New households choose whether to create or join. New househelps
+        // complete their information directly on the profile page.
+        if (isNewSignup && profileType === 'household') {
+          navigate('/household-choice', { replace: true });
+          return;
         }
-        navigate(path);
+        if (isNewSignup && profileType === 'househelp') {
+          navigate('/househelp/profile', { replace: true });
+          return;
+        }
+        navigate(verificationState.redirectTo || '/', { replace: true });
       }
     } catch (err: any) {
       const errorMessage = handleApiError(err, 'otp');

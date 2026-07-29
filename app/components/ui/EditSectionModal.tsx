@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
-import { ProfileSetupProvider } from '~/contexts/ProfileSetupContext';
+import { ProfileEditorProvider } from '~/contexts/ProfileEditorContext';
 import { OnboardingOptionsProvider } from '~/contexts/OnboardingOptionsContext';
 
 interface EditSectionModalProps {
@@ -61,11 +61,11 @@ export default function EditSectionModal({ isOpen, onClose, title, profileType, 
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-5 py-5">
-          <ProfileSetupProvider>
+          <ProfileEditorProvider>
             <OnboardingOptionsProvider profileType={profileType}>
               {children}
             </OnboardingOptionsProvider>
-          </ProfileSetupProvider>
+          </ProfileEditorProvider>
         </div>
       </div>
     </div>

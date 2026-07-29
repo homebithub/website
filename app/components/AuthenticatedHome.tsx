@@ -911,7 +911,7 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
                               {househelp.avatar_url || househelp.profile_picture || (househelp.photos && househelp.photos.length > 0) || profilePhotos[househelp.user_id || String(househelp.id)] ? (
                                 <>
                                   {imageLoadingStates[househelp.profile_id] !== false && (
-                                    <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                                    <div className="hb-shimmer-piece absolute inset-0" />
                                   )}
                                   <OptimizedImage
                                     path={

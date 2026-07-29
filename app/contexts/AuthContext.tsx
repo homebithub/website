@@ -12,7 +12,6 @@ import {
   getStoredUser,
   normalizeProfileType,
 } from "~/utils/authStorage";
-import { resolveProfileSetupDestination } from '~/utils/profileSetupRouting';
 
 interface User {
   id: string;
@@ -73,7 +72,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Public routes that don't need auth check
   const isPublicRoute = () => {
-    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/household-choice', '/join-household', '/pending-approval', '/profile-setup', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies', '/debug'];
+    const publicPaths = ['/signup', '/login', '/forgot-password', '/reset-password', '/verify-otp', '/verify-email', '/household-choice', '/join-household', '/pending-approval', '/about', '/services', '/contact', '/pricing', '/terms', '/privacy', '/cookies', '/debug'];
     return publicPaths.some(path => location.pathname.startsWith(path)) || location.pathname === '/';
   };
 
@@ -154,29 +153,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser({ token: token || "", user } as unknown as LoginResponse);
       cacheAuthSession({ token: token || "", user });
 
-      // Check for pending household join requests on page load/refresh
-      const profileType = normalizeProfileType(user.profile_type);
-      if (profileType === 'household' && !isPublicRoute()) {
-        try {
-          const destination = await resolveProfileSetupDestination({
-            userId: user.id,
-            profileType,
-            completedPath: '/',
-          });
-
-          if (destination === '/pending-approval' && location.pathname !== '/pending-approval') {
-            navigate('/pending-approval');
-            return;
-          }
-
-          if (destination === '/household/profile' && location.pathname !== '/household/profile') {
-            navigate('/household/profile');
-            return;
-          }
-        } catch (err: any) {
-          // Error checking profile setup, continue normally
-        }
-      }
     } catch (error: any) {
       console.error("Error checking auth:", error);
       // Only clear auth state on explicit UNAUTHENTICATED errors (gRPC code 16).

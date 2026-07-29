@@ -24,6 +24,7 @@ import {
   getStoredUserId,
   getStoredUserProfileId,
 } from '~/utils/authStorage';
+import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 
 const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const client_profile_pb = (client_profile_pb_module as any).default ?? client_profile_pb_module;
@@ -33,7 +34,6 @@ const shared_pb = (shared_pb_module as any).default ?? shared_pb_module;
 const empty_pb = (empty_pb_module as any).default ?? empty_pb_module;
 const {
   ProfileServiceClient,
-  JobServiceClient,
   ShortlistServiceClient,
   InterestServiceClient,
   ReviewServiceClient,
@@ -316,7 +316,6 @@ const hireContractClient = new HireContractServiceClient(GRPC_WEB_BASE_URL, null
 const hireNegotiationClient = new HireNegotiationServiceClient(GRPC_WEB_BASE_URL, null, null);
 const employmentClient = new EmploymentServiceClient(GRPC_WEB_BASE_URL, null, null);
 const employmentContractClient = new EmploymentContractServiceClient(GRPC_WEB_BASE_URL, null, null);
-const jobClient = new JobServiceClient(GRPC_WEB_BASE_URL, null, null);
 const openForWorkClient = new OpenForWorkServiceClient(GRPC_WEB_BASE_URL, null, null);
 const bureauClient = new BureauServiceClient(GRPC_WEB_BASE_URL, null, null);
 const waitlistClient = new WaitlistServiceClient(GRPC_WEB_BASE_URL, null, null);
@@ -429,6 +428,7 @@ export const profileService = {
   },
   async updateHouseholdProfile(userId: string, profileType: string, data: Record<string, any>): Promise<any> {
     const res = await grpcCall((cb) => profileClient.updateHouseholdProfile(buildUpdateProfileRequest(userId, profileType, data), getMetadata(), cb));
+    notifyProfileProgressChanged();
     return jsonResponseToJs(res);
   },
   async getHouseholdByUserID(userId: string): Promise<any> {
@@ -466,10 +466,12 @@ export const profileService = {
     return jsonResponseToJs(res);
   },
   async getHousehelpsByBureau(bureauId: string, limit: number = 20, offset: number = 0): Promise<any> {
-    void bureauId;
-    void limit;
-    void offset;
-    return { data: [], deprecated: true };
+    const req = new auth_pb.GetByBureauRequest();
+    req.setBureauId(bureauId);
+    req.setLimit(limit);
+    req.setOffset(offset);
+    const res = await grpcCall((cb) => profileClient.getHousehelpsByBureau(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
   async searchHousehelps(userId: string, profileType: string, filters?: Record<string, any>, limit?: number, offset?: number): Promise<any> {
     const res = await grpcCall((cb) => profileClient.searchHousehelps(buildSearchRequest(userId, profileType, filters, limit, offset), getMetadata(), cb));
@@ -521,6 +523,7 @@ export const profileService = {
       if (metaStruct) req.setStepMetadata(metaStruct);
     }
     const res = await grpcCall((cb) => profileClient.updateHousehelpFields(req, getMetadata(), cb));
+    notifyProfileProgressChanged();
     return jsonResponseToJs(res);
   },
   async saveUserLocation(userId: string, data: Record<string, any>): Promise<any> {
@@ -529,6 +532,7 @@ export const profileService = {
     const struct = toStruct(data);
     if (struct) req.setData(struct);
     const res = await grpcCall((cb) => profileClient.saveUserLocation(req, getMetadata(), cb));
+    notifyProfileProgressChanged();
     return jsonResponseToJs(res);
   },
   async getProfileDocuments(userId: string, profileType: string): Promise<any> {
@@ -546,9 +550,6 @@ export const profileService = {
 // ══════════════════════════════════════════════════════════════════════════
 export const shortlistService = {
   async createShortlist(userId: string, profileType: string, data: Record<string, any>): Promise<any> {
-    if (['household', 'househelp', 'bureau'].includes(String(data?.profile_type || '').toLowerCase())) {
-      throw new Error('Shortlists can only save job postings or open-for-work listings.');
-    }
     const req = new auth_pb.CreateShortlistReq();
     req.setUserId(resolveUserId(userId));
     req.setProfileType(profileType);
@@ -565,7 +566,8 @@ export const shortlistService = {
     await grpcCall((cb) => shortlistClient.deleteShortlist(buildIdRequest(id, userId), getMetadata(), cb));
   },
   async listByHousehold(userId: string, profileType?: string): Promise<any> {
-    return { data: [], total: 0 };
+    const res = await grpcCall((cb) => shortlistClient.listByHousehold(buildUserIdRequest(userId, profileType), getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
   async listByProfile(userId: string, profileType?: string): Promise<any> {
     const res = await grpcCall((cb) => shortlistClient.listByProfile(buildUserIdRequest(userId, profileType), getMetadata(), cb));
@@ -575,7 +577,11 @@ export const shortlistService = {
     const req = new auth_pb.ShortlistExistsReq();
     req.setUserId(resolveUserId(userId));
     req.setProfileId(profileId);
-    return grpcCall((cb) => shortlistClient.shortlistExists(req, getMetadata(), cb));
+    const res: any = await grpcCall((cb) => shortlistClient.shortlistExists(req, getMetadata(), cb));
+    return {
+      exists: !!(res?.getValue?.() ?? res?.getExists?.()),
+      value: !!(res?.getValue?.() ?? res?.getExists?.()),
+    };
   },
   // Legacy compatibility wrapper. Shortlists no longer enforce lock-based access.
   async unlockShortlist(userId: string, profileId: string): Promise<{ unlocked: boolean; phone?: string; email?: string }> {
@@ -602,7 +608,8 @@ export const shortlistService = {
     };
   },
   async getShortlistCount(userId: string, profileType?: string): Promise<any> {
-    return { count: 0 };
+    const res: any = await grpcCall((cb) => shortlistClient.getShortlistCount(buildUserIdRequest(userId, profileType), getMetadata(), cb));
+    return { count: Number(res?.getCount?.() ?? 0) };
   },
 };
 
@@ -629,7 +636,8 @@ export const interestService = {
     await grpcCall((cb) => interestClient.deleteInterest(buildIdRequest(id, userId), getMetadata(), cb));
   },
   async listByHousehold(userId: string, profileType?: string): Promise<any> {
-    return { data: [], total: 0 };
+    const res = await grpcCall((cb) => interestClient.listByHousehold(buildUserIdRequest(userId, profileType || 'household'), getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
   async listByHousehelp(userId: string, profileType?: string): Promise<any> {
     const res = await grpcCall((cb) => interestClient.listByHousehelp(buildUserIdRequest(userId, profileType), getMetadata(), cb));
@@ -639,7 +647,11 @@ export const interestService = {
     const req = new auth_pb.InterestExistsReq();
     req.setUserId(resolveUserId(userId));
     req.setHouseholdId(householdId);
-    return grpcCall((cb) => interestClient.interestExists(req, getMetadata(), cb));
+    const res: any = await grpcCall((cb) => interestClient.interestExists(req, getMetadata(), cb));
+    return {
+      exists: !!(res?.getValue?.() ?? res?.getExists?.()),
+      value: !!(res?.getValue?.() ?? res?.getExists?.()),
+    };
   },
   async acceptInterest(id: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => interestClient.acceptInterest(buildIdRequest(id, userId), getMetadata(), cb));
@@ -1071,19 +1083,13 @@ export const preferencesService = {
 
 // ══════════════════════════════════════════════════════════════════════════
 // Onboarding Options Service (proto: getLanguages, getSkills, getChores,
-//   getAllOptions, getOnboardingSteps, etc.)
+//   getAllOptions, getSalaryRanges)
 // ══════════════════════════════════════════════════════════════════════════
 export const onboardingOptionsService = {
   async getAllOptions(profileType: string): Promise<any> {
     const req = new auth_pb.ProfileTypeRequest();
     req.setProfileType(profileType);
     const res = await grpcCall((cb) => onboardingOptionsClient.getAllOptions(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async getOnboardingSteps(profileType: string): Promise<any> {
-    const req = new auth_pb.ProfileTypeRequest();
-    req.setProfileType(profileType);
-    const res = await grpcCall((cb) => onboardingOptionsClient.getOnboardingSteps(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
   async getSalaryRanges(frequency: string): Promise<any> {
@@ -1148,7 +1154,14 @@ export const hireRequestService = {
     return jsonResponseToJs(res);
   },
   async listHireRequests(userId: string, profileType: string, status?: string): Promise<any> {
-    return { data: [], total: 0 };
+    const req = new auth_pb.ListHireRequestsReq();
+    req.setUserId(resolveUserId(userId));
+    req.setProfileType(profileType);
+    if (status) req.setStatus(status);
+    req.setLimit(50);
+    req.setOffset(0);
+    const res = await grpcCall((cb) => hireRequestClient.listHireRequests(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
   async acceptHireRequest(id: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => hireRequestClient.acceptHireRequest(buildIdRequest(id, userId), getMetadata(), cb));
@@ -1170,8 +1183,9 @@ export const hireContractService = {
   async createFromHireRequest(userId: string, data: Record<string, any>): Promise<any> {
     const req = new auth_pb.CreateContractReq();
     req.setUserId(resolveUserId(userId));
-    const struct = toStruct(data);
-    if (struct) req.setData(struct);
+    req.setProfileType(String(data.profile_type || getStoredProfileType() || 'household'));
+    req.setHireRequestId(String(data.hire_request_id || data.application_id || data.id || ''));
+    if (data.notes) req.setNotes(String(data.notes));
     const res = await grpcCall((cb) => hireContractClient.createFromHireRequest(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
@@ -1310,6 +1324,7 @@ export const userProfilePicksService = {
       return next;
     }));
     const res = await grpcCall((cb) => userProfileClient.addPicks(req, getMetadata(), cb));
+    notifyProfileProgressChanged();
     return dataEnvelope(res);
   },
 
@@ -1323,6 +1338,7 @@ export const userProfilePicksService = {
       return next;
     }));
     const res = await grpcCall((cb) => userProfileClient.replacePicks(req, getMetadata(), cb));
+    notifyProfileProgressChanged();
     return dataEnvelope(res);
   },
 };
@@ -1355,8 +1371,16 @@ async function enrichListingsWithFeatures(listings: Record<string, any>[]) {
 
 export const listingApplicationService = {
   async shortlistListing(listingId: string, serviceProviderId: string, message = ''): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.applyForJob(buildIdRequest(listingId, serviceProviderId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'shortlist',
+        id: listingId,
+        service_provider_id: serviceProviderId,
+        message,
+      }),
+    });
+    return payload.data ?? payload;
   },
 
   async listApplications(options: {
@@ -1366,8 +1390,14 @@ export const listingApplicationService = {
     limit?: number;
     offset?: number;
   }): Promise<any> {
-    console.warn('Listing applications are not available in the current auth gRPC contract:', options);
-    return { data: [] };
+    const params = new URLSearchParams({ action: 'applications' });
+    if (options.listingId) params.set('listing_id', options.listingId);
+    if (options.applicantProfileId) params.set('applicant_profile_id', options.applicantProfileId);
+    if (options.statuses?.length) params.set('statuses', options.statuses.join(','));
+    params.set('limit', String(options.limit ?? 20));
+    params.set('offset', String(options.offset ?? 0));
+    const payload = await jobListingsApi(`?${params.toString()}`);
+    return { data: normalizeArray(payload.data ?? payload) };
   },
 };
 
@@ -1432,38 +1462,43 @@ export const jobService = {
   },
 
   async listJobs(limit = 20, offset = 0, userProfileId = getStoredUserProfileId(), status = ''): Promise<any> {
-    try {
-      const params = new URLSearchParams({
-        limit: String(limit),
-        offset: String(offset),
-      });
-      if (userProfileId) params.set('user_profile_id', userProfileId);
-      if (status) params.set('status', status);
-      const payload = await jobListingsApi(`?${params.toString()}`);
-      return { data: normalizeArray(payload.data ?? payload) };
-    } catch (err) {
-      console.warn('Failed to list jobs:', err);
-      return { data: [] };
-    }
+    const params = new URLSearchParams({
+      limit: String(limit),
+      offset: String(offset),
+    });
+    if (userProfileId) params.set('user_profile_id', userProfileId);
+    if (status) params.set('status', status);
+    const payload = await jobListingsApi(`?${params.toString()}`);
+    return { data: normalizeArray(payload.data ?? payload) };
   },
 
-  async searchJobs(filters: Record<string, any>, userId?: string): Promise<any> {
-    const req = new auth_pb.SearchRequest();
-    if (userId) req.setUserId(resolveUserId(userId));
-    const struct = toStruct(filters || {});
-    if (struct) req.setFilters(struct);
-    const res = await grpcCall((cb) => jobClient.searchJobs(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
+  async searchJobs(filters: Record<string, any>, _userId?: string): Promise<any> {
+    const params = new URLSearchParams({
+      limit: String(filters?.limit ?? 20),
+      offset: String(filters?.offset ?? 0),
+    });
+    const status = String(filters?.status || '');
+    if (status) params.set('status', status === 'open' ? 'active' : status);
+    if (filters?.user_profile_id) params.set('user_profile_id', String(filters.user_profile_id));
+    const payload = await jobListingsApi(`?${params.toString()}`);
+    return { data: normalizeArray(payload.data ?? payload) };
   },
 
   async getLatestJobs(limit = 10): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.getLatestJobs(buildListRequest(limit, 0), getMetadata(), cb));
-    return jsonResponseToJs(res);
+    return jobService.listJobs(limit, 0, '', 'active');
   },
 
-  async applyForJob(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => jobClient.applyForJob(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
+  async applyForJob(id: string, serviceProviderId?: string, message = ''): Promise<any> {
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'apply',
+        id,
+        service_provider_id: serviceProviderId || '',
+        message,
+      }),
+    });
+    return payload.data ?? payload;
   },
 
   async closeJob(id: string, userId?: string): Promise<any> {

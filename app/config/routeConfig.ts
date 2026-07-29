@@ -39,8 +39,6 @@ export const routeConfig: Record<string, RouteConfig> = {
   
   // ==================== PROTECTED ROUTES ====================
   // ALL OTHER ROUTES REQUIRE AUTHENTICATION INCLUDING:
-  // - /profile-setup/household
-  // - /profile-setup/househelp
   // - /household/profile
   // - /househelp/profile
   // - /household/*
@@ -57,8 +55,6 @@ export const routeConfig: Record<string, RouteConfig> = {
   '/profile': { path: '/profile', requiresAuth: true },
   '/settings': { path: '/settings', requiresAuth: true },
   '/change-password': { path: '/change-password', requiresAuth: true },
-  '/profile-setup/household': { path: '/profile-setup/household', requiresAuth: true },
-  '/profile-setup/househelp': { path: '/profile-setup/househelp', requiresAuth: true },
   '/household/profile': { path: '/household/profile', requiresAuth: true },
   '/househelp/profile': { path: '/househelp/profile', requiresAuth: true },
   '/inbox': { path: '/inbox', requiresAuth: true },
@@ -112,4 +108,4 @@ export const protectedRoutes = Object.entries(routeConfig)
 // Get all auth routes (login/signup)
 export const authRoutes = Object.entries(routeConfig)
   .filter(([_, config]) => config.redirectIfAuthenticated)
-  .map(([path, _]) => path); 
+  .map(([path, _]) => path);

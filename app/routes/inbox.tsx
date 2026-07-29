@@ -1735,7 +1735,7 @@ export default function InboxPage() {
                       return (
                         <>
                           {imageLoadingStates[`header-${selectedConversation.id}`] !== false && (
-                            <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700 animate-shimmer bg-[length:200%_100%]" />
+                            <div className="hb-shimmer-piece absolute inset-0" />
                           )}
                           <img
                             src={headerPhoto}

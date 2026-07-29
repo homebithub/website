@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router';
-import { useProfileSetupStatus } from '~/hooks/useProfileSetupStatus';
+import { useAccountChoiceStatus } from '~/hooks/useAccountChoiceStatus';
 
 type FooterVariant = 'dark' | 'light';
 
@@ -10,10 +10,10 @@ interface FooterProps {
 
 const Footer: React.FC<FooterProps> = ({ variant = 'dark' }) => {
   const location = useLocation();
-  const { isInSetupMode } = useProfileSetupStatus();
+  const { isInSetupMode } = useAccountChoiceStatus();
   const isHousehelpProfileRoute = location.pathname.startsWith('/househelp/profile');
 
-  // Hide footer during profile setup flow
+  // Hide the footer while a household is choosing or joining a household.
   if (isInSetupMode) {
     return null;
   }

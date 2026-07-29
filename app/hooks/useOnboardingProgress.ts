@@ -1,5 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { profileSetupService } from '~/services/grpc/profileSetup.service';
+import {
+  getProfileProgressRevision,
+  PROFILE_PROGRESS_UPDATED_EVENT,
+} from '~/utils/profileProgress';
 
 export interface OnboardingProgress {
   user_id: string;
@@ -7,6 +11,8 @@ export interface OnboardingProgress {
   current_step: number;
   last_completed_step: number;
   total_steps?: number;
+  completed_items?: number;
+  total_items?: number;
   completion_percentage?: number;
   status: 'not_started' | 'in_progress' | 'completed';
   completed_steps?: number[];
@@ -16,33 +22,88 @@ interface UseOnboardingProgressResult {
   progress: OnboardingProgress | null;
   loading: boolean;
   error: string | null;
-  updateProgress: (data: Partial<OnboardingProgress>) => Promise<void>;
   refetch: () => Promise<void>;
 }
 
+type ProgressCacheEntry = {
+  progress: OnboardingProgress;
+  fetchedAt: number;
+  revision: number;
+};
+
+type ProgressRequestEntry = {
+  request: Promise<OnboardingProgress>;
+  revision: number;
+};
+
+const PROGRESS_CACHE_TTL_MS = 30_000;
+const progressCache = new Map<string, ProgressCacheEntry>();
+const progressRequests = new Map<string, ProgressRequestEntry>();
+
+function progressCacheKey(userId: string, profileType: string) {
+  return `${userId}:${profileType}`;
+}
+
 /**
- * Hook to manage onboarding progress tracking
- * Fetches current progress and provides method to update it
+ * Reads completion computed from canonical profile data.
  */
 export function useOnboardingProgress(
   userId: string,
   profileType: 'househelp' | 'household'
 ): UseOnboardingProgressResult {
-  const [progress, setProgress] = useState<OnboardingProgress | null>(null);
-  const [loading, setLoading] = useState(true);
+  const key = progressCacheKey(userId, profileType);
+  const initialCacheEntry = progressCache.get(key);
+  const initialProgress = initialCacheEntry?.revision === getProfileProgressRevision()
+    ? initialCacheEntry.progress
+    : null;
+  const [progress, setProgress] = useState<OnboardingProgress | null>(initialProgress);
+  const [loading, setLoading] = useState(!initialProgress);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchProgress = useCallback(async () => {
+  const fetchProgress = useCallback(async (force = false) => {
     if (!userId) {
+      setProgress(null);
+      setLoading(false);
+      return;
+    }
+
+    const cached = progressCache.get(key);
+    if (
+      !force &&
+      cached &&
+      cached.revision === getProfileProgressRevision() &&
+      Date.now() - cached.fetchedAt < PROGRESS_CACHE_TTL_MS
+    ) {
+      setProgress(cached.progress);
+      setError(null);
       setLoading(false);
       return;
     }
 
     try {
-      setLoading(true);
+      if (!cached) setLoading(true);
       setError(null);
 
-      const data = await profileSetupService.getProgress(userId, profileType);
+      const requestRevision = getProfileProgressRevision();
+      let requestEntry = progressRequests.get(key);
+      if (!requestEntry || requestEntry.revision !== requestRevision) {
+        const request = profileSetupService
+          .getProgress(userId, profileType)
+          .then((data) => data as OnboardingProgress)
+          .finally(() => {
+            if (progressRequests.get(key)?.request === request) {
+              progressRequests.delete(key);
+            }
+          });
+        requestEntry = { request, revision: requestRevision };
+        progressRequests.set(key, requestEntry);
+      }
+      const data = await requestEntry.request;
+      progressCache.set(key, {
+        progress: data,
+        fetchedAt: Date.now(),
+        revision: requestEntry.revision,
+      });
       setProgress(data);
     } catch (err) {
       console.error('Error fetching onboarding progress:', err);
@@ -50,55 +111,27 @@ export function useOnboardingProgress(
     } finally {
       setLoading(false);
     }
-  }, [userId, profileType]);
-
-  const updateProgress = useCallback(async (data: Partial<OnboardingProgress>) => {
-    if (!userId) return;
-
-    try {
-      const updatedData = await profileSetupService.updateProgress(userId, {
-        ...data,
-        profile_type: profileType,
-      });
-      setProgress(updatedData);
-    } catch (err) {
-      console.error('Error updating onboarding progress:', err);
-      throw err;
-    }
-  }, [userId, profileType]);
+  }, [key, profileType, userId]);
 
   useEffect(() => {
-    fetchProgress();
+    void fetchProgress();
+  }, [fetchProgress]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const refresh = () => {
+      void fetchProgress(true);
+    };
+    window.addEventListener(PROFILE_PROGRESS_UPDATED_EVENT, refresh);
+    return () => {
+      window.removeEventListener(PROFILE_PROGRESS_UPDATED_EVENT, refresh);
+    };
   }, [fetchProgress]);
 
   return {
     progress,
     loading,
     error,
-    updateProgress,
-    refetch: fetchProgress,
+    refetch: () => fetchProgress(true),
   };
-}
-
-/**
- * Hook to update individual step completion
- */
-export function useStepCompletion(userId: string, profileType: 'househelp' | 'household') {
-  const updateStep = useCallback(async (stepId: string, stepData: any, isCompleted: boolean = true) => {
-    if (!userId) return;
-
-    try {
-      return await profileSetupService.updateStep(userId, {
-        step_id: stepId,
-        is_completed: isCompleted,
-        data: stepData,
-        profile_type: profileType,
-      });
-    } catch (err) {
-      console.error('Error updating step:', err);
-      throw err;
-    }
-  }, [userId, profileType]);
-
-  return { updateStep };
 }

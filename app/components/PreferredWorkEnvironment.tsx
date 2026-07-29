@@ -4,7 +4,7 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 // Icons for preferences
@@ -31,7 +31,7 @@ const familyIcons: Record<string, string> = {
 };
 
 const PreferredWorkEnvironment: React.FC = () => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [householdSize, setHouseholdSize] = useState<string>('');
   const [locationType, setLocationType] = useState<string>('');
@@ -102,10 +102,10 @@ const PreferredWorkEnvironment: React.FC = () => {
         preferred_location_type: locationType,
         preferred_family_type: familyType,
         work_environment_notes: additionalPreferences,
-      }, { step_id: 'workenvironment', step_number: 11, is_completed: true });
+      });
 
       markClean();
-      updateStepData('workenvironment', { householdSize, locationType, familyType });
+      updateProfileDraft('workenvironment', { householdSize, locationType, familyType });
       setSuccess('Work environment preferences saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'workEnvironment', 'Failed to save your preferences. Please try again.'));

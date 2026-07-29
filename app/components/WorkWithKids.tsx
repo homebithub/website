@@ -5,7 +5,7 @@ import { handleApiError } from '../utils/errorMessages';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 type WorkPreference = 'with_kids' | 'chores_only';
@@ -13,7 +13,7 @@ type AgeRange = '0-2' | '2-5' | '5-10' | '10+';
 type ChildrenCapacity = '1-2' | '2-4' | '5+';
 
 const WorkWithKids = () => {
-    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+    const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
     const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [workPreference, setWorkPreference] = useState<WorkPreference | null>(null);
     const [selectedAges, setSelectedAges] = useState<AgeRange[]>([]);
@@ -92,12 +92,10 @@ const WorkWithKids = () => {
                     : 0
             };
 
-            await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
-                { step_id: 'workwithkids', step_number: 7, is_completed: true }
-            );
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
             
             markClean();
-            updateStepData('workwithkids', { preference: pref, ages });
+            updateProfileDraft('workwithkids', { preference: pref, ages });
             setSuccess('Your preferences have been saved successfully!');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {

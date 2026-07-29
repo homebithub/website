@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { handleApiError } from '../utils/errorMessages';
 import { petsService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import CustomSelect from '~/components/ui/CustomSelect';
 
 interface Pet {
@@ -46,7 +46,7 @@ const PET_TRAITS = [
 ];
 
 const Pets: React.FC = () => {
-  const { markDirty, markClean } = useProfileSetup();
+  const { markDirty, markClean } = useProfileEditor();
   const [hasPet, setHasPet] = useState<string>("");
   const [showModal, setShowModal] = useState(false);
   const [pets, setPets] = useState<Pet[]>([]);
@@ -203,11 +203,6 @@ const Pets: React.FC = () => {
       const { profileService: grpcProfileService } = await import('~/services/grpc/authServices');
       await grpcProfileService.updateHouseholdProfile('', 'household', {
         has_pets: false,
-        _step_metadata: {
-          step_id: 'pets',
-          step_number: 7,
-          is_completed: true
-        }
       });
       markClean();
     } catch (err) {

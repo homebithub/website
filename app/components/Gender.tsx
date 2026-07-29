@@ -4,10 +4,10 @@ import { handleApiError } from '../utils/errorMessages';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 
 const Gender = () => {
-    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+    const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
     const [gender, setGender] = useState<'female' | 'male'>('female');
     const [dateOfBirth, setDateOfBirth] = useState<string>('');
     const [error, setError] = useState<string>('');
@@ -75,12 +75,11 @@ const Gender = () => {
             }
 
             await grpcProfileService.updateHousehelpFields('', 'househelp',
-                { gender: genderVal, date_of_birth: dobVal },
-                { step_id: 'gender', step_number: 3, is_completed: true }
+                { gender: genderVal, date_of_birth: dobVal }
             );
             
             markClean();
-            updateStepData('gender', { gender: genderVal, dateOfBirth: dobVal });
+            updateProfileDraft('gender', { gender: genderVal, dateOfBirth: dobVal });
             setSuccess('Your information has been saved successfully!');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {

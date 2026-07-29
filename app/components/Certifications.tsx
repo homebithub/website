@@ -4,13 +4,13 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 // Certifications and skills are now fetched from backend via context
 
 const Certifications: React.FC = () => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedCerts, setSelectedCerts] = useState<string[]>([]);
   const [selectedHelp, setSelectedHelp] = useState<string[]>([]);
@@ -139,10 +139,10 @@ const Certifications: React.FC = () => {
       await grpcProfileService.updateHousehelpFields('', 'househelp', {
         certifications: allCerts.join(','),
         can_help_with: allHelp.join(','),
-      }, { step_id: 'certifications', step_number: 5, is_completed: true });
+      });
 
       markClean();
-      updateStepData('certifications', { certs: allCerts, helpWith: allHelp });
+      updateProfileDraft('certifications', { certs: allCerts, helpWith: allHelp });
       setSuccess('Certifications saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'certifications', 'Failed to save your information. Please try again.'));

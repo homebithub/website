@@ -1,6 +1,9 @@
 import { GrpcWebFetchTransport } from '@protobuf-ts/grpcweb-transport';
 import type { JsonObject } from '@protobuf-ts/runtime';
-import { HouseholdMemberServiceClient, WaitlistServiceClient } from '~/proto/auth/auth.client';
+import {
+  AuthServiceClient,
+  WaitlistServiceClient,
+} from '~/proto/auth/auth.client';
 import { Struct } from '~/proto/google/protobuf/struct';
 import { API_BASE_URL, normalizeGatewayBaseUrl } from '~/config/api';
 
@@ -35,10 +38,6 @@ function resolveGrpcBaseUrl(requestUrl: string): string {
   return normalizeGatewayBaseUrl(process.env.GATEWAY_API_BASE_URL || API_BASE_URL);
 }
 
-function resolveRestBaseUrl(requestUrl: string): string {
-  return resolveGrpcBaseUrl(requestUrl);
-}
-
 function createTransport(requestUrl: string) {
   return new GrpcWebFetchTransport({
     baseUrl: resolveGrpcBaseUrl(requestUrl),
@@ -46,40 +45,13 @@ function createTransport(requestUrl: string) {
   });
 }
 
-function buildMetadata(token: string, profileType?: string) {
-  const metadata: Record<string, string> = {
-    authorization: `Bearer ${token}`,
-  };
-
-  if (profileType) {
-    metadata['x-profile-type'] = profileType;
-  }
-
-  return metadata;
-}
-
-function structToJson(data?: Parameters<typeof Struct.toJson>[0]) {
-  return data ? (Struct.toJson(data) as JsonObject) : null;
-}
-
 export async function googleSignInOnServer(
   requestUrl: string,
   input: { code: string; flow: string },
 ) {
-  const response = await fetch(`${resolveRestBaseUrl(requestUrl)}/api/v1/auth/google/signin`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(input),
-  });
-
-  if (!response.ok) {
-    const body = await response.text().catch(() => '');
-    throw new Error(body || `google_signin_failed:${response.status}`);
-  }
-
-  return response.json();
+  const client = new AuthServiceClient(createTransport(requestUrl));
+  const { response } = await client.googleSignIn(input);
+  return response;
 }
 
 export async function createWaitlistOnServer(
@@ -94,32 +66,4 @@ export async function createWaitlistOnServer(
   };
   const { response } = await client.createWaitlist(payload);
   return response;
-}
-
-export async function getProfileSetupProgressOnServer(
-  requestUrl: string,
-  token: string,
-  userId: string,
-  profileType: string,
-) {
-  return {
-    status: 'completed',
-    total_steps: 0,
-    last_completed_step: 0,
-    profile_type: profileType,
-  };
-}
-
-export async function getJoinRequestStatusOnServer(
-  requestUrl: string,
-  token: string,
-  userId: string,
-  profileType?: string,
-) {
-  const client = new HouseholdMemberServiceClient(createTransport(requestUrl));
-  const { response } = await client.getJoinRequestStatus(
-    { userId, profileType: profileType || '' },
-    { meta: buildMetadata(token, profileType) },
-  );
-  return structToJson(response.data);
 }

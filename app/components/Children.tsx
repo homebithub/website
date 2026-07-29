@@ -5,7 +5,7 @@ import { UserGroupIcon, NoSymbolIcon } from "@heroicons/react/24/outline";
 import Kids from "./Kids";
 import { profileService as grpcProfileService, householdKidsService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 
 export interface Child {
   id?: string | number;
@@ -25,7 +25,7 @@ const options = [
 ];
 
 const Children: React.FC = () => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const [selected, setSelected] = useState<string>("");
   const [childrenList, setChildrenList] = useState<Child[]>([]);
   const [saving, setSaving] = useState(false);
@@ -102,7 +102,7 @@ const Children: React.FC = () => {
       });
       
       markClean();
-      updateStepData('children', { children: hasChildren, kids: hasChildren ? childrenList : [] });
+      updateProfileDraft('children', { children: hasChildren, kids: hasChildren ? childrenList : [] });
       setSaveMessage({ type: 'success', text: 'Preference saved successfully' });
       // Note: Step completion is tracked server-side when kids are added
     } catch (err: any) {
@@ -115,7 +115,7 @@ const Children: React.FC = () => {
   const handleChildrenUpdate = (children: Child[]) => {
     setChildrenList(children);
     if (children.length > 0) {
-      updateStepData('children', { children: true, kids: children });
+      updateProfileDraft('children', { children: true, kids: children });
       markClean();
     }
   };

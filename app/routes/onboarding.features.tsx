@@ -179,7 +179,7 @@ export default function OnboardingFeaturesPage() {
   const isJobEligible = progress >= JOB_ELIGIBILITY_THRESHOLD;
   const remainingEligibilityPercent = Math.max(0, JOB_ELIGIBILITY_THRESHOLD - progress);
   const nextDestination = locationState.returnTo ||
-    (profileType === 'household' ? '/household-choice' : '/profile-setup/househelp?step=1');
+    (profileType === 'household' ? '/household/profile' : '/househelp/profile');
 
   const toggleProperty = (featureId: number, propertyId: number) => {
     setSaved(false);
@@ -227,7 +227,7 @@ export default function OnboardingFeaturesPage() {
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
-      <PurpleThemeWrapper variant="light" bubbles={false} bubbleDensity="low" className="flex-1">
+      <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1">
         <main className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4 py-8">
           <div className="w-full max-w-6xl">
             {error && <ErrorAlert message={error} className="mb-4" />}
@@ -280,21 +280,9 @@ export default function OnboardingFeaturesPage() {
                     </div>
                   </div>
 
-                  <div
-                    className={`mt-5 rounded-2xl border p-4 ${
-                      isJobEligible
-                        ? 'border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/30 dark:text-emerald-100'
-                        : 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-950/30 dark:text-amber-100'
-                    }`}
-                  >
+                  <div className="mt-5 rounded-2xl border border-purple-200 bg-purple-50 p-4 text-purple-900 dark:border-purple-500/30 dark:bg-purple-950/30 dark:text-purple-100">
                     <div className="flex gap-3">
-                      <div
-                        className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-                          isJobEligible
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200'
-                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/60 dark:text-amber-200'
-                        }`}
-                      >
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 text-white shadow-sm shadow-purple-500/30">
                         {isJobEligible ? <BriefcaseBusiness className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
                       </div>
                       <div>

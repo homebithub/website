@@ -4,7 +4,7 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 // Religions are now fetched from backend via context
@@ -14,7 +14,7 @@ interface ReligionProps {
 }
 
 const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const { options, loading: optionsLoading } = useOnboardingOptionsContext();
   const [selectedReligion, setSelectedReligion] = useState<string>('');
   const [customReligion, setCustomReligion] = useState<string>('');
@@ -80,15 +80,10 @@ const Religion: React.FC<ReligionProps> = ({ userType = 'househelp' }) => {
 
       await grpcProfileService.updateHouseholdProfile('', 'household', {
         religion: religionValue,
-        _step_metadata: {
-          step_id: 'religion',
-          step_number: 6,
-          is_completed: true
-        }
       });
 
       markClean();
-      updateStepData('religion', religionValue);
+      updateProfileDraft('religion', religionValue);
       setSuccess('Religion preferences saved automatically!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {

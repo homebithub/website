@@ -66,6 +66,29 @@ function encodeCreateListingReq(body: Record<string, unknown>) {
   ]);
 }
 
+function encodeCreateApplication(body: Record<string, unknown>) {
+  return concatBytes([
+    encodeStringField(1, String(body.listing_id || body.listingId || body.id || '')),
+    encodeStringField(2, String(body.service_provider_id || body.serviceProviderId || '')),
+    encodeStringField(3, String(body.message || '')),
+  ]);
+}
+
+function encodeListApplicationsRequest(params: URLSearchParams) {
+  const statuses = String(params.get('statuses') || '')
+    .split(',')
+    .map((status) => status.trim())
+    .filter(Boolean);
+
+  return concatBytes([
+    encodeStringField(1, String(params.get('listing_id') || params.get('listingId') || '')),
+    encodeStringField(2, String(params.get('applicant_profile_id') || params.get('applicantProfileId') || '')),
+    ...statuses.map((status) => encodeStringField(3, status)),
+    encodeInt32Field(4, Number(params.get('limit') || '20')),
+    encodeInt32Field(5, Number(params.get('offset') || '0')),
+  ]);
+}
+
 function encodeUpdateJobReq(body: Record<string, unknown>) {
   return concatBytes([
     encodeStringField(1, String(body.id || '')),
@@ -248,6 +271,15 @@ export async function loader({ request }: { request: Request }) {
     const requestedId = Number(url.searchParams.get('id') || url.searchParams.get('listing_id') || 0);
     const hydrateWithGetListing = url.searchParams.get('hydrate') === 'get';
 
+    if (url.searchParams.get('action') === 'applications') {
+      const { body } = await callUnaryGrpc(
+        baseUrl,
+        '/auth.ListingService/ListApplications',
+        encodeListApplicationsRequest(url.searchParams),
+      );
+      return Response.json({ data: normalizeArray(body.data ?? body) });
+    }
+
     if (requestedId) {
       const listing = await getJobListing(baseUrl, requestedId, callUnaryGrpc);
       const enriched = await enrichListingsWithFeatures(baseUrl, [listing], callUnaryGrpc);
@@ -288,6 +320,31 @@ export async function action({ request }: { request: Request }) {
     const body = await request.json();
     const action = String(body.action || '').trim();
     const id = String(body.id || '').trim();
+
+    if (request.method === 'POST' && (action === 'apply' || action === 'shortlist')) {
+      const serviceProviderId = String(body.service_provider_id || body.serviceProviderId || '').trim();
+      if (!id || !serviceProviderId) {
+        return Response.json(
+          { message: 'id and service_provider_id are required' },
+          { status: 400 },
+        );
+      }
+
+      const rpcPath = action === 'shortlist'
+        ? '/auth.ListingService/ShortlistListing'
+        : '/auth.ListingService/InitiateListing';
+      const { body: responseBody } = await callUnaryGrpc(
+        resolveAuthGrpcBaseUrl(request),
+        rpcPath,
+        encodeCreateApplication({
+          id,
+          service_provider_id: serviceProviderId,
+          message: body.message,
+        }),
+      );
+
+      return Response.json({ data: responseBody.data ?? responseBody });
+    }
 
     if (request.method === 'PATCH') {
       const title = String(body.title || '').trim();

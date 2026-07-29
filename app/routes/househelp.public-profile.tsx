@@ -1,5 +1,5 @@
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
 import { profileService as grpcProfileService, documentService, openForWorkService, shortlistService } from '~/services/grpc/authServices';
@@ -15,33 +15,20 @@ import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { useSubscription } from '~/hooks/useSubscription';
 import { SubscriptionRequiredModal } from '~/components/subscriptions/SubscriptionRequiredModal';
-import { formatOnboardingAmount } from '~/utils/onboardingCompensation';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
+import ProfileReviews from "~/components/ProfileReviews";
+import { useProfileViewTracking } from "~/hooks/useProfileViewTracking";
+import { ProfileChoicesSection } from '~/components/profile/ProfileChoicesSection';
 
 interface UserData {
   id?: string;
   user_id?: string;
-  email?: string;
   first_name?: string;
   last_name?: string;
-  phone?: string;
-  email_verified?: boolean;
-  country?: string;
-  role?: string;
-  status?: string;
-  auth_provider?: string;
-  profile_type?: string;
-  created_at?: string;
-  updated_at?: string;
 }
 
 interface LocationData {
-  place?: string;
   name?: string;
-  mapbox_id?: string;
-  feature_type?: string;
-  latitude?: number;
-  longitude?: number;
 }
 
 interface AvailabilitySchedule {
@@ -61,74 +48,18 @@ interface HousehelpData {
   user?: UserData;
   first_name?: string;
   last_name?: string;
-  gender?: string;
-  date_of_birth?: string;
   years_of_experience?: number;
-  can_work_with_kid?: boolean;
-  can_work_with_pets?: boolean;
-  children_age_range?: string;
-  my_child_preference?: string;
-  number_of_concurrent_children?: number;
-  pets?: string[];
-  can_drive?: boolean;
-  first_aid_certificate?: boolean;
-  certificate_of_good_conduct?: boolean;
   languages?: string[];
-  certifications?: string;
-  can_help_with?: string;
-  pet_types?: string;
   salary_expectation?: number;
   salary_frequency?: string;
-  bio?: string;
   location?: LocationData;
-  address?: string;
   town?: string;
   available_from?: string;
   offers_live_in?: boolean;
-  off_days?: string[];
   offers_day_worker?: boolean;
   availability?: AvailabilitySchedule;
   skills?: string[];
-  traits?: string[];
-  talent_with_kids?: string[];
-  religion?: string;
-  marital_status?: string;
-  education_level?: string;
-  has_kids?: boolean;
-  needs_accommodation?: boolean;
-  preferred_household_size?: string;
-  preferred_location_type?: string;
-  preferred_family_type?: string;
-  work_environment_notes?: string;
   photos?: string[];
-  avatar_url?: string;
-  'househelp-type'?: string;
-  status?: string;
-  verified?: boolean;
-  completed_jobs?: number;
-  premium?: boolean;
-  rating?: number;
-  review_count?: number;
-  reference?: string;
-  national_id_no?: string;
-  next_of_kin?: string;
-  next_of_kin_tel?: string;
-  background_check_consent?: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
-
-interface ProfileResponse {
-  data?: {
-    Househelp?: HousehelpData;
-    User?: UserData;
-    user?: UserData;
-    [key: string]: any;
-  };
-  // For backward compatibility with direct response
-  id?: string;
-  user?: UserData;
-  [key: string]: any;
 }
 
 function normalizeHousehelpData(raw: any): HousehelpData {
@@ -138,8 +69,6 @@ function normalizeHousehelpData(raw: any): HousehelpData {
     ...raw,
     first_name: raw.first_name || user.first_name || '',
     last_name: raw.last_name || user.last_name || '',
-    can_work_with_kid: raw.can_work_with_kid ?? raw.can_work_with_kids ?? raw.work_with_kids ?? false,
-    can_work_with_pets: raw.can_work_with_pets ?? raw.work_with_pets ?? false,
     offers_live_in: raw.offers_live_in ?? raw.live_in ?? false,
     offers_day_worker: raw.offers_day_worker ?? raw.day_worker ?? false,
     years_of_experience: raw.years_of_experience ?? raw.experience_years ?? undefined,
@@ -147,9 +76,6 @@ function normalizeHousehelpData(raw: any): HousehelpData {
     photos: Array.isArray(raw.photos) ? raw.photos : [],
     languages: Array.isArray(raw.languages) ? raw.languages : [],
     skills: Array.isArray(raw.skills) ? raw.skills : [],
-    traits: Array.isArray(raw.traits) ? raw.traits : [],
-    off_days: Array.isArray(raw.off_days) ? raw.off_days : [],
-    talent_with_kids: Array.isArray(raw.talent_with_kids) ? raw.talent_with_kids : [],
     availability: (() => {
       const sched = raw.availability || raw.availability_schedule;
       if (!sched) return undefined;
@@ -184,11 +110,9 @@ export default function HousehelpPublicProfile() {
   const [isShortlisted, setIsShortlisted] = useState(false);
   const [openForWorkId, setOpenForWorkId] = useState<string | null>(queryOpenForWorkId);
   const [viewingProfileId, setViewingProfileId] = useState<string | null>(null);
-  const [imageError, setImageError] = useState<Record<string, boolean>>({});
   const [isHireModalOpen, setIsHireModalOpen] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionActionLabel, setSubscriptionActionLabel] = useState('unlock full profile information');
-  const [viewerProfileType, setViewerProfileType] = useState<string | null>(null);
   const navigationState = (location.state ?? {}) as {
     profileId?: string;
     backTo?: string;
@@ -232,12 +156,16 @@ export default function HousehelpPublicProfile() {
   const currentUser = useMemo(() => getStoredUser(), []);
   const currentUserId: string | undefined = currentUser?.user_id || currentUser?.id || getStoredUserId() || undefined;
   const currentProfileType: string | undefined = currentUser?.profile_type || getStoredProfileType() || undefined;
+  useProfileViewTracking({
+    profileId: viewingProfileId || profile?.id || '',
+    profileType: 'househelp',
+    viewerUserId: currentUserId,
+    enabled: Boolean((viewingProfileId || profile?.id) && isViewingOther),
+  });
   const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
   const [currentHouseholdProfileId, setCurrentHouseholdProfileId] = useState<string | null>(null);
 
   useEffect(() => {
-    setViewerProfileType(currentProfileType || null);
-    
     // Fetch household profile ID if current user is a household
     const fetchHouseholdProfileId = async () => {
       if (currentProfileType?.toLowerCase() === 'household' && currentUserId) {
@@ -472,7 +400,7 @@ export default function HousehelpPublicProfile() {
     }
   };
 
-  const showOwnerBackButton = !isViewingOther && (viewerProfileType?.toLowerCase() === 'househelp');
+  const showOwnerBackButton = !isViewingOther && (currentProfileType?.toLowerCase() === 'househelp');
   const shouldShowBackButton = isViewingOther || showOwnerBackButton;
   const backButtonText = isViewingOther ? backButtonLabel : 'Back to My Profile';
 
@@ -505,400 +433,6 @@ export default function HousehelpPublicProfile() {
   const resolvedFirstName = profile?.first_name || profile?.user?.first_name || user?.first_name;
   const resolvedLastName = profile?.last_name || profile?.user?.last_name || user?.last_name;
   const displayName = [resolvedFirstName, resolvedLastName].filter(Boolean).join(' ').trim();
-  const shouldBlurProfile = isViewingOther && !hasActiveSubscription && !subscriptionLoading;
-
-  const lockedSections = (
-    <>
-      {/* Experience & Skills */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">💼 Experience & Skills</h2>
-        <div className="space-y-4">
-          <div>
-            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Years of Experience</span>
-            <p className="text-xs font-medium text-purple-900 dark:text-purple-100 mt-1">
-              {profile.years_of_experience ? `${profile.years_of_experience} years` : 'Not specified'}
-            </p>
-          </div>
-          {profile.completed_jobs !== undefined && profile.completed_jobs > 0 && (
-            <div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Jobs Completed</span>
-              <p className="text-xs font-medium text-purple-900 dark:text-purple-100 mt-1">
-                ✓ {profile.completed_jobs} job{profile.completed_jobs === 1 ? '' : 's'} completed on Homebit
-              </p>
-            </div>
-          )}
-          {profile.certifications && profile.certifications.trim() && (
-            <div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Certifications</span>
-              <div className="flex flex-wrap gap-2">
-                {profile.certifications.split(',').map((cert, idx) => (
-                  <span key={idx} className="px-2.5 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100 rounded-full text-xs font-medium">
-                    ✓ {cert.trim()}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {profile.languages && Array.isArray(profile.languages) && profile.languages.length > 0 && (
-            <div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Languages</span>
-              <div className="flex flex-wrap gap-2">
-                {profile.languages.map((lang, idx) => (
-                  <span key={idx} className="px-2.5 py-0.5 bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 rounded-full text-xs font-medium">
-                    🗣️ {lang}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {profile.skills && Array.isArray(profile.skills) && profile.skills.length > 0 && (
-            <div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Skills</span>
-              <div className="flex flex-wrap gap-2">
-                {profile.skills.map((skill, idx) => (
-                  <span key={idx} className="px-2.5 py-0.5 bg-green-100 dark:bg-green-900/30 text-green-900 dark:text-green-100 rounded-full text-xs font-medium">
-                    ⭐ {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {profile.traits && Array.isArray(profile.traits) && profile.traits.length > 0 && (
-            <div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Personal Traits</span>
-              <div className="flex flex-wrap gap-2">
-                {profile.traits.map((trait, idx) => (
-                  <span key={idx} className="px-2.5 py-0.5 bg-pink-100 dark:bg-pink-900/30 text-pink-900 dark:text-pink-100 rounded-full text-xs font-medium">
-                    💫 {trait}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {profile.can_help_with && profile.can_help_with.trim() && (
-            <div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Can Help With</span>
-              <div className="flex flex-wrap gap-2">
-                {profile.can_help_with.split(',').map((item, idx) => (
-                  <span key={idx} className="px-2.5 py-0.5 bg-orange-100 dark:bg-orange-900/30 text-orange-900 dark:text-orange-100 rounded-full text-xs font-medium">
-                    🛠️ {item.trim()}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Certifications & Abilities */}
-      {(profile.first_aid_certificate || profile.certificate_of_good_conduct || profile.can_drive) && (
-        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📜 Certifications & Abilities</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {profile.first_aid_certificate && (
-              <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
-                <p className="text-xs font-semibold text-green-900 dark:text-green-100">✅ First Aid Certificate</p>
-              </div>
-            )}
-            {profile.certificate_of_good_conduct && (
-              <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 border-2 border-green-500">
-                <p className="text-xs font-semibold text-green-900 dark:text-green-100">✅ Certificate of Good Conduct</p>
-              </div>
-            )}
-            {profile.can_drive && (
-              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500">
-                <p className="text-xs font-semibold text-blue-900 dark:text-blue-100">✅ Can Drive</p>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Work with Children Details */}
-      {profile.can_work_with_kid && (
-        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">👶 Working with Children</h2>
-          <div className="space-y-4">
-            {profile.children_age_range && (
-              <div>
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Children Age Range</span>
-                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.children_age_range}</p>
-              </div>
-            )}
-            {profile.number_of_concurrent_children !== undefined && profile.number_of_concurrent_children > 0 && (
-              <div>
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Can Handle</span>
-                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.number_of_concurrent_children} children at once</p>
-              </div>
-            )}
-            {profile.my_child_preference && (
-              <div>
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Child Preference</span>
-                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.my_child_preference}</p>
-              </div>
-            )}
-            {profile.talent_with_kids && Array.isArray(profile.talent_with_kids) && profile.talent_with_kids.length > 0 && (
-              <div>
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Special Talents with Kids</span>
-                <div className="flex flex-wrap gap-2">
-                  {profile.talent_with_kids.map((talent, idx) => (
-                    <span key={idx} className="px-2.5 py-0.5 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-900 dark:text-yellow-100 rounded-full text-xs font-medium">
-                      🌟 {talent}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Work with Pets Details */}
-      {profile.can_work_with_pets && profile.pet_types && profile.pet_types.trim() && (
-        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">🐾 Working with Pets</h2>
-          <div>
-            <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Comfortable with</span>
-            <div className="flex flex-wrap gap-2">
-              {profile.pet_types.split(',').map((pet, idx) => (
-                <span key={idx} className="px-2.5 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-900 dark:text-amber-100 rounded-full text-xs font-medium">
-                  🐕 {pet.trim()}
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Household Preferences */}
-      {(profile.preferred_household_size || profile.preferred_location_type || profile.preferred_family_type || profile.needs_accommodation) && (
-        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">🏠 Household Preferences</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {profile.preferred_household_size && (
-              <div>
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Household Size</span>
-                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_household_size}</p>
-              </div>
-            )}
-            {profile.preferred_location_type && (
-              <div>
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Location Type</span>
-                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_location_type}</p>
-              </div>
-            )}
-            {profile.preferred_family_type && (
-              <div>
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Preferred Family Type</span>
-                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.preferred_family_type}</p>
-              </div>
-            )}
-            {profile.needs_accommodation !== undefined && (
-              <div>
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Needs Accommodation</span>
-                <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.needs_accommodation ? 'Yes' : 'No'}</p>
-              </div>
-            )}
-          </div>
-          {profile.work_environment_notes && (
-            <div className="mt-4">
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Additional Notes</span>
-              <p className="text-xs text-gray-900 dark:text-gray-100 mt-1 whitespace-pre-wrap">{profile.work_environment_notes}</p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Work Preferences */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">⚙️ Work Preferences</h2>
-        <div className="space-y-3">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className={`p-3 rounded-xl ${profile.can_work_with_kid ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
-              <p className={`text-xs font-semibold ${profile.can_work_with_kid ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
-                👶 Work with Kids
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                {profile.can_work_with_kid ? 'Yes, comfortable with children' : 'No'}
-              </p>
-            </div>
-            <div className={`p-3 rounded-xl ${profile.can_work_with_pets ? 'bg-green-50 dark:bg-green-900/20' : 'bg-gray-50 dark:bg-gray-900/20'}`}>
-              <p className={`text-xs font-semibold ${profile.can_work_with_pets ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>
-                🐾 Work with Pets
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                {profile.can_work_with_pets ? 'Yes, comfortable with pets' : 'No'}
-              </p>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {profile.offers_live_in && (
-              <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl">
-                <p className="text-xs font-semibold text-purple-900 dark:text-purple-100">🌙 Available for Live-in</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Can live with the family</p>
-              </div>
-            )}
-            {profile.offers_day_worker && (
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg">
-                <p className="text-xs font-semibold text-yellow-900 dark:text-yellow-100">☀️ Available as Day Worker</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">Works during the day</p>
-              </div>
-            )}
-          </div>
-          {profile.available_from && (
-            <div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">They are available from</span>
-              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
-                {new Date(profile.available_from).toLocaleDateString()}
-              </p>
-            </div>
-          )}
-          {profile.off_days && profile.off_days.length > 0 && (
-            <div>
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400 mb-2 block">Off Days</span>
-              <div className="flex flex-wrap gap-2">
-                {profile.off_days.map((day, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-red-100 dark:bg-red-900/30 text-red-900 dark:text-red-100 rounded-lg text-xs font-medium">
-                    📅 {day}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Availability Schedule */}
-      {profile.availability && Object.keys(profile.availability).length > 0 && (
-        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📅 Weekly Availability</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {Object.entries(profile.availability).map(([day, times]) => {
-              const dayTimes = times as { morning?: boolean; afternoon?: boolean; evening?: boolean };
-              const availableTimes = [];
-              if (dayTimes.morning) availableTimes.push('Morning');
-              if (dayTimes.afternoon) availableTimes.push('Afternoon');
-              if (dayTimes.evening) availableTimes.push('Evening');
-              return (
-                <div key={day} className={`p-2.5 rounded-lg border-2 ${availableTimes.length > 0 ? 'bg-green-50 dark:bg-green-900/20 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-gray-300 dark:border-gray-700'}`}>
-                  <p className={`text-xs font-semibold capitalize mb-1 ${availableTimes.length > 0 ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{day}</p>
-                  {availableTimes.length > 0 ? (
-                    <p className="text-[11px] text-gray-600 dark:text-gray-400">{availableTimes.join(', ')}</p>
-                  ) : (
-                    <p className="text-[11px] text-gray-500 dark:text-gray-500">Not available</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Salary Expectations */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">💰 Salary Expectations</h2>
-        {profile.salary_expectation ? (
-          <div className="space-y-2">
-            <p className="text-xs font-bold text-purple-900 dark:text-purple-100">
-              {formatOnboardingAmount(profile.salary_expectation, profile.salary_frequency)}
-            </p>
-            {profile.salary_frequency && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 capitalize">
-                Per {profile.salary_frequency === 'daily' ? 'Day' : profile.salary_frequency === 'weekly' ? 'Week' : profile.salary_frequency === 'monthly' ? 'Month' : profile.salary_frequency === 'yearly' ? 'Year' : profile.salary_frequency}
-              </p>
-            )}
-          </div>
-        ) : (
-          <p className="text-gray-500 dark:text-gray-400">Salary expectation not specified</p>
-        )}
-      </div>
-
-      {/* References */}
-      {profile.reference && profile.reference.trim() && (
-        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📝 References</h2>
-          {(() => {
-            try {
-              const parsedOnce = JSON.parse(profile.reference);
-              const references = typeof parsedOnce === 'string' ? JSON.parse(parsedOnce) : parsedOnce;
-              if (Array.isArray(references) && references.length > 0) {
-                return (
-                  <div className="space-y-4">
-                    {references.map((ref: any, idx: number) => (
-                      <div key={idx} className="p-4 bg-gray-50 dark:bg-gray-900/20 rounded-lg border border-gray-200 dark:border-gray-700">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          {ref.name && (
-                            <div>
-                              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Name</span>
-                              <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{ref.name}</p>
-                            </div>
-                          )}
-                          {ref.relationship && (
-                            <div>
-                              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Relationship</span>
-                              <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{ref.relationship}</p>
-                            </div>
-                          )}
-                          {ref.duration && (
-                            <div>
-                              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Duration</span>
-                              <p className="text-xs font-medium text-gray-900 dark:text-gray-100">{ref.duration} years</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              }
-            } catch (e) {
-              console.error('Error parsing references:', e);
-            }
-            return <p className="text-gray-500 dark:text-gray-400">No references provided</p>;
-          })()}
-        </div>
-      )}
-
-      {/* Status & Verification */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-        <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">✅ Status & Verification</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {profile.status && (
-            <div className={`p-3 rounded-xl ${profile.status === 'active' ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
-              <p className={`text-xs font-semibold ${profile.status === 'active' ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>Profile Status</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 capitalize">{profile.status}</p>
-            </div>
-          )}
-          {profile.verified !== undefined && (
-            <div className={`p-3 rounded-xl ${profile.verified ? 'bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
-              <p className={`text-xs font-semibold ${profile.verified ? 'text-blue-900 dark:text-blue-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.verified ? '✅' : '❌'} Verified Profile</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.verified ? 'Identity verified' : 'Not verified'}</p>
-            </div>
-          )}
-          {profile.premium !== undefined && (
-            <div className={`p-3 rounded-lg ${profile.premium ? 'bg-yellow-50 dark:bg-yellow-900/20 border-2 border-yellow-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
-              <p className={`text-xs font-semibold ${profile.premium ? 'text-yellow-900 dark:text-yellow-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.premium ? '⭐' : '○'} Premium Member</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.premium ? 'Premium account' : 'Standard account'}</p>
-            </div>
-          )}
-          {profile.background_check_consent !== undefined && (
-            <div className={`p-3 rounded-xl ${profile.background_check_consent ? 'bg-green-50 dark:bg-green-900/20 border-2 border-green-500' : 'bg-gray-50 dark:bg-gray-900/20 border-2 border-gray-300'}`}>
-              <p className={`text-xs font-semibold ${profile.background_check_consent ? 'text-green-900 dark:text-green-100' : 'text-gray-900 dark:text-gray-100'}`}>{profile.background_check_consent ? '✅' : '❌'} Background Check</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{profile.background_check_consent ? 'Consented to check' : 'Not consented'}</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Bio */}
-      {profile.bio && (
-        <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30 rounded-b-3xl">
-          <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">✍️ About This Person</h2>
-          <p className="text-xs text-gray-900 dark:text-gray-100 whitespace-pre-wrap">{profile.bio}</p>
-        </div>
-      )}
-    </>
-  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -926,9 +460,6 @@ export default function HousehelpPublicProfile() {
                       <h1 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-3">
                         {displayName || 'Househelp Profile'}
                       </h1>
-                      {profile['househelp-type'] && (
-                        <p className="text-xs text-gray-600 dark:text-gray-300 capitalize mt-1">{profile['househelp-type']}</p>
-                      )}
                     </div>
                   </div>
 
@@ -989,7 +520,7 @@ export default function HousehelpPublicProfile() {
                       onClick={() => setSelectedImage(photo)}
                     >
                       {!imageLoaded[`photo-${idx}`] && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-100 via-purple-200 to-purple-100 dark:from-purple-900/20 dark:via-purple-800/30 dark:to-purple-900/20 animate-pulse" />
+                        <div className="hb-shimmer-piece absolute inset-0" />
                       )}
                       <img
                         src={photo}
@@ -1016,107 +547,22 @@ export default function HousehelpPublicProfile() {
               )}
             </div>
 
-            {/* Personal Information */}
-            <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">👤 Personal Information</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Gender</span>
-                  <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.gender || 'Not specified'}</p>
-                </div>
-                {profile.date_of_birth && (
-                  <div>
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Age</span>
-                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
-                      {Math.floor(
-                        (new Date().getTime() - new Date(profile.date_of_birth ?? '').getTime()) /
-                          (365.25 * 24 * 60 * 60 * 1000)
-                      )}{' '}
-                      years old
-                    </p>
-                  </div>
-                )}
-                {profile.religion && (
-                  <div>
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Religion</span>
-                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.religion}</p>
-                  </div>
-                )}
-                {profile.marital_status && (
-                  <div>
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Marital Status</span>
-                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.marital_status}</p>
-                  </div>
-                )}
-                {profile.education_level && (
-                  <div>
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Education Level</span>
-                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1 capitalize">{profile.education_level}</p>
-                  </div>
-                )}
-                {profile.has_kids !== undefined && (
-                  <div>
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Has Children</span>
-                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.has_kids ? 'Yes' : 'No'}</p>
-                  </div>
-                )}
-              </div>
-            </div>
+            <ProfileChoicesSection
+              profile={profile as Record<string, any>}
+              fallbackProfileId="6dbd5104-d314-4ef1-a7d3-37d7eb26ddff"
+              profileType="househelp"
+              title="Profile Details"
+            />
 
-            {/* Location & Contact Area */}
-            <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
-              <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-4">📍 Location</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Area</span>
-                  <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">
-                    {typeof profile.location === 'string'
-                      ? (profile.location || 'Not specified')
-                      : (profile.location?.place || profile.location?.name || 'Not specified')}
-                  </p>
-                </div>
-                {profile.town && (
-                  <div>
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Town</span>
-                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.town}</p>
-                  </div>
-                )}
-                {profile.address && (
-                  <div className="md:col-span-2">
-                    <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">Address</span>
-                    <p className="text-xs font-medium text-gray-900 dark:text-gray-100 mt-1">{profile.address}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            {shouldBlurProfile ? (
-              <div className="relative">
-                <div className="pointer-events-none select-none blur-sm">
-                  {lockedSections}
-                </div>
-                <div className="absolute inset-0 flex items-end justify-center pointer-events-none">
-                  <div className="w-full bg-gradient-to-t from-[#0f0b1a] via-[#0f0b1a]/90 to-transparent pt-24 pb-8 px-6 pointer-events-auto">
-                    <div className="mx-auto flex max-w-md flex-col items-center gap-3 text-center">
-                      <p className="text-sm font-semibold text-white">Unlock full profile information</p>
-                      <p className="text-xs text-purple-100/80">
-                        View experience, preferences, references, and availability when you subscribe.
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSubscriptionActionLabel('unlock full profile information');
-                          setShowSubscriptionModal(true);
-                        }}
-                        className="mt-2 inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2 text-xs font-semibold text-white shadow-lg shadow-purple-500/30 hover:from-purple-700 hover:to-pink-700"
-                      >
-                        Unlock full profile information
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              lockedSections
+            {(profile.user_id || user?.id || user?.user_id) && (
+              <section className="mt-6">
+                <h2 className="mb-4 text-sm font-semibold text-purple-300">Ratings & reviews</h2>
+                <ProfileReviews
+                  profileId={profile.user_id || user?.id || user?.user_id || ''}
+                  profileType="househelp"
+                  isOwnProfile={!isViewingOther}
+                />
+              </section>
             )}
           </div>
         </main>

@@ -4,10 +4,10 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { handleApiError } from '../utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 
 const BackgroundCheckConsent: React.FC = () => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const [consent, setConsent] = useState<boolean | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -48,12 +48,11 @@ const BackgroundCheckConsent: React.FC = () => {
     try {
       const token = getAccessTokenFromCookies();
       await grpcProfileService.updateHousehelpFields('', 'househelp',
-        { background_check_consent: value },
-        { step_id: 'backgroundcheck', step_number: 13, is_completed: true }
+        { background_check_consent: value }
       );
 
       markClean();
-      updateStepData('backgroundcheck', { consent: value });
+      updateProfileDraft('backgroundcheck', { consent: value });
       setSuccess('Your preference has been saved successfully!');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err: any) {

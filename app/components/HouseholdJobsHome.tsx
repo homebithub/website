@@ -19,7 +19,7 @@ import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionReminder";
 import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
-import { Heart, ChevronDown, X } from "lucide-react";
+import { Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 
 interface HousehelpSummary {
   id?: string;
@@ -554,6 +554,10 @@ export default function HouseholdJobsHome() {
     () => Object.values(filters).some(Boolean),
     [filters]
   );
+  const activeFilterCount = useMemo(
+    () => Object.values(filters).filter(Boolean).length,
+    [filters]
+  );
   const clearFilters = () => setFilters({ ...DEFAULT_OPEN_FOR_WORK_FILTERS });
   const filteredListings = useMemo(() => {
     const choreFilter = filters.choreId ? Number(filters.choreId) : null;
@@ -881,56 +885,40 @@ export default function HouseholdJobsHome() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className="flex-1 py-10">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {isServiceProvider ? "Job Listings" : "Open for Work"}
-              </h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                {isServiceProvider
-                  ? "Browse household job listings that are open for applications."
-                  : "Browse househelps who are actively looking for their next role."}
-              </p>
-            </div>
-
+        <main className="flex-1 pb-10">
+          <div className="mx-auto flex max-w-6xl flex-col px-4 sm:px-6 lg:px-8">
             {profileCompletionReminder.shouldShow && (
               <ProfileCompletionBanner
                 title={profileCompletionReminder.title}
                 description={profileCompletionReminder.description}
                 ctaLabel={profileCompletionReminder.ctaLabel}
-                completedSteps={profileCompletionReminder.completedSteps}
-                totalSteps={profileCompletionReminder.totalSteps}
-                nextStep={profileCompletionReminder.nextStep}
+                completedItems={profileCompletionReminder.completedItems}
+                totalItems={profileCompletionReminder.totalItems}
                 progressValue={profileCompletionReminder.progressValue}
                 onContinue={() => navigate(profileCompletionReminder.destination)}
               />
             )}
 
-            <div className="mb-4 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/80 dark:bg-[#141020]/80 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setFiltersOpen((prev) => !prev)}
-                className="w-full flex flex-wrap items-center justify-between gap-4 px-5 py-4"
-              >
-                <div className="text-left">
-                  <p className="text-xs uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Filters</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                    {isServiceProvider
-                      ? "Narrow down job listings by role details and preferences."
-                      : "Narrow down househelps by availability, skills, and preferences."}
+            <section className="order-first sticky top-[65px] z-30 mb-5 h-16 border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[73px] sm:h-[72px]">
+              <div className="flex h-full items-center gap-2 sm:gap-3">
+                <div className="hidden min-w-0 flex-1 sm:block">
+                  <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
+                    {isServiceProvider ? "Job listings" : "Open for work"}
+                  </h1>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {sortedListings.length} {sortedListings.length === 1 ? "listing" : "listings"} available
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  {!isServiceProvider && (
-                    <div className="flex items-center gap-2 rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/70 dark:bg-white/10 p-1 shadow-inner">
+
+                {!isServiceProvider && (
+                  <div className="hidden items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 shadow-inner dark:border-purple-500/40 dark:bg-white/10 lg:flex">
                       <button
                         type="button"
                         onClick={(event) => {
                           event.stopPropagation();
                           setOpenOnly(true);
                         }}
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
+                        className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
                           openOnly
                             ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
                             : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
@@ -944,7 +932,7 @@ export default function HouseholdJobsHome() {
                           event.stopPropagation();
                           setOpenOnly(false);
                         }}
-                        className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
+                        className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
                           !openOnly
                             ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
                             : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
@@ -952,20 +940,76 @@ export default function HouseholdJobsHome() {
                       >
                         All listings
                       </button>
-                    </div>
+                  </div>
+                )}
+
+                <label className="min-w-0 flex-1 sm:flex-none">
+                  <span className="sr-only">Sort listings</span>
+                  <CustomSelect
+                    value={sortBy}
+                    onChange={(value) => setSortBy(value)}
+                    options={[
+                      { value: "best_match", label: "Best match" },
+                      { value: "default", label: "Newest first" },
+                      { value: "created_asc", label: "Oldest first" },
+                      { value: "budget_desc", label: "Budget high to low" },
+                      { value: "budget_asc", label: "Budget low to high" },
+                    ]}
+                    className="w-full sm:w-[180px]"
+                    size="sm"
+                    placeholder="Best match"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen((prev) => !prev)}
+                  aria-label={filtersOpen ? "Hide listing filters" : "Show listing filters"}
+                  aria-expanded={filtersOpen}
+                  aria-controls="household-listing-filters"
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-purple-200/70 bg-white/80 px-3 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span>Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-600 px-1 text-[10px] text-white">
+                      {activeFilterCount}
+                    </span>
                   )}
-                  <span
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/80 dark:bg-white/10 text-purple-600 dark:text-purple-200 transition ${
-                      filtersOpen ? "rotate-180" : ""
-                    }`}
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </span>
-                </div>
-              </button>
+                  <ChevronDown className={`h-3.5 w-3.5 transition ${filtersOpen ? "rotate-180" : ""}`} />
+                </button>
+              </div>
 
               {filtersOpen && (
-                <div className="border-t border-purple-100/70 dark:border-purple-500/20 px-5 pb-5">
+                <div
+                  id="household-listing-filters"
+                  className="absolute left-0 right-0 top-full max-h-[calc(100vh-136px)] overflow-y-auto rounded-b-2xl border border-t-0 border-purple-200/60 bg-white/95 px-4 pb-5 shadow-2xl backdrop-blur-xl dark:border-purple-500/30 dark:bg-[#141020]/95 sm:px-5"
+                >
+                  {!isServiceProvider && (
+                    <div className="mt-4 flex items-center justify-between gap-3 lg:hidden">
+                      <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Listing status</span>
+                      <div className="flex items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 dark:border-purple-500/40 dark:bg-white/10">
+                        <button
+                          type="button"
+                          onClick={() => setOpenOnly(true)}
+                          className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
+                            openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
+                          }`}
+                        >
+                          Open to work
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setOpenOnly(false)}
+                          className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
+                            !openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
+                          }`}
+                        >
+                          All listings
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Job type
@@ -1141,46 +1185,7 @@ export default function HouseholdJobsHome() {
                   </div>
                 </div>
               )}
-            </div>
-
-            <div className="mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/70 dark:bg-[#141020]/70 px-5 py-4 text-xs shadow-sm">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Sort by</p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                  {isServiceProvider
-                    ? "Prioritize job listings by budget or newest posts."
-                    : "Prioritize househelps by budget or newest listings."}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Order
-                  <CustomSelect
-                    value={sortBy}
-                    onChange={(value) => setSortBy(value)}
-                    options={[
-                      { value: "best_match", label: "Best match" },
-                      { value: "default", label: "Newest first" },
-                      { value: "created_asc", label: "Oldest first" },
-                      { value: "budget_desc", label: "Budget high to low" },
-                      { value: "budget_asc", label: "Budget low to high" },
-                    ]}
-                    className="min-w-[220px]"
-                    size="sm"
-                    placeholder="Newest first"
-                  />
-                  {sortBy !== "default" && (
-                    <button
-                      type="button"
-                      onClick={() => setSortBy("default")}
-                      className="text-[11px] font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
-                    >
-                      Clear sort
-                    </button>
-                  )}
-                </label>
-              </div>
-            </div>
+            </section>
 
             {error && <ErrorAlert message={error} className="mb-6" onClose={() => setError(null)} />}
             {actionSuccess && <SuccessAlert message={actionSuccess} className="mb-6" onClose={() => setActionSuccess(null)} />}
@@ -1211,7 +1216,7 @@ export default function HouseholdJobsHome() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
                 {sortedListings.map((listing) => {
                   const househelp = listing.househelp || {};
                   const user = househelp.user || {};
@@ -1242,7 +1247,7 @@ export default function HouseholdJobsHome() {
                           handleOpenListingModal(listing);
                         }
                       }}
-                      className="bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400"
+                      className="cursor-pointer rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400 dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6"
                     >
                       <div className="flex items-start gap-4">
                         <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 text-white flex items-center justify-center text-lg font-bold overflow-hidden">

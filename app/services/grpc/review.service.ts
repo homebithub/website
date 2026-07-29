@@ -1,5 +1,5 @@
 import * as auth_grpc_web_module from '~/grpc/generated/auth/auth_grpc_web_pb';
-import * as auth_pb from '~/grpc/generated/auth/auth_pb';
+import * as auth_pb_module from '~/grpc/generated/auth/auth_pb';
 import * as struct_pb from 'google-protobuf/google/protobuf/struct_pb.js';
 import { GRPC_WEB_BASE_URL, handleGrpcError } from './client';
 import {
@@ -8,14 +8,17 @@ import {
 } from '~/utils/authStorage';
 
 const { ReviewServiceClient } = auth_grpc_web_module as any;
+const auth_pb = (auth_pb_module as any).default ?? auth_pb_module;
 const client = new ReviewServiceClient(GRPC_WEB_BASE_URL, null, null);
 
 export interface ReviewFormData {
-  hiring_id: string;
+  hiring_id?: string;
   reviewee_id: string;
   rating: number;
   title: string;
   content: string;
+  type: 'household' | 'househelp';
+  service_type: string;
   images: Array<{
     image_url: string;
     s3_key: string;

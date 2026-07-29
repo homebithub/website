@@ -30,7 +30,7 @@ import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionReminder";
 import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
-import { Heart, ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, X } from "lucide-react";
+import { Heart, ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, SlidersHorizontal, X } from "lucide-react";
 import { useAuth } from "~/contexts/useAuth";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
@@ -460,6 +460,10 @@ export default function HousehelpJobsHome() {
     () => Object.values(filters).some(Boolean),
     [filters]
   );
+  const activeFilterCount = useMemo(
+    () => Object.values(filters).filter(Boolean).length,
+    [filters]
+  );
   const clearFilters = () => setFilters({ ...DEFAULT_JOB_FILTERS });
   const filteredJobs = useMemo(() => {
     const choreFilter = filters.choreId ? Number(filters.choreId) : null;
@@ -627,7 +631,13 @@ export default function HousehelpJobsHome() {
         });
         setHasMore(items.length === limit);
       } catch (err: any) {
-        if (!cancelled) setError(err.message || "Failed to load job listings");
+        if (!cancelled) {
+          setError(err.message || "Failed to load job listings");
+          // Stop the intersection observer from advancing the offset after a
+          // failed request. Without this, an empty page keeps retrying while
+          // the sentinel is visible and quickly exhausts the gateway limit.
+          setHasMore(false);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -646,7 +656,7 @@ export default function HousehelpJobsHome() {
     const io = new IntersectionObserver(
       (entries) => {
         const [entry] = entries;
-        if (entry.isIntersecting && !loading && hasMore) {
+        if (entry.isIntersecting && !loading && hasMore && !error) {
           setOffset((prev) => prev + limit);
         }
       },
@@ -654,7 +664,7 @@ export default function HousehelpJobsHome() {
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [loading, hasMore]);
+  }, [loading, hasMore, error]);
 
   useEffect(() => {
     const missingIds = jobs
@@ -888,51 +898,39 @@ export default function HousehelpJobsHome() {
     <div className="min-h-screen flex flex-col">
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
-        <main className="flex-1 py-10">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <main className="flex-1 pb-10">
+          <div className="mx-auto flex max-w-6xl flex-col px-4 sm:px-6 lg:px-8">
             <IdentityVerificationPrompt verification={identityVerification} />
-
-            <div className="mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Latest Job Openings</h1>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                Apply directly to households that are actively hiring.
-              </p>
-            </div>
 
             {profileCompletionReminder.shouldShow && (
               <ProfileCompletionBanner
                 title={profileCompletionReminder.title}
                 description={profileCompletionReminder.description}
                 ctaLabel={profileCompletionReminder.ctaLabel}
-                completedSteps={profileCompletionReminder.completedSteps}
-                totalSteps={profileCompletionReminder.totalSteps}
-                nextStep={profileCompletionReminder.nextStep}
+                completedItems={profileCompletionReminder.completedItems}
+                totalItems={profileCompletionReminder.totalItems}
                 progressValue={profileCompletionReminder.progressValue}
                 onContinue={() => navigate(profileCompletionReminder.destination)}
               />
             )}
 
-            <div className="mb-4 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/80 dark:bg-[#141020]/80 shadow-sm">
-              <button
-                type="button"
-                onClick={() => setFiltersOpen((prev) => !prev)}
-                className="w-full flex flex-wrap items-center justify-between gap-4 px-5 py-4"
-              >
-                <div className="text-left">
-                  <p className="text-xs uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Filters</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
-                    Narrow down roles by schedule, location, and pay.
+            <section className="order-first sticky top-[65px] z-30 mb-5 h-16 border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[73px] sm:h-[72px]">
+              <div className="flex h-full items-center gap-2 sm:gap-3">
+                <div className="hidden min-w-0 flex-1 sm:block">
+                  <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">Latest job openings</h1>
+                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                    {sortedJobs.length} {sortedJobs.length === 1 ? "role" : "roles"} available
                   </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2 rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/70 dark:bg-white/10 p-1 shadow-inner">
+
+                <div className="hidden items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 shadow-inner dark:border-purple-500/40 dark:bg-white/10 lg:flex">
                     <button
                       type="button"
                       onClick={(event) => {
                         event.stopPropagation();
                         setOpenOnly(true);
                       }}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
                         openOnly
                           ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
                           : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
@@ -946,7 +944,7 @@ export default function HousehelpJobsHome() {
                         event.stopPropagation();
                         setOpenOnly(false);
                       }}
-                      className={`px-4 py-1.5 rounded-full text-[11px] font-semibold uppercase tracking-wide transition ${
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
                         !openOnly
                           ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
                           : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
@@ -954,19 +952,73 @@ export default function HousehelpJobsHome() {
                     >
                       All jobs
                     </button>
-                  </div>
-                  <span
-                    className={`inline-flex h-9 w-9 items-center justify-center rounded-full border border-purple-200/70 dark:border-purple-500/40 bg-white/80 dark:bg-white/10 text-purple-600 dark:text-purple-200 transition ${
-                      filtersOpen ? "rotate-180" : ""
-                    }`}
-                  >
-                    <ChevronDown className="h-4 w-4" />
-                  </span>
                 </div>
-              </button>
+
+                <label className="min-w-0 flex-1 sm:flex-none">
+                  <span className="sr-only">Sort job openings</span>
+                  <CustomSelect
+                    value={sortBy}
+                    onChange={(value) => setSortBy(value)}
+                    options={[
+                      { value: "best_match", label: "Best match" },
+                      { value: "default", label: "Newest first" },
+                      { value: "created_asc", label: "Oldest first" },
+                      { value: "budget_desc", label: "Budget high to low" },
+                      { value: "budget_asc", label: "Budget low to high" },
+                    ]}
+                    className="w-full sm:w-[180px]"
+                    size="sm"
+                    placeholder="Best match"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => setFiltersOpen((prev) => !prev)}
+                  aria-label={filtersOpen ? "Hide job filters" : "Show job filters"}
+                  aria-expanded={filtersOpen}
+                  aria-controls="househelp-job-filters"
+                  className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-purple-200/70 bg-white/80 px-3 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span>Filters</span>
+                  {activeFilterCount > 0 && (
+                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-600 px-1 text-[10px] text-white">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                  <ChevronDown className={`h-3.5 w-3.5 transition ${filtersOpen ? "rotate-180" : ""}`} />
+                </button>
+              </div>
 
               {filtersOpen && (
-                <div className="border-t border-purple-100/70 dark:border-purple-500/20 px-5 pb-5">
+                <div
+                  id="househelp-job-filters"
+                  className="absolute left-0 right-0 top-full max-h-[calc(100vh-136px)] overflow-y-auto rounded-b-2xl border border-t-0 border-purple-200/60 bg-white/95 px-4 pb-5 shadow-2xl backdrop-blur-xl dark:border-purple-500/30 dark:bg-[#141020]/95 sm:px-5"
+                >
+                  <div className="mt-4 flex items-center justify-between gap-3 lg:hidden">
+                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Listing status</span>
+                    <div className="flex items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 dark:border-purple-500/40 dark:bg-white/10">
+                      <button
+                        type="button"
+                        onClick={() => setOpenOnly(true)}
+                        className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
+                          openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
+                        }`}
+                      >
+                        Open roles
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setOpenOnly(false)}
+                        className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
+                          !openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
+                        }`}
+                      >
+                        All jobs
+                      </button>
+                    </div>
+                  </div>
                   <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                       Job type
@@ -1126,7 +1178,7 @@ export default function HousehelpJobsHome() {
                   </div>
                 </div>
               )}
-            </div>
+            </section>
 
             {topMatches.length > 0 && (
               <section className="mb-8">
@@ -1156,17 +1208,20 @@ export default function HousehelpJobsHome() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-4 overflow-x-auto pb-2">
+                <div className="space-y-3">
                   {topMatches.map((job) => {
                     const householdProfile = job.household_id ? householdProfiles[job.household_id] : null;
                     const responseBadge = deriveHouseholdResponsivenessBadge(householdProfile);
                     return (
-                      <button
+                      <div
                         key={job.id}
-                        type="button"
-                        onClick={() => handleOpenJobDetail(job)}
-                        className="min-w-[240px] max-w-[280px] text-left rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/90 dark:bg-[#151025]/80 p-4 shadow-sm hover:shadow-lg transition"
+                        className="w-full rounded-2xl border border-purple-200/50 bg-white/90 p-4 text-left shadow-sm transition hover:border-purple-300/70 hover:shadow-md dark:border-purple-500/25 dark:bg-[#151025]/80 sm:flex sm:items-center sm:gap-4"
                       >
+                        <button
+                          type="button"
+                          onClick={() => handleOpenJobDetail(job)}
+                          className="min-w-0 flex-1 text-left"
+                        >
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-600 dark:text-emerald-300">
@@ -1207,69 +1262,29 @@ export default function HousehelpJobsHome() {
                             )}
                           </div>
                         )}
-                      <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-semibold">
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleOpenApplyModal(job, { template: "experience" });
-                          }}
-                          className="rounded-xl border border-green-200/60 dark:border-green-500/30 text-green-700 dark:text-green-200 px-3 py-1 hover:bg-green-50 dark:hover:bg-green-500/10"
-                        >
-                          Quick apply
                         </button>
-                        <button
-                          type="button"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            handleOpenApplyModal(job, { template: "availability" });
-                          }}
-                          className="rounded-xl border border-purple-200/60 dark:border-purple-500/30 text-purple-700 dark:text-purple-200 px-3 py-1 hover:bg-purple-50 dark:hover:bg-purple-500/10"
-                        >
-                          Fast pitch
-                        </button>
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-[11px] font-semibold sm:mt-0 sm:w-[220px] sm:shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenApplyModal(job, { template: "experience" })}
+                            className="rounded-xl border border-green-200/60 dark:border-green-500/30 text-green-700 dark:text-green-200 px-3 py-1 hover:bg-green-50 dark:hover:bg-green-500/10"
+                          >
+                            Quick apply
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenApplyModal(job, { template: "availability" })}
+                            className="rounded-xl border border-purple-200/60 dark:border-purple-500/30 text-purple-700 dark:text-purple-200 px-3 py-1 hover:bg-purple-50 dark:hover:bg-purple-500/10"
+                          >
+                            Fast pitch
+                          </button>
+                        </div>
                       </div>
-                    </button>
                     );
                   })}
                 </div>
               </section>
             )}
-
-            <div className="mb-4 rounded-2xl border border-purple-200/60 dark:border-purple-500/30 bg-white/70 dark:bg-[#141020]/70 px-5 py-4 text-xs shadow-sm">
-              <div>
-                <p className="text-[11px] uppercase tracking-[0.2em] text-purple-500 dark:text-purple-300 font-semibold">Sort by</p>
-                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">Prioritize roles by budget or newest listings.</p>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                  Order
-                  <CustomSelect
-                    value={sortBy}
-                    onChange={(value) => setSortBy(value)}
-                    options={[
-                      { value: "best_match", label: "Best match" },
-                      { value: "default", label: "Newest first" },
-                      { value: "created_asc", label: "Oldest first" },
-                      { value: "budget_desc", label: "Budget high to low" },
-                      { value: "budget_asc", label: "Budget low to high" },
-                    ]}
-                    className="min-w-[220px]"
-                    size="sm"
-                    placeholder="Newest first"
-                  />
-                  {sortBy !== "default" && (
-                    <button
-                      type="button"
-                      onClick={() => setSortBy("default")}
-                      className="text-[11px] font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
-                    >
-                      Clear sort
-                    </button>
-                  )}
-                </label>
-              </div>
-            </div>
 
             {error && <ErrorAlert message={error} className="mb-6" onClose={() => setError(null)} />}
             {success && <SuccessAlert message={success} className="mb-6" onClose={() => setSuccess(null)} />}
@@ -1290,7 +1305,7 @@ export default function HousehelpJobsHome() {
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
                 {sortedJobs.map((job) => {
                   const householdName = renderHouseholdName(job);
                   const shortlisted = shortlistedJobIds.has(job.id);
@@ -1309,7 +1324,7 @@ export default function HousehelpJobsHome() {
                           handleOpenJobDetail(job);
                         }
                       }}
-                      className="bg-white dark:bg-[#13131a] rounded-2xl border-2 border-purple-200/40 dark:border-purple-500/30 p-6 shadow-sm hover:shadow-lg transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400"
+                      className="cursor-pointer rounded-2xl border border-purple-200/50 bg-white p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:border-purple-300/70 hover:shadow-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-400 dark:border-purple-500/25 dark:bg-[#13131a] sm:p-6"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>

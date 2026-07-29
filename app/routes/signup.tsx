@@ -7,7 +7,6 @@ import { signupSchema, validateForm, validateField, normalizeKenyanPhoneNumber }
 import { handleApiError } from '~/utils/errorMessages';
 import { useAuth } from '~/contexts/useAuth';
 import { Loading } from '~/components/Loading';
-import { ChevronDownIcon } from '@heroicons/react/20/solid';
 import { FcGoogle } from 'react-icons/fc';
 import { Modal } from '~/components/features/Modal';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -476,7 +475,8 @@ export default function SignupPage() {
                         state: { 
                             verification: data.verification,
                             profileType: profileType,
-                            isGoogleSignup: true 
+                            isGoogleSignup: true,
+                            from: 'signup',
                         } 
                     });
                 } else {
@@ -484,7 +484,8 @@ export default function SignupPage() {
                         state: {
                             userId: userId,
                             profileType: profileType,
-                            isGoogleSignup: true
+                            isGoogleSignup: true,
+                            from: 'signup',
                         }
                     });
                 }
@@ -581,11 +582,12 @@ export default function SignupPage() {
             if (data.verification) {
                 navigate('/verify-otp', { 
                     state: { 
-                            verification: data.verification,
-                            profileType: profileType,
-                            profileId: data.profile_id || form.profile_id,
-                            userProfileId,
-                } 
+                        verification: data.verification,
+                        profileType: profileType,
+                        profileId: data.profile_id || form.profile_id,
+                        userProfileId,
+                        from: 'signup',
+                    }
                 });
             } else {
                 // Fallback if no verification data - still navigate to verify-otp
@@ -596,6 +598,7 @@ export default function SignupPage() {
                         profileType: profileType,
                         profileId: data.profile_id || form.profile_id,
                         userProfileId,
+                        from: 'signup',
                     }
                 });
             }

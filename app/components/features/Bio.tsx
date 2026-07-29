@@ -4,7 +4,7 @@ import { profileService as grpcProfileService } from '~/services/grpc/authServic
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { handleApiError } from '../../utils/errorMessages';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 
 const MIN_CHARACTERS = 25;
 const MAX_CHARACTERS = 2000;
@@ -14,7 +14,7 @@ interface BioProps {
 }
 
 const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
-  const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+  const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
   const [bio, setBio] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -89,21 +89,15 @@ const Bio: React.FC<BioProps> = ({ userType = 'househelp' }) => {
       if (userType === 'household') {
         await grpcProfileService.updateHouseholdProfile('', 'household', {
           bio,
-          _step_metadata: {
-            step_id: 'bio',
-            step_number: 7,
-            is_completed: true
-          }
         });
       } else {
         await grpcProfileService.updateHousehelpFields('', 'househelp',
-          { bio },
-          { step_id: 'bio', step_number: 14, is_completed: true }
+          { bio }
         );
       }
 
       markClean();
-      updateStepData('bio', bio);
+      updateProfileDraft('bio', bio);
       setSuccess('Your bio has been saved successfully!');
     } catch (err: any) {
       setError(handleApiError(err, 'bio', 'Failed to save your bio. Please try again.'));

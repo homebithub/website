@@ -211,3 +211,21 @@ export const prepareDeviceRegistration = async () => {
     longitude: location?.longitude,
   };
 };
+
+/**
+ * Register the current browser after authentication. IP enrichment is left to
+ * the backend/proxy so sign-in never prompts for location permission or calls
+ * a third-party IP service.
+ */
+export const registerCurrentDevice = async (userId: string) => {
+  if (!userId || typeof window === 'undefined') return null;
+  const { deviceService } = await import('~/services/grpc/device.service');
+  const deviceId = await getDeviceId();
+  return deviceService.registerDevice(
+    userId,
+    deviceId,
+    getDeviceName(),
+    navigator.userAgent,
+    '',
+  );
+};

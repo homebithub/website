@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Star, ThumbsUp, MessageSquare, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Star, ThumbsUp, MessageSquare, ChevronLeft, ChevronRight, LoaderCircle, X } from 'lucide-react';
 import { reviewService } from '~/services/grpc/review.service';
+import { getStoredUserId } from '~/utils/authStorage';
 
 interface Review {
   id: string;
@@ -9,6 +10,7 @@ interface Review {
   content: string;
   created_at: string;
   helpful_count: number;
+  is_helpful?: boolean;
   response?: string;
   response_at?: string;
   images?: Array<{
@@ -52,6 +54,16 @@ export default function ProfileReviews({
   const [totalReviews, setTotalReviews] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [busyReviewId, setBusyReviewId] = useState<string | null>(null);
+  const [responseDrafts, setResponseDrafts] = useState<Record<string, string>>({});
+  const [actionError, setActionError] = useState('');
+  const [actionSuccess, setActionSuccess] = useState('');
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewForm, setReviewForm] = useState({
+    rating: 5,
+    title: '',
+    content: '',
+  });
 
   const reviewsPerPage = 10;
   const totalPages = Math.ceil(totalReviews / reviewsPerPage);
@@ -90,12 +102,75 @@ export default function ProfileReviews({
     }
   };
 
-  const handleMarkHelpful = async (reviewId: string) => {
+  const handleMarkHelpful = async (review: Review) => {
+    if (!getStoredUserId()) {
+      setActionError('Sign in to mark a review as helpful.');
+      return;
+    }
+    setBusyReviewId(review.id);
+    setActionError('');
     try {
-      await reviewService.markReviewHelpful(reviewId);
+      if (review.is_helpful) {
+        await reviewService.unmarkReviewHelpful(review.id);
+      } else {
+        await reviewService.markReviewHelpful(review.id);
+      }
       await loadReviews(currentPage);
     } catch (err) {
-      console.error('Error marking review as helpful:', err);
+      setActionError(err instanceof Error ? err.message : 'Could not update this review.');
+    } finally {
+      setBusyReviewId(null);
+    }
+  };
+
+  const handleResponse = async (review: Review) => {
+    const response = (responseDrafts[review.id] || '').trim();
+    const userId = getStoredUserId();
+    if (!userId || response.length < 2) return;
+    setBusyReviewId(review.id);
+    setActionError('');
+    try {
+      await reviewService.addReviewResponse(review.id, userId, response);
+      setResponseDrafts((current) => ({ ...current, [review.id]: '' }));
+      await loadReviews(currentPage);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not post your response.');
+    } finally {
+      setBusyReviewId(null);
+    }
+  };
+
+  const submitReview = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const userId = getStoredUserId();
+    if (!userId) {
+      setActionError('Sign in to leave a review.');
+      return;
+    }
+    if (reviewForm.title.trim().length < 5 || reviewForm.content.trim().length < 20) {
+      setActionError('Use a title of at least 5 characters and a review of at least 20 characters.');
+      return;
+    }
+    setBusyReviewId('new');
+    setActionError('');
+    setActionSuccess('');
+    try {
+      await reviewService.createReview(userId, {
+        reviewee_id: profileId,
+        rating: reviewForm.rating,
+        title: reviewForm.title.trim(),
+        content: reviewForm.content.trim(),
+        type: profileType,
+        service_type: 'domestic_service',
+        images: [],
+      });
+      setShowReviewForm(false);
+      setReviewForm({ rating: 5, title: '', content: '' });
+      setActionSuccess('Review submitted. It will appear after moderation.');
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Could not submit your review.');
+    } finally {
+      setBusyReviewId(null);
     }
   };
 
@@ -137,6 +212,137 @@ export default function ProfileReviews({
 
   return (
     <div className="space-y-6">
+      {actionError && (
+        <div className="rounded-xl border border-red-400/40 bg-red-950/20 px-4 py-3 text-xs text-red-700 dark:text-red-200">
+          {actionError}
+        </div>
+      )}
+      {actionSuccess && (
+        <div className="rounded-xl border border-emerald-400/40 bg-emerald-950/20 px-4 py-3 text-xs text-emerald-700 dark:text-emerald-200">
+          {actionSuccess}
+        </div>
+      )}
+
+      {!isOwnProfile && (
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => {
+              setActionError('');
+              setShowReviewForm(true);
+            }}
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white shadow transition hover:from-purple-700 hover:to-pink-700"
+          >
+            <Star className="h-4 w-4" />
+            Leave a review
+          </button>
+        </div>
+      )}
+
+      {showReviewForm && (
+        <div className="fixed inset-0 z-[90] flex items-end justify-center bg-black/70 p-0 backdrop-blur-sm sm:items-center sm:p-4">
+          <form
+            onSubmit={submitReview}
+            className="w-full max-w-lg rounded-t-3xl border border-purple-500/30 bg-white p-6 shadow-2xl dark:bg-[#13131a] sm:rounded-3xl"
+          >
+            <div className="mb-5 flex items-start justify-between gap-4">
+              <div>
+                <h3 className="text-base font-bold text-gray-900 dark:text-white">Leave a review</h3>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                  Reviews are available only where HomeBit can verify a working relationship.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowReviewForm(false)}
+                className="rounded-full p-2 text-gray-500 hover:bg-purple-100 dark:hover:bg-purple-500/10"
+                aria-label="Close review form"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <fieldset className="mb-4">
+              <legend className="mb-2 text-xs font-semibold text-gray-800 dark:text-gray-200">Rating</legend>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((rating) => (
+                  <button
+                    key={rating}
+                    type="button"
+                    onClick={() => setReviewForm((current) => ({ ...current, rating }))}
+                    className="rounded-lg p-1 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    aria-label={`${rating} stars`}
+                  >
+                    <Star
+                      className={`h-7 w-7 ${
+                        rating <= reviewForm.rating
+                          ? 'fill-yellow-400 text-yellow-400'
+                          : 'text-gray-300 dark:text-gray-600'
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+
+            <label className="mb-4 block">
+              <span className="mb-1.5 block text-xs font-semibold text-gray-800 dark:text-gray-200">
+                Title
+              </span>
+              <input
+                required
+                minLength={5}
+                maxLength={100}
+                value={reviewForm.title}
+                onChange={(event) =>
+                  setReviewForm((current) => ({ ...current, title: event.target.value }))
+                }
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-purple-500/30 dark:bg-[#0f0f16] dark:text-white"
+                placeholder="A clear summary of your experience"
+              />
+            </label>
+
+            <label className="block">
+              <span className="mb-1.5 block text-xs font-semibold text-gray-800 dark:text-gray-200">
+                Review
+              </span>
+              <textarea
+                required
+                minLength={20}
+                maxLength={1000}
+                rows={5}
+                value={reviewForm.content}
+                onChange={(event) =>
+                  setReviewForm((current) => ({ ...current, content: event.target.value }))
+                }
+                className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2.5 text-sm text-gray-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-purple-500/30 dark:bg-[#0f0f16] dark:text-white"
+                placeholder="Share specific, respectful feedback..."
+              />
+              <span className="mt-1 block text-right text-[11px] text-gray-400">
+                {reviewForm.content.length}/1000
+              </span>
+            </label>
+
+            <div className="mt-5 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowReviewForm(false)}
+                className="rounded-xl border border-purple-300 px-4 py-2 text-xs font-semibold text-purple-700 dark:border-purple-500/40 dark:text-purple-300"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={busyReviewId === 'new'}
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+              >
+                {busyReviewId === 'new' && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                Submit review
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
       {/* Review Statistics */}
       {stats && stats.total_reviews > 0 && (
         <div className="bg-white dark:bg-[#13131a] rounded-3xl shadow-2xl border-2 border-purple-200 dark:border-purple-500/30 p-8">
@@ -264,13 +470,62 @@ export default function ProfileReviews({
                 </div>
               )}
 
+              {isOwnProfile && !review.response && (
+                <div className="mt-4 rounded-2xl border border-purple-200 bg-purple-50 p-4 dark:border-purple-500/30 dark:bg-purple-900/10">
+                  <label
+                    htmlFor={`review-response-${review.id}`}
+                    className="mb-2 block text-xs font-semibold text-purple-700 dark:text-purple-300"
+                  >
+                    Respond as the profile owner
+                  </label>
+                  <textarea
+                    id={`review-response-${review.id}`}
+                    rows={3}
+                    maxLength={1000}
+                    value={responseDrafts[review.id] || ''}
+                    onChange={(event) =>
+                      setResponseDrafts((current) => ({
+                        ...current,
+                        [review.id]: event.target.value,
+                      }))
+                    }
+                    placeholder="Thank the reviewer or add helpful context..."
+                    className="w-full rounded-xl border border-purple-200 bg-white px-3 py-2 text-xs text-gray-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-purple-500/30 dark:bg-[#0f0f16] dark:text-white"
+                  />
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => void handleResponse(review)}
+                      disabled={
+                        busyReviewId === review.id ||
+                        (responseDrafts[review.id] || '').trim().length < 2
+                      }
+                      className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      {busyReviewId === review.id && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                      Post response
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex items-center gap-4 mt-6 pt-4 border-t-2 border-gray-100 dark:border-gray-800">
                 <button
-                  onClick={() => handleMarkHelpful(review.id)}
-                  className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors font-medium"
+                  onClick={() => void handleMarkHelpful(review)}
+                  disabled={busyReviewId === review.id}
+                  aria-pressed={Boolean(review.is_helpful)}
+                  className={`flex items-center gap-2 transition-colors font-medium disabled:opacity-50 ${
+                    review.is_helpful
+                      ? 'text-purple-600 dark:text-purple-300'
+                      : 'text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400'
+                  }`}
                 >
-                  <ThumbsUp className="w-5 h-5" />
+                  {busyReviewId === review.id ? (
+                    <LoaderCircle className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <ThumbsUp className={`h-5 w-5 ${review.is_helpful ? 'fill-current' : ''}`} />
+                  )}
                   <span className="text-xs">
                     Helpful ({review.helpful_count})
                   </span>

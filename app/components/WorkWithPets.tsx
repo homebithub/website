@@ -5,7 +5,7 @@ import { handleApiError } from '../utils/errorMessages';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 type PetPreference = 'with_pets' | 'no_pets';
@@ -19,7 +19,7 @@ const validateOtherPets = (input: string): boolean => {
 };
 
 const WorkWithPets = () => {
-    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+    const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
     const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [petPreference, setPetPreference] = useState<PetPreference | null>(null);
     const [selectedPets, setSelectedPets] = useState<PetType[]>([]);
@@ -66,12 +66,10 @@ const WorkWithPets = () => {
                 pet_types: pref === 'with_pets' ? petTypesList.join(',') : '',
             };
 
-            await grpcProfileService.updateHousehelpFields('', 'househelp', updates,
-                { step_id: 'workwithpets', step_number: 8, is_completed: true }
-            );
+            await grpcProfileService.updateHousehelpFields('', 'househelp', updates);
             
             markClean();
-            updateStepData('workwithpets', { preference: pref, pets });
+            updateProfileDraft('workwithpets', { preference: pref, pets });
             setSuccess('Your pet preferences have been saved successfully!');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {

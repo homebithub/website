@@ -17,12 +17,11 @@ export { default as Bio } from './features/Bio';
 export { default as Budget } from './features/Budget';
 export { default as Certifications } from './Certifications';
 export { default as HouseSize } from './HouseSize';
-export { default as Photos } from './Photos';
 export { default as Religion } from './Religion';
 export { default as SalaryExpectations } from './SalaryExpectations';
 export { default as ShortlistPlaceholderIcon } from './features/ShortlistPlaceholderIcon';
 
-// Profile Setup Step Components (Modals)
+// Profile editor components
 export { default as Children } from './modals/Children';
 export { default as Chores } from './modals/Chores';
 export { default as ExpectingModal } from './ExpectingModal';

@@ -3,7 +3,7 @@ import { handleApiError } from '../utils/errorMessages';
 import { locationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 
 interface LocationSuggestion {
     name: string;
@@ -17,7 +17,7 @@ interface LocationProps {
 }
 
 const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
-    const { markDirty, markClean, profileData } = useProfileSetup();
+    const { markDirty, markClean, profileData } = useProfileEditor();
     const [input, setInput] = useState("");
     const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
     const [showDropdown, setShowDropdown] = useState(false);

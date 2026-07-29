@@ -5,11 +5,11 @@ import { handleApiError } from '../utils/errorMessages';
 import { profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { useProfileSetup } from '~/contexts/ProfileSetupContext';
+import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { useOnboardingOptionsContext } from '~/contexts/OnboardingOptionsContext';
 
 const YearsOfExperience = () => {
-    const { markDirty, markClean, updateStepData, profileData } = useProfileSetup();
+    const { markDirty, markClean, updateProfileDraft, profileData } = useProfileEditor();
     const { options, loading: optionsLoading } = useOnboardingOptionsContext();
     const [years, setYears] = useState<number>(0);
     const [customYears, setCustomYears] = useState<string>('');
@@ -80,12 +80,11 @@ const YearsOfExperience = () => {
             }
 
             await grpcProfileService.updateHousehelpFields('', 'househelp',
-                { years_of_experience: finalYears },
-                { step_id: 'experience', step_number: 4, is_completed: true }
+                { years_of_experience: finalYears }
             );
             
             markClean();
-            updateStepData('experience', { years: finalYears });
+            updateProfileDraft('experience', { years: finalYears });
             setSuccess('Your information has been saved successfully!');
             setTimeout(() => setSuccess(''), 3000);
         } catch (err: any) {

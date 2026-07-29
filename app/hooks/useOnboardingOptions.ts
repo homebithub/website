@@ -128,17 +128,6 @@ export interface ReferenceRelationship {
   is_active: boolean;
 }
 
-export interface OnboardingStep {
-  id: number;
-  step_id: string;
-  profile_type: string;
-  title: string;
-  description: string;
-  step_number: number;
-  is_skippable: boolean;
-  is_active: boolean;
-}
-
 export interface OnboardingOptions {
   languages: Language[];
   certifications: Certification[];
@@ -156,7 +145,6 @@ export interface OnboardingOptions {
   location_type_preferences: LocationTypePreference[];
   family_type_preferences: FamilyTypePreference[];
   reference_relationships: ReferenceRelationship[];
-  onboarding_steps: OnboardingStep[];
 }
 
 interface UseOnboardingOptionsResult {

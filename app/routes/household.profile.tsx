@@ -3,7 +3,6 @@ import { useNavigate } from "react-router";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { uploadDocuments } from '~/utils/documentUploads';
 import { profileService as grpcProfileService, documentService, householdMemberService, jobService, profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
-import profileSetupService from '~/services/grpc/profileSetup.service';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
@@ -17,14 +16,16 @@ import EditSectionModal from '~/components/ui/EditSectionModal';
 import Location from '~/components/Location';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
-import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
+import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId, setStoredActiveUserProfileId } from '~/utils/authStorage';
 import JobPostModal from '~/components/modals/JobPostModal';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
 import { profileFeatureLabel } from '~/utils/profileFeatures';
+import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 
 interface HouseholdData {
   id?: string;
+  user_profile_id?: string;
   user_id?: string;
   house_size?: string;
   household_notes?: string;
@@ -216,7 +217,7 @@ export default function HouseholdProfile() {
     profileId: profile?.id || '',
     profileType: 'household',
     viewerUserId: profile?.user_id,
-    enabled: !!profile?.id,
+    enabled: false,
   });
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -226,7 +227,6 @@ export default function HouseholdProfile() {
   const [deleteStatus, setDeleteStatus] = useState<string | null>(null);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [setupRedirectLoading, setSetupRedirectLoading] = useState(false);
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [jobsLoading, setJobsLoading] = useState(false);
   const [jobsError, setJobsError] = useState<string | null>(null);
@@ -296,6 +296,9 @@ export default function HouseholdProfile() {
             id: String(storedUser.user_profile_id || storedUser.userProfileId || storedUser.profile_id || ''),
             user_id: String(storedUser.user_id || storedUser.id || getStoredUserId() || ''),
           };
+        }
+        if (profileData.id || profileData.user_profile_id) {
+          setStoredActiveUserProfileId(String(profileData.id || profileData.user_profile_id));
         }
         setProfile(profileData);
 
@@ -427,35 +430,6 @@ export default function HouseholdProfile() {
     const base = min && max ? `${min} - ${max}` : (min || max || 'Not specified');
     const freqLabel = range.frequency ? ` / ${range.frequency}` : '';
     return `${base}${freqLabel}`;
-  };
-
-  const handleContinueSetup = async () => {
-    if (setupRedirectLoading) return;
-    setSetupRedirectLoading(true);
-
-    try {
-      const progressData = await profileSetupService.getProgress('', 'household');
-      const totalSteps = progressData?.total_steps || 0;
-      const lastStep = progressData?.last_completed_step || 0;
-      const status = progressData?.status || '';
-      const isComplete = status === 'completed' || (totalSteps > 0 && lastStep >= totalSteps);
-
-      if (isComplete) {
-        navigate('/household/profile', { replace: true });
-        return;
-      }
-
-      if (lastStep <= 0) {
-        navigate('/household-choice', { replace: true });
-        return;
-      }
-
-      navigate(`/profile-setup/household?step=${lastStep + 1}`, { replace: true });
-    } catch {
-      navigate('/household-choice', { replace: true });
-    } finally {
-      setSetupRedirectLoading(false);
-    }
   };
 
   const handleCompleteFeaturePicks = () => {
@@ -603,10 +577,15 @@ export default function HouseholdProfile() {
       const token = getAccessTokenFromCookies();
       if (!token) return;
       
-      const membersData = await householdMemberService.listMembers(profile.id);
+      const [membersData, pendingData] = await Promise.all([
+        householdMemberService.listMembers(profile.id),
+        householdMemberService.listPendingRequests(profile.id).catch(() => ({ data: [] })),
+      ]);
       const extracted = membersData?.data || membersData?.members || membersData;
       const membersArray = Array.isArray(extracted) ? extracted : [];
       setMembers(membersArray);
+      const pending = pendingData?.data || pendingData?.requests || pendingData;
+      setPendingRequestsCount(Array.isArray(pending) ? pending.length : 0);
     } catch (err) {
       console.error("Error fetching members:", err);
     } finally {
@@ -692,6 +671,7 @@ export default function HouseholdProfile() {
       } catch (err) {
         console.warn('Failed to refetch photos after upload:', err);
       }
+      notifyProfileProgressChanged();
       
       // Reset file input
       if (fileInputRef.current) {
@@ -754,6 +734,7 @@ export default function HouseholdProfile() {
       } catch (err) {
         console.warn('Failed to refetch photos after delete:', err);
       }
+      notifyProfileProgressChanged();
     } catch (err: any) {
       console.error('Error deleting photo:', err);
       setUploadError(err.message || 'Failed to delete photo');
@@ -791,13 +772,6 @@ export default function HouseholdProfile() {
             >
               Try Again
             </button>
-            <button
-              onClick={handleContinueSetup}
-              disabled={setupRedirectLoading}
-              className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all shadow-lg hover:shadow-xl transform hover:scale-105"
-            >
-              {setupRedirectLoading ? 'Opening Setup...' : 'Continue Profile Setup'}
-            </button>
           </div>
         </div>
       </div>
@@ -814,11 +788,10 @@ export default function HouseholdProfile() {
           </div>
           <p className="text-gray-700 dark:text-gray-300 mb-4">You haven't completed your household profile yet.</p>
           <button
-            onClick={handleContinueSetup}
-            disabled={setupRedirectLoading}
+            onClick={() => setRetryKey((prev) => prev + 1)}
             className="px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-bold hover:from-purple-700 hover:to-pink-700 transition-all"
           >
-            {setupRedirectLoading ? 'Opening Setup...' : 'Continue Profile Setup'}
+            Reload Profile
           </button>
         </div>
       </div>
@@ -1243,10 +1216,7 @@ export default function HouseholdProfile() {
                 {/* Blur placeholder */}
                 {!loadedImages.has(photo) && (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="w-full h-full bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900/20 dark:to-pink-900/20 animate-pulse" />
-                    <div className="absolute">
-                      <span className="hb-shimmer-piece h-8 w-8 rounded-full" />
-                    </div>
+                    <div className="hb-shimmer-piece absolute inset-0" />
                   </div>
                 )}
                 <img

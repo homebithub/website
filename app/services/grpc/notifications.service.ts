@@ -83,10 +83,33 @@ function toStruct(obj: Record<string, any>): any {
 }
 
 export const notificationsService = {
+  // ── Notification preferences ───────────────────────────
+
+  async getUserPreferences(userId = ''): Promise<any> {
+    const request = new notifications_pb.GetUserPreferencesRequest();
+    request.setUserId(resolveUserId(userId));
+    const res = await grpcCall((cb) => notificationsClient.getUserPreferences(request, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+
+  async updateUserPreferences(userId: string, preferences: Record<string, any>): Promise<any> {
+    const request = new notifications_pb.UpdateUserPreferencesRequest();
+    request.setUserId(resolveUserId(userId));
+    const struct = toStruct(preferences);
+    if (struct) request.setPreferences(struct);
+    const res = await grpcCall((cb) => notificationsClient.updateUserPreferences(request, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+
   // ── Conversations ──────────────────────────────────────
 
   async listConversations(userId: string, offset = 0, limit = 100): Promise<any> {
-    return { conversations: [], total: 0, offset, limit };
+    const request = new notifications_pb.ListConversationsRequest();
+    request.setUserId(resolveUserId(userId));
+    request.setOffset(offset);
+    request.setLimit(limit);
+    const res = await grpcCall((cb) => notificationsClient.listConversations(request, getMetadata(), cb));
+    return jsonResponseToJs(res);
   },
 
   async startConversation(payload: {
