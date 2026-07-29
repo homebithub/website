@@ -155,6 +155,7 @@ export function ProfileChoicesSection({
   const [groups, setGroups] = useState<SelectedFeatureGroup[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
 
   const profileRecord = useMemo(() => nestedRecord(profile.profile), [profile.profile]);
   const userProfileRecord = useMemo(
@@ -204,12 +205,9 @@ export function ProfileChoicesSection({
         }
       } catch (requestError: unknown) {
         if (!cancelled) {
+          console.error('Unable to load profile details', requestError);
           setGroups([]);
-          setError(
-            requestError instanceof Error && requestError.message
-              ? requestError.message
-              : 'Unable to load profile choices',
-          );
+          setError('We couldn’t load your profile details. Please try again.');
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -220,7 +218,7 @@ export function ProfileChoicesSection({
     return () => {
       cancelled = true;
     };
-  }, [catalogueProfileId, userProfileId]);
+  }, [catalogueProfileId, retryKey, userProfileId]);
 
   return (
     <section
@@ -254,8 +252,15 @@ export function ProfileChoicesSection({
           Loading profile choices...
         </div>
       ) : error ? (
-        <div className="rounded-xl border border-purple-300/50 bg-purple-50/70 p-4 text-xs text-purple-800 dark:border-purple-500/30 dark:bg-purple-950/20 dark:text-purple-200">
-          {error}
+        <div className="flex flex-col gap-3 rounded-xl border border-purple-300/50 bg-purple-50/70 p-4 text-xs text-purple-800 dark:border-purple-500/30 dark:bg-purple-950/20 dark:text-purple-200 sm:flex-row sm:items-center sm:justify-between">
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => setRetryKey((current) => current + 1)}
+            className="self-start rounded-lg bg-purple-700 px-3 py-1.5 font-semibold text-white transition hover:bg-purple-600 sm:self-auto"
+          >
+            Try again
+          </button>
         </div>
       ) : groups.length > 0 ? (
         <div className="divide-y divide-purple-200/60 dark:divide-purple-500/30">

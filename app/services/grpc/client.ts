@@ -69,36 +69,83 @@ function parseGrpcErrorMessage(raw: string): { code: string; message: string } |
   return null;
 }
 
+const SERVICE_UNAVAILABLE_MESSAGE =
+  "We’re unable to reach Homebit right now. Please check your connection and try again.";
+const GENERIC_ERROR_MESSAGE =
+  "We couldn’t complete that request. Please try again.";
+
+function isTechnicalErrorMessage(message: string): boolean {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes('sqlstate') ||
+    lower.includes('dial tcp') ||
+    lower.includes('connection refused') ||
+    lower.includes('transport:') ||
+    lower.includes('rpc error') ||
+    lower.includes('grpc.') ||
+    lower.includes('stack trace') ||
+    lower.includes('does not exist') ||
+    lower.includes('no such table') ||
+    lower.includes('no such column')
+  );
+}
+
+function friendlyError(message: string, cause: unknown, grpcCode?: string | number): Error {
+  const result = new Error(message);
+  result.cause = cause;
+  if (grpcCode !== undefined) {
+    (result as Error & { grpcCode?: string | number }).grpcCode = grpcCode;
+  }
+  return result;
+}
+
 /**
  * Handle gRPC errors and transform them to user-friendly messages.
- * Preserves the backend error code in error.cause for programmatic handling.
+ * Preserves the original error as the cause and the backend code for diagnostics.
  */
 export function handleGrpcError(error: any): Error {
   const rawMessage = error.message || '';
   const grpcCode = error.code; // numeric gRPC status code
 
+  if (isGatewayUnavailableError(error)) {
+    return friendlyError(SERVICE_UNAVAILABLE_MESSAGE, error, grpcCode);
+  }
+
   // Try to parse JSON error payload from backend
   const parsed = parseGrpcErrorMessage(rawMessage);
   if (parsed) {
-    const err = new Error(parsed.message);
-    (err as any).grpcCode = parsed.code; // e.g. "ALREADY_EXISTS"
-    return err;
+    const parsedCode = parsed.code.toUpperCase();
+    if (parsedCode === 'UNAVAILABLE') {
+      return friendlyError(SERVICE_UNAVAILABLE_MESSAGE, error, parsed.code);
+    }
+    if (
+      parsedCode === 'INTERNAL' ||
+      parsedCode === 'UNKNOWN' ||
+      parsedCode === 'DATA_LOSS' ||
+      isTechnicalErrorMessage(parsed.message)
+    ) {
+      return friendlyError(GENERIC_ERROR_MESSAGE, error, parsed.code);
+    }
+    return friendlyError(parsed.message || GENERIC_ERROR_MESSAGE, error, parsed.code);
   }
 
   // Fallback: map numeric gRPC status codes to friendly messages
   if (grpcCode !== undefined && grpcCode !== 0) {
     const codeMessages: Record<number, string> = {
-      2:  rawMessage || 'An unexpected error occurred.',           // UNKNOWN
-      3:  rawMessage || 'Invalid request. Please check your input.', // INVALID_ARGUMENT
-      5:  rawMessage || 'Resource not found.',                     // NOT_FOUND
-      6:  rawMessage || 'Resource already exists.',                // ALREADY_EXISTS
-      7:  rawMessage || 'You do not have permission.',             // PERMISSION_DENIED
-      13: rawMessage || 'Internal server error.',                  // INTERNAL
-      14: rawMessage || 'Service temporarily unavailable.',        // UNAVAILABLE
-      16: rawMessage || 'Authentication required. Please log in.', // UNAUTHENTICATED
+      2:  GENERIC_ERROR_MESSAGE,                                      // UNKNOWN
+      3:  'Some information was invalid. Please check and try again.', // INVALID_ARGUMENT
+      5:  'We couldn’t find the requested information.',              // NOT_FOUND
+      6:  'That information already exists.',                          // ALREADY_EXISTS
+      7:  'You do not have permission to do that.',                    // PERMISSION_DENIED
+      13: GENERIC_ERROR_MESSAGE,                                      // INTERNAL
+      14: SERVICE_UNAVAILABLE_MESSAGE,                                // UNAVAILABLE
+      16: 'Please sign in again to continue.',                         // UNAUTHENTICATED
     };
-    return new Error(codeMessages[grpcCode] || rawMessage || 'An unexpected error occurred.');
+    return friendlyError(codeMessages[grpcCode] || GENERIC_ERROR_MESSAGE, error, grpcCode);
   }
 
-  return new Error(rawMessage || 'An unexpected error occurred. Please try again.');
+  if (isTechnicalErrorMessage(rawMessage)) {
+    return friendlyError(GENERIC_ERROR_MESSAGE, error, grpcCode);
+  }
+  return friendlyError(rawMessage || GENERIC_ERROR_MESSAGE, error, grpcCode);
 }
