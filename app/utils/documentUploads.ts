@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '~/config/api';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
+import { getStoredProfileType } from '~/utils/authStorage';
 
 type UploadDocumentsInput = {
   files: File[];
@@ -18,6 +19,12 @@ const uploadMessage = (xhr: XMLHttpRequest): string => {
     }
     if (typeof response?.message === 'string' && response.message.trim()) {
       return response.message;
+    }
+    if (typeof response?.error?.message === 'string' && response.error.message.trim()) {
+      return response.error.message;
+    }
+    if (typeof response?.details === 'string' && response.details.trim()) {
+      return response.details;
     }
   } catch {
     // The fallback below is intentionally human-readable.
@@ -75,6 +82,8 @@ export function uploadDocuments({
     xhr.addEventListener('abort', () => reject(new Error('The upload was cancelled.')));
     xhr.open('POST', `${API_BASE_URL}/api/v1/documents/upload`);
     xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+    const profileType = getStoredProfileType();
+    if (profileType) xhr.setRequestHeader('X-Profile-Type', profileType);
     xhr.send(form);
   });
 }
