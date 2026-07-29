@@ -110,6 +110,29 @@ export const setStoredProfileType = (profileType: string | null | undefined) => 
   safeRemove("userType");
 };
 
+export const setStoredActiveUserProfileId = (userProfileId: string) => {
+  const normalized = String(userProfileId || "").trim();
+  if (!normalized) return;
+
+  safeSet("user_profile_id", normalized);
+  safeSet("household_id", normalized);
+
+  const { token, refreshToken, user } = getAuthFromCookies();
+  const storedUser = user ?? getStoredUser();
+  if (!storedUser) return;
+
+  const nextUser = {
+    ...storedUser,
+    user_profile_id: normalized,
+    userProfileId: normalized,
+    household_id: normalized,
+  };
+  safeSet("user_object", JSON.stringify(nextUser));
+  if (token) {
+    setAuthCookies(token, refreshToken ?? null, nextUser);
+  }
+};
+
 export const cacheAuthSession = ({
   token,
   refreshToken,

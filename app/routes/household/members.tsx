@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router';
 import { Navigation } from '~/components/Navigation';
 import { Footer } from '~/components/Footer';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
@@ -23,12 +22,11 @@ import {
   type HouseholdMemberRequest,
   type HouseholdInvitation,
 } from '~/utils/householdApi';
-import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { getStoredUserId } from '~/utils/authStorage';
+import { profileService } from '~/services/grpc/authServices';
 
 export default function HouseholdMembersPage() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const storedUser = getStoredUser();
   const currentUserId = user?.user?.user_id || getStoredUserId() || '';
   const [loading, setLoading] = useState(true);
   const [members, setMembers] = useState<HouseholdMember[]>([]);
@@ -63,16 +61,27 @@ export default function HouseholdMembersPage() {
       return;
     }
 
-    // Get household ID from user profile
-    const householdUserId = storedUser?.household_id;
-    if (householdUserId) {
-      setHouseholdId(householdUserId);
-      loadData(householdUserId);
-    } else {
-      setError('No household found for your account');
-      setLoading(false);
-    }
-  }, [user, navigate, storedUser]);
+    let cancelled = false;
+    const resolveHousehold = async () => {
+      try {
+        const profile = await profileService.getCurrentHouseholdProfile('');
+        const householdUserId = String(profile?.id || profile?.user_profile_id || '').trim();
+        if (!householdUserId) throw new Error('No household found for your account');
+        if (cancelled) return;
+        setHouseholdId(householdUserId);
+        await loadData(householdUserId);
+      } catch (err: any) {
+        if (!cancelled) {
+          setError(err?.message || 'No household found for your account');
+          setLoading(false);
+        }
+      }
+    };
+    void resolveHousehold();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   const loadData = async (hhId: string) => {
     try {

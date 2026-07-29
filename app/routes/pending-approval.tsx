@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { getAccessTokenFromCookies } from "~/utils/cookie";
-import { householdMemberService } from '~/services/grpc/authServices';
 import { Button } from '~/components/ui/Button';
 import { useSSESubscription } from '~/hooks/useSSESubscription';
 import { FormPageSkeleton } from "~/components/ShimmerLoader";
+import { getLatestJoinRequest } from "~/utils/householdApi";
+import { setStoredActiveUserProfileId } from "~/utils/authStorage";
 
 export default function PendingApprovalPage() {
   const navigate = useNavigate();
@@ -21,8 +22,7 @@ export default function PendingApprovalPage() {
     }
 
     try {
-      const data = await householdMemberService.getJoinRequestStatus('');
-      const request = data?.data || data;
+      const request = await getLatestJoinRequest();
 
       if (!request || !request.status) {
         navigate("/household-choice", { replace: true });
@@ -33,6 +33,8 @@ export default function PendingApprovalPage() {
       setHouseholdName(request.household_name || "the household");
 
       if (request.status === 'approved') {
+        const householdId = String(request.household_id || request.household_profile_id || "");
+        if (householdId) setStoredActiveUserProfileId(householdId);
         navigate("/household/profile", { replace: true });
       }
     } catch (err) {
@@ -121,7 +123,7 @@ export default function PendingApprovalPage() {
                     </Button>
                     <Button
                       as={Link}
-                      to="/profile-setup/household?step=1"
+                      to="/household-choice"
                       variant="secondary"
                       size="lg"
                       fullWidth

@@ -1,10 +1,64 @@
-import React from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { PurpleCard } from "~/components/ui/PurpleCard";
+import { ErrorAlert } from "~/components/ui/ErrorAlert";
+import { householdMemberService, profileService } from "~/services/grpc/authServices";
+import { setStoredActiveUserProfileId } from "~/utils/authStorage";
+import { getLatestJoinRequest } from "~/utils/householdApi";
 
 export default function HouseholdChoicePage() {
   const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const restoreExistingChoice = async () => {
+      try {
+        const memberships = await householdMemberService.getUserHouseholds("");
+        const rows = memberships?.data || memberships?.households || memberships || [];
+        const active = Array.isArray(rows) ? rows[0] : null;
+        if (active && !cancelled) {
+          const householdId = String(active.household_profile_id || active.household_id || "").trim();
+          if (householdId) setStoredActiveUserProfileId(householdId);
+          navigate("/household/profile", { replace: true });
+          return;
+        }
+        const request = await getLatestJoinRequest();
+        if (request?.status === "pending" && !cancelled) {
+          navigate("/pending-approval", { replace: true });
+        }
+      } catch {
+        // A new household account has no membership or join request yet.
+      }
+    };
+    void restoreExistingChoice();
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
+  const handleCreateHousehold = async () => {
+    if (creating) return;
+    setCreating(true);
+    setError(null);
+    try {
+      const profile = await profileService.updateHouseholdProfile("", "household", {
+        household_created: true,
+      });
+      const householdId = String(profile?.id || profile?.user_profile_id || "").trim();
+      if (!householdId) {
+        throw new Error("The household was created but no profile ID was returned.");
+      }
+      setStoredActiveUserProfileId(householdId);
+      navigate("/household/profile", { replace: true });
+    } catch (createError: any) {
+      setError(createError?.message || "Failed to create your household. Please try again.");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -20,6 +74,8 @@ export default function HouseholdChoicePage() {
                 How would you like to get started?
               </p>
             </div>
+
+            {error && <ErrorAlert message={error} className="mb-5" />}
 
             <div className="flex flex-col gap-4">
               {/* Option 1: Join existing household */}
@@ -51,7 +107,8 @@ export default function HouseholdChoicePage() {
               {/* Option 2: Create new household */}
               <button
                 type="button"
-                onClick={() => navigate("/profile-setup/household?step=1")}
+                onClick={handleCreateHousehold}
+                disabled={creating}
                 className="group relative w-full p-5 border-2 rounded-2xl text-left transition-all duration-300 transform hover:scale-[1.02] border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 hover:bg-gradient-to-br hover:from-purple-50/50 hover:to-pink-50/50 dark:hover:from-purple-900/20 dark:hover:to-pink-900/20 hover:shadow-md dark:hover:shadow-glow-sm bg-gray-50/50 dark:bg-gray-800/30"
               >
                 <div className="flex items-start gap-4">
@@ -60,7 +117,7 @@ export default function HouseholdChoicePage() {
                   </div>
                   <div className="flex-1">
                     <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
-                      Create a new household
+                      {creating ? "Creating your household…" : "Create a new household"}
                     </h3>
                     <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                       I want to set up a new household profile and start looking for help

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, Link } from "react-router";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { getAccessTokenFromCookies } from "~/utils/cookie";
@@ -9,6 +9,8 @@ import { Button } from '~/components/ui/Button';
 import { useSSESubscription } from '~/hooks/useSSESubscription';
 import { InviteCodeInput, isInviteCodeComplete } from '~/components/household/InviteCodeInput';
 import { FormPageSkeleton } from "~/components/ShimmerLoader";
+import { getLatestJoinRequest, normalizeJoinRequestStatus } from "~/utils/householdApi";
+import { setStoredActiveUserProfileId } from "~/utils/authStorage";
 
 export default function JoinHouseholdPage() {
   const navigate = useNavigate();
@@ -30,13 +32,14 @@ export default function JoinHouseholdPage() {
     }
 
     try {
-      const data = await householdMemberService.getJoinRequestStatus('');
-      const request = data?.data || data;
+      const request = await getLatestJoinRequest();
       if (request && request.status) {
         setJoinStatus(request.status);
         setSuccess(true);
 
         if (request.status === 'approved') {
+          const householdId = String(request.household_id || request.household_profile_id || "");
+          if (householdId) setStoredActiveUserProfileId(householdId);
           navigate("/household/profile");
           return;
         }
@@ -104,7 +107,7 @@ export default function JoinHouseholdPage() {
         inviteCode.trim(),
         message.trim() || undefined
       );
-      const status = data?.data?.status || data?.status || 'pending';
+      const status = normalizeJoinRequestStatus(data?.data?.status || data?.status) || 'pending';
       setJoinStatus(status);
       setSuccess(true);
       

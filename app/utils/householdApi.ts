@@ -1,4 +1,3 @@
-import { getAccessTokenFromCookies } from '~/utils/cookie';
 import { householdMemberService } from '~/services/grpc/authServices';
 
 // ============================================================================
@@ -137,7 +136,7 @@ export const listPendingRequests = async (
   householdId: string
 ): Promise<HouseholdMemberRequest[]> => {
   const result = await householdMemberService.listPendingRequests(householdId);
-  return result?.requests || result || [];
+  return result?.requests || result?.data || result || [];
 };
 
 export const approveRequest = async (
@@ -150,8 +149,9 @@ export const approveRequest = async (
 export const rejectRequest = async (
   householdId: string,
   requestId: string,
-  _reason?: string
+  reason?: string
 ): Promise<void> => {
+  void reason;
   await householdMemberService.rejectRequest(householdId, requestId, '');
 };
 
@@ -163,7 +163,7 @@ export const listMembers = async (
   householdId: string
 ): Promise<HouseholdMember[]> => {
   const result = await householdMemberService.listMembers(householdId);
-  return result?.members || result || [];
+  return result?.members || result?.data || result || [];
 };
 
 export const updateMemberRole = async (
@@ -187,7 +187,24 @@ export const leaveHousehold = async (householdId: string): Promise<void> => {
 
 export const getUserHouseholds = async (): Promise<any[]> => {
   const result = await householdMemberService.getUserHouseholds('');
-  return result?.households || result || [];
+  return result?.households || result?.data || result || [];
+};
+
+export const normalizeJoinRequestStatus = (status: unknown): 'approved' | 'pending' | 'rejected' | null => {
+  const normalized = String(status || '').trim().toLowerCase();
+  if (normalized === 'approved' || normalized === 'accepted' || normalized === 'active') return 'approved';
+  if (normalized === 'rejected' || normalized === 'revoked' || normalized === 'expired') return 'rejected';
+  if (normalized === 'pending') return 'pending';
+  return null;
+};
+
+export const getLatestJoinRequest = async (): Promise<any | null> => {
+  const result = await householdMemberService.getJoinRequestStatus('');
+  const payload = result?.data ?? result;
+  const request = Array.isArray(payload) ? payload[0] : payload;
+  if (!request || typeof request !== 'object') return null;
+  const status = normalizeJoinRequestStatus(request.status);
+  return status ? { ...request, status } : null;
 };
 
 export const transferOwnership = async (
