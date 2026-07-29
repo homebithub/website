@@ -333,7 +333,6 @@ All tested code is production-ready:
 
 2. **Integration Components** (~60-80 tests)
    - Navigation component
-   - ProfileSetupGuard
    - ProtectedRoute
    - ErrorBoundary
 
@@ -481,4 +480,3 @@ npm test -- app/contexts/__tests__/ --run  # Phase 6
 ---
 
 **End of Summary**
-

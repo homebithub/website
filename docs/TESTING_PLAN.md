@@ -45,17 +45,14 @@ For each page and component, we will test:
 - [ ] `google.auth.callback.tsx` - Google OAuth callback
 - [ ] `google.waitlist.callback.tsx` - Google waitlist callback
 
-### Profile Setup Pages (3)
+### Household Choice Page
 - [ ] `household-choice.tsx` - Choose household type
-- [ ] `profile-setup.househelp.tsx` - Househelp onboarding
-- [ ] `profile-setup.household.tsx` - Household onboarding
 
-### Household Pages (15)
+### Household Pages (14)
 - [ ] `household/_layout.tsx` - Household layout
 - [ ] `household.profile.tsx` - Household profile
 - [ ] `household.public-profile.tsx` - Public profile view
 - [ ] `household.public-profile.$user_id.tsx` - User public profile
-- [ ] `household.setup.tsx` - Household setup
 - [ ] `household.shortlist.tsx` - Shortlist page
 - [ ] `household.requests.tsx` - Hire requests
 - [ ] `household.hire-request.$id.tsx` - Single hire request
@@ -205,7 +202,6 @@ For each page and component, we will test:
 - [ ] `ImageViewModal.tsx`
 - [ ] `OnboardingTipsBanner.tsx`
 - [ ] `OptimizedImage.tsx`
-- [ ] `ProfileSetupGuard.tsx`
 - [ ] `ProtectedRoute.tsx`
 - [ ] `SubscriptionWallet.tsx`
 - [ ] `Waitlist.tsx`

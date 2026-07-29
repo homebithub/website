@@ -69,7 +69,6 @@ Notes:
 | `/household/public-profile` | `web/app/routes/household.public-profile.tsx` | no | no | no |
 | `/household/public-profile/:user_id` | `web/app/routes/household.public-profile.$user_id.tsx` | no | no | no |
 | `/household/requests` | `web/app/routes/household.requests.tsx` | no | no | no |
-| `/household/setup` | `web/app/routes/household.setup.tsx` | no | no | no |
 | `/household/shortlist` | `web/app/routes/household.shortlist.tsx` | no | no | no |
 | `/inbox` | `web/app/routes/inbox.tsx` | no | no | no |
 | `/join-household` | `web/app/routes/join-household.tsx` | no | no | no |
@@ -82,8 +81,6 @@ Notes:
 | `/pricing` | `web/app/routes/pricing.tsx` | no | no | yes |
 | `/privacy` | `web/app/routes/privacy.tsx` | no | no | yes |
 | `/profile` | `web/app/routes/profile.tsx` | no | no | no |
-| `/profile-setup/househelp` | `web/app/routes/profile-setup.househelp.tsx` | no | no | no |
-| `/profile-setup/household` | `web/app/routes/profile-setup.household.tsx` | no | no | no |
 | `/reset-password` | `web/app/routes/reset-password.tsx` | no | no | no |
 | `/services` | `web/app/routes/services.tsx` | no | no | yes |
 | `/settings` | `web/app/routes/settings.tsx` | no | no | no |

@@ -87,13 +87,7 @@ app/components/__tests__/Salary.test.tsx
 3. **`app/components/HousehelpSignupFlow.tsx`**
    - 12+ warnings (accessibility, React hooks deps, unescaped entities)
 
-4. **`app/routes/profile-setup.househelp.tsx`**
-   - Multiple warnings (TypeScript, accessibility)
-
-5. **`app/routes/profile-setup.household.tsx`**
-   - Multiple warnings (TypeScript, accessibility)
-
-6. **`app/routes/inbox.tsx`**
+4. **`app/routes/inbox.tsx`**
    - Multiple warnings (TypeScript, state management)
 
 ---

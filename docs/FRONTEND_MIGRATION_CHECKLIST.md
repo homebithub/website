@@ -45,9 +45,8 @@ This checklist tracks the migration of components and routes from `localStorage`
 | `app/routes/change-password.tsx` | [x] | [x] | [x] | Migrated to gRPC-Web & SSR. |
 | `app/routes/contact.tsx` | [x] | [x] | [x] | Migrated to gRPC-Web & SSR. |
 | `app/contexts/AuthContext.tsx` | [x] | [x] | [-] | Core cookie management. |
-| `app/contexts/ProfileSetupContext.tsx` | [x] | [x] | [-] | gRPC-Web onboarding. |
+| `app/contexts/ProfileEditorContext.tsx` | [x] | [x] | [-] | Local profile editor drafts. |
 | `app/components/Navigation.tsx` | [x] | [x] | [x] | Cookie-based user state. |
-| `app/components/ProfileSetupGuard.tsx` | [x] | [x] | [x] | Cookie-based route guard. |
 | `app/components/HousehelpHome.tsx` | [x] | [x] | [x] | Optimized Image (WebP). |
 | `app/components/AuthenticatedHome.tsx` | [x] | [x] | [x] | Optimized Image (WebP). |
 | `app/components/KYCUpload.tsx` | [x] | [x] | [x] | Cookie-based uploads. |
@@ -57,7 +56,7 @@ This checklist tracks the migration of components and routes from `localStorage`
 - [x] `app/utils/cookie.ts`: Centralized cookie management.
 - [x] `app/utils/grpcClient.ts`: gRPC-Web transport with auto-refresh.
 - [x] `app/hooks/useNotifications.ts`: Real-time gRPC-Web notifications.
-- [x] `app/hooks/useProfileSetupStatus.ts`: gRPC-Web status tracking.
+- [x] `app/hooks/useAccountChoiceStatus.ts`: Household choice layout state.
 - [x] `app/hooks/useProfilePhotos.ts`: Parallel gRPC-Web image fetching.
 
 #### Bulk Migration Status
