@@ -899,6 +899,271 @@ export default function HousehelpJobsHome() {
       <Navigation />
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className="flex-1 pb-10">
+          <section className="sticky top-[65px] z-30 mb-5 h-16 border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[73px] sm:h-[72px]">
+            <div className="flex h-full items-center gap-2 sm:gap-3 px-8 sm:px-16 lg:px-32">
+              <div className="hidden min-w-0 flex-1 sm:block">
+                <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">Latest job openings</h1>
+                <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+                  {sortedJobs.length} {sortedJobs.length === 1 ? "role" : "roles"} available
+                </p>
+              </div>
+
+              <div className="hidden items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 shadow-inner dark:border-purple-500/40 dark:bg-white/10 lg:flex">
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setOpenOnly(true);
+                    }}
+                    className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
+                      openOnly
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
+                        : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
+                    }`}
+                  >
+                    Open roles
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      setOpenOnly(false);
+                    }}
+                    className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
+                      !openOnly
+                        ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
+                        : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
+                    }`}
+                  >
+                    All jobs
+                  </button>
+              </div>
+
+              <label className="min-w-0 flex-1 sm:flex-none">
+                <span className="sr-only">Sort job openings</span>
+                <CustomSelect
+                  value={sortBy}
+                  onChange={(value) => setSortBy(value)}
+                  options={[
+                    { value: "best_match", label: "Best match" },
+                    { value: "default", label: "Newest first" },
+                    { value: "created_asc", label: "Oldest first" },
+                    { value: "budget_desc", label: "Budget high to low" },
+                    { value: "budget_asc", label: "Budget low to high" },
+                  ]}
+                  className="w-full sm:w-[180px]"
+                  size="sm"
+                  placeholder="Best match"
+                />
+              </label>
+
+              <button
+                type="button"
+                onClick={() => setFiltersOpen((prev) => !prev)}
+                aria-label={filtersOpen ? "Hide job filters" : "Show job filters"}
+                aria-expanded={filtersOpen}
+                aria-controls="househelp-job-filters"
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-purple-200/70 bg-white/80 px-3 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+                <span>Filters</span>
+                {activeFilterCount > 0 && (
+                  <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-600 px-1 text-[10px] text-white">
+                    {activeFilterCount}
+                  </span>
+                )}
+                <ChevronDown className={`h-3.5 w-3.5 transition ${filtersOpen ? "rotate-180" : ""}`} />
+              </button>
+            </div>
+
+            {filtersOpen && (
+              <div
+                id="househelp-job-filters"
+                className="absolute left-0 right-0 top-full max-h-[calc(100vh-136px)] overflow-y-auto border-b border-purple-200/60 bg-white/95 pb-5 shadow-2xl backdrop-blur-xl dark:border-purple-500/30 dark:bg-[#141020]/95 px-8 sm:px-16 lg:px-32"
+              >
+                <div className="mt-4 flex items-center justify-between gap-3 lg:hidden">
+                  <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Listing status</span>
+                  <div className="flex items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 dark:border-purple-500/40 dark:bg-white/10">
+                    <button
+                      type="button"
+                      onClick={() => setOpenOnly(true)}
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
+                        openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
+                      }`}
+                    >
+                      Open roles
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOpenOnly(false)}
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
+                        !openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
+                      }`}
+                    >
+                      All jobs
+                    </button>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Job type
+                    <CustomSelect
+                      value={filters.jobType}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, jobType: value }))}
+                      options={[
+                        { value: "", label: "Any job type" },
+                        ...jobTypeOptions.map((option) => ({ value: option.value, label: option.label })),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any job type"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Location
+                    <CustomSelect
+                      value={filters.location}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, location: value }))}
+                      options={[
+                        { value: "", label: "Any location" },
+                        ...locationOptions.map((option) => ({ value: option.value, label: option.label })),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any location"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Start window
+                    <CustomSelect
+                      value={filters.startWindow}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, startWindow: value }))}
+                      options={[
+                        { value: "", label: "Any start window" },
+                        { value: "next_14", label: "Within 2 weeks" },
+                        { value: "next_30", label: "Within 30 days" },
+                        { value: "later", label: "Later" },
+                        { value: "flexible", label: "Flexible" },
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any start window"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Schedule slot
+                    <CustomSelect
+                      value={filters.scheduleSlot}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, scheduleSlot: value }))}
+                      options={[
+                        { value: "", label: "Any slot" },
+                        { value: "morning", label: "Morning" },
+                        { value: "afternoon", label: "Afternoon" },
+                        { value: "evening", label: "Evening" },
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any slot"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Salary range
+                    <CustomSelect
+                      value={filters.salaryRangeId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, salaryRangeId: value }))}
+                      options={[
+                        { value: "", label: "Any salary" },
+                        ...salaryRangeOptions.map((option) => ({ value: option.value, label: option.label })),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any salary"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Chore focus
+                    <CustomSelect
+                      value={filters.choreId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, choreId: value }))}
+                      options={[
+                        { value: "", label: "Any chores" },
+                        ...(onboardingOptions?.chores?.map((chore) => ({ value: String(chore.id), label: chore.name })) ?? []),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any chores"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Pet type
+                    <CustomSelect
+                      value={filters.petTypeId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, petTypeId: value }))}
+                      options={[
+                        { value: "", label: "Any pets" },
+                        ...(onboardingOptions?.pet_types?.map((pet) => ({ value: String(pet.id), label: pet.name })) ?? []),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any pets"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Children age range
+                    <CustomSelect
+                      value={filters.childrenAgeRangeId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, childrenAgeRangeId: value }))}
+                      options={[
+                        { value: "", label: "Any age range" },
+                        ...(onboardingOptions?.children_age_ranges?.map((range) => ({ value: String(range.id), label: range.label })) ?? []),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any age range"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                    Children capacity
+                    <CustomSelect
+                      value={filters.childrenCapacityId}
+                      onChange={(value) => setFilters((prev) => ({ ...prev, childrenCapacityId: value }))}
+                      options={[
+                        { value: "", label: "Any capacity" },
+                        ...(onboardingOptions?.children_capacities?.map((capacity) => ({ value: String(capacity.id), label: capacity.label })) ?? []),
+                      ]}
+                      className="w-full"
+                      size="sm"
+                      placeholder="Any capacity"
+                    />
+                  </label>
+                </div>
+
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200 font-semibold">
+                      {openJobsCount} open now
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
+                      {jobs.length} total roles
+                    </span>
+                    {hasActiveFilters && (
+                      <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200 font-semibold">
+                        {filteredJobs.length} match your filters
+                      </span>
+                    )}
+                  </div>
+                  {hasActiveFilters && (
+                    <button
+                      onClick={clearFilters}
+                      className="text-xs font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
+                    >
+                      Clear filters
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
           <div className="mx-auto flex max-w-6xl flex-col px-4 sm:px-6 lg:px-8">
             <IdentityVerificationPrompt verification={identityVerification} />
 
@@ -914,271 +1179,6 @@ export default function HousehelpJobsHome() {
               />
             )}
 
-            <section className="order-first sticky top-[65px] z-30 mb-5 h-16 rounded-2xl border border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[73px] sm:h-[72px]">
-              <div className="flex h-full items-center gap-2 px-4 sm:gap-3 sm:px-5">
-                <div className="hidden min-w-0 flex-1 sm:block">
-                  <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">Latest job openings</h1>
-                  <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
-                    {sortedJobs.length} {sortedJobs.length === 1 ? "role" : "roles"} available
-                  </p>
-                </div>
-
-                <div className="hidden items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 shadow-inner dark:border-purple-500/40 dark:bg-white/10 lg:flex">
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setOpenOnly(true);
-                      }}
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
-                        openOnly
-                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
-                          : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
-                      }`}
-                    >
-                      Open roles
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setOpenOnly(false);
-                      }}
-                      className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide transition ${
-                        !openOnly
-                          ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow"
-                          : "text-purple-700 dark:text-purple-200 hover:bg-purple-50 dark:hover:bg-white/10"
-                      }`}
-                    >
-                      All jobs
-                    </button>
-                </div>
-
-                <label className="min-w-0 flex-1 sm:flex-none">
-                  <span className="sr-only">Sort job openings</span>
-                  <CustomSelect
-                    value={sortBy}
-                    onChange={(value) => setSortBy(value)}
-                    options={[
-                      { value: "best_match", label: "Best match" },
-                      { value: "default", label: "Newest first" },
-                      { value: "created_asc", label: "Oldest first" },
-                      { value: "budget_desc", label: "Budget high to low" },
-                      { value: "budget_asc", label: "Budget low to high" },
-                    ]}
-                    className="w-full sm:w-[180px]"
-                    size="sm"
-                    placeholder="Best match"
-                  />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => setFiltersOpen((prev) => !prev)}
-                  aria-label={filtersOpen ? "Hide job filters" : "Show job filters"}
-                  aria-expanded={filtersOpen}
-                  aria-controls="househelp-job-filters"
-                  className="inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-purple-200/70 bg-white/80 px-3 text-xs font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:bg-white/10 dark:text-purple-200 dark:hover:bg-purple-500/10"
-                >
-                  <SlidersHorizontal className="h-4 w-4" />
-                  <span>Filters</span>
-                  {activeFilterCount > 0 && (
-                    <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-purple-600 px-1 text-[10px] text-white">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                  <ChevronDown className={`h-3.5 w-3.5 transition ${filtersOpen ? "rotate-180" : ""}`} />
-                </button>
-              </div>
-
-              {filtersOpen && (
-                <div
-                  id="househelp-job-filters"
-                  className="absolute left-0 right-0 top-full max-h-[calc(100vh-136px)] overflow-y-auto rounded-b-2xl border border-t-0 border-purple-200/60 bg-white/95 px-4 pb-5 shadow-2xl backdrop-blur-xl dark:border-purple-500/30 dark:bg-[#141020]/95 sm:px-5"
-                >
-                  <div className="mt-4 flex items-center justify-between gap-3 lg:hidden">
-                    <span className="text-xs font-semibold text-gray-500 dark:text-gray-400">Listing status</span>
-                    <div className="flex items-center gap-1 rounded-full border border-purple-200/70 bg-white/70 p-1 dark:border-purple-500/40 dark:bg-white/10">
-                      <button
-                        type="button"
-                        onClick={() => setOpenOnly(true)}
-                        className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
-                          openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
-                        }`}
-                      >
-                        Open roles
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setOpenOnly(false)}
-                        className={`rounded-full px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide ${
-                          !openOnly ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white" : "text-purple-700 dark:text-purple-200"
-                        }`}
-                      >
-                        All jobs
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Job type
-                      <CustomSelect
-                        value={filters.jobType}
-                        onChange={(value) => setFilters((prev) => ({ ...prev, jobType: value }))}
-                        options={[
-                          { value: "", label: "Any job type" },
-                          ...jobTypeOptions.map((option) => ({ value: option.value, label: option.label })),
-                        ]}
-                        className="w-full"
-                        size="sm"
-                        placeholder="Any job type"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Location
-                      <CustomSelect
-                        value={filters.location}
-                        onChange={(value) => setFilters((prev) => ({ ...prev, location: value }))}
-                        options={[
-                          { value: "", label: "Any location" },
-                          ...locationOptions.map((option) => ({ value: option.value, label: option.label })),
-                        ]}
-                        className="w-full"
-                        size="sm"
-                        placeholder="Any location"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Start window
-                      <CustomSelect
-                        value={filters.startWindow}
-                        onChange={(value) => setFilters((prev) => ({ ...prev, startWindow: value }))}
-                        options={[
-                          { value: "", label: "Any start window" },
-                          { value: "next_14", label: "Within 2 weeks" },
-                          { value: "next_30", label: "Within 30 days" },
-                          { value: "later", label: "Later" },
-                          { value: "flexible", label: "Flexible" },
-                        ]}
-                        className="w-full"
-                        size="sm"
-                        placeholder="Any start window"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Schedule slot
-                      <CustomSelect
-                        value={filters.scheduleSlot}
-                        onChange={(value) => setFilters((prev) => ({ ...prev, scheduleSlot: value }))}
-                        options={[
-                          { value: "", label: "Any slot" },
-                          { value: "morning", label: "Morning" },
-                          { value: "afternoon", label: "Afternoon" },
-                          { value: "evening", label: "Evening" },
-                        ]}
-                        className="w-full"
-                        size="sm"
-                        placeholder="Any slot"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Salary range
-                      <CustomSelect
-                        value={filters.salaryRangeId}
-                        onChange={(value) => setFilters((prev) => ({ ...prev, salaryRangeId: value }))}
-                        options={[
-                          { value: "", label: "Any salary" },
-                          ...salaryRangeOptions.map((option) => ({ value: option.value, label: option.label })),
-                        ]}
-                        className="w-full"
-                        size="sm"
-                        placeholder="Any salary"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Chore focus
-                      <CustomSelect
-                        value={filters.choreId}
-                        onChange={(value) => setFilters((prev) => ({ ...prev, choreId: value }))}
-                        options={[
-                          { value: "", label: "Any chores" },
-                          ...(onboardingOptions?.chores?.map((chore) => ({ value: String(chore.id), label: chore.name })) ?? []),
-                        ]}
-                        className="w-full"
-                        size="sm"
-                        placeholder="Any chores"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Pet type
-                      <CustomSelect
-                        value={filters.petTypeId}
-                        onChange={(value) => setFilters((prev) => ({ ...prev, petTypeId: value }))}
-                        options={[
-                          { value: "", label: "Any pets" },
-                          ...(onboardingOptions?.pet_types?.map((pet) => ({ value: String(pet.id), label: pet.name })) ?? []),
-                        ]}
-                        className="w-full"
-                        size="sm"
-                        placeholder="Any pets"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Children age range
-                      <CustomSelect
-                        value={filters.childrenAgeRangeId}
-                        onChange={(value) => setFilters((prev) => ({ ...prev, childrenAgeRangeId: value }))}
-                        options={[
-                          { value: "", label: "Any age range" },
-                          ...(onboardingOptions?.children_age_ranges?.map((range) => ({ value: String(range.id), label: range.label })) ?? []),
-                        ]}
-                        className="w-full"
-                        size="sm"
-                        placeholder="Any age range"
-                      />
-                    </label>
-                    <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Children capacity
-                      <CustomSelect
-                        value={filters.childrenCapacityId}
-                        onChange={(value) => setFilters((prev) => ({ ...prev, childrenCapacityId: value }))}
-                        options={[
-                          { value: "", label: "Any capacity" },
-                          ...(onboardingOptions?.children_capacities?.map((capacity) => ({ value: String(capacity.id), label: capacity.label })) ?? []),
-                        ]}
-                        className="w-full"
-                        size="sm"
-                        placeholder="Any capacity"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs">
-                    <div className="flex flex-wrap gap-2">
-                      <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-700 dark:bg-purple-500/20 dark:text-purple-200 font-semibold">
-                        {openJobsCount} open now
-                      </span>
-                      <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300">
-                        {jobs.length} total roles
-                      </span>
-                      {hasActiveFilters && (
-                        <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200 font-semibold">
-                          {filteredJobs.length} match your filters
-                        </span>
-                      )}
-                    </div>
-                    {hasActiveFilters && (
-                      <button
-                        onClick={clearFilters}
-                        className="text-xs font-semibold text-purple-600 dark:text-purple-300 hover:text-purple-700 dark:hover:text-purple-200"
-                      >
-                        Clear filters
-                      </button>
-                    )}
-                  </div>
-                </div>
-              )}
-            </section>
 
             {topMatches.length > 0 && (
               <section className="mb-8">
