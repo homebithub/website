@@ -3,7 +3,7 @@ name: Build, Push to GHCR, and Deploy to LKE
 on:
   push:
     branches:
-      - feat/preprod
+      - staging
 
 permissions:
   contents: write
