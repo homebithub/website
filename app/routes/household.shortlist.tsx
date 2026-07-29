@@ -322,7 +322,7 @@ export default function HouseholdShortlistPage() {
             {chatError && <ErrorAlert message={chatError} className="mb-4" />}
             {error && <ErrorAlert message={error} className="mb-4" />}
 	
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-4">
               {(items || [])
                 .filter((s) => s.profile_type === "open_for_work")
                 .map((s) => {

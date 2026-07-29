@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { resolveHousehelpProfile, resolveHousehelpProfileId } from '~/utils/househelpProfiles';
 import { FormPageSkeleton } from "~/components/ShimmerLoader";
+import { SELECT_CLASS, SelectChevron } from '~/components/ui/formStyles';
 
 interface ContractClause {
   id: string;
@@ -615,13 +616,16 @@ export default function EmploymentContractPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency *</label>
-                  <select value={salaryFrequency} onChange={e => setSalaryFrequency(e.target.value)}
-                    className="w-full px-4 py-2.5 border-2 border-purple-200 dark:border-purple-500/30 rounded-xl bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all">
-                    <option value="monthly">Monthly</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="bi-weekly">Bi-weekly</option>
-                    <option value="daily">Daily</option>
-                  </select>
+                  <div className="relative">
+                    <select value={salaryFrequency} onChange={e => setSalaryFrequency(e.target.value)}
+                      className={SELECT_CLASS}>
+                      <option value="monthly">Monthly</option>
+                      <option value="weekly">Weekly</option>
+                      <option value="bi-weekly">Bi-weekly</option>
+                      <option value="daily">Daily</option>
+                    </select>
+                    <SelectChevron />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Start Date</label>
@@ -934,6 +938,16 @@ export default function EmploymentContractPage() {
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={() => setShowSigningModal(false)} />
             <div className="relative bg-white dark:bg-[#0d0d15] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
+              <button
+                type="button"
+                onClick={() => setShowSigningModal(false)}
+                aria-label="Close"
+                className="absolute right-4 top-4 rounded-full border border-purple-200 p-1.5 text-gray-500 transition hover:bg-purple-50 hover:text-gray-900 dark:border-purple-500/30 dark:text-gray-300 dark:hover:bg-purple-500/15 dark:hover:text-white"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
               <h3 className="text-base font-extrabold text-gray-900 dark:text-white mb-2">Sign Contract</h3>
               <p className="text-xs text-gray-600 dark:text-purple-200 mb-4">
                 Enter your full legal name to sign this contract. This serves as your digital signature.
@@ -972,6 +986,16 @@ export default function EmploymentContractPage() {
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in" onClick={() => setShowEmailModal(false)} />
             <div className="relative bg-white dark:bg-[#0d0d15] rounded-t-2xl sm:rounded-2xl shadow-2xl shadow-purple-500/20 border border-purple-200/50 dark:border-purple-600/40 w-full sm:max-w-md p-6 sm:p-8 animate-slide-up sm:mx-4">
+              <button
+                type="button"
+                onClick={() => setShowEmailModal(false)}
+                aria-label="Close"
+                className="absolute right-4 top-4 rounded-full border border-purple-200 p-1.5 text-gray-500 transition hover:bg-purple-50 hover:text-gray-900 dark:border-purple-500/30 dark:text-gray-300 dark:hover:bg-purple-500/15 dark:hover:text-white"
+              >
+                <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
               <h3 className="text-base font-extrabold text-gray-900 dark:text-white mb-2">Email Contract</h3>
               <p className="text-xs text-gray-600 dark:text-purple-200 mb-4">
                 We'll send a copy of the signed contract to the email address below.

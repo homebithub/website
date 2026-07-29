@@ -5,6 +5,16 @@ import { ErrorAlert } from "~/components/ui/ErrorAlert";
 import { SuccessAlert } from "~/components/ui/SuccessAlert";
 import { clientProfileService, jobService } from "~/services/grpc/authServices";
 import { getStoredUserProfileId } from "~/utils/authStorage";
+import { useModalDismiss } from "~/hooks/useModalDismiss";
+import {
+  FIELD_LABEL_CLASS,
+  INPUT_CLASS,
+  RequiredLegend,
+  RequiredMark,
+  SELECT_CLASS,
+  SelectChevron,
+  TEXTAREA_CLASS,
+} from "~/components/ui/formStyles";
 
 type JobPostModalProps = {
   isOpen: boolean;
@@ -119,6 +129,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const { panelRef, onOverlayClick } = useModalDismiss(isOpen, onClose);
 
   useEffect(() => {
     setMounted(true);
@@ -321,21 +332,29 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
 
   const modal = (
     <div
-      className="fixed inset-0 isolate flex items-center justify-center bg-black/70 px-4 py-8 backdrop-blur-sm"
+      className="fixed inset-0 isolate flex items-center justify-center bg-black/50 px-4 py-8 backdrop-blur-sm dark:bg-black/70"
       style={{ zIndex: 2147483647 }}
+      onClick={onOverlayClick}
+      role="presentation"
     >
-      <div className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[28px] border border-purple-500/40 bg-[#111017] shadow-[0_0_42px_rgba(168,85,247,0.35)]">
-        <div className="flex items-start justify-between border-b border-purple-500/25 px-6 py-5">
+      <div
+        ref={panelRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={editing ? "Edit job posting" : "Create job posting"}
+        className="max-h-[92vh] w-full max-w-4xl overflow-hidden rounded-[28px] border border-purple-200 bg-white shadow-2xl dark:border-purple-500/40 dark:bg-dark-card dark:shadow-[0_0_42px_rgba(168,85,247,0.35)]"
+      >
+        <div className="flex items-start justify-between border-b border-purple-100 px-6 py-5 dark:border-purple-500/25">
           <div>
-            <h2 className="text-2xl font-bold text-white">{editing ? "Edit Job Posting" : "Create Job Posting"}</h2>
-            <p className="mt-1 text-sm text-gray-400">
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{editing ? "Edit Job Posting" : "Create Job Posting"}</h2>
+            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
               {editing ? "Update the listing details." : "Add the role, then choose the details clients need to know."}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-purple-500/30 p-2 text-gray-300 transition hover:bg-purple-500/15 hover:text-white"
+            className="rounded-full border border-purple-200 p-2 text-gray-500 transition hover:bg-purple-50 hover:text-gray-900 dark:border-purple-500/30 dark:text-gray-300 dark:hover:bg-purple-500/15 dark:hover:text-white"
             aria-label="Close"
           >
             <XMarkIcon className="h-5 w-5" />
@@ -346,63 +365,83 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
           {error && <ErrorAlert title="Job Posting" message={error} durationMs={12000} />}
           {success && <SuccessAlert title="Job Posting" message={success} durationMs={3000} />}
 
+          <RequiredLegend className="mb-4" />
+
           <div className="grid gap-5">
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-purple-300">Title</span>
+              <span className={FIELD_LABEL_CLASS}>
+                Title
+                <RequiredMark />
+              </span>
               <input
                 value={title}
                 onChange={(event) => setTitle(event.target.value)}
-                className="w-full rounded-2xl border border-purple-500/35 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-purple-400 focus:ring-2 focus:ring-purple-500/25"
+                required
+                aria-required="true"
+                className={INPUT_CLASS}
                 placeholder="House Nanny"
               />
             </label>
 
             <label className="block">
-              <span className="mb-2 block text-sm font-semibold text-purple-300">Description</span>
+              <span className={FIELD_LABEL_CLASS}>
+                Description
+                <RequiredMark />
+              </span>
               <textarea
                 value={description}
                 onChange={(event) => setDescription(event.target.value)}
                 rows={4}
-                className="w-full resize-y rounded-2xl border border-purple-500/35 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-purple-400 focus:ring-2 focus:ring-purple-500/25"
+                required
+                aria-required="true"
+                className={TEXTAREA_CLASS}
                 placeholder="Describe what the role involves."
               />
             </label>
 
             {!editing && (
               <label className="block">
-                <span className="mb-2 block text-sm font-semibold text-purple-300">Job Type</span>
-                <select
-                  value={selectedJobTypeId}
-                  onChange={(event) => setSelectedJobTypeId(event.target.value)}
-                  disabled={loadingJobTypes}
-                  className="w-full rounded-2xl border border-purple-500/35 bg-[#171320] px-4 py-3 text-white outline-none transition focus:border-purple-400 focus:ring-2 focus:ring-purple-500/25"
-                >
-                  <option value="">{loadingJobTypes ? "Loading job types..." : "Select job type"}</option>
-                  {jobTypes.map((type) => {
-                    const id = jobTypeId(type);
-                    return (
-                      <option key={id || type.name} value={id}>
-                        {type.name || type.title || `Job type ${id}`}
-                      </option>
-                    );
-                  })}
-                </select>
+                <span className={FIELD_LABEL_CLASS}>
+                  Job Type
+                  <RequiredMark />
+                </span>
+                <div className="relative">
+                  <select
+                    value={selectedJobTypeId}
+                    onChange={(event) => setSelectedJobTypeId(event.target.value)}
+                    disabled={loadingJobTypes}
+                    required
+                    aria-required="true"
+                    className={SELECT_CLASS}
+                  >
+                    <option value="">{loadingJobTypes ? "Loading job types..." : "Select job type"}</option>
+                    {jobTypes.map((type) => {
+                      const id = jobTypeId(type);
+                      return (
+                        <option key={id || type.name} value={id}>
+                          {type.name || type.title || `Job type ${id}`}
+                        </option>
+                      );
+                    })}
+                  </select>
+                  <SelectChevron />
+                </div>
               </label>
             )}
 
             {!editing && selectedJobTypeId && (
-              <section className="rounded-2xl border border-purple-500/25 bg-purple-950/15 p-4">
+              <section className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 dark:border-purple-500/25 dark:bg-purple-950/15">
                 <div className="mb-4 flex items-center justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-bold text-white">Listing Details</h3>
-                    <p className="text-sm text-gray-400">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">Listing Details</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
                       {loadingFeatures ? "Loading options..." : `${selectedFeatureCount} feature${selectedFeatureCount === 1 ? "" : "s"} filled`}
                     </p>
                   </div>
                 </div>
 
                 {!loadingFeatures && featureBundles.length === 0 && (
-                  <p className="text-sm text-gray-400">No additional details are required for this job type.</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">No additional details are required for this job type.</p>
                 )}
 
                 <div className="space-y-5">
@@ -410,16 +449,21 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
                     const fId = featureId(bundle);
                     const properties = featureProperties(bundle);
                     const hasOptions = featureHasOptions(bundle);
-                    const shownProperties = properties.slice(0, 10);
-                    const hiddenCount = Math.max(properties.length - shownProperties.length, 0);
+                    const required = Boolean(
+                      (bundle as { is_required?: boolean; isRequired?: boolean }).is_required ??
+                        (bundle as { isRequired?: boolean }).isRequired
+                    );
 
                     return (
-                      <div key={fId || featureName(bundle)} className="border-t border-purple-500/20 pt-4 first:border-t-0 first:pt-0">
-                        <h4 className="mb-3 text-base font-bold text-white">{featureName(bundle)}</h4>
+                      <div key={fId || featureName(bundle)} className="border-t border-purple-100 pt-4 first:border-t-0 first:pt-0 dark:border-purple-500/20">
+                        <h4 className="mb-3 text-base font-bold text-gray-900 dark:text-white">
+                          {featureName(bundle)}
+                          {required && <RequiredMark />}
+                        </h4>
 
                         {hasOptions ? (
                           <div className="flex flex-wrap gap-2">
-                            {shownProperties.map((property) => {
+                            {properties.map((property) => {
                               const pId = propertyId(property);
                               const selected = Boolean(fId && pId && selectedProperties[fId]?.includes(pId));
                               return (
@@ -430,21 +474,22 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
                                   className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-sm font-semibold transition ${
                                     selected
                                       ? "border-purple-300 bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-500/25"
-                                      : "border-slate-600 bg-slate-950/45 text-gray-200 hover:border-purple-400"
+                                      : "border-purple-200 bg-white text-gray-700 hover:border-purple-400 dark:border-slate-600 dark:bg-slate-950/45 dark:text-gray-200 dark:hover:border-purple-400"
                                   }`}
                                 >
-                                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-700/70 text-xs">
+                                  <span
+                                    className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
+                                      selected
+                                        ? "bg-purple-700/70 text-white"
+                                        : "bg-purple-100 text-purple-700 dark:bg-purple-700/70 dark:text-white"
+                                    }`}
+                                  >
                                     {selected ? "✓" : propertyName(property).slice(0, 1).toUpperCase()}
                                   </span>
                                   {propertyName(property)}
                                 </button>
                               );
                             })}
-                            {hiddenCount > 0 && (
-                              <span className="inline-flex items-center gap-2 rounded-full border border-dashed border-purple-500/60 px-3 py-2 text-sm font-semibold text-purple-200">
-                                + {hiddenCount} more
-                              </span>
-                            )}
                           </div>
                         ) : (
                           <div className="grid gap-3 sm:grid-cols-2">
@@ -454,14 +499,15 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
                               const label = propertyName(property);
 
                               return (
-                                <label key={key} className="block rounded-2xl border border-purple-500/20 bg-black/20 p-3">
-                                  <span className="mb-2 block text-sm font-semibold text-purple-200">
+                                <label key={key} className="block rounded-2xl border border-purple-100 bg-white/70 p-3 dark:border-purple-500/20 dark:bg-black/20">
+                                  <span className={FIELD_LABEL_CLASS}>
                                     {label}
+                                    {required && <RequiredMark />}
                                   </span>
                                   <input
                                     value={freeFormValues[key] || ""}
                                     onChange={(event) => setFreeFormValues((current) => ({ ...current, [key]: event.target.value }))}
-                                    className="w-full rounded-xl border border-purple-500/35 bg-black/30 px-4 py-3 text-white outline-none transition placeholder:text-gray-500 focus:border-purple-400 focus:ring-2 focus:ring-purple-500/25"
+                                    className={INPUT_CLASS}
                                     placeholder={`Enter ${label.toLowerCase()}`}
                                   />
                                 </label>
@@ -481,7 +527,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-purple-500/40 px-6 py-3 font-semibold text-purple-200 transition hover:bg-purple-500/15"
+              className="rounded-full border border-purple-300 px-6 py-3 font-semibold text-purple-700 transition hover:bg-purple-50 dark:border-purple-500/40 dark:text-purple-200 dark:hover:bg-purple-500/15"
             >
               Cancel
             </button>

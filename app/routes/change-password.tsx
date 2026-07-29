@@ -14,6 +14,7 @@ import { authService } from '~/services/grpc/auth.service';
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { RequiredMark } from '~/components/ui/formStyles';
 
 interface User {
   id: string;
@@ -238,7 +239,7 @@ export default function ChangePasswordPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-4">
               <div>
-                <label htmlFor="currentPassword" className="block text-xs font-semibold text-purple-700 mb-2">Current Password</label>
+                <label htmlFor="currentPassword" className="block text-xs font-semibold text-purple-700 mb-2">Current Password<RequiredMark /></label>
                 <input
                   type="password"
                   id="currentPassword"
@@ -260,7 +261,7 @@ export default function ChangePasswordPage() {
                 )}
               </div>
               <div>
-                <label htmlFor="newPassword" className="block text-xs font-semibold text-purple-700 mb-2">New Password</label>
+                <label htmlFor="newPassword" className="block text-xs font-semibold text-purple-700 mb-2">New Password<RequiredMark /></label>
                 <input
                   type="password"
                   id="newPassword"
@@ -282,7 +283,7 @@ export default function ChangePasswordPage() {
                 )}
               </div>
               <div>
-                <label htmlFor="confirmPassword" className="block text-xs font-semibold text-purple-700 mb-2">Confirm New Password</label>
+                <label htmlFor="confirmPassword" className="block text-xs font-semibold text-purple-700 mb-2">Confirm New Password<RequiredMark /></label>
                 <input
                   type="password"
                   id="confirmPassword"

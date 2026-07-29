@@ -914,7 +914,7 @@ export default function HousehelpJobsHome() {
               />
             )}
 
-            <section className="order-first sticky top-[65px] z-30 mb-5 h-16 border-b border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[73px] sm:h-[72px]">
+            <section className="order-first sticky top-[65px] z-30 mb-5 h-16 overflow-hidden rounded-2xl border border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[73px] sm:h-[72px]">
               <div className="flex h-full items-center gap-2 sm:gap-3">
                 <div className="hidden min-w-0 flex-1 sm:block">
                   <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">Latest job openings</h1>

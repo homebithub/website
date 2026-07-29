@@ -10,6 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { documentService, onboardingOptionsService } from '~/services/grpc/authServices';
 import { uploadDocuments } from '~/utils/documentUploads';
+import { SELECT_CLASS, SelectChevron } from '~/components/ui/formStyles';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
@@ -317,6 +318,7 @@ export function CertificationDocuments({ profileId }: { profileId?: string }) {
           <span className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
             Certification type
           </span>
+          <div className="relative">
           <select
             value={selectedType}
             onChange={(event) => {
@@ -325,7 +327,7 @@ export function CertificationDocuments({ profileId }: { profileId?: string }) {
               setError(null);
               if (inputRef.current) inputRef.current.value = '';
             }}
-            className="h-10 w-full rounded-xl border border-purple-300/70 bg-white px-3 text-sm text-gray-900 outline-none transition focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 dark:border-purple-500/30 dark:bg-[#191522] dark:text-white"
+            className={SELECT_CLASS}
           >
             <option value="">Select certification type</option>
             {options.map((option) => (
@@ -334,6 +336,8 @@ export function CertificationDocuments({ profileId }: { profileId?: string }) {
               </option>
             ))}
           </select>
+          <SelectChevron />
+          </div>
         </label>
         <div className="self-end text-xs text-gray-500 dark:text-gray-400">
           {selectedOption ? `${existingForSelected}/${MAX_PER_TYPE} uploaded` : 'Maximum 5 per type'}

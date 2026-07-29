@@ -14,6 +14,7 @@ import { PurpleCard } from '~/components/ui/PurpleCard';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { clearStoredAuthSession, setStoredProfileType } from '~/utils/authStorage';
 import { profileFeatureService } from '~/services/grpc/authServices';
+import { RequiredMark } from '~/components/ui/formStyles';
 
 export const meta = () => [
     { title: "Sign Up — Homebit" },
@@ -824,7 +825,7 @@ export default function SignupPage() {
                         {!googleData && (
                           <>
                             <div>
-                                <label htmlFor="first_name" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">First Name</label>
+                                <label htmlFor="first_name" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">First Name<RequiredMark /></label>
                                 <input
                                     id="first_name"
                                     type="text"
@@ -846,7 +847,7 @@ export default function SignupPage() {
                                 )}
                             </div>
                             <div>
-                                <label htmlFor="last_name" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Last Name</label>
+                                <label htmlFor="last_name" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Last Name<RequiredMark /></label>
                                 <input
                                     id="last_name"
                                     type="text"
@@ -873,7 +874,7 @@ export default function SignupPage() {
                         {/* Only show password field for non-Google signups */}
                         {!googleData && (
                             <div>
-                                <label htmlFor="password" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Password</label>
+                                <label htmlFor="password" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Password<RequiredMark /></label>
                                 <div className="relative">
                                     <input
                                         id="password"
@@ -911,7 +912,7 @@ export default function SignupPage() {
                             </div>
                         )}
                         <div>
-    <label htmlFor="phone" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Phone</label>
+    <label htmlFor="phone" className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">Phone<RequiredMark /></label>
     <input
         id="phone"
         type="tel"

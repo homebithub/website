@@ -7,6 +7,8 @@ interface InviteCodeGeneratorProps {
   onInviteCreated?: (invitation: HouseholdInvitation) => void;
 }
 
+import { SELECT_CLASS, SelectChevron } from '~/components/ui/formStyles';
+
 export function InviteCodeGenerator({
   householdId,
   onInviteCreated,
@@ -165,10 +167,11 @@ export function InviteCodeGenerator({
                 <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">
                   Expires In
                 </label>
+                <div className="relative">
                 <select
                   value={expiresInDays}
                   onChange={(e) => setExpiresInDays(Number(e.target.value))}
-                  className="w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className={SELECT_CLASS}
                 >
                   <option value={1}>1 day</option>
                   <option value={3}>3 days</option>
@@ -176,6 +179,8 @@ export function InviteCodeGenerator({
                   <option value={14}>14 days</option>
                   <option value={30}>30 days</option>
                 </select>
+                <SelectChevron />
+                </div>
               </div>
 
               {/* Max Uses */}
@@ -183,16 +188,19 @@ export function InviteCodeGenerator({
                 <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">
                   Maximum Uses
                 </label>
+                <div className="relative">
                 <select
                   value={maxUses}
                   onChange={(e) => setMaxUses(Number(e.target.value))}
-                  className="w-full h-12 px-4 py-3 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white border-purple-200 dark:border-purple-500/30 shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className={SELECT_CLASS}
                 >
                   <option value={1}>1 person (recommended)</option>
                   <option value={2}>2 people</option>
                   <option value={3}>3 people</option>
                   <option value={5}>5 people</option>
                 </select>
+                <SelectChevron />
+                </div>
               </div>
 
               {/* Auto-Approve Toggle */}

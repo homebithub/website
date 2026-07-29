@@ -6,6 +6,7 @@ import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
 import authService from '~/services/grpc/auth.service';
 import { handleApiError } from '~/utils/errorMessages';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
+import { RequiredLegend, RequiredMark } from '~/components/ui/formStyles';
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -382,9 +383,10 @@ export function ProfileAccountSummary({
             </div>
 
             <form onSubmit={saveAccount} className="space-y-4">
+              <RequiredLegend />
               <div className="grid gap-4 sm:grid-cols-2">
                 <label className="space-y-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300">
-                  First name
+                  <span>First name{isHousehold && <RequiredMark />}</span>
                   <input
                     value={form.firstName}
                     onChange={(event) => setForm((current) => ({ ...current, firstName: event.target.value }))}
@@ -394,7 +396,7 @@ export function ProfileAccountSummary({
                   />
                 </label>
                 <label className="space-y-1.5 text-xs font-semibold text-purple-700 dark:text-purple-300">
-                  Last name
+                  <span>Last name{isHousehold && <RequiredMark />}</span>
                   <input
                     value={form.lastName}
                     onChange={(event) => setForm((current) => ({ ...current, lastName: event.target.value }))}
