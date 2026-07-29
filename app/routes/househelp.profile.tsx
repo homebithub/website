@@ -30,6 +30,8 @@ import { formatOnboardingAmount } from '~/utils/onboardingCompensation';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
 import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { IdentityVerificationPrompt } from '~/components/verification/IdentityVerificationPrompt';
+import { useIdentityVerification } from '~/hooks/useIdentityVerification';
 
 interface HousehelpData {
   id?: string;
@@ -126,6 +128,7 @@ const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export default function HousehelpProfile() {
   const navigate = useNavigate();
+  const identityVerification = useIdentityVerification(getStoredUserId());
   const [profile, setProfile] = useState<HousehelpData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -548,6 +551,8 @@ export default function HousehelpProfile() {
         </div>
       </div>
 
+      <IdentityVerificationPrompt verification={identityVerification} className="mb-4" />
+
       <ProfileAccountSummary
         profile={profile as Record<string, unknown>}
         fallbackProfileId="6dbd5104-d314-4ef1-a7d3-37d7eb26ddff"
@@ -805,6 +810,31 @@ export default function HousehelpProfile() {
               </div>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Identity verification */}
+      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">🪪 Identity Verification</h2>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {identityVerification.status === 'approved'
+                ? 'Your identity has been verified securely with Smile ID.'
+                : identityVerification.status === 'in_progress'
+                  ? 'Your Smile ID verification is currently in progress.'
+                  : identityVerification.status === 'failed'
+                    ? 'Your verification needs attention before it can be approved.'
+                    : 'Verify your identity securely with Smile ID.'}
+            </p>
+          </div>
+          <button
+            onClick={identityVerification.status === 'approved' ? undefined : identityVerification.openModal}
+            disabled={identityVerification.status === 'approved' || identityVerification.loading}
+            className="px-3 py-1.5 text-xs rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 font-semibold hover:bg-gradient-to-r hover:from-purple-600 hover:to-pink-600 hover:text-white dark:hover:text-white transition-all disabled:cursor-default disabled:opacity-70 disabled:hover:bg-purple-100 disabled:hover:text-purple-700 dark:disabled:hover:bg-purple-900/30 dark:disabled:hover:text-purple-400"
+          >
+            {identityVerification.status === 'approved' ? 'Verified' : 'Manage Verification'}
+          </button>
         </div>
       </div>
 

@@ -8,7 +8,7 @@ import { kycService } from "~/services/grpc/authServices";
 
 declare global {
   interface Window {
-    SmileIdentity?: (config: Record<string, any>) => void;
+    SmileIdentity?: (config: Record<string, unknown>) => void;
   }
 }
 

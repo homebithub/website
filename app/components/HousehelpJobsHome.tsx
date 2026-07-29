@@ -34,6 +34,8 @@ import { Heart, ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Sea
 import { useAuth } from "~/contexts/useAuth";
 import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
+import { IdentityVerificationPrompt } from "~/components/verification/IdentityVerificationPrompt";
+import { useIdentityVerification } from "~/hooks/useIdentityVerification";
 
 interface JobListing {
   id: string;
@@ -417,6 +419,7 @@ export default function HousehelpJobsHome() {
   const limit = 12;
   const backToPath = "/househelp/jobs";
   const profileCompletionReminder = useProfileCompletionReminder(currentUserId || "", "househelp");
+  const identityVerification = useIdentityVerification(currentUserId);
 
   const { options: onboardingOptions } = useOnboardingOptions("household");
   const openJobsCount = useMemo(() => jobs.filter((job) => isJobOpen(job)).length, [jobs]);
@@ -887,6 +890,8 @@ export default function HousehelpJobsHome() {
       <PurpleThemeWrapper variant="gradient" bubbles={false} bubbleDensity="low" className="flex-1 flex flex-col">
         <main className="flex-1 py-10">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <IdentityVerificationPrompt verification={identityVerification} />
+
             <div className="mb-8">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Latest Job Openings</h1>
               <p className="text-gray-600 dark:text-gray-300 mt-1">
