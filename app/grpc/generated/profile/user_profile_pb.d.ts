@@ -28,6 +28,9 @@ export class PickInput extends jspb.Message {
   getWeight(): number;
   setWeight(value: number): PickInput;
 
+  getValue(): string;
+  setValue(value: string): PickInput;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PickInput.AsObject;
   static toObject(includeInstance: boolean, msg: PickInput): PickInput.AsObject;
@@ -40,6 +43,7 @@ export namespace PickInput {
   export type AsObject = {
     featurePropertyId: number;
     weight: number;
+    value: string;
   };
 }
 

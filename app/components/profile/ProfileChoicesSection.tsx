@@ -8,6 +8,9 @@ type FeaturePropertyChoice = {
   id: number;
   name: string;
   description?: string;
+  // Text the user typed against an "Other" option. Shown in place of the
+  // generic "Other" label so the profile reads as their own answer.
+  value?: string;
 };
 
 type SelectedFeatureGroup = {
@@ -118,7 +121,8 @@ const buildSelectedFeatureGroups = (
     const featureName = profileFeatureLabel(
       String(feature.name || mapped?.featureName || `Feature ${featureId}`),
     );
-    const selectedProperty: FeaturePropertyChoice = mapped?.property || {
+    const typedValue = String(pick.value ?? '').trim();
+    const baseProperty: FeaturePropertyChoice = mapped?.property || {
       id: propertyId,
       name: String(featureProperty.name || property.name || pick.name || `Option ${propertyId}`),
       description: String(
@@ -128,6 +132,9 @@ const buildSelectedFeatureGroups = (
         '',
       ),
     };
+    const selectedProperty: FeaturePropertyChoice = typedValue
+      ? { ...baseProperty, value: typedValue }
+      : baseProperty;
 
     const group = groups.get(featureId) || {
       featureId,
@@ -277,9 +284,9 @@ export function ProfileChoicesSection({
                     className="inline-flex items-center gap-2 rounded-full border border-purple-300/70 bg-purple-50 px-3 py-1.5 text-xs font-semibold text-purple-800 dark:border-purple-500/40 dark:bg-purple-500/10 dark:text-purple-100"
                   >
                     <span className="flex h-5 w-5 items-center justify-center rounded-full bg-purple-600 text-[10px] font-bold text-white dark:bg-purple-500">
-                      {property.name.slice(0, 1).toUpperCase()}
+                      {(property.value || property.name).slice(0, 1).toUpperCase()}
                     </span>
-                    {property.name}
+                    {property.value || property.name}
                   </span>
                 ))}
               </div>

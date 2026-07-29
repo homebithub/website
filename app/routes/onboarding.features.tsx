@@ -9,12 +9,22 @@ import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import { PurpleCard } from '~/components/ui/PurpleCard';
 import { profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 import { profileFeatureLabel } from '~/utils/profileFeatures';
+import { INPUT_CLASS, RequiredMark } from '~/components/ui/formStyles';
+
+// Mirrors MaxPickValueLength in the auth service, so the field cannot submit
+// something the backend will reject.
+const MAX_OTHER_LENGTH = 120;
 
 type FeatureProperty = {
   id: number;
   name: string;
   description?: string;
   display_order?: number;
+  // Set on a feature's "Other" option, which accepts an answer the catalogue
+  // does not list. Backends send snake_case; the camelCase form is tolerated
+  // in case a client is regenerated with different casing.
+  allows_free_text?: boolean;
+  allowsFreeText?: boolean;
 };
 
 type FeatureBundle = {
@@ -105,6 +115,8 @@ export default function OnboardingFeaturesPage() {
   const [profileType] = useState(locationState.profileType || getStoredValue('profile_type'));
   const [features, setFeatures] = useState<FeatureBundle[]>([]);
   const [selected, setSelected] = useState<Record<number, number[]>>({});
+  // Typed answers keyed by the "Other" property they belong to.
+  const [otherValues, setOtherValues] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -144,14 +156,18 @@ export default function OnboardingFeaturesPage() {
             });
           });
           const nextSelected: Record<number, number[]> = {};
+          const nextOtherValues: Record<number, string> = {};
           normalizePicks(picksPayload?.data).forEach((pick) => {
             const propertyId = pickPropertyId(pick);
             const featureId = Number(pick.feature_id || pick.featureId || propertyToFeature.get(propertyId) || 0);
             if (!propertyId || !featureId) return;
             nextSelected[featureId] = Array.from(new Set([...(nextSelected[featureId] || []), propertyId]));
+            const typed = String(pick.value ?? '');
+            if (typed) nextOtherValues[propertyId] = typed;
           });
           setFeatures(nextFeatures);
           setSelected(nextSelected);
+          setOtherValues(nextOtherValues);
         }
       } catch (err: unknown) {
         if (!cancelled) setError(getErrorMessage(err, 'Unable to load profile features'));
@@ -175,11 +191,27 @@ export default function OnboardingFeaturesPage() {
     () => Object.values(selected).flat(),
     [selected],
   );
+  const allowsFreeText = useMemo(() => {
+    const ids = new Set<number>();
+    features.forEach((feature) => {
+      (feature.properties || []).forEach((property) => {
+        if (property.allows_free_text ?? property.allowsFreeText) ids.add(Number(property.id));
+      });
+    });
+    return ids;
+  }, [features]);
   const canSave = selectedPropertyIds.length > 0;
   const isJobEligible = progress >= JOB_ELIGIBILITY_THRESHOLD;
   const remainingEligibilityPercent = Math.max(0, JOB_ELIGIBILITY_THRESHOLD - progress);
   const nextDestination = locationState.returnTo ||
     (profileType === 'household' ? '/household/profile' : '/househelp/profile');
+
+  // Clearing the text when an "Other" option is deselected stops a stale
+  // answer being resubmitted if the user selects it again later.
+  const setOtherValue = (propertyId: number, value: string) => {
+    setSaved(false);
+    setOtherValues((prev) => ({ ...prev, [propertyId]: value }));
+  };
 
   const toggleProperty = (featureId: number, propertyId: number) => {
     setSaved(false);
@@ -188,6 +220,12 @@ export default function OnboardingFeaturesPage() {
       const next = current.includes(propertyId)
         ? current.filter((id) => id !== propertyId)
         : [...current, propertyId];
+      if (!next.includes(propertyId)) {
+        setOtherValues((values) => {
+          const { [propertyId]: _removed, ...rest } = values;
+          return rest;
+        });
+      }
       return { ...prev, [featureId]: next };
     });
   };
@@ -202,9 +240,20 @@ export default function OnboardingFeaturesPage() {
     setError(null);
     setSaved(false);
     try {
+      const missingOther = selectedPropertyIds.find(
+        (id) => allowsFreeText.has(id) && !(otherValues[id] || '').trim(),
+      );
+      if (missingOther) {
+        setError('Please describe your "Other" choice, or deselect it.');
+        return;
+      }
+
       await userProfilePicksService.replacePicks(userProfileId, selectedPropertyIds.map((featurePropertyId) => ({
         feature_property_id: featurePropertyId,
         weight: 1,
+        value: allowsFreeText.has(featurePropertyId)
+          ? (otherValues[featurePropertyId] || '').trim()
+          : undefined,
       })));
 
       setSaved(true);
@@ -350,9 +399,13 @@ export default function OnboardingFeaturesPage() {
                           <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                             {(feature.properties || []).map((property) => {
                               const active = featureSelections.includes(Number(property.id));
+                              const freeText = allowsFreeText.has(Number(property.id));
                               return (
-                                <button
+                                <div
                                   key={property.id}
+                                  className={freeText && active ? 'sm:col-span-2 xl:col-span-3' : undefined}
+                                >
+                                <button
                                   type="button"
                                   onClick={() => toggleProperty(feature.feature_id, Number(property.id))}
                                   className={`group relative min-h-[64px] rounded-xl border-2 p-3 text-left transition-all ${
@@ -379,6 +432,28 @@ export default function OnboardingFeaturesPage() {
                                     </span>
                                   )}
                                 </button>
+
+                                {freeText && active && (
+                                  <label className="mt-2 block">
+                                    <span className="mb-1.5 block text-xs font-semibold text-purple-700 dark:text-purple-300">
+                                      Tell us what it is
+                                      <RequiredMark />
+                                    </span>
+                                    <input
+                                      value={otherValues[Number(property.id)] || ''}
+                                      onChange={(event) => setOtherValue(Number(property.id), event.target.value)}
+                                      maxLength={MAX_OTHER_LENGTH}
+                                      required
+                                      aria-required="true"
+                                      placeholder={`Add a ${getFeatureName(feature).toLowerCase()} not listed above`}
+                                      className={INPUT_CLASS}
+                                    />
+                                    <span className="mt-1 block text-[11px] text-gray-500 dark:text-gray-400">
+                                      Shown on your profile. It is not used for matching yet.
+                                    </span>
+                                  </label>
+                                )}
+                                </div>
                               );
                             })}
                           </div>

@@ -271,7 +271,8 @@ proto.profile.PickInput.prototype.toObject = function(opt_includeInstance) {
 proto.profile.PickInput.toObject = function(includeInstance, msg) {
   var f, obj = {
 featurePropertyId: jspb.Message.getFieldWithDefault(msg, 1, 0),
-weight: jspb.Message.getFieldWithDefault(msg, 2, 0)
+weight: jspb.Message.getFieldWithDefault(msg, 2, 0),
+value: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -316,6 +317,10 @@ proto.profile.PickInput.deserializeBinaryFromReader = function(msg, reader) {
       var value = /** @type {number} */ (reader.readInt32());
       msg.setWeight(value);
       break;
+    case 3:
+      var value = /** @type {string} */ (reader.readStringRequireUtf8());
+      msg.setValue(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -359,6 +364,13 @@ proto.profile.PickInput.serializeBinaryToWriter = function(message, writer) {
       f
     );
   }
+  f = message.getValue();
+  if (f.length > 0) {
+    writer.writeString(
+      3,
+      f
+    );
+  }
 };
 
 
@@ -395,6 +407,24 @@ proto.profile.PickInput.prototype.getWeight = function() {
  */
 proto.profile.PickInput.prototype.setWeight = function(value) {
   return jspb.Message.setProto3IntField(this, 2, value);
+};
+
+
+/**
+ * optional string value = 3;
+ * @return {string}
+ */
+proto.profile.PickInput.prototype.getValue = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.profile.PickInput} returns this
+ */
+proto.profile.PickInput.prototype.setValue = function(value) {
+  return jspb.Message.setProto3StringField(this, 3, value);
 };
 
 
