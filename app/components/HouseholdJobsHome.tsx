@@ -899,8 +899,8 @@ export default function HouseholdJobsHome() {
               />
             )}
 
-            <section className="order-first sticky top-[65px] z-30 mb-5 h-16 overflow-hidden rounded-2xl border border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[73px] sm:h-[72px]">
-              <div className="flex h-full items-center gap-2 sm:gap-3">
+            <section className="order-first sticky top-[65px] z-30 mb-5 h-16 rounded-2xl border border-purple-200/60 bg-white/90 shadow-sm backdrop-blur-xl dark:border-purple-500/20 dark:bg-[#0d0914]/90 sm:top-[73px] sm:h-[72px]">
+              <div className="flex h-full items-center gap-2 px-4 sm:gap-3 sm:px-5">
                 <div className="hidden min-w-0 flex-1 sm:block">
                   <h1 className="truncate text-sm font-semibold text-gray-900 dark:text-white">
                     {isServiceProvider ? "Job listings" : "Open for work"}
