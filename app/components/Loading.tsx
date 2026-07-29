@@ -1,5 +1,4 @@
-import React from "react";
-import { ShimmerHeroPanel, ShimmerSection, ShimmerTileRow } from "~/components/ShimmerLoader";
+import { ShimmerLine } from "~/components/ShimmerLoader";
 
 type LoadingVariant = "fullscreen" | "inline";
 
@@ -11,7 +10,7 @@ interface LoadingProps {
 
 const containerVariants = {
   fullscreen: "min-h-screen flex items-center justify-center bg-gradient-to-br from-[#06030a] via-[#090314] to-[#050109]",
-  inline: "w-full h-full flex items-center justify-center bg-gradient-to-br from-[#06030a] via-[#090314] to-[#050109] rounded-3xl",
+  inline: "w-full min-h-56 flex items-center justify-center bg-[#0b0711]/80 rounded-2xl",
 };
 
 export function Loading({
@@ -22,28 +21,24 @@ export function Loading({
   const containerClasses = containerVariants[variant];
 
   return (
-    <div className={`${containerClasses} ${className} relative overflow-hidden bg-[#05020b]`}> 
-      <div className="absolute inset-0 opacity-60" aria-hidden>
-        <div className="absolute -top-32 -left-10 w-[480px] h-[480px] rounded-full bg-purple-500/10 blur-[140px]" />
-        <div className="absolute top-16 right-0 w-[420px] h-[420px] rounded-full bg-pink-500/10 blur-[120px]" />
+    <div className={`${containerClasses} ${className} relative overflow-hidden`}>
+      <div className="absolute inset-0 opacity-50" aria-hidden>
+        <div className="absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full bg-purple-500/10 blur-[100px]" />
       </div>
 
-      <div className="relative z-10 flex flex-col gap-8 text-white/70 w-full max-w-5xl px-6">
-        <div className="text-center">
-          <p className="text-[0.8rem] uppercase tracking-[0.4em] text-white/40 mb-2">{text}</p>
-          <h1 className="text-2xl font-bold text-white">
-            Home<span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Bit</span>
-          </h1>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <div className="space-y-6">
-            <ShimmerHeroPanel />
-            <ShimmerTileRow items={2} />
+      <div className="relative z-10 w-full max-w-md px-5">
+        <div className="rounded-2xl border border-purple-300/15 bg-[#120b1c]/90 p-5 shadow-2xl shadow-black/25 backdrop-blur-sm sm:p-6">
+          <div className="flex items-center justify-between gap-4">
+            <h1 className="text-lg font-bold text-white">
+              Home<span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Bit</span>
+            </h1>
+            <span className="h-2 w-2 rounded-full bg-purple-400 shadow-[0_0_12px_rgba(192,132,252,0.7)]" />
           </div>
-          <div className="space-y-4">
-            <ShimmerSection lines={4} showAction />
-            <ShimmerSection lines={3} showTitle={false} />
+          <p className="mt-2 text-sm text-white/55">{text}</p>
+          <div className="mt-5 space-y-2.5">
+            <ShimmerLine width="92%" height={10} />
+            <ShimmerLine width="70%" height={10} />
+            <ShimmerLine width="46%" height={10} />
           </div>
         </div>
       </div>

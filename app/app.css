@@ -4,125 +4,6 @@
     box-sizing: border-box;
 }
 
-.hb-shimmer-surface {
-    position: relative;
-    overflow: hidden;
-    background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.02))
-        , linear-gradient(135deg, rgba(253, 252, 255, 0.06), rgba(162, 87, 248, 0.08));
-    backdrop-filter: blur(12px);
-}
-
-.hb-shimmer-surface::after {
-    content: "";
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(120deg, transparent 10%, rgba(255, 255, 255, 0.4) 40%, transparent 70%);
-    animation: hbSweep 2.4s ease-in-out infinite;
-}
-
-.hb-shimmer-piece {
-    position: relative;
-    overflow: hidden;
-    background: rgba(255, 255, 255, 0.4);
-    background-image: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
-    background-size: 300% 100%;
-    animation: hbSwipe 1.6s linear infinite;
-}
-
-@keyframes hbSweep {
-    0% {
-        transform: translateX(-80%);
-    }
-    100% {
-        transform: translateX(120%);
-    }
-}
-
-@keyframes hbSwipe {
-    0% {
-        background-position: -200% 0;
-    }
-    100% {
-        background-position: 200% 0;
-    }
-}
-
-.hb-loader-overlay {
-    position: fixed;
-    inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    pointer-events: none;
-    background: var(--hb-loader-overlay-bg);
-    backdrop-filter: blur(var(--hb-loader-overlay-blur));
-    opacity: 0;
-    transform: translateY(8px) scale(0.98);
-    transition: opacity 220ms ease, transform 240ms ease;
-    z-index: 60;
-}
-
-.hb-loader-overlay--visible {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-}
-
-.hb-loader-shell {
-    width: min(1200px, 100%);
-    background: var(--hb-loader-shell-bg);
-    border: 1px solid var(--hb-loader-shell-border);
-    border-radius: 28px;
-    padding: clamp(1.5rem, 2vw, 2.5rem);
-    box-shadow: 0 20px 120px rgba(7, 1, 14, 0.6);
-    color: #f4f4f6;
-}
-
-.hb-loader-progress {
-    position: relative;
-    width: 100%;
-    height: 6px;
-    border-radius: 999px;
-    background: var(--hb-loader-progress-track);
-    overflow: hidden;
-    margin-bottom: 1.75rem;
-}
-
-.hb-loader-progress-bar {
-    height: 100%;
-    border-radius: inherit;
-    background-image: var(--hb-loader-progress-bar);
-    background-size: 400% 100%;
-    animation: hbProgressWave 1s linear infinite;
-}
-
-.hb-loader-progress-bar--complete {
-    animation: none;
-    transition: width 320ms ease, opacity 280ms ease;
-    opacity: 0;
-}
-
-@keyframes hbProgressWave {
-    0% {
-        background-position: 0% 0;
-    }
-    100% {
-        background-position: 200% 0;
-    }
-}
-
-.hb-loader-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 1.5rem;
-}
-
-@media (max-width: 640px) {
-    .hb-loader-grid {
-        grid-template-columns: 1fr;
-    }
-}
-
 body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
     "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
@@ -143,18 +24,6 @@ body {
     line-height: 1.5;
     color: #121212;
 }
-
-:root {
-    --hb-loader-overlay-bg: rgba(4, 2, 9, 0.88);
-    --hb-loader-overlay-blur: 18px;
-    --hb-loader-shell-bg: linear-gradient(145deg, rgba(14, 9, 22, 0.9), rgba(15, 9, 25, 0.92));
-    --hb-loader-shell-border: rgba(255, 255, 255, 0.1);
-    --hb-loader-progress-track: rgba(255, 255, 255, 0.08);
-    --hb-loader-progress-bar: linear-gradient(90deg, #a855f7, #ec4899, #f97316);
-    --hb-shimmer-light: rgba(255, 255, 255, 0.85);
-    --hb-shimmer-dark: rgba(168, 85, 247, 0.2);
-}
-
 
 /* Legacy form + link helpers (keep light theme parity outside Tailwind) */
 input,
@@ -615,27 +484,6 @@ i {
     animation: bounce 2s ease-in-out infinite;
 }
 
-/* Shimmer effect */
-@keyframes shimmer {
-    0% {
-        background-position: -1000px 0;
-    }
-    100% {
-        background-position: 1000px 0;
-    }
-}
-
-.animate-shimmer {
-    background: linear-gradient(
-        90deg,
-        rgba(255, 255, 255, 0) 0%,
-        rgba(255, 255, 255, 0.3) 50%,
-        rgba(255, 255, 255, 0) 100%
-    );
-    background-size: 1000px 100%;
-    animation: shimmer 2s infinite;
-}
-
 /* Scale on hover */
 .hover-scale {
     transition: transform 0.3s ease-in-out;
@@ -672,29 +520,6 @@ i {
     0% { left: -100%; }
     50% { left: 150%; }
     100% { left: 150%; }
-}
-
-/* Profile setup step transition animations */
-@keyframes slideInLeft {
-    from {
-        opacity: 0;
-        transform: translateX(2rem);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
-
-@keyframes slideInRight {
-    from {
-        opacity: 0;
-        transform: translateX(-2rem);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
 }
 
 /* Glow effect */

@@ -28,7 +28,7 @@ export function lazyLoad<T extends ComponentType<any>>(
   
   const fallback = options.fallback || (
     <div className="flex items-center justify-center p-8">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+      <div className="h-7 w-7 animate-spin rounded-full border-2 border-purple-300/30 border-t-purple-500" />
     </div>
   );
 
@@ -54,7 +54,7 @@ export function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
 
   return (
     <div className="flex items-center justify-center p-8">
-      <div className={`animate-spin rounded-full border-b-2 border-purple-600 ${sizeClasses[size]}`}></div>
+      <div className={`animate-spin rounded-full border-2 border-purple-300/30 border-t-purple-500 ${sizeClasses[size]}`} />
     </div>
   );
 }
@@ -65,11 +65,11 @@ export function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
  */
 export function SkeletonLoader() {
   return (
-    <div className="animate-pulse space-y-4 p-4">
-      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-      <div className="h-4 bg-gray-200 rounded"></div>
-      <div className="h-4 bg-gray-200 rounded w-5/6"></div>
-      <div className="h-32 bg-gray-200 rounded"></div>
+    <div className="hb-shimmer-surface space-y-3 rounded-2xl border border-purple-200/35 p-4 dark:border-purple-500/15">
+      <div className="hb-shimmer-piece h-3 w-3/4 rounded-full" />
+      <div className="hb-shimmer-piece h-3 rounded-full" />
+      <div className="hb-shimmer-piece h-3 w-5/6 rounded-full" />
+      <div className="hb-shimmer-piece h-24 rounded-xl" />
     </div>
   );
 }

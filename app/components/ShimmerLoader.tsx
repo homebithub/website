@@ -2,6 +2,8 @@ import React from "react";
 import { useNavigation } from "react-router";
 
 const WIDTH_PRESETS = ["96%", "82%", "74%", "88%", "68%"];
+const SHIMMER_SURFACE =
+  "hb-shimmer-surface rounded-2xl border border-purple-200/35 dark:border-purple-500/15";
 
 type ShimmerLineProps = {
   width?: string;
@@ -35,7 +37,7 @@ export function ShimmerSection({
 
   return (
     <div
-      className={`hb-shimmer-surface rounded-2xl border border-white/10 dark:border-white/5 p-5 shadow-light-glow-sm dark:shadow-glow-sm ${className}`}
+      className={`${SHIMMER_SURFACE} p-4 sm:p-5 ${className}`}
     >
       {showTitle && (
         <div className="mb-4 flex items-center justify-between gap-4">
@@ -58,21 +60,31 @@ type PageSkeletonProps = {
 
 export function ProfilePageSkeleton({ className = "" }: PageSkeletonProps) {
   return (
-    <div className={`space-y-6 ${className}`}>
-      <ShimmerHeroPanel />
-      <ShimmerTileRow items={3} />
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ShimmerSection lines={4} showAction />
-        <ShimmerSection lines={3} />
+    <div className={`space-y-4 ${className}`}>
+      <ShimmerSection lines={2} showAction />
+      <div className={`${SHIMMER_SURFACE} p-4 sm:p-5`}>
+        <div className="flex items-start gap-3">
+          <div className="hb-shimmer-piece h-11 w-11 shrink-0 rounded-xl" />
+          <div className="flex-1 space-y-2">
+            <ShimmerLine width="28%" height={10} />
+            <ShimmerLine width="52%" height={16} />
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-3">
+          <ShimmerLine height={54} className="w-full rounded-xl" />
+          <ShimmerLine height={54} className="w-full rounded-xl" />
+          <ShimmerLine height={54} className="w-full rounded-xl" />
+        </div>
       </div>
-      <ShimmerSection lines={5} showTitle={false} />
+      <ShimmerSection lines={4} showAction />
+      <ShimmerSection lines={3} />
     </div>
   );
 }
 
 export function ListPageSkeleton({ className = "", items = 4 }: { className?: string; items?: number }) {
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       <div className="grid gap-4 lg:grid-cols-2">
         <ShimmerSection lines={2} showAction />
         <ShimmerSection lines={3} />
@@ -85,7 +97,7 @@ export function ListPageSkeleton({ className = "", items = 4 }: { className?: st
 
 export function FormPageSkeleton({ className = "" }: PageSkeletonProps) {
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       <ShimmerHeroPanel />
       <ShimmerSection lines={4} showAction />
       <ShimmerSection lines={3} showTitle={false} />
@@ -95,7 +107,7 @@ export function FormPageSkeleton({ className = "" }: PageSkeletonProps) {
 
 export function DetailPageSkeleton({ className = "" }: PageSkeletonProps) {
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       <ShimmerHeroPanel />
       <div className="grid gap-4 lg:grid-cols-2">
         <ShimmerSection lines={4} showAction />
@@ -109,7 +121,7 @@ export function DetailPageSkeleton({ className = "" }: PageSkeletonProps) {
 
 export function PricingPageSkeleton({ className = "" }: PageSkeletonProps) {
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       <ShimmerHeroPanel />
       <ShimmerTileRow items={3} />
       <div className="grid gap-4 lg:grid-cols-2">
@@ -122,7 +134,7 @@ export function PricingPageSkeleton({ className = "" }: PageSkeletonProps) {
 
 export function SettingsPageSkeleton({ className = "" }: PageSkeletonProps) {
   return (
-    <div className={`space-y-6 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       <ShimmerSection lines={2} showAction />
       <ShimmerTileRow items={3} />
       <ShimmerSection lines={4} />
@@ -157,7 +169,7 @@ export function ShimmerTileRow({ items = 3, className = "" }: ShimmerTileRowProp
       {Array.from({ length: items }).map((_, index) => (
         <div
           key={`tile-${index}`}
-          className="hb-shimmer-surface rounded-2xl border border-white/10 dark:border-white/5 p-4 shadow-light-glow-sm dark:shadow-glow-sm"
+          className={`${SHIMMER_SURFACE} p-4`}
         >
           <ShimmerLine width="60%" height={16} className="rounded-xl" />
           <ShimmerLine width="80%" height={12} className="mt-2 rounded-xl" />
@@ -177,9 +189,9 @@ export function ShimmerListPlaceholder({ items = 3, className = "" }: { items?: 
       {Array.from({ length: items }).map((_, index) => (
         <div
           key={`list-placeholder-${index}`}
-          className="hb-shimmer-surface flex flex-col gap-4 rounded-2xl border border-white/10 p-4 shadow-light-glow-sm dark:border-white/5 dark:shadow-glow-sm sm:flex-row"
+          className={`${SHIMMER_SURFACE} flex flex-col gap-4 p-4 sm:flex-row`}
         >
-          <div className="hb-shimmer-piece h-20 w-20 rounded-2xl sm:h-24 sm:w-24" />
+          <div className="hb-shimmer-piece h-16 w-16 shrink-0 rounded-xl sm:h-20 sm:w-20" />
           <div className="flex-1 space-y-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <ShimmerLine width="45%" height={16} className="rounded-xl" />
@@ -206,14 +218,14 @@ export function ShimmerListPlaceholder({ items = 3, className = "" }: { items?: 
 export function ShimmerHeroPanel({ className = "" }: { className?: string }) {
   return (
     <div
-      className={`hb-shimmer-surface rounded-[28px] border border-white/10 dark:border-white/5 p-6 md:p-8 shadow-light-glow-md dark:shadow-glow-md ${className}`}
+      className={`${SHIMMER_SURFACE} p-5 sm:p-6 ${className}`}
     >
       <div className="space-y-4">
         <ShimmerLine width="48%" height={20} className="rounded-xl" />
         <ShimmerLine width="72%" height={14} className="rounded-xl" />
         <ShimmerLine width="64%" height={14} className="rounded-xl" />
       </div>
-      <div className="mt-6 grid gap-4 md:grid-cols-2">
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
         <div className="space-y-3">
           <ShimmerLine width="80%" height={12} className="rounded-xl" />
           <ShimmerLine width="60%" height={12} className="rounded-xl" />
@@ -222,7 +234,7 @@ export function ShimmerHeroPanel({ className = "" }: { className?: string }) {
             <ShimmerLine width="28%" height={10} />
           </div>
         </div>
-        <div className="hb-shimmer-piece rounded-2xl" style={{ minHeight: 140 }} />
+        <div className="hb-shimmer-piece h-24 rounded-xl" />
       </div>
     </div>
   );
@@ -306,19 +318,21 @@ export function GlobalLoaderOverlay() {
             style={{ width: `${progress}%` }}
           />
         </div>
-        <div className="mb-4 flex flex-col gap-1 text-[0.7rem] font-semibold uppercase tracking-[0.4em] text-gray-500 dark:text-white/50">
-          <span>{statusCopy}</span>
-          <span className="text-primary-500 dark:text-primary-300">{state}</span>
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <p className="text-[0.65rem] font-semibold uppercase tracking-[0.24em] text-white/45">
+              HomeBit
+            </p>
+            <p className="mt-1 text-sm font-medium text-white/85">{statusCopy}</p>
+          </div>
+          <span className="rounded-full bg-purple-500/10 px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-wider text-purple-200">
+            {state}
+          </span>
         </div>
-        <div className="hb-loader-grid">
-          <div className="flex flex-col gap-6">
-            <ShimmerHeroPanel />
-            <ShimmerTileRow items={3} />
-          </div>
-          <div className="flex flex-col gap-4">
-            <ShimmerSection lines={4} showAction />
-            <ShimmerSection lines={3} showTitle={false} />
-          </div>
+        <div className="mt-5 space-y-2.5">
+          <ShimmerLine width="92%" height={10} />
+          <ShimmerLine width="72%" height={10} />
+          <ShimmerLine width="48%" height={10} />
         </div>
       </div>
     </div>
