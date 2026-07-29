@@ -16,11 +16,11 @@ import {
 interface HireRequest {
   id: string;
   household_id: string;
-  job_type: string;
+  job_type?: string;
   start_date?: string;
   salary_offered: number;
   salary_frequency: string;
-  status: string;
+  status?: string;
   special_requirements?: string;
   created_at: string;
   updated_at: string;
@@ -40,12 +40,12 @@ interface HireRequest {
 interface HireContract {
   id: string;
   household_id: string;
-  job_type: string;
-  start_date: string;
+  job_type?: string;
+  start_date?: string;
   end_date?: string;
   salary: number;
   salary_frequency: string;
-  status: string;
+  status?: string;
   created_at: string;
   household?: {
     id: string;
@@ -69,7 +69,7 @@ interface Interest {
   available_from?: string;
   job_type?: string;
   comments?: string;
-  status: string;
+  status?: string;
   viewed_at?: string;
   created_at: string;
   household?: {
@@ -89,8 +89,8 @@ interface EmploymentContract {
   id: string;
   household_id: string;
   househelp_id: string;
-  status: string;
-  job_title: string;
+  status?: string;
+  job_title?: string;
   salary: number;
   salary_frequency: string;
   start_date?: string;
@@ -140,7 +140,8 @@ const getHouseholdName = (household?: HireRequest['household'] | HireContract['h
   if (!household) return 'Household';
   if (household.household_name) return household.household_name;
   if (household.user) {
-    return `${household.user.first_name} ${household.user.last_name}`.trim();
+    const name = `${household.user.first_name || ''} ${household.user.last_name || ''}`.trim();
+    if (name) return name;
   }
   return 'Household';
 };
@@ -171,6 +172,35 @@ const extractTotal = (raw: any, fallbackLength: number): number => {
   const payload: any = extractEnvelopeObject(raw);
   const total = payload?.total ?? raw?.total;
   return typeof total === 'number' ? total : fallbackLength;
+};
+
+const formatJobType = (record?: Record<string, any> | null): string => {
+  if (!record) return 'Not specified';
+  const nestedJob = record.job && typeof record.job === 'object' ? record.job : {};
+  const nestedListing = record.listing && typeof record.listing === 'object' ? record.listing : {};
+  const raw =
+    record.job_type ||
+    record.job_type_name ||
+    record.job_title ||
+    record.service_type ||
+    record.title ||
+    nestedJob.job_type ||
+    nestedJob.title ||
+    nestedListing.job_type ||
+    nestedListing.title ||
+    (Array.isArray(record.job_types) ? record.job_types[0] : '');
+  const label = String(raw || '').trim();
+  return label ? label.replace(/[-_]+/g, ' ') : 'Not specified';
+};
+
+const normalizeStatus = (status?: string | null): string => {
+  const value = String(status || '').trim().toLowerCase();
+  return value || 'pending';
+};
+
+const formatStatus = (status?: string | null): string => {
+  const value = normalizeStatus(status).replace(/[-_]+/g, ' ');
+  return value.replace(/\b\w/g, (letter) => letter.toUpperCase());
 };
 
 function buildHouseholdProfileLink(options: {
@@ -462,8 +492,11 @@ export default function HousehelpHiringHistory() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  const formatDate = (dateString?: string | null) => {
+    if (!dateString) return 'Not specified';
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Not specified';
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
   const formatSalary = (amount?: number | null, frequency?: string) =>
@@ -480,8 +513,8 @@ export default function HousehelpHiringHistory() {
       : []
   );
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusColor = (status?: string | null) => {
+    switch (normalizeStatus(status)) {
       case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300';
       case 'accepted': case 'active': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300';
       case 'declined': case 'terminated': return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300';
@@ -492,8 +525,8 @@ export default function HousehelpHiringHistory() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
+  const getStatusIcon = (status?: string | null) => {
+    switch (normalizeStatus(status)) {
       case 'pending': return <Clock className="w-4 h-4" />;
       case 'accepted': case 'active': return <CheckCircle className="w-4 h-4" />;
       case 'declined': case 'terminated': return <XCircle className="w-4 h-4" />;
@@ -707,11 +740,11 @@ export default function HousehelpHiringHistory() {
                             <h3 className="text-base font-semibold text-gray-900 dark:text-white">{getHouseholdName(request.household)}</h3>
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
                               {getStatusIcon(request.status)}
-                              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                              {formatStatus(request.status)}
                             </span>
                           </div>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                            <div><span className="text-gray-500 dark:text-purple-300">Job Type</span><p className="font-medium text-gray-900 dark:text-white capitalize">{request.job_type.replace('-', ' ')}</p></div>
+                            <div><span className="text-gray-500 dark:text-purple-300">Job Type</span><p className="font-medium text-gray-900 dark:text-white capitalize">{formatJobType(request as any)}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Salary</span><p className="font-medium text-gray-900 dark:text-white">{formatSalary(request.salary_offered, request.salary_frequency)}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Start Date</span><p className="font-medium text-gray-900 dark:text-white">{request.start_date ? formatDate(request.start_date) : 'Not specified'}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Requested</span><p className="font-medium text-gray-900 dark:text-white">{formatDate(request.created_at)}</p></div>
@@ -889,11 +922,11 @@ export default function HousehelpHiringHistory() {
                             <h3 className="text-base font-semibold text-gray-900 dark:text-white">{getHouseholdName(contract.household)}</h3>
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(contract.status)}`}>
                               {getStatusIcon(contract.status)}
-                              {contract.status.charAt(0).toUpperCase() + contract.status.slice(1)}
+                              {formatStatus(contract.status)}
                             </span>
                           </div>
                           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                            <div><span className="text-gray-500 dark:text-purple-300">Job Type</span><p className="font-medium text-gray-900 dark:text-white capitalize">{contract.job_type.replace('-', ' ')}</p></div>
+                            <div><span className="text-gray-500 dark:text-purple-300">Job Type</span><p className="font-medium text-gray-900 dark:text-white capitalize">{formatJobType(contract as any)}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Salary</span><p className="font-medium text-gray-900 dark:text-white">{formatSalary(contract.salary, contract.salary_frequency)}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">Start Date</span><p className="font-medium text-gray-900 dark:text-white">{formatDate(contract.start_date)}</p></div>
                             <div><span className="text-gray-500 dark:text-purple-300">End Date</span><p className="font-medium text-gray-900 dark:text-white">{contract.end_date ? formatDate(contract.end_date) : 'Ongoing'}</p></div>
@@ -948,7 +981,7 @@ export default function HousehelpHiringHistory() {
                             <h3 className="text-base font-semibold text-gray-900 dark:text-white">{getHouseholdName(interest.household)}</h3>
                             <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(interest.status)}`}>
                               {getStatusIcon(interest.status)}
-                              {interest.status.charAt(0).toUpperCase() + interest.status.slice(1)}
+                              {formatStatus(interest.status)}
                             </span>
                             {interest.viewed_at && interest.status === 'pending' && (
                               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300">
@@ -1057,7 +1090,7 @@ export default function HousehelpHiringHistory() {
                     )}
                     <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium mt-2 ${getStatusColor(selectedInterest.status)}`}>
                       {getStatusIcon(selectedInterest.status)}
-                      {selectedInterest.status.charAt(0).toUpperCase() + selectedInterest.status.slice(1)}
+                      {formatStatus(selectedInterest.status)}
                       {selectedInterest.viewed_at && selectedInterest.status === 'pending' && (
                         <span className="ml-1 flex items-center gap-1"><Eye className="w-3 h-3" /> Viewed</span>
                       )}
