@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useSSEContext, type SSEEventHandler } from '~/contexts/SSEContext';
+import { useSSEContext, useSSEContextSafe, type SSEEventHandler } from '~/contexts/SSEContext';
 
 /**
  * Hook to subscribe to specific SSE event types using the centralized SSE connection
@@ -29,8 +29,36 @@ export function useSSESubscription(
 }
 
 /**
+ * Same as useSSESubscription, but tolerates the SSE provider being absent.
+ *
+ * Live updates are an enhancement layered on top of polling, so a component
+ * rendered outside SSEProvider should lose realtime refreshes rather than
+ * crash. Use this from anything that renders on every page, such as the
+ * navigation bar; use useSSESubscription where SSE is genuinely required.
+ */
+export function useSSESubscriptionSafe(
+  eventType: string,
+  handler: SSEEventHandler,
+  enabled: boolean = true
+) {
+  const subscribe = useSSEContextSafe()?.subscribe;
+
+  useEffect(() => {
+    if (!enabled || !handler || !subscribe) {
+      return;
+    }
+
+    const unsubscribe = subscribe(eventType, handler);
+
+    return () => {
+      unsubscribe();
+    };
+  }, [eventType, handler, enabled, subscribe]);
+}
+
+/**
  * Hook to subscribe to multiple SSE event types at once
- * 
+ *
  * @param subscriptions - Array of {eventType, handler} objects
  * @param enabled - Whether the subscriptions are active (default: true)
  */

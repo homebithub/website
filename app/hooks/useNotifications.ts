@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { NotificationItem } from "~/types/notifications";
 import { notificationsService } from "~/services/grpc/notifications.service";
-import { useSSESubscription } from "~/hooks/useSSESubscription";
+import { useSSESubscriptionSafe } from "~/hooks/useSSESubscription";
 import { shouldSilenceGatewayError } from "~/services/grpc/client";
 import {
   getStoredAccessToken,
@@ -210,10 +210,10 @@ export function useNotifications({
     void fetchLatest();
   }, [enabled, fetchLatest]);
 
-  useSSESubscription("notifications.snapshot", refreshFromRealtime);
-  useSSESubscription("notifications.created", refreshFromRealtime);
-  useSSESubscription("notifications.blast", refreshFromRealtime);
-  useSSESubscription("notifications.system.alert", refreshFromRealtime);
+  useSSESubscriptionSafe("notifications.snapshot", refreshFromRealtime, enabled);
+  useSSESubscriptionSafe("notifications.created", refreshFromRealtime, enabled);
+  useSSESubscriptionSafe("notifications.blast", refreshFromRealtime, enabled);
+  useSSESubscriptionSafe("notifications.system.alert", refreshFromRealtime, enabled);
 
   const markAllAsRead = useCallback(async () => {
     const userId = getCurrentUserId();
