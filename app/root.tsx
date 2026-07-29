@@ -4,13 +4,12 @@ import type { Route } from "./+types/root";
 
 import { AuthProvider } from "~/contexts/AuthContext";
 import { ThemeProvider } from "~/contexts/ThemeContext";
-import { ProfileSetupProvider } from "~/contexts/ProfileSetupContext";
-import { ProfileSetupGuard } from "~/components/ProfileSetupGuard";
+import { ProfileEditorProvider } from "~/contexts/ProfileEditorContext";
 import { WebSocketProvider } from "~/contexts/WebSocketContext";
 import { SSEProvider } from "~/contexts/SSEContext";
 import { GlobalLoaderOverlay } from "~/components/ShimmerLoader";
 import { API_BASE_URL, NOTIFICATIONS_API_BASE_URL, NOTIFICATIONS_WS_BASE_URL } from '~/config/api';
-import "./tailwind.css";
+import stylesheet from "./tailwind.css?url";
 
 export const meta: Route.MetaFunction = () => [
     { title: "Homebit — Find Trusted Home Help in Kenya" },
@@ -31,6 +30,7 @@ export const meta: Route.MetaFunction = () => [
 ];
 
 export const links: Route.LinksFunction = () => [
+    { rel: "stylesheet", href: stylesheet },
     { rel: "canonical", href: "https://homebit.co.ke" },
 ];
 
@@ -162,12 +162,10 @@ export default function App() {
                     <AuthProvider>
                         <SSEProvider>
                             <WebSocketProvider>
-                                <ProfileSetupProvider>
-                                    <ProfileSetupGuard>
-                                        <Outlet/>
-                                        <GlobalLoaderOverlay />
-                                    </ProfileSetupGuard>
-                                </ProfileSetupProvider>
+                                <ProfileEditorProvider>
+                                    <Outlet/>
+                                    <GlobalLoaderOverlay />
+                                </ProfileEditorProvider>
                             </WebSocketProvider>
                         </SSEProvider>
                     </AuthProvider>
