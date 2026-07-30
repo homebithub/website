@@ -196,11 +196,18 @@ export const deviceService = {
         deviceClient.getDeviceActivity(request, getMetadata(), (err: any, response: any) => {
           if (err) {
             reject(handleGrpcError(err));
-          } else {
-            resolve({
-              activities: response.getActivitiesList().map((a: any) => a.toObject()),
-            });
+            return;
           }
+          // GetDeviceActivityResponse carries `logs`, so the generated getter
+          // is getLogsList. Guard the call rather than assume it exists: a
+          // client regenerated from a renamed field would otherwise throw a
+          // TypeError inside the callback, where no catch can reach it.
+          const logs = typeof response?.getLogsList === 'function' ? response.getLogsList() : [];
+          resolve({
+            activities: (logs || []).map((entry: any) =>
+              typeof entry?.toObject === 'function' ? entry.toObject() : entry
+            ),
+          });
         });
       } catch (error) {
         reject(error);
