@@ -1412,6 +1412,8 @@ export const listingApplicationService = {
   async listApplications(options: {
     listingId?: string;
     applicantProfileId?: string;
+    /** Every application across the listings this profile owns. */
+    ownerProfileId?: string;
     statuses?: string[];
     limit?: number;
     offset?: number;
@@ -1419,6 +1421,7 @@ export const listingApplicationService = {
     const params = new URLSearchParams({ action: 'applications' });
     if (options.listingId) params.set('listing_id', options.listingId);
     if (options.applicantProfileId) params.set('applicant_profile_id', options.applicantProfileId);
+    if (options.ownerProfileId) params.set('owner_profile_id', options.ownerProfileId);
     if (options.statuses?.length) params.set('statuses', options.statuses.join(','));
     params.set('limit', String(options.limit ?? 20));
     params.set('offset', String(options.offset ?? 0));

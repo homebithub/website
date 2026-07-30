@@ -111,6 +111,9 @@ function encodeListApplicationsRequest(params: URLSearchParams) {
     ...statuses.map((status) => encodeStringField(3, status)),
     encodeInt32Field(4, Number(params.get('limit') || '20')),
     encodeInt32Field(5, Number(params.get('offset') || '0')),
+    // Every application across the listings this profile owns — the household
+    // hiring workspace's query.
+    encodeStringField(6, String(params.get('owner_profile_id') || params.get('ownerProfileId') || '')),
   ]);
 }
 
