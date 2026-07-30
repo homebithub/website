@@ -86,7 +86,11 @@ function isTechnicalErrorMessage(message: string): boolean {
     lower.includes('stack trace') ||
     lower.includes('does not exist') ||
     lower.includes('no such table') ||
-    lower.includes('no such column')
+    lower.includes('no such column') ||
+    // GORM's ErrRecordNotFound. It reads like prose, so it slipped past the
+    // patterns above and reached users as a bare "record not found".
+    lower === 'record not found' ||
+    lower.includes('gorm')
   );
 }
 

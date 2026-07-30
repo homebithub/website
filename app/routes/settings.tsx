@@ -121,20 +121,39 @@ export default function SettingsPage() {
     if (!user) return;
     let cancelled = false;
     setPrefsLoading(true);
-    Promise.all([
+    // Settled rather than all: account, password and device settings must stay
+    // usable when only one of these reads fails. Delivery preferences in
+    // particular are secondary, and a single failure previously discarded the
+    // whole load and replaced the page with the raw backend message.
+    Promise.allSettled([
       fetchPreferences(),
       notificationsService.getUserPreferences(userId),
     ])
-      .then(([app, delivery]) => {
+      .then(([appResult, deliveryResult]) => {
         if (cancelled) return;
-        setPreferences(app?.settings || {});
-        setNotifications({ ...defaultNotifications, ...(delivery || {}) });
-      })
-      .catch((error) => {
-        if (!cancelled) {
+
+        if (appResult.status === "fulfilled") {
+          setPreferences(appResult.value?.settings || {});
+        }
+        if (deliveryResult.status === "fulfilled") {
+          setNotifications({ ...defaultNotifications, ...(deliveryResult.value || {}) });
+        }
+
+        const failed: string[] = [];
+        if (appResult.status === "rejected") {
+          console.error("Unable to load application preferences", appResult.reason);
+          failed.push("app preferences");
+        }
+        if (deliveryResult.status === "rejected") {
+          console.error("Unable to load notification preferences", deliveryResult.reason);
+          // Defaults are already in state, so the toggles stay usable and
+          // saving writes a real record.
+          failed.push("notification preferences");
+        }
+        if (failed.length > 0) {
           setMessage({
             type: "error",
-            text: error instanceof Error ? error.message : "Could not load settings.",
+            text: `We couldn’t load your ${failed.join(" or ")}. Everything else on this page still works, and saving will store your choices.`,
           });
         }
       })
