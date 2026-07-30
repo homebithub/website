@@ -132,9 +132,12 @@ function encodeUpdateJobReq(body: Record<string, unknown>) {
   ]);
 }
 
-function encodeIdRequest(id: string) {
+function encodeIdRequest(id: string, userId = '') {
   return concatBytes([
     encodeStringField(1, id),
+    // IdRequest carries the caller in field 2. Renewing needs it, since only the
+    // household that owns a listing may keep it alive.
+    encodeStringField(2, userId),
   ]);
 }
 
@@ -417,6 +420,27 @@ export async function action({ request }: { request: Request }) {
         resolveAuthGrpcBaseUrl(request),
         rpcPath,
         encodeIdRequest(id),
+      );
+
+      return Response.json({ data: responseBody.data ?? responseBody });
+    }
+
+    // Keeps a listing alive for another cycle. A POST rather than sitting with
+    // close and delete, because renewing extends a job rather than ending one.
+    if (request.method === 'POST' && action === 'renew') {
+      const listingId = String(body.id || body.listing_id || body.listingId || '');
+      const actorProfileId = String(body.user_profile_id || body.userProfileId || '');
+      if (!listingId || !actorProfileId) {
+        return Response.json(
+          { message: 'id and user_profile_id are required to renew a listing' },
+          { status: 400 },
+        );
+      }
+
+      const { body: responseBody } = await callUnaryGrpc(
+        resolveAuthGrpcBaseUrl(request),
+        '/auth.ListingService/RenewListing',
+        encodeIdRequest(listingId, actorProfileId),
       );
 
       return Response.json({ data: responseBody.data ?? responseBody });

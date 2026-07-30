@@ -63,6 +63,8 @@ interface JobPosting {
   max_applicants?: number;
   status?: string;
   created_at?: string;
+  /** When the listing lapses unless the household keeps it open. */
+  expires_at?: string;
   salary_range?: { min?: number; max?: number; currency?: string };
   listing_feature_groups?: Array<{
     feature_id?: number | string;
@@ -145,6 +147,31 @@ function toApplicantRow(application: Record<string, any>): Interest {
 // One empty state per tab. A single message would be wrong on five of six tabs —
 // "no interested househelps" tells someone looking at Hired nothing at all — and
 // an empty tab is the moment a person most needs to know what would fill it.
+/** Whole days until a moment, floored, never negative. */
+function daysUntil(value: string): number {
+  const target = new Date(value).getTime();
+  if (Number.isNaN(target)) return 0;
+  return Math.max(0, Math.floor((target - Date.now()) / (1000 * 60 * 60 * 24)));
+}
+
+/**
+ * Says when a job lapses, in the words a person would use.
+ *
+ * Phrased as a closure rather than an expiry date, because that is the thing the
+ * household needs to act on — and it is what makes the "Keep open" button beside
+ * it mean something.
+ */
+function describeExpiry(value: string): string {
+  const target = new Date(value).getTime();
+  if (Number.isNaN(target)) return '';
+  if (target <= Date.now()) return 'Closing now';
+
+  const days = daysUntil(value);
+  if (days === 0) return 'Closes today';
+  if (days === 1) return 'Closes tomorrow';
+  return `Closes in ${days} days`;
+}
+
 const EMPTY_TAB_COPY: Record<Exclude<TabType, 'jobs'>, { title: string; body: string }> = {
   applicants: {
     title: 'No applicants yet',
@@ -345,6 +372,25 @@ export default function HiringHistory() {
       await fetchJobs();
     } catch (err: any) {
       setError(err.message || 'Failed to update job status');
+    } finally {
+      setJobActionLoading(null);
+    }
+  };
+
+  // Keeps a job open for another three weeks. Listings lapse by default, so this
+  // is how a household says it is still hiring — the action the renewal reminder
+  // asks for.
+  const handleRenewJob = async (job: JobPosting) => {
+    if (!job?.id) return;
+    setJobActionLoading(job.id);
+    setError(null);
+    setJobsSuccess(null);
+    try {
+      await jobService.renewListing(job.id);
+      setJobsSuccess('Job kept open for another three weeks.');
+      await fetchJobs();
+    } catch (err: any) {
+      setError(err.message || 'Could not keep this job open. Please try again.');
     } finally {
       setJobActionLoading(null);
     }
@@ -1062,11 +1108,24 @@ export default function HiringHistory() {
                     </div>
                   )}
 
-                  {job.max_applicants ? (
+                  {(job.max_applicants || (job.status === 'active' && job.expires_at)) ? (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
-                        Max {job.max_applicants} applicants
-                      </span>
+                      {job.max_applicants ? (
+                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200">
+                          Max {job.max_applicants} applicants
+                        </span>
+                      ) : null}
+                      {job.status === 'active' && job.expires_at ? (
+                        <span
+                          className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                            daysUntil(job.expires_at) <= 2
+                              ? 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-200'
+                              : 'bg-gray-100 text-gray-600 dark:bg-white/10 dark:text-gray-300'
+                          }`}
+                        >
+                          {describeExpiry(job.expires_at)}
+                        </span>
+                      ) : null}
                     </div>
                   ) : null}
 
@@ -1084,6 +1143,17 @@ export default function HiringHistory() {
                     >
                       {job.status === 'closed' ? 'Reopen' : 'Close'}
                     </button>
+                    {/* Only on live jobs: a closed or filled one has no expiry to
+                        extend, and offering it there would suggest otherwise. */}
+                    {job.status === 'active' && (
+                      <button
+                        onClick={() => handleRenewJob(job)}
+                        disabled={jobActionLoading === job.id}
+                        className="px-3 py-1 text-xs font-semibold rounded-lg border border-purple-300 text-purple-700 dark:text-purple-200 dark:border-purple-500/40 hover:bg-purple-50 dark:hover:bg-purple-500/10 disabled:opacity-50"
+                      >
+                        {jobActionLoading === job.id ? 'Keeping open…' : 'Keep open'}
+                      </button>
+                    )}
                     <button
                       onClick={() => setJobToDelete(job)}
                       disabled={jobActionLoading === job.id}

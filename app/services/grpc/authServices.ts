@@ -1441,6 +1441,16 @@ export const jobService = {
     return payload.data ?? payload;
   },
 
+  // Keeps a job open for another cycle. The action behind the renewal reminder;
+  // listings lapse by default, so this is how a household says it is still hiring.
+  async renewListing(listingId: string, userProfileId = getStoredUserProfileId()): Promise<any> {
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'renew', id: listingId, user_profile_id: userProfileId }),
+    });
+    return payload.data ?? payload;
+  },
+
   async createJob(userId: string, data: Record<string, any>): Promise<any> {
     return jobService.createListing(userId, data);
   },
