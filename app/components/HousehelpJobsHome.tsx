@@ -29,6 +29,7 @@ import {
 import { useOnboardingOptions } from "~/hooks/useOnboardingOptions";
 import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionReminder";
 import CustomSelect from "~/components/ui/CustomSelect";
+import LocationPicker, { type LocationSelection } from "~/components/ui/LocationPicker";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
 import { Heart, ChevronDown, Calendar, Users, Briefcase, MapPin, ArrowRight, Search, MessageCircle, Eye, SlidersHorizontal, X } from "lucide-react";
 import { useAuth } from "~/contexts/useAuth";
@@ -104,7 +105,13 @@ type SalaryRangeOption = {
 
 const DEFAULT_JOB_FILTERS = {
   jobType: "",
-  location: "",
+  // Location is filtered by the server, so it holds catalogue ids rather than a
+  // place name. Client-side matching could only ever filter the page already
+  // loaded, which made a narrow area look empty until you scrolled far enough
+  // to pull in a job from it.
+  countyId: "",
+  subcountyId: "",
+  wardId: "",
   startWindow: "",
   scheduleSlot: "",
   salaryRangeId: "",
@@ -436,6 +443,7 @@ export default function HousehelpJobsHome() {
   const [openOnly, setOpenOnly] = useState(true);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState(() => ({ ...DEFAULT_JOB_FILTERS }));
+  const [locationPickerKey, setLocationPickerKey] = useState(0);
   const [sortBy, setSortBy] = useState("best_match");
   const sentinelRef = useRef<HTMLDivElement | null>(null);
 
@@ -453,15 +461,6 @@ export default function HousehelpJobsHome() {
         const normalized = normalizeToken(type);
         if (normalized) options.set(normalized, type.replace(/_/g, " "));
       });
-    });
-    return Array.from(options.entries()).map(([value, label]) => ({ value, label }));
-  }, [jobs]);
-  const locationOptions = useMemo(() => {
-    const options = new Map<string, string>();
-    jobs.forEach((job) => {
-      const label = formatListingPlace(job);
-      const normalized = normalizeToken(label);
-      if (normalized) options.set(normalized, label);
     });
     return Array.from(options.entries()).map(([value, label]) => ({ value, label }));
   }, [jobs]);
@@ -483,11 +482,21 @@ export default function HousehelpJobsHome() {
     () => Object.values(filters).some(Boolean),
     [filters]
   );
-  const activeFilterCount = useMemo(
-    () => Object.values(filters).filter(Boolean).length,
-    [filters]
-  );
-  const clearFilters = () => setFilters({ ...DEFAULT_JOB_FILTERS });
+  const activeFilterCount = useMemo(() => {
+    // Location occupies three keys but reads as one choice to the user, so a
+    // ward selection counts once rather than announcing three active filters.
+    const { countyId, subcountyId, wardId, ...rest } = filters;
+    const locationActive = Boolean(countyId || subcountyId || wardId);
+    return Object.values(rest).filter(Boolean).length + (locationActive ? 1 : 0);
+  }, [filters]);
+  const clearFilters = () => {
+    setFilters({ ...DEFAULT_JOB_FILTERS });
+    // The picker holds its own county/subcounty/ward state and only reads the
+    // initial props once, so clearing the filters here would leave its
+    // dropdowns showing a selection that is no longer being applied. Bumping
+    // its key remounts it with the cleared values.
+    setLocationPickerKey((key) => key + 1);
+  };
   const filteredJobs = useMemo(() => {
     const choreFilter = filters.choreId ? Number(filters.choreId) : null;
     const petFilter = filters.petTypeId ? Number(filters.petTypeId) : null;
@@ -496,7 +505,6 @@ export default function HousehelpJobsHome() {
       if (filters.jobType && !job.job_types?.some((type) => normalizeToken(type) === filters.jobType)) {
         return false;
       }
-      if (filters.location && normalizeToken(formatListingPlace(job)) !== filters.location) return false;
       if (filters.startWindow && !matchesStartWindow(job.start_date, filters.startWindow)) return false;
       if (filters.scheduleSlot && !hasScheduleSlot(job.work_schedule, filters.scheduleSlot as "morning" | "afternoon" | "evening")) {
         return false;
@@ -540,6 +548,22 @@ export default function HousehelpJobsHome() {
       .sort((a, b) => compareNumbers(a.fit_score ?? null, b.fit_score ?? null, "desc"))
       .slice(0, 6)
   ), [jobs]);
+
+  // Refetches, because location is a server-side filter. Guarded against
+  // no-op reports: the picker emits on every internal change, including the
+  // ones caused by its own option lists loading, and setting identical state
+  // would restart the query and clear the results for nothing.
+  const handleLocationFilterChange = useCallback((selection: LocationSelection) => {
+    setFilters((prev) => {
+      const countyId = selection.countyId ? String(selection.countyId) : "";
+      const subcountyId = selection.subcountyId ? String(selection.subcountyId) : "";
+      const wardId = selection.wardId ? String(selection.wardId) : "";
+      if (prev.countyId === countyId && prev.subcountyId === subcountyId && prev.wardId === wardId) {
+        return prev;
+      }
+      return { ...prev, countyId, subcountyId, wardId };
+    });
+  }, []);
 
   const searchKey = useMemo(
     () => JSON.stringify({ filters, openOnly, sortBy, salaryRangeId: filters.salaryRangeId }),
@@ -619,7 +643,9 @@ export default function HousehelpJobsHome() {
         };
         if (openOnly) payload.status = "open";
         if (filters.jobType) payload.job_types = filters.jobType;
-        if (filters.location) payload.location = filters.location;
+        if (filters.wardId) payload.ward_id = Number(filters.wardId);
+        else if (filters.subcountyId) payload.subcounty_id = Number(filters.subcountyId);
+        else if (filters.countyId) payload.county_id = Number(filters.countyId);
         if (filters.choreId) payload.chores_ids = [Number(filters.choreId)];
         if (filters.petTypeId) payload.pet_type_ids = [Number(filters.petTypeId)];
         if (filters.childrenAgeRangeId) payload.children_age_range_id = Number(filters.childrenAgeRangeId);
@@ -1042,20 +1068,15 @@ export default function HousehelpJobsHome() {
                       placeholder="Any job type"
                     />
                   </label>
-                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Location
-                    <CustomSelect
-                      value={filters.location}
-                      onChange={(value) => setFilters((prev) => ({ ...prev, location: value }))}
-                      options={[
-                        { value: "", label: "Any location" },
-                        ...locationOptions.map((option) => ({ value: option.value, label: option.label })),
-                      ]}
-                      className="w-full"
-                      size="sm"
-                      placeholder="Any location"
-                    />
-                  </label>
+                  <LocationPicker
+                    key={locationPickerKey}
+                    onChange={handleLocationFilterChange}
+                    initialCountyId={filters.countyId ? Number(filters.countyId) : null}
+                    initialSubcountyId={filters.subcountyId ? Number(filters.subcountyId) : null}
+                    initialWardId={filters.wardId ? Number(filters.wardId) : null}
+                    layout="contents"
+                    anyLabel="Anywhere"
+                  />
                   <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Start window
                     <CustomSelect

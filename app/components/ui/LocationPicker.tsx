@@ -30,6 +30,16 @@ type LocationPickerProps = {
   size?: 'sm' | 'md';
   /** Overrides the default three labels, e.g. for a filter bar. */
   labels?: { county?: string; subcounty?: string; ward?: string };
+  /**
+   * 'stack' is a form field: three stacked selects with a helper note.
+   *
+   * 'contents' drops the wrapper from layout entirely, so the three selects
+   * become direct children of the parent's grid and flow with its other
+   * filters. Used by the filter bar, which owns its own columns.
+   */
+  layout?: 'stack' | 'contents';
+  /** Label shown for "no preference". Only meaningful when filtering. */
+  anyLabel?: string;
 };
 
 const EMPTY: LocationSelection = {
@@ -63,6 +73,8 @@ export function LocationPicker({
   disabled = false,
   size = 'md',
   labels,
+  layout = 'stack',
+  anyLabel,
 }: LocationPickerProps) {
   const [counties, setCounties] = useState<Place[]>([]);
   const [subcounties, setSubcounties] = useState<Place[]>([]);
@@ -198,82 +210,127 @@ export function LocationPicker({
     setWardId(value ? Number(value) : null);
   }, []);
 
-  const toOptions = (places: Place[]) =>
-    places.map((place) => ({ value: String(place.id), label: place.name }));
+  // An "any" entry makes the level clearable, which a filter needs and a
+  // required form field must not have.
+  const toOptions = (places: Place[]) => {
+    const options = places.map((place) => ({ value: String(place.id), label: place.name }));
+    return anyLabel ? [{ value: '', label: anyLabel }, ...options] : options;
+  };
 
   const countyLabel = labels?.county ?? 'County';
   const subcountyLabel = labels?.subcounty ?? 'Subcounty';
   const wardLabel = labels?.ward ?? 'Ward';
 
+  const asFilter = layout === 'contents';
+  // In the filter bar the labels have to match the controls beside them, which
+  // are uppercase micro-labels rather than form field labels.
+  const labelClass = asFilter
+    ? 'flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400'
+    : undefined;
+
+  const field = (
+    label: string,
+    value: string,
+    onChangeValue: (next: string) => void,
+    options: { value: string; label: string }[],
+    placeholder: string,
+    disabledField: boolean,
+  ) => {
+    const select = (
+      <CustomSelect
+        value={value}
+        onChange={onChangeValue}
+        options={options}
+        placeholder={placeholder}
+        disabled={disabledField}
+        required={required}
+        size={asFilter ? 'sm' : size}
+        ariaLabel={label}
+        className={asFilter ? 'w-full' : undefined}
+      />
+    );
+
+    if (asFilter) {
+      return (
+        <label className={labelClass}>
+          {label}
+          {select}
+        </label>
+      );
+    }
+
+    return (
+      <div>
+        <label className={FIELD_LABEL_CLASS}>
+          {label}
+          {required && <RequiredMark />}
+        </label>
+        {select}
+      </div>
+    );
+  };
+
+  const fields = (
+    <>
+      {field(
+        countyLabel,
+        countyId ? String(countyId) : '',
+        handleCounty,
+        toOptions(counties),
+        loadingLevel === 'county' ? 'Loading counties…' : anyLabel ?? 'Select a county',
+        disabled || counties.length === 0,
+      )}
+
+      {field(
+        subcountyLabel,
+        subcountyId ? String(subcountyId) : '',
+        handleSubcounty,
+        toOptions(subcounties),
+        !countyId
+          ? 'Choose a county first'
+          : loadingLevel === 'subcounty'
+            ? 'Loading subcounties…'
+            : anyLabel ?? 'Select a subcounty',
+        disabled || !countyId || subcounties.length === 0,
+      )}
+
+      {field(
+        wardLabel,
+        wardId ? String(wardId) : '',
+        handleWard,
+        toOptions(wards),
+        !subcountyId
+          ? 'Choose a subcounty first'
+          : loadingLevel === 'ward'
+            ? 'Loading wards…'
+            : anyLabel ?? 'Select a ward',
+        disabled || !subcountyId || wards.length === 0,
+      )}
+    </>
+  );
+
+  // display:contents removes this wrapper from layout, so the three selects
+  // become grid items of whatever laid out the parent.
+  if (asFilter) {
+    return (
+      <div className="contents">
+        {fields}
+        {error && (
+          <p className="text-xs font-medium text-red-600 dark:text-red-400" role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
-      <div>
-        <label className={FIELD_LABEL_CLASS}>
-          {countyLabel}
-          {required && <RequiredMark />}
-        </label>
-        <CustomSelect
-          value={countyId ? String(countyId) : ''}
-          onChange={handleCounty}
-          options={toOptions(counties)}
-          placeholder={loadingLevel === 'county' ? 'Loading counties…' : 'Select a county'}
-          disabled={disabled || counties.length === 0}
-          required={required}
-          size={size}
-          ariaLabel={countyLabel}
-        />
-      </div>
-
-      <div>
-        <label className={FIELD_LABEL_CLASS}>
-          {subcountyLabel}
-          {required && <RequiredMark />}
-        </label>
-        <CustomSelect
-          value={subcountyId ? String(subcountyId) : ''}
-          onChange={handleSubcounty}
-          options={toOptions(subcounties)}
-          placeholder={
-            !countyId
-              ? 'Choose a county first'
-              : loadingLevel === 'subcounty'
-                ? 'Loading subcounties…'
-                : 'Select a subcounty'
-          }
-          disabled={disabled || !countyId || subcounties.length === 0}
-          required={required}
-          size={size}
-          ariaLabel={subcountyLabel}
-        />
-      </div>
-
-      <div>
-        <label className={FIELD_LABEL_CLASS}>
-          {wardLabel}
-          {required && <RequiredMark />}
-        </label>
-        <CustomSelect
-          value={wardId ? String(wardId) : ''}
-          onChange={handleWard}
-          options={toOptions(wards)}
-          placeholder={
-            !subcountyId
-              ? 'Choose a subcounty first'
-              : loadingLevel === 'ward'
-                ? 'Loading wards…'
-                : 'Select a ward'
-          }
-          disabled={disabled || !subcountyId || wards.length === 0}
-          required={required}
-          size={size}
-          ariaLabel={wardLabel}
-        />
-        <p className="mt-1.5 text-[11px] text-gray-500 dark:text-gray-400">
-          Not sure of the ward? Pick the one nearest to you — it only needs to be
-          close enough for people to judge the distance.
-        </p>
-      </div>
-
+      {fields}
+      <p className="-mt-2 text-[11px] text-gray-500 dark:text-gray-400">
+        Not sure of the ward? Pick the one nearest to you — it only needs to be
+        close enough for people to judge the distance.
+      </p>
       {error && (
         <p className="text-xs font-medium text-red-600 dark:text-red-400" role="alert">
           {error}

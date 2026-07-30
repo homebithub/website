@@ -1506,6 +1506,18 @@ export const jobService = {
     const status = String(filters?.status || '');
     if (status) params.set('status', status === 'open' ? 'active' : status);
     if (filters?.user_profile_id) params.set('user_profile_id', String(filters.user_profile_id));
+
+    // Location is the one filter the service applies. Only the most specific
+    // level is sent, matching how it resolves them.
+    //
+    // Every other key callers pass — job type, chores, salary, start window —
+    // is dropped here and applied in the browser instead. That is not an
+    // oversight to fix silently: those need query support on the listings side
+    // first, and sending them now would look like they worked.
+    if (filters?.ward_id) params.set('ward_id', String(filters.ward_id));
+    else if (filters?.subcounty_id) params.set('subcounty_id', String(filters.subcounty_id));
+    else if (filters?.county_id) params.set('county_id', String(filters.county_id));
+
     const payload = await jobListingsApi(`?${params.toString()}`);
     return { data: normalizeArray(payload.data ?? payload) };
   },
