@@ -8,12 +8,23 @@ import { getStoredUserId } from '~/utils/authStorage';
 
 export type SSEEventHandler = (event: any) => void;
 
+/** Event type the gateway uses to say a reconnect could not be resumed cleanly. */
+export const SSE_HISTORY_GAP_EVENT = 'stream.history_gap';
+
 interface SSEContextValue {
   isConnected: boolean;
   subscribe: (eventType: string, handler: SSEEventHandler) => () => void;
   reconnect: () => void;
   connectionUptime: number;
   hasActiveConnection: () => boolean;
+  /**
+   * Increments whenever the server could not resume the stream from where this
+   * client left off, so what it holds may be missing events.
+   *
+   * Watch it to refetch. Nothing else reveals the gap: the stream reconnects
+   * and resumes normally, and the events that were missed simply never arrive.
+   */
+  historyGapCount: number;
 }
 
 const SSEContext = createContext<SSEContextValue | null>(null);
@@ -40,6 +51,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const disabledOnProfileAccount = location.pathname === '/profile';
   const [isConnected, setIsConnected] = useState(false);
   const [connectionUptime, setConnectionUptime] = useState(0);
+  const [historyGapCount, setHistoryGapCount] = useState(0);
   const eventSourceRef = useRef<EventSource | null>(null);
   const listenersRef = useRef<Map<string, Set<SSEEventHandler>>>(new Map());
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -180,10 +192,23 @@ export function SSEProvider({ children }: SSEProviderProps) {
       }, 1000);
     };
 
+    // onmessage, not addEventListener per type. An EventSource only routes a
+    // frame to a named listener when the frame carries an "event:" field, so
+    // the gateway deliberately omits it and every event arrives here to be
+    // dispatched on the event_type inside the payload.
     es.onmessage = (ev) => {
       try {
         const payload = JSON.parse(ev.data);
         const eventType = payload.event_type;
+
+        if (eventType === SSE_HISTORY_GAP_EVENT) {
+          // The server could not resume from our cursor, so anything that
+          // happened while we were away is lost to this connection. Surface it
+          // rather than carrying on as if the state were complete.
+          console.warn('[SSE] Reconnected with a gap in history:', payload.data);
+          setHistoryGapCount((count) => count + 1);
+        }
+
         dispatchMessage(eventType, payload);
       } catch (err) {
         console.error('[SSE] Failed to parse event:', err);
@@ -330,6 +355,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
     reconnect,
     connectionUptime,
     hasActiveConnection: () => isConnected && !!eventSourceRef.current,
+    historyGapCount,
   };
 
   return <SSEContext.Provider value={value}>{children}</SSEContext.Provider>;
