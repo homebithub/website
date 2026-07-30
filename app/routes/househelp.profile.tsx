@@ -16,6 +16,11 @@ import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
 import { ProfileChoicesSection } from '~/components/profile/ProfileChoicesSection';
+import { ProfileRequirementsChecklist } from '~/components/profile/ProfileRequirementsChecklist';
+import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
+import type { MissingRequirement } from '~/hooks/useOnboardingProgress';
+import EditSectionModal from '~/components/ui/EditSectionModal';
+import Location from '~/components/Location';
 import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 import { IdentityVerificationPrompt } from '~/components/verification/IdentityVerificationPrompt';
@@ -117,6 +122,29 @@ const MAX_PHOTOS = 5;
 export default function HousehelpProfile() {
   const navigate = useNavigate();
   const identityVerification = useIdentityVerification(getStoredUserId());
+  const { progress, refetch: refetchProgress } = useOnboardingProgress(getStoredUserId() || '', 'househelp');
+  const [editingLocation, setEditingLocation] = useState(false);
+
+  // Each outstanding requirement opens whatever satisfies it. Location has no
+  // permanent section on this page, so it opens in a modal from the checklist.
+  const handleResolveRequirement = (requirement: MissingRequirement) => {
+    switch (requirement.action) {
+      case 'features':
+        handleCompleteFeaturePicks();
+        break;
+      case 'location':
+        setEditingLocation(true);
+        break;
+      case 'photo':
+        document.getElementById('profile-photos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        break;
+      case 'verification':
+        identityVerification.openModal();
+        break;
+      default:
+        break;
+    }
+  };
   const [profile, setProfile] = useState<HousehelpData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -426,7 +454,7 @@ export default function HousehelpProfile() {
       />
 
       {/* Profile Photos */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+      <div id="profile-photos" className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
           <div>
             <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📸 Profile Photos</h2>
@@ -558,6 +586,14 @@ export default function HousehelpProfile() {
 
       <CertificationDocuments profileId={profile.id} />
 
+      <ProfileRequirementsChecklist
+        missing={progress?.missing || []}
+        completedItems={progress?.completed_items}
+        totalItems={progress?.total_items}
+        percentage={progress?.completion_percentage}
+        onResolve={handleResolveRequirement}
+      />
+
       {profile.user_id && (
         <section className="border-t border-purple-200/40 bg-white p-6 dark:border-purple-500/30 dark:bg-[#13131a]">
           <h2 className="mb-4 text-sm font-semibold text-purple-700 dark:text-purple-300">
@@ -570,6 +606,18 @@ export default function HousehelpProfile() {
           />
         </section>
       )}
+
+      <EditSectionModal
+        isOpen={editingLocation}
+        onClose={() => {
+          setEditingLocation(false);
+          void refetchProgress();
+        }}
+        title="📍 Edit Location"
+        profileType="househelp"
+      >
+        <Location />
+      </EditSectionModal>
     </div>
       </main>
       </PurpleThemeWrapper>

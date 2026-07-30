@@ -19,6 +19,10 @@ import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStore
 import JobPostModal from '~/components/modals/JobPostModal';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
+import Location from '~/components/Location';
+import { ProfileRequirementsChecklist } from '~/components/profile/ProfileRequirementsChecklist';
+import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
+import type { MissingRequirement } from '~/hooks/useOnboardingProgress';
 import { profileFeatureLabel } from '~/utils/profileFeatures';
 import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 
@@ -486,8 +490,28 @@ export default function HouseholdProfile() {
 
   const [editingSection, setEditingSection] = useState<string | null>(null);
   const [showViewsModal, setShowViewsModal] = useState(false);
+  const { progress } = useOnboardingProgress(getStoredUserId() || '', 'household');
+
+  // Each outstanding requirement opens the editor that satisfies it. Location
+  // has no permanent section on this page, so it opens in a modal from here.
+  const handleResolveRequirement = (requirement: MissingRequirement) => {
+    switch (requirement.action) {
+      case 'features':
+        handleCompleteFeaturePicks();
+        break;
+      case 'location':
+        setEditingSection('location');
+        break;
+      case 'photo':
+        document.getElementById('profile-photos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        break;
+      default:
+        break;
+    }
+  };
 
   const EDIT_SECTIONS: Record<string, { title: string; component: React.FC }> = {
+    location: { title: '📍 Edit Location', component: Location },
   };
 
   const handleEditSection = (section: string) => {
@@ -1093,7 +1117,7 @@ export default function HouseholdProfile() {
       </div>
 
       {/* Profile Photos */}
-      <div className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
+      <div id="profile-photos" className="bg-white dark:bg-[#13131a] p-6 border-t border-purple-200/40 dark:border-purple-500/30">
         <div className="flex justify-between items-center mb-4">
           <div>
             <h2 className="text-xs font-semibold text-purple-700 dark:text-purple-400">📸 Home Photos</h2>
@@ -1286,6 +1310,14 @@ export default function HouseholdProfile() {
           </div>
         )}
       </div>
+
+      <ProfileRequirementsChecklist
+        missing={progress?.missing || []}
+        completedItems={progress?.completed_items}
+        totalItems={progress?.total_items}
+        percentage={progress?.completion_percentage}
+        onResolve={handleResolveRequirement}
+      />
     </div>
       </main>
       </PurpleThemeWrapper>

@@ -4,6 +4,7 @@ import { locationService, profileService as grpcProfileService } from '~/service
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileEditor } from '~/contexts/ProfileEditorContext';
+import { notifyProfileProgressChanged } from '~/utils/profileProgress';
 
 interface LocationSuggestion {
     name: string;
@@ -209,6 +210,10 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
             } catch (profileErr) {
                 console.warn('[Location] Failed to update profile location:', profileErr);
             }
+
+            // Location counts toward profile completion, so invalidate the
+            // cached progress or the checklist keeps listing it as outstanding.
+            notifyProfileProgressChanged();
 
             setSubmitStatus({
                 success: true,

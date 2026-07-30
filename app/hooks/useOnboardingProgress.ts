@@ -5,6 +5,15 @@ import {
   PROFILE_PROGRESS_UPDATED_EVENT,
 } from '~/utils/profileProgress';
 
+/** One outstanding requirement, named by the backend. */
+export interface MissingRequirement {
+  id: string;
+  label: string;
+  /** Which editor completes this: features, location, photo or verification. */
+  action: 'features' | 'location' | 'photo' | 'verification' | string;
+  feature_id?: number;
+}
+
 export interface OnboardingProgress {
   user_id: string;
   profile_type: string;
@@ -16,6 +25,8 @@ export interface OnboardingProgress {
   completion_percentage?: number;
   status: 'not_started' | 'in_progress' | 'completed';
   completed_steps?: number[];
+  /** Everything still required for 100%, so the UI can list it. */
+  missing?: MissingRequirement[];
 }
 
 interface UseOnboardingProgressResult {
