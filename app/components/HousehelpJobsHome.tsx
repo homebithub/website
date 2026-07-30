@@ -5,7 +5,6 @@ import { Footer } from "~/components/Footer";
 import { ShimmerListPlaceholder } from "~/components/ShimmerLoader";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import {
-  interestService,
   jobService,
   listingApplicationService,
   profileService as grpcProfileService,
@@ -181,13 +180,6 @@ const extractArray = <T,>(raw: any): T[] => {
   return [];
 };
 
-const getDefaultSalaryExpectation = (job: JobListing): number => {
-  const min = typeof job.salary_range?.min === "number" ? job.salary_range?.min : undefined;
-  const max = typeof job.salary_range?.max === "number" ? job.salary_range?.max : undefined;
-  if (typeof min === "number" && min > 0) return min;
-  if (typeof max === "number" && max > 0) return max;
-  return 1000;
-};
 
 const SAVED_PITCH_STORAGE_KEY = "homebit_househelp_saved_pitch";
 
@@ -732,42 +724,21 @@ export default function HousehelpJobsHome() {
       return;
     }
 
-    const householdProfileId = getHouseholdProfileId(selectedJob);
-    if (!householdProfileId) {
-      setApplyError("We couldn’t find this household’s profile right now. Please try again later.");
-      return;
-    }
-
     setApplyLoading(true);
     setApplyError(null);
 
     try {
-      // The pitch belongs on the application itself. applications.message is what
-      // the household's hiring workspace reads, and it is the record the state
-      // machine, engagements and reviews all hang off — so a note stored only on
-      // the parallel interest row would be invisible there.
+      // One write, carrying the pitch. applications.message is what the
+      // household's hiring workspace reads and what the state machine,
+      // engagements and reviews all hang off.
+      //
+      // The parallel interest record this used to create alongside it is gone.
+      // It had no reader once the hiring view moved to applications, and it lost
+      // data: interests are unique per household-and-provider pair, so applying
+      // to a second job from the same household was rejected as a duplicate and
+      // the old catch block swallowed it, leaving the applicant believing they
+      // had applied.
       await jobService.applyForJob(selectedJob.id, househelpProfileId, pitch.trim());
-
-      try {
-        await interestService.createInterest('', 'househelp', {
-          household_id: householdProfileId,
-          salary_expectation: getDefaultSalaryExpectation(selectedJob),
-          salary_frequency: 'monthly',
-          available_from: null,
-          job_type: selectedJob.job_types?.[0] || 'general',
-          comments: pitch.trim() || undefined,
-        });
-      } catch (err) {
-        // A duplicate is expected and harmless — the applicant already showed
-        // interest. Anything else means the application exists but will not
-        // appear in the household's Applicants tab, which reads interests: the
-        // applicant believes they applied and the household never sees them.
-        // Not fatal to the apply, but it must not vanish silently.
-        const message = err instanceof Error ? err.message : String(err);
-        if (!/exist|duplicate/i.test(message)) {
-          console.error('[Apply] Application created but interest record failed:', err);
-        }
-      }
 
       persistSavedPitchToStorage(pitch);
       setSuccess("Application submitted successfully.");
