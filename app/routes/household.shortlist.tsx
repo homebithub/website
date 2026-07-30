@@ -16,6 +16,7 @@ import { useProfilePhotos } from '~/hooks/useProfilePhotos';
 import { getStoredUser, getStoredUserId } from '~/utils/authStorage';
 import { formatTimeAgo } from '~/utils/timeAgo';
 import { normalizeOnboardingAmountFromStorage } from '~/utils/onboardingCompensation';
+import { formatPlaceOrFallback } from '~/utils/place';
 
 const formatDate = (value?: string) => {
   if (!value) return 'Flexible';
@@ -338,7 +339,7 @@ export default function HouseholdShortlistPage() {
                   const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
                   const scheduleLabel = summarizeSchedule(listing?.work_schedule);
                   const jobTypes = toStringArray(listing?.job_types);
-                  const location = firstString(househelp.town, househelp.location) || 'Location not specified';
+                  const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
                   const experienceYears = toFiniteNumber(househelp.years_of_experience);
                   const isOpen = isOpenForWorkListingActive(listing);
                   const updatedAt = listing?.created_at || s.created_at;

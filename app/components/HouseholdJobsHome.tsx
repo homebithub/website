@@ -20,6 +20,7 @@ import { useProfileCompletionReminder } from "~/hooks/useProfileCompletionRemind
 import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
 import { Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
+import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
 
 interface HousehelpSummary {
   id?: string;
@@ -360,7 +361,12 @@ const normalizeHousehelp = (raw: unknown): HousehelpSummary | undefined => {
     avatar_url: formatTextValue(househelp.avatar_url) || undefined,
     photos: toStringArray(househelp.photos),
     town: formatTextValue(househelp.town) || undefined,
-    location: formatTextValue(househelp.location) || undefined,
+    // Kept structured rather than flattened. formatTextValue would collapse the
+    // location object to its `name`, which is just the ward, losing the
+    // subcounty that makes a place recognisable.
+    location: (househelp.location && typeof househelp.location === "object")
+      ? househelp.location as Record<string, any>
+      : formatTextValue(househelp.location) || undefined,
     years_of_experience: toFiniteNumber(househelp.years_of_experience),
     salary_expectation: toFiniteNumber(househelp.salary_expectation),
     salary_frequency: formatTextValue(househelp.salary_frequency) || undefined,
@@ -507,7 +513,7 @@ export default function HouseholdJobsHome() {
     const name = firstString(user.first_name, househelp.first_name, "there");
     const jobTypes = toStringArray(listing.job_types).map((type) => type.replace(/_/g, " ")).join(", ") || "your preferred role";
     const scheduleLabel = summarizeSchedule(listing.work_schedule) || "your ideal schedule";
-    const location = firstString(househelp.town, househelp.location) || "your area";
+    const location = formatPlace(househelp.location, { town: househelp.town }) || "your area";
     if (variant === "availability") {
       return `Hi ${name},\n\nWe have a family in ${location} hoping to hire a ${jobTypes} and they are ready as soon as ${formatDate(listing.available_from)}. Your availability and schedule (${scheduleLabel}) look like a great match. Can we chat this week?`;
     }
@@ -1228,7 +1234,7 @@ export default function HouseholdJobsHome() {
                   const photos = toStringArray(househelp.photos);
                   const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
                   const scheduleLabel = summarizeSchedule(listing.work_schedule);
-                  const location = firstString(househelp.town, househelp.location) || "Location not specified";
+                  const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
                   const experienceYears = toFiniteNumber(househelp.years_of_experience);
                   const shortlisted = shortlistedListingIds.has(listing.id);
                   const isOpen = isOpenForWorkListingActive(listing);
@@ -1476,7 +1482,7 @@ export default function HouseholdJobsHome() {
         const photos = toStringArray(househelp.photos);
         const avatar = firstString(househelp.avatar_url, photos[0], profilePhotos[userId]);
         const scheduleLabel = summarizeSchedule(selectedListing.work_schedule);
-        const location = firstString(househelp.town, househelp.location) || "Location not specified";
+        const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
         const experienceYears = toFiniteNumber(househelp.years_of_experience);
         const shortlisted = shortlistedListingIds.has(selectedListing.id);
         const isOpen = isOpenForWorkListingActive(selectedListing);
@@ -1661,7 +1667,7 @@ export default function HouseholdJobsHome() {
         const househelp = selectedInviteListing.househelp || {};
         const user = househelp.user || {};
         const name = `${firstString(user.first_name, househelp.first_name)} ${firstString(user.last_name, househelp.last_name)}`.trim() || 'Househelp';
-        const location = firstString(househelp.town, househelp.location) || 'Location not specified';
+        const location = formatPlaceOrFallback(househelp.location, { town: househelp.town });
         return (
           <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleCloseInviteModal} />

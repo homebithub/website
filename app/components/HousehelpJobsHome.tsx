@@ -37,6 +37,7 @@ import { useSubscription } from "~/hooks/useSubscription";
 import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 import { IdentityVerificationPrompt } from "~/components/verification/IdentityVerificationPrompt";
 import { useIdentityVerification } from "~/hooks/useIdentityVerification";
+import { formatListingPlace, formatPlaceOrFallback } from "~/utils/place";
 
 interface JobListing {
   id: string;
@@ -112,8 +113,6 @@ const DEFAULT_JOB_FILTERS = {
   countyId: "",
   subcountyId: "",
   wardId: "",
-  startWindow: "",
-  scheduleSlot: "",
   salaryRangeId: "",
   choreId: "",
   petTypeId: "",
@@ -125,52 +124,12 @@ const HOUSEHELP_FILTERS_STORAGE_KEY = "homebit_househelp_filters_open";
 
 const normalizeToken = (value?: string) => (value || "").trim().toLowerCase();
 
-const toNumberArray = (value: unknown): number[] => {
-  if (!Array.isArray(value)) return [];
-  return value
-    .map((item) => {
-      if (typeof item === "number") return item;
-      if (typeof item === "string" && item.trim() !== "") {
-        const parsed = Number(item);
-        return Number.isFinite(parsed) ? parsed : undefined;
-      }
-      return undefined;
-    })
-    .filter((item): item is number => typeof item === "number");
-};
-
-const toIdString = (value: unknown): string => (value == null ? "" : String(value));
-
-const formatJobLocation = (location?: string | JobLocation): string => {
-  if (!location) return "Location not specified";
-  if (typeof location === "string") return location;
-  return location.name || location.place || "Location not specified";
-};
-
-/**
- * Names where a job is, most specific part first.
- *
- * "Kitisuru, Westlands" tells a househelp far more about whether the commute
- * works than either half alone, and the county is left off because the browse is
- * almost always already within one.
- */
-const formatListingPlace = (job: JobListing): string => {
-  const parts = [job.ward, job.subcounty].filter(
-    (part): part is string => typeof part === "string" && part.trim() !== "",
-  );
-  if (parts.length > 0) return parts.join(", ");
-  // Listings created before jobs carried a ward fall back to whatever the old
-  // free-text field held.
-  return formatJobLocation(job.location);
-};
-
 const formatDate = (value?: string) => {
   if (!value) return "Flexible";
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return "Flexible";
   return parsed.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 };
-
 const formatSalaryRange = (range?: JobListing["salary_range"]) => {
   if (!range) return "Not specified";
   const min = range.min ? `KES ${range.min.toLocaleString()}` : "";
@@ -178,7 +137,6 @@ const formatSalaryRange = (range?: JobListing["salary_range"]) => {
   if (min && max) return `${min} - ${max}`;
   return min || max || "Not specified";
 };
-
 const isJobOpen = (job: JobListing) => (job.status || "open").toLowerCase() === "open";
 
 const hasScheduleSlot = (
@@ -187,44 +145,6 @@ const hasScheduleSlot = (
 ): boolean => {
   if (!schedule) return false;
   return Object.values(schedule).some((day) => day?.[slot]);
-};
-
-const matchesStartWindow = (value: string | undefined, window: string) => {
-  if (!window) return true;
-  if (!value) return window === "flexible";
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) return window === "flexible";
-  const now = new Date();
-  const msDiff = parsed.getTime() - now.getTime();
-  const days = msDiff / (1000 * 60 * 60 * 24);
-  switch (window) {
-    case "next_14":
-      return days <= 14;
-    case "next_30":
-      return days <= 30;
-    case "later":
-      return days > 30;
-    case "flexible":
-      return false;
-    default:
-      return true;
-  }
-};
-
-const matchesSalaryRange = (range: JobListing["salary_range"], selected?: SalaryRangeOption) => {
-  if (!selected) return true;
-  if (!range) return false;
-  const min = typeof range.min === "number" ? range.min : undefined;
-  const max = typeof range.max === "number" ? range.max : undefined;
-  if (min == null && max == null) return false;
-  const jobMin = min ?? max ?? 0;
-  const jobMax = max ?? min ?? 0;
-  if (selected.frequency && range.frequency && normalizeToken(range.frequency) !== normalizeToken(selected.frequency)) {
-    return false;
-  }
-  if (selected.min != null && jobMax < selected.min) return false;
-  if (selected.max != null && jobMin > selected.max) return false;
-  return true;
 };
 
 const toTimestamp = (value?: string): number | null => {
@@ -497,26 +417,21 @@ export default function HousehelpJobsHome() {
     // its key remounts it with the cleared values.
     setLocationPickerKey((key) => key + 1);
   };
-  const filteredJobs = useMemo(() => {
-    const choreFilter = filters.choreId ? Number(filters.choreId) : null;
-    const petFilter = filters.petTypeId ? Number(filters.petTypeId) : null;
-    return jobs.filter((job) => {
-      if (openOnly && !isJobOpen(job)) return false;
-      if (filters.jobType && !job.job_types?.some((type) => normalizeToken(type) === filters.jobType)) {
-        return false;
-      }
-      if (filters.startWindow && !matchesStartWindow(job.start_date, filters.startWindow)) return false;
-      if (filters.scheduleSlot && !hasScheduleSlot(job.work_schedule, filters.scheduleSlot as "morning" | "afternoon" | "evening")) {
-        return false;
-      }
-      if (choreFilter && !toNumberArray(job.chores_ids).includes(choreFilter)) return false;
-      if (petFilter && !toNumberArray(job.pet_type_ids).includes(petFilter)) return false;
-      if (filters.childrenAgeRangeId && toIdString(job.children_age_range_id) !== filters.childrenAgeRangeId) return false;
-      if (filters.childrenCapacityId && toIdString(job.children_capacity_id) !== filters.childrenCapacityId) return false;
-      if (!matchesSalaryRange(job.salary_range, selectedSalaryRange)) return false;
-      return true;
-    });
-  }, [jobs, openOnly, filters, selectedSalaryRange]);
+  // Every filter is applied by the listings query now.
+  //
+  // The predicates that used to live here read job_types, chores_ids,
+  // pet_type_ids, children_age_range_id, children_capacity_id, start_date,
+  // work_schedule and salary_range — none of which a listing response contains.
+  // `!job.job_types?.some(...)` on an absent field is `!undefined`, so setting
+  // any of those filters removed every job from the list. The filter bar looked
+  // like it worked and emptied the results instead.
+  //
+  // Open-only stays local: it reads status, which the response does carry, and
+  // the toggle is meant to feel instant.
+  const filteredJobs = useMemo(
+    () => (openOnly ? jobs.filter(isJobOpen) : jobs),
+    [jobs, openOnly],
+  );
   const sortedJobs = useMemo(() => {
     if (!sortBy) return filteredJobs;
     const items = [...filteredJobs];
@@ -642,24 +557,25 @@ export default function HousehelpJobsHome() {
           offset,
         };
         if (openOnly) payload.status = "open";
-        if (filters.jobType) payload.job_types = filters.jobType;
+        if (filters.jobType) payload.job_type_id = Number(filters.jobType);
         if (filters.wardId) payload.ward_id = Number(filters.wardId);
         else if (filters.subcountyId) payload.subcounty_id = Number(filters.subcountyId);
         else if (filters.countyId) payload.county_id = Number(filters.countyId);
-        if (filters.choreId) payload.chores_ids = [Number(filters.choreId)];
-        if (filters.petTypeId) payload.pet_type_ids = [Number(filters.petTypeId)];
-        if (filters.childrenAgeRangeId) payload.children_age_range_id = Number(filters.childrenAgeRangeId);
-        if (filters.childrenCapacityId) payload.children_capacity_id = Number(filters.childrenCapacityId);
-        if (selectedSalaryRange?.min != null) payload.salary_min = selectedSalaryRange.min;
-        if (selectedSalaryRange?.max != null) payload.salary_max = selectedSalaryRange.max;
-        if (selectedSalaryRange?.frequency) payload.salary_frequency = selectedSalaryRange.frequency;
-        if (filters.startWindow) {
-          const now = new Date();
-          const addDays = (days: number) => new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
-          if (filters.startWindow === "next_14") payload.start_date_to = addDays(14);
-          if (filters.startWindow === "next_30") payload.start_date_to = addDays(30);
-          if (filters.startWindow === "later") payload.start_date_from = addDays(30);
-        }
+
+        // Chore, pet type, children age range, capacity and salary range are all
+        // feature properties, and the ids the pickers carry are the catalogue's
+        // own feature_properties ids, so they go over as one list.
+        const propertyIds = [
+          filters.choreId,
+          filters.petTypeId,
+          filters.childrenAgeRangeId,
+          filters.childrenCapacityId,
+          filters.salaryRangeId,
+        ]
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value) && value > 0);
+        if (propertyIds.length > 0) payload.property_ids = propertyIds;
+
         if (sortBy === "best_match") payload.sort = "best_match";
 
         const raw = await jobService.searchJobs(payload, currentUserId);
@@ -1077,39 +993,6 @@ export default function HousehelpJobsHome() {
                     layout="contents"
                     anyLabel="Anywhere"
                   />
-                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Start window
-                    <CustomSelect
-                      value={filters.startWindow}
-                      onChange={(value) => setFilters((prev) => ({ ...prev, startWindow: value }))}
-                      options={[
-                        { value: "", label: "Any start window" },
-                        { value: "next_14", label: "Within 2 weeks" },
-                        { value: "next_30", label: "Within 30 days" },
-                        { value: "later", label: "Later" },
-                        { value: "flexible", label: "Flexible" },
-                      ]}
-                      className="w-full"
-                      size="sm"
-                      placeholder="Any start window"
-                    />
-                  </label>
-                  <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                    Schedule slot
-                    <CustomSelect
-                      value={filters.scheduleSlot}
-                      onChange={(value) => setFilters((prev) => ({ ...prev, scheduleSlot: value }))}
-                      options={[
-                        { value: "", label: "Any slot" },
-                        { value: "morning", label: "Morning" },
-                        { value: "afternoon", label: "Afternoon" },
-                        { value: "evening", label: "Evening" },
-                      ]}
-                      className="w-full"
-                      size="sm"
-                      placeholder="Any slot"
-                    />
-                  </label>
                   <label className="flex flex-col gap-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     Salary range
                     <CustomSelect
@@ -1563,7 +1446,10 @@ export default function HousehelpJobsHome() {
         const profileData = (profile ?? {}) as Record<string, any>;
         const householdName = profile?.display_name || profile?.household_name || profile?.name || profileData["display_name"] || "Verified household";
         const shortName = householdName.split(" ")[0] || householdName;
-        const locationLabel = formatJobLocation((profileData["location"] as string | JobLocation | undefined) || previewProfileJob.location);
+        const locationLabel = formatPlaceOrFallback(
+          profileData["location"] ?? previewProfileJob.location,
+          { town: profileData["town"] },
+        );
         const lifestyle = (profileData["household_type"] as string | undefined) || (profileData["vibe"] as string | undefined) || "Family-focused";
         const maskedDetails = [
           {

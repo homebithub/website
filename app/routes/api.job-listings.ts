@@ -54,6 +54,16 @@ function encodeListRequest(params: URLSearchParams) {
   const subcountyId = Number(params.get('subcounty_id') || params.get('subcountyId') || '0');
   const countyId = Number(params.get('county_id') || params.get('countyId') || '0');
 
+  const jobTypeId = Number(params.get('job_type_id') || params.get('jobTypeId') || '0');
+
+  // Catalogue property ids the listing must carry — a chore, a salary range.
+  // Repeated scalars are emitted unpacked, one field entry each, which proto3
+  // parsers accept alongside the packed form.
+  const propertyIds = String(params.get('property_ids') || params.get('propertyIds') || '')
+    .split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value) => Number.isFinite(value) && value > 0);
+
   return concatBytes([
     encodeInt32Field(1, Number.isFinite(limit) ? limit : 20),
     encodeInt32Field(2, Number.isFinite(offset) ? offset : 0),
@@ -62,6 +72,8 @@ function encodeListRequest(params: URLSearchParams) {
     encodeInt32Field(5, Number.isFinite(countyId) ? countyId : 0),
     encodeInt32Field(6, Number.isFinite(subcountyId) ? subcountyId : 0),
     encodeInt32Field(7, Number.isFinite(wardId) ? wardId : 0),
+    encodeInt32Field(8, Number.isFinite(jobTypeId) ? jobTypeId : 0),
+    ...propertyIds.map((id) => encodeInt32Field(9, id)),
   ]);
 }
 

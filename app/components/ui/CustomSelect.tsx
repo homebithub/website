@@ -17,6 +17,14 @@ interface CustomSelectProps {
   size?: 'sm' | 'md';
   /** Accessible name, when no visible <label> wraps the control. */
   ariaLabel?: string;
+  /**
+   * Show a filter box once the list reaches this many options.
+   *
+   * A ward list runs to dozens of names and a chore list to a couple of dozen;
+   * scrolling those to find one you can already name is slower than typing it.
+   * Short lists are faster to scan than to type into, so they stay plain.
+   */
+  searchThreshold?: number;
 }
 
 /**
@@ -38,12 +46,25 @@ export default function CustomSelect({
   disabled = false,
   size = 'md',
   ariaLabel,
+  searchThreshold = 8,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [query, setQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
   const listId = useId();
+
+  const searchable = options.length >= searchThreshold;
+
+  // Substring rather than prefix: someone looking for "Dagoretti North" may
+  // well type "north".
+  const visibleOptions = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return options;
+    return options.filter((option) => option.label.toLowerCase().includes(needle));
+  }, [options, query]);
 
   const selectedIndex = useMemo(
     () => options.findIndex((option) => option.value === value),
@@ -54,6 +75,9 @@ export default function CustomSelect({
   const close = useCallback(() => {
     setIsOpen(false);
     setActiveIndex(-1);
+    // Clear the query, so reopening shows the whole list rather than whatever
+    // was typed last time.
+    setQuery('');
   }, []);
 
   const open = useCallback(() => {
@@ -62,6 +86,18 @@ export default function CustomSelect({
     // Start on the current choice so arrow keys move from where the user is.
     setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
   }, [disabled, selectedIndex]);
+
+  // Typing narrows the list, so the old highlight index would point at a
+  // different option, or past the end of it.
+  useEffect(() => {
+    setActiveIndex(visibleOptions.length > 0 ? 0 : -1);
+  }, [query, visibleOptions.length]);
+
+  // Focus the filter box on open, so a searchable list can be typed into
+  // immediately rather than needing a second click.
+  useEffect(() => {
+    if (isOpen && searchable) searchRef.current?.focus();
+  }, [isOpen, searchable]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -108,11 +144,13 @@ export default function CustomSelect({
         break;
       case 'ArrowDown':
         event.preventDefault();
-        setActiveIndex((current) => (current + 1) % options.length);
+        if (visibleOptions.length === 0) break;
+        setActiveIndex((current) => (current + 1) % visibleOptions.length);
         break;
       case 'ArrowUp':
         event.preventDefault();
-        setActiveIndex((current) => (current - 1 + options.length) % options.length);
+        if (visibleOptions.length === 0) break;
+        setActiveIndex((current) => (current - 1 + visibleOptions.length) % visibleOptions.length);
         break;
       case 'Home':
         event.preventDefault();
@@ -120,12 +158,18 @@ export default function CustomSelect({
         break;
       case 'End':
         event.preventDefault();
-        setActiveIndex(options.length - 1);
+        setActiveIndex(visibleOptions.length - 1);
         break;
       case 'Enter':
-      case ' ':
         event.preventDefault();
-        if (activeIndex >= 0 && options[activeIndex]) handleSelect(options[activeIndex].value);
+        if (activeIndex >= 0 && visibleOptions[activeIndex]) handleSelect(visibleOptions[activeIndex].value);
+        break;
+      case ' ':
+        // Space selects on the trigger, but in the filter box it is just a
+        // space — "day care" would otherwise be unsearchable.
+        if (searchable && event.target === searchRef.current) break;
+        event.preventDefault();
+        if (activeIndex >= 0 && visibleOptions[activeIndex]) handleSelect(visibleOptions[activeIndex].value);
         break;
       case 'Tab':
         close();
@@ -166,6 +210,21 @@ export default function CustomSelect({
 
       {isOpen && (
         <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border-2 border-purple-200 bg-white shadow-lg dark:border-purple-500/30 dark:bg-[#13131a] dark:shadow-glow-md">
+          {searchable && (
+            <div className="border-b border-purple-100 p-2 dark:border-purple-500/20">
+              <input
+                ref={searchRef}
+                type="text"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type to search…"
+                aria-label={ariaLabel ? `Search ${ariaLabel}` : 'Search options'}
+                aria-controls={listId}
+                className="w-full rounded-lg border border-purple-200 bg-white px-3 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-purple-400 focus:outline-none focus:ring-1 focus:ring-purple-500 dark:border-purple-500/30 dark:bg-[#0f0f16] dark:text-white dark:placeholder:text-gray-500"
+              />
+            </div>
+          )}
           <div
             ref={listRef}
             id={listId}
@@ -173,7 +232,12 @@ export default function CustomSelect({
             aria-label={ariaLabel}
             className="max-h-60 overflow-y-auto"
           >
-            {options.map((option, index) => {
+            {visibleOptions.length === 0 && (
+              <p className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
+                Nothing matches “{query.trim()}”.
+              </p>
+            )}
+            {visibleOptions.map((option, index) => {
               const isSelected = option.value === value;
               const isActive = index === activeIndex;
               return (
