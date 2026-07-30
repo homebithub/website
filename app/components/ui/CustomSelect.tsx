@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 
 interface Option {
@@ -36,6 +37,10 @@ interface CustomSelectProps {
  * of reimplementing the keyboard behaviour a native select gets for free:
  * arrow keys, Home/End, Enter to choose, Escape to dismiss.
  */
+// Caps the list so a long one scrolls internally rather than running off screen,
+// and gives reposition() a figure to decide flipping against.
+const MAX_PANEL_HEIGHT = 288;
+
 export default function CustomSelect({
   value,
   onChange,
@@ -49,10 +54,20 @@ export default function CustomSelect({
   searchThreshold = 8,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
+  // The open list is rendered into document.body rather than beside the trigger.
+  //
+  // An absolutely positioned list is clipped by any ancestor that scrolls or hides
+  // overflow, and this control sits inside plenty of them — the filter panel, which
+  // is overflow-y-auto, and several scrolling modals. Portalling escapes all of
+  // them at once, so the component works the same wherever it is dropped.
+  const [position, setPosition] = useState<{ top: number; left: number; width: number; openUpward: boolean } | null>(null);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [query, setQuery] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // The portalled panel lives outside dropdownRef, so click-outside has to know
+  // about it separately or every click on an option would close the list.
+  const panelRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const listId = useId();
 
@@ -103,13 +118,62 @@ export default function CustomSelect({
     if (!isOpen) return;
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const insideTrigger = dropdownRef.current?.contains(target);
+      const insidePanel = panelRef.current?.contains(target);
+      if (!insideTrigger && !insidePanel) {
         close();
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [close, isOpen]);
+
+  // Measures the trigger so the portalled panel can sit against it.
+  //
+  // Flips upward when there is more room above than below, so a control near the
+  // bottom of the screen opens into space rather than off the edge — which is what
+  // a clipped list looks like to someone who cannot scroll it.
+  const reposition = useCallback(() => {
+    const trigger = dropdownRef.current;
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const openUpward = spaceBelow < MAX_PANEL_HEIGHT && spaceAbove > spaceBelow;
+
+    setPosition({
+      top: openUpward ? rect.top : rect.bottom,
+      left: rect.left,
+      width: rect.width,
+      openUpward,
+    });
+  }, []);
+
+  // Laid out before paint, so the panel never appears at the wrong place first.
+  useLayoutEffect(() => {
+    if (!isOpen) {
+      setPosition(null);
+      return;
+    }
+    reposition();
+  }, [isOpen, reposition]);
+
+  // The panel is fixed, so it does not travel with a scrolling ancestor. Follow
+  // the trigger instead. Capture phase catches scrolls on inner containers too,
+  // not just the window.
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handle = () => reposition();
+    window.addEventListener('scroll', handle, true);
+    window.addEventListener('resize', handle);
+    return () => {
+      window.removeEventListener('scroll', handle, true);
+      window.removeEventListener('resize', handle);
+    };
+  }, [isOpen, reposition]);
 
   // Keep the highlighted option visible while arrowing through a long list.
   useEffect(() => {
@@ -208,8 +272,22 @@ export default function CustomSelect({
         />
       </button>
 
-      {isOpen && (
-        <div className="absolute z-50 mt-2 w-full overflow-hidden rounded-xl border-2 border-purple-200 bg-white shadow-lg dark:border-purple-500/30 dark:bg-[#13131a] dark:shadow-glow-md">
+      {isOpen && position && typeof document !== 'undefined' && createPortal(
+        <div
+          ref={panelRef}
+          // Fixed and portalled to the body, so no scrolling or overflow-hidden
+          // ancestor can clip it. z-index above the app's own layers but below a
+          // modal's backdrop sentinel, which uses the maximum.
+          style={{
+            position: 'fixed',
+            top: position.openUpward ? undefined : position.top + 8,
+            bottom: position.openUpward ? window.innerHeight - position.top + 8 : undefined,
+            left: position.left,
+            width: position.width,
+            maxHeight: MAX_PANEL_HEIGHT,
+            zIndex: 2147483646,
+          }}
+          className="flex flex-col overflow-hidden rounded-xl border-2 border-purple-200 bg-white shadow-lg dark:border-purple-500/30 dark:bg-[#13131a] dark:shadow-glow-md">
           {searchable && (
             <div className="border-b border-purple-100 p-2 dark:border-purple-500/20">
               <input
@@ -230,7 +308,7 @@ export default function CustomSelect({
             id={listId}
             role="listbox"
             aria-label={ariaLabel}
-            className="max-h-60 overflow-y-auto"
+            className="flex-1 overflow-y-auto"
           >
             {visibleOptions.length === 0 && (
               <p className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
@@ -262,7 +340,8 @@ export default function CustomSelect({
               );
             })}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );
