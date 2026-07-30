@@ -47,11 +47,59 @@ export function SSEProvider({ children }: SSEProviderProps) {
   const connectionStartTimeRef = useRef<number>(0);
   const uptimeIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasConnectedRef = useRef(false);
-  const consecutiveErrorCountRef = useRef(0);
-  const disabledDueToErrorsRef = useRef(false);
-  
+  // Lets scheduleReconnect reach the latest connect without the two callbacks
+  // depending on one another.
+  const connectRef = useRef<() => void>(() => {});
+  // So exhausting the budget is reported once, not on every subsequent error.
+  const exhaustedLoggedRef = useRef(false);
+
   const maxReconnectAttempts = 5;
   const baseReconnectDelay = 1000;
+
+  const isOffline = () => typeof navigator !== 'undefined' && navigator.onLine === false;
+
+  const clearPendingReconnect = () => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  };
+
+  /**
+   * Schedule the next attempt.
+   *
+   * There is deliberately no terminal state. Previously three consecutive
+   * errors set a flag that made connect() return early forever — even the
+   * public reconnect() honoured it — so one bad tunnel left a signed-in user
+   * silently receiving nothing until they reloaded the page.
+   */
+  const scheduleReconnect = useCallback((suppress: boolean) => {
+    if (suppress) return;
+
+    // A retry cannot succeed with no network, and spending the budget during
+    // the outage leaves nothing for when connectivity returns. Stay dormant;
+    // the online listener resumes us.
+    if (isOffline()) return;
+
+    if (reconnectAttemptsRef.current >= maxReconnectAttempts) {
+      if (!exhaustedLoggedRef.current) {
+        exhaustedLoggedRef.current = true;
+        console.warn('[SSE] Paused retries; will resume when the network or tab returns');
+      }
+      return;
+    }
+
+    reconnectAttemptsRef.current++;
+    const backoff = Math.min(baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current - 1), 30000);
+    // Jitter so many tabs recovering from one outage do not retry in lockstep.
+    const delay = Math.round(backoff * (0.5 + Math.random() * 0.5));
+
+    clearPendingReconnect();
+    reconnectTimeoutRef.current = setTimeout(() => {
+      reconnectTimeoutRef.current = null;
+      connectRef.current();
+    }, delay);
+  }, []);
 
   const disconnect = useCallback(() => {
     if (eventSourceRef.current) {
@@ -87,9 +135,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
 
   const connect = useCallback(() => {
     if (typeof window === 'undefined') return;
-    if (disabledDueToErrorsRef.current) {
-      return;
-    }
     if (disabledOnProfileAccount) {
       disconnect();
       return;
@@ -121,7 +166,7 @@ export function SSEProvider({ children }: SSEProviderProps) {
       reconnectAttemptsRef.current = 0;
       connectionStartTimeRef.current = Date.now();
       hasConnectedRef.current = true;
-      consecutiveErrorCountRef.current = 0;
+      exhaustedLoggedRef.current = false;
       
       // Start uptime tracking
       if (uptimeIntervalRef.current) {
@@ -153,7 +198,6 @@ export function SSEProvider({ children }: SSEProviderProps) {
       setIsConnected(false);
       es.close();
       eventSourceRef.current = null;
-      consecutiveErrorCountRef.current += 1;
 
       // Clear uptime tracking
       if (uptimeIntervalRef.current) {
@@ -163,33 +207,14 @@ export function SSEProvider({ children }: SSEProviderProps) {
       connectionStartTimeRef.current = 0;
       setConnectionUptime(0);
 
-      if (!suppressLocalRetry && consecutiveErrorCountRef.current >= 3) {
-        disabledDueToErrorsRef.current = true;
-        if (!suppressLocalRetry) {
-          console.warn('[SSE] Disabled SSE retries after repeated errors');
-        }
-        return;
-      }
-
-      // Attempt reconnection with exponential backoff
-      if (!suppressLocalRetry && reconnectAttemptsRef.current < maxReconnectAttempts) {
-        const delay = baseReconnectDelay * Math.pow(2, reconnectAttemptsRef.current);
-        
-        reconnectTimeoutRef.current = setTimeout(() => {
-          reconnectAttemptsRef.current++;
-          connect();
-        }, delay);
-      } else if (!suppressLocalRetry) {
-        console.error('[SSE] Max reconnection attempts reached');
-      }
+      scheduleReconnect(suppressLocalRetry);
     };
-  }, [disconnect, disabledOnProfileAccount, user]);
+  }, [disconnect, disabledOnProfileAccount, scheduleReconnect, user]);
 
   const reconnect = useCallback(() => {
-    if (disabledDueToErrorsRef.current) {
-      return;
-    }
     reconnectAttemptsRef.current = 0;
+    exhaustedLoggedRef.current = false;
+    clearPendingReconnect();
     connect();
   }, [connect]);
 
@@ -212,13 +237,54 @@ export function SSEProvider({ children }: SSEProviderProps) {
     };
   }, []);
 
+  useEffect(() => {
+    connectRef.current = connect;
+  }, [connect]);
+
+  /**
+   * Recover from an outage.
+   *
+   * Coming back online, or returning to a tab whose stream died while the
+   * machine slept, is fresh evidence that a retry may now succeed. Reset the
+   * budget and reconnect at once rather than waiting out a backoff — or, before
+   * this, never retrying again.
+   */
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const resume = () => {
+      if (disabledOnProfileAccount) return;
+      if (eventSourceRef.current?.readyState === EventSource.OPEN) return;
+
+      const authUser = (user as any)?.user ?? user;
+      const currentUserId = authUser?.user_id || authUser?.id || getStoredUserId();
+      if (!currentUserId) return;
+
+      reconnectAttemptsRef.current = 0;
+      exhaustedLoggedRef.current = false;
+      clearPendingReconnect();
+      connectRef.current();
+    };
+
+    const handleOnline = () => resume();
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') resume();
+    };
+
+    window.addEventListener('online', handleOnline);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [disabledOnProfileAccount, user]);
+
   // Reconnect whenever auth state changes so login/logout updates the shared stream.
   useEffect(() => {
     const authUser = (user as any)?.user ?? user;
     const currentUserId = authUser?.user_id || authUser?.id || getStoredUserId();
     reconnectAttemptsRef.current = 0;
-    consecutiveErrorCountRef.current = 0;
-    disabledDueToErrorsRef.current = false;
+    exhaustedLoggedRef.current = false;
 
     if (currentUserId && !disabledOnProfileAccount) {
       hasConnectedRef.current = false;
