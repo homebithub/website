@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import { getAccessTokenFromCookies } from '~/utils/cookie';
-import { uploadDocuments } from '~/utils/documentUploads';
+import { PHOTO_ACCEPT_ATTRIBUTE, selectPhotosForUpload, uploadDocuments } from '~/utils/documentUploads';
 import { profileService as grpcProfileService, documentService, householdMemberService, jobService, profileFeatureService, userProfilePicksService } from '~/services/grpc/authServices';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
@@ -200,8 +200,6 @@ const formatJobLocation = (location?: string | JobLocation): string => {
 };
 
 const MAX_PHOTOS = 5;
-const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
 export default function HouseholdProfile() {
   const navigate = useNavigate();
@@ -615,28 +613,18 @@ export default function HouseholdProfile() {
   };
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    const currentPhotoCount = profile?.photos?.length || 0;
-    if (currentPhotoCount >= MAX_PHOTOS) {
-      setUploadError(`Maximum of ${MAX_PHOTOS} photos allowed`);
+    const { files: selectedFiles, error: selectionError } = selectPhotosForUpload(
+      e.target.files,
+      profile?.photos?.length || 0,
+      MAX_PHOTOS,
+    );
+    // Clear the input either way, so re-picking the same files fires onChange.
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (selectionError) {
+      setUploadError(selectionError);
       return;
     }
-
-    const file = files[0];
-    
-    // Validate file type
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      setUploadError('Only JPG, PNG, WEBP, and GIF files are allowed');
-      return;
-    }
-
-    // Validate file size
-    if (file.size > MAX_FILE_SIZE) {
-      setUploadError('File size must be less than 5MB');
-      return;
-    }
+    if (selectedFiles.length === 0) return;
 
     setUploading(true);
     setUploadError(null);
@@ -647,17 +635,16 @@ export default function HouseholdProfile() {
       if (!token) throw new Error('Not authenticated');
 
       const uploadData = await uploadDocuments({
-        files: [file],
+        files: selectedFiles,
         documentType: 'profile_photo',
         profileId: profile?.id,
         description: 'Household profile photo',
         onProgress: setUploadProgress,
       });
       const docs = uploadData.data || uploadData.documents || [];
-      const firstDoc = Array.isArray(docs) ? docs[0] : null;
-      const imageUrl = firstDoc?.public_url || firstDoc?.signed_url || firstDoc?.url;
-
-      if (!imageUrl) throw new Error('No image URL returned');
+      if (!Array.isArray(docs) || docs.length === 0) {
+        throw new Error('The upload completed, but no photos were returned.');
+      }
 
       // Refetch photos from documents table via gRPC
       try {
@@ -670,11 +657,6 @@ export default function HouseholdProfile() {
         console.warn('Failed to refetch photos after upload:', err);
       }
       notifyProfileProgressChanged();
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
     } catch (err: any) {
       console.error('Error uploading photo:', err);
       setUploadError(err.message || 'We couldn’t upload your photo. Please try again.');
@@ -1164,7 +1146,8 @@ export default function HouseholdProfile() {
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
+              accept={PHOTO_ACCEPT_ATTRIBUTE}
+              multiple
               onChange={handleFileSelect}
               className="hidden"
             />
@@ -1181,7 +1164,7 @@ export default function HouseholdProfile() {
               ) : (
                 <>
                   <PlusIcon className="h-4 w-4" />
-                  Add Photo
+                  Add Photos
                 </>
               )}
             </button>
