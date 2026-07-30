@@ -14,6 +14,7 @@ import {
   TEXTAREA_CLASS,
 } from "~/components/ui/formStyles";
 import CustomSelect from "~/components/ui/CustomSelect";
+import LocationPicker, { type LocationSelection } from "~/components/ui/LocationPicker";
 
 type JobPostModalProps = {
   isOpen: boolean;
@@ -128,6 +129,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [location, setLocation] = useState<LocationSelection | null>(null);
   const { panelRef, onOverlayClick } = useModalDismiss(isOpen, onClose);
 
   useEffect(() => {
@@ -296,6 +298,13 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
       return;
     }
 
+    // A job with no location cannot be found by the househelps near it, so this
+    // is a hard requirement rather than something to fill in later.
+    if (!editing && !location?.wardId) {
+      setError("Choose where the job is, down to the ward.");
+      return;
+    }
+
     const userProfileId = getStoredUserProfileId();
     if (!editing && !userProfileId) {
       setError("User profile information is missing. Please sign in again.");
@@ -316,6 +325,7 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
           description: trimmedDescription,
           job_type_id: Number(selectedJobTypeId),
           features: buildFeaturePayload(),
+          ward_id: location?.wardId,
         });
       }
 
@@ -420,6 +430,18 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
                   })}
                 />
               </label>
+            )}
+
+            {!editing && (
+              <section className="rounded-2xl border border-purple-100 bg-purple-50/60 p-4 dark:border-purple-500/25 dark:bg-purple-950/15">
+                <div className="mb-4">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Where is the job?</h3>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Househelps search by area, so this is how the right people find your listing.
+                  </p>
+                </div>
+                <LocationPicker onChange={setLocation} required />
+              </section>
             )}
 
             {!editing && selectedJobTypeId && (

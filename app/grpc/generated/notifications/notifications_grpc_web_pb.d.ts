@@ -302,6 +302,13 @@ export class NotificationsServiceClient {
                response: notifications_notifications_pb.PurgeUserDataResponse) => void
   ): grpcWeb.ClientReadableStream<notifications_notifications_pb.PurgeUserDataResponse>;
 
+  listUserEventsSince(
+    request: notifications_notifications_pb.ListUserEventsSinceRequest,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: notifications_notifications_pb.ListUserEventsSinceResponse) => void
+  ): grpcWeb.ClientReadableStream<notifications_notifications_pb.ListUserEventsSinceResponse>;
+
 }
 
 export class NotificationsServicePromiseClient {
@@ -518,6 +525,11 @@ export class NotificationsServicePromiseClient {
     request: notifications_notifications_pb.PurgeUserDataRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<notifications_notifications_pb.PurgeUserDataResponse>;
+
+  listUserEventsSince(
+    request: notifications_notifications_pb.ListUserEventsSinceRequest,
+    metadata?: grpcWeb.Metadata
+  ): Promise<notifications_notifications_pb.ListUserEventsSinceResponse>;
 
 }
 

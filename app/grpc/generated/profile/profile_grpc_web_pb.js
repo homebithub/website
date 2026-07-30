@@ -22,6 +22,9 @@ const grpc = { web: grpcWeb };
 
 import * as _shared_shared_pb from '../shared/shared_pb.js';
 const shared_shared_pb = _shared_shared_pb.default || _shared_shared_pb
+
+import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js';
+const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb
 import * as profile_pb from './profile_pb.js';
 const proto = { profile: profile_pb.default || profile_pb };
 
@@ -379,6 +382,67 @@ proto.profile.ProfileServicePromiseClient.prototype.getProfiles =
       request,
       metadata || {},
       methodDescriptor_ProfileService_GetProfiles);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.google.protobuf.Empty,
+ *   !proto.shared.GenericResponse>}
+ */
+const methodDescriptor_ProfileService_ListProfiles = new grpc.web.MethodDescriptor(
+  '/profile.ProfileService/ListProfiles',
+  grpc.web.MethodType.UNARY,
+  google_protobuf_empty_pb.Empty,
+  shared_shared_pb.GenericResponse,
+  /**
+   * @param {!proto.google.protobuf.Empty} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  shared_shared_pb.GenericResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.shared.GenericResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.shared.GenericResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.profile.ProfileServiceClient.prototype.listProfiles =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/profile.ProfileService/ListProfiles',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_ListProfiles,
+      callback);
+};
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.shared.GenericResponse>}
+ *     Promise that resolves to the response
+ */
+proto.profile.ProfileServicePromiseClient.prototype.listProfiles =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/profile.ProfileService/ListProfiles',
+      request,
+      metadata || {},
+      methodDescriptor_ProfileService_ListProfiles);
 };
 
 

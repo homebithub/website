@@ -12,14 +12,12 @@ import { TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { ClipboardCheck, Eye } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import EditSectionModal from '~/components/ui/EditSectionModal';
 import ProfileViewsAnalytics from '~/components/ProfileViewsAnalytics';
 import { useProfileViewTracking } from '~/hooks/useProfileViewTracking';
 import { getStoredCanonicalProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId, setStoredActiveUserProfileId } from '~/utils/authStorage';
 import JobPostModal from '~/components/modals/JobPostModal';
 import { ProfilePageSkeleton } from "~/components/ShimmerLoader";
 import { ProfileAccountSummary } from '~/components/ProfileAccountSummary';
-import Location from '~/components/Location';
 import { ProfileRequirementsChecklist } from '~/components/profile/ProfileRequirementsChecklist';
 import { useOnboardingProgress } from '~/hooks/useOnboardingProgress';
 import type { MissingRequirement } from '~/hooks/useOnboardingProgress';
@@ -488,19 +486,19 @@ export default function HouseholdProfile() {
     };
   }, [retryKey]);
 
-  const [editingSection, setEditingSection] = useState<string | null>(null);
   const [showViewsModal, setShowViewsModal] = useState(false);
   const { progress } = useOnboardingProgress(getStoredUserId() || '', 'household');
 
-  // Each outstanding requirement opens the editor that satisfies it. Location
-  // has no permanent section on this page, so it opens in a modal from here.
+  // Each outstanding requirement opens the editor that satisfies it.
+  //
+  // There is no location case. Nothing searches for households — househelps
+  // browse job listings, and each listing carries its own ward — so a household
+  // is never asked where it is, and the backend no longer reports location as
+  // outstanding for them.
   const handleResolveRequirement = (requirement: MissingRequirement) => {
     switch (requirement.action) {
       case 'features':
         handleCompleteFeaturePicks();
-        break;
-      case 'location':
-        setEditingSection('location');
         break;
       case 'photo':
         document.getElementById('profile-photos')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -508,28 +506,6 @@ export default function HouseholdProfile() {
       default:
         break;
     }
-  };
-
-  const EDIT_SECTIONS: Record<string, { title: string; component: React.FC }> = {
-    location: { title: '📍 Edit Location', component: Location },
-  };
-
-  const handleEditSection = (section: string) => {
-    setEditingSection(section);
-  };
-
-  const handleCloseEditModal = () => {
-    setEditingSection(null);
-    // Refresh profile data after editing
-    const refresh = async () => {
-      try {
-        const profileData = await grpcProfileService.getCurrentHouseholdProfile('');
-        setProfile(profileData);
-      } catch (err) {
-        console.error('Failed to refresh profile after edit:', err);
-      }
-    };
-    refresh();
   };
 
   const fetchInvitationCode = async () => {
@@ -1369,18 +1345,6 @@ export default function HouseholdProfile() {
         onConfirm={handleDeleteJob}
         onCancel={() => setJobToDelete(null)}
       />
-
-      {/* Edit Section Modal */}
-      {editingSection && EDIT_SECTIONS[editingSection] && (
-        <EditSectionModal
-          isOpen={true}
-          onClose={handleCloseEditModal}
-          title={EDIT_SECTIONS[editingSection].title}
-          profileType="household"
-        >
-          {React.createElement(EDIT_SECTIONS[editingSection].component)}
-        </EditSectionModal>
-      )}
 
       {/* Profile Views Modal */}
       {profile?.id && (

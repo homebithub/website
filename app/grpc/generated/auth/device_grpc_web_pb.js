@@ -25,8 +25,8 @@ const google_protobuf_timestamp_pb = _google_protobuf_timestamp_pb.default || _g
 
 import * as _google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js';
 const google_protobuf_empty_pb = _google_protobuf_empty_pb.default || _google_protobuf_empty_pb
-import * as device_pb from './device_pb.js';
-const proto = { auth: device_pb.default || device_pb };
+import * as auth_pb from './device_pb.js';
+const proto = { auth: auth_pb.default || auth_pb };
 
 /**
  * @param {string} hostname
@@ -571,5 +571,6 @@ proto.auth.DeviceServicePromiseClient.prototype.updateDeviceActivity =
 export default proto.auth;
 export const {
   DeviceServiceClient,
+  DeviceServicePromiseClient,
 } = proto.auth;
 

@@ -47,11 +47,21 @@ function encodeListRequest(params: URLSearchParams) {
   const userProfileId = String(params.get('user_profile_id') || params.get('userProfileId') || '');
   const status = String(params.get('status') || '');
 
+  // Location filters. Only the most specific one the caller supplied is sent —
+  // the service picks ward over subcounty over county, so passing all three
+  // would just be noise on the wire.
+  const wardId = Number(params.get('ward_id') || params.get('wardId') || '0');
+  const subcountyId = Number(params.get('subcounty_id') || params.get('subcountyId') || '0');
+  const countyId = Number(params.get('county_id') || params.get('countyId') || '0');
+
   return concatBytes([
     encodeInt32Field(1, Number.isFinite(limit) ? limit : 20),
     encodeInt32Field(2, Number.isFinite(offset) ? offset : 0),
     encodeStringField(3, userProfileId),
     encodeStringField(4, status),
+    encodeInt32Field(5, Number.isFinite(countyId) ? countyId : 0),
+    encodeInt32Field(6, Number.isFinite(subcountyId) ? subcountyId : 0),
+    encodeInt32Field(7, Number.isFinite(wardId) ? wardId : 0),
   ]);
 }
 
@@ -63,6 +73,9 @@ function encodeCreateListingReq(body: Record<string, unknown>) {
     encodeStringField(3, String(body.description || '')),
     encodeInt32Field(4, Number(body.job_type_id || body.jobTypeId || 0)),
     ...features.map((feature) => encodeMessageField(5, encodeFeaturePick(feature as Record<string, unknown>))),
+    // Where the work is. The service rejects a listing without it, since a job
+    // nobody can place is a job the right househelps never find.
+    encodeInt32Field(6, Number(body.ward_id || body.wardId || 0)),
   ]);
 }
 
@@ -399,6 +412,16 @@ export async function action({ request }: { request: Request }) {
       return Response.json({ message: 'title and description are required' }, { status: 400 });
     }
 
+    const wardId = Number(body.ward_id || body.wardId || 0);
+    if (!wardId) {
+      // Caught here as well as in the service, so the browser gets a plain
+      // message instead of a gRPC status it has to unwrap.
+      return Response.json(
+        { message: 'a location is required so househelps can find this job' },
+        { status: 400 },
+      );
+    }
+
     const { body: responseBody } = await callUnaryGrpc(
       resolveAuthGrpcBaseUrl(request),
       '/auth.ListingService/CreateListing',
@@ -408,6 +431,7 @@ export async function action({ request }: { request: Request }) {
         description,
         job_type_id: body.job_type_id || body.jobTypeId,
         features: Array.isArray(body.features) ? body.features : [],
+        ward_id: wardId,
       }),
     );
 

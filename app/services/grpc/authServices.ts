@@ -720,6 +720,26 @@ export const locationService = {
     const res = await grpcCall((cb) => locationClient.searchLocations(req, getMetadata(), cb));
     return jsonResponseToJs(res);
   },
+  // Walking the hierarchy, for the cascading picker. Search alone assumed the
+  // user knew the name of their ward; these let the UI lead them down from a
+  // county, which everyone knows.
+  async listCounties(): Promise<any> {
+    const req = new auth_pb.LocationLevelReq();
+    const res = await grpcCall((cb) => locationClient.listCounties(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async listSubcounties(countyId: number): Promise<any> {
+    const req = new auth_pb.LocationLevelReq();
+    req.setCountyId(countyId);
+    const res = await grpcCall((cb) => locationClient.listSubcounties(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
+  async listWards(subcountyId: number): Promise<any> {
+    const req = new auth_pb.LocationLevelReq();
+    req.setSubcountyId(subcountyId);
+    const res = await grpcCall((cb) => locationClient.listWards(req, getMetadata(), cb));
+    return jsonResponseToJs(res);
+  },
   async getLocationByID(id: string, userId?: string): Promise<any> {
     const res = await grpcCall((cb) => locationClient.getLocationByID(buildIdRequest(id, userId), getMetadata(), cb));
     return jsonResponseToJs(res);

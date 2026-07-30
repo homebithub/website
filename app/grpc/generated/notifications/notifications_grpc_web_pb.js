@@ -2639,6 +2639,67 @@ proto.notifications.NotificationsServicePromiseClient.prototype.purgeUserData =
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.notifications.ListUserEventsSinceRequest,
+ *   !proto.notifications.ListUserEventsSinceResponse>}
+ */
+const methodDescriptor_NotificationsService_ListUserEventsSince = new grpc.web.MethodDescriptor(
+  '/notifications.NotificationsService/ListUserEventsSince',
+  grpc.web.MethodType.UNARY,
+  proto.notifications.ListUserEventsSinceRequest,
+  proto.notifications.ListUserEventsSinceResponse,
+  /**
+   * @param {!proto.notifications.ListUserEventsSinceRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.notifications.ListUserEventsSinceResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.notifications.ListUserEventsSinceRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.notifications.ListUserEventsSinceResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.notifications.ListUserEventsSinceResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.notifications.NotificationsServiceClient.prototype.listUserEventsSince =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/notifications.NotificationsService/ListUserEventsSince',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_ListUserEventsSince,
+      callback);
+};
+
+
+/**
+ * @param {!proto.notifications.ListUserEventsSinceRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.notifications.ListUserEventsSinceResponse>}
+ *     Promise that resolves to the response
+ */
+proto.notifications.NotificationsServicePromiseClient.prototype.listUserEventsSince =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/notifications.NotificationsService/ListUserEventsSince',
+      request,
+      metadata || {},
+      methodDescriptor_NotificationsService_ListUserEventsSince);
+};
+
+
 export default proto.notifications;
 export const {
   NotificationsServiceClient,

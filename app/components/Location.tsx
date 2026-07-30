@@ -1,11 +1,13 @@
-import React, {useState, useRef, useEffect} from "react";
+import React, { useEffect, useState } from "react";
 import { handleApiError } from '../utils/errorMessages';
 import { locationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
 import { useProfileEditor } from '~/contexts/ProfileEditorContext';
 import { notifyProfileProgressChanged } from '~/utils/profileProgress';
+import LocationPicker, { type LocationSelection } from '~/components/ui/LocationPicker';
 
+/** What a saved location looks like to the pages that consume this. */
 interface LocationSuggestion {
     name: string;
     mapbox_id: string;
@@ -17,163 +19,100 @@ interface LocationProps {
     onSaved?: (location: LocationSuggestion) => void;
 }
 
-const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
+/**
+ * Captures where a househelp is based, by walking county → subcounty → ward.
+ *
+ * Households search for househelps by area, so a househelp who has not said
+ * where they are cannot be found. This is a househelp field only: nothing
+ * searches for households, and a job listing carries its own location.
+ *
+ * This replaced a free-text search box, which was wrong in three ways. It asked
+ * people to name their ward, which most cannot. The search response returns
+ * ward/subcounty/county columns while the dropdown read `name` and `mapbox_id`,
+ * so every suggestion rendered blank and keyed on undefined. And the save sent
+ * `{place, mapbox_id}` where CreateLocation requires `ward_id`, so it was
+ * rejected every time — location could not actually be completed.
+ */
+const Location: React.FC<LocationProps> = ({ onSelect, onSaved }) => {
     const { markDirty, markClean, profileData } = useProfileEditor();
-    const [input, setInput] = useState("");
-    const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
-    const [showDropdown, setShowDropdown] = useState(false);
-    const [loading, setLoading] = useState(false);
+    const [selection, setSelection] = useState<LocationSelection | null>(null);
+    const [savedWardId, setSavedWardId] = useState<number | null>(null);
+    const [initial, setInitial] = useState<{
+        wardId: number | null;
+        subcountyId: number | null;
+        countyId: number | null;
+    }>({ wardId: null, subcountyId: null, countyId: null });
     const [submitting, setSubmitting] = useState(false);
-    const [selectedIndex, setSelectedIndex] = useState(-1);
-    const [selectedLocation, setSelectedLocation] = useState<LocationSuggestion | null>(null);
-    const [savedLocation, setSavedLocation] = useState<LocationSuggestion | null>(null);
-    const [submitStatus, setSubmitStatus] = useState<{success: boolean; message: string} | null>(null);
-    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLInputElement>(null);
+    const [submitStatus, setSubmitStatus] = useState<{ success: boolean; message: string } | null>(null);
 
-    // Populate from context (instant on back-nav)
+    // Prime the picker from the editor context, so coming back to this section
+    // shows the existing choice rather than an empty form.
     useEffect(() => {
-        const cached = profileData.location;
-        if (cached) {
-            const place = cached.place || cached.name || cached.town || cached.address || '';
-            if (place) {
-                setInput(place);
-                const loc = { name: place, mapbox_id: cached.mapbox_id || '', feature_type: cached.feature_type || 'place' };
-                setSavedLocation(loc);
-                setSelectedLocation(loc);
-            }
-        }
+        const cached: any = profileData.location;
+        if (!cached || typeof cached !== 'object') return;
+        const wardId = Number(cached.ward_id ?? cached.wardId ?? 0) || null;
+        if (!wardId) return;
+        setInitial({
+            wardId,
+            subcountyId: Number(cached.subcounty_id ?? cached.subcountyId ?? 0) || null,
+            countyId: Number(cached.county_id ?? cached.countyId ?? 0) || null,
+        });
+        setSavedWardId(wardId);
     }, [profileData.location]);
 
-    // Load existing location data from backend (fallback)
+    // Fall back to the profile record when the context holds nothing.
     useEffect(() => {
+        let active = true;
         const loadLocation = async () => {
             try {
                 const profileType = localStorage.getItem('profile_type');
                 const raw = profileType === 'househelp'
                     ? await grpcProfileService.getHousehelpProfileWithUser('')
                     : await grpcProfileService.getCurrentHouseholdProfile('');
-                const data = raw?.data || raw || {};
+                if (!active) return;
 
+                const data = raw?.data || raw || {};
                 const loc = data?.location;
-                const place = (typeof loc === 'string' ? loc : loc?.place || loc?.name) || data?.town || '';
-                if (place) {
-                    const mapboxId = (typeof loc === 'object' && loc?.mapbox_id) || '';
-                    const featureType = (typeof loc === 'object' && loc?.feature_type) || 'place';
-                    setInput(place);
-                    setSavedLocation({
-                        name: place,
-                        mapbox_id: mapboxId,
-                        feature_type: featureType
-                    });
-                    setSelectedLocation({
-                        name: place,
-                        mapbox_id: mapboxId,
-                        feature_type: featureType
-                    });
-                }
+                if (!loc || typeof loc !== 'object') return;
+
+                const wardId = Number(loc.ward_id ?? loc.wardId ?? 0) || null;
+                if (!wardId) return;
+                setInitial({
+                    wardId,
+                    subcountyId: Number(loc.subcounty_id ?? loc.subcountyId ?? 0) || null,
+                    countyId: Number(loc.county_id ?? loc.countyId ?? 0) || null,
+                });
+                setSavedWardId(wardId);
             } catch (err) {
                 console.error('Failed to load location:', err);
             }
         };
         loadLocation();
-    }, []);
-
-    useEffect(() => {
-        // Don't search if we just selected a location or if input is too short
-        if (input.length > 2 && (!selectedLocation || input !== selectedLocation.name)) {
-            setLoading(true);
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-            timeoutRef.current = setTimeout(() => {
-                locationService.getLocationSuggestions(input)
-                  .then((response: any) => {
-                    const data = response?.data?.data || response?.data || response;
-                    setSuggestions(Array.isArray(data) ? data : []);
-                    setShowDropdown(true);
-                  })
-                  .catch(() => setSuggestions([]))
-                  .finally(() => setLoading(false));
-            }, 1000);
-        } else {
-            setSuggestions([]);
-            setShowDropdown(false);
-        }
         return () => {
-            if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        };
-    }, [input]);
-
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (
-                dropdownRef.current &&
-                !dropdownRef.current.contains(event.target as Node)
-            ) {
-                setShowDropdown(false);
-                setSelectedIndex(-1);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
+            active = false;
         };
     }, []);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setInput(e.target.value);
-        setSelectedIndex(-1);
-        // Reset saved location when user starts typing again (only if they're actually changing it)
-        if (savedLocation && input !== savedLocation.name) {
-            setSavedLocation(null);
+    const handleChange = (next: LocationSelection) => {
+        setSelection(next);
+        if (next.wardId && next.wardId !== savedWardId) {
+            markDirty();
+            setSubmitStatus(null);
         }
-    };
-
-    const handleSuggestionClick = (suggestion: LocationSuggestion) => {
-        setInput(suggestion.name);
-        setSelectedLocation(suggestion);
-        setShowDropdown(false);
-        setSuggestions([]);
-        setSubmitStatus(null);
-        markDirty();
-        
-        // Clear the timeout to prevent dropdown from reappearing
-        if (timeoutRef.current) {
-            clearTimeout(timeoutRef.current);
-            timeoutRef.current = null;
-        }
-        
-        // Blur the input to prevent refocus triggering search
-        if (inputRef.current) {
-            inputRef.current.blur();
-        }
-        
-        if (onSelect) onSelect(suggestion);
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (!showDropdown || suggestions.length === 0) return;
-        if (e.key === "ArrowDown") {
-            setSelectedIndex((prev) =>
-                prev < suggestions.length - 1 ? prev + 1 : prev
-            );
-        } else if (e.key === "ArrowUp") {
-            setSelectedIndex((prev) => (prev > 0 ? prev - 1 : prev));
-        } else if (e.key === "Enter" && selectedIndex >= 0) {
-            handleSuggestionClick(suggestions[selectedIndex]);
-        }
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setShowDropdown(false);
-        
-        if (!selectedLocation) {
-            setSubmitStatus({
-                success: false,
-                message: 'Please select a location from the suggestions'
+        if (next.wardId) {
+            onSelect?.({
+                name: next.wardName,
+                mapbox_id: String(next.wardId),
+                feature_type: 'ward',
             });
+        }
+    };
+
+    const handleSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+
+        if (!selection?.wardId) {
+            setSubmitStatus({ success: false, message: 'Choose your location down to the ward.' });
             return;
         }
 
@@ -183,121 +122,88 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
         try {
             const profileType = localStorage.getItem('profile_type') || '';
 
-            // Flat payload for CreateLocation (matches types.Location fields)
-            const createPayload = {
-                place: selectedLocation.name,
-                mapbox_id: selectedLocation.mapbox_id,
-            };
+            // ward_id is what profile_locations stores; the names below are
+            // context so the profile page can show the place without a join.
+            await locationService.createLocation('', {
+                ward_id: selection.wardId,
+                location_type: 'primary',
+                label: selection.wardName,
+            });
 
-            // Rich payload for SaveUserLocation (profile update)
-            const profilePayload = {
-                mapbox_id: selectedLocation.mapbox_id || '',
-                town: selectedLocation.name || '',
-                profile_type: profileType || '',
-                location: {
-                    place: selectedLocation.name || '',
-                    name: selectedLocation.name || '',
-                    mapbox_id: selectedLocation.mapbox_id || '',
-                    feature_type: selectedLocation.feature_type || 'place'
-                }
-            };
-
-            await locationService.createLocation('', createPayload);
-
-            // Also update the profile's location JSONB field so it appears on the profile page
             try {
-                await grpcProfileService.saveUserLocation('', profilePayload);
+                await grpcProfileService.saveUserLocation('', {
+                    town: selection.wardName,
+                    profile_type: profileType,
+                    location: {
+                        ward_id: selection.wardId,
+                        ward: selection.wardName,
+                        subcounty_id: selection.subcountyId,
+                        subcounty: selection.subcountyName,
+                        county_id: selection.countyId,
+                        county: selection.countyName,
+                        place: [selection.wardName, selection.subcountyName].filter(Boolean).join(', '),
+                        name: selection.wardName,
+                        feature_type: 'ward',
+                    },
+                });
             } catch (profileErr) {
                 console.warn('[Location] Failed to update profile location:', profileErr);
             }
 
-            // Location counts toward profile completion, so invalidate the
+            // Location counts toward a househelp's completion, so invalidate the
             // cached progress or the checklist keeps listing it as outstanding.
             notifyProfileProgressChanged();
 
-            setSubmitStatus({
-                success: true,
-                message: 'Location saved successfully!'
-            });
+            setSubmitStatus({ success: true, message: 'Location saved successfully!' });
             markClean();
-            // Save the location to disable button
-            setSavedLocation(selectedLocation);
-            
-            // Notify parent that location was saved
-            if (onSaved) {
-                onSaved(selectedLocation);
-            }
+            setSavedWardId(selection.wardId);
 
-            // Clear the status after 3 seconds
+            onSaved?.({
+                name: selection.wardName,
+                mapbox_id: String(selection.wardId),
+                feature_type: 'ward',
+            });
+
             setTimeout(() => setSubmitStatus(null), 3000);
         } catch (error) {
             console.error('Error saving location:', error);
             setSubmitStatus({
                 success: false,
-                message: handleApiError(error, 'location', 'An error occurred while saving location')
+                message: handleApiError(error, 'location', 'An error occurred while saving location'),
             });
         } finally {
             setSubmitting(false);
         }
     };
 
+    const unchanged = savedWardId !== null && selection?.wardId === savedWardId;
+
     return (
         <div className="w-full max-w-md mx-auto">
             <form onSubmit={handleSubmit} autoComplete="off" className="space-y-6">
-                <div className="relative z-10">
-                    <label htmlFor="location-input" className="block text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
-                        📍 Location <span className="text-red-500">*</span>
-                    </label>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">
-                        If your exact location isn't found, try searching for the nearest town or landmark
+                <div>
+                    <h3 className="text-xs font-semibold text-purple-700 dark:text-purple-400 mb-2">
+                        📍 Where are you based?
+                    </h3>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
+                        Households search by area, so this is how they find you.
                     </p>
-                    <input
-                        ref={inputRef}
-                        id="location-input"
-                        type="text"
-                        value={input}
-                        onChange={handleInputChange}
-                        onKeyDown={handleKeyDown}
-                        autoComplete="off"
-                        className="w-full h-10 text-xs px-4 py-2 rounded-xl border-2 bg-white dark:bg-[#13131a] text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-400 transition-all border-purple-200 dark:border-purple-500/30 shadow-sm"
-                        placeholder="Enter location..."
+                    <LocationPicker
+                        onChange={handleChange}
+                        initialWardId={initial.wardId}
+                        initialSubcountyId={initial.subcountyId}
+                        initialCountyId={initial.countyId}
+                        required
+                        size="sm"
                     />
-                    {showDropdown && suggestions.length > 0 && (
-                        <div
-                            ref={dropdownRef}
-                            className="absolute left-0 w-full bg-white dark:bg-[#13131a] border-2 border-purple-200 dark:border-purple-500/30 rounded-xl shadow-xl dark:shadow-glow-md z-50 max-h-56 overflow-y-auto mt-2"
-                            style={{ top: '100%' }}
-                        >
-                            {loading && (
-                                <div className="px-4 py-3 text-gray-500 dark:text-gray-400">🔍 Loading...</div>
-                            )}
-                            {suggestions.map((s, idx) => (
-                                <div
-                                    key={s.mapbox_id}
-                                    onMouseDown={(e) => {
-                                        e.preventDefault(); // Prevent input blur
-                                        handleSuggestionClick(s);
-                                    }}
-                                    onMouseEnter={() => setSelectedIndex(idx)}
-                                    className={`px-4 py-1.5 cursor-pointer font-medium border-b border-purple-100 dark:border-purple-500/20 last:border-b-0 transition-colors ${
-                                        idx === selectedIndex 
-                                            ? 'bg-purple-50 dark:bg-purple-900/30 text-purple-900 dark:text-purple-100' 
-                                            : 'bg-white dark:bg-[#13131a] text-gray-900 dark:text-gray-100'
-                                    } hover:bg-purple-100 dark:hover:bg-purple-900/40`}
-                                >
-                                    📍 {s.name}
-                                </div>
-                            ))}
-                        </div>
-                    )}
                 </div>
-                {submitStatus && submitStatus.success && <SuccessAlert message={submitStatus.message} />}
-                {submitStatus && !submitStatus.success && (
-                    <ErrorAlert message={submitStatus.message} />
-                )}
+
+                {submitStatus?.success && <SuccessAlert message={submitStatus.message} />}
+                {submitStatus && !submitStatus.success && <ErrorAlert message={submitStatus.message} />}
+
                 <button
                     type="submit"
-                    disabled={submitting || !selectedLocation || (savedLocation?.mapbox_id === selectedLocation?.mapbox_id)}
+                    disabled={submitting || !selection?.wardId || unchanged}
                     className="w-full px-8 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs shadow-lg hover:from-purple-700 hover:to-pink-700 hover:scale-105 transition-all focus:outline-none focus:ring-2 focus:ring-purple-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-2"
                 >
                     {submitting ? (
@@ -309,9 +215,7 @@ const Location: React.FC<LocationProps> = ({onSelect, onSaved}) => {
                             Saving...
                         </>
                     ) : (
-                        <>
-                            💾 Save Location
-                        </>
+                        <>💾 Save Location</>
                     )}
                 </button>
             </form>

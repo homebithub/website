@@ -1,6 +1,7 @@
 import * as jspb from 'google-protobuf'
 
 import * as shared_shared_pb from '../shared/shared_pb'; // proto import: "shared/shared.proto"
+import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb'; // proto import: "google/protobuf/empty.proto"
 
 
 export class CreateProfileRequest extends jspb.Message {

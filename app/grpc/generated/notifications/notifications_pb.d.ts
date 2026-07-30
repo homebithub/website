@@ -1841,3 +1841,91 @@ export namespace PurgeUserDataResponse {
   };
 }
 
+export class UserEvent extends jspb.Message {
+  getEventId(): string;
+  setEventId(value: string): UserEvent;
+
+  getEventType(): string;
+  setEventType(value: string): UserEvent;
+
+  getSeq(): number;
+  setSeq(value: number): UserEvent;
+
+  getPayload(): string;
+  setPayload(value: string): UserEvent;
+
+  getOccurredAt(): string;
+  setOccurredAt(value: string): UserEvent;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): UserEvent.AsObject;
+  static toObject(includeInstance: boolean, msg: UserEvent): UserEvent.AsObject;
+  static serializeBinaryToWriter(message: UserEvent, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): UserEvent;
+  static deserializeBinaryFromReader(message: UserEvent, reader: jspb.BinaryReader): UserEvent;
+}
+
+export namespace UserEvent {
+  export type AsObject = {
+    eventId: string;
+    eventType: string;
+    seq: number;
+    payload: string;
+    occurredAt: string;
+  };
+}
+
+export class ListUserEventsSinceRequest extends jspb.Message {
+  getUserId(): string;
+  setUserId(value: string): ListUserEventsSinceRequest;
+
+  getAfterEventId(): string;
+  setAfterEventId(value: string): ListUserEventsSinceRequest;
+
+  getLimit(): number;
+  setLimit(value: number): ListUserEventsSinceRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListUserEventsSinceRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: ListUserEventsSinceRequest): ListUserEventsSinceRequest.AsObject;
+  static serializeBinaryToWriter(message: ListUserEventsSinceRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListUserEventsSinceRequest;
+  static deserializeBinaryFromReader(message: ListUserEventsSinceRequest, reader: jspb.BinaryReader): ListUserEventsSinceRequest;
+}
+
+export namespace ListUserEventsSinceRequest {
+  export type AsObject = {
+    userId: string;
+    afterEventId: string;
+    limit: number;
+  };
+}
+
+export class ListUserEventsSinceResponse extends jspb.Message {
+  getEventsList(): Array<UserEvent>;
+  setEventsList(value: Array<UserEvent>): ListUserEventsSinceResponse;
+  clearEventsList(): ListUserEventsSinceResponse;
+  addEvents(value?: UserEvent, index?: number): UserEvent;
+
+  getCursorExpired(): boolean;
+  setCursorExpired(value: boolean): ListUserEventsSinceResponse;
+
+  getHasMore(): boolean;
+  setHasMore(value: boolean): ListUserEventsSinceResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ListUserEventsSinceResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ListUserEventsSinceResponse): ListUserEventsSinceResponse.AsObject;
+  static serializeBinaryToWriter(message: ListUserEventsSinceResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ListUserEventsSinceResponse;
+  static deserializeBinaryFromReader(message: ListUserEventsSinceResponse, reader: jspb.BinaryReader): ListUserEventsSinceResponse;
+}
+
+export namespace ListUserEventsSinceResponse {
+  export type AsObject = {
+    eventsList: Array<UserEvent.AsObject>;
+    cursorExpired: boolean;
+    hasMore: boolean;
+  };
+}
+

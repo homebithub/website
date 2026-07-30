@@ -42,6 +42,12 @@ interface JobListing {
   title?: string;
   description?: string;
   location?: string | JobLocation;
+  // Resolved from the listing's ward by the auth service. This is where the
+  // work is, which is the only location a househelp ever sees — households are
+  // not discoverable, so their own address never appears.
+  ward?: string;
+  subcounty?: string;
+  county?: string;
   job_types?: string[];
   start_date?: string;
   work_schedule?: Record<string, { morning?: boolean; afternoon?: boolean; evening?: boolean }>;
@@ -132,6 +138,23 @@ const formatJobLocation = (location?: string | JobLocation): string => {
   if (!location) return "Location not specified";
   if (typeof location === "string") return location;
   return location.name || location.place || "Location not specified";
+};
+
+/**
+ * Names where a job is, most specific part first.
+ *
+ * "Kitisuru, Westlands" tells a househelp far more about whether the commute
+ * works than either half alone, and the county is left off because the browse is
+ * almost always already within one.
+ */
+const formatListingPlace = (job: JobListing): string => {
+  const parts = [job.ward, job.subcounty].filter(
+    (part): part is string => typeof part === "string" && part.trim() !== "",
+  );
+  if (parts.length > 0) return parts.join(", ");
+  // Listings created before jobs carried a ward fall back to whatever the old
+  // free-text field held.
+  return formatJobLocation(job.location);
 };
 
 const formatDate = (value?: string) => {
@@ -436,7 +459,7 @@ export default function HousehelpJobsHome() {
   const locationOptions = useMemo(() => {
     const options = new Map<string, string>();
     jobs.forEach((job) => {
-      const label = formatJobLocation(job.location);
+      const label = formatListingPlace(job);
       const normalized = normalizeToken(label);
       if (normalized) options.set(normalized, label);
     });
@@ -473,7 +496,7 @@ export default function HousehelpJobsHome() {
       if (filters.jobType && !job.job_types?.some((type) => normalizeToken(type) === filters.jobType)) {
         return false;
       }
-      if (filters.location && normalizeToken(formatJobLocation(job.location)) !== filters.location) return false;
+      if (filters.location && normalizeToken(formatListingPlace(job)) !== filters.location) return false;
       if (filters.startWindow && !matchesStartWindow(job.start_date, filters.startWindow)) return false;
       if (filters.scheduleSlot && !hasScheduleSlot(job.work_schedule, filters.scheduleSlot as "morning" | "afternoon" | "evening")) {
         return false;
@@ -1239,7 +1262,7 @@ export default function HousehelpJobsHome() {
                             {isJobOpen(job) ? "Open" : "Closed"}
                           </span>
                         </div>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">📍 {formatJobLocation(job.location)}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">📍 {formatListingPlace(job)}</p>
                         {job.match_reasons && job.match_reasons.length > 0 && (
                           <div className="mt-3 flex flex-wrap gap-2">
                             {job.match_reasons.slice(0, 2).map((reason) => (
@@ -1336,7 +1359,7 @@ export default function HousehelpJobsHome() {
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatJobLocation(job.location)}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">📍 {formatListingPlace(job)}</p>
                           {householdName && (
                             <p className="mt-1 text-xs font-semibold text-purple-600 dark:text-purple-300">Hosted by {householdName}</p>
                           )}
@@ -1625,7 +1648,7 @@ export default function HousehelpJobsHome() {
                 <div>
                   <p className="text-xs uppercase tracking-[0.3em] text-purple-500 dark:text-purple-300 font-semibold">Job opening</p>
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">{selectedJobDetail.title || "Household Job"}</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {formatJobLocation(selectedJobDetail.location)}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">📍 {formatListingPlace(selectedJobDetail)}</p>
                   {responseBadge && (
                     <div className="mt-3 space-y-1">
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${RESPONSIVENESS_BADGE_STYLES[responseBadge.tone]}`}>
@@ -1750,7 +1773,7 @@ export default function HousehelpJobsHome() {
                 <p className="text-xs uppercase tracking-widest text-purple-500 dark:text-purple-300 font-semibold mb-1">Apply to household</p>
                 <h2 className="text-lg font-bold text-gray-900 dark:text-white">{selectedJob.title || "Household Job"}</h2>
                 <div className="mt-2 text-xs text-gray-500 dark:text-gray-400 space-y-1">
-                  <p>📍 {formatJobLocation(selectedJob.location)}</p>
+                  <p>📍 {formatListingPlace(selectedJob)}</p>
                   <p>💰 {formatSalaryRange(selectedJob.salary_range)}</p>
                   <p>🗓️ Start {formatDate(selectedJob.start_date)}</p>
                 </div>
