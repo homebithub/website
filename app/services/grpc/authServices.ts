@@ -618,53 +618,6 @@ export const shortlistService = {
 //   listByHousehold, listByHousehelp, interestExists, getInterestCount,
 //   markViewed, acceptInterest, declineInterest)
 // ══════════════════════════════════════════════════════════════════════════
-export const interestService = {
-  async createInterest(userId: string, profileType: string, data: Record<string, any>): Promise<any> {
-    const req = new auth_pb.CreateInterestReq();
-    req.setUserId(resolveUserId(userId));
-    req.setProfileType(profileType);
-    const struct = toStruct(data);
-    if (struct) req.setData(struct);
-    const res = await grpcCall((cb) => interestClient.createInterest(req, getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async getInterest(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => interestClient.getInterest(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async deleteInterest(id: string, userId?: string): Promise<void> {
-    await grpcCall((cb) => interestClient.deleteInterest(buildIdRequest(id, userId), getMetadata(), cb));
-  },
-  async listByHousehold(userId: string, profileType?: string): Promise<any> {
-    const res = await grpcCall((cb) => interestClient.listByHousehold(buildUserIdRequest(userId, profileType || 'household'), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async listByHousehelp(userId: string, profileType?: string): Promise<any> {
-    const res = await grpcCall((cb) => interestClient.listByHousehelp(buildUserIdRequest(userId, profileType), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async interestExists(userId: string, householdId: string): Promise<any> {
-    const req = new auth_pb.InterestExistsReq();
-    req.setUserId(resolveUserId(userId));
-    req.setHouseholdId(householdId);
-    const res: any = await grpcCall((cb) => interestClient.interestExists(req, getMetadata(), cb));
-    return {
-      exists: !!(res?.getValue?.() ?? res?.getExists?.()),
-      value: !!(res?.getValue?.() ?? res?.getExists?.()),
-    };
-  },
-  async acceptInterest(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => interestClient.acceptInterest(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async declineInterest(id: string, userId?: string): Promise<any> {
-    const res = await grpcCall((cb) => interestClient.declineInterest(buildIdRequest(id, userId), getMetadata(), cb));
-    return jsonResponseToJs(res);
-  },
-  async markViewed(id: string, userId?: string): Promise<void> {
-    await grpcCall((cb) => interestClient.markViewed(buildIdRequest(id, userId), getMetadata(), cb));
-  },
-};
 
 // ══════════════════════════════════════════════════════════════════════════
 // Review Service (proto: createReview, getHousehelpReviews, getHouseholdReviews,

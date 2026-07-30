@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { hireRequestService, hireContractService, employmentContractService, interestService, jobService } from '~/services/grpc/authServices';
+import { hireRequestService, hireContractService, employmentContractService, jobService, listingApplicationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { ConfirmDialog } from '~/components/ui/ConfirmDialog';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
-import { getStoredProfileType, getStoredUser, getStoredUserId } from '~/utils/authStorage';
+import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { formatOnboardingAmountWithFrequency } from '~/utils/onboardingCompensation';
 import { buildIdentifierMap, findByAnyIdentifier, getHouseholdCandidateIds } from '~/utils/hiringIdentifiers';
 import { ListPageSkeleton } from "~/components/ShimmerLoader";
@@ -410,16 +410,92 @@ export default function HousehelpHiringHistory() {
     fetchECMap();
   }, []);
 
+  // The provider's own applications.
+  //
+  // This tab used to list "interests sent" — a record that existed alongside the
+  // application and held one row per household, so a second application to the
+  // same household was never recorded. Applications are per job, so this now shows
+  // every job they actually applied to.
   const fetchInterests = async () => {
     setInterestsLoading(true);
     setError(null);
     try {
-      const raw = await interestService.listByHousehelp('');
-      const items = extractEnvelopeArray<Interest>(raw);
+      const applicantProfileId = getStoredUserProfileId();
+      if (!applicantProfileId) {
+        setInterests([]);
+        setInterestsTotal(0);
+        return;
+      }
+      const raw = await listingApplicationService.listApplications({ applicantProfileId, limit: 200 });
+      const rows = extractEnvelopeArray<any>(raw);
+      // The rows render the household behind each application, which an
+      // application only names indirectly through its listing. Resolve the
+      // listings once each, then the households they belong to, so the tab shows
+      // who the job was with rather than a blank card.
+      const listingIds = Array.from(new Set(
+        rows.map((application) => String(application.listing_id ?? application.listingId ?? ''))
+            .filter(Boolean),
+      ));
+
+      const listings = await Promise.all(
+        listingIds.map(async (listingId) => {
+          try {
+            const listing = await jobService.getJob(listingId);
+            return [listingId, listing?.data ?? listing] as const;
+          } catch {
+            // One unreadable listing must not empty the whole tab.
+            return [listingId, null] as const;
+          }
+        }),
+      );
+      const listingById = new Map(listings);
+
+      const householdProfileIds = Array.from(new Set(
+        listings
+          .map(([, listing]) => String((listing as any)?.user_profile_id ?? ''))
+          .filter(Boolean),
+      ));
+
+      let householdById = new Map<string, any>();
+      if (householdProfileIds.length > 0) {
+        try {
+          const raw = await grpcProfileService.searchMultipleWithUser('', 'household', {
+            profile_ids: householdProfileIds,
+          });
+          for (const profile of extractEnvelopeArray<any>(raw)) {
+            const id = profile?.id || profile?.profile_id;
+            if (id) householdById.set(String(id), profile);
+          }
+        } catch (err) {
+          // Names are a nicety; the applications themselves still list.
+          console.error('Failed to resolve households for applications:', err);
+        }
+      }
+
+      // Presented in the shape this tab already renders. The salary fields have no
+      // application equivalent — they described an interest's asking rate — so they
+      // are left empty rather than invented.
+      const items: Interest[] = rows.map((application) => {
+        const listingId = String(application.listing_id ?? application.listingId ?? '');
+        const listing = listingById.get(listingId) as any;
+        const householdProfileId = String(listing?.user_profile_id ?? '');
+        return {
+          id: String(application.id ?? ''),
+          househelp_id: applicantProfileId,
+          household_id: householdProfileId,
+          salary_expectation: 0,
+          salary_frequency: '',
+          status: String(application.status ?? 'initiated'),
+          comments: application.message ? String(application.message) : undefined,
+          created_at: String(application.created_at ?? application.createdAt ?? ''),
+          household: householdById.get(householdProfileId),
+          job_type: listing?.title ? String(listing.title) : undefined,
+        } as Interest;
+      });
       setInterests(items);
-      setInterestsTotal(extractTotal(raw, items.length));
+      setInterestsTotal(items.length);
     } catch (err: any) {
-      setError(err.message || 'Failed to load interests');
+      setError(err.message || 'Failed to load your applications');
     } finally {
       setInterestsLoading(false);
     }
@@ -479,7 +555,9 @@ export default function HousehelpHiringHistory() {
     if (!pendingActionId) return;
     setActionLoading(pendingActionId);
     try {
-      await interestService.deleteInterest(pendingActionId);
+      // Unshortlist is the withdraw path on an application. deleteInterest would
+      // have been given an application id and found nothing.
+      await listingApplicationService.unshortlistApplication(pendingActionId, getStoredUserProfileId() || '');
       fetchInterests();
       setShowInterestModal(false);
       setSelectedInterest(null);
@@ -542,7 +620,7 @@ export default function HousehelpHiringHistory() {
     { key: 'requests', label: 'Requests Received', count: pendingCount > 0 ? pendingCount : undefined },
     { key: 'employment-contracts', label: 'Contracts' },
     { key: 'work-history', label: 'Work History' },
-    { key: 'interests', label: 'Interests Sent' },
+    { key: 'interests', label: 'My Applications' },
   ];
 
   const pageTitle = isClientProfile ? 'Hiring' : 'Job Openings';
@@ -957,10 +1035,10 @@ export default function HousehelpHiringHistory() {
             {interests.length === 0 ? (
               <div className="p-12 text-center">
                 <HandHeart className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">No interests sent yet</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">When you express interest in working for a household, it will appear here</p>
-                <button onClick={() => navigate('/')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
-                  Browse Households
+                <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">You haven't applied to anything yet</h3>
+                <p className="text-gray-600 dark:text-gray-400 mb-6">Jobs you apply to will appear here, with where each one has got to.</p>
+                <button onClick={() => navigate('/househelp/jobs')} className="inline-flex items-center px-6 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all">
+                  Browse jobs
                 </button>
               </div>
             ) : (
@@ -1114,13 +1192,6 @@ export default function HousehelpHiringHistory() {
                         <p className="font-semibold text-gray-900 dark:text-white capitalize">{selectedInterest.job_type.replace('-', ' ')}</p>
                       </div>
                     )}
-                    <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
-                      <div className="flex items-center gap-2 text-gray-500 dark:text-purple-300 mb-1">
-                        <DollarSign className="w-4 h-4" />
-                        <span className="text-xs font-medium">Salary Expected</span>
-                      </div>
-                      <p className="font-semibold text-gray-900 dark:text-white">{formatSalary(selectedInterest.salary_expectation, selectedInterest.salary_frequency)}</p>
-                    </div>
                     {selectedInterest.available_from && (
                       <div className="bg-gray-50 dark:bg-purple-900/20 rounded-xl p-4">
                         <div className="flex items-center gap-2 text-gray-500 dark:text-purple-300 mb-1">

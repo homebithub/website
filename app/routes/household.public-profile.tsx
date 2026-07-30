@@ -3,13 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router";
 import { useSubscription } from '~/hooks/useSubscription';
 import { NOTIFICATIONS_API_BASE_URL } from '~/config/api';
-import { documentService, shortlistService, interestService, listingApplicationService } from '~/services/grpc/authServices';
+import { documentService, shortlistService, listingApplicationService } from '~/services/grpc/authServices';
 import { getInboxRoute, startOrGetConversation, type StartConversationPayload } from '~/utils/conversationLauncher';
 import { Navigation } from "~/components/Navigation";
 import { Footer } from "~/components/Footer";
 import { PurpleThemeWrapper } from '~/components/layout/PurpleThemeWrapper';
 import ImageViewModal from '~/components/ImageViewModal';
-import ShowInterestModal from '~/components/modals/ShowInterestModal';
 import { MessageCircle, Heart, HandHeart } from "lucide-react";
 import { getStoredProfileType, getStoredUser, getStoredUserId, getStoredUserProfileId } from '~/utils/authStorage';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
@@ -77,8 +76,6 @@ export default function HouseholdPublicProfile() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
   const [isShortlisted, setIsShortlisted] = useState(false);
-  const [isInterestModalOpen, setIsInterestModalOpen] = useState(false);
-  const [hasExpressedInterest, setHasExpressedInterest] = useState(false);
   const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const [subscriptionActionLabel, setSubscriptionActionLabel] = useState('unlock full profile information');
   const { isActive: hasActiveSubscription, status: subscriptionStatus, loading: subscriptionLoading } = useSubscription(currentUserId);
@@ -201,30 +198,7 @@ export default function HouseholdPublicProfile() {
   }, [canShortlist, queryJobId]);
 
   // Check if househelp has already expressed interest
-  useEffect(() => {
-    if (!canInteract || !profile?.id) {
-      setHasExpressedInterest(false);
-      return;
-    }
-
-    let cancelled = false;
-    const checkInterest = async () => {
-      try {
-        const data = await interestService.interestExists('', profile.id!) as any;
-        const exists = !!(data?.getExists?.() ?? data?.exists);
-        if (!cancelled) {
-          setHasExpressedInterest(exists);
-        }
-      } catch (err) {
-        console.error("Failed to check interest status", err);
-      }
-    };
-    checkInterest();
-    return () => {
-      cancelled = true;
-    };
-  }, [canInteract, profile?.id]);
-
+  
   const handleBackNavigation = () => {
     const resolvedBackTo = navigationState.backTo || queryBackTo;
     const resolvedSource =
@@ -434,21 +408,16 @@ export default function HouseholdPublicProfile() {
                           <button
                             onClick={() => {
                               if (!hasActiveSubscription && !subscriptionLoading) {
-                                setSubscriptionActionLabel('show interest in households');
+                                setSubscriptionActionLabel('apply to jobs');
                                 setShowSubscriptionModal(true);
                                 return;
                               }
-                              setIsInterestModalOpen(true);
+                              navigate('/househelp/jobs');
                             }}
-                            disabled={hasExpressedInterest}
-                            className={`px-4 py-1.5 text-xs rounded-xl font-semibold shadow-lg transition-all flex items-center gap-2 ${
-                              hasExpressedInterest
-                                ? 'bg-gray-400 text-white cursor-not-allowed'
-                                : 'bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:scale-105'
-                            }`}
+                            className="px-4 py-1.5 text-xs rounded-xl font-semibold shadow-lg transition-all flex items-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 hover:scale-105"
                           >
                             <HandHeart className="w-4 h-4" />
-                            {hasExpressedInterest ? 'Interest Sent' : 'Show Interest'}
+                            See their jobs
                           </button>
                         )}
                       </div>
@@ -520,18 +489,6 @@ export default function HouseholdPublicProfile() {
         plansHref="/plans"
       />
 
-      {/* Show Interest Modal */}
-      {canInteract && profile && (
-        <ShowInterestModal
-          isOpen={isInterestModalOpen}
-          onClose={() => {
-            setIsInterestModalOpen(false);
-            setHasExpressedInterest(true);
-          }}
-          householdId={profile.id || ''}
-          householdName="this household"
-        />
-      )}
     </div>
   );
 }
