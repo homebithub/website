@@ -10,7 +10,7 @@ import {
 } from '@heroicons/react/24/outline';
 import { documentService, onboardingOptionsService } from '~/services/grpc/authServices';
 import { uploadDocuments } from '~/utils/documentUploads';
-import { SELECT_CLASS, SelectChevron } from '~/components/ui/formStyles';
+import CustomSelect from '~/components/ui/CustomSelect';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import ConfirmDialog from '~/components/ConfirmDialog';
 import { getAccessTokenFromCookies } from '~/utils/cookie';
@@ -318,26 +318,21 @@ export function CertificationDocuments({ profileId }: { profileId?: string }) {
           <span className="mb-1.5 block text-xs font-medium text-gray-700 dark:text-gray-300">
             Certification type
           </span>
-          <div className="relative">
-          <select
+          <CustomSelect
             value={selectedType}
-            onChange={(event) => {
-              setSelectedType(event.target.value);
+            onChange={(next) => {
+              setSelectedType(next);
               setSelectedFiles([]);
               setError(null);
               if (inputRef.current) inputRef.current.value = '';
             }}
-            className={SELECT_CLASS}
-          >
-            <option value="">Select certification type</option>
-            {options.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.name}
-              </option>
-            ))}
-          </select>
-          <SelectChevron />
-          </div>
+            ariaLabel="Certification type"
+            placeholder="Select certification type"
+            options={options.map((option) => ({
+              value: String(option.id),
+              label: String(option.name),
+            }))}
+          />
         </label>
         <div className="self-end text-xs text-gray-500 dark:text-gray-400">
           {selectedOption ? `${existingForSelected}/${MAX_PER_TYPE} uploaded` : 'Maximum 5 per type'}

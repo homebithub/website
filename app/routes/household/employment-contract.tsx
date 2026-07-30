@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { resolveHousehelpProfile, resolveHousehelpProfileId } from '~/utils/househelpProfiles';
 import { FormPageSkeleton } from "~/components/ShimmerLoader";
-import { SELECT_CLASS, SelectChevron } from '~/components/ui/formStyles';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface ContractClause {
   id: string;
@@ -616,16 +616,17 @@ export default function EmploymentContractPage() {
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Salary Frequency *</label>
-                  <div className="relative">
-                    <select value={salaryFrequency} onChange={e => setSalaryFrequency(e.target.value)}
-                      className={SELECT_CLASS}>
-                      <option value="monthly">Monthly</option>
-                      <option value="weekly">Weekly</option>
-                      <option value="bi-weekly">Bi-weekly</option>
-                      <option value="daily">Daily</option>
-                    </select>
-                    <SelectChevron />
-                  </div>
+                  <CustomSelect
+                    value={salaryFrequency}
+                    onChange={setSalaryFrequency}
+                    ariaLabel="Salary frequency"
+                    options={[
+                      { value: 'monthly', label: 'Monthly' },
+                      { value: 'weekly', label: 'Weekly' },
+                      { value: 'bi-weekly', label: 'Bi-weekly' },
+                      { value: 'daily', label: 'Daily' },
+                    ]}
+                  />
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-purple-600 dark:text-purple-400 mb-1">Start Date</label>

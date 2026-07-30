@@ -1,9 +1,12 @@
 /**
  * Shared form styling.
  *
- * Inputs, selects and textareas were styled ad hoc per component, which left
- * some controls readable only in dark mode. These constants keep every field
- * on the same purple/pink language and legible in both themes.
+ * Inputs and textareas were styled ad hoc per component, which left some
+ * controls readable only in dark mode. These constants keep every field on the
+ * same purple/pink language and legible in both themes.
+ *
+ * Selects are not here: a native <select> renders its open list through the
+ * operating system and ignores the theme, so dropdowns use CustomSelect.
  */
 
 export const FIELD_LABEL_CLASS =
@@ -20,38 +23,6 @@ export const FIELD_BASE_CLASS =
 export const INPUT_CLASS = FIELD_BASE_CLASS;
 
 export const TEXTAREA_CLASS = `${FIELD_BASE_CLASS} resize-y`;
-
-/**
- * Native selects need an explicit background on the element itself, because
- * the rendered option list inherits it. Without this the dark theme shows
- * white-on-white options on some platforms.
- */
-export const SELECT_CLASS =
-  `${FIELD_BASE_CLASS} appearance-none bg-no-repeat pr-11 ` +
-  "dark:bg-dark-card [&>option]:bg-white [&>option]:text-gray-900 " +
-  "dark:[&>option]:bg-dark-card dark:[&>option]:text-white";
-
-/**
- * Chevron for a native select. Pair with SELECT_CLASS on a `relative` wrapper.
- */
-export function SelectChevron() {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 20 20"
-      fill="none"
-      className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 text-purple-500 dark:text-purple-300"
-    >
-      <path
-        d="M6 8l4 4 4-4"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
 
 /**
  * Marks a field as required. Screen readers announce "required" rather than

@@ -5,6 +5,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import type { Subscription, CancelReason, SubscriptionPlan } from '~/types/payments';
 import { validateFeedback } from '~/utils/validation/payments';
 import { formatDate } from '~/utils/formatting/currency';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface CancelSubscriptionFlowProps {
   isOpen: boolean;
@@ -227,18 +228,16 @@ export function CancelSubscriptionFlow({
                         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Reason for Cancellation
                         </label>
-                        <select
+                        <CustomSelect
                           value={reason}
-                          onChange={(e) => setReason(e.target.value as CancelReason)}
+                          onChange={(next) => setReason(next as CancelReason)}
                           disabled={processing}
-                          className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
-                        >
-                          {CANCEL_REASONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
+                          ariaLabel="Reason for cancellation"
+                          options={CANCEL_REASONS.map((option) => ({
+                            value: String(option.value),
+                            label: option.label,
+                          }))}
+                        />
                       </div>
 
                       {/* Feedback Textarea */}

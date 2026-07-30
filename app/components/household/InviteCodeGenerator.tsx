@@ -7,7 +7,7 @@ interface InviteCodeGeneratorProps {
   onInviteCreated?: (invitation: HouseholdInvitation) => void;
 }
 
-import { SELECT_CLASS, SelectChevron } from '~/components/ui/formStyles';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 export function InviteCodeGenerator({
   householdId,
@@ -167,20 +167,18 @@ export function InviteCodeGenerator({
                 <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">
                   Expires In
                 </label>
-                <div className="relative">
-                <select
-                  value={expiresInDays}
-                  onChange={(e) => setExpiresInDays(Number(e.target.value))}
-                  className={SELECT_CLASS}
-                >
-                  <option value={1}>1 day</option>
-                  <option value={3}>3 days</option>
-                  <option value={7}>7 days (recommended)</option>
-                  <option value={14}>14 days</option>
-                  <option value={30}>30 days</option>
-                </select>
-                <SelectChevron />
-                </div>
+                <CustomSelect
+                  value={String(expiresInDays)}
+                  onChange={(next) => setExpiresInDays(Number(next))}
+                  ariaLabel="Expires in"
+                  options={[
+                    { value: '1', label: '1 day' },
+                    { value: '3', label: '3 days' },
+                    { value: '7', label: '7 days (recommended)' },
+                    { value: '14', label: '14 days' },
+                    { value: '30', label: '30 days' },
+                  ]}
+                />
               </div>
 
               {/* Max Uses */}
@@ -188,19 +186,17 @@ export function InviteCodeGenerator({
                 <label className="block text-xs font-semibold text-primary-600 dark:text-purple-400 mb-2">
                   Maximum Uses
                 </label>
-                <div className="relative">
-                <select
-                  value={maxUses}
-                  onChange={(e) => setMaxUses(Number(e.target.value))}
-                  className={SELECT_CLASS}
-                >
-                  <option value={1}>1 person (recommended)</option>
-                  <option value={2}>2 people</option>
-                  <option value={3}>3 people</option>
-                  <option value={5}>5 people</option>
-                </select>
-                <SelectChevron />
-                </div>
+                <CustomSelect
+                  value={String(maxUses)}
+                  onChange={(next) => setMaxUses(Number(next))}
+                  ariaLabel="Maximum uses"
+                  options={[
+                    { value: '1', label: '1 person (recommended)' },
+                    { value: '2', label: '2 people' },
+                    { value: '3', label: '3 people' },
+                    { value: '5', label: '5 people' },
+                  ]}
+                />
               </div>
 
               {/* Auto-Approve Toggle */}

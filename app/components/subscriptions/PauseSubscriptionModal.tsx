@@ -5,6 +5,7 @@ import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import type { Subscription, PauseReason } from '~/types/payments';
 import { validatePauseDuration } from '~/utils/validation/payments';
 import { formatDate, calculateResumeDate } from '~/utils/formatting/currency';
+import CustomSelect from '~/components/ui/CustomSelect';
 
 interface PauseSubscriptionModalProps {
   isOpen: boolean;
@@ -123,18 +124,16 @@ export function PauseSubscriptionModal({
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Pause Duration
                     </label>
-                    <select
-                      value={durationDays}
-                      onChange={(e) => setDurationDays(Number(e.target.value))}
+                    <CustomSelect
+                      value={String(durationDays)}
+                      onChange={(next) => setDurationDays(Number(next))}
                       disabled={processing}
-                      className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
-                    >
-                      {DURATION_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                      ariaLabel="Pause duration"
+                      options={DURATION_OPTIONS.map((option) => ({
+                        value: String(option.value),
+                        label: option.label,
+                      }))}
+                    />
                   </div>
 
                   {/* Reason Selector */}
@@ -142,18 +141,16 @@ export function PauseSubscriptionModal({
                     <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Reason for Pausing
                     </label>
-                    <select
+                    <CustomSelect
                       value={reason}
-                      onChange={(e) => setReason(e.target.value as PauseReason)}
+                      onChange={(next) => setReason(next as PauseReason)}
                       disabled={processing}
-                      className="w-full px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:border-purple-500 dark:focus:border-purple-400 focus:ring-2 focus:ring-purple-200 dark:focus:ring-purple-900/30 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50"
-                    >
-                      {REASON_OPTIONS.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                      ariaLabel="Reason for pausing"
+                      options={REASON_OPTIONS.map((option) => ({
+                        value: String(option.value),
+                        label: option.label,
+                      }))}
+                    />
                   </div>
 
                   {/* Resume Date Preview */}

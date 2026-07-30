@@ -8,6 +8,7 @@ import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { BlogSubscribeForm } from "~/components/blog/BlogSubscribeForm";
 import { useAuth } from "~/contexts/useAuth";
 import { NOTIFICATIONS_API_BASE_URL } from "~/config/api";
+import CustomSelect from "~/components/ui/CustomSelect";
 
 export const meta: MetaFunction = () => {
   return [
@@ -220,30 +221,33 @@ export default function BlogIndex() {
                 </div>
 
                 {/* Category Filter */}
-                <select
+                <CustomSelect
+                  size="sm"
+                  className="min-w-[10rem]"
                   value={searchParams.get("category") || ""}
-                  onChange={(e) => handleCategoryFilter(e.target.value)}
-                  className="px-4 py-2 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer"
-                >
-                  <option value="">All Categories</option>
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category}
-                    </option>
-                  ))}
-                </select>
+                  onChange={handleCategoryFilter}
+                  ariaLabel="Filter by category"
+                  placeholder="All Categories"
+                  options={[
+                    { value: "", label: "All Categories" },
+                    ...categories.map((category) => ({ value: category, label: category })),
+                  ]}
+                />
 
                 {/* Sort */}
                 <div className="flex items-center gap-2 ml-auto">
                   <TrendingUp className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-                  <select
+                  <CustomSelect
+                    size="sm"
+                    className="min-w-[10rem]"
                     value={searchParams.get("sort") || "newest"}
-                    onChange={(e) => handleSort(e.target.value)}
-                    className="px-4 py-2 border-2 border-purple-200 dark:border-purple-500/20 rounded-xl bg-white dark:bg-white/5 text-gray-900 dark:text-white text-xs font-medium focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all cursor-pointer"
-                  >
-                    <option value="newest">Newest First</option>
-                    <option value="popular">Most Popular</option>
-                  </select>
+                    onChange={handleSort}
+                    ariaLabel="Sort posts"
+                    options={[
+                      { value: "newest", label: "Newest First" },
+                      { value: "popular", label: "Most Popular" },
+                    ]}
+                  />
                 </div>
               </div>
             </div>

@@ -11,10 +11,9 @@ import {
   INPUT_CLASS,
   RequiredLegend,
   RequiredMark,
-  SELECT_CLASS,
-  SelectChevron,
   TEXTAREA_CLASS,
 } from "~/components/ui/formStyles";
+import CustomSelect from "~/components/ui/CustomSelect";
 
 type JobPostModalProps = {
   isOpen: boolean;
@@ -405,27 +404,21 @@ export default function JobPostModal({ isOpen, onClose, job, onSaved }: JobPostM
                   Job Type
                   <RequiredMark />
                 </span>
-                <div className="relative">
-                  <select
-                    value={selectedJobTypeId}
-                    onChange={(event) => setSelectedJobTypeId(event.target.value)}
-                    disabled={loadingJobTypes}
-                    required
-                    aria-required="true"
-                    className={SELECT_CLASS}
-                  >
-                    <option value="">{loadingJobTypes ? "Loading job types..." : "Select job type"}</option>
-                    {jobTypes.map((type) => {
-                      const id = jobTypeId(type);
-                      return (
-                        <option key={id || type.name} value={id}>
-                          {type.name || type.title || `Job type ${id}`}
-                        </option>
-                      );
-                    })}
-                  </select>
-                  <SelectChevron />
-                </div>
+                <CustomSelect
+                  value={selectedJobTypeId}
+                  onChange={setSelectedJobTypeId}
+                  disabled={loadingJobTypes}
+                  required
+                  ariaLabel="Job type"
+                  placeholder={loadingJobTypes ? "Loading job types..." : "Select job type"}
+                  options={jobTypes.map((type) => {
+                    const id = jobTypeId(type);
+                    return {
+                      value: String(id),
+                      label: String(type.name || type.title || `Job type ${id}`),
+                    };
+                  })}
+                />
               </label>
             )}
 
