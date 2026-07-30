@@ -742,7 +742,11 @@ export default function HousehelpJobsHome() {
     setApplyError(null);
 
     try {
-      await jobService.applyForJob(selectedJob.id, househelpProfileId);
+      // The pitch belongs on the application itself. applications.message is what
+      // the household's hiring workspace reads, and it is the record the state
+      // machine, engagements and reviews all hang off — so a note stored only on
+      // the parallel interest row would be invisible there.
+      await jobService.applyForJob(selectedJob.id, househelpProfileId, pitch.trim());
 
       try {
         await interestService.createInterest('', 'househelp', {
@@ -754,7 +758,15 @@ export default function HousehelpJobsHome() {
           comments: pitch.trim() || undefined,
         });
       } catch (err) {
-        // If interest already exists, ignore duplicate errors and continue
+        // A duplicate is expected and harmless — the applicant already showed
+        // interest. Anything else means the application exists but will not
+        // appear in the household's Applicants tab, which reads interests: the
+        // applicant believes they applied and the household never sees them.
+        // Not fatal to the apply, but it must not vanish silently.
+        const message = err instanceof Error ? err.message : String(err);
+        if (!/exist|duplicate/i.test(message)) {
+          console.error('[Apply] Application created but interest record failed:', err);
+        }
       }
 
       persistSavedPitchToStorage(pitch);
