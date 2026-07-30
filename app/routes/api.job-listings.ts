@@ -117,6 +117,13 @@ function encodeListApplicationsRequest(params: URLSearchParams) {
   ]);
 }
 
+function encodeApplicationAction(body: Record<string, unknown>) {
+  return concatBytes([
+    encodeInt64Field(1, Number(body.application_id || body.applicationId || body.id || 0)),
+    encodeStringField(2, String(body.actor_profile_id || body.actorProfileId || '')),
+  ]);
+}
+
 function encodeUpdateJobReq(body: Record<string, unknown>) {
   return concatBytes([
     encodeStringField(1, String(body.id || '')),
@@ -410,6 +417,35 @@ export async function action({ request }: { request: Request }) {
         resolveAuthGrpcBaseUrl(request),
         rpcPath,
         encodeIdRequest(id),
+      );
+
+      return Response.json({ data: responseBody.data ?? responseBody });
+    }
+
+    // Application transitions the household drives from its hiring workspace.
+    // Each maps to one RPC and carries who acted, which is what
+    // application_events records and what the contact-visibility rules read to
+    // tell a household advancing a candidate from a candidate applying.
+    if (request.method === 'POST' && (action === 'promote' || action === 'approve' || action === 'unshortlist')) {
+      const applicationId = Number(body.application_id || body.applicationId || body.id || 0);
+      const actorProfileId = String(body.actor_profile_id || body.actorProfileId || '');
+      if (!applicationId || !actorProfileId) {
+        return Response.json(
+          { message: 'application_id and actor_profile_id are required' },
+          { status: 400 },
+        );
+      }
+
+      const actionPath = action === 'promote'
+        ? '/auth.ListingService/PromoteToInitiated'
+        : action === 'approve'
+          ? '/auth.ListingService/ApproveApplication'
+          : '/auth.ListingService/UnshortlistListing';
+
+      const { body: responseBody } = await callUnaryGrpc(
+        resolveAuthGrpcBaseUrl(request),
+        actionPath,
+        encodeApplicationAction({ application_id: applicationId, actor_profile_id: actorProfileId }),
       );
 
       return Response.json({ data: responseBody.data ?? responseBody });

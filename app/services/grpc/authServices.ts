@@ -1409,6 +1409,33 @@ export const listingApplicationService = {
     return payload.data ?? payload;
   },
 
+  // The household's application transitions. actorProfileId is recorded against
+  // the event, which is how the timeline attributes the action and how contact
+  // visibility distinguishes a household advancing someone from someone applying.
+  async promoteApplication(applicationId: string, actorProfileId: string): Promise<any> {
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'promote', application_id: applicationId, actor_profile_id: actorProfileId }),
+    });
+    return payload.data ?? payload;
+  },
+
+  async approveApplication(applicationId: string, actorProfileId: string): Promise<any> {
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'approve', application_id: applicationId, actor_profile_id: actorProfileId }),
+    });
+    return payload.data ?? payload;
+  },
+
+  async unshortlistApplication(applicationId: string, actorProfileId: string): Promise<any> {
+    const payload = await jobListingsApi('', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'unshortlist', application_id: applicationId, actor_profile_id: actorProfileId }),
+    });
+    return payload.data ?? payload;
+  },
+
   async listApplications(options: {
     listingId?: string;
     applicantProfileId?: string;

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router";
-import { hireRequestService, hireContractService, employmentContractService, interestService, shortlistService, jobService, profileService as grpcProfileService } from '~/services/grpc/authServices';
+import { hireRequestService, hireContractService, employmentContractService, shortlistService, jobService, listingApplicationService, profileService as grpcProfileService } from '~/services/grpc/authServices';
 import { Clock, CheckCircle, XCircle, Ban, FileText, MessageCircle, HandHeart, Eye, UserCheck, UserX, Briefcase, Heart } from 'lucide-react';
 import { ErrorAlert } from '~/components/ui/ErrorAlert';
 import { SuccessAlert } from '~/components/ui/SuccessAlert';
@@ -107,7 +107,74 @@ const normalizeListingFeatureGroups = (job: JobPosting) => {
   return Array.from(groups.values()).filter((group) => group.properties.length > 0);
 };
 
-type TabType = 'applicants' | 'jobs' | 'all' | 'pending' | 'accepted' | 'declined' | 'cancelled';
+// Tabs are application statuses, because that is what the hiring process
+// actually is. "awaiting" is the bucket that needs the household to act, kept
+// separate so it cannot get lost among candidates they have already dealt with.
+type TabType = 'jobs' | 'applicants' | 'shortlisted' | 'awaiting' | 'hired' | 'closed';
+
+// Which application statuses belong under each tab.
+//
+// From the household's side: someone applying is an applicant; someone they saved
+// is shortlisted; a provider accepting hands the decision back to them; approved
+// means hired; declined is closed.
+/**
+ * Presents an application in the shape this page already renders.
+ *
+ * The list markup and the profile resolver were both written against the older
+ * interest record, and they key off `househelp_id`. Adapting here rather than
+ * rewriting several hundred lines of JSX keeps the change reviewable, and means
+ * the switch to applications is one function rather than a rewrite.
+ */
+function toApplicantRow(application: Record<string, any>): Interest {
+  return {
+    id: String(application.id ?? ''),
+    // The applicant's user_profile id, which is what the profile lookup needs.
+    househelp_id: String(application.applicant_profile_id ?? application.applicantProfileId ?? ''),
+    household_id: '',
+    salary_expectation: Number(application.salary_expectation ?? 0),
+    salary_frequency: String(application.salary_frequency ?? 'monthly'),
+    job_type: application.job_type ? String(application.job_type) : undefined,
+    // The pitch the applicant attached, now stored on the application itself.
+    comments: application.message ? String(application.message) : undefined,
+    status: String(application.status ?? 'initiated'),
+    created_at: String(application.created_at ?? application.createdAt ?? ''),
+    listing_id: application.listing_id ?? application.listingId,
+  } as Interest;
+}
+
+// One empty state per tab. A single message would be wrong on five of six tabs —
+// "no interested househelps" tells someone looking at Hired nothing at all — and
+// an empty tab is the moment a person most needs to know what would fill it.
+const EMPTY_TAB_COPY: Record<Exclude<TabType, 'jobs'>, { title: string; body: string }> = {
+  applicants: {
+    title: 'No applicants yet',
+    body: 'When someone applies to one of your jobs, they will appear here with their message.',
+  },
+  shortlisted: {
+    title: 'Nobody shortlisted yet',
+    body: 'Shortlist an applicant to keep them here while you decide. They will be able to see your household once you do.',
+  },
+  awaiting: {
+    title: 'Nothing waiting on you',
+    body: 'When an applicant accepts, they will appear here for your final approval.',
+  },
+  hired: {
+    title: 'Nobody hired yet',
+    body: 'Once you approve an applicant, they will show here and you will be able to review them after the work.',
+  },
+  closed: {
+    title: 'Nothing closed',
+    body: 'Applications that were declined or withdrawn end up here.',
+  },
+};
+
+const TAB_STATUSES: Record<Exclude<TabType, 'jobs'>, string[]> = {
+  applicants:  ['initiated'],
+  shortlisted: ['shortlisted'],
+  awaiting:    ['accepted'],
+  hired:       ['approved'],
+  closed:      ['declined'],
+};
 
 interface Interest {
   id: string;
@@ -192,7 +259,7 @@ export default function HiringHistory() {
   const sseContext = useSSEContextSafe();
   const [activeTab, setActiveTab] = useState<TabType>(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['jobs', 'applicants'];
+    const validTabs: TabType[] = ['jobs', 'applicants', 'shortlisted', 'awaiting', 'hired', 'closed'];
     return validTabs.includes(tabParam as TabType) ? (tabParam as TabType) : 'jobs';
   });
   const [hireRequests, setHireRequests] = useState<HireRequest[]>([]);
@@ -455,33 +522,20 @@ export default function HiringHistory() {
     } else if (activeTab === 'jobs') {
       fetchJobs();
     } else {
-      fetchHireRequests();
+      // Every remaining tab is an application status served from the same fetch.
+      fetchApplicants();
     }
   }, [activeTab, offset]);
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs: TabType[] = ['jobs', 'applicants'];
+    const validTabs: TabType[] = ['jobs', 'applicants', 'shortlisted', 'awaiting', 'hired', 'closed'];
     if (tabParam && validTabs.includes(tabParam as TabType) && tabParam !== activeTab) {
       setActiveTab(tabParam as TabType);
       setOffset(0);
     }
   }, [activeTab, searchParams]);
 
-  // Fetch interest count for badge
-  useEffect(() => {
-    const fetchApplicantCount = async () => {
-      try {
-        const raw = await interestService.listByHousehold('');
-        const items = raw?.data || raw || [];
-        setApplicantsCount(Array.isArray(items) ? items.length : 0);
-      } catch (err) {
-        console.error('Failed to fetch interest count:', err);
-      }
-    };
-
-    fetchApplicantCount();
-  }, []);
 
   // SSE: auto-refetch applicants when a new application is received
   useEffect(() => {
@@ -495,13 +549,28 @@ export default function HiringHistory() {
     return unsub;
   }, [sseContext]);
 
+  // Every application across this household's listings, in one request.
+  //
+  // Applications rather than interests: interests hold one row per household and
+  // provider pair, so a candidate applying to a second job was rejected by that
+  // unique constraint and never appeared here at all. Applications are per job,
+  // and they carry the status these tabs are built from.
+  //
+  // Fetched unfiltered and grouped in the browser, so every tab count is accurate
+  // from one round trip and switching tabs is instant. A household's own
+  // applications are a bounded set, so this stays small.
   const fetchApplicants = async () => {
     setLoading(true);
     setError(null);
     try {
-      const raw = await interestService.listByHousehold('');
-      const items = extractEnvelopeArray<Interest>(raw);
-      setApplicants(items);
+      const ownerProfileId = getStoredUserProfileId();
+      if (!ownerProfileId) {
+        setApplicants([]);
+        return;
+      }
+      const raw = await listingApplicationService.listApplications({ ownerProfileId, limit: 200 });
+      const rows = extractEnvelopeArray<any>(raw);
+      setApplicants(rows.map(toApplicantRow));
     } catch (err: any) {
       setError(err.message || 'Failed to load applicants');
     } finally {
@@ -528,8 +597,9 @@ export default function HiringHistory() {
     setLoading(true);
     setError(null);
     try {
-      const status = activeTab !== 'all' ? activeTab : undefined;
-      const raw = await hireRequestService.listHireRequests('', 'household', status);
+      // No status filter: the tab names are application statuses now, and hire
+      // requests are a separate legacy concept that does not share them.
+      const raw = await hireRequestService.listHireRequests('', 'household');
       const items = extractEnvelopeArray<HireRequest>(raw);
       setHireRequests(items);
       setTotal(extractTotal(raw, items.length));
@@ -688,24 +758,59 @@ export default function HiringHistory() {
     return parsed.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
+  // One grouping drives both the counts and the list, so a tab can never show a
+  // number that disagrees with what it contains.
+  const applicantsByTab = useMemo(() => {
+    const groups: Record<string, Interest[]> = {
+      applicants: [], shortlisted: [], awaiting: [], hired: [], closed: [],
+    };
+    for (const row of applicants) {
+      for (const [tab, statuses] of Object.entries(TAB_STATUSES)) {
+        if (statuses.includes(row.status)) {
+          groups[tab].push(row);
+          break;
+        }
+      }
+    }
+    return groups;
+  }, [applicants]);
+
+  // The nav badge counts what needs the household's attention: new applicants
+  // plus anyone who has accepted and is waiting on their approval.
+  //
+  // Derived from the same grouping the tabs use rather than fetched separately,
+  // so the badge and the tabs can never disagree — a badge showing three when the
+  // tab shows none is the kind of thing that trains people to ignore badges.
+  useEffect(() => {
+    setApplicantsCount(applicantsByTab.applicants.length + applicantsByTab.awaiting.length);
+  }, [applicantsByTab]);
+
+  // What the active tab shows. 'jobs' renders its own list, so anything else
+  // falls back to an empty group rather than the whole set.
+  const visibleApplicants = useMemo(
+    () => (activeTab === 'jobs' ? [] : applicantsByTab[activeTab] ?? []),
+    [activeTab, applicantsByTab],
+  );
+
   const tabs: { key: TabType; label: string; count?: number }[] = useMemo(
     () => [
       { key: 'jobs', label: 'Jobs' },
-      { key: 'applicants', label: 'Applicants', count: applicantsCount },
+      // Counts only where a number tells the household something. "Applicants"
+      // and "Needs your reply" are queues to work through; hired and closed are
+      // history, and a badge on history reads as something to action.
+      { key: 'applicants', label: 'Applicants', count: applicantsByTab.applicants.length },
+      { key: 'shortlisted', label: 'Shortlisted', count: applicantsByTab.shortlisted.length },
+      { key: 'awaiting', label: 'Needs your reply', count: applicantsByTab.awaiting.length },
+      { key: 'hired', label: 'Hired' },
+      { key: 'closed', label: 'Closed' },
     ],
-    [applicantsCount],
+    [applicantsByTab],
   );
 
   const handleViewInterest = async (interest: Interest) => {
-    // Mark as viewed if not already
-    if (!interest.viewed_at) {
-      try {
-        await interestService.markViewed(interest.id);
-        setApplicantsCount((prev) => Math.max(0, prev - 1));
-      } catch (err) {
-        console.error('Failed to mark interest as viewed:', err);
-      }
-    }
+    // No "mark as viewed": applications have no such flag, and the tabs already
+    // say what needs attention by status. Nothing is lost — a read receipt was
+    // never shown to the applicant.
     // Navigate to househelp profile using profileId
     const profileId = interest.househelp_id;
     navigate(`/househelp/public-profile?profileId=${profileId}&from=hiring&backTo=${encodeURIComponent(backToPath)}&backLabel=${encodeURIComponent('Back to Hiring')}`, {
@@ -713,25 +818,48 @@ export default function HiringHistory() {
     });
   };
 
+  // Advancing an applicant. Which transition depends on where they are: a
+  // shortlisted candidate is promoted into a live application, and one who has
+  // already accepted is given final approval.
+  //
+  // Both record the household as the actor, which is what lets the applicant see
+  // the household's profile from that point — the signal that the interest is
+  // real rather than someone merely having applied.
   const handleAcceptInterest = async (interest: Interest) => {
+    const actorProfileId = getStoredUserProfileId();
+    if (!actorProfileId) {
+      setError('We could not identify your household profile. Please sign in again.');
+      return;
+    }
     try {
-      await interestService.acceptInterest(interest.id);
-      fetchApplicants();
-      setApplicantsCount((prev) => Math.max(0, prev - 1));
+      if (interest.status === 'shortlisted') {
+        await listingApplicationService.promoteApplication(interest.id, actorProfileId);
+      } else {
+        await listingApplicationService.approveApplication(interest.id, actorProfileId);
+      }
+      await fetchApplicants();
       window.dispatchEvent(new Event('hiring-updated'));
-    } catch (err) {
-      console.error('Failed to accept interest:', err);
+    } catch (err: any) {
+      console.error('Failed to advance application:', err);
+      setError(err?.message || 'We could not update this application. Please try again.');
     }
   };
 
   const handleDeclineInterest = async (interest: Interest) => {
+    const actorProfileId = getStoredUserProfileId();
+    if (!actorProfileId) {
+      setError('We could not identify your household profile. Please sign in again.');
+      return;
+    }
     try {
-      await interestService.declineInterest(interest.id);
-      fetchApplicants();
-      setApplicantsCount((prev) => Math.max(0, prev - 1));
+      // Unshortlisting is the only removal the household controls; a live
+      // application is declined by the applicant, not by the household.
+      await listingApplicationService.unshortlistApplication(interest.id, actorProfileId);
+      await fetchApplicants();
       window.dispatchEvent(new Event('hiring-updated'));
-    } catch (err) {
-      console.error('Failed to decline interest:', err);
+    } catch (err: any) {
+      console.error('Failed to remove application:', err);
+      setError(err?.message || 'We could not update this application. Please try again.');
     }
   };
 
@@ -971,22 +1099,22 @@ export default function HiringHistory() {
         )}
 
         {/* Empty State for Applicants */}
-        {!loading && activeTab === 'applicants' && applicants.length === 0 && (
+        {!loading && activeTab !== 'jobs' && visibleApplicants.length === 0 && (
           <div className="bg-white dark:bg-purple-900 rounded-3xl shadow-lg border border-purple-200 dark:border-purple-700/40 p-8 sm:p-12 text-center transition-colors">
             <HandHeart className="w-16 h-16 text-green-400 dark:text-green-300 mx-auto mb-4" />
             <h3 className="text-lg sm:text-xl font-semibold text-purple-900 dark:text-white mb-2">
-              No interested househelps yet
+              {EMPTY_TAB_COPY[activeTab as Exclude<TabType, 'jobs'>]?.title ?? 'Nothing here yet'}
             </h3>
             <p className="text-gray-600 dark:text-purple-200 mb-6 sm:mb-8 text-xs sm:text-sm">
-              When househelps express interest in working for you, they'll appear here
+              {EMPTY_TAB_COPY[activeTab as Exclude<TabType, 'jobs'>]?.body ?? ''}
             </p>
           </div>
         )}
 
         {/* Applicants List */}
-        {!loading && activeTab === 'applicants' && applicants.length > 0 && (
+        {!loading && activeTab !== 'jobs' && visibleApplicants.length > 0 && (
           <div className="space-y-5">
-            {applicants.map((interest) => {
+            {visibleApplicants.map((interest) => {
               const profileId = interest.househelp_id || interest.househelp?.id;
               const profile = profileId ? profilesById[profileId] : undefined;
               const firstName = profile?.first_name || interest.househelp?.first_name || interest.househelp?.user?.first_name;
