@@ -199,12 +199,13 @@ export default function About() {
                                 Join thousands of families and professionals who trust HomeBit for their home management needs.
                             </p>
                             <div className="mt-6">
-                                <Link
+                                {/* TODO: Uncomment signup link when going live */}
+                                {/* <Link
                                     to="/signup"
                                     className="inline-block rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-xs sm:text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300"
                                 >
                                     Join HomeBit Today
-                                </Link>
+                                </Link> */}
                             </div>
                         </SlideUp>
                     </div>

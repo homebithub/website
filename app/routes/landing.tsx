@@ -4,6 +4,7 @@ import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { Link } from "react-router";
 import React, { useEffect, useRef, useState } from "react";
 import { MARKETING_SERVICES } from "~/constants/marketingServices";
+import { ProfileSelectionModal } from "~/components/ProfileSelectionModal";
 
 export const meta = () => [
     { title: "Homebit — Trusted Home Services in Kenya" },
@@ -118,6 +119,16 @@ function Typewriter({ words, className = "" }: { words: string[]; className?: st
 }
 
 export default function Home4() {
+  const [selectedService, setSelectedService] = useState<{ name: string; waitlistSlug: string } | null>(null);
+
+  const handleServiceClick = (service: typeof MARKETING_SERVICES[0]) => {
+    if (service.waitlistSlug && !service.comingSoon) {
+      setSelectedService({ name: service.name, waitlistSlug: service.waitlistSlug });
+    }
+  };
+
+  const closeModal = () => setSelectedService(null);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -143,13 +154,14 @@ export default function Home4() {
                     We connect households with trusted, skilled professionals. Simple hiring, transparent pricing, and peace of mind — all in one platform.
                   </p>
                   <div className="mt-4 flex flex-wrap items-center gap-3">
-                    <Link
+                    {/* TODO: Uncomment signup link when going live */}
+                    {/* <Link
                       to="/signup"
                       className="group inline-flex items-center gap-2 rounded-xl bg-gray-900 dark:bg-white px-5 py-2 text-xs font-bold text-white dark:text-gray-900 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300"
                     >
                       Get Started
                       <ArrowRightIcon className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-                    </Link>
+                    </Link> */}
                     <Link
                       to="/about"
                       className="text-xs font-semibold text-gray-600 dark:text-gray-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors duration-200 underline underline-offset-4 decoration-gray-300 dark:decoration-gray-600 hover:decoration-purple-400"
@@ -214,7 +226,10 @@ export default function Home4() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {MARKETING_SERVICES.map((service, idx) => (
                   <SlideUp key={service.name} delay={idx * 80}>
-                    <div className="group relative rounded-2xl border border-purple-200/30 dark:border-purple-500/15 bg-gradient-to-br from-white to-purple-50/50 dark:from-[#13131a] dark:to-[#0a0a0f] p-5 sm:p-6 transition-all duration-300 hover:shadow-light-glow-md dark:hover:shadow-glow-sm hover:-translate-y-1">
+                    <div 
+                      className={`group relative rounded-2xl border border-purple-200/30 dark:border-purple-500/15 bg-gradient-to-br from-white to-purple-50/50 dark:from-[#13131a] dark:to-[#0a0a0f] p-5 sm:p-6 transition-all duration-300 hover:shadow-light-glow-md dark:hover:shadow-glow-sm hover:-translate-y-1 ${service.waitlistSlug && !service.comingSoon ? 'cursor-pointer' : ''}`}
+                      onClick={() => handleServiceClick(service)}
+                    >
                       <div className="flex items-start gap-3.5">
                         <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-md group-hover:scale-110 transition-transform duration-300">
                           <service.icon className="h-5 w-5 text-white" />
@@ -342,12 +357,13 @@ export default function Home4() {
                   Join thousands of households and professionals already on Homebit.
                 </p>
                 <div className="mt-6">
-                  <Link
+                  {/* TODO: Uncomment signup link when going live */}
+                  {/* <Link
                     to="/signup"
                     className="inline-block rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-6 py-2 text-xs sm:text-sm font-bold text-white shadow-lg hover:from-purple-700 hover:to-pink-700 transform hover:scale-105 transition-all duration-300"
                   >
                     Join Homebit Today
-                  </Link>
+                  </Link> */}
                 </div>
               </SlideUp>
             </div>
@@ -355,6 +371,14 @@ export default function Home4() {
         </main>
       </PurpleThemeWrapper>
       <Footer />
+      
+      {selectedService && (
+        <ProfileSelectionModal
+          isOpen={!!selectedService}
+          onClose={closeModal}
+          waitlistUrl={`/waitlist/${selectedService.waitlistSlug}`}
+        />
+      )}
     </div>
   );
 }

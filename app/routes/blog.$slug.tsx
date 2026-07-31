@@ -676,12 +676,13 @@ export default function BlogPost() {
                 >
                   Sign In
                 </Link>
-                <Link
+                {/* TODO: Uncomment signup link when going live */}
+                {/* <Link
                   to="/signup"
                   className="w-full px-6 py-3 border-2 border-purple-200 dark:border-purple-500/20 text-sm text-purple-700 dark:text-purple-300 rounded-xl font-semibold hover:bg-purple-50 dark:hover:bg-purple-500/10 hover:border-purple-300 dark:hover:border-purple-500/30 transition-all text-center"
                 >
                   Create Account
-                </Link>
+                </Link> */}
               </div>
             </div>
           </div>

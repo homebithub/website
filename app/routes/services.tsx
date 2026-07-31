@@ -5,6 +5,7 @@ import { Link } from "react-router";
 import { Button } from "~/components/ui";
 import { PurpleThemeWrapper } from "~/components/layout/PurpleThemeWrapper";
 import { MARKETING_SERVICES } from "~/constants/marketingServices";
+import { ProfileSelectionModal } from "~/components/ProfileSelectionModal";
 
 export const meta = () => [
     { title: "Home Services — Homebit Kenya" },
@@ -48,6 +49,16 @@ function SlideUp({ children, delay = 0, className = "" }: { children: React.Reac
 }
 
 export default function Services() {
+  const [selectedService, setSelectedService] = useState<{ name: string; waitlistSlug: string } | null>(null);
+
+  const handleServiceClick = (service: typeof MARKETING_SERVICES[0]) => {
+    if (service.waitlistSlug && !service.comingSoon) {
+      setSelectedService({ name: service.name, waitlistSlug: service.waitlistSlug });
+    }
+  };
+
+  const closeModal = () => setSelectedService(null);
+
   return (
     <div className="min-h-screen flex flex-col">
       <Navigation />
@@ -82,7 +93,10 @@ export default function Services() {
                 {MARKETING_SERVICES.map((service, idx) => {
                   return (
                     <SlideUp key={service.name} delay={idx * 80}>
-                      <div className="group relative rounded-2xl border border-purple-200/30 dark:border-purple-500/15 bg-gradient-to-br from-white to-purple-50/50 dark:from-[#13131a] dark:to-[#0a0a0f] p-5 sm:p-6 transition-all duration-300 hover:shadow-light-glow-md dark:hover:shadow-glow-sm hover:-translate-y-1">
+                      <div 
+                        className={`group relative rounded-2xl border border-purple-200/30 dark:border-purple-500/15 bg-gradient-to-br from-white to-purple-50/50 dark:from-[#13131a] dark:to-[#0a0a0f] p-5 sm:p-6 transition-all duration-300 hover:shadow-light-glow-md dark:hover:shadow-glow-sm hover:-translate-y-1 ${service.waitlistSlug && !service.comingSoon ? 'cursor-pointer' : ''}`}
+                        onClick={() => handleServiceClick(service)}
+                      >
                         <div className="flex items-start gap-3.5">
                           <div className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 shadow-md group-hover:scale-110 transition-transform duration-300">
                             <service.icon className="h-5 w-5 text-white" />
@@ -120,13 +134,14 @@ export default function Services() {
                   Join Homebit and connect with trusted professionals today.
                 </p>
                 <div className="mt-6">
-                  <Button
+                  {/* TODO: Uncomment signup link when going live */}
+                  {/* <Button
                     as={Link}
                     to="/signup"
                     size="lg"
                   >
                     Get Started
-                  </Button>
+                  </Button> */}
                 </div>
               </SlideUp>
             </div>
@@ -134,6 +149,14 @@ export default function Services() {
         </main>
       </PurpleThemeWrapper>
       <Footer />
+      
+      {selectedService && (
+        <ProfileSelectionModal
+          isOpen={!!selectedService}
+          onClose={closeModal}
+          waitlistUrl={`/waitlist/${selectedService.waitlistSlug}`}
+        />
+      )}
     </div>
   );
 }
