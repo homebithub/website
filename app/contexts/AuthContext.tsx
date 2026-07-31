@@ -5,6 +5,9 @@ import { migratePreferences } from '~/utils/preferencesApi';
 import { extractErrorMessage, transformErrorMessage } from '~/utils/errorMessages';
 import { normalizeKenyanPhoneNumber } from '~/utils/validation';
 import { AuthContext, type AuthContextType } from "./AuthContextCore";
+import { authService } from "~/services/grpc/auth.service";
+import { getAuthFromCookies } from "~/utils/cookie";
+import { needsRenewal, msUntilRefresh, nextTimerDelay } from "~/utils/session";
 import {
   cacheAuthSession,
   clearStoredAuthSession,
@@ -250,6 +253,66 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     await performLogout();
   };
+
+  // Renew the session rather than letting it end under the person using it.
+  //
+  // A timer covers ordinary use; a visibility check covers the tab that was
+  // left open while the device slept, which no timer would have fired through.
+  // A refusal from the refresh call is the only thing that ends the session,
+  // and that means the refresh token itself has expired — at which point asking
+  // for a login is correct rather than a failure.
+  useEffect(() => {
+    if (!user) return;
+
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const renewIfNeeded = async () => {
+      if (cancelled) return;
+
+      const token = getStoredAccessToken();
+      // Only 'expiring' and 'expired' warrant action; a token whose expiry
+      // cannot be read is left alone, since it may be perfectly valid.
+      if (!needsRenewal(token)) return;
+
+      const { refreshToken } = getAuthFromCookies();
+      if (!refreshToken) return;
+
+      try {
+        const renewed = await authService.refreshSession(refreshToken);
+        if (cancelled || !renewed.token) return;
+        cacheAuthSession({ token: renewed.token, refreshToken: renewed.refreshToken });
+      } catch (renewError) {
+        if (cancelled) return;
+        console.warn("[Auth] Session could not be renewed", renewError);
+        await performLogout();
+      }
+    };
+
+    const arm = () => {
+      if (cancelled) return;
+      const untilRefresh = msUntilRefresh(getStoredAccessToken());
+      if (untilRefresh === null) return;
+      timer = setTimeout(async () => {
+        await renewIfNeeded();
+        arm();
+      }, nextTimerDelay(untilRefresh));
+    };
+
+    const onVisible = () => {
+      if (document.visibilityState === "visible") void renewIfNeeded();
+    };
+
+    void renewIfNeeded();
+    arm();
+    document.addEventListener("visibilitychange", onVisible);
+
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [user]);
 
   return (
     <AuthContext.Provider

@@ -145,6 +145,34 @@ function buildReferralMetadata(referralCode?: string): { [key: string]: string }
  */
 export const authService = {
   /**
+   * Exchange a refresh token for a new access token.
+   *
+   * The RPC has always existed and nothing called it, so a session simply ended
+   * when its access token did. This is the wire; the session keeper decides
+   * when to pull it.
+   */
+  async refreshSession(refreshToken: string): Promise<{ token: string; refreshToken: string }> {
+    return new Promise((resolve, reject) => {
+      const request = new auth_pb.RefreshTokenRequest();
+      request.setRefreshToken(refreshToken);
+
+      authClient.refreshToken(request, getMetadata(), (err: any, response: any) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve({
+          token: response?.getToken?.() ?? "",
+          // Some issuers rotate the refresh token and some return the same one.
+          // Falling back to what we sent keeps a non-rotating server working
+          // rather than blanking a token that is still perfectly good.
+          refreshToken: response?.getRefreshToken?.() || refreshToken,
+        });
+      });
+    });
+  },
+
+  /**
    * Sign up a new user
    */
   async signup(
