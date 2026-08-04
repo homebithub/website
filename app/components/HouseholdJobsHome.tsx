@@ -347,17 +347,38 @@ const getListingBudgetValue = (listing: OpenForWorkListing): number | null => {
   return null;
 };
 
-const normalizeHousehelp = (raw: unknown): HousehelpSummary | undefined => {
+const normalizeHousehelp = (raw: unknown, listing?: Record<string, any>): HousehelpSummary | undefined => {
   const househelp = toRecord(raw);
-  if (!househelp) return undefined;
+  const owner = toRecord(listing);
+
+  // A listing carries who posted it even when it has no nested profile object,
+  // which is the usual case: the search endpoint returns listings, not people.
+  // Without this the card had nobody attached — hence a placeholder name and a
+  // Message button with no one to message.
+  const ownerUserId = formatTextValue(owner?.owner_user_id) || undefined;
+  const ownerFirstName = formatTextValue(owner?.owner_first_name) || undefined;
+  const ownerLastName = formatTextValue(owner?.owner_last_name) || undefined;
+
+  if (!househelp) {
+    if (!ownerUserId && !ownerFirstName) return undefined;
+    return {
+      id: formatTextValue(owner?.user_profile_id) || undefined,
+      user_id: ownerUserId,
+      first_name: ownerFirstName,
+      last_name: ownerLastName,
+    };
+  }
+
   const user = toRecord(househelp.user);
 
   return {
     ...househelp,
-    id: formatTextValue(househelp.id) || undefined,
-    user_id: formatTextValue(househelp.user_id) || undefined,
-    first_name: formatTextValue(househelp.first_name) || undefined,
-    last_name: formatTextValue(househelp.last_name) || undefined,
+    id: formatTextValue(househelp.id) || formatTextValue(owner?.user_profile_id) || undefined,
+    // The nested profile wins when present; the listing's own owner fields are
+    // the fallback rather than the other way round.
+    user_id: formatTextValue(househelp.user_id) || ownerUserId || undefined,
+    first_name: formatTextValue(househelp.first_name) || ownerFirstName || undefined,
+    last_name: formatTextValue(househelp.last_name) || ownerLastName || undefined,
     avatar_url: formatTextValue(househelp.avatar_url) || undefined,
     photos: toStringArray(househelp.photos),
     town: formatTextValue(househelp.town) || undefined,
@@ -416,7 +437,10 @@ const normalizeOpenForWorkListing = (raw: unknown, fallbackId: string): OpenForW
     match_reasons: toStringArray(listing.match_reasons),
     listing_feature_groups: featureGroups,
     listing_features: Array.isArray(listing.listing_features) ? listing.listing_features : [],
-    househelp: normalizeHousehelp(listing.househelp || listing.user_profile || listing.userProfile),
+    househelp: normalizeHousehelp(
+      listing.househelp || listing.user_profile || listing.userProfile,
+      listing,
+    ),
   };
 };
 
@@ -751,7 +775,23 @@ export default function HouseholdJobsHome() {
   const handleMessage = async (listing: OpenForWorkListing) => {
     const househelpUserId = listing.househelp?.user_id || listing.househelp?.user?.id;
     const househelpProfileId = listing.househelp?.id;
-    if (!househelpUserId || !currentUserId) return;
+
+    // Never return in silence.
+    //
+    // This used to be a bare `return`, so a card whose listing arrived without
+    // an owner gave a button that did nothing at all — no navigation, no error,
+    // nothing in the console. There is no way to tell that apart from a broken
+    // app, and the person clicking has no idea whether to wait, retry, or pay
+    // for something.
+    if (!currentUserId) {
+      setError("Please sign in again before starting a conversation.");
+      return;
+    }
+    if (!househelpUserId) {
+      setError("We couldn't work out who posted this listing, so we can't open a conversation. Please try again, or use View Profile.");
+      return;
+    }
+
     try {
       const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, {
         household_user_id: currentUserId,

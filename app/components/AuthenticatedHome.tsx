@@ -159,7 +159,17 @@ export default function AuthenticatedHome({ variant = 'default' }: Authenticated
   };
 
   const handleStartChat = async (targetUserId?: string, househelpProfileId?: string) => {
-    if (!targetUserId || !currentUserId) return;
+    // The same silent return that made the Message button on the open-for-work
+    // card look broken. A button that does nothing and says nothing is
+    // indistinguishable from a broken app.
+    if (!currentUserId) {
+      setError('Please sign in again before starting a conversation.');
+      return;
+    }
+    if (!targetUserId) {
+      setError("We couldn't work out who this listing belongs to, so we can't open a conversation.");
+      return;
+    }
     if (!hasActiveSubscription && !subscriptionLoading) {
       setShowSubscriptionModal(true);
       return;
