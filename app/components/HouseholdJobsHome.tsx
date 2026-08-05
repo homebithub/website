@@ -21,6 +21,8 @@ import CustomSelect from "~/components/ui/CustomSelect";
 import { ProfileCompletionBanner } from "~/components/profile/ProfileCompletionBanner";
 import { Heart, ChevronDown, SlidersHorizontal, X } from "lucide-react";
 import { formatPlace, formatPlaceOrFallback } from "~/utils/place";
+import { useSubscription } from "~/hooks/useSubscription";
+import { SubscriptionRequiredModal } from "~/components/subscriptions/SubscriptionRequiredModal";
 
 interface HousehelpSummary {
   id?: string;
@@ -504,6 +506,12 @@ const formatListingStatus = (status?: string) => {
 export default function HouseholdJobsHome() {
   const navigate = useNavigate();
   const currentUserId = useMemo(() => getStoredUserId(), []);
+  const {
+    isActive: hasActiveSubscription,
+    status: subscriptionStatus,
+    loading: subscriptionLoading,
+  } = useSubscription(currentUserId);
+  const [showSubscriptionModal, setShowSubscriptionModal] = useState(false);
   const profileType = useMemo(() => getStoredCanonicalProfileType(), []);
   const isServiceProvider = profileType === "househelp";
 
@@ -792,6 +800,14 @@ export default function HouseholdJobsHome() {
       return;
     }
 
+    // Messaging needs a subscription, matching the home screen. Checked only
+    // once the answer is known: while it is still loading, blocking would show
+    // a paywall to somebody who has already paid.
+    if (!hasActiveSubscription && !subscriptionLoading) {
+      setShowSubscriptionModal(true);
+      return;
+    }
+
     try {
       const convId = await startOrGetConversation(NOTIFICATIONS_API_BASE_URL, {
         household_user_id: currentUserId,
@@ -806,6 +822,14 @@ export default function HouseholdJobsHome() {
   };
 
   const handleOpenInviteModal = (listing: OpenForWorkListing, options?: { template?: "skills" | "availability" }) => {
+    // Invite sends a message too, so gating one path and not the other would be
+    // a paywall with a hole beside it — and the hole is a button on the same
+    // card. Checked when the composer opens rather than on send, so nobody
+    // writes a note and is then told they cannot deliver it.
+    if (!hasActiveSubscription && !subscriptionLoading) {
+      setShowSubscriptionModal(true);
+      return;
+    }
     setSelectedInviteListing(listing);
     setInviteError(null);
     if (options?.template) {
@@ -1782,6 +1806,15 @@ export default function HouseholdJobsHome() {
           </div>
         );
       })()}
+      {/* Same wording and destination as the home screen, so the two places a
+          household can start a conversation now behave identically. */}
+      <SubscriptionRequiredModal
+        open={showSubscriptionModal}
+        onClose={() => setShowSubscriptionModal(false)}
+        status={subscriptionStatus}
+        actionLabel="message househelps"
+        plansHref="/plans"
+      />
       <Footer />
     </div>
   );
