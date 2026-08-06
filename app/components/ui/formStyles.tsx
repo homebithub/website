@@ -10,10 +10,16 @@
  */
 
 export const FIELD_LABEL_CLASS =
-  "mb-2 block text-sm font-semibold text-purple-700 dark:text-purple-300";
+  "mb-1.5 block text-xs font-semibold text-purple-700 dark:text-purple-300";
 
+/**
+ * Height is set from padding and text size rather than a fixed value, so a
+ * textarea can still grow. The 42px this works out to is what CustomSelect
+ * hard-codes for its trigger, so an input and a select sitting in the same
+ * column line up.
+ */
 export const FIELD_BASE_CLASS =
-  "w-full rounded-2xl border px-4 py-3 outline-none transition " +
+  "w-full rounded-xl border px-3.5 py-2.5 text-sm outline-none transition " +
   "border-purple-200 bg-white text-gray-900 placeholder:text-gray-400 " +
   "focus:border-purple-500 focus:ring-2 focus:ring-purple-500/25 " +
   "disabled:cursor-not-allowed disabled:opacity-60 " +

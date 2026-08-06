@@ -325,7 +325,7 @@ export function LocationPicker({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {fields}
       <p className="-mt-2 text-[11px] text-gray-500 dark:text-gray-400">
         Not sure of the ward? Pick the one nearest to you — it only needs to be

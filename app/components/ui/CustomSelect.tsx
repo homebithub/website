@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
+import { SELECT_PANEL_Z_INDEX } from '~/components/ui/layers';
 
 interface Option {
   value: string;
@@ -243,8 +244,10 @@ export default function CustomSelect({
     }
   };
 
-  const buttonSizeClass = size === 'sm' ? 'h-10 text-xs px-3 py-2' : 'h-12 text-sm px-4 py-3';
-  const optionSizeClass = size === 'sm' ? 'px-3 py-2 text-xs' : 'px-4 py-3 text-sm';
+  // 42px matches what FIELD_BASE_CLASS works out to, so a select and an input
+  // stacked in the same form are the same height.
+  const buttonSizeClass = size === 'sm' ? 'h-9 text-xs px-3 py-1.5' : 'h-[42px] text-sm px-3.5 py-2';
+  const optionSizeClass = size === 'sm' ? 'px-3 py-1.5 text-xs' : 'px-3.5 py-2 text-sm';
 
   return (
     <div ref={dropdownRef} className={`relative ${className}`}>
@@ -276,8 +279,8 @@ export default function CustomSelect({
         <div
           ref={panelRef}
           // Fixed and portalled to the body, so no scrolling or overflow-hidden
-          // ancestor can clip it. z-index above the app's own layers but below a
-          // modal's backdrop sentinel, which uses the maximum.
+          // ancestor can clip it. It is the topmost layer, since it may be
+          // opened from inside a modal that is itself portalled to the body.
           style={{
             position: 'fixed',
             top: position.openUpward ? undefined : position.top + 8,
@@ -285,7 +288,7 @@ export default function CustomSelect({
             left: position.left,
             width: position.width,
             maxHeight: MAX_PANEL_HEIGHT,
-            zIndex: 2147483646,
+            zIndex: SELECT_PANEL_Z_INDEX,
           }}
           className="flex flex-col overflow-hidden rounded-xl border-2 border-purple-200 bg-white shadow-lg dark:border-purple-500/30 dark:bg-[#13131a] dark:shadow-glow-md">
           {searchable && (
@@ -311,8 +314,13 @@ export default function CustomSelect({
             className="flex-1 overflow-y-auto"
           >
             {visibleOptions.length === 0 && (
-              <p className="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">
-                Nothing matches “{query.trim()}”.
+              // An empty list and a query that matches nothing look identical
+              // from here, but mean different things to the person reading it:
+              // one is "nothing arrived", the other is "try another word".
+              <p className="px-3.5 py-2 text-xs text-gray-500 dark:text-gray-400">
+                {query.trim()
+                  ? `Nothing matches “${query.trim()}”.`
+                  : 'Nothing to choose from yet.'}
               </p>
             )}
             {visibleOptions.map((option, index) => {
